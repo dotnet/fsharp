@@ -3576,7 +3576,6 @@ let isILTypeTy ilg ty = isILBoxedBuiltInTy ilg ty tname_Type
 let isILTypedReferenceTy ilg ty =
     isILValueBuiltInTy ilg ty tname_TypedReference
 
-
 let isILSByteTy ilg ty = isILValueBuiltInTy ilg ty tname_SByte
 
 let isILByteTy ilg ty = isILValueBuiltInTy ilg ty tname_Byte
@@ -5073,6 +5072,7 @@ type ILTypeSigParser(tstring: string) =
         ILAttribElem.Type(Some ilTy)
 
 type ILType with
+
     static member Parse assemblyQualifiedName =
         (ILTypeSigParser assemblyQualifiedName).ParseType()
 

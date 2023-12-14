@@ -33,7 +33,6 @@ open Internal.Utilities.Library
 
 #nowarn "9"
 
-
 type ILReaderMetadataSnapshot = obj * nativeint * int
 type ILReaderTryGetMetadataSnapshot = (* path: *) string (* snapshotTimeStamp: *) * DateTime -> ILReaderMetadataSnapshot option
 
@@ -63,19 +62,26 @@ type ILModuleReader =
     inherit IDisposable
 
 type Statistics =
-    { mutable rawMemoryFileCount : int
-      mutable memoryMapFileOpenedCount : int
-      mutable memoryMapFileClosedCount : int
-      mutable weakByteFileCount : int
-      mutable byteFileCount : int }
+    {
+        mutable rawMemoryFileCount: int
+        mutable memoryMapFileOpenedCount: int
+        mutable memoryMapFileClosedCount: int
+        mutable weakByteFileCount: int
+        mutable byteFileCount: int
+    }
 
 [<RequireQualifiedAccess>]
 module rec ILBinaryReaderImpl =
     open System.Linq
     open System.Collections.ObjectModel
 
-    let ilNativeTypeLookup = (ILNativeTypeMap.Value |> Seq.map (fun x -> x)).ToDictionary((fun (key, _) -> key), fun (_, value) -> value)
-    let ilVariantTypeMap = (ILVariantTypeMap.Value |> Seq.map (fun x -> x)).ToDictionary((fun (_, key) -> key), fun (value, _) -> value)
+    let ilNativeTypeLookup =
+        (ILNativeTypeMap.Value |> Seq.map (fun x -> x))
+            .ToDictionary((fun (key, _) -> key), (fun (_, value) -> value))
+
+    let ilVariantTypeMap =
+        (ILVariantTypeMap.Value |> Seq.map (fun x -> x))
+            .ToDictionary((fun (_, key) -> key), (fun (value, _) -> value))
 
     let DummyFSharpCoreScopeRef =
         let asmRef =
@@ -91,7 +97,8 @@ module rec ILBinaryReaderImpl =
 
         ILScopeRef.Assembly asmRef
 
-    let primaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef)
+    let primaryAssemblyILGlobals =
+        mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef)
 
     type OperandType = System.Reflection.Emit.OperandType
 
@@ -197,6 +204,7 @@ module rec ILBinaryReaderImpl =
 
     let mkILMemberAccess (attributes: TypeAttributes) =
         let attributes = attributes &&& TypeAttributes.VisibilityMask
+
         match attributes with
         | TypeAttributes.Public -> ILMemberAccess.Public
         | TypeAttributes.NestedPublic -> ILMemberAccess.Public
@@ -209,6 +217,7 @@ module rec ILBinaryReaderImpl =
 
     let mkILTypeDefAccess (attributes: TypeAttributes) =
         let attributes = attributes &&& TypeAttributes.VisibilityMask
+
         match attributes with
         | TypeAttributes.Public -> ILTypeDefAccess.Public
         | TypeAttributes.NestedPublic
@@ -216,32 +225,39 @@ module rec ILBinaryReaderImpl =
         | TypeAttributes.NestedFamily
         | TypeAttributes.NestedAssembly
         | TypeAttributes.NestedFamANDAssem
-        | TypeAttributes.NestedFamORAssem -> ILTypeDefAccess.Nested (mkILMemberAccess attributes)
+        | TypeAttributes.NestedFamORAssem -> ILTypeDefAccess.Nested(mkILMemberAccess attributes)
         | _ -> ILTypeDefAccess.Private
 
     let mkILAssemblyLongevity (flags: AssemblyFlags) =
-        let  masked = int flags &&& 0x000e
-        if   masked = 0x0000 then ILAssemblyLongevity.Unspecified
-        elif masked = 0x0002 then ILAssemblyLongevity.Library
-        elif masked = 0x0004 then ILAssemblyLongevity.PlatformAppDomain
-        elif masked = 0x0006 then ILAssemblyLongevity.PlatformProcess
-        elif masked = 0x0008 then ILAssemblyLongevity.PlatformSystem
-        else                      ILAssemblyLongevity.Unspecified
+        let masked = int flags &&& 0x000e
+
+        if masked = 0x0000 then
+            ILAssemblyLongevity.Unspecified
+        elif masked = 0x0002 then
+            ILAssemblyLongevity.Library
+        elif masked = 0x0004 then
+            ILAssemblyLongevity.PlatformAppDomain
+        elif masked = 0x0006 then
+            ILAssemblyLongevity.PlatformProcess
+        elif masked = 0x0008 then
+            ILAssemblyLongevity.PlatformSystem
+        else
+            ILAssemblyLongevity.Unspecified
 
     let mkILTypeDefLayoutInfo (layout: TypeLayout) =
         if layout.IsDefault then
             { Size = None; Pack = None }
         else
-            { Size = Some(layout.Size); Pack = Some(uint16 layout.PackingSize) }
+            {
+                Size = Some(layout.Size)
+                Pack = Some(uint16 layout.PackingSize)
+            }
 
     let mkILTypeDefLayout (attributes: TypeAttributes) (layout: TypeLayout) =
         match attributes &&& TypeAttributes.LayoutMask with
-        | TypeAttributes.SequentialLayout ->
-            ILTypeDefLayout.Sequential(mkILTypeDefLayoutInfo layout)
-        | TypeAttributes.ExplicitLayout ->
-            ILTypeDefLayout.Explicit(mkILTypeDefLayoutInfo layout)
-        | _ ->
-            ILTypeDefLayout.Auto
+        | TypeAttributes.SequentialLayout -> ILTypeDefLayout.Sequential(mkILTypeDefLayoutInfo layout)
+        | TypeAttributes.ExplicitLayout -> ILTypeDefLayout.Explicit(mkILTypeDefLayoutInfo layout)
+        | _ -> ILTypeDefLayout.Auto
 
     let mkILSecurityAction (declSecurityAction: DeclarativeSecurityAction) =
         match declSecurityAction with
@@ -298,56 +314,46 @@ module rec ILBinaryReaderImpl =
             | _ -> failwithf "Invalid Signature Calling Convention: %A" sigHeader.CallingConvention
 
         // Optimize allocations.
-        if ilThisConvention = ILThisConvention.Instance && ilArgConvention = ILArgConvention.Default then
+        if
+            ilThisConvention = ILThisConvention.Instance
+            && ilArgConvention = ILArgConvention.Default
+        then
             ILCallingConv.Instance
-        elif ilThisConvention = ILThisConvention.Static && ilArgConvention = ILArgConvention.Default then
+        elif
+            ilThisConvention = ILThisConvention.Static
+            && ilArgConvention = ILArgConvention.Default
+        then
             ILCallingConv.Static
         else
             ILCallingConv.Callconv(ilThisConvention, ilArgConvention)
 
     let mkPInvokeCallingConvention (methImportAttributes: MethodImportAttributes) =
         match methImportAttributes &&& MethodImportAttributes.CallingConventionMask with
-        | MethodImportAttributes.CallingConventionCDecl ->
-            PInvokeCallingConvention.Cdecl
-        | MethodImportAttributes.CallingConventionStdCall ->
-            PInvokeCallingConvention.Stdcall
-        | MethodImportAttributes.CallingConventionThisCall ->
-            PInvokeCallingConvention.Thiscall
-        | MethodImportAttributes.CallingConventionFastCall ->
-            PInvokeCallingConvention.Fastcall
-        | MethodImportAttributes.CallingConventionWinApi ->
-            PInvokeCallingConvention.WinApi
-        | _ ->
-            PInvokeCallingConvention.None
+        | MethodImportAttributes.CallingConventionCDecl -> PInvokeCallingConvention.Cdecl
+        | MethodImportAttributes.CallingConventionStdCall -> PInvokeCallingConvention.Stdcall
+        | MethodImportAttributes.CallingConventionThisCall -> PInvokeCallingConvention.Thiscall
+        | MethodImportAttributes.CallingConventionFastCall -> PInvokeCallingConvention.Fastcall
+        | MethodImportAttributes.CallingConventionWinApi -> PInvokeCallingConvention.WinApi
+        | _ -> PInvokeCallingConvention.None
 
     let mkPInvokeCharEncoding (methImportAttributes: MethodImportAttributes) =
         match methImportAttributes &&& MethodImportAttributes.CharSetMask with
-        | MethodImportAttributes.CharSetAnsi ->
-            PInvokeCharEncoding.Ansi
-        | MethodImportAttributes.CharSetUnicode ->
-            PInvokeCharEncoding.Unicode
-        | MethodImportAttributes.CharSetAuto ->
-            PInvokeCharEncoding.Auto
-        | _ ->
-            PInvokeCharEncoding.None
+        | MethodImportAttributes.CharSetAnsi -> PInvokeCharEncoding.Ansi
+        | MethodImportAttributes.CharSetUnicode -> PInvokeCharEncoding.Unicode
+        | MethodImportAttributes.CharSetAuto -> PInvokeCharEncoding.Auto
+        | _ -> PInvokeCharEncoding.None
 
     let mkPInvokeThrowOnUnmappableChar (methImportAttrs: MethodImportAttributes) =
         match methImportAttrs &&& MethodImportAttributes.ThrowOnUnmappableCharMask with
-        | MethodImportAttributes.ThrowOnUnmappableCharEnable ->
-            PInvokeThrowOnUnmappableChar.Enabled
-        | MethodImportAttributes.ThrowOnUnmappableCharDisable ->
-            PInvokeThrowOnUnmappableChar.Disabled
-        | _ ->
-            PInvokeThrowOnUnmappableChar.UseAssembly
+        | MethodImportAttributes.ThrowOnUnmappableCharEnable -> PInvokeThrowOnUnmappableChar.Enabled
+        | MethodImportAttributes.ThrowOnUnmappableCharDisable -> PInvokeThrowOnUnmappableChar.Disabled
+        | _ -> PInvokeThrowOnUnmappableChar.UseAssembly
 
     let mkPInvokeCharBestFit (methImportAttrs: MethodImportAttributes) =
         match methImportAttrs &&& MethodImportAttributes.BestFitMappingMask with
-        | MethodImportAttributes.BestFitMappingEnable ->
-            PInvokeCharBestFit.Enabled
-        | MethodImportAttributes.BestFitMappingDisable ->
-            PInvokeCharBestFit.Disabled
-        | _ ->
-            PInvokeCharBestFit.UseAssembly
+        | MethodImportAttributes.BestFitMappingEnable -> PInvokeCharBestFit.Enabled
+        | MethodImportAttributes.BestFitMappingDisable -> PInvokeCharBestFit.Disabled
+        | _ -> PInvokeCharBestFit.UseAssembly
 
     let mkILTypeFunctionPointer (sigHeader: SignatureHeader) argTypes returnType =
         let callingSig =
@@ -356,6 +362,7 @@ module rec ILBinaryReaderImpl =
                 ArgTypes = argTypes
                 ReturnType = returnType
             }
+
         ILType.FunctionPointer(callingSig)
 
     let mkILTypeModified isRequired typeRef unmodifiedType =
@@ -395,30 +402,32 @@ module rec ILBinaryReaderImpl =
         | true, ilVariantType -> ilVariantType
         | _ ->
             match kind with
-            | _ when (kind &&& vt_ARRAY) <> 0 ->
-                ILNativeVariant.Array(mkILVariantType (kind &&& (~~~vt_ARRAY)))
-            | _ when (kind &&& vt_VECTOR) <> 0 ->
-                ILNativeVariant.Vector(mkILVariantType (kind &&& (~~~vt_VECTOR)))
-            | _ when (kind &&& vt_BYREF) <> 0 ->
-                ILNativeVariant.Byref(mkILVariantType (kind &&& (~~~vt_BYREF)))
-            | _ -> (* possible warning? *)
-                ILNativeVariant.Empty
+            | _ when (kind &&& vt_ARRAY) <> 0 -> ILNativeVariant.Array(mkILVariantType (kind &&& (~~~vt_ARRAY)))
+            | _ when (kind &&& vt_VECTOR) <> 0 -> ILNativeVariant.Vector(mkILVariantType (kind &&& (~~~vt_VECTOR)))
+            | _ when (kind &&& vt_BYREF) <> 0 -> ILNativeVariant.Byref(mkILVariantType (kind &&& (~~~vt_BYREF)))
+            | _ -> (* possible warning? *) ILNativeVariant.Empty
 
     let mkILTypeArray elementType (shape: ArrayShape) =
         let lowerBounds = shape.LowerBounds
         let sizes = shape.Sizes
         let rank = shape.Rank
+
         let shape =
             let dim i =
-              (if i < lowerBounds.Length then Some (Seq.item i lowerBounds) else None),
-              (if i < sizes.Length then Some (Seq.item i sizes) else None)
-            ILArrayShape (List.init rank dim)
+                (if i < lowerBounds.Length then
+                     Some(Seq.item i lowerBounds)
+                 else
+                     None),
+                (if i < sizes.Length then Some(Seq.item i sizes) else None)
+
+            ILArrayShape(List.init rank dim)
+
         mkILArrTy (elementType, shape)
 
     [<Sealed; NoComparison; NoEquality>]
     type SignatureTypeProvider() =
 
-        member val cenv : cenv = Unchecked.defaultof<_> with get, set
+        member val cenv: cenv = Unchecked.defaultof<_> with get, set
 
         interface ISignatureTypeProvider<ILType, MethodTypeVarOffset> with
 
@@ -428,8 +437,7 @@ module rec ILBinaryReaderImpl =
             member _.GetGenericMethodParameter(typarOffset, index) =
                 mkILTyvarTy (uint16 (typarOffset + index))
 
-            member _.GetGenericTypeParameter(_, index) =
-                mkILTyvarTy (uint16 (index))
+            member _.GetGenericTypeParameter(_, index) = mkILTyvarTy (uint16 (index))
 
             member _.GetModifiedType(modifier, unmodifiedType, isRequired) =
                 mkILTypeModified isRequired modifier.TypeRef unmodifiedType
@@ -441,8 +449,7 @@ module rec ILBinaryReaderImpl =
 
         interface ISimpleTypeProvider<ILType> with
 
-            member _.GetPrimitiveType typeCode =
-                mkILTypePrimitive typeCode
+            member _.GetPrimitiveType typeCode = mkILTypePrimitive typeCode
 
             member this.GetTypeFromDefinition(_, typeDefHandle, rawTypeKind) =
                 readILTypeFromTypeDefinition this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeDefHandle
@@ -455,19 +462,15 @@ module rec ILBinaryReaderImpl =
             member _.GetGenericInstantiation(genericType, typeArgs) =
                 mkILTypeGeneric genericType.TypeRef genericType.Boxity (typeArgs |> List.ofSeq)
 
-            member _.GetArrayType(elementType, shape) =
-                mkILTypeArray elementType shape
+            member _.GetArrayType(elementType, shape) = mkILTypeArray elementType shape
 
-            member _.GetByReferenceType elementType =
-                ILType.Byref(elementType)
+            member _.GetByReferenceType elementType = ILType.Byref(elementType)
 
-            member _.GetPointerType elementType =
-                ILType.Ptr(elementType)
+            member _.GetPointerType elementType = ILType.Ptr(elementType)
 
         interface ISZArrayTypeProvider<ILType> with
 
-            member _.GetSZArrayType elementType =
-                mkILArr1DTy elementType
+            member _.GetSZArrayType elementType = mkILArr1DTy elementType
 
         interface ICustomAttributeTypeProvider<ILType> with
 
@@ -476,33 +479,47 @@ module rec ILBinaryReaderImpl =
             member _.GetTypeFromSerializedName nm = ILType.Parse nm
 
             member _.GetUnderlyingEnumType ilType =
-                if isILSByteTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.SByte
-                elif isILByteTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Byte
-                elif isILInt16Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Int16
-                elif isILUInt16Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.UInt16
-                elif isILInt32Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Int32
-                elif isILUInt32Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.UInt32
-                elif isILInt64Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Int64
-                elif isILUInt64Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.UInt64
-                elif isILCharTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Char
-                elif isILDoubleTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Double
-                elif isILSingleTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Single
-                elif isILBoolTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Boolean
+                if isILSByteTy primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.SByte
+                elif isILByteTy primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.Byte
+                elif isILInt16Ty primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.Int16
+                elif isILUInt16Ty primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.UInt16
+                elif isILInt32Ty primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.Int32
+                elif isILUInt32Ty primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.UInt32
+                elif isILInt64Ty primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.Int64
+                elif isILUInt64Ty primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.UInt64
+                elif isILCharTy primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.Char
+                elif isILDoubleTy primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.Double
+                elif isILSingleTy primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.Single
+                elif isILBoolTy primaryAssemblyILGlobals ilType then
+                    PrimitiveTypeCode.Boolean
                 else
                     failwith "GetUnderlyingEnumType: Invalid type"
 
-            member _.IsSystemType ilType = isILTypeTy primaryAssemblyILGlobals ilType
+            member _.IsSystemType ilType =
+                isILTypeTy primaryAssemblyILGlobals ilType
 
     type LocalSignatureTypeProvider() =
 
-        member val cenv : cenv = Unchecked.defaultof<_> with get, set
+        member val cenv: cenv = Unchecked.defaultof<_> with get, set
 
         interface ISignatureTypeProvider<ILLocal, MethodTypeVarOffset> with
 
             member _.GetFunctionPointerType si =
                 {
                     IsPinned = false
-                    Type = mkILTypeFunctionPointer si.Header (si.ParameterTypes |> Seq.map (fun x -> x.Type) |> Seq.toList) si.ReturnType.Type
+                    Type =
+                        mkILTypeFunctionPointer si.Header (si.ParameterTypes |> Seq.map (fun x -> x.Type) |> Seq.toList) si.ReturnType.Type
                     DebugInfo = None
                 }
 
@@ -569,7 +586,11 @@ module rec ILBinaryReaderImpl =
             member _.GetGenericInstantiation(genericType, typeArgs) =
                 {
                     IsPinned = false
-                    Type = mkILTypeGeneric genericType.Type.TypeRef genericType.Type.Boxity (typeArgs |> Seq.map (fun x -> x.Type) |> List.ofSeq)
+                    Type =
+                        mkILTypeGeneric
+                            genericType.Type.TypeRef
+                            genericType.Type.Boxity
+                            (typeArgs |> Seq.map (fun x -> x.Type) |> List.ofSeq)
                     DebugInfo = None
                 }
 
@@ -599,7 +620,7 @@ module rec ILBinaryReaderImpl =
             member _.GetSZArrayType elementType =
                 {
                     IsPinned = false
-                    Type =  mkILArr1DTy elementType.Type
+                    Type = mkILArr1DTy elementType.Type
                     DebugInfo = None
                 }
 
@@ -614,44 +635,90 @@ module rec ILBinaryReaderImpl =
         }
 
     let noPrefixes mk prefixes =
-        if prefixes.al <> Aligned then failwith "an unaligned prefix is not allowed here"
-        if prefixes.vol <> Nonvolatile then failwith "a volatile prefix is not allowed here"
-        if prefixes.tl <> Normalcall then failwith "a tailcall prefix is not allowed here"
-        if prefixes.ro <> NormalAddress then failwith "a readonly prefix is not allowed here"
-        if prefixes.constrained <> None then failwith "a constrained prefix is not allowed here"
+        if prefixes.al <> Aligned then
+            failwith "an unaligned prefix is not allowed here"
+
+        if prefixes.vol <> Nonvolatile then
+            failwith "a volatile prefix is not allowed here"
+
+        if prefixes.tl <> Normalcall then
+            failwith "a tailcall prefix is not allowed here"
+
+        if prefixes.ro <> NormalAddress then
+            failwith "a readonly prefix is not allowed here"
+
+        if prefixes.constrained <> None then
+            failwith "a constrained prefix is not allowed here"
+
         mk
 
     let volatileOrUnalignedPrefix mk prefixes =
-        if prefixes.tl <> Normalcall then failwith "a tailcall prefix is not allowed here"
-        if prefixes.constrained <> None then failwith "a constrained prefix is not allowed here"
-        if prefixes.ro <> NormalAddress then failwith "a readonly prefix is not allowed here"
+        if prefixes.tl <> Normalcall then
+            failwith "a tailcall prefix is not allowed here"
+
+        if prefixes.constrained <> None then
+            failwith "a constrained prefix is not allowed here"
+
+        if prefixes.ro <> NormalAddress then
+            failwith "a readonly prefix is not allowed here"
+
         mk (prefixes.al, prefixes.vol)
 
     let volatilePrefix mk prefixes =
-        if prefixes.al <> Aligned then failwith "an unaligned prefix is not allowed here"
-        if prefixes.tl <> Normalcall then failwith "a tailcall prefix is not allowed here"
-        if prefixes.constrained <> None then failwith "a constrained prefix is not allowed here"
-        if prefixes.ro <> NormalAddress then failwith "a readonly prefix is not allowed here"
+        if prefixes.al <> Aligned then
+            failwith "an unaligned prefix is not allowed here"
+
+        if prefixes.tl <> Normalcall then
+            failwith "a tailcall prefix is not allowed here"
+
+        if prefixes.constrained <> None then
+            failwith "a constrained prefix is not allowed here"
+
+        if prefixes.ro <> NormalAddress then
+            failwith "a readonly prefix is not allowed here"
+
         mk prefixes.vol
 
     let tailPrefix mk prefixes =
-        if prefixes.al <> Aligned then failwith "an unaligned prefix is not allowed here"
-        if prefixes.vol <> Nonvolatile then failwith "a volatile prefix is not allowed here"
-        if prefixes.constrained <> None then failwith "a constrained prefix is not allowed here"
-        if prefixes.ro <> NormalAddress then failwith "a readonly prefix is not allowed here"
+        if prefixes.al <> Aligned then
+            failwith "an unaligned prefix is not allowed here"
+
+        if prefixes.vol <> Nonvolatile then
+            failwith "a volatile prefix is not allowed here"
+
+        if prefixes.constrained <> None then
+            failwith "a constrained prefix is not allowed here"
+
+        if prefixes.ro <> NormalAddress then
+            failwith "a readonly prefix is not allowed here"
+
         mk prefixes.tl
 
     let constraintOrTailPrefix mk prefixes =
-        if prefixes.al <> Aligned then failwith "an unaligned prefix is not allowed here"
-        if prefixes.vol <> Nonvolatile then failwith "a volatile prefix is not allowed here"
-        if prefixes.ro <> NormalAddress then failwith "a readonly prefix is not allowed here"
-        mk (prefixes.constrained, prefixes.tl )
+        if prefixes.al <> Aligned then
+            failwith "an unaligned prefix is not allowed here"
+
+        if prefixes.vol <> Nonvolatile then
+            failwith "a volatile prefix is not allowed here"
+
+        if prefixes.ro <> NormalAddress then
+            failwith "a readonly prefix is not allowed here"
+
+        mk (prefixes.constrained, prefixes.tl)
 
     let readonlyPrefix mk prefixes =
-        if prefixes.al <> Aligned then failwith "an unaligned prefix is not allowed here"
-        if prefixes.vol <> Nonvolatile then failwith "a volatile prefix is not allowed here"
-        if prefixes.tl <> Normalcall then failwith "a tailcall prefix is not allowed here"
-        if prefixes.constrained <> None then failwith "a constrained prefix is not allowed here"
+        if prefixes.al <> Aligned then
+            failwith "an unaligned prefix is not allowed here"
+
+        if prefixes.vol <> Nonvolatile then
+            failwith "a volatile prefix is not allowed here"
+
+        if prefixes.tl <> Normalcall then
+            failwith "a tailcall prefix is not allowed here"
+
+        if prefixes.constrained <> None then
+            failwith "a constrained prefix is not allowed here"
+
         mk prefixes.ro
 
     type ILOperandDecoder =
@@ -680,69 +747,67 @@ module rec ILBinaryReaderImpl =
 
     let OneByteDecoders =
         [|
-            InlineNone(noPrefixes AI_nop)//byte OperandType.InlineNone           // nop
-            InlineNone(noPrefixes I_break)//byte OperandType.InlineNone           // break
-            InlineNone(noPrefixes (I_ldarg(0us)))//byte OperandType.InlineNone           // ldarg.0
-            InlineNone(noPrefixes (I_ldarg(1us)))//byte OperandType.InlineNone           // ldarg.1
-            InlineNone(noPrefixes (I_ldarg(2us)))//byte OperandType.InlineNone           // ldarg.2
-            InlineNone(noPrefixes (I_ldarg(3us)))//byte OperandType.InlineNone           // ldarg.3
-            InlineNone(noPrefixes (I_ldloc(0us)))//byte OperandType.InlineNone           // ldloc.0
-            InlineNone(noPrefixes (I_ldloc(1us)))//byte OperandType.InlineNone           // ldloc.1
-            InlineNone(noPrefixes (I_ldloc(2us)))//byte OperandType.InlineNone           // ldloc.2
-            InlineNone(noPrefixes (I_ldloc(3us)))//byte OperandType.InlineNone           // ldloc.3
-            InlineNone(noPrefixes (I_stloc(0us)))//byte OperandType.InlineNone           // stloc.0
-            InlineNone(noPrefixes (I_stloc(1us)))//byte OperandType.InlineNone           // stloc.1
-            InlineNone(noPrefixes (I_stloc(2us)))//byte OperandType.InlineNone           // stloc.2
-            InlineNone(noPrefixes (I_stloc(3us)))//byte OperandType.InlineNone           // stloc.3
+            InlineNone(noPrefixes AI_nop) //byte OperandType.InlineNone           // nop
+            InlineNone(noPrefixes I_break) //byte OperandType.InlineNone           // break
+            InlineNone(noPrefixes (I_ldarg(0us))) //byte OperandType.InlineNone           // ldarg.0
+            InlineNone(noPrefixes (I_ldarg(1us))) //byte OperandType.InlineNone           // ldarg.1
+            InlineNone(noPrefixes (I_ldarg(2us))) //byte OperandType.InlineNone           // ldarg.2
+            InlineNone(noPrefixes (I_ldarg(3us))) //byte OperandType.InlineNone           // ldarg.3
+            InlineNone(noPrefixes (I_ldloc(0us))) //byte OperandType.InlineNone           // ldloc.0
+            InlineNone(noPrefixes (I_ldloc(1us))) //byte OperandType.InlineNone           // ldloc.1
+            InlineNone(noPrefixes (I_ldloc(2us))) //byte OperandType.InlineNone           // ldloc.2
+            InlineNone(noPrefixes (I_ldloc(3us))) //byte OperandType.InlineNone           // ldloc.3
+            InlineNone(noPrefixes (I_stloc(0us))) //byte OperandType.InlineNone           // stloc.0
+            InlineNone(noPrefixes (I_stloc(1us))) //byte OperandType.InlineNone           // stloc.1
+            InlineNone(noPrefixes (I_stloc(2us))) //byte OperandType.InlineNone           // stloc.2
+            InlineNone(noPrefixes (I_stloc(3us))) //byte OperandType.InlineNone           // stloc.3
             ShortInlineVar(noPrefixes (fun index -> I_ldarg(uint16 index))) //byte OperandType.ShortInlineVar       // ldarg.s
-            ShortInlineVar(noPrefixes (fun index -> I_ldarga(uint16 index)))//byte OperandType.ShortInlineVar       // ldarga.s
-            ShortInlineVar(noPrefixes (fun index -> I_starg(uint16 index)))//byte OperandType.ShortInlineVar       // starg.s
-            ShortInlineVar(noPrefixes (fun index -> I_ldloc(uint16 index)))//byte OperandType.ShortInlineVar       // ldloc.s
-            ShortInlineVar(noPrefixes (fun index -> I_ldloca(uint16 index)))//byte OperandType.ShortInlineVar       // ldloca.s
-            ShortInlineVar(noPrefixes (fun index -> I_stloc(uint16 index)))//byte OperandType.ShortInlineVar       // stloc.s
-            InlineNone(noPrefixes AI_ldnull)//byte OperandType.InlineNone           // ldnull
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(-1))))//byte OperandType.InlineNone           // ldc.i4.m1
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(0))))//byte OperandType.InlineNone           // ldc.i4.0
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(1))))//byte OperandType.InlineNone           // ldc.i4.1
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(2))))//byte OperandType.InlineNone           // ldc.i4.2
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(3))))//byte OperandType.InlineNone           // ldc.i4.3
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(4))))//byte OperandType.InlineNone           // ldc.i4.4
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(5))))//byte OperandType.InlineNone           // ldc.i4.5
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(6))))//byte OperandType.InlineNone           // ldc.i4.6
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(7))))//byte OperandType.InlineNone           // ldc.i4.7
-            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(8))))//byte OperandType.InlineNone           // ldc.i4.8
-            ShortInlineI(noPrefixes (fun value -> AI_ldc(DT_I4, ILConst.I4(int32 value))))//byte OperandType.ShortInlineI         // ldc.i4.s
-            InlineI(noPrefixes (fun value -> AI_ldc(DT_I4, ILConst.I4(value))))//byte OperandType.InlineI              // ldc.i4
-            InlineI8(noPrefixes (fun value -> AI_ldc(DT_I8, ILConst.I8(value))))//byte OperandType.InlineI8             // ldc.i8
-            ShortInlineR(noPrefixes (fun value -> AI_ldc(DT_R4, ILConst.R4(value))))//byte OperandType.ShortInlineR         // ldc.r4
-            InlineR(noPrefixes (fun value -> AI_ldc(DT_R8, ILConst.R8(value))))//byte OperandType.InlineR              // ldc.r8
+            ShortInlineVar(noPrefixes (fun index -> I_ldarga(uint16 index))) //byte OperandType.ShortInlineVar       // ldarga.s
+            ShortInlineVar(noPrefixes (fun index -> I_starg(uint16 index))) //byte OperandType.ShortInlineVar       // starg.s
+            ShortInlineVar(noPrefixes (fun index -> I_ldloc(uint16 index))) //byte OperandType.ShortInlineVar       // ldloc.s
+            ShortInlineVar(noPrefixes (fun index -> I_ldloca(uint16 index))) //byte OperandType.ShortInlineVar       // ldloca.s
+            ShortInlineVar(noPrefixes (fun index -> I_stloc(uint16 index))) //byte OperandType.ShortInlineVar       // stloc.s
+            InlineNone(noPrefixes AI_ldnull) //byte OperandType.InlineNone           // ldnull
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(-1)))) //byte OperandType.InlineNone           // ldc.i4.m1
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(0)))) //byte OperandType.InlineNone           // ldc.i4.0
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(1)))) //byte OperandType.InlineNone           // ldc.i4.1
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(2)))) //byte OperandType.InlineNone           // ldc.i4.2
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(3)))) //byte OperandType.InlineNone           // ldc.i4.3
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(4)))) //byte OperandType.InlineNone           // ldc.i4.4
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(5)))) //byte OperandType.InlineNone           // ldc.i4.5
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(6)))) //byte OperandType.InlineNone           // ldc.i4.6
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(7)))) //byte OperandType.InlineNone           // ldc.i4.7
+            InlineNone(noPrefixes (AI_ldc(DT_I4, ILConst.I4(8)))) //byte OperandType.InlineNone           // ldc.i4.8
+            ShortInlineI(noPrefixes (fun value -> AI_ldc(DT_I4, ILConst.I4(int32 value)))) //byte OperandType.ShortInlineI         // ldc.i4.s
+            InlineI(noPrefixes (fun value -> AI_ldc(DT_I4, ILConst.I4(value)))) //byte OperandType.InlineI              // ldc.i4
+            InlineI8(noPrefixes (fun value -> AI_ldc(DT_I8, ILConst.I8(value)))) //byte OperandType.InlineI8             // ldc.i8
+            ShortInlineR(noPrefixes (fun value -> AI_ldc(DT_R4, ILConst.R4(value)))) //byte OperandType.ShortInlineR         // ldc.r4
+            InlineR(noPrefixes (fun value -> AI_ldc(DT_R8, ILConst.R8(value)))) //byte OperandType.InlineR              // ldc.r8
             NoDecoder
-            InlineNone(noPrefixes AI_dup)//byte OperandType.InlineNone           // dup
-            InlineNone(noPrefixes AI_pop)//byte OperandType.InlineNone           // pop
-            InlineMethod(noPrefixes (fun (ilMethSpec, _) -> I_jmp(ilMethSpec)))//byte OperandType.InlineMethod         // jmp
+            InlineNone(noPrefixes AI_dup) //byte OperandType.InlineNone           // dup
+            InlineNone(noPrefixes AI_pop) //byte OperandType.InlineNone           // pop
+            InlineMethod(noPrefixes (fun (ilMethSpec, _) -> I_jmp(ilMethSpec))) //byte OperandType.InlineMethod         // jmp
             InlineMethod(
-                constraintOrTailPrefix (
-                    fun (ilConstraint, ilTailcall) (ilMethSpec, ilVarArgs) ->
-                        match ilConstraint with
-                        | Some(ilType) -> I_callconstraint(false, ilTailcall, ilType, ilMethSpec, ilVarArgs)
-                        | _ -> I_call(ilTailcall, ilMethSpec, ilVarArgs)
-                )
-            )//byte OperandType.InlineMethod         // call
-            InlineSig(tailPrefix (fun ilTailcall (ilCallSig, ilVarArgs) -> I_calli(ilTailcall, ilCallSig, ilVarArgs)))//byte OperandType.InlineSig            // calli
-            InlineNone(noPrefixes I_ret)//byte OperandType.InlineNone           // ret
-            ShortInlineBrTarget(noPrefixes (fun value -> I_br(int value)))//byte OperandType.ShortInlineBrTarget  // br.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_brfalse, int value)))//byte OperandType.ShortInlineBrTarget  // brfalse.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_brtrue, int value)))//byte OperandType.ShortInlineBrTarget  // brtrue.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_beq, int value)))//byte OperandType.ShortInlineBrTarget  // beq.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bge, int value)))//byte OperandType.ShortInlineBrTarget  // bge.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bgt, int value)))//byte OperandType.ShortInlineBrTarget  // bgt.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_ble, int value)))//byte OperandType.ShortInlineBrTarget  // ble.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_blt, int value)))//byte OperandType.ShortInlineBrTarget  // blt.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bne_un, int value)))//byte OperandType.ShortInlineBrTarget  // bne.un.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bge_un, int value)))//byte OperandType.ShortInlineBrTarget  // bge.un.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bgt_un, int value)))//byte OperandType.ShortInlineBrTarget  // bgt.un.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_ble_un, int value)))//byte OperandType.ShortInlineBrTarget  // ble.un.s
-            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_blt_un, int value)))//byte OperandType.ShortInlineBrTarget  // blt.un.s
+                constraintOrTailPrefix (fun (ilConstraint, ilTailcall) (ilMethSpec, ilVarArgs) ->
+                    match ilConstraint with
+                    | Some(ilType) -> I_callconstraint(false, ilTailcall, ilType, ilMethSpec, ilVarArgs)
+                    | _ -> I_call(ilTailcall, ilMethSpec, ilVarArgs))
+            ) //byte OperandType.InlineMethod         // call
+            InlineSig(tailPrefix (fun ilTailcall (ilCallSig, ilVarArgs) -> I_calli(ilTailcall, ilCallSig, ilVarArgs))) //byte OperandType.InlineSig            // calli
+            InlineNone(noPrefixes I_ret) //byte OperandType.InlineNone           // ret
+            ShortInlineBrTarget(noPrefixes (fun value -> I_br(int value))) //byte OperandType.ShortInlineBrTarget  // br.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_brfalse, int value))) //byte OperandType.ShortInlineBrTarget  // brfalse.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_brtrue, int value))) //byte OperandType.ShortInlineBrTarget  // brtrue.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_beq, int value))) //byte OperandType.ShortInlineBrTarget  // beq.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bge, int value))) //byte OperandType.ShortInlineBrTarget  // bge.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bgt, int value))) //byte OperandType.ShortInlineBrTarget  // bgt.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_ble, int value))) //byte OperandType.ShortInlineBrTarget  // ble.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_blt, int value))) //byte OperandType.ShortInlineBrTarget  // blt.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bne_un, int value))) //byte OperandType.ShortInlineBrTarget  // bne.un.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bge_un, int value))) //byte OperandType.ShortInlineBrTarget  // bge.un.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bgt_un, int value))) //byte OperandType.ShortInlineBrTarget  // bgt.un.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_ble_un, int value))) //byte OperandType.ShortInlineBrTarget  // ble.un.s
+            ShortInlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_blt_un, int value))) //byte OperandType.ShortInlineBrTarget  // blt.un.s
             InlineBrTarget(noPrefixes (fun value -> I_br(value))) // br
             InlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_brfalse, value))) // brfalse
             InlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_brtrue, value))) // brtrue
@@ -756,143 +821,112 @@ module rec ILBinaryReaderImpl =
             InlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_bgt_un, value))) // bgt.un
             InlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_ble_un, value))) // ble.un
             InlineBrTarget(noPrefixes (fun value -> I_brcmp(BI_blt_un, value))) // blt.un
-            InlineSwitch(noPrefixes (fun values -> ILInstr.I_switch(values)))//byte OperandType.InlineSwitch         // switch
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I1)))//byte OperandType.InlineNone           // ldind.i1
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_U1)))//byte OperandType.InlineNone           // ldind.u1
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I2)))//byte OperandType.InlineNone           // ldind.i2
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_U2)))//byte OperandType.InlineNone           // ldind.u2
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I4)))//byte OperandType.InlineNone           // ldind.i4
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_U4)))//byte OperandType.InlineNone           // ldind.u4
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I8)))//byte OperandType.InlineNone           // ldind.i8
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I)))//byte OperandType.InlineNone           // ldind.i
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_R4)))//byte OperandType.InlineNone           // ldind.r4
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_R8)))//byte OperandType.InlineNone           // ldind.r8
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_REF)))//byte OperandType.InlineNone           // ldind.ref
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_REF)))//byte OperandType.InlineNone           // stind.ref
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I1)))//byte OperandType.InlineNone           // stind.i1
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I2)))//byte OperandType.InlineNone           // stind.i2
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I4)))//byte OperandType.InlineNone           // stind.i4
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I8)))//byte OperandType.InlineNone           // stind.i8
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_R4)))//byte OperandType.InlineNone           // stind.r4
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_R8)))//byte OperandType.InlineNone           // stind.r8
-            InlineNone(noPrefixes AI_add)//byte OperandType.InlineNone           // add
-            InlineNone(noPrefixes AI_sub)//byte OperandType.InlineNone           // sub
-            InlineNone(noPrefixes AI_mul)//byte OperandType.InlineNone           // mul
-            InlineNone(noPrefixes AI_div)//byte OperandType.InlineNone           // div
-            InlineNone(noPrefixes AI_div_un)//byte OperandType.InlineNone           // div.un
-            InlineNone(noPrefixes AI_rem)//byte OperandType.InlineNone           // rem
-            InlineNone(noPrefixes AI_rem_un)//byte OperandType.InlineNone           // rem.un
-            InlineNone(noPrefixes AI_and)//byte OperandType.InlineNone           // and
-            InlineNone(noPrefixes AI_or)//byte OperandType.InlineNone           // or
-            InlineNone(noPrefixes AI_xor)//byte OperandType.InlineNone           // xor
-            InlineNone(noPrefixes AI_shl)//byte OperandType.InlineNone           // shl
-            InlineNone(noPrefixes AI_shr)//byte OperandType.InlineNone           // shr
-            InlineNone(noPrefixes AI_shr_un)//byte OperandType.InlineNone           // shr.un
-            InlineNone(noPrefixes AI_neg)//byte OperandType.InlineNone           // neg
-            InlineNone(noPrefixes AI_not)//byte OperandType.InlineNone           // not
-            InlineNone(noPrefixes (AI_conv(DT_I1)))//byte OperandType.InlineNone           // conv.i1
-            InlineNone(noPrefixes (AI_conv(DT_I2)))//byte OperandType.InlineNone           // conv.i2
-            InlineNone(noPrefixes (AI_conv(DT_I4)))//byte OperandType.InlineNone           // conv.i4
-            InlineNone(noPrefixes (AI_conv(DT_I8)))//byte OperandType.InlineNone           // conv.i8
-            InlineNone(noPrefixes (AI_conv(DT_R4)))//byte OperandType.InlineNone           // conv.r4
-            InlineNone(noPrefixes (AI_conv(DT_R8)))//byte OperandType.InlineNone           // conv.r8
-            InlineNone(noPrefixes (AI_conv(DT_U4)))//byte OperandType.InlineNone           // conv.u4
-            InlineNone(noPrefixes (AI_conv(DT_U8)))//byte OperandType.InlineNone           // conv.u8
+            InlineSwitch(noPrefixes (fun values -> ILInstr.I_switch(values))) //byte OperandType.InlineSwitch         // switch
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I1))) //byte OperandType.InlineNone           // ldind.i1
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_U1))) //byte OperandType.InlineNone           // ldind.u1
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I2))) //byte OperandType.InlineNone           // ldind.i2
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_U2))) //byte OperandType.InlineNone           // ldind.u2
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I4))) //byte OperandType.InlineNone           // ldind.i4
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_U4))) //byte OperandType.InlineNone           // ldind.u4
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I8))) //byte OperandType.InlineNone           // ldind.i8
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_I))) //byte OperandType.InlineNone           // ldind.i
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_R4))) //byte OperandType.InlineNone           // ldind.r4
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_R8))) //byte OperandType.InlineNone           // ldind.r8
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_ldind(ilAlignment, ilVolatility, DT_REF))) //byte OperandType.InlineNone           // ldind.ref
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_REF))) //byte OperandType.InlineNone           // stind.ref
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I1))) //byte OperandType.InlineNone           // stind.i1
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I2))) //byte OperandType.InlineNone           // stind.i2
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I4))) //byte OperandType.InlineNone           // stind.i4
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I8))) //byte OperandType.InlineNone           // stind.i8
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_R4))) //byte OperandType.InlineNone           // stind.r4
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_R8))) //byte OperandType.InlineNone           // stind.r8
+            InlineNone(noPrefixes AI_add) //byte OperandType.InlineNone           // add
+            InlineNone(noPrefixes AI_sub) //byte OperandType.InlineNone           // sub
+            InlineNone(noPrefixes AI_mul) //byte OperandType.InlineNone           // mul
+            InlineNone(noPrefixes AI_div) //byte OperandType.InlineNone           // div
+            InlineNone(noPrefixes AI_div_un) //byte OperandType.InlineNone           // div.un
+            InlineNone(noPrefixes AI_rem) //byte OperandType.InlineNone           // rem
+            InlineNone(noPrefixes AI_rem_un) //byte OperandType.InlineNone           // rem.un
+            InlineNone(noPrefixes AI_and) //byte OperandType.InlineNone           // and
+            InlineNone(noPrefixes AI_or) //byte OperandType.InlineNone           // or
+            InlineNone(noPrefixes AI_xor) //byte OperandType.InlineNone           // xor
+            InlineNone(noPrefixes AI_shl) //byte OperandType.InlineNone           // shl
+            InlineNone(noPrefixes AI_shr) //byte OperandType.InlineNone           // shr
+            InlineNone(noPrefixes AI_shr_un) //byte OperandType.InlineNone           // shr.un
+            InlineNone(noPrefixes AI_neg) //byte OperandType.InlineNone           // neg
+            InlineNone(noPrefixes AI_not) //byte OperandType.InlineNone           // not
+            InlineNone(noPrefixes (AI_conv(DT_I1))) //byte OperandType.InlineNone           // conv.i1
+            InlineNone(noPrefixes (AI_conv(DT_I2))) //byte OperandType.InlineNone           // conv.i2
+            InlineNone(noPrefixes (AI_conv(DT_I4))) //byte OperandType.InlineNone           // conv.i4
+            InlineNone(noPrefixes (AI_conv(DT_I8))) //byte OperandType.InlineNone           // conv.i8
+            InlineNone(noPrefixes (AI_conv(DT_R4))) //byte OperandType.InlineNone           // conv.r4
+            InlineNone(noPrefixes (AI_conv(DT_R8))) //byte OperandType.InlineNone           // conv.r8
+            InlineNone(noPrefixes (AI_conv(DT_U4))) //byte OperandType.InlineNone           // conv.u4
+            InlineNone(noPrefixes (AI_conv(DT_U8))) //byte OperandType.InlineNone           // conv.u8
             InlineMethod(
-                constraintOrTailPrefix (
-                    fun (ilConstraint, ilTailcall) (ilMethSpec, ilVarArgs) ->
-                        match ilConstraint with
-                        | Some(ilType) -> I_callconstraint(true, ilTailcall, ilType, ilMethSpec, ilVarArgs)
-                        | _ -> I_callvirt(ilTailcall, ilMethSpec, ilVarArgs)
-                )
-            )//byte OperandType.InlineMethod         // callvirt
-            InlineType(noPrefixes (fun ilType -> I_cpobj(ilType)))//byte OperandType.InlineType           // cpobj
-            InlineType(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) ilType -> I_ldobj(ilAlignment, ilVolatility, ilType)))//byte OperandType.InlineType           // ldobj
-            InlineString(noPrefixes (fun value -> I_ldstr(value)))//byte OperandType.InlineString         // ldstr
-            InlineMethod(noPrefixes (fun (ilMethSpec, ilVarArgs) -> I_newobj(ilMethSpec, ilVarArgs)))//byte OperandType.InlineMethod         // newobj
-            InlineType(noPrefixes (fun ilType -> I_castclass(ilType)))//byte OperandType.InlineType           // castclass
-            InlineType(noPrefixes (fun ilType -> I_isinst(ilType)))//byte OperandType.InlineType           // isinst
-            InlineNone(noPrefixes (AI_conv(DT_R)))//byte OperandType.InlineNone           // conv.r.un // TODO: Looks like we don't have this?
+                constraintOrTailPrefix (fun (ilConstraint, ilTailcall) (ilMethSpec, ilVarArgs) ->
+                    match ilConstraint with
+                    | Some(ilType) -> I_callconstraint(true, ilTailcall, ilType, ilMethSpec, ilVarArgs)
+                    | _ -> I_callvirt(ilTailcall, ilMethSpec, ilVarArgs))
+            ) //byte OperandType.InlineMethod         // callvirt
+            InlineType(noPrefixes (fun ilType -> I_cpobj(ilType))) //byte OperandType.InlineType           // cpobj
+            InlineType(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) ilType -> I_ldobj(ilAlignment, ilVolatility, ilType))) //byte OperandType.InlineType           // ldobj
+            InlineString(noPrefixes (fun value -> I_ldstr(value))) //byte OperandType.InlineString         // ldstr
+            InlineMethod(noPrefixes (fun (ilMethSpec, ilVarArgs) -> I_newobj(ilMethSpec, ilVarArgs))) //byte OperandType.InlineMethod         // newobj
+            InlineType(noPrefixes (fun ilType -> I_castclass(ilType))) //byte OperandType.InlineType           // castclass
+            InlineType(noPrefixes (fun ilType -> I_isinst(ilType))) //byte OperandType.InlineType           // isinst
+            InlineNone(noPrefixes (AI_conv(DT_R))) //byte OperandType.InlineNone           // conv.r.un // TODO: Looks like we don't have this?
             NoDecoder
             NoDecoder
-            InlineType(noPrefixes (fun ilType -> I_unbox(ilType)))//byte OperandType.InlineType           // unbox
-            InlineNone(noPrefixes I_throw)//byte OperandType.InlineNone           // throw
-            InlineField(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) ilFieldSpec -> I_ldfld(ilAlignment, ilVolatility, ilFieldSpec)))//byte OperandType.InlineField          // ldfld
-            InlineField(noPrefixes (fun ilFieldSpec -> I_ldflda(ilFieldSpec)))//byte OperandType.InlineField          // ldflda
-            InlineField(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) ilFieldSpec -> I_stfld(ilAlignment, ilVolatility, ilFieldSpec)))//byte OperandType.InlineField          // stfld
-            InlineField(volatilePrefix (fun ilVolatility ilFieldSpec -> I_ldsfld(ilVolatility, ilFieldSpec)))//byte OperandType.InlineField          // ldsfld
-            InlineField(noPrefixes (fun ilFieldSpec -> I_ldsflda(ilFieldSpec)))//byte OperandType.InlineField          // ldsflda
-            InlineField(volatilePrefix (fun ilVolatility ilFieldSpec -> I_stsfld(ilVolatility, ilFieldSpec)))//byte OperandType.InlineField          // stsfld
-            InlineType(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) ilType -> I_stobj(ilAlignment, ilVolatility, ilType)))//byte OperandType.InlineType           // stobj
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I1)))//byte OperandType.InlineNone           // conv.ovf.i1.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I2)))//byte OperandType.InlineNone           // conv.ovf.i2.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I4)))//byte OperandType.InlineNone           // conv.ovf.i4.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I8)))//byte OperandType.InlineNone           // conv.ovf.i8.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U1)))//byte OperandType.InlineNone           // conv.ovf.u1.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U2)))//byte OperandType.InlineNone           // conv.ovf.u2.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U4)))//byte OperandType.InlineNone           // conv.ovf.u4.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U8)))//byte OperandType.InlineNone           // conv.ovf.u8.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I)))//byte OperandType.InlineNone           // conv.ovf.i.un
-            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U)))//byte OperandType.InlineNone           // conv.ovf.u.un
-            InlineType(noPrefixes (fun ilType -> I_box(ilType)))//byte OperandType.InlineType           // box
-            InlineType(noPrefixes (fun ilType -> I_newarr(ILArrayShape.SingleDimensional, ilType)))//byte OperandType.InlineType           // newarr
-            InlineNone(noPrefixes I_ldlen)//byte OperandType.InlineNone           // ldlen
-            InlineType(readonlyPrefix (fun ilReadonly ilType -> I_ldelema(ilReadonly, false, ILArrayShape.SingleDimensional, ilType)))//byte OperandType.InlineType           // ldelema
-            InlineNone(noPrefixes (I_ldelem(DT_I1)))//byte OperandType.InlineNone           // ldelem.i1
-            InlineNone(noPrefixes (I_ldelem(DT_U1)))//byte OperandType.InlineNone           // ldelem.u1
-            InlineNone(noPrefixes (I_ldelem(DT_I2)))//byte OperandType.InlineNone           // ldelem.i2
-            InlineNone(noPrefixes (I_ldelem(DT_U2)))//byte OperandType.InlineNone           // ldelem.u2
-            InlineNone(noPrefixes (I_ldelem(DT_I4)))//byte OperandType.InlineNone           // ldelem.i4
-            InlineNone(noPrefixes (I_ldelem(DT_U4)))//byte OperandType.InlineNone           // ldelem.u4
-            InlineNone(noPrefixes (I_ldelem(DT_I8)))//byte OperandType.InlineNone           // ldelem.i8
-            InlineNone(noPrefixes (I_ldelem(DT_I)))//byte OperandType.InlineNone           // ldelem.i
-            InlineNone(noPrefixes (I_ldelem(DT_R4)))//byte OperandType.InlineNone           // ldelem.r4
-            InlineNone(noPrefixes (I_ldelem(DT_R8)))//byte OperandType.InlineNone           // ldelem.r8
-            InlineNone(noPrefixes (I_ldelem(DT_REF)))//byte OperandType.InlineNone           // ldelem.ref
-            InlineNone(noPrefixes (I_stelem(DT_I)))//byte OperandType.InlineNone           // stelem.i
-            InlineNone(noPrefixes (I_stelem(DT_I1)))//byte OperandType.InlineNone           // stelem.i1
-            InlineNone(noPrefixes (I_stelem(DT_I2)))//byte OperandType.InlineNone           // stelem.i2
-            InlineNone(noPrefixes (I_stelem(DT_I4)))//byte OperandType.InlineNone           // stelem.i4
-            InlineNone(noPrefixes (I_stelem(DT_I8)))//byte OperandType.InlineNone           // stelem.i8
-            InlineNone(noPrefixes (I_stelem(DT_R4)))//byte OperandType.InlineNone           // stelem.r4
-            InlineNone(noPrefixes (I_stelem(DT_R8)))//byte OperandType.InlineNone           // stelem.r8
-            InlineNone(noPrefixes (I_stelem(DT_REF)))//byte OperandType.InlineNone           // stelem.ref
-            InlineType(noPrefixes (fun ilType -> I_ldelem_any(ILArrayShape.SingleDimensional, ilType)))//byte OperandType.InlineType           // ldelem
-            InlineType(noPrefixes (fun ilType -> I_stelem_any(ILArrayShape.SingleDimensional, ilType)))//byte OperandType.InlineType           // stelem
-            InlineType(noPrefixes (fun ilType -> I_unbox_any(ilType)))//byte OperandType.InlineType           // unbox.any
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            InlineNone(noPrefixes (AI_conv_ovf(DT_I1)))//byte OperandType.InlineNone           // conv.ovf.i1
-            InlineNone(noPrefixes (AI_conv_ovf(DT_U1)))//byte OperandType.InlineNone           // conv.ovf.u1
-            InlineNone(noPrefixes (AI_conv_ovf(DT_I2)))//byte OperandType.InlineNone           // conv.ovf.i2
-            InlineNone(noPrefixes (AI_conv_ovf(DT_U2)))//byte OperandType.InlineNone           // conv.ovf.u2
-            InlineNone(noPrefixes (AI_conv_ovf(DT_I4)))//byte OperandType.InlineNone           // conv.ovf.i4
-            InlineNone(noPrefixes (AI_conv_ovf(DT_U4)))//byte OperandType.InlineNone           // conv.ovf.u4
-            InlineNone(noPrefixes (AI_conv_ovf(DT_I8)))//byte OperandType.InlineNone           // conv.ovf.i8
-            InlineNone(noPrefixes (AI_conv_ovf(DT_U8)))//byte OperandType.InlineNone           // conv.ovf.u8
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            NoDecoder
-            InlineType(noPrefixes (fun ilType -> I_refanyval(ilType)))//byte OperandType.InlineType           // refanyval
-            InlineNone(noPrefixes AI_ckfinite)//byte OperandType.InlineNone           // ckfinite
-            NoDecoder
-            NoDecoder
-            InlineType(noPrefixes (fun ilType -> I_mkrefany(ilType)))//byte OperandType.InlineType           // mkrefany
+            InlineType(noPrefixes (fun ilType -> I_unbox(ilType))) //byte OperandType.InlineType           // unbox
+            InlineNone(noPrefixes I_throw) //byte OperandType.InlineNone           // throw
+            InlineField(
+                volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) ilFieldSpec -> I_ldfld(ilAlignment, ilVolatility, ilFieldSpec))
+            ) //byte OperandType.InlineField          // ldfld
+            InlineField(noPrefixes (fun ilFieldSpec -> I_ldflda(ilFieldSpec))) //byte OperandType.InlineField          // ldflda
+            InlineField(
+                volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) ilFieldSpec -> I_stfld(ilAlignment, ilVolatility, ilFieldSpec))
+            ) //byte OperandType.InlineField          // stfld
+            InlineField(volatilePrefix (fun ilVolatility ilFieldSpec -> I_ldsfld(ilVolatility, ilFieldSpec))) //byte OperandType.InlineField          // ldsfld
+            InlineField(noPrefixes (fun ilFieldSpec -> I_ldsflda(ilFieldSpec))) //byte OperandType.InlineField          // ldsflda
+            InlineField(volatilePrefix (fun ilVolatility ilFieldSpec -> I_stsfld(ilVolatility, ilFieldSpec))) //byte OperandType.InlineField          // stsfld
+            InlineType(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) ilType -> I_stobj(ilAlignment, ilVolatility, ilType))) //byte OperandType.InlineType           // stobj
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I1))) //byte OperandType.InlineNone           // conv.ovf.i1.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I2))) //byte OperandType.InlineNone           // conv.ovf.i2.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I4))) //byte OperandType.InlineNone           // conv.ovf.i4.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I8))) //byte OperandType.InlineNone           // conv.ovf.i8.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U1))) //byte OperandType.InlineNone           // conv.ovf.u1.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U2))) //byte OperandType.InlineNone           // conv.ovf.u2.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U4))) //byte OperandType.InlineNone           // conv.ovf.u4.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U8))) //byte OperandType.InlineNone           // conv.ovf.u8.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_I))) //byte OperandType.InlineNone           // conv.ovf.i.un
+            InlineNone(noPrefixes (AI_conv_ovf_un(DT_U))) //byte OperandType.InlineNone           // conv.ovf.u.un
+            InlineType(noPrefixes (fun ilType -> I_box(ilType))) //byte OperandType.InlineType           // box
+            InlineType(noPrefixes (fun ilType -> I_newarr(ILArrayShape.SingleDimensional, ilType))) //byte OperandType.InlineType           // newarr
+            InlineNone(noPrefixes I_ldlen) //byte OperandType.InlineNone           // ldlen
+            InlineType(readonlyPrefix (fun ilReadonly ilType -> I_ldelema(ilReadonly, false, ILArrayShape.SingleDimensional, ilType))) //byte OperandType.InlineType           // ldelema
+            InlineNone(noPrefixes (I_ldelem(DT_I1))) //byte OperandType.InlineNone           // ldelem.i1
+            InlineNone(noPrefixes (I_ldelem(DT_U1))) //byte OperandType.InlineNone           // ldelem.u1
+            InlineNone(noPrefixes (I_ldelem(DT_I2))) //byte OperandType.InlineNone           // ldelem.i2
+            InlineNone(noPrefixes (I_ldelem(DT_U2))) //byte OperandType.InlineNone           // ldelem.u2
+            InlineNone(noPrefixes (I_ldelem(DT_I4))) //byte OperandType.InlineNone           // ldelem.i4
+            InlineNone(noPrefixes (I_ldelem(DT_U4))) //byte OperandType.InlineNone           // ldelem.u4
+            InlineNone(noPrefixes (I_ldelem(DT_I8))) //byte OperandType.InlineNone           // ldelem.i8
+            InlineNone(noPrefixes (I_ldelem(DT_I))) //byte OperandType.InlineNone           // ldelem.i
+            InlineNone(noPrefixes (I_ldelem(DT_R4))) //byte OperandType.InlineNone           // ldelem.r4
+            InlineNone(noPrefixes (I_ldelem(DT_R8))) //byte OperandType.InlineNone           // ldelem.r8
+            InlineNone(noPrefixes (I_ldelem(DT_REF))) //byte OperandType.InlineNone           // ldelem.ref
+            InlineNone(noPrefixes (I_stelem(DT_I))) //byte OperandType.InlineNone           // stelem.i
+            InlineNone(noPrefixes (I_stelem(DT_I1))) //byte OperandType.InlineNone           // stelem.i1
+            InlineNone(noPrefixes (I_stelem(DT_I2))) //byte OperandType.InlineNone           // stelem.i2
+            InlineNone(noPrefixes (I_stelem(DT_I4))) //byte OperandType.InlineNone           // stelem.i4
+            InlineNone(noPrefixes (I_stelem(DT_I8))) //byte OperandType.InlineNone           // stelem.i8
+            InlineNone(noPrefixes (I_stelem(DT_R4))) //byte OperandType.InlineNone           // stelem.r4
+            InlineNone(noPrefixes (I_stelem(DT_R8))) //byte OperandType.InlineNone           // stelem.r8
+            InlineNone(noPrefixes (I_stelem(DT_REF))) //byte OperandType.InlineNone           // stelem.ref
+            InlineType(noPrefixes (fun ilType -> I_ldelem_any(ILArrayShape.SingleDimensional, ilType))) //byte OperandType.InlineType           // ldelem
+            InlineType(noPrefixes (fun ilType -> I_stelem_any(ILArrayShape.SingleDimensional, ilType))) //byte OperandType.InlineType           // stelem
+            InlineType(noPrefixes (fun ilType -> I_unbox_any(ilType))) //byte OperandType.InlineType           // unbox.any
             NoDecoder
             NoDecoder
             NoDecoder
@@ -902,23 +936,56 @@ module rec ILBinaryReaderImpl =
             NoDecoder
             NoDecoder
             NoDecoder
-            InlineTok(noPrefixes (fun ilToken -> I_ldtoken(ilToken)))//byte OperandType.InlineTok            // ldtoken
-            InlineNone(noPrefixes (AI_conv(DT_U2)))//byte OperandType.InlineNone           // conv.u2
-            InlineNone(noPrefixes (AI_conv(DT_U1)))//byte OperandType.InlineNone           // conv.u1
-            InlineNone(noPrefixes (AI_conv(DT_I)))//byte OperandType.InlineNone           // conv.i
-            InlineNone(noPrefixes (AI_conv_ovf(DT_I)))//byte OperandType.InlineNone           // conv.ovf.i
-            InlineNone(noPrefixes (AI_conv_ovf(DT_U)))//byte OperandType.InlineNone           // conv.ovf.u
-            InlineNone(noPrefixes AI_add_ovf)//byte OperandType.InlineNone           // add.ovf
-            InlineNone(noPrefixes AI_add_ovf_un)//byte OperandType.InlineNone           // add.ovf.un
-            InlineNone(noPrefixes AI_mul_ovf)//byte OperandType.InlineNone           // mul.ovf
-            InlineNone(noPrefixes AI_mul_ovf_un)//byte OperandType.InlineNone           // mul.ovf.un
-            InlineNone(noPrefixes AI_sub_ovf)//byte OperandType.InlineNone           // sub.ovf
-            InlineNone(noPrefixes AI_sub_ovf_un)//byte OperandType.InlineNone           // sub.ovf.un
-            InlineNone(noPrefixes I_endfinally)//byte OperandType.InlineNone           // endfinally
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            InlineNone(noPrefixes (AI_conv_ovf(DT_I1))) //byte OperandType.InlineNone           // conv.ovf.i1
+            InlineNone(noPrefixes (AI_conv_ovf(DT_U1))) //byte OperandType.InlineNone           // conv.ovf.u1
+            InlineNone(noPrefixes (AI_conv_ovf(DT_I2))) //byte OperandType.InlineNone           // conv.ovf.i2
+            InlineNone(noPrefixes (AI_conv_ovf(DT_U2))) //byte OperandType.InlineNone           // conv.ovf.u2
+            InlineNone(noPrefixes (AI_conv_ovf(DT_I4))) //byte OperandType.InlineNone           // conv.ovf.i4
+            InlineNone(noPrefixes (AI_conv_ovf(DT_U4))) //byte OperandType.InlineNone           // conv.ovf.u4
+            InlineNone(noPrefixes (AI_conv_ovf(DT_I8))) //byte OperandType.InlineNone           // conv.ovf.i8
+            InlineNone(noPrefixes (AI_conv_ovf(DT_U8))) //byte OperandType.InlineNone           // conv.ovf.u8
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            InlineType(noPrefixes (fun ilType -> I_refanyval(ilType))) //byte OperandType.InlineType           // refanyval
+            InlineNone(noPrefixes AI_ckfinite) //byte OperandType.InlineNone           // ckfinite
+            NoDecoder
+            NoDecoder
+            InlineType(noPrefixes (fun ilType -> I_mkrefany(ilType))) //byte OperandType.InlineType           // mkrefany
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            NoDecoder
+            InlineTok(noPrefixes (fun ilToken -> I_ldtoken(ilToken))) //byte OperandType.InlineTok            // ldtoken
+            InlineNone(noPrefixes (AI_conv(DT_U2))) //byte OperandType.InlineNone           // conv.u2
+            InlineNone(noPrefixes (AI_conv(DT_U1))) //byte OperandType.InlineNone           // conv.u1
+            InlineNone(noPrefixes (AI_conv(DT_I))) //byte OperandType.InlineNone           // conv.i
+            InlineNone(noPrefixes (AI_conv_ovf(DT_I))) //byte OperandType.InlineNone           // conv.ovf.i
+            InlineNone(noPrefixes (AI_conv_ovf(DT_U))) //byte OperandType.InlineNone           // conv.ovf.u
+            InlineNone(noPrefixes AI_add_ovf) //byte OperandType.InlineNone           // add.ovf
+            InlineNone(noPrefixes AI_add_ovf_un) //byte OperandType.InlineNone           // add.ovf.un
+            InlineNone(noPrefixes AI_mul_ovf) //byte OperandType.InlineNone           // mul.ovf
+            InlineNone(noPrefixes AI_mul_ovf_un) //byte OperandType.InlineNone           // mul.ovf.un
+            InlineNone(noPrefixes AI_sub_ovf) //byte OperandType.InlineNone           // sub.ovf
+            InlineNone(noPrefixes AI_sub_ovf_un) //byte OperandType.InlineNone           // sub.ovf.un
+            InlineNone(noPrefixes I_endfinally) //byte OperandType.InlineNone           // endfinally
             InlineBrTarget(noPrefixes (fun value -> I_leave(value))) // leave
-            ShortInlineBrTarget(noPrefixes (fun value -> I_leave(int value)))//byte OperandType.ShortInlineBrTarget  // leave.s
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I)))//byte OperandType.InlineNone           // stind.i
-            InlineNone(noPrefixes (AI_conv(DT_U)))//byte OperandType.InlineNone           // conv.u            (0xe0)
+            ShortInlineBrTarget(noPrefixes (fun value -> I_leave(int value))) //byte OperandType.ShortInlineBrTarget  // leave.s
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_stind(ilAlignment, ilVolatility, DT_I))) //byte OperandType.InlineNone           // stind.i
+            InlineNone(noPrefixes (AI_conv(DT_U))) //byte OperandType.InlineNone           // conv.u            (0xe0)
             NoDecoder
             NoDecoder
             NoDecoder
@@ -953,37 +1020,43 @@ module rec ILBinaryReaderImpl =
 
     let TwoByteDecoders =
         [|
-            InlineNone(noPrefixes I_arglist)//(byte)OperandType.InlineNone,           // arglist           (0xfe 0x00)
-            InlineNone(noPrefixes AI_ceq)//(byte)OperandType.InlineNone,           // ceq
-            InlineNone(noPrefixes AI_cgt)//(byte)OperandType.InlineNone,           // cgt
-            InlineNone(noPrefixes AI_cgt_un)//(byte)OperandType.InlineNone,           // cgt.un
-            InlineNone(noPrefixes AI_clt)//(byte)OperandType.InlineNone,           // clt
-            InlineNone(noPrefixes AI_clt_un)//(byte)OperandType.InlineNone,           // clt.un
-            InlineMethod(noPrefixes (fun (ilMethSpec, _) -> I_ldftn(ilMethSpec)))//(byte)OperandType.InlineMethod,         // ldftn
-            InlineMethod(noPrefixes (fun (ilMethSpec, _) -> I_ldvirtftn(ilMethSpec)))//(byte)OperandType.InlineMethod,         // ldvirtftn
+            InlineNone(noPrefixes I_arglist) //(byte)OperandType.InlineNone,           // arglist           (0xfe 0x00)
+            InlineNone(noPrefixes AI_ceq) //(byte)OperandType.InlineNone,           // ceq
+            InlineNone(noPrefixes AI_cgt) //(byte)OperandType.InlineNone,           // cgt
+            InlineNone(noPrefixes AI_cgt_un) //(byte)OperandType.InlineNone,           // cgt.un
+            InlineNone(noPrefixes AI_clt) //(byte)OperandType.InlineNone,           // clt
+            InlineNone(noPrefixes AI_clt_un) //(byte)OperandType.InlineNone,           // clt.un
+            InlineMethod(noPrefixes (fun (ilMethSpec, _) -> I_ldftn(ilMethSpec))) //(byte)OperandType.InlineMethod,         // ldftn
+            InlineMethod(noPrefixes (fun (ilMethSpec, _) -> I_ldvirtftn(ilMethSpec))) //(byte)OperandType.InlineMethod,         // ldvirtftn
             NoDecoder
-            InlineVar(noPrefixes (fun index -> I_ldarg(index)))//(byte)OperandType.InlineVar,            // ldarg
-            InlineVar(noPrefixes (fun index -> I_ldarga(index)))//(byte)OperandType.InlineVar,            // ldarga
-            InlineVar(noPrefixes (fun index -> I_starg(index)))//(byte)OperandType.InlineVar,            // starg
-            InlineVar(noPrefixes (fun index -> I_ldloc(index)))//(byte)OperandType.InlineVar,            // ldloc
-            InlineVar(noPrefixes (fun index -> I_ldloca(index)))//(byte)OperandType.InlineVar,            // ldloca
-            InlineVar(noPrefixes (fun index -> I_stloc(index)))//(byte)OperandType.InlineVar,            // stloc
-            InlineNone(noPrefixes I_localloc)//(byte)OperandType.InlineNone,           // localloc
+            InlineVar(noPrefixes (fun index -> I_ldarg(index))) //(byte)OperandType.InlineVar,            // ldarg
+            InlineVar(noPrefixes (fun index -> I_ldarga(index))) //(byte)OperandType.InlineVar,            // ldarga
+            InlineVar(noPrefixes (fun index -> I_starg(index))) //(byte)OperandType.InlineVar,            // starg
+            InlineVar(noPrefixes (fun index -> I_ldloc(index))) //(byte)OperandType.InlineVar,            // ldloc
+            InlineVar(noPrefixes (fun index -> I_ldloca(index))) //(byte)OperandType.InlineVar,            // ldloca
+            InlineVar(noPrefixes (fun index -> I_stloc(index))) //(byte)OperandType.InlineVar,            // stloc
+            InlineNone(noPrefixes I_localloc) //(byte)OperandType.InlineNone,           // localloc
             NoDecoder
-            InlineNone(noPrefixes I_endfilter)//(byte)OperandType.InlineNone,           // endfilter
-            PrefixShortInlineI(fun prefixes value -> prefixes.al <- match value with | 1us -> Unaligned1 | 2us -> Unaligned2 | 4us -> Unaligned4 | _ -> (* possible warning? *) Aligned)//(byte)OperandType.ShortInlineI,         // unaligned.
-            PrefixInlineNone(fun prefixes -> prefixes.vol <- Volatile)//(byte)OperandType.InlineNone,           // volatile.
-            PrefixInlineNone(fun prefixes -> prefixes.tl <- Tailcall)//(byte)OperandType.InlineNone,           // tail.
-            InlineType(noPrefixes (fun ilType -> I_initobj(ilType)))//(byte)OperandType.InlineType,           // initobj
-            PrefixInlineType(fun prefixes ilType -> prefixes.constrained <- Some(ilType))//(byte)OperandType.InlineType,           // constrained.
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_cpblk(ilAlignment, ilVolatility)))//(byte)OperandType.InlineNone,           // cpblk
-            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_initblk(ilAlignment, ilVolatility)))//(byte)OperandType.InlineNone,           // initblk
+            InlineNone(noPrefixes I_endfilter) //(byte)OperandType.InlineNone,           // endfilter
+            PrefixShortInlineI(fun prefixes value ->
+                prefixes.al <-
+                    match value with
+                    | 1us -> Unaligned1
+                    | 2us -> Unaligned2
+                    | 4us -> Unaligned4
+                    | _ -> (* possible warning? *) Aligned) //(byte)OperandType.ShortInlineI,         // unaligned.
+            PrefixInlineNone(fun prefixes -> prefixes.vol <- Volatile) //(byte)OperandType.InlineNone,           // volatile.
+            PrefixInlineNone(fun prefixes -> prefixes.tl <- Tailcall) //(byte)OperandType.InlineNone,           // tail.
+            InlineType(noPrefixes (fun ilType -> I_initobj(ilType))) //(byte)OperandType.InlineType,           // initobj
+            PrefixInlineType(fun prefixes ilType -> prefixes.constrained <- Some(ilType)) //(byte)OperandType.InlineType,           // constrained.
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_cpblk(ilAlignment, ilVolatility))) //(byte)OperandType.InlineNone,           // cpblk
+            InlineNone(volatileOrUnalignedPrefix (fun (ilAlignment, ilVolatility) -> I_initblk(ilAlignment, ilVolatility))) //(byte)OperandType.InlineNone,           // initblk
             NoDecoder
-            InlineNone(noPrefixes I_rethrow)//(byte)OperandType.InlineNone,           // rethrow
+            InlineNone(noPrefixes I_rethrow) //(byte)OperandType.InlineNone,           // rethrow
             NoDecoder
-            InlineType(noPrefixes (fun ilType -> I_sizeof(ilType)))//(byte)OperandType.InlineType,           // sizeof
-            InlineNone(noPrefixes I_refanytype)//(byte)OperandType.InlineNone,           // refanytype
-            PrefixInlineNone(fun prefixes -> prefixes.ro <- ReadonlyAddress)//(byte)OperandType.InlineNone,           // readonly.         (0xfe 0x1e)
+            InlineType(noPrefixes (fun ilType -> I_sizeof(ilType))) //(byte)OperandType.InlineType,           // sizeof
+            InlineNone(noPrefixes I_refanytype) //(byte)OperandType.InlineNone,           // refanytype
+            PrefixInlineNone(fun prefixes -> prefixes.ro <- ReadonlyAddress) //(byte)OperandType.InlineNone,           // readonly.         (0xfe 0x1e)
         |]
 
     let readString (cenv: cenv) (stringHandle: StringHandle) =
@@ -999,6 +1072,7 @@ module rec ILBinaryReaderImpl =
 
     let readTypeName (cenv: cenv) (namespaceHandle: StringHandle) (nameHandle: StringHandle) =
         let name = readString cenv nameHandle
+
         if namespaceHandle.IsNil then
             name
         else
@@ -1098,8 +1172,6 @@ module rec ILBinaryReaderImpl =
                 Some(mdReader.GetBlobBytes(hashValue))
 
         ILModuleRef.Create(name, asmFile.ContainsMetadata, hash)
-
-
 
     let readILAssemblyRefFromAssemblyReferenceUncached (cenv: cenv) (asmRefHandle: AssemblyReferenceHandle) =
         let mdReader = cenv.MetadataReader
@@ -1360,7 +1432,7 @@ module rec ILBinaryReaderImpl =
     let readILParameter
         (cenv: cenv)
         typarOffset
-        (returnType: ILReturn)
+        (returnType: byref<ILReturn>)
         (parameters: ILParameter[])
         (paramHandle: ParameterHandle)
         : struct (ILParameter * int) =
@@ -1417,7 +1489,7 @@ module rec ILBinaryReaderImpl =
         struct (ilParameter, param.SequenceNumber)
 
     let readILParameters (cenv: cenv) typarOffset (si: MethodSignature<ILType>) (methDef: MethodDefinition) =
-        let ret = ref (mkILReturn si.ReturnType) // TODO: will byref be suitable here?
+        let mutable ret = mkILReturn si.ReturnType // TODO: will byref be suitable here?
 
         let parameters =
             let parameters = Array.zeroCreate si.ParameterTypes.Length
@@ -1430,47 +1502,60 @@ module rec ILBinaryReaderImpl =
         let paramHandles = methDef.GetParameters()
 
         if paramHandles.Count > 0 then
-            paramHandles
-            |> Seq.iter (fun paramHandle ->
+            for paramHandle in paramHandles do
                 let struct (ilParameter, sequenceNumber) =
-                    readILParameter cenv typarOffset !ret parameters paramHandle
+                    readILParameter cenv typarOffset &ret parameters paramHandle
 
                 if sequenceNumber = 0 then
-                    ret
-                    := {
-                        Marshal = ilParameter.Marshal
-                        Type = ilParameter.Type
-                        CustomAttrsStored = ilParameter.CustomAttrsStored
-                        MetadataIndex = ilParameter.MetadataIndex
-                    }
+                    ret <-
+                        {
+                            Marshal = ilParameter.Marshal
+                            Type = ilParameter.Type
+                            CustomAttrsStored = ilParameter.CustomAttrsStored
+                            MetadataIndex = ilParameter.MetadataIndex
+                        }
                 else
-                    parameters.[sequenceNumber - 1] <- ilParameter)
+                    parameters.[sequenceNumber - 1] <- ilParameter
 
-        !ret, parameters |> List.ofArray
+        ret, parameters |> List.ofArray
 
     let readILOperandDecoder (ilReader: byref<BlobReader>) : ILOperandDecoder =
         let operation = int (ilReader.ReadByte())
-        if operation = 0xfe then TwoByteDecoders.[int (ilReader.ReadByte())]
-        else OneByteDecoders.[operation]
+
+        if operation = 0xfe then
+            TwoByteDecoders.[int (ilReader.ReadByte())]
+        else
+            OneByteDecoders.[operation]
 
     [<TailCall>]
     let rec readDeclaringTypeInfoFromMemberOrMethod (cenv: cenv) typarOffset (handle: EntityHandle) : string * ILType =
         let mdReader = cenv.MetadataReader
+
         match handle.Kind with
         | HandleKind.MemberReference ->
-            let memberRef = mdReader.GetMemberReference(MemberReferenceHandle.op_Explicit(handle))
-            (readString cenv memberRef.Name, readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent)
+            let memberRef =
+                mdReader.GetMemberReference(MemberReferenceHandle.op_Explicit (handle))
+
+            (readString cenv memberRef.Name,
+             readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent)
 
         | HandleKind.MethodDefinition ->
-            let methodDef = mdReader.GetMethodDefinition(MethodDefinitionHandle.op_Explicit(handle))
-            (readString cenv methodDef.Name, readILTypeFromTypeDefinition cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) (methodDef.GetDeclaringType()))
+            let methodDef =
+                mdReader.GetMethodDefinition(MethodDefinitionHandle.op_Explicit (handle))
+
+            (readString cenv methodDef.Name,
+             readILTypeFromTypeDefinition
+                 cenv
+                 SignatureTypeKind.Class (* original reader assumed object, it's ok *)
+                 (methodDef.GetDeclaringType()))
 
         | HandleKind.MethodSpecification ->
-            let methodSpec = mdReader.GetMethodSpecification(MethodSpecificationHandle.op_Explicit(handle))
+            let methodSpec =
+                mdReader.GetMethodSpecification(MethodSpecificationHandle.op_Explicit (handle))
+
             readDeclaringTypeInfoFromMemberOrMethod cenv typarOffset methodSpec.Method
 
-        | _ ->
-            failwithf "Invalid Entity Handle Kind: %A" handle.Kind
+        | _ -> failwithf "Invalid Entity Handle Kind: %A" handle.Kind
 
     let readILFieldDef (cenv: cenv) typarOffset (fieldDefHandle: FieldDefinitionHandle) : ILFieldDef =
         let mdReader = cenv.MetadataReader
@@ -1480,10 +1565,11 @@ module rec ILBinaryReaderImpl =
         let data =
             match cenv.TryPEReader with
             | Some peReader when int (fieldDef.Attributes &&& FieldAttributes.HasFieldRVA) <> 0 ->
-                let mutable blobReader = peReader.GetSectionData(fieldDef.GetRelativeVirtualAddress()).GetReader()
+                let mutable blobReader =
+                    peReader.GetSectionData(fieldDef.GetRelativeVirtualAddress()).GetReader()
+
                 Some(blobReader.ReadBytes(blobReader.Length))
-            | _ ->
-                None
+            | _ -> None
 
         let literalValue =
             if int (fieldDef.Attributes &&& FieldAttributes.HasDefault) <> 0 then
@@ -1493,6 +1579,7 @@ module rec ILBinaryReaderImpl =
 
         let offset =
             let isStatic = int (fieldDef.Attributes &&& FieldAttributes.Static) <> 0
+
             if not isStatic then
                 let offset = fieldDef.GetOffset()
                 if offset = -1 then None else Some(offset)
@@ -1514,16 +1601,22 @@ module rec ILBinaryReaderImpl =
             offset = offset,
             marshal = marshal,
             customAttrsStored = readILAttributesStored cenv typarOffset (fieldDef.GetCustomAttributes()),
-            metadataIndex = MetadataTokens.GetRowNumber(FieldDefinitionHandle.op_Implicit fieldDefHandle))
+            metadataIndex = MetadataTokens.GetRowNumber(FieldDefinitionHandle.op_Implicit fieldDefHandle)
+        )
 
     let readILFieldSpec (cenv: cenv) typarOffset (handle: EntityHandle) : ILFieldSpec =
         let mdReader = cenv.MetadataReader
 
         match handle.Kind with
         | HandleKind.FieldDefinition ->
-            let fieldDef = mdReader.GetFieldDefinition(FieldDefinitionHandle.op_Explicit(handle))
+            let fieldDef =
+                mdReader.GetFieldDefinition(FieldDefinitionHandle.op_Explicit (handle))
 
-            let declaringILType = readILTypeFromTypeDefinition cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) (fieldDef.GetDeclaringType())
+            let declaringILType =
+                readILTypeFromTypeDefinition
+                    cenv
+                    SignatureTypeKind.Class (* original reader assumed object, it's ok *)
+                    (fieldDef.GetDeclaringType())
 
             let ilFieldRef =
                 {
@@ -1538,9 +1631,11 @@ module rec ILBinaryReaderImpl =
             }
 
         | HandleKind.MemberReference ->
-            let memberRef = mdReader.GetMemberReference(MemberReferenceHandle.op_Explicit(handle))
+            let memberRef =
+                mdReader.GetMemberReference(MemberReferenceHandle.op_Explicit (handle))
 
-            let declaringType = readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
+            let declaringType =
+                readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
 
             let ilFieldRef =
                 {
@@ -1559,8 +1654,11 @@ module rec ILBinaryReaderImpl =
     let readILFieldDefs (cenv: cenv) typarOffset (fieldDefHandles: FieldDefinitionHandleCollection) =
         let f =
             InterruptibleLazy(fun () ->
-                [ for fdef in fieldDefHandles do
-                    readILFieldDef cenv typarOffset fdef ])
+                [
+                    for fdef in fieldDefHandles do
+                        readILFieldDef cenv typarOffset fdef
+                ])
+
         mkILFieldsLazy f
 
     let readILInstrs (cenv: cenv) typarOffset (ilReader: byref<BlobReader>) =
@@ -1579,6 +1677,7 @@ module rec ILBinaryReaderImpl =
 
         let labelsOfRawOffsets = Dictionary()
         let ilOffsetsOfLabels = Dictionary()
+
         let tryRawToLabel rawOffset =
             match labelsOfRawOffsets.TryGetValue rawOffset with
             | true, v -> Some v
@@ -1588,7 +1687,7 @@ module rec ILBinaryReaderImpl =
             match tryRawToLabel rawOffset with
             | Some l -> l
             | None ->
-                let lab = generateCodeLabel()
+                let lab = generateCodeLabel ()
                 labelsOfRawOffsets.[rawOffset] <- lab
                 lab
 
@@ -1605,7 +1704,10 @@ module rec ILBinaryReaderImpl =
             | PrefixShortInlineI(f) -> f prefixes (ilReader.ReadUInt16())
             | PrefixInlineType(f) ->
                 let handle = MetadataTokens.EntityHandle(ilReader.ReadInt32())
-                let ilType = readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
+
+                let ilType =
+                    readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
+
                 f prefixes ilType
 
             | decoder ->
@@ -1638,10 +1740,12 @@ module rec ILBinaryReaderImpl =
                     | InlineSig(f) ->
                         let handle = MetadataTokens.EntityHandle(ilReader.ReadInt32())
                         let ilMethSpec = readILMethodSpec cenv typarOffset handle
+
                         let ilVarArgs =
                             match ilMethSpec.GenericArgs with
                             | [] -> None
                             | xs -> Some(xs)
+
                         f prefixes (ilMethSpec.MethodRef.GetCallingSignature(), ilVarArgs)
 
                     | ShortInlineBrTarget(f) ->
@@ -1653,24 +1757,32 @@ module rec ILBinaryReaderImpl =
 
                     | InlineSwitch(f) ->
                         let deltas = Array.zeroCreate (ilReader.ReadInt32())
+
                         for i = 0 to deltas.Length - 1 do
                             deltas.[i] <- ilReader.ReadInt32()
+
                         for i = 0 to deltas.Length - 1 do
                             deltas.[i] <- rawToLabel (ilReader.Offset + deltas.[i])
+
                         f prefixes (deltas |> List.ofArray)
 
                     | InlineType(f) ->
                         let handle = MetadataTokens.EntityHandle(ilReader.ReadInt32())
-                        let ilType = readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
+
+                        let ilType =
+                            readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
+
                         f prefixes ilType
 
                     | InlineString(f) ->
                         let handle = MetadataTokens.Handle(ilReader.ReadInt32())
+
                         let value =
                             match handle.Kind with
-                            | HandleKind.String -> readString cenv (StringHandle.op_Explicit(handle))
-                            | HandleKind.UserString -> mdReader.GetUserString(UserStringHandle.op_Explicit(handle))
+                            | HandleKind.String -> readString cenv (StringHandle.op_Explicit (handle))
+                            | HandleKind.UserString -> mdReader.GetUserString(UserStringHandle.op_Explicit (handle))
                             | _ -> failwithf "Invalid Handle Kind: %A" handle.Kind
+
                         f prefixes value
 
                     | InlineField(f) ->
@@ -1688,7 +1800,10 @@ module rec ILBinaryReaderImpl =
                             | HandleKind.FieldDefinition -> ILToken.ILField(readILFieldSpec cenv typarOffset handle)
                             | HandleKind.TypeDefinition
                             | HandleKind.TypeReference
-                            | HandleKind.TypeSpecification -> ILToken.ILType(readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle)
+                            | HandleKind.TypeSpecification ->
+                                ILToken.ILType(
+                                    readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
+                                )
                             | _ -> failwithf "Invalid Handle Kind: %A" handle.Kind
 
                         f prefixes ilToken
@@ -1719,42 +1834,56 @@ module rec ILBinaryReaderImpl =
                 match tryRawToLabel x with
                 | None -> false
                 | Some lab -> ilOffsetsOfLabels.ContainsKey lab
-            if isInstrStart rawOffset then rawToLabel rawOffset
-            elif isInstrStart (rawOffset+1) then rawToLabel (rawOffset+1)
-            else failwith ("the bytecode raw offset "+string rawOffset+" did not refer either to the start or end of an instruction")
+
+            if isInstrStart rawOffset then
+                rawToLabel rawOffset
+            elif isInstrStart (rawOffset + 1) then
+                rawToLabel (rawOffset + 1)
+            else
+                failwith (
+                    "the bytecode raw offset "
+                    + string rawOffset
+                    + " did not refer either to the start or end of an instruction"
+                )
 
         instrs.ToArray(), rawToLabel, lab2pc, raw2nextLab
 
     let readILCode (cenv: cenv) typarOffset (_methDef: MethodDefinition) (methBodyBlock: MethodBodyBlock) : ILCode =
         let mutable ilReader = methBodyBlock.GetILReader()
-        let instrs, rawToLabel, lab2pc, _raw2nextLab = readILInstrs cenv typarOffset &ilReader
+
+        let instrs, rawToLabel, lab2pc, _raw2nextLab =
+            readILInstrs cenv typarOffset &ilReader
 
         let exceptions =
-            methBodyBlock.ExceptionRegions
-            |> Seq.map (fun region ->
-                let start = rawToLabel region.HandlerOffset
-                let finish = rawToLabel (region.HandlerOffset + region.HandlerLength)
-                let clause =
-                    match region.Kind with
-                    | ExceptionRegionKind.Finally ->
-                        ILExceptionClause.Finally(start, finish)
-                    | ExceptionRegionKind.Fault ->
-                        ILExceptionClause.Fault(start, finish)
-                    | ExceptionRegionKind.Filter ->
-                        let filterStart = rawToLabel region.FilterOffset
-                        let filterFinish = rawToLabel region.HandlerOffset
-                        ILExceptionClause.FilterCatch((filterStart, filterFinish), (start, finish))
-                    | ExceptionRegionKind.Catch ->
-                        ILExceptionClause.TypeCatch(readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) region.CatchType, (start, finish))
-                    | _ ->
-                        failwithf "Invalid Exception Region Kind: %A" region.Kind
+            [
+                for region in methBodyBlock.ExceptionRegions do
+                    let start = rawToLabel region.HandlerOffset
+                    let finish = rawToLabel (region.HandlerOffset + region.HandlerLength)
 
-                {
-                    ILExceptionSpec.Range = (rawToLabel region.TryOffset, rawToLabel (region.TryOffset + region.TryLength))
-                    ILExceptionSpec.Clause = clause
-                }
-            )
-            |> List.ofSeq
+                    let clause =
+                        match region.Kind with
+                        | ExceptionRegionKind.Finally -> ILExceptionClause.Finally(start, finish)
+                        | ExceptionRegionKind.Fault -> ILExceptionClause.Fault(start, finish)
+                        | ExceptionRegionKind.Filter ->
+                            let filterStart = rawToLabel region.FilterOffset
+                            let filterFinish = rawToLabel region.HandlerOffset
+                            ILExceptionClause.FilterCatch((filterStart, filterFinish), (start, finish))
+                        | ExceptionRegionKind.Catch ->
+                            ILExceptionClause.TypeCatch(
+                                readILType
+                                    cenv
+                                    typarOffset
+                                    SignatureTypeKind.Class (* original reader assumed object, it's ok *)
+                                    region.CatchType,
+                                (start, finish)
+                            )
+                        | _ -> failwithf "Invalid Exception Region Kind: %A" region.Kind
+
+                    {
+                        ILExceptionSpec.Range = (rawToLabel region.TryOffset, rawToLabel (region.TryOffset + region.TryLength))
+                        ILExceptionSpec.Clause = clause
+                    }
+            ]
 
         {
             Labels = lab2pc
@@ -1765,6 +1894,7 @@ module rec ILBinaryReaderImpl =
 
     let decodeLocalSignature (cenv: cenv) (mdReader: MetadataReader) typarOffset localSignature =
         let si = mdReader.GetStandaloneSignature localSignature
+
         si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, typarOffset)
         |> List.ofSeq
 
@@ -1776,7 +1906,8 @@ module rec ILBinaryReaderImpl =
         let ilLocals =
             if methBodyBlock.LocalSignature.IsNil then
                 List.Empty
-            else decodeLocalSignature cenv mdReader typarOffset methBodyBlock.LocalSignature
+            else
+                decodeLocalSignature cenv mdReader typarOffset methBodyBlock.LocalSignature
 
         let ilCode = readILCode cenv typarOffset methDef methBodyBlock
 
@@ -1822,6 +1953,7 @@ module rec ILBinaryReaderImpl =
                     }
 
                 MethodBody.PInvoke(InterruptibleLazy.FromValue(pInvokeMethod))
+
             InterruptibleLazy(factory)
         elif
             isInternalCall
@@ -1833,7 +1965,9 @@ module rec ILBinaryReaderImpl =
         else
             match cenv.TryPEReader with
             | Some peReader ->
-                let mbody = InterruptibleLazy(fun () -> readILMethodBody cenv peReader typarOffset methDef)
+                let mbody =
+                    InterruptibleLazy(fun () -> readILMethodBody cenv peReader typarOffset methDef)
+
                 notlazy (MethodBody.IL mbody)
             | _ -> methBodyNotAvailable
 
@@ -1844,12 +1978,15 @@ module rec ILBinaryReaderImpl =
         let attributes = genParam.Attributes
 
         let constraints =
-            [ for genParamCnstrHandle in genParam.GetConstraints() do
-                let genParamCnstr = mdReader.GetGenericParameterConstraint(genParamCnstrHandle)
-                readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) genParamCnstr.Type ]
+            [
+                for genParamCnstrHandle in genParam.GetConstraints() do
+                    let genParamCnstr = mdReader.GetGenericParameterConstraint(genParamCnstrHandle)
+                    readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) genParamCnstr.Type
+            ]
 
         let variance =
             let attributes = attributes &&& GenericParameterAttributes.VarianceMask
+
             match attributes with
             | GenericParameterAttributes.Covariant -> CoVariant
             | GenericParameterAttributes.Contravariant -> ContraVariant
@@ -1860,15 +1997,21 @@ module rec ILBinaryReaderImpl =
             Constraints = constraints
             Variance = variance
             HasReferenceTypeConstraint = int (attributes &&& GenericParameterAttributes.ReferenceTypeConstraint) <> 0
-            HasNotNullableValueTypeConstraint = int (attributes &&& GenericParameterAttributes.NotNullableValueTypeConstraint) <> 0
-            HasDefaultConstructorConstraint = int (attributes &&& GenericParameterAttributes.DefaultConstructorConstraint) <> 0
+            HasNotNullableValueTypeConstraint =
+                int (attributes &&& GenericParameterAttributes.NotNullableValueTypeConstraint)
+                <> 0
+            HasDefaultConstructorConstraint =
+                int (attributes &&& GenericParameterAttributes.DefaultConstructorConstraint)
+                <> 0
             CustomAttrsStored = readILAttributesStored cenv typarOffset (genParam.GetCustomAttributes())
-            MetadataIndex = MetadataTokens.GetRowNumber(GenericParameterHandle.op_Implicit(genParamHandle))
+            MetadataIndex = MetadataTokens.GetRowNumber(GenericParameterHandle.op_Implicit (genParamHandle))
         }
 
     let readILGenericParameterDefs (cenv: cenv) typarOffset (genParamHandles: GenericParameterHandleCollection) =
-        [ for genParamHandle in genParamHandles do
-            readILGenericParameterDef cenv typarOffset genParamHandle ]
+        [
+            for genParamHandle in genParamHandles do
+                readILGenericParameterDef cenv typarOffset genParamHandle
+        ]
 
     let readILMethodDef (cenv: cenv) (methDefHandle: MethodDefinitionHandle) : ILMethodDef =
         match cenv.TryGetCachedILMethodDef methDefHandle with
@@ -1911,14 +2054,20 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let memberRef = mdReader.GetMemberReference(memberRefHandle)
-        let enclILTy = readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
+
+        let enclILTy =
+            readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
+
         let typarOffset = enclILTy.GenericArgs.Length
         let si = memberRef.DecodeMethodSignature(cenv.SignatureTypeProvider, typarOffset)
 
         let name = readString cenv memberRef.Name
         let ilCallingConv = mkILCallingConv si.Header
         let genericArity = si.GenericParameterCount
-        let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, genericArity, si.ParameterTypes |> List.ofSeq, si.ReturnType)
+
+        let ilMethodRef =
+            ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, genericArity, si.ParameterTypes |> List.ofSeq, si.ReturnType)
+
         let ilGenericArgs = mkILGenericArgsByCount typarOffset genericArity
 
         ILMethodSpec.Create(enclILTy, ilMethodRef, ilGenericArgs)
@@ -1927,12 +2076,28 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let methDef = mdReader.GetMethodDefinition(methDefHandle)
-        let enclILTy = readILTypeFromTypeDefinition cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) (methDef.GetDeclaringType())
+
+        let enclILTy =
+            readILTypeFromTypeDefinition
+                cenv
+                SignatureTypeKind.Class (* original reader assumed object, it's ok *)
+                (methDef.GetDeclaringType())
+
         let typarOffset = enclILTy.GenericArgs.Length
         let ilMethDef = readILMethodDef cenv methDefHandle
 
         let genericArity = ilMethDef.GenericParams.Length
-        let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilMethDef.CallingConv, ilMethDef.Name, genericArity, ilMethDef.ParameterTypes, ilMethDef.Return.Type)
+
+        let ilMethodRef =
+            ILMethodRef.Create(
+                enclILTy.TypeRef,
+                ilMethDef.CallingConv,
+                ilMethDef.Name,
+                genericArity,
+                ilMethDef.ParameterTypes,
+                ilMethDef.Return.Type
+            )
+
         let ilGenericArgs = mkILGenericArgsByCount typarOffset genericArity
         ILMethodSpec.Create(enclILTy, ilMethodRef, ilGenericArgs)
 
@@ -1948,9 +2113,9 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let methSpec = mdReader.GetMethodSpecification methSpecHandle
+
         let ilGenericArgs =
-            methSpec.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
-            |> List.ofSeq
+            methSpec.DecodeSignature(cenv.SignatureTypeProvider, typarOffset) |> List.ofSeq
 
         let origILMethSpec = readILMethodSpec cenv typarOffset methSpec.Method
 
@@ -1991,6 +2156,7 @@ module rec ILBinaryReaderImpl =
                     i <- i + 1
 
                 customAttrsArray)
+
     let readILNestedExportedType (cenv: cenv) typarOffset nested (exportedTyHandle: ExportedTypeHandle) =
         let mdReader = cenv.MetadataReader
 
@@ -2014,10 +2180,11 @@ module rec ILBinaryReaderImpl =
         =
         match nested.TryGetValue parentExportedTyHandle with
         | true, nestedTys ->
-            nestedTys
-            |> Seq.map (fun x -> readILNestedExportedType cenv typarOffset nested x)
-            |> List.ofSeq
-            |> mkILNestedExportedTypes
+            mkILNestedExportedTypes
+                [
+                    for nestedTyHandle in nestedTys do
+                        yield readILNestedExportedType cenv typarOffset nested nestedTyHandle
+                ]
         | _ -> mkILNestedExportedTypes List.empty
 
     let readILExportedType
@@ -2043,6 +2210,7 @@ module rec ILBinaryReaderImpl =
 
     let readILExportedTypes (cenv: cenv) typarOffset (exportedTys: ExportedTypeHandleCollection) =
         let mdReader = cenv.MetadataReader
+
         let nested =
             lazy
                 let lookup = Dictionary<ExportedTypeHandle, ResizeArray<ExportedTypeHandle>>()
@@ -2050,8 +2218,14 @@ module rec ILBinaryReaderImpl =
                 for exportedTyHandle in exportedTys do
                     let exportedTy = mdReader.GetExportedType(exportedTyHandle)
                     let access = mkILTypeDefAccess exportedTy.Attributes
-                    if not (access = ILTypeDefAccess.Public || access = ILTypeDefAccess.Private) && exportedTy.Implementation.Kind = HandleKind.ExportedType then
-                        let parentExportedTyHandle = ExportedTypeHandle.op_Explicit exportedTy.Implementation
+
+                    if
+                        not (access = ILTypeDefAccess.Public || access = ILTypeDefAccess.Private)
+                        && exportedTy.Implementation.Kind = HandleKind.ExportedType
+                    then
+                        let parentExportedTyHandle =
+                            ExportedTypeHandle.op_Explicit exportedTy.Implementation
+
                         let nested =
                             match lookup.TryGetValue parentExportedTyHandle with
                             | true, nested -> nested
@@ -2059,20 +2233,27 @@ module rec ILBinaryReaderImpl =
                                 let nested = ResizeArray()
                                 lookup.[parentExportedTyHandle] <- nested
                                 nested
+
                         nested.Add exportedTyHandle
 
                 ReadOnlyDictionary lookup
+
         let f =
             lazy
                 let nested = nested.Value
+
                 [
                     for exportedTyHandle in exportedTys do
                         let exportedTy = mdReader.GetExportedType(exportedTyHandle)
                         let access = mkILTypeDefAccess exportedTy.Attributes
                         // Not a nested type
-                        if (access = ILTypeDefAccess.Public || access = ILTypeDefAccess.Private) && exportedTy.Implementation.Kind <> HandleKind.ExportedType then
+                        if
+                            (access = ILTypeDefAccess.Public || access = ILTypeDefAccess.Private)
+                            && exportedTy.Implementation.Kind <> HandleKind.ExportedType
+                        then
                             yield readILExportedType cenv typarOffset nested exportedTyHandle
                 ]
+
         mkILExportedTypesLazy f
 
     let readILAssemblyManifest (cenv: cenv) (entryPointToken: int) =
@@ -2081,31 +2262,24 @@ module rec ILBinaryReaderImpl =
         let asmDef = mdReader.GetAssemblyDefinition()
 
         let publicKey =
-            let bytes =
-                asmDef.PublicKey
-                |> mdReader.GetBlobBytes
-            if bytes.Length = 0 then
-                None
-            else
-                Some(bytes)
+            let bytes = asmDef.PublicKey |> mdReader.GetBlobBytes
+            if bytes.Length = 0 then None else Some(bytes)
 
         let locale =
             let str = readString cenv asmDef.Culture
-            if str.Length = 0 then
-                None
-            else
-                Some(str)
+            if str.Length = 0 then None else Some(str)
 
         let flags = asmDef.Flags
 
         let entrypointElsewhere =
             let handle = MetadataTokens.EntityHandle(entryPointToken)
+
             if handle.IsNil then
                 None
             else
                 match handle.Kind with
                 | HandleKind.AssemblyFile ->
-                    let asmFile = mdReader.GetAssemblyFile(AssemblyFileHandle.op_Explicit(handle))
+                    let asmFile = mdReader.GetAssemblyFile(AssemblyFileHandle.op_Explicit (handle))
                     Some(readILModuleRefFromAssemblyFile cenv asmFile)
                 | _ -> None
 
@@ -2129,21 +2303,23 @@ module rec ILBinaryReaderImpl =
 
     let readILNativeResources (peReader: PEReader) =
         let sectionHeaders = peReader.PEHeaders.SectionHeaders
-        [ for section in sectionHeaders do
-            if section.Name.Equals(".rsrc", StringComparison.OrdinalIgnoreCase) then
-                let memBlock = peReader.GetSectionData(section.VirtualAddress)
-                // We can probably do a partial read + use spans here (even on netstandard)?
-                let bytes = Enumerable.ToArray(memBlock.GetContent())
-                // TODO: This is probably wrong and we shouldn't try to catch this.
-                try
-                    ILNativeResource.Out(Support.unlinkResource section.VirtualAddress bytes)
-                with _ ->
-                    () ]
+
+        [
+            for section in sectionHeaders do
+                if section.Name.Equals(".rsrc", StringComparison.OrdinalIgnoreCase) then
+                    let memBlock = peReader.GetSectionData(section.VirtualAddress)
+                    // We can probably do a partial read + use spans here (even on netstandard)?
+                    let bytes = Enumerable.ToArray(memBlock.GetContent())
+                    // TODO: This is probably wrong and we shouldn't try to catch this.
+                    try
+                        ILNativeResource.Out(Support.unlinkResource section.VirtualAddress bytes)
+                    with _ ->
+                        ()
+        ]
 
     let readILOverridesSpec (cenv: cenv) typarOffset (handle: EntityHandle) =
         let ilMethSpec = readILMethodSpec cenv typarOffset handle
         OverridesSpec(ilMethSpec.MethodRef, ilMethSpec.DeclaringType)
-
 
     let readILMethodImpl (cenv: cenv) typarOffset (methImplHandle: MethodImplementationHandle) =
         let mdReader = cenv.MetadataReader
@@ -2156,7 +2332,12 @@ module rec ILBinaryReaderImpl =
         }
 
     let readILMethodImpls (cenv: cenv) typarOffset (methImplHandles: MethodImplementationHandleCollection) =
-        let f = lazy (methImplHandles |> Seq.map (readILMethodImpl cenv typarOffset) |> List.ofSeq)
+        let f =
+            lazy
+                ([
+                    for methImplHandle in methImplHandles do
+                        yield readILMethodImpl cenv typarOffset methImplHandle
+                ])
 
         mkILMethodImplsLazy f
 
@@ -2164,10 +2345,10 @@ module rec ILBinaryReaderImpl =
         (readILMethodSpec cenv typarOffset handle).MethodRef
 
     let tryReadILMethodRef (cenv: cenv) typarOffset (handle: EntityHandle) =
-        if handle.IsNil then None
+        if handle.IsNil then
+            None
         else
-            readILMethodRef cenv typarOffset handle
-            |> Some
+            readILMethodRef cenv typarOffset handle |> Some
 
     let readILEventDef (cenv: cenv) typarOffset (eventDefHandle: EventDefinitionHandle) =
         let mdReader = cenv.MetadataReader
@@ -2175,7 +2356,11 @@ module rec ILBinaryReaderImpl =
         let eventDef = mdReader.GetEventDefinition eventDefHandle
         let accessors = eventDef.GetAccessors()
 
-        let otherMethods = accessors.Others |> Seq.map (fun h -> readILMethodRef cenv typarOffset (MethodDefinitionHandle.op_Implicit h)) |> List.ofSeq
+        let otherMethods =
+            [
+                for h in accessors.Others do
+                    readILMethodRef cenv typarOffset (MethodDefinitionHandle.op_Implicit h)
+            ]
 
         ILEventDef(
             eventType = tryReadILType cenv typarOffset eventDef.Type,
@@ -2186,16 +2371,22 @@ module rec ILBinaryReaderImpl =
             fireMethod = tryReadILMethodRef cenv typarOffset (MethodDefinitionHandle.op_Implicit accessors.Raiser),
             otherMethods = otherMethods,
             customAttrsStored = readILAttributesStored cenv typarOffset (eventDef.GetCustomAttributes()),
-            metadataIndex = MetadataTokens.GetRowNumber(EventDefinitionHandle.op_Implicit eventDefHandle))
- 
+            metadataIndex = MetadataTokens.GetRowNumber(EventDefinitionHandle.op_Implicit eventDefHandle)
+        )
+
     let readILEventDefs (cenv: cenv) typarOffset (eventDefHandles: EventDefinitionHandleCollection) =
-        let f = InterruptibleLazy(fun () ->
-            [ for eventDefHandle in eventDefHandles do
-                readILEventDef cenv typarOffset eventDefHandle ])
+        let f =
+            InterruptibleLazy(fun () ->
+                [
+                    for eventDefHandle in eventDefHandles do
+                        readILEventDef cenv typarOffset eventDefHandle
+                ])
+
         mkILEventsLazy f
 
     let tryReadILType (cenv: cenv) typarOffset (handle: EntityHandle) =
-        if handle.IsNil then None
+        if handle.IsNil then
+            None
         else
             readILType cenv typarOffset SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
             |> Some
@@ -2207,15 +2398,21 @@ module rec ILBinaryReaderImpl =
         let accessors = propDef.GetAccessors()
 
         let getMethod =
-            if accessors.Getter.IsNil then None
+            if accessors.Getter.IsNil then
+                None
             else
-                let spec = readILMethodSpec cenv typarOffset (MethodDefinitionHandle.op_Implicit accessors.Getter)
+                let spec =
+                    readILMethodSpec cenv typarOffset (MethodDefinitionHandle.op_Implicit accessors.Getter)
+
                 Some spec.MethodRef
 
         let setMethod =
-            if accessors.Setter.IsNil then None
+            if accessors.Setter.IsNil then
+                None
             else
-                let spec = readILMethodSpec cenv typarOffset (MethodDefinitionHandle.op_Implicit accessors.Setter)
+                let spec =
+                    readILMethodSpec cenv typarOffset (MethodDefinitionHandle.op_Implicit accessors.Setter)
+
                 Some spec.MethodRef
 
         let init =
@@ -2233,8 +2430,10 @@ module rec ILBinaryReaderImpl =
                         accessors.Setter
                 else
                     accessors.Getter
+
             let methDef = mdReader.GetMethodDefinition methDefHandle
             readDeclaringTypeGenericCountFromMethodDefinition cenv methDef
+
         let si = propDef.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
         let args = si.ParameterTypes |> List.ofSeq
 
@@ -2257,12 +2456,17 @@ module rec ILBinaryReaderImpl =
             init = init,
             args = args,
             customAttrsStored = readILAttributesStored cenv typarOffset (propDef.GetCustomAttributes()),
-            metadataIndex = MetadataTokens.GetRowNumber(PropertyDefinitionHandle.op_Implicit propDefHandle))
+            metadataIndex = MetadataTokens.GetRowNumber(PropertyDefinitionHandle.op_Implicit propDefHandle)
+        )
 
     let readILPropertyDefs (cenv: cenv) typarOffset (propDefHandles: PropertyDefinitionHandleCollection) =
-        let f = InterruptibleLazy(fun () ->
-            [ for propDefHandle in propDefHandles do
-                readILPropertyDef cenv typarOffset propDefHandle ])
+        let f =
+            InterruptibleLazy(fun () ->
+                [
+                    for propDefHandle in propDefHandles do
+                        readILPropertyDef cenv typarOffset propDefHandle
+                ])
+
         mkILPropertiesLazy f
 
     let rec readILTypeDef (cenv: cenv) (typeDefHandle: TypeDefinitionHandle) : ILTypeDef =
@@ -2273,11 +2477,11 @@ module rec ILBinaryReaderImpl =
         let name = readTypeName cenv typeDef.Namespace typeDef.Name
 
         let implements =
-            typeDef.GetInterfaceImplementations()
-            |> Seq.map (fun h ->
-                let interfaceImpl = mdReader.GetInterfaceImplementation h
-                readILType cenv 0 SignatureTypeKind.Class (* original reader assumed object, it's ok *) interfaceImpl.Interface)
-            |> List.ofSeq
+            [
+                for h in typeDef.GetInterfaceImplementations() do
+                    let interfaceImpl = mdReader.GetInterfaceImplementation h
+                    readILType cenv 0 SignatureTypeKind.Class (* original reader assumed object, it's ok *) interfaceImpl.Interface
+            ]
 
         let genericParams =
             readILGenericParameterDefs cenv 0 (typeDef.GetGenericParameters())
@@ -2302,7 +2506,11 @@ module rec ILBinaryReaderImpl =
                 ilMethodDefs)
 
         let nestedTypes =
-            mkILTypeDefsComputed (fun () -> typeDef.GetNestedTypes() |> Seq.map (readILPreTypeDef cenv) |> Array.ofSeq)
+            mkILTypeDefsComputed (fun () ->
+                [|
+                    for h in typeDef.GetNestedTypes() do
+                        readILPreTypeDef cenv h
+                |])
 
         let ilTypeDefLayout = mkILTypeDefLayout typeDef.Attributes (typeDef.GetLayout())
 
@@ -2322,9 +2530,10 @@ module rec ILBinaryReaderImpl =
             isKnownToBeAttribute = false,
             securityDeclsStored = readILSecurityDeclsStored cenv (typeDef.GetDeclarativeSecurityAttributes()),
             customAttrsStored = readILAttributesStored cenv 0 (typeDef.GetCustomAttributes()),
-            metadataIndex = MetadataTokens.GetRowNumber(TypeDefinitionHandle.op_Implicit (typeDefHandle)))
+            metadataIndex = MetadataTokens.GetRowNumber(TypeDefinitionHandle.op_Implicit (typeDefHandle))
+        )
 
-    let readILPreTypeDef (cenv: cenv) (typeDefHandle: TypeDefinitionHandle) =
+    let readILPreTypeDef (cenv: cenv) (typeDefHandle: TypeDefinitionHandle) : ILPreTypeDef =
         let mdReader = cenv.MetadataReader
 
         let typeDef = mdReader.GetTypeDefinition typeDefHandle
@@ -2362,45 +2571,49 @@ module rec ILBinaryReaderImpl =
 
     let readILResources (cenv: cenv) (peReader: PEReader) =
         let mdReader = cenv.MetadataReader
+
         mkILResources
-            [ for resource in mdReader.ManifestResources do
-                let resource = mdReader.GetManifestResource(resource)
-                let location =
-                    if resource.Implementation.IsNil then
-                        let rva = peReader.PEHeaders.CorHeader.ResourcesDirectory.RelativeVirtualAddress
-                        let block = peReader.GetSectionData(rva)
-                        let mutable reader = block.GetReader()
-                        reader.Offset <- int resource.Offset
-                        let length = reader.ReadInt32()
-                        let mutable reader = block.GetReader(int resource.Offset + 4, length)
+            [
+                for resource in mdReader.ManifestResources do
+                    let resource = mdReader.GetManifestResource(resource)
 
-                        let byteStorage =
-                            let bytes =
-                                ByteMemory
-                                    .FromUnsafePointer(reader.CurrentPointer |> NativePtr.toNativeInt, reader.RemainingBytes, null)
-                                    .AsReadOnly()
+                    let location =
+                        if resource.Implementation.IsNil then
+                            let rva = peReader.PEHeaders.CorHeader.ResourcesDirectory.RelativeVirtualAddress
+                            let block = peReader.GetSectionData(rva)
+                            let mutable reader = block.GetReader()
+                            reader.Offset <- int resource.Offset
+                            let length = reader.ReadInt32()
+                            let mutable reader = block.GetReader(int resource.Offset + 4, length)
 
-                            ByteStorage.FromByteMemoryAndCopy(bytes, useBackingMemoryMappedFile = cenv.CanReduceMemory)
+                            let byteStorage =
+                                let bytes =
+                                    ByteMemory
+                                        .FromUnsafePointer(reader.CurrentPointer |> NativePtr.toNativeInt, reader.RemainingBytes, null)
+                                        .AsReadOnly()
 
-                        ILResourceLocation.Local(byteStorage)
-                    else
-                        match readILScopeRef cenv resource.Implementation with
-                        | ILScopeRef.Module mref -> ILResourceLocation.File(mref, int resource.Offset)
-                        | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
-                        | ILScopeRef.Local -> failwith "Unexpected ILScopeRef.Local"
-                        | ILScopeRef.PrimaryAssembly -> failwith "Unexpected ILScopeRef.PrimaryAssembly"
+                                ByteStorage.FromByteMemoryAndCopy(bytes, useBackingMemoryMappedFile = cenv.CanReduceMemory)
 
-                {
-                    Name = readString cenv resource.Name
-                    Location = location
-                    Access =
-                        (if resource.Attributes &&& ManifestResourceAttributes.Public = ManifestResourceAttributes.Public then
-                            ILResourceAccess.Public
+                            ILResourceLocation.Local(byteStorage)
                         else
-                            ILResourceAccess.Private)
-                    CustomAttrsStored = resource.GetCustomAttributes() |> readILAttributesStored cenv 0
-                    MetadataIndex = MetadataTokens.GetRowNumber(resource.Implementation)
-                }]
+                            match readILScopeRef cenv resource.Implementation with
+                            | ILScopeRef.Module mref -> ILResourceLocation.File(mref, int resource.Offset)
+                            | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
+                            | ILScopeRef.Local -> failwith "Unexpected ILScopeRef.Local"
+                            | ILScopeRef.PrimaryAssembly -> failwith "Unexpected ILScopeRef.PrimaryAssembly"
+
+                    {
+                        Name = readString cenv resource.Name
+                        Location = location
+                        Access =
+                            (if resource.Attributes &&& ManifestResourceAttributes.Public = ManifestResourceAttributes.Public then
+                                 ILResourceAccess.Public
+                             else
+                                 ILResourceAccess.Private)
+                        CustomAttrsStored = resource.GetCustomAttributes() |> readILAttributesStored cenv 0
+                        MetadataIndex = MetadataTokens.GetRowNumber(resource.Implementation)
+                    }
+            ]
 
     let readModuleDef
         (peReader: PEReader)
@@ -2512,16 +2725,19 @@ module rec ILBinaryReaderImpl =
         ilAsmRefs
 
 let defaultStatistics =
-    { rawMemoryFileCount = 0
-      memoryMapFileOpenedCount = 0
-      memoryMapFileClosedCount = 0
-      weakByteFileCount = 0
-      byteFileCount = 0 }
+    {
+        rawMemoryFileCount = 0
+        memoryMapFileOpenedCount = 0
+        memoryMapFileClosedCount = 0
+        weakByteFileCount = 0
+        byteFileCount = 0
+    }
 
-let GetStatistics() = defaultStatistics
+let GetStatistics () = defaultStatistics
 
 type ILModuleReaderImpl(peReaderCaptured: PEReader option, holder: obj, ilModuleDef, ilAsmRefs, dispose) =
     member _.Holder = holder
+
     override _.Finalize() =
         match peReaderCaptured with
         | Some peReader -> peReader.Dispose()
@@ -2530,11 +2746,13 @@ type ILModuleReaderImpl(peReaderCaptured: PEReader option, holder: obj, ilModule
     interface ILModuleReader with
         member _.ILModuleDef = ilModuleDef
         member _.ILAssemblyRefs = ilAsmRefs
+
     interface IDisposable with
 
         member _.Dispose() = dispose ()
 
 let stronglyHeldReaderCacheSizeDefault = 30
+
 let stronglyHeldReaderCacheSize =
     try
         (match System.Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with
@@ -2543,12 +2761,12 @@ let stronglyHeldReaderCacheSize =
     with _ ->
         stronglyHeldReaderCacheSizeDefault
 
-
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * bool * ReduceMemoryFlag * MetadataOnlyFlag
 
 // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
-type ILModuleReaderCache1LockToken() = interface LockToken
+type ILModuleReaderCache1LockToken() =
+    interface LockToken
 
 let ilModuleReaderCache1 =
     AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>(
@@ -2563,29 +2781,40 @@ let ilModuleReaderCache1Lock = Lock()
 let ilModuleReaderCache2 =
     ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
 
-let aliveReaders = System.Runtime.CompilerServices.ConditionalWeakTable<MetadataReader, ILModuleReader>()
+let aliveReaders =
+    System.Runtime.CompilerServices.ConditionalWeakTable<MetadataReader, ILModuleReader>()
 
 let OpenILModuleReaderAux (peReader: PEReader) (opts: ILReaderOptions) metadataSnapshotOpt =
     let peReaderCaptured, mdReader, snapshotHolder =
-        if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && opts.metadataOnly = MetadataOnlyFlag.Yes then
+        if
+            opts.reduceMemoryUsage = ReduceMemoryFlag.Yes
+            && opts.metadataOnly = MetadataOnlyFlag.Yes
+        then
             match metadataSnapshotOpt with
-            | Some(obj, start, len) ->
-                None, MetadataReader(NativePtr.ofNativeInt start, len), Some obj
-            | _ ->
-                Some peReader, peReader.GetMetadataReader(), None
+            | Some(obj, start, len) -> None, MetadataReader(NativePtr.ofNativeInt start, len), Some obj
+            | _ -> Some peReader, peReader.GetMetadataReader(), None
         else
             Some peReader, peReader.GetMetadataReader(), None
 
     let pdbReaderProviderOpt =
         opts.pdbDirPath
         |> Option.bind (fun pdbDirPath ->
-            let streamProvider = System.Func<_,_>(fun pdbPath -> FileSystem.OpenFileForReadShim(pdbPath, shouldShadowCopy=true))
+            let streamProvider =
+                System.Func<_, _>(fun pdbPath -> FileSystem.OpenFileForReadShim(pdbPath, shouldShadowCopy = true))
+
             match peReader.TryOpenAssociatedPortablePdb(pdbDirPath, streamProvider) with
             | true, pdbReaderProvider, pdbPath -> Some(pdbReaderProvider, pdbPath)
             | _ -> None)
-    let ilModuleDef, ilAsmRefs = ILBinaryReaderImpl.readModuleDef peReader peReaderCaptured opts.reduceMemoryUsage pdbReaderProviderOpt mdReader
 
-    let disposePdbReader = fun () -> match pdbReaderProviderOpt with Some (provider, _) -> provider.Dispose() | _ -> ()
+    let ilModuleDef, ilAsmRefs =
+        ILBinaryReaderImpl.readModuleDef peReader peReaderCaptured opts.reduceMemoryUsage pdbReaderProviderOpt mdReader
+
+    let disposePdbReader =
+        fun () ->
+            match pdbReaderProviderOpt with
+            | Some(provider, _) -> provider.Dispose()
+            | _ -> ()
+
     let dispose =
         // If we are not capturing the PEReader, then we will dispose of it.
         if peReaderCaptured.IsNone then
@@ -2596,17 +2825,24 @@ let OpenILModuleReaderAux (peReader: PEReader) (opts: ILReaderOptions) metadataS
             disposePdbReader
 
     let holder = (snapshotHolder, mdReader)
-    let reader = new ILModuleReaderImpl(peReaderCaptured, holder, ilModuleDef, ilAsmRefs, dispose) :> ILModuleReader
+
+    let reader =
+        new ILModuleReaderImpl(peReaderCaptured, holder, ilModuleDef, ilAsmRefs, dispose) :> ILModuleReader
+
     aliveReaders.Add(mdReader, reader)
     reader
 
 let OpenILModuleReaderFromBytes (fileName: string) (assemblyContents: byte[]) (options: ILReaderOptions) =
     ignore fileName
-    let peReader = new PEReader(new MemoryStream(assemblyContents), PEStreamOptions.PrefetchEntireImage)
+
+    let peReader =
+        new PEReader(new MemoryStream(assemblyContents), PEStreamOptions.PrefetchEntireImage)
+
     OpenILModuleReaderAux peReader options None
 
 let OpenILModuleReaderFromStream (fileName: string) (peStream: Stream) (options: ILReaderOptions) =
     ignore fileName
+
     let peReader =
         if
             options.reduceMemoryUsage = ReduceMemoryFlag.Yes
@@ -2678,7 +2914,6 @@ let OpenILModuleReader fileName opts =
             ilModuleReaderCache1Lock.AcquireLock(fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
             ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
             ilModuleReader
-
 
 [<AutoOpen>]
 module Shim =

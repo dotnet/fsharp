@@ -320,7 +320,6 @@ type ILType =
 
     static member Parse: assemblyQualifiedName: string -> ILType
 
-
 [<StructuralEquality; StructuralComparison>]
 type ILCallingSignature =
     { CallingConv: ILCallingConv
