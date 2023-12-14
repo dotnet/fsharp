@@ -1009,7 +1009,6 @@ module rec ILBinaryReaderImpl =
         let typeSpec = mdReader.GetTypeSpecification(typeSpecHandle)
         typeSpec.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
 
-    [<TailCall>]
     let rec readILTypeRefFromTypeDefinition (cenv: cenv) (typeDef: TypeDefinition) : ILTypeRef =
         let mdReader = cenv.MetadataReader
 
@@ -2602,7 +2601,21 @@ let OpenILModuleReaderAux (peReader: PEReader) (opts: ILReaderOptions) metadataS
     reader
 
 let OpenILModuleReaderFromBytes (fileName: string) (assemblyContents: byte[]) (options: ILReaderOptions) =
+    ignore fileName
     let peReader = new PEReader(new MemoryStream(assemblyContents), PEStreamOptions.PrefetchEntireImage)
+    OpenILModuleReaderAux peReader options None
+
+let OpenILModuleReaderFromStream (fileName: string) (peStream: Stream) (options: ILReaderOptions) =
+    ignore fileName
+    let peReader =
+        if
+            options.reduceMemoryUsage = ReduceMemoryFlag.Yes
+            && options.metadataOnly = MetadataOnlyFlag.Yes
+        then
+            new PEReader(peStream, PEStreamOptions.Default)
+        else
+            new PEReader(peStream, PEStreamOptions.PrefetchEntireImage)
+
     OpenILModuleReaderAux peReader options None
 
 let OpenILModuleReaderFromFile fileName (opts: ILReaderOptions) metadataSnapshotOpt =
@@ -2611,7 +2624,6 @@ let OpenILModuleReaderFromFile fileName (opts: ILReaderOptions) metadataSnapshot
             opts.reduceMemoryUsage = ReduceMemoryFlag.Yes
             && opts.metadataOnly = MetadataOnlyFlag.Yes
         then
-            //let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy = true)
             let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
             new PEReader(stream, PEStreamOptions.Default)
         else
