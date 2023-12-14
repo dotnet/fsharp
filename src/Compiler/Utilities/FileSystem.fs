@@ -654,7 +654,7 @@ type DefaultFileSystem() as this =
                     path
                 else
                     "."
-            | res -> if res.Length = 0 then "." else res
+            | res -> if String.IsNullOrEmpty(res) then "." else res
 
     abstract GetLastWriteTimeShim: fileName: string -> DateTime
     default _.GetLastWriteTimeShim(fileName: string) = File.GetLastWriteTimeUtc fileName

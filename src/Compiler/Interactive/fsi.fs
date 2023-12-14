@@ -938,7 +938,7 @@ let internal directoryName (s: string) =
     else
         match Path.GetDirectoryName s with
         | null -> if FileSystem.IsPathRootedShim s then s else "."
-        | res -> if res.Length = 0 then "." else res
+        | res -> if String.IsNullOrEmpty(res) then "." else res
 
 //----------------------------------------------------------------------------
 // cmd line - state for options

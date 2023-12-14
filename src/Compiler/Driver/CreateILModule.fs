@@ -585,7 +585,7 @@ module MainModuleBuilder =
 
         // a user cannot specify both win32res and win32manifest
         if
-            not (tcConfig.win32manifest.Length = 0)
+            not (String.IsNullOrEmpty(tcConfig.win32manifest))
             && not (String.IsNullOrEmpty(tcConfig.win32res))
         then
             error (Error(FSComp.SR.fscTwoResourceManifests (), rangeCmdArgs))

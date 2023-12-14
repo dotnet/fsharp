@@ -787,7 +787,7 @@ module String =
 
         String digits
         |> function
-            | x when x.Length = 0 -> str, None
+            | x when String.IsNullOrEmpty(x) -> str, None
             | index -> str.Substring(0, str.Length - index.Length), Some(int index)
 
     /// Splits a string into substrings based on the strings in the array separators
