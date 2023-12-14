@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckFormatStrings
 
+open System
 open System.Text
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -58,7 +59,7 @@ let escapeDotnetFormatString str =
 
 [<return: Struct>]
 let (|PrefixedBy|_|) (prefix: string) (str: string) =
-    if str.StartsWith prefix then
+    if str.StartsWith(prefix, StringComparison.Ordinal) then
         ValueSome prefix.Length
     else
         ValueNone
@@ -370,7 +371,7 @@ let parseFormatStringInternal
             // type checker.  They should always have '(...)' after for format string.
             let requireAndSkipInterpolationHoleFormat i =
                 if i < len && fmt[i] = '(' then
-                    let i2 = fmt.IndexOf(")", i+1)
+                    let i2 = fmt.IndexOf(")", i+1, StringComparison.Ordinal)
                     if i2 = -1 then
                         failwith (FSComp.SR.forFormatInvalidForInterpolated3())
                     else

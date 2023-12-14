@@ -22,7 +22,7 @@ module internal PathMap =
         let normalSrc = FileSystem.GetFullPathShim src
 
         let oldPrefix =
-            if normalSrc.EndsWith dirSepStr then
+            if normalSrc.EndsWith(dirSepStr, StringComparison.Ordinal) then
                 normalSrc
             else
                 normalSrc + dirSepStr
@@ -60,7 +60,7 @@ module internal PathMap =
         |> Option.defaultValue filePath
 
     let applyDir pathMap (dirName: string) : string =
-        if dirName.EndsWith dirSepStr then
+        if dirName.EndsWith(dirSepStr, StringComparison.Ordinal) then
             apply pathMap dirName
         else
             let mapped = apply pathMap (dirName + dirSepStr)

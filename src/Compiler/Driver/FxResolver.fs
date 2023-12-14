@@ -238,7 +238,7 @@ type internal FxResolver
                             dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
                             + pattern.Length
 
-                        let endPos = dotnetConfig.IndexOf("\"", startPos)
+                        let endPos = dotnetConfig.IndexOf("\"", startPos, StringComparison.Ordinal)
                         let ver = dotnetConfig[startPos .. endPos - 1]
 
                         let path =
@@ -364,7 +364,7 @@ type internal FxResolver
                 let implDir, warnings = getImplementationAssemblyDir ()
                 let version = DirectoryInfo(implDir).Name
 
-                if version.StartsWith("x") then
+                if version.StartsWith("x", StringComparison.Ordinal) then
                     // Is running on the desktop
                     (None, None), warnings
                 else
@@ -403,7 +403,7 @@ type internal FxResolver
             | ".NET", "Core" when arr.Length >= 3 -> Some("netcoreapp" + (getTfmNumber arr[2]))
 
             | ".NET", "Framework" when arr.Length >= 3 ->
-                if arr[2].StartsWith("4.8") then
+                if arr[2].StartsWith("4.8", StringComparison.Ordinal) then
                     Some "net48"
                 else
                     Some "net472"
@@ -560,7 +560,7 @@ type internal FxResolver
                 dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
                 + pattern.Length
 
-            let endPos = dotnetConfig.IndexOf("\"", startPos)
+            let endPos = dotnetConfig.IndexOf("\"", startPos, StringComparison.Ordinal)
             let tfm = dotnetConfig[startPos .. endPos - 1]
             tfm
         with _ ->

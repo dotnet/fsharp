@@ -812,7 +812,7 @@ type MethInfo =
     member x.IsUnionCaseTester =
         let tcref = x.ApparentEnclosingTyconRef
         tcref.IsUnionTycon &&
-        x.LogicalName.StartsWith("get_Is") &&
+        x.LogicalName.StartsWith("get_Is", StringComparison.Ordinal) &&
         match x.ArbitraryValRef with 
         | Some v -> v.IsImplied
         | None -> false

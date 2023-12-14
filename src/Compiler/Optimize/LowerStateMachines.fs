@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.LowerStateMachines
 
+open System
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -114,7 +115,7 @@ let isExpandVar g (v: Val) =
 let isStateMachineBindingVar g (v: Val) = 
     isExpandVar g v  ||
     (let nm = v.LogicalName
-     (nm.StartsWith "builder@" || v.IsMemberThisVal) &&
+     (nm.StartsWith("builder@", StringComparison.Ordinal) || v.IsMemberThisVal) &&
      not v.IsCompiledAsTopLevel)
 
 type env = 
@@ -833,7 +834,7 @@ type LowerStateMachine(g: TcGlobals) =
                 |> Result.Ok
             elif bind.Var.IsCompiledAsTopLevel || 
                 not (resBody.resumableVars.FreeLocals.Contains(bind.Var)) || 
-                bind.Var.LogicalName.StartsWith stackVarPrefix then
+                bind.Var.LogicalName.StartsWith(stackVarPrefix, StringComparison.Ordinal) then
                 if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
                 RepresentBindingAsTopLevelOrLocal bind resBody m
                 |> Result.Ok

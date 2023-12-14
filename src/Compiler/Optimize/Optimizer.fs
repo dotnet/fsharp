@@ -5,6 +5,7 @@
 /// are never used.
 module internal FSharp.Compiler.Optimizer
 
+open System
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -1534,11 +1535,11 @@ let ValueOfExpr expr =
 
 let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.EndsWith suffixForTupleElementAssignmentTarget
+    vref.LogicalName.EndsWith(suffixForTupleElementAssignmentTarget, StringComparison.Ordinal)
 
 let IsMutableForOutArg (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.StartsWith(outArgCompilerGeneratedName)
+    vref.LogicalName.StartsWith(outArgCompilerGeneratedName, StringComparison.Ordinal)
 
 let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
     IsMutableStructuralBindingForTupleElement vref || 
@@ -1672,7 +1673,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
-    elif vspec1.LogicalName.StartsWith stackVarPrefix ||
+    elif vspec1.LogicalName.StartsWith(stackVarPrefix, StringComparison.Ordinal) ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
 

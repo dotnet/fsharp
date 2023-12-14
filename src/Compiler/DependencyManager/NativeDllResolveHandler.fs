@@ -88,7 +88,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
         let isRooted = Path.IsPathRooted name
 
         let useSuffix s =
-            not (name.Contains(s + ".") || name.EndsWith(s)) // linux devs often append version # to libraries I.e mydll.so.5.3.2
+            not (name.Contains(s + ".") || name.EndsWith(s, StringComparison.Ordinal)) // linux devs often append version # to libraries I.e mydll.so.5.3.2
 
         let usePrefix =
             name.IndexOf(Path.DirectorySeparatorChar) = -1 // If name has directory information no add no prefix

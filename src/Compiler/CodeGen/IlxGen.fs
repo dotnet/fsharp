@@ -5,6 +5,7 @@ module internal FSharp.Compiler.IlxGen
 
 open FSharp.Compiler.IlxGenSupport
 
+open System
 open System.IO
 open System.Reflection
 open System.Collections.Generic
@@ -2694,7 +2695,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
     match selfArgOpt with
     | Some selfArg when
         selfArg.LogicalName <> "this"
-        && not (selfArg.LogicalName.StartsWith("_"))
+        && not (selfArg.LogicalName.StartsWith("_", StringComparison.Ordinal))
         && not cenv.options.localOptimizationsEnabled
         ->
         let ilTy = selfArg.Type |> GenType cenv m eenv.tyenv

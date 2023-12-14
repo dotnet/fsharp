@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.EditorServices
 
+open System
 open System.Diagnostics
 open System.Collections.Generic
 open System.Collections.Immutable
@@ -75,7 +76,7 @@ module TcResolutionsExtensions =
         && protectAssemblyExplorationNoReraise false false (fun () ->
             ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
 
-    let isDiscard (str: string) = str.StartsWith("_")
+    let isDiscard (str: string) = str.StartsWith("_", StringComparison.Ordinal)
 
     let isValRefDisposable g amap (vref: ValRef) =
         not (isDiscard vref.DisplayName)

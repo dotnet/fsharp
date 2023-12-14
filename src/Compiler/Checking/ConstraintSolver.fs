@@ -42,6 +42,7 @@
 
 module internal FSharp.Compiler.ConstraintSolver
 
+open System
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -1713,7 +1714,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   None
 
           let anonRecdPropSearch = 
-              let isGetProp = nm.StartsWith "get_" 
+              let isGetProp = nm.StartsWith("get_", StringComparison.Ordinal)
               if not isRigid && isGetProp && memFlags.IsInstance  then
                   let propName = nm[4..]
                   let props = 

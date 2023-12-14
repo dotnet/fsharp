@@ -2,6 +2,7 @@
 
 module FSharp.Compiler.SyntaxTreeOps
 
+open System
 open Internal.Utilities.Library
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
@@ -409,7 +410,7 @@ let opNameQMark = CompileOpName qmark
 
 let mkSynOperator (opm: range) (oper: string) =
     let trivia =
-        if oper.StartsWith("~") && ((opm.EndColumn - opm.StartColumn) = (oper.Length - 1)) then
+        if oper.StartsWith("~", StringComparison.Ordinal) && ((opm.EndColumn - opm.StartColumn) = (oper.Length - 1)) then
             // PREFIX_OP token where the ~ was actually absent
             IdentTrivia.OriginalNotation(string (oper.[1..]))
         else

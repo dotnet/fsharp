@@ -97,7 +97,7 @@ type StringText(str: string) =
             if lastIndex <= startIndex || lastIndex >= str.Length then
                 invalidArg "target" "Too big."
 
-            str.IndexOf(target, startIndex, target.Length) <> -1
+            str.IndexOf(target, startIndex, target.Length, StringComparison.Ordinal) <> -1
 
         member _.Length = str.Length
 
