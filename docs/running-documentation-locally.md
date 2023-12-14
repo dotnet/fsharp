@@ -7,6 +7,7 @@ index: 999
 # Running the documentation locally
 
 The source of this documentation website is hosted on https://github.com/fsharp/fsharp-compiler-docs.  
+You can follow this guide to see the results of your document changes rendered in the browser.
 
 ## Setup
 
