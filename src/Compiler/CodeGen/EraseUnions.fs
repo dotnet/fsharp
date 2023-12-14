@@ -872,11 +872,12 @@ let convAlternativeDef
 
             let baseTesterMeths, baseTesterProps =
                 if
-                (*    g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible &&
+                    (*    g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible &&
                     cud.HasHelpers = AllHelpers
                 then
                     [], []
-                elif *) cud.UnionCases.Length <= 1 then
+                elif *) cud.UnionCases.Length <= 1
+                then
                     [], []
                 elif repr.RepresentOneAlternativeAsNull info then
                     [], []
