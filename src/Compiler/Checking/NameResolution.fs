@@ -273,7 +273,7 @@ type Item =
             | ValueSome tcref -> tcref.DisplayNameCore
             | _ -> nm
             |> DemangleGenericTypeName
-        |Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
+        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
         | Item.DelegateCtor ty ->
             match ty with 
             | AbbrevOrAppTy tcref -> tcref.DisplayNameCore
@@ -4013,9 +4013,6 @@ let isWrongItemInExpr item =
     match item with
     | Item.Types _ -> true
     | _ -> false
-    // | Item.TypeVar(s, typar) -> failwith "todo"
-    // | Item.ModuleOrNamespaces entityRefs -> failwith "todo"
-    // | Item.UnqualifiedType entityRefs -> failwith "todo"
 
 /// Specifies additional work to do after an item has been processed further in type checking.
 [<RequireQualifiedAccess>]
