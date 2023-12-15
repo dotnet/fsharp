@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckFormatStrings
 
+open System
 open System.Text
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -375,7 +376,7 @@ let parseFormatStringInternal
                         failwith (FSComp.SR.forFormatInvalidForInterpolated3())
                     else
                         let dotnetAlignment = match widthValue with None -> "" | Some w -> "," + (if info.leftJustify then "-" else "") + string w
-                        let dotnetNumberFormat = match fmt[i+1..i2-1] with "" -> "" | s -> ":" + s
+                        let dotnetNumberFormat = match fmt[i+1..i2-1] with s when String.IsNullOrEmpty(s) -> "" | s -> ":" + s
                         appendToDotnetFormatString ("{" + string dotnetFormatStringInterpolationHoleCount + dotnetAlignment  + dotnetNumberFormat + "}")
                         dotnetFormatStringInterpolationHoleCount <- dotnetFormatStringInterpolationHoleCount + 1
                         i2+1

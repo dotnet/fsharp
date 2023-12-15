@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.EditorServices
 
+open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open Internal.Utilities.Library
@@ -332,7 +333,10 @@ module SimplifyNames =
                             - partialName.PartialIdent.Length
                             - (getPlidLength partialName.QualifyingIdents)
 
-                        if partialName.PartialIdent = "" || List.isEmpty partialName.QualifyingIdents then
+                        if
+                            String.IsNullOrEmpty(partialName.PartialIdent)
+                            || List.isEmpty partialName.QualifyingIdents
+                        then
                             None
                         else
                             Some(symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent))

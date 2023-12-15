@@ -279,7 +279,7 @@ module Layout =
 
     let isEmptyL layout =
         match layout with
-        | Leaf(true, s, true) -> s.Text = ""
+        | Leaf(true, s, true) -> String.IsNullOrEmpty(s.Text)
         | _ -> false
 
 #if COMPILER
@@ -1125,7 +1125,7 @@ module Display =
                                     :: layouts
 
                                 match postText with
-                                | "" ->
+                                | _ when String.IsNullOrEmpty(postText) ->
                                     //We are done, build a space-delimited layout from the collection of layouts we've accumulated
                                     Some(spaceListL (List.rev newLayouts))
 
