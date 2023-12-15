@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="needs-review-translation">확인에 라이브(저장되지 않은) 버퍼 사용(다시 시작 필요)</target>
+        <target state="new">Use live (unsaved) buffers for analysis (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="needs-review-translation">라이브 버퍼(실험적)</target>
+        <target state="new">Live Buffers</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
