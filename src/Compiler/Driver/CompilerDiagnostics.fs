@@ -1765,28 +1765,6 @@ type Exception with
 
             let tau = v.TauType
 
-            match v.MemberInfo with
-            | Some membInfo ->
-                // We should not reach here since obj would be inferred instead of retaining a generic type variable
-                (*
-                let a = [] @ [] // ERROR: Value restriction
-                module b =
-                    let c = [] @ [] // ERROR: Value restriction
-                    type d() =
-                        let e = [] @ [] // inferred as 'obj list'
-                        new(_) =
-                            let f = [] @ [] // inferred as 'obj list'
-                            d()
-                        member _.g = [] @ [] // inferred as 'obj list'
-                        member _.h with set () =
-                            let i = [] @ [] // inferred as 'obj list'
-                            ()
-                *)
-                assert (membInfo.MemberFlags.MemberKind <> SynMemberKind.PropertyGet)
-                assert (membInfo.MemberFlags.MemberKind <> SynMemberKind.PropertySet)
-                assert (membInfo.MemberFlags.MemberKind <> SynMemberKind.Constructor)
-            | _ -> ()
-
             if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
                 let msg =
                     ValueRestrictionFunctionE().Format
