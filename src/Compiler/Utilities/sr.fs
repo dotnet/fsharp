@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler
 
+open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Reflection
@@ -132,7 +133,7 @@ module internal DiagnosticMessage =
             // strip any escaped % characters - yes, this will fail if given %%%...
             let s = s.Replace("%%", "")
 
-            if s = "" then
+            if String.IsNullOrEmpty(s) then
                 0
             else
                 let len = s.Length - 1

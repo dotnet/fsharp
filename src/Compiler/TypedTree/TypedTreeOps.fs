@@ -3,6 +3,7 @@
 /// Defines derived expression manipulation and construction functions.
 module internal FSharp.Compiler.TypedTreeOps
 
+open System
 open System.CodeDom.Compiler
 open System.Collections.Generic
 open System.Collections.Immutable
@@ -3178,7 +3179,7 @@ type DisplayEnv =
               ControlPath
               (splitNamespace ExtraTopLevelOperatorsName) ]
 
-let (+.+) s1 s2 = if s1 = "" then s2 else s1+"."+s2
+let (+.+) s1 s2 = if String.IsNullOrEmpty(s1) then s2 else s1+"."+s2
 
 let layoutOfPath p =
     sepListL SepL.dot (List.map (tagNamespace >> wordL) p)
@@ -8783,7 +8784,7 @@ let buildAccessPath (cp: CompilationPath option) =
         System.String.Join(".", ap)      
     | None -> "Extension Type"
 
-let prependPath path name = if path = "" then name else path + "." + name
+let prependPath path name = if String.IsNullOrEmpty(path) then name else path + "." + name
 
 let XmlDocSigOfVal g full path (v: Val) =
     let parentTypars, methTypars, cxs, argInfos, retTy, prefix, path, name = 
