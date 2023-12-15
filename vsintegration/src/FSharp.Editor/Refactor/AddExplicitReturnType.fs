@@ -25,14 +25,10 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
         let typeAnnotationRange =
             parseFileResults.TryRangeOfReturnTypeHint(symbolUse.Range.Start, false)
 
-        let isLambdaIfFunction =
-            funcOrValue.IsFunction
-            && parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start
-
         let res =
             funcOrValue.CompiledName = funcOrValue.DisplayName
-            && not funcOrValue.IsValue
-            && (not funcOrValue.IsValue || not isLambdaIfFunction)
+            && funcOrValue.IsFunction
+            && not (parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start)
             && not (funcOrValue.ReturnParameter.Type.IsUnresolved)
             && not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
             && not typeAnnotationRange.IsNone
