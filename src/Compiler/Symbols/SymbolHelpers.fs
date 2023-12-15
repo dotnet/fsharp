@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.Symbols
 
+open System
 open System.IO
 
 open Internal.Utilities.Library  
@@ -875,7 +876,7 @@ module internal SymbolHelpers =
                         // works similar to generation of xml-docs at tastops.fs, probably too similar
                         // TODO: check if this code can be implemented using xml-doc generation functionality
                         let prefix = path.AccessPath |> Seq.map fst |> String.concat "."
-                        let fullName = if prefix = "" then modref.CompiledName else prefix + "." + modref.CompiledName
+                        let fullName = if String.IsNullOrEmpty(prefix) then modref.CompiledName else prefix + "." + modref.CompiledName
                         Some fullName
                         )
 #endif

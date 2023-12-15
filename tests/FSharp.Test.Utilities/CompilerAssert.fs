@@ -386,7 +386,7 @@ module rec CompilerAssertHelpers =
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> tryCreateTemporaryFileName()
+            | _ -> tryCreateTemporaryFileNameInDirectory(outputDirectory)
 
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         disposals.Add(disposeFile outputFilePath)

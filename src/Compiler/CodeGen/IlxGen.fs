@@ -5,6 +5,7 @@ module internal FSharp.Compiler.IlxGen
 
 open FSharp.Compiler.IlxGenSupport
 
+open System
 open System.IO
 open System.Reflection
 open System.Collections.Generic
@@ -420,7 +421,7 @@ let CompLocForFixedPath fragName qname (CompPath(sref, cpath)) =
     let ns = List.map fst ns
     let ns = textOfPath ns
     let encl = t |> List.map (fun (s, _) -> s)
-    let ns = if ns = "" then None else Some ns
+    let ns = if String.IsNullOrEmpty(ns) then None else Some ns
 
     {
         QualifiedNameOfFile = fragName
@@ -2694,7 +2695,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
     match selfArgOpt with
     | Some selfArg when
         selfArg.LogicalName <> "this"
-        && not (selfArg.LogicalName.StartsWith("_"))
+        && not (selfArg.LogicalName.StartsWithOrdinal("_"))
         && not cenv.options.localOptimizationsEnabled
         ->
         let ilTy = selfArg.Type |> GenType cenv m eenv.tyenv
@@ -2833,7 +2834,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
     match expr with
     | Expr.Sequential((DebugPointExpr g debugPointName) as dpExpr, codeExpr, NormalSeq, m) ->
         match cenv.namedDebugPointsForInlinedCode.TryGetValue({ Range = m; Name = debugPointName }) with
-        | false, _ when debugPointName = "" -> CG.EmitDebugPoint cgbuf m
+        | false, _ when String.IsNullOrEmpty(debugPointName) -> CG.EmitDebugPoint cgbuf m
         | false, _ ->
             // printfn $"---- Unfound debug point {debugPointName} at {m}"
             // for KeyValue(k,v) in cenv.namedDebugPointsForInlinedCode do
@@ -8614,7 +8615,7 @@ and GenMarshal cenv attribs =
                 let safeArrayUserDefinedSubType =
                     // the argument is a System.Type obj, but it's written to MD as a UTF8 string
                     match decoder.FindTypeName "SafeArrayUserDefinedSubType" "" with
-                    | "" -> None
+                    | x when String.IsNullOrEmpty(x) -> None
                     | res ->
                         if
                             (safeArraySubType = ILNativeVariant.IDispatch)
