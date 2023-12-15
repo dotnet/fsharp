@@ -145,7 +145,7 @@ type Exception with
         | IntfImplInIntrinsicAugmentation m
         | OverrideInExtrinsicAugmentation m
         | IntfImplInExtrinsicAugmentation m
-        | ValueRestriction(_, _, _, _, _, m)
+        | ValueRestriction(_, _, _, _, m)
         | LetRecUnsound(_, _, m)
         | ObsoleteError(_, m)
         | ObsoleteWarning(_, m)
@@ -579,11 +579,8 @@ module OldStyleMessages =
     let DeprecatedE () = Message("Deprecated", "%s")
     let LibraryUseOnlyE () = Message("LibraryUseOnly", "")
     let MissingFieldsE () = Message("MissingFields", "%s")
-    let ValueRestriction1E () = Message("ValueRestriction1", "%s%s%s")
-    let ValueRestriction2E () = Message("ValueRestriction2", "%s%s%s")
-    let ValueRestriction3E () = Message("ValueRestriction3", "%s")
-    let ValueRestriction4E () = Message("ValueRestriction4", "%s%s%s")
-    let ValueRestriction5E () = Message("ValueRestriction5", "%s%s%s")
+    let ValueRestrictionFunctionE () = Message("ValueRestrictionFunction", "%s%s%s")
+    let ValueRestrictionE () = Message("ValueRestriction", "%s%s%s")
     let RecoverableParseErrorE () = Message("RecoverableParseError", "")
     let ReservedKeywordE () = Message("ReservedKeyword", "%s")
     let IndentationProblemE () = Message("IndentationProblem", "%s")
@@ -1760,7 +1757,7 @@ type Exception with
 
         | MissingFields(sl, _) -> os.AppendString(MissingFieldsE().Format(String.concat "," sl + "."))
 
-        | ValueRestriction(denv, infoReader, hasSig, v, _, _) ->
+        | ValueRestriction(denv, infoReader, v, _, _) ->
             let denv =
                 { denv with
                     showInferenceTyparAnnotations = true
@@ -1768,55 +1765,44 @@ type Exception with
 
             let tau = v.TauType
 
-            if hasSig then
-                if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
-                    let msg =
-                        ValueRestriction1E().Format
-                            v.DisplayName
-                            (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                            v.DisplayName
+            match v.MemberInfo with
+            | Some membInfo ->
+                // We should not reach here since obj would be inferred instead of retaining a generic type variable
+                (*
+                let a = [] @ [] // ERROR: Value restriction
+                module b =
+                    let c = [] @ [] // ERROR: Value restriction
+                    type d() =
+                        let e = [] @ [] // inferred as 'obj list'
+                        new(_) =
+                            let f = [] @ [] // inferred as 'obj list'
+                            d()
+                        member _.g = [] @ [] // inferred as 'obj list'
+                        member _.h with set () =
+                            let i = [] @ [] // inferred as 'obj list'
+                            ()
+                *)
+                assert (membInfo.MemberFlags.MemberKind <> SynMemberKind.PropertyGet)
+                assert (membInfo.MemberFlags.MemberKind <> SynMemberKind.PropertySet)
+                assert (membInfo.MemberFlags.MemberKind <> SynMemberKind.Constructor)
+            | _ -> ()
 
-                    os.AppendString msg
-                else
-                    let msg =
-                        ValueRestriction2E().Format
-                            v.DisplayName
-                            (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                            v.DisplayName
+            if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
+                let msg =
+                    ValueRestrictionFunctionE().Format
+                        v.DisplayName
+                        (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
+                        v.DisplayName
 
-                    os.AppendString msg
+                os.AppendString msg
             else
-                match v.MemberInfo with
-                | Some membInfo when
-                    (match membInfo.MemberFlags.MemberKind with
-                     | SynMemberKind.PropertyGet
-                     | SynMemberKind.PropertySet
-                     | SynMemberKind.Constructor -> true // can't infer extra polymorphism
-                     // can infer extra polymorphism
-                     | _ -> false)
-                    ->
-                    let msg =
-                        ValueRestriction3E()
-                            .Format(NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
+                let msg =
+                    ValueRestrictionE().Format
+                        v.DisplayName
+                        (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
+                        v.DisplayName
 
-                    os.AppendString msg
-                | _ ->
-                    if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
-                        let msg =
-                            ValueRestriction4E().Format
-                                v.DisplayName
-                                (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                                v.DisplayName
-
-                        os.AppendString msg
-                    else
-                        let msg =
-                            ValueRestriction5E().Format
-                                v.DisplayName
-                                (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                                v.DisplayName
-
-                        os.AppendString msg
+                os.AppendString msg
 
         | Parsing.RecoverableParseError -> os.AppendString(RecoverableParseErrorE().Format)
 
