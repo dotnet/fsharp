@@ -12,7 +12,6 @@ open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
 open System.Threading
-open FSharp.Compiler.Text
 
 let GetTaskResult (task: Tasks.Task<'T>) = task.GetAwaiter().GetResult()
 

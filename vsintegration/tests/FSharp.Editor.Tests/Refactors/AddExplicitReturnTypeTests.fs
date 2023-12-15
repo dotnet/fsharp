@@ -87,6 +87,33 @@ let sum a b : int = a + b
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
+    
+[<Fact>]
+let ``Correctly infer on next line arguments`` () =
+    let symbolName = "sum"
+
+    let code =
+        """
+let sum
+    x y =
+    x + y
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+    let expectedCode =
+        $"""
+let sum
+    x y : int =
+    x + y
+        """
+
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
 let ``Should not throw exception when binding another method`` () =
@@ -114,7 +141,7 @@ let addThings : (int->int->float) = add
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
-let ``Handle Parantheses on the arguments`` () =
+let ``Handle parantheses on the arguments`` () =
     let symbolName = "sum"
 
     let code =
