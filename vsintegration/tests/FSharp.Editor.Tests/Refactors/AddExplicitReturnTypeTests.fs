@@ -163,6 +163,7 @@ let sum (a:float) (b:float) : float = a + b
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
+
 [<Fact>]
 let ``Infer on rec method`` () =
     let symbolName = "fib"
@@ -264,6 +265,35 @@ let getNow() : System.DateTime =
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
+    
+[<Fact>]
+let ``Handle already existing opens for DateTime`` () =
+    let symbolName = "getNow"
+
+    let code =
+        $"""
+open System
+
+let getNow() = 
+    DateTime.Now
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+    let expectedCode =
+        $"""
+open System
+
+let getNow() : DateTime = 
+    DateTime.Now
+        """
+
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
 let ``Binding linq function doesnt crash`` () =
@@ -285,6 +315,67 @@ let skip1 elements =
         $"""
 let skip1 elements : System.Collections.Generic.IEnumerable<'a> = 
     System.Linq.Enumerable.Skip(elements, 1)
+        """
+
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
+
+    
+[<Fact>]
+let ``Handle already existing opens on Linq`` () =
+    let symbolName = "skip1"
+
+    let code =
+        $"""
+open System
+
+let skip1 elements = 
+    Linq.Enumerable.Skip(elements, 1)
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+    let expectedCode =
+        $"""
+open System
+
+let skip1 elements : Collections.Generic.IEnumerable<'a> = 
+    Linq.Enumerable.Skip(elements, 1)
+        """
+
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
+    
+[<Fact>]
+let ``Handle already existing opens on Enumerable`` () =
+    let symbolName = "skip1"
+
+    let code =
+        $"""
+open System
+open System.Linq
+
+let skip1 elements = 
+    Enumerable.Skip(elements, 1)
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+    let expectedCode =
+        $"""
+open System
+open System.Linq
+
+let skip1 elements : Collections.Generic.IEnumerable<'a> = 
+    Enumerable.Skip(elements, 1)
         """
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
