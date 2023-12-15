@@ -1457,6 +1457,11 @@
         <target state="translated">Deklarowanie \"interfejsów ze statycznymi metodami abstrakcyjnymi\" jest funkcją zaawansowaną. Aby uzyskać wskazówki, zobacz https://aka.ms/fsharp-iwsams. To ostrzeżenie można wyłączyć przy użyciu polecenia „#nowarn \"3535\"" lub "--nowarn:3535”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
         <target state="translated">Składowa interfejsu „{0}” nie ma najbardziej specyficznej implementacji.</target>

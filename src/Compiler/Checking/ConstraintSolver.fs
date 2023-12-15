@@ -1732,7 +1732,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   None
 
           let anonRecdPropSearch = 
-              let isGetProp = nm.StartsWith "get_" 
+              let isGetProp = nm.StartsWithOrdinal("get_")
               if not isRigid && isGetProp && memFlags.IsInstance  then
                   let propName = nm[4..]
                   let props = 

@@ -23,7 +23,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
         | lineA :: rest as lines ->
             let lineAT = lineA.TrimStart([| ' ' |])
 
-            if lineAT = "" then
+            if String.IsNullOrEmpty(lineAT) then
                 processLines rest
             elif lineAT.StartsWithOrdinal("<") then
                 lines

@@ -124,6 +124,15 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
+        member inline x.IndexOfOrdinal value =
+            x.IndexOf(value, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex) =
+            x.IndexOf(value, startIndex, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex, count) =
+            x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
+
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with
@@ -787,7 +796,7 @@ module String =
 
         String digits
         |> function
-            | "" -> str, None
+            | x when String.IsNullOrEmpty(x) -> str, None
             | index -> str.Substring(0, str.Length - index.Length), Some(int index)
 
     /// Splits a string into substrings based on the strings in the array separators

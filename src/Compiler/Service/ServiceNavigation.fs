@@ -377,7 +377,14 @@ module NavigationImpl =
                     | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid; accessibility = access); decls = decls; range = m) ->
                         // Find let bindings (for the right dropdown)
                         let nested = processNestedDeclarations (decls)
-                        let newBaseName = (if (baseName = "") then "" else baseName + ".") + (textOfLid lid)
+
+                        let newBaseName =
+                            (if (String.IsNullOrEmpty(baseName)) then
+                                 ""
+                             else
+                                 baseName + ".")
+                            + (textOfLid lid)
+
                         let other = processNavigationTopLevelDeclarations (newBaseName, decls)
 
                         let mBody = unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other)
@@ -587,7 +594,14 @@ module NavigationImpl =
                     | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid; accessibility = access); moduleDecls = decls; range = m) ->
                         // Find let bindings (for the right dropdown)
                         let nested = processNestedSigDeclarations (decls)
-                        let newBaseName = (if baseName = "" then "" else baseName + ".") + (textOfLid lid)
+
+                        let newBaseName =
+                            (if String.IsNullOrEmpty(baseName) then
+                                 ""
+                             else
+                                 baseName + ".")
+                            + (textOfLid lid)
+
                         let other = processNavigationTopLevelSigDeclarations (newBaseName, decls)
 
                         // Get nested modules and types (for the left dropdown)

@@ -279,13 +279,13 @@ module Layout =
 
     let isEmptyL layout =
         match layout with
-        | Leaf(true, s, true) -> s.Text = ""
+        | Leaf(true, s, true) -> String.IsNullOrEmpty(s.Text)
         | _ -> false
 
 #if COMPILER
     let rec endsWithL (text: string) layout =
         match layout with
-        | Leaf(_, s, _) -> s.Text.EndsWith(text)
+        | Leaf(_, s, _) -> s.Text.EndsWith(text, StringComparison.Ordinal)
         | Node(_, r, _) -> endsWithL text r
         | Attr(_, _, l) -> endsWithL text l
         | ObjLeaf _ -> false
@@ -512,7 +512,7 @@ module ReflectUtils =
                         FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs[i]))
 
                     let tupleType =
-                        if reprty.Name.StartsWith "ValueTuple" then
+                        if reprty.Name.StartsWith("ValueTuple", StringComparison.Ordinal) then
                             TupleType.Value
                         else
                             TupleType.Reference
@@ -1125,7 +1125,7 @@ module Display =
                                     :: layouts
 
                                 match postText with
-                                | "" ->
+                                | _ when String.IsNullOrEmpty(postText) ->
                                     //We are done, build a space-delimited layout from the collection of layouts we've accumulated
                                     Some(spaceListL (List.rev newLayouts))
 

@@ -896,9 +896,11 @@ type Exception with
                     [ knownReturnType; genericParametersMessage; argsMessage ]
                     |> List.choose id
                     |> String.concat (nl + nl)
-                    |> function
-                        | "" -> nl
-                        | result -> nl + nl + result + nl + nl
+                    |> fun result ->
+                        if String.IsNullOrEmpty(result) then
+                            nl
+                        else
+                            nl + nl + result + nl + nl
 
                 match failure with
                 | NoOverloadsFound(methodName, overloads, _) ->

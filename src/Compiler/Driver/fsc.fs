@@ -349,7 +349,7 @@ module InterfaceFileWriter =
         let writeAllToSameFile declaredImpls =
             /// Use a UTF-8 Encoding with no Byte Order Mark
             let os =
-                if tcConfig.printSignatureFile = "" then
+                if String.IsNullOrEmpty(tcConfig.printSignatureFile) then
                     Console.Out
                 else
                     FileSystem

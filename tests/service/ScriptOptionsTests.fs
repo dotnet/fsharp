@@ -50,9 +50,9 @@ let ``can generate options for different frameworks regardless of execution envi
 [<TestCase([| "--targetprofile:netstandard" |])>]
 [<Test>]
 let ``can resolve nuget packages to right target framework for different frameworks regardless of execution environment``(flags) =
-    let path = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+    let path = DirectoryInfo(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location))
     let file = tryCreateTemporaryFileNameInDirectory(path) + ".fsx"
-    let scriptFullPath = Path.Combine(path, file)
+    let scriptFullPath = Path.Combine(path.FullName, file)
     let scriptSource = """
 #r "nuget: FSharp.Data, 3.3.3"
 open System

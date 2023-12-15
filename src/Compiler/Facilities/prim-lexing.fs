@@ -6,6 +6,7 @@ namespace FSharp.Compiler.Text
 
 open System
 open System.IO
+open Internal.Utilities.Library
 
 type ISourceText =
 
@@ -97,7 +98,7 @@ type StringText(str: string) =
             if lastIndex <= startIndex || lastIndex >= str.Length then
                 invalidArg "target" "Too big."
 
-            str.IndexOf(target, startIndex, target.Length) <> -1
+            str.IndexOfOrdinal(target, startIndex, target.Length) <> -1
 
         member _.Length = str.Length
 
