@@ -439,7 +439,7 @@ module UnusedDeclarations =
                 su.IsFromDefinition
                 && su.Symbol.DeclarationLocation.IsSome
                 && (isScript || su.IsPrivateToFile)
-                && not (su.Symbol.DisplayName.StartsWith "_")
+                && not (su.Symbol.DisplayName.StartsWithOrdinal "_")
                 && isPotentiallyUnusedDeclaration su.Symbol
             then
                 Some(su, usages.Contains su.Symbol.DeclarationLocation.Value)

@@ -538,7 +538,7 @@ type CalledMeth<'T>
     // Detect the special case where an indexer setter using param aray takes 'value' argument after ParamArray arguments
     let isIndexerSetter =
         match pinfoOpt with
-        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWith "set_"  && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
+        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWithOrdinal("set_") && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
         | _ -> false
 
     let argSetInfos = 
