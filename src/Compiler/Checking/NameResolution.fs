@@ -1709,7 +1709,8 @@ type ItemOccurence =
     | RelatedText
     /// This is a usage of a module or namespace name in open statement
     | Open
-    | WrongUse
+    /// Not permitted item uses like interface names used as expressions
+    | InvalidUse
 
 type FormatStringCheckContext =
     { SourceText: ISourceText
@@ -4078,7 +4079,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                 AfterResolution.RecordResolution(None, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
 
             elif isWrongItemInExpr item then
-               CallNameResolutionSink sink (itemRange, nenv, item, emptyTyparInst, ItemOccurence.WrongUse, ad)
+               CallNameResolutionSink sink (itemRange, nenv, item, emptyTyparInst, ItemOccurence.InvalidUse, ad)
                AfterResolution.DoNothing
 
             else
