@@ -1,4 +1,4 @@
-﻿module FSharp.Editor.Tests.Refactors.AddExplicitReturnTypeTests
+﻿module FSharp.Editor.Tests.Refactors.AddReturnTypeTests
 
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
@@ -23,8 +23,7 @@ let sum a b {shouldNotTrigger}= a + b
 
     let spanStart = code.IndexOf symbolName
 
-    let actions =
-        tryGetRefactoringActions code spanStart context (new AddExplicitReturnType())
+    let actions = tryGetRefactoringActions code spanStart context (new AddReturnType())
 
     do Assert.Empty(actions)
 
@@ -41,8 +40,7 @@ let example2 = 42 // value
 
     let spanStart = code.IndexOf symbolName
 
-    let actions =
-        tryGetRefactoringActions code spanStart context (new AddExplicitReturnType())
+    let actions = tryGetRefactoringActions code spanStart context (new AddReturnType())
 
     do Assert.Empty(actions)
 
@@ -60,13 +58,12 @@ type Example3() =
 
     let spanStart = code.IndexOf symbolName
 
-    let actions =
-        tryGetRefactoringActions code spanStart context (new AddExplicitReturnType())
+    let actions = tryGetRefactoringActions code spanStart context (new AddReturnType())
 
     do Assert.Empty(actions)
 
 [<Fact>]
-let ``Correctly infer int as explicit return type`` () =
+let ``Correctly infer int as return type`` () =
     let symbolName = "sum"
 
     let code =
@@ -78,7 +75,7 @@ let sum a b = a + b
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -87,7 +84,7 @@ let sum a b : int = a + b
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
-    
+
 [<Fact>]
 let ``Correctly infer on next line arguments`` () =
     let symbolName = "sum"
@@ -103,7 +100,7 @@ let sum
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -129,7 +126,7 @@ let addThings = add
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -153,7 +150,7 @@ let sum (a:float) (b:float) = a + b
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         """
@@ -162,7 +159,6 @@ let sum (a:float) (b:float) : float = a + b
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
-
 
 [<Fact>]
 let ``Infer on rec method`` () =
@@ -179,7 +175,7 @@ let rec fib n =
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -204,7 +200,7 @@ let apply1 (transform: int -> int) y = transform y
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -229,7 +225,7 @@ type SomeType(factor0: int) =
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -255,7 +251,7 @@ let getNow() =
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -265,7 +261,7 @@ let getNow() : System.DateTime =
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
-    
+
 [<Fact>]
 let ``Handle already existing opens for DateTime`` () =
     let symbolName = "getNow"
@@ -282,7 +278,7 @@ let getNow() =
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -309,7 +305,7 @@ let skip1 elements =
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -320,7 +316,6 @@ let skip1 elements : System.Collections.Generic.IEnumerable<'a> =
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
-    
 [<Fact>]
 let ``Handle already existing opens on Linq`` () =
     let symbolName = "skip1"
@@ -337,7 +332,7 @@ let skip1 elements =
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -349,7 +344,7 @@ let skip1 elements : Collections.Generic.IEnumerable<'a> =
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
-    
+
 [<Fact>]
 let ``Handle already existing opens on Enumerable`` () =
     let symbolName = "skip1"
@@ -367,7 +362,7 @@ let skip1 elements =
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         $"""
@@ -395,7 +390,7 @@ let sum a b = {Value=a+b}
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         """
@@ -442,7 +437,7 @@ let sum a b = {Value=a+b}
 
     let spanStart = code.IndexOf symbolName
 
-    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
 
     let expectedCode =
         """

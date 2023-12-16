@@ -1,20 +1,17 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading
-open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
 open CancellableTasks
 
-[<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "AddExplicitReturnType"); Shared>]
-type internal AddExplicitReturnType [<ImportingConstructor>] () =
+[<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "AddReturnType"); Shared>]
+type internal AddReturnType [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
 
     static member isValidMethodWithoutTypeAnnotation
@@ -87,9 +84,9 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
             let! lexerSymbol =
-                document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof (AddExplicitReturnType))
+                document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof (AddReturnType))
 
-            let! (parseFileResults, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync(nameof (AddExplicitReturnType))
+            let! (parseFileResults, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync(nameof (AddReturnType))
 
             let symbolUseOpt =
                 lexerSymbol
@@ -103,16 +100,16 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
 
             let memberFuncOpt =
                 symbolUseOpt
-                |> Option.bind (fun sym -> sym.Symbol |> AddExplicitReturnType.ofFSharpMemberOrFunctionOrValue)
+                |> Option.bind (fun sym -> sym.Symbol |> AddReturnType.ofFSharpMemberOrFunctionOrValue)
 
             match (symbolUseOpt, memberFuncOpt) with
             | (Some symbolUse, Some memberFunc) ->
                 let isValidMethod =
                     memberFunc
-                    |> AddExplicitReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
+                    |> AddReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
 
                 match isValidMethod with
-                | Some(memberFunc, typeRange) -> do AddExplicitReturnType.refactor context (memberFunc, typeRange, symbolUse)
+                | Some(memberFunc, typeRange) -> do AddReturnType.refactor context (memberFunc, typeRange, symbolUse)
                 | None -> ()
             | _ -> ()
 
