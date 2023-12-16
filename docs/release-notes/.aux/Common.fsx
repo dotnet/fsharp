@@ -1,4 +1,5 @@
-﻿#r "nuget: Markdig, 0.33.0"
+﻿#i "nuget: https://api.nuget.org/v3/index.json"
+#r "nuget: Markdig, 0.33.0"
 #r "nuget: FsHttp, 12.1.0"
 
 open System.IO
