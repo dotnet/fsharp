@@ -23,8 +23,8 @@
         <note />
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
-        <source>Add explicit return type annotation</source>
-        <target state="new">Add explicit return type annotation</target>
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">

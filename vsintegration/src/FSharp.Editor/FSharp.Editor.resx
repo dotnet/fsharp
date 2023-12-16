@@ -354,7 +354,7 @@ Use live (unsaved) buffers for analysis</value>
     <value>Convert C# 'using' to F# 'open'</value>
   </data>
   <data name="AddReturnTypeAnnotation" xml:space="preserve">
-    <value>Add explicit return type annotation</value>
+    <value>Add return type annotation</value>
   </data>
   <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
     <value>Remove unnecessary parentheses</value>
