@@ -46,6 +46,7 @@ type QuickInfoOptions =
         DisplayLinks: bool
         UnderlineStyle: QuickInfoUnderlineStyle
         DescriptionWidth: int option
+        ShowRemarks: bool
     }
 
     static member Default =
@@ -53,6 +54,7 @@ type QuickInfoOptions =
             DisplayLinks = true
             UnderlineStyle = QuickInfoUnderlineStyle.Solid
             DescriptionWidth = None
+            ShowRemarks = true
         }
 
 [<CLIMutable>]
@@ -203,6 +205,7 @@ module internal OptionsUI =
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks (nameof QuickInfoOptions.Default.DisplayLinks)
             bindDescriptionWidthTextBox view.descriptionWidth (nameof QuickInfoOptions.Default.DescriptionWidth)
+            bindCheckBox view.showRemarks (nameof QuickInfoOptions.Default.ShowRemarks)
             upcast view
 
     [<Guid(Guids.codeFixesOptionPageIdString)>]

@@ -7,6 +7,7 @@ namespace FSharp.Compiler.Text
 open System
 open System.IO
 open System.Collections.Immutable
+open Internal.Utilities.Library
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Hashing
@@ -106,7 +107,7 @@ type StringText(str: string) =
             if lastIndex <= startIndex || lastIndex >= str.Length then
                 invalidArg "target" "Too big."
 
-            str.IndexOf(target, startIndex, target.Length) <> -1
+            str.IndexOfOrdinal(target, startIndex, target.Length) <> -1
 
         member _.Length = str.Length
 

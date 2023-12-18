@@ -1713,7 +1713,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   None
 
           let anonRecdPropSearch = 
-              let isGetProp = nm.StartsWith "get_" 
+              let isGetProp = nm.StartsWithOrdinal("get_")
               if not isRigid && isGetProp && memFlags.IsInstance  then
                   let propName = nm[4..]
                   let props = 
@@ -2359,7 +2359,7 @@ and SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                // Give a good error for structural types excluded from the comparison relation because of their fields
                elif (isAppTy g ty && 
                      let tcref = tcrefOfAppTy g ty 
-                     AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tcref.Deref && 
+                     AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithCompare g tcref.Deref && 
                      Option.isNone tcref.GeneratedCompareToWithComparerValues) then
  
                    ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportComparison3(NicePrint.minimalStringOfType denv ty), m, m2))
@@ -2389,7 +2389,7 @@ and SolveTypeSupportsEquality (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                match ty with
                | AppTy g (tcref, tinst) ->
                    // Give a good error for structural types excluded from the equality relation because of their fields
-                   if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
+                   if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
                        Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues 
                    then
                        ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality3(NicePrint.minimalStringOfType denv ty), m, m2))
