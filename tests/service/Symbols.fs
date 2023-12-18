@@ -1123,3 +1123,14 @@ let z = builder
                     if symbolUse.Symbol.DisplayName = "builder" then
                         (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
             ]
+
+module Member =
+    [<Test>]
+    let ``Inherit 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+type T() =
+    inherit Foo()
+
+    let i = 1
+"""
+        assertHasSymbolUsages ["i"] checkResults

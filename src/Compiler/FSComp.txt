@@ -1740,3 +1740,4 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3861,chkTailCallAttrOnNonRec,"The TailCall attribute should only be applied to recursive functions."
 3862,parsStaticMemberImcompleteSyntax,"Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration."
 3863,parsExpectingField,"Expecting record field"
+3864,tooManyMethodsInDotNetTypeWritingAssembly,"The type '%s' has too many methods. Found: '%d', maximum: '%d'"

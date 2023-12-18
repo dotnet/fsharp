@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckFormatStrings
 
+open System
 open System.Text
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -58,7 +59,7 @@ let escapeDotnetFormatString str =
 
 [<return: Struct>]
 let (|PrefixedBy|_|) (prefix: string) (str: string) =
-    if str.StartsWith prefix then
+    if str.StartsWithOrdinal(prefix) then
         ValueSome prefix.Length
     else
         ValueNone
@@ -370,12 +371,12 @@ let parseFormatStringInternal
             // type checker.  They should always have '(...)' after for format string.
             let requireAndSkipInterpolationHoleFormat i =
                 if i < len && fmt[i] = '(' then
-                    let i2 = fmt.IndexOf(")", i+1)
+                    let i2 = fmt.IndexOfOrdinal(")", i+1)
                     if i2 = -1 then
                         failwith (FSComp.SR.forFormatInvalidForInterpolated3())
                     else
                         let dotnetAlignment = match widthValue with None -> "" | Some w -> "," + (if info.leftJustify then "-" else "") + string w
-                        let dotnetNumberFormat = match fmt[i+1..i2-1] with "" -> "" | s -> ":" + s
+                        let dotnetNumberFormat = match fmt[i+1..i2-1] with s when String.IsNullOrEmpty(s) -> "" | s -> ":" + s
                         appendToDotnetFormatString ("{" + string dotnetFormatStringInterpolationHoleCount + dotnetAlignment  + dotnetNumberFormat + "}")
                         dotnetFormatStringInterpolationHoleCount <- dotnetFormatStringInterpolationHoleCount + 1
                         i2+1

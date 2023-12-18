@@ -1532,7 +1532,6 @@ type TcGlobals(
   member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
   member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
   member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
-  member val attrib_TailCallAttribute                      = mk_MFCore_attrib "TailCallAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1870,6 +1869,10 @@ type TcGlobals(
 
   member _.DebuggerNonUserCodeAttribute = debuggerNonUserCodeAttribute
 
+  member _.HasTailCallAttrib (attribs: Attribs) =
+    attribs
+    |> List.exists (fun a -> a.TyconRef.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.TailCallAttribute")
+  
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
@@ -1879,7 +1882,7 @@ type TcGlobals(
       let memberName =
           let nm = t.MemberLogicalName
           let coreName =
-              if nm.StartsWith "op_" then nm[3..]
+              if nm.StartsWithOrdinal "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm

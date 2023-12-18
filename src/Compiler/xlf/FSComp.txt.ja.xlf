@@ -1462,6 +1462,11 @@
         <target state="translated">\"interfaces with static abstract method\" の宣言は高度な機能です。ガイダンスについては https://aka.ms/fsharp-iwsams を参照してください。この警告は、'#nowarn \"3535\"' または '--nowarn:3535' を使用して無効にできます。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
         <target state="translated">インターフェイス メンバー '{0}' には最も固有な実装がありません。</target>

@@ -1462,6 +1462,11 @@
         <target state="translated">Объявление \"интерфейсов со статическими абстрактными методами\" является расширенной функцией. См. руководство на https://aka.ms/fsharp-iwsams. Это предупреждение можно отключить с помощью используя "#nowarn \"3535\"" or "--nowarn:3535".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
         <target state="translated">Элемент интерфейса "{0}" не имеет наиболее конкретной реализации.</target>

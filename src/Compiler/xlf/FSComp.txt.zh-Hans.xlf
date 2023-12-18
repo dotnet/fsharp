@@ -1462,6 +1462,11 @@
         <target state="translated">声明“使用静态抽象方法的接口”是一项高级功能。有关指南，请参阅 https://aka.ms/fsharp-iwsams。可以使用 "#nowarn \"3535\"' 或 '--nowarn:3535' 禁用此警告。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
         <target state="translated">接口成员“{0}”没有最具体的实现。</target>
