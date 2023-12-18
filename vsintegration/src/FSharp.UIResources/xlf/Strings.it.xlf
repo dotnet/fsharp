@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="needs-review-translation">Usa buffer in tempo reale (non salvati) per il controllo (riavvio necessario)</target>
+        <target state="new">Use live (unsaved) buffers for analysis (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="needs-review-translation">Buffer in tempo reale (sperimentale)</target>
+        <target state="new">Live Buffers</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
