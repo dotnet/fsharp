@@ -5,7 +5,7 @@
         {
             "id": "fscArgsPrompt",
             "description": "Enter arguments for fsc",
-            "default": "",
+            "default": "@/Users/u/code/compiler.rsp",
             "type": "promptString"
         },
         {

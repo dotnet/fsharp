@@ -1527,7 +1527,6 @@ module rec ILBinaryReaderImpl =
         else
             OneByteDecoders.[operation]
 
-    [<TailCall>]
     let rec readDeclaringTypeInfoFromMemberOrMethod (cenv: cenv) typarOffset (handle: EntityHandle) : string * ILType =
         let mdReader = cenv.MetadataReader
 
@@ -2474,6 +2473,8 @@ module rec ILBinaryReaderImpl =
 
         let typeDef = mdReader.GetTypeDefinition typeDefHandle
 
+        let _namespace = readString cenv typeDef.Namespace
+
         let name = readTypeName cenv typeDef.Namespace typeDef.Name
 
         let implements =
@@ -2651,6 +2652,8 @@ module rec ILBinaryReaderImpl =
             match peReader.PEHeaders.CoffHeader.Machine with
             | Machine.Amd64 -> Some AMD64
             | Machine.IA64 -> Some IA64
+            | Machine.Arm64 -> Some ARM64
+            | Machine.Arm -> Some ARM
             | _ -> Some X86
 
         let isDll = peReader.PEHeaders.IsDll
