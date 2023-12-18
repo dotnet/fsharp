@@ -2557,7 +2557,11 @@ module rec ILBinaryReaderImpl =
             | ValueNone -> []
             | ValueSome namespac -> splitNamespace namespac
 
-        mkILPreTypeDefComputed (namespaceSplit, name, (fun () -> readILTypeDef cenv typeDefHandle))
+        mkILPreTypeDefComputed (
+            namespaceSplit, name,
+            fun () ->
+                readILTypeDef cenv typeDefHandle
+        )
 
     let readILPreTypeDefs (cenv: cenv) =
         let mdReader = cenv.MetadataReader
