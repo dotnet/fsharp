@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
         <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
-        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
+        <target state="translated">인덱싱된 속성의 getter와 setter의 형식이 같아야 합니다. '{0}' 속성에 '{1}' 형식의 getter가 있지만 '{2}’ 형식의 setter가 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
-        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
+        <target state="translated">개체 식은 정적 추상 멤버가 있는 인터페이스를 구현하거나 정적 멤버를 선언할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailCallAttrOnNonRec">
         <source>The TailCall attribute should only be applied to recursive functions.</source>
-        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
+        <target state="translated">TailCall 특성은 재귀 함수에만 적용해야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
-        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
+        <target state="translated">'TailCall' 특성이 비 재귀 함수에 사용되는 경우 경고를 발생합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -419,7 +419,7 @@
       </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
-        <target state="new">prefer extension method over plain property</target>
+        <target state="translated">일반 속성보다 확장 메서드 선호</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
@@ -464,7 +464,7 @@
       </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
-        <target state="new">Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</target>
+        <target state="translated">이름과 형식이 같으면 [&lt;Struct&gt;] 구분된 공용 구조체에서 기본 필드 공유</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
@@ -504,7 +504,7 @@
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
-        <target state="new">Union case test properties</target>
+        <target state="translated">공용 구조체 사례 테스트 속성</target>
         <note />
       </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
@@ -519,7 +519,7 @@
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
-        <target state="new">Indexed properties getter and setter must have the same type</target>
+        <target state="translated">인덱싱된 속성 getter와 setter의 형식이 같아야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -914,7 +914,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingField">
         <source>Expecting record field</source>
-        <target state="new">Expecting record field</target>
+        <target state="translated">레코드 필드 필요</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPattern">
@@ -959,7 +959,7 @@
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
         <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
-        <target state="new">Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</target>
+        <target state="translated">정적 구문의 선언이 불완전합니다. 선언에 'static let','static do','static member' 또는 'static val'을 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -1159,7 +1159,7 @@
       </trans-unit>
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
         <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
-        <target state="new">Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</target>
+        <target state="translated">줄임 람다 구문은 암시적 '_' 인수의 메서드, 속성, 필드 또는 인덱서와 같은 원자성 식에 대해서만 지원됩니다. 예: 'let f = _.Length'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1199,7 +1199,7 @@
       </trans-unit>
       <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
         <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
-        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <target state="translated">공용 구조체 케이스를 음영 처리하는 함수입니다. 원하는 경우 이 경고를 무시하거나 표시하지 않습니다. 공용 구조체 케이스 분해가 되도록 하려면 괄호를 추가합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1299,12 +1299,12 @@
       </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
-        <target state="new">No static abstract member was found that corresponds to this override</target>
+        <target state="translated">이 재정의에 해당하는 정적 추상 멤버를 찾을 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoStaticPropertyFoundForOverride">
         <source>No static abstract property was found that corresponds to this override</source>
-        <target state="new">No static abstract property was found that corresponds to this override</target>
+        <target state="translated">이 재정의에 해당하는 정적 추상 속성을 찾을 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1399,7 +1399,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
         <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
-        <target state="new">If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</target>
+        <target state="translated">멀티캐시 공용 구조체 형식이 구조체이면 이름이 같은 모든 필드의 형식이 같아야 합니다. 이 규칙은 명명되지 않은 필드의 경우 생성된 '항목' 이름에도 적용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1619,7 +1619,7 @@
       </trans-unit>
       <trans-unit id="unnecessaryParentheses">
         <source>Parentheses can be removed.</source>
-        <target state="new">Parentheses can be removed.</target>
+        <target state="translated">괄호를 제거할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -5099,7 +5099,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="new">For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</target>
+        <target state="translated">F#7 이하의 경우, 정적 'let', 'do' 및 'member val' 정의는 기본 생성자가 있는 타입('type X(args) = ...')에서만 사용할 수 있습니다. 다른 모든 형식에서 사용하도록 설정하려면 언어 버전 ‘8’ 또는 그 이상을 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8504,7 +8504,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="new">Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <target state="translated">byref 확장 메서드 '{0}'을(를) 호출할 수 없습니다. ‘이’ 매개 변수는 변경할 수 있거나 읽기 전용이 아닌 byref 형식인 값이 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8594,7 +8594,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
+        <target state="translated">패키지 관리자 키 '{0}'이(가) {1}에 등록되지 않았습니다. 현재 등록됨: {2}. 명령줄에 '--compilertool:&lt;extensionsfolder&gt;'를 전달하여 추가 경로를 제공할 수 있습니다. 확장에 대한 자세한 내용은 다음을 참조하세요. https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

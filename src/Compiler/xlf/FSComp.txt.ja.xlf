@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
         <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
-        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
+        <target state="translated">インデックスの付いたプロパティのゲッターとセッターは同じ型でなければなりません。プロパティ '{0}' は、ゲッターの型が '{1}' ですが、セッターの型は '{2}' です。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
-        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
+        <target state="translated">オブジェクト式は、静的抽象メンバーを持つインターフェイスを実装したり、静的メンバーを宣言したりすることはできません。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailCallAttrOnNonRec">
         <source>The TailCall attribute should only be applied to recursive functions.</source>
-        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
+        <target state="translated">TailCall 属性は再帰関数にのみ適用する必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
-        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
+        <target state="translated">'TailCall' 属性が再帰関数以外で使用されている場合、警告が発せられます。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -419,7 +419,7 @@
       </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
-        <target state="new">prefer extension method over plain property</target>
+        <target state="translated">plain プロパティよりも拡張メソッドを優先する</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
@@ -464,7 +464,7 @@
       </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
-        <target state="new">Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</target>
+        <target state="translated">名前と型が同じである限り、[&lt;Struct&gt;] 判別可能な共用体で基になるフィールドを共有する</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
@@ -504,7 +504,7 @@
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
-        <target state="new">Union case test properties</target>
+        <target state="translated">ユニオン ケースのテスト プロパティ</target>
         <note />
       </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
@@ -519,7 +519,7 @@
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
-        <target state="new">Indexed properties getter and setter must have the same type</target>
+        <target state="translated">インデックス付きプロパティのゲッターとセッターの型は同じである必要があります</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -914,7 +914,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingField">
         <source>Expecting record field</source>
-        <target state="new">Expecting record field</target>
+        <target state="translated">レコード フィールドが必要です</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPattern">
@@ -959,7 +959,7 @@
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
         <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
-        <target state="new">Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</target>
+        <target state="translated">静的コンストラクトの不完全な宣言。宣言には、'static let'、'static do'、'static member'、または 'static val' を使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -1159,7 +1159,7 @@
       </trans-unit>
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
         <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
-        <target state="new">Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</target>
+        <target state="translated">短縮ラムダ構文は、暗黙的な '_' 引数のメソッド、プロパティ、フィールド、インデクサーなどのアトミック式でのみサポートされています。例: 'let f = _.Length'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1199,7 +1199,7 @@
       </trans-unit>
       <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
         <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
-        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <target state="translated">これは、共用体のケースをシャドウする関数定義です。これが必要な場合は、この警告を無視するか、非表示にしてください。共用体のケース分解にする場合は、かっこを追加します。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1299,12 +1299,12 @@
       </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
-        <target state="new">No static abstract member was found that corresponds to this override</target>
+        <target state="translated">このオーバーライドに対応する静的抽象メンバーが見つかりませんでした</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoStaticPropertyFoundForOverride">
         <source>No static abstract property was found that corresponds to this override</source>
-        <target state="new">No static abstract property was found that corresponds to this override</target>
+        <target state="translated">このオーバーライドに対応する抽象プロパティが見つかりませんでした</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1399,7 +1399,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
         <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
-        <target state="new">If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</target>
+        <target state="translated">マルチケース共用体型が構造体の場合、同じ名前を持つすべてのフィールドが同じ型である必要があります。このルールは、名前のないフィールドの場合に生成された 'Item' 名にも適用されます。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1619,7 +1619,7 @@
       </trans-unit>
       <trans-unit id="unnecessaryParentheses">
         <source>Parentheses can be removed.</source>
-        <target state="new">Parentheses can be removed.</target>
+        <target state="translated">かっこは削除できます。</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -5099,7 +5099,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="new">For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</target>
+        <target state="translated">F#7 以前の場合、静的な 'let'、'do'、'member val' の定義は、プライマリ コンストラクター ('type X(args) = ...') を持つ型でのみ使用できます。他のすべての型で有効にするには、言語バージョン '8' 以降を使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8504,7 +8504,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="new">Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <target state="translated">byref 拡張メソッド '{0}を呼び出すことはできません。'this' パラメーターには、値を変更可能にするか、読み取り専用以外の byref 型を指定する必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8594,7 +8594,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
+        <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されませんでした。現在登録されているもの: {2}。'--compilertool:&lt;extensionsfolder&gt;' をコマンド ラインに渡すことで、追加のパスを指定できます。拡張機能の詳細については、次を参照してください: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
