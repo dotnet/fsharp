@@ -24,12 +24,12 @@
       </trans-unit>
       <trans-unit id="OverrideShouldBeInstance">
         <source> Non-static member is expected.</source>
-        <target state="new"> Non-static member is expected.</target>
+        <target state="translated"> 应为非静态成员。</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
-        <target state="new"> Static member is expected.</target>
+        <target state="translated"> 应为静态成员。</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
