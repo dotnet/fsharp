@@ -281,7 +281,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         let ex = exn (message)
         failures.Add(key, ex)
         Interlocked.Increment &errors |> ignore
-        raise ex
+    // raise ex -- Suppose there's no need to raise here - where does it even go?
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
         task {

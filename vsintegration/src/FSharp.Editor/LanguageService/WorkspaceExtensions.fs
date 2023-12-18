@@ -35,7 +35,6 @@ type Solution with
     member internal this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
-
 module internal FSharpProjectSnapshotSerialization =
 
     let serializeFileSnapshot (snapshot: FSharpFileSnapshot) =
@@ -52,32 +51,36 @@ module internal FSharpProjectSnapshotSerialization =
 
     let rec serializeReferencedProject (reference: FSharpReferencedProjectSnapshot) =
         let output = JObject()
+
         match reference with
-        | FSharpReference (projectOutputFile, snapshot) ->
+        | FSharpReference(projectOutputFile, snapshot) ->
             output.Add("projectOutputFile", projectOutputFile)
             output.Add("snapshot", serializeSnapshot snapshot)
+
         output
 
     and serializeSnapshot (snapshot: FSharpProjectSnapshot) =
-        
+
         let output = JObject()
 
         output.Add("ProjectFileName", snapshot.ProjectFileName)
         output.Add("ProjectId", (snapshot.ProjectId |> Option.defaultValue null |> JToken.FromObject))
-        output.Add("SourceFiles", snapshot.SourceFiles |> Seq.map serializeFileSnapshot |> JArray )
-        output.Add("ReferencesOnDisk", snapshot.ReferencesOnDisk |> Seq.map serializeReferenceOnDisk |> JArray )
+        output.Add("SourceFiles", snapshot.SourceFiles |> Seq.map serializeFileSnapshot |> JArray)
+        output.Add("ReferencesOnDisk", snapshot.ReferencesOnDisk |> Seq.map serializeReferenceOnDisk |> JArray)
         output.Add("OtherOptions", JArray(snapshot.OtherOptions))
-        output.Add("ReferencedProjects", snapshot.ReferencedProjects |> Seq.map serializeReferencedProject |> JArray )
+        output.Add("ReferencedProjects", snapshot.ReferencedProjects |> Seq.map serializeReferencedProject |> JArray)
         output.Add("IsIncompleteTypeCheckEnvironment", snapshot.IsIncompleteTypeCheckEnvironment)
         output.Add("UseScriptResolutionRules", snapshot.UseScriptResolutionRules)
         output.Add("LoadTime", snapshot.LoadTime)
         // output.Add("UnresolvedReferences", snapshot.UnresolvedReferences)
-        output.Add("OriginalLoadReferences",
+        output.Add(
+            "OriginalLoadReferences",
             snapshot.OriginalLoadReferences
-            |> Seq.map (fun (r:Text.range, a, b) ->
-                 JArray(r.FileName, r.Start, r.End, a, b)) |> JArray)
+            |> Seq.map (fun (r: Text.range, a, b) -> JArray(r.FileName, r.Start, r.End, a, b))
+            |> JArray
+        )
 
-        output.Add("Stamp", (snapshot.Stamp |> (Option.defaultValue 0) |> JToken.FromObject ))
+        output.Add("Stamp", (snapshot.Stamp |> (Option.defaultValue 0) |> JToken.FromObject))
 
         output
 
@@ -88,7 +91,6 @@ module internal FSharpProjectSnapshotSerialization =
         let json = jObject.ToString(Formatting.Indented)
 
         json
-    
 
 open FSharpProjectSnapshotSerialization
 
@@ -172,12 +174,7 @@ module private CheckerExtensions =
 
                             async.Return(version.ToString(), getSource)
 
-                    return
-                        FSharpFileSnapshot(
-                            FileName = path,
-                            Version = version,
-                            GetSource = getSource
-                        )
+                    return FSharpFileSnapshot(FileName = path, Version = version, GetSource = getSource)
                 }
 
             let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)

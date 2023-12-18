@@ -378,7 +378,11 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
             let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
 
             return
-                FSharpFileSnapshot.Create(fileName, timeStamp.Ticks.ToString(), (fun () -> Task.FromResult(SourceTextNew.ofString contents)))
+                FSharpFileSnapshot.Create(
+                    fileName,
+                    timeStamp.Ticks.ToString(),
+                    (fun () -> Task.FromResult(SourceTextNew.ofString contents))
+                )
         }
 
     static member FromOptions(options: FSharpProjectOptions) =
@@ -392,7 +396,7 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
                     FSharpFileSnapshot.Create(
                         fileName,
                         $"{fileVersion}{sourceText.GetHashCode().ToString()}",
-                        fun () -> Task.FromResult (SourceTextNew.ofISourceText sourceText)
+                        fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
                     )
                 )
             else

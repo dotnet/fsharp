@@ -1803,7 +1803,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
                     |> NodeCode.AwaitAsync
@@ -1827,7 +1827,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
                     |> NodeCode.AwaitAsync
@@ -1867,7 +1867,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 ignore canInvalidateProject
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
 
@@ -1884,7 +1884,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! this.GetAssemblyData(snapshot, fileName, userOpName)
             }
@@ -1906,7 +1906,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
 
                 match! this.ParseAndCheckFileInProject(fileName, snapshot, userOpName) with
@@ -1923,7 +1923,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! this.ParseFile(fileName, snapshot, userOpName)
             }
@@ -1993,7 +1993,7 @@ type internal TransparentCompiler
                 ignore userOpName
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! ComputeSemanticClassification(fileName, snapshot)
             }
@@ -2018,7 +2018,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
                     |> NodeCode.AwaitAsync
@@ -2033,7 +2033,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 ignore userOpName
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! ComputeParseAndCheckProject snapshot
@@ -2043,7 +2043,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 ignore userOpName
                 return! ComputeParseAndCheckProject projectSnapshot
             }

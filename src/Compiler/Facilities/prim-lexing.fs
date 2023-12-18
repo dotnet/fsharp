@@ -165,8 +165,8 @@ module SourceTextNew =
 
     let ofString str = StringText(str) :> ISourceTextNew
 
-    let ofISourceText (sourceText: ISourceText) = {
-        new ISourceTextNew with
+    let ofISourceText (sourceText: ISourceText) =
+        { new ISourceTextNew with
             member _.Item
                 with get index = sourceText[index]
 

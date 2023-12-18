@@ -191,12 +191,13 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     captureIdentifiersWhenParsing = enableFastFindReferences,
                                     documentSource =
                                         (if enableLiveBuffers then
-                                             (DocumentSource.Custom (fun filename ->
-                                                async {
-                                                    match! getSource filename with
-                                                    | Some source -> return Some(source :> ISourceText)
-                                                    | None -> return None }))
-                                        else
+                                             (DocumentSource.Custom(fun filename ->
+                                                 async {
+                                                     match! getSource filename with
+                                                     | Some source -> return Some(source :> ISourceText)
+                                                     | None -> return None
+                                                 }))
+                                         else
                                              DocumentSource.FileSystem),
                                     useSyntaxTreeCache = useSyntaxTreeCache,
                                     useTransparentCompiler = useTransparentCompiler
