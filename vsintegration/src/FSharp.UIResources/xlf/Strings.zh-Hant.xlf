@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="needs-review-translation">使用即時 (未儲存) 緩衝區進行檢查 (需要重新啟動)</target>
+        <target state="new">Use live (unsaved) buffers for analysis (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="needs-review-translation">即時緩衝區 (實驗性)</target>
+        <target state="new">Live Buffers</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
