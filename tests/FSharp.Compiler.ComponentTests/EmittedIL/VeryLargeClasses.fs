@@ -21,7 +21,7 @@ module VeryLargeClasses =
             type Type1 ={methods}
                 """
 
-    [<Fact>]
+    [<Fact(Skip="Running for too long, causing CI timeouts")>]
     let ``More than 64K Methods -- should fail`` () =
         classWithManyMethods (1024 * 64 + 1)
         |> compile
@@ -30,7 +30,7 @@ module VeryLargeClasses =
             (Error 3864, Line 1, Col 1, Line 1, Col 1, "The type 'VeryLargeClassesTestcases.Type1' has too many methods. Found: '65537', maximum: '65520'")
         ]
 
-    [<Fact>]
+    [<Fact(Skip="Running for too long, causing CI timeouts")>]
     let ``Exactly (0xfff0) Methods -- should succeed`` () =
         FSharp
             """
