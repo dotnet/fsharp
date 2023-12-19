@@ -3595,8 +3595,9 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurence fullyQualified 
     match res with
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
-        let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
-        CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
+        if occurence = ItemOccurence.Binding then
+            let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
+            CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
     | _ -> ()
     res
 
