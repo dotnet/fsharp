@@ -179,8 +179,6 @@ module private CheckerExtensions =
 
             let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
 
-            let _json = dumpToJson snapshot
-
             return snapshot
         }
 

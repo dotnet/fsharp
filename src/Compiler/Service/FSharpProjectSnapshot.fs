@@ -258,6 +258,8 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
 
     member _.SourceFileNames = sourceFileNames.Value
 
+    member _.Label = projectCore.Label
+
     member _.IndexOf fileName =
         sourceFiles
         |> List.tryFindIndex (fun x -> x.FileName = fileName)

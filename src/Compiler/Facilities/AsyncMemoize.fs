@@ -7,6 +7,7 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 
+open FSharp.Compiler
 open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
@@ -29,6 +30,16 @@ module internal Utils =
 
     let replayDiagnostics (logger: DiagnosticsLogger) = Seq.iter ((<|) logger.DiagnosticSink)
 
+    let (|TaskCancelled|_|) (ex : exn) =
+        match ex with
+            | :? System.Threading.Tasks.TaskCanceledException as tce -> Some tce
+            //| :? System.AggregateException as ae ->
+            //    if ae.InnerExceptions |> Seq.forall (fun e -> e :? System.Threading.Tasks.TaskCanceledException) then
+            //        ae.InnerExceptions |> Seq.tryHead |> Option.map (fun e -> e :?> System.Threading.Tasks.TaskCanceledException)
+            //    else
+            //        None
+            | _ -> None
+
 type internal StateUpdate<'TValue> =
     | CancelRequest
     | OriginatorCanceled
@@ -41,7 +52,6 @@ type internal MemoizeReply<'TValue> =
 
 type internal MemoizeRequest<'TValue> =
     | GetOrCompute of NodeCode<'TValue> * CancellationToken
-    | Sync
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal Job<'TValue> =
@@ -152,6 +162,13 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let mutable collected = 0
     let mutable strengthened = 0
 
+    let mutable cancel_ct_registration_original = 0
+    let mutable cancel_exception_original = 0
+    let mutable cancel_original_processed = 0
+    let mutable cancel_ct_registration_subsequent = 0
+    let mutable cancel_exception_subsequent = 0
+    let mutable cancel_subsequent_processed = 0
+
     let failures = ResizeArray()
     let mutable avgDurationMs = 0.0
 
@@ -225,7 +242,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                 return
                     match msg, cached with
-                    | Sync, _ -> New Unchecked.defaultof<_>
                     | GetOrCompute _, Some(Completed(result, diags)) ->
                         Interlocked.Increment &hits |> ignore
                         diags |> replayDiagnostics diagnosticLogger
@@ -236,6 +252,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         ct.Register(fun _ ->
                             let _name = name
+                            Interlocked.Increment &cancel_ct_registration_subsequent |> ignore
                             post (key, CancelRequest))
                         |> saveRegistration key
 
@@ -251,6 +268,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         ct.Register(fun _ ->
                             let _name = name
+                            Interlocked.Increment &cancel_ct_registration_original |> ignore
                             post (key, OriginatorCanceled))
                         |> saveRegistration key
 
@@ -281,7 +299,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         let ex = exn (message)
         failures.Add(key, ex)
         Interlocked.Increment &errors |> ignore
-    // raise ex -- Suppose there's no need to raise here - where does it even go?
+        // raise ex -- Suppose there's no need to raise here - where does it even go?
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
         task {
@@ -296,6 +314,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         match action, cached with
 
                         | OriginatorCanceled, Some(Running(tcs, cts, computation, _, _)) ->
+
+                            Interlocked.Increment &cancel_original_processed |> ignore
 
                             decrRequestCount key
 
@@ -321,6 +341,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                                             try
                                                 // TODO: Should unify starting and restarting
+                                                use _ = Cancellable.UsingToken(cts.Token)
                                                 log (Started, key)
                                                 Interlocked.Increment &restarted |> ignore
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
@@ -334,7 +355,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                                 finally
                                                     DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
                                             with
-                                            | :? OperationCanceledException ->
+                                            | TaskCancelled _ ->
+                                                Interlocked.Increment &cancel_exception_subsequent |> ignore
                                                 post (key, CancelRequest)
                                                 ()
                                             | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
@@ -344,6 +366,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 |> ignore
 
                         | CancelRequest, Some(Running(tcs, cts, _c, _, _)) ->
+
+                            Interlocked.Increment &cancel_subsequent_processed |> ignore
 
                             decrRequestCount key
 
@@ -467,9 +491,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         Async.StartAsTask(
                             async {
                                 // TODO: Should unify starting and restarting
-                                log (Started, key)
                                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
                                 DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+                                use _ = Cancellable.UsingToken(internalCt)
+                                log (Started, key)
 
                                 try
                                     let! result = computation |> Async.AwaitNodeCode
@@ -482,8 +507,16 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         )
                         |> NodeCode.AwaitTask
                 with
-                | :? TaskCanceledException
-                | :? OperationCanceledException as ex -> return raise ex
+                | TaskCancelled ex ->
+                    // TODO: do we need to do anything else here? Presumably it should be done by the registration on
+                    // the cancellation token or before we triggered our own cancellation
+
+                    // Let's send this again just in case. It seems sometimes it's not triggered from the registration?
+
+                    Interlocked.Increment &cancel_exception_original |> ignore
+
+                    post (key, (OriginatorCanceled))
+                    return raise ex
                 | ex ->
                     post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
                     return raise ex
@@ -567,3 +600,4 @@ type internal AsyncMemoizeDisabled<'TKey, 'TVersion, 'TValue when 'TKey: equalit
         computation
 
     member _.DebuggerDisplay = $"(disabled) requests: {requests}"
+ 
