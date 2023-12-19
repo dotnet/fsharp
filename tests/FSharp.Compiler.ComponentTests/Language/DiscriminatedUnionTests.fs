@@ -50,6 +50,43 @@ if foo.IsA then failwith "Should not be A"
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Is* DU property roundtrip over pickled metadata and with fsi file`` () = 
+        let libCode =  """module rec TestLib
+
+//ivt comment out [<assembly:System.Runtime.CompilerServices.InternalsVisibleToAttribute("AppCodeProjectName")>]
+//ivt comment out do ()
+
+[<RequireQualifiedAccess>]
+type internal X =
+| A
+| a of int"""
+        let appCode = """
+open TestLib
+let someFunction () = 
+    let x = X.a 42
+    printfn "%A" x.IsA
+    
+printfn "%s" "exit" """
+
+        let lib = 
+            Fsi(libCode)
+            |> withAdditionalSourceFile (FsSource (libCode.Replace("internal","").Replace("//ivt comment out ","")))
+            |> withLangVersionPreview
+            |> withName "fsLib"
+
+        FSharp appCode
+        |> asExe
+        |> withReferences [lib]
+        |> withWarnOn 3186
+        |> withOptions ["--warnaserror+"]
+        |> withName "AppCodeProjectName"
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    
+
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties with backticks are visible, proper values are returned`` () =
         Fsx """
 type Foo = | Foo of string | ``Mars Bar``
