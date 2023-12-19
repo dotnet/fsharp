@@ -542,7 +542,7 @@ module ProjectOperations =
             filePath
             |> project.FindByPath
             |> renderSourceFile project
-        |> SourceText.ofString
+        |> SourceTextNew.ofString
 
     let internal getFileSnapshot (project: SyntheticProject) _options (path: string) =
         async {
@@ -750,7 +750,7 @@ module Helpers =
             FSharpFileSnapshot(
               FileName = fileName,
               Version = "1",
-              GetSource = fun () -> source |> SourceText.ofString |> Task.FromResult )
+              GetSource = fun () -> source |> SourceTextNew.ofString |> Task.FromResult )
             |> async.Return
 
         let checker = FSharpChecker.Create(
@@ -846,7 +846,7 @@ type ProjectWorkflowBuilder
     let mutable activity = None
     let mutable tracerProvider = None
 
-    let getSource f = f |> getSourceText latestProject |> Some |> async.Return
+    let getSource f = f |> getSourceText latestProject :> ISourceText |> Some |> async.Return
 
     let checker =
         defaultArg

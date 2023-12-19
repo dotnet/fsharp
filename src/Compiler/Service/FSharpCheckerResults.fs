@@ -1913,7 +1913,7 @@ type internal TypeCheckInfo
                 | Some(_, lines) ->
                     let lines =
                         lines
-                        |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
+                        |> List.filter (fun line -> not (line.StartsWithOrdinal("//")) && not (String.IsNullOrEmpty line))
 
                     ToolTipText.ToolTipText
                         [
@@ -2256,7 +2256,7 @@ type internal TypeCheckInfo
                         | Some itemRange ->
                             let projectDir =
                                 FileSystem.GetDirectoryNameShim(
-                                    if projectFileName = "" then
+                                    if String.IsNullOrEmpty(projectFileName) then
                                         mainInputFileName
                                     else
                                         projectFileName

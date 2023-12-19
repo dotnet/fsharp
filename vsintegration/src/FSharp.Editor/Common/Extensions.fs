@@ -87,7 +87,7 @@ module private SourceText =
         let combineValues (values: seq<'T>) =
             (0, values) ||> Seq.fold (fun hash value -> combine (value.GetHashCode()) hash)
 
-    let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
+    let weakTable = ConditionalWeakTable<SourceText, ISourceTextNew>()
 
     let create (sourceText: SourceText) =
         let sourceText =
@@ -113,7 +113,7 @@ module private SourceText =
                     |> Hash.combine sourceText.Length
 
                 override _.ToString() = sourceText.ToString()
-              interface ISourceText with
+              interface ISourceTextNew with
 
                   member _.Item
                       with get index = sourceText.[index]

@@ -47,14 +47,6 @@ open Internal.Utilities.Hashing
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open System.Runtime.Serialization.Formatters.Binary
 
-//type internal FSharpFile =
-//    {
-//        Range: range
-//        Source: FSharpFileSnapshot
-//        IsLastCompiland: bool
-//        IsExe: bool
-//    }
-
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
 type internal TcInfo =
@@ -122,14 +114,6 @@ type internal BootstrapInfo =
         LastFileName: string
     }
 
-//member this.GetFile fileName =
-//    this.SourceFiles
-//    |> List.tryFind (fun f -> f.Source.FileName = fileName)
-//    |> Option.defaultWith (fun _ ->
-//        failwith (
-//            $"File {fileName} not found in project snapshot. Files in project: \n\n"
-//            + (this.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")
-//        ))
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
@@ -1556,34 +1540,42 @@ type internal TransparentCompiler
         caches.AssemblyData.Get(
             projectSnapshot.SignatureKey,
             node {
-                let availableOnDiskModifiedTime =
-                    if FileSystem.FileExistsShim fileName then
-                        Some <| FileSystem.GetLastWriteTimeShim fileName
-                    else
-                        None
 
-                let shouldUseOnDisk =
-                    availableOnDiskModifiedTime
-                    |> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
+                try
 
-                let name = projectSnapshot.ProjectFileName |> Path.GetFileNameWithoutExtension
+                    let availableOnDiskModifiedTime =
+                        if FileSystem.FileExistsShim fileName then
+                            Some <| FileSystem.GetLastWriteTimeShim fileName
+                        else
+                            None
 
-                if shouldUseOnDisk then
-                    Trace.TraceInformation($"Using assembly on disk: {name}")
-                    return ProjectAssemblyDataResult.Unavailable true
-                else
-                    match! ComputeBootstrapInfo projectSnapshot with
-                    | None, _ ->
-                        Trace.TraceInformation($"Using assembly on disk (unintentionally): {name}")
+                    let shouldUseOnDisk =
+                        availableOnDiskModifiedTime
+                        |> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
+
+                    let name = projectSnapshot.ProjectFileName |> Path.GetFileNameWithoutExtension
+
+                    if shouldUseOnDisk then
+                        Trace.TraceInformation($"Using assembly on disk: {name}")
                         return ProjectAssemblyDataResult.Unavailable true
-                    | Some bootstrapInfo, _creationDiags ->
+                    else
+                        match! ComputeBootstrapInfo projectSnapshot with
+                        | None, _ ->
+                            Trace.TraceInformation($"Using assembly on disk (unintentionally): {name}")
+                            return ProjectAssemblyDataResult.Unavailable true
+                        | Some bootstrapInfo, _creationDiags ->
 
-                        let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
+                            let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
-                        let! _, _, assemblyDataResult, _ = ComputeProjectExtras bootstrapInfo snapshotWithSources
-                        Trace.TraceInformation($"Using in-memory project reference: {name}")
+                            let! _, _, assemblyDataResult, _ = ComputeProjectExtras bootstrapInfo snapshotWithSources
+                            Trace.TraceInformation($"Using in-memory project reference: {name}")
 
-                        return assemblyDataResult
+                            return assemblyDataResult
+                with
+                | TaskCancelled ex -> return raise ex
+                | ex ->
+                    errorR(exn($"Error while computing assembly data for project {projectSnapshot.Label}: {ex}"))
+                    return ProjectAssemblyDataResult.Unavailable true
             }
         )
 
@@ -1803,7 +1795,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
                     |> NodeCode.AwaitAsync
@@ -1827,7 +1819,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
                     |> NodeCode.AwaitAsync
@@ -1867,7 +1859,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 ignore canInvalidateProject
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
 
@@ -1884,7 +1876,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! this.GetAssemblyData(snapshot, fileName, userOpName)
             }
@@ -1906,7 +1898,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
 
                 match! this.ParseAndCheckFileInProject(fileName, snapshot, userOpName) with
@@ -1923,7 +1915,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! this.ParseFile(fileName, snapshot, userOpName)
             }
@@ -1993,7 +1985,7 @@ type internal TransparentCompiler
                 ignore userOpName
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! ComputeSemanticClassification(fileName, snapshot)
             }
@@ -2018,7 +2010,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
                     |> NodeCode.AwaitAsync
@@ -2033,7 +2025,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 ignore userOpName
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! ComputeParseAndCheckProject snapshot
@@ -2043,7 +2035,7 @@ type internal TransparentCompiler
             node {
                 let! ct = NodeCode.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
-                
+
                 ignore userOpName
                 return! ComputeParseAndCheckProject projectSnapshot
             }

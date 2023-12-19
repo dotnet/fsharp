@@ -805,7 +805,7 @@ type ILTypeRef =
     member tref.AddQualifiedNameExtension basic =
         let sco = tref.Scope.QualifiedName
 
-        if sco = "" then
+        if String.IsNullOrEmpty(sco) then
             basic
         else
             String.concat ", " [ basic; sco ]

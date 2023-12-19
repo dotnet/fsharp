@@ -7,6 +7,7 @@ namespace FSharp.Compiler.Text
 open System
 open System.IO
 open System.Collections.Immutable
+open Internal.Utilities.Library
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Hashing
@@ -32,6 +33,9 @@ type ISourceText =
     abstract CopyTo: sourceIndex: int * destination: char[] * destinationIndex: int * count: int -> unit
 
     abstract GetSubTextFromRange: range: range -> string
+
+type ISourceTextNew =
+    inherit ISourceText
 
     abstract GetChecksum: unit -> System.Collections.Immutable.ImmutableArray<byte>
 
@@ -72,7 +76,7 @@ type StringText(str: string) =
 
     override _.ToString() = str
 
-    interface ISourceText with
+    interface ISourceTextNew with
 
         member _.Item
             with get index = str[index]
@@ -103,7 +107,7 @@ type StringText(str: string) =
             if lastIndex <= startIndex || lastIndex >= str.Length then
                 invalidArg "target" "Too big."
 
-            str.IndexOf(target, startIndex, target.Length) <> -1
+            str.IndexOfOrdinal(target, startIndex, target.Length) <> -1
 
         member _.Length = str.Length
 
@@ -156,6 +160,39 @@ type StringText(str: string) =
 module SourceText =
 
     let ofString str = StringText(str) :> ISourceText
+
+module SourceTextNew =
+
+    let ofString str = StringText(str) :> ISourceTextNew
+
+    let ofISourceText (sourceText: ISourceText) =
+        { new ISourceTextNew with
+            member _.Item
+                with get index = sourceText[index]
+
+            member _.GetLineString(x) = sourceText.GetLineString(x)
+
+            member _.GetLineCount() = sourceText.GetLineCount()
+
+            member _.GetLastCharacterPosition() = sourceText.GetLastCharacterPosition()
+
+            member _.GetSubTextString(x, y) = sourceText.GetSubTextString(x, y)
+
+            member _.SubTextEquals(x, y) = sourceText.SubTextEquals(x, y)
+
+            member _.Length = sourceText.Length
+
+            member _.ContentEquals(x) = sourceText.ContentEquals(x)
+
+            member _.CopyTo(a, b, c, d) = sourceText.CopyTo(a, b, c, d)
+
+            member _.GetSubTextFromRange(x) = sourceText.GetSubTextFromRange(x)
+
+            member _.GetChecksum() =
+                // TODO: something better...
+                sourceText.ToString() |> Md5Hasher.hashString |> ImmutableArray.Create<byte>
+        }
+
 // NOTE: the code in this file is a drop-in replacement runtime for Lexing.fs from the FsLexYacc repository
 
 namespace Internal.Utilities.Text.Lexing

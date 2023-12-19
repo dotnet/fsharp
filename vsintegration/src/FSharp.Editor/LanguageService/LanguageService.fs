@@ -25,6 +25,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
+open FSharp.Compiler.Text
 
 #nowarn "9" // NativePtr.toNativeInt
 #nowarn "57" // Experimental stuff
@@ -190,7 +191,12 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     captureIdentifiersWhenParsing = enableFastFindReferences,
                                     documentSource =
                                         (if enableLiveBuffers then
-                                             DocumentSource.Custom getSource
+                                             (DocumentSource.Custom(fun filename ->
+                                                 async {
+                                                     match! getSource filename with
+                                                     | Some source -> return Some(source :> ISourceText)
+                                                     | None -> return None
+                                                 }))
                                          else
                                              DocumentSource.FileSystem),
                                     useSyntaxTreeCache = useSyntaxTreeCache,

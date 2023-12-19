@@ -257,19 +257,14 @@ module private CheckerExtensions =
 
                                         // Fall back to file system
                                         let version = System.IO.File.GetLastWriteTimeUtc(path)
-
                                         let getSource () =
-                                            task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
-
+                                            task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceTextNew.ofString }
                                         async.Return(version.ToString(), getSource)
 
                                 return FSharpFileSnapshot(FileName = path, Version = version, GetSource = getSource)
                             }
 
-                        let! snapshot =
-                            FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
-
-                        //let _json = dumpToJson snapshot
+                        let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
 
                         System.Diagnostics.Trace.TraceInformation $"Created new FSharpProjectSnapshot ({snapshot.ProjectCore.Label})"
 

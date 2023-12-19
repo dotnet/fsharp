@@ -99,7 +99,6 @@ module internal SourceText =
                             let lastLine = this.GetLineString(range.EndLine - 1)
                             sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
 
-                member _.GetChecksum() = sourceText.GetChecksum()
             }
 
         sourceText
