@@ -876,7 +876,7 @@ let convAlternativeDef
                     && cud.HasHelpers = AllHelpers
                 then
                     [], []
-                elif  cud.UnionCases.Length <= 1 then
+                elif cud.UnionCases.Length <= 1 then
                     [], []
                 elif repr.RepresentOneAlternativeAsNull info then
                     [], []
