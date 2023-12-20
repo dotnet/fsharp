@@ -4128,7 +4128,7 @@ module TcDeclarations =
                                 typar.SetIdent(untypedIdent)
                         )
 
-                    let tps = ttypes |> List.map (function TType_var(typar, _) -> typar | _ -> failwith "123")
+                    let tps = ttypes |> List.map (function TType_var(typar, _) -> typar | t -> failwith $"ComputeTyconDeclKind: {t}")
                     types, tcref, tps
 
                 | Exception exn ->
