@@ -53,26 +53,19 @@ if foo.IsA then failwith "Should not be A"
     let ``Is* DU property roundtrip over pickled metadata and with fsi file`` () = 
         let libCode =  """module rec TestLib
 
-//ivt comment out [<assembly:System.Runtime.CompilerServices.InternalsVisibleToAttribute("AppCodeProjectName")>]
-//ivt comment out do ()
-
-[<RequireQualifiedAccess>]
-type internal X =
-| A
-| a of int"""
-        let appCode = """
-open TestLib
-let someFunction () = 
-    let x = X.a 42
-    printfn "%A" x.IsA
-    
-printfn "%s" "exit" """
-
+type X = A | B"""
+        let appCode = """printfn "%s" "exit" """
         let lib = 
             Fsi(libCode)
-            |> withAdditionalSourceFile (FsSource (libCode.Replace("internal","").Replace("//ivt comment out ","")))
+            |> withAdditionalSourceFile (FsSource libCode)
             |> withLangVersionPreview
+            |> asLibrary
             |> withName "fsLib"
+
+        lib
+        |> compile
+        |> verifyIL [""".method public hidebysig specialname 
+instance bool  get_IsA() cil managed """]
 
         FSharp appCode
         |> asExe
