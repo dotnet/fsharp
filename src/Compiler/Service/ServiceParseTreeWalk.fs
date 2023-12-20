@@ -1090,7 +1090,8 @@ module SyntaxTraversal =
             |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespaceSig []))
             |> pick fileRange l
 
-    let traverseAll (visitor: SyntaxVisitorBase<'T>) (parseTree: ParsedInput) : unit =
+    /// Traverses the entire AST, using the given visitor to visit nodes along the way.
+    let TraverseAll (parseTree: ParsedInput, visitor: SyntaxVisitorBase<'T>) : unit =
         let pick _ _ _ diveResults =
             let rec loop =
                 function

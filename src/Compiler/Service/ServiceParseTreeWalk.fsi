@@ -199,6 +199,7 @@ module public SyntaxTraversal =
     val internal pick:
         pos: pos -> outerRange: range -> debugObj: obj -> diveResults: (range * (unit -> 'a option)) list -> 'a option
 
-    val internal traverseAll: visitor: SyntaxVisitorBase<'T> -> parseTree: ParsedInput -> unit
+    /// Traverses the entire AST, using the given visitor to visit nodes along the way.
+    val TraverseAll: parseTree: ParsedInput * visitor: SyntaxVisitorBase<'T> -> unit
 
     val Traverse: pos: pos * parseTree: ParsedInput * visitor: SyntaxVisitorBase<'T> -> 'T option
