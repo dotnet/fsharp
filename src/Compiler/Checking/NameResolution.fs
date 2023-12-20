@@ -2978,6 +2978,31 @@ let ResolveUnqualifiedTyconRefs nenv tcrefs =
         | Some tinst ->
             (resInfo.WithEnclosingTypeInst tinst, tcref))
 
+let compgenId = mkSynId range0 unassignedTyparName
+
+let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
+    Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false)
+
+let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
+    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
+    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
+    let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
+    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
+
+// QUERY: should 'rigid' ever really be 'true'? We set this when we know
+// we are going to have to generalize a typar, e.g. when implementing a 
+// abstract generic method slot. But we later check the generalization 
+// condition anyway, so we could get away with a non-rigid typar. This 
+// would sort of be cleaner, though give errors later. 
+let FreshenAndFixupTypars g m rigid fctps tinst tpsorig =
+    let tps = tpsorig |> List.map (FreshenTypar g rigid)
+    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
+    tps, renaming, tinst
+
+let FreshenTypeInst g m tpsorig =
+    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig
+
+
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers
 /// that may represent further actions, e.g. further lookups.
@@ -3082,8 +3107,11 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         |> CollectResults success
 
                     match tyconSearch () with
-                    | Result ((resInfo, tcref) :: _) ->
-                        let item = Item.Types(id.idText, [ generalizedTyconRef ncenv.g tcref ])
+                    | Result((resInfo, tcref) :: _) ->
+                        let inst = FreshenTypeInst ncenv.g m (tcref.Typars m)
+                        let _, _, tTypes = inst
+                        let tType = TType_app(tcref, tTypes, ncenv.g.knownWithoutNull)
+                        let item = Item.Types(id.idText, [ tType ])
                         success (resInfo, item)
                     | _ ->
 
@@ -3439,7 +3467,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInf
         AtMostOneResult m tyconSearch
 
 /// Resolve a long identifier representing a type name and report the result
-let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResInfo ad m tcref (lid: Ident list) =
+let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) occurrence nenv typeNameResInfo ad m tcref (lid: Ident list) =
     let resInfo, tcref =
         match lid with
         | [] ->
@@ -3447,9 +3475,12 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
         | id :: rest ->
             ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref id rest)
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> true))
-    let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
-    CallNameResolutionSink sink (rangeOfLid lid, nenv, item, emptyTyparInst, ItemOccurence.UseInType, ad)
-    tcref
+
+    let _, tinst, args = FreshenTypeInst ncenv.g m (tcref.Typars m)
+    let ttype = TType_app(tcref, args, ncenv.g.knownWithoutNull)
+    let item = Item.Types(tcref.DisplayName, [ttype])
+    CallNameResolutionSink sink (m, nenv, item, tinst, occurrence, ad)
+    tcref, args
 
 /// Create an UndefinedName error with details
 let SuggestTypeLongIdentInModuleOrNamespace depth (modref: ModuleOrNamespaceRef) amap ad m (id: Ident) =
@@ -3593,7 +3624,6 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                 let r = AddResults searchSoFar (modulSearchFailed())
                 AtMostOneResult m2 (r |?> (fun tcrefs -> CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, m)))
 
-
 /// Resolve a long identifier representing a type and report it
 let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurence fullyQualified nenv ad (lid: Ident list) staticResInfo genOk =
     let m = rangeOfLid lid
@@ -3608,15 +3638,20 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurence fullyQualified 
     match res with
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
-        let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
-        CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
-    | _ -> ()
-    res
+        let inst = FreshenTypeInst ncenv.g m (tcref.Typars m)
+        let _, inst2, tTypes = inst
+        let ttype = TType_app(tcref, tTypes, ncenv.g.knownWithoutNull)
+        let item = Item.Types(tcref.DisplayName, [ttype])
+        CallNameResolutionSink sink (m, nenv, item, inst2, occurence, ad)
+        Result(resInfo, tcref, tTypes)
+
+    | Exception exn ->
+        Exception exn
 
 /// Resolve a long identifier representing a type and report it
 let ResolveTypeLongIdent sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk =
     let res = ResolveTypeLongIdentAux sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk
-    (res |?> fun (resInfo, tcref) -> (resInfo.EnclosingTypeInst, tcref))
+    res |?> fun (resInfo, tcref, ttypes) -> (resInfo.EnclosingTypeInst, tcref, ttypes)
 
 //-------------------------------------------------------------------------
 // Resolve F#/IL "." syntax in records etc.

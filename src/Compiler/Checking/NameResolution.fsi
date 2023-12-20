@@ -727,13 +727,14 @@ val internal ResolvePatternLongIdent:
 val internal ResolveTypeLongIdentInTyconRef:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
+    occurrence: ItemOccurence ->
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     ad: AccessorDomain ->
     m: range ->
     tcref: TyconRef ->
     lid: Ident list ->
-        TyconRef
+        TyconRef * TypeInst
 
 /// Resolve a long identifier to a type definition
 val internal ResolveTypeLongIdent:
@@ -746,7 +747,7 @@ val internal ResolveTypeLongIdent:
     lid: Ident list ->
     staticResInfo: TypeNameResolutionStaticArgsInfo ->
     genOk: PermitDirectReferenceToGeneratedType ->
-        ResultOrException<EnclosingTypeInst * TyconRef>
+        ResultOrException<EnclosingTypeInst * TyconRef * TypeInst>
 
 /// Resolve a long identifier to a field
 val internal ResolveField:
