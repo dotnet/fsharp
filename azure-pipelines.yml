@@ -458,14 +458,14 @@ stages:
           # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
-              ${{ if eq(variables['Agent.JobName'], 'Job experimental_features') }}:
+              ${{ if eq(variables['Agent.JobName'], 'WindowsCompressedMetadata experimental_features') }}:
                 FSHARP_EXPERIMENTAL_FEATURES: 1
               NativeToolsOnMachine: true
             displayName: Build / Test
             condition: ne(variables['_testKind'], 'testIntegration')
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
-              ${{ if eq(variables['Agent.JobName'], 'Job experimental_features') }}:
+              ${{ if eq(variables['Agent.JobName'], 'WindowsCompressedMetadata experimental_features') }}:
                 FSHARP_EXPERIMENTAL_FEATURES: 1
               NativeToolsOnMachine: true
             displayName: Build / Integration Test
