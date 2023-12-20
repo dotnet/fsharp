@@ -97,6 +97,10 @@ type internal TcIntermediate =
 /// Things we need to start parsing and checking files for a given project snapshot
 type internal BootstrapInfo =
     {
+        // Each instance gets an Id on creation, unfortunately partial type check results using different instances are not compatible
+        // So if this needs to be recreated for whatever reason then we need to re type check all files
+        Id: int
+
         AssemblyName: string
         OutFile: string
         TcConfig: TcConfig
@@ -606,6 +610,8 @@ type internal TransparentCompiler
 
         tcConfigB, sourceFilesNew, loadClosureOpt
 
+    let mutable BootstrapInfoIdCounter = 0
+
     /// Bootstrap info that does not depend source files
     let ComputeBootstrapInfoStatic (projectSnapshot: ProjectCore, tcConfig: TcConfig, assemblyName: string, loadClosureOpt) =
 
@@ -680,7 +686,9 @@ type internal TransparentCompiler
                         importsInvalidatedByTypeProvider
                     )
 
-                return tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider
+                let bootstrapId = Interlocked.Increment &BootstrapInfoIdCounter
+
+                return bootstrapId, tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider
             }
         )
 
@@ -729,7 +737,7 @@ type internal TransparentCompiler
             let tcConfig = TcConfig.Create(tcConfigB, validate = true)
             let outFile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
-            let! tcImports, tcGlobals, initialTcInfo, _importsInvalidatedByTypeProvider =
+            let! bootstrapId, tcImports, tcGlobals, initialTcInfo, _importsInvalidatedByTypeProvider =
                 ComputeBootstrapInfoStatic(projectSnapshot.ProjectCore, tcConfig, assemblyName, loadClosureOpt)
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
@@ -776,6 +784,7 @@ type internal TransparentCompiler
             return
                 Some
                     {
+                        Id = bootstrapId
                         AssemblyName = assemblyName
                         OutFile = outFile
                         TcConfig = tcConfig
@@ -785,7 +794,7 @@ type internal TransparentCompiler
                         LoadedSources = loadedSources
                         LoadClosure = loadClosureOpt
                         LastFileName = sourceFiles |> List.last
-                    //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
+                        //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
                     }
         }
 
@@ -1051,7 +1060,7 @@ type internal TransparentCompiler
 
         ignore dependencyGraph
 
-        let key = projectSnapshot.FileKey(index)
+        let key = projectSnapshot.FileKey(index).WithExtraVersion(bootstrapInfo.Id)
 
         let _label, _k, _version = key.GetLabel(), key.GetKey(), key.GetVersion()
 

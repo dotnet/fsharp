@@ -464,6 +464,32 @@ let ``Multi-project`` signatureFiles =
     }
 
 
+[<Fact>]
+let ``What happens if bootrstapInfoStatic needs to be recomputed`` () =
+
+    let signatureFiles = true
+
+    let giraffe = if signatureFiles then "giraffe-signatures" else "Giraffe"
+    let giraffeDir = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ giraffe ++ "src" ++ "Giraffe"
+
+    let giraffeProject = SyntheticProject.CreateFromRealProject giraffeDir
+    let giraffeProject = { giraffeProject with OtherOptions = "--nowarn:FS3520"::giraffeProject.OtherOptions }
+
+    giraffeProject.Workflow {
+        updateFile "Helpers" (fun f -> { f with SignatureFile = Custom (f.SignatureFile.CustomText + "\n") })
+        checkFile "EndpointRouting" expectOk
+        withChecker (fun checker -> 
+            async {
+                checker.Caches.BootstrapInfoStatic.Clear()
+                checker.Caches.BootstrapInfo.Clear()
+                checker.Caches.FrameworkImports.Clear()
+                ignore checker
+                return ()
+            })
+        updateFile "Core" (fun f -> { f with SignatureFile = Custom (f.SignatureFile.CustomText + "\n") })
+        checkFile "EndpointRouting" expectOk
+    } 
+
 type ProjectAction = Get | Modify of (SyntheticProject -> SyntheticProject)
 type ProjectModificaiton = Update of int | Add | Remove
 type ProjectRequest = ProjectAction * AsyncReplyChannel<SyntheticProject>
