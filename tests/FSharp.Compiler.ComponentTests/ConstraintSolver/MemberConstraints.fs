@@ -74,3 +74,43 @@ type DataItem< ^input> with
 """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Indirect constraint by operator`` () =
+        FSharp """
+List.average [42] |> ignore
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 15, Line 2, Col 17, "'List.average' does not support the type 'int', because the latter lacks the required (real or built-in) member 'DivideByInt'")
+
+    [<Fact>]
+    let ``Direct constraint by named (pseudo) operator`` () =
+        FSharp """
+abs -1u |> ignore
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 6, Line 2, Col 8, "The type 'uint32' does not support the operator 'abs'")
+
+    [<Fact>]
+    let ``Direct constraint by simple operator`` () =
+        FSharp """
+"" >>> 1 |> ignore
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 1, Line 2, Col 3, "The type 'string' does not support the operator '>>>'")
+
+    [<Fact>]
+    let ``Direct constraint by pseudo operator`` () =
+        FSharp """
+ignore ["1" .. "42"]
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 9, Line 2, Col 12, "The type 'string' does not support the operator 'op_Range'")
