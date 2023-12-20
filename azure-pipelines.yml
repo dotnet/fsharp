@@ -225,7 +225,7 @@ stages:
               regular:
                 _experimental_flag: ''
               experimental_features:
-                _experimental_flag: ''
+                _experimental_flag: 1
           steps:
           - checkout: self
             clean: true
@@ -439,6 +439,10 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
+              experimental_features:
+                _configuration: Release
+                _testKind: testCoreclr
+
               ${{ if eq(variables['Build.Reason'], 'Flaky, disabled, was PullRequest') }}:
                 inttests_release:
                   _configuration: Release
@@ -454,11 +458,15 @@ stages:
           # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
+              ${{ if eq(variables['Agent.JobName'], 'Job experimental_features') }}:
+                FSHARP_EXPERIMENTAL_FEATURES: 1
               NativeToolsOnMachine: true
             displayName: Build / Test
             condition: ne(variables['_testKind'], 'testIntegration')
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
+              ${{ if eq(variables['Agent.JobName'], 'Job experimental_features') }}:
+                FSHARP_EXPERIMENTAL_FEATURES: 1
               NativeToolsOnMachine: true
             displayName: Build / Integration Test
             continueOnError: true
@@ -605,7 +613,7 @@ stages:
               regular:
                 _experimental_flag: ''
               experimental_features:
-                _experimental_flag: ''
+                _experimental_flag: 1
           steps:
           - checkout: self
             clean: true
