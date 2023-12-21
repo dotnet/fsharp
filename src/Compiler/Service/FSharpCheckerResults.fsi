@@ -573,6 +573,31 @@ module internal ParseAndCheckFile =
         ct: CancellationToken ->
             (range * range)[]
 
+
+    /// Diagnostics handler for parsing & type checking while processing a single file
+    type DiagnosticsHandler =
+        new:
+            reportErrors: bool * 
+            mainInputFileName: string * 
+            diagnosticsOptions: FSharpDiagnosticOptions * 
+            sourceText: ISourceText *
+            suggestNamesForErrors: bool *
+            flatErrors: bool -> 
+                DiagnosticsHandler
+        
+        member DiagnosticsLogger: DiagnosticsLogger
+
+        member ErrorCount: int
+
+        member DiagnosticOptions: FSharpDiagnosticOptions with set
+
+        member AnyErrors: bool
+
+        member CollectedPhasedDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+
+        member CollectedDiagnostics: symbolEnv: SymbolEnv option -> FSharpDiagnostic array
+            
+
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
@@ -586,3 +611,4 @@ type internal FsiInteractiveChecker =
 
 module internal FSharpCheckerResultsSettings =
     val defaultFSharpBinariesDir: string
+

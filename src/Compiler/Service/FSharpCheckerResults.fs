@@ -2520,6 +2520,9 @@ module internal ParseAndCheckFile =
 
         member _.AnyErrors = errorCount > 0
 
+        member _.CollectedPhasedDiagnostics =
+            [| for struct (diagnostic, severity) in diagnosticsCollector -> diagnostic, severity |]
+
         member _.CollectedDiagnostics(symbolEnv: SymbolEnv option) =
             [|
                 for struct (diagnostic, severity) in diagnosticsCollector do

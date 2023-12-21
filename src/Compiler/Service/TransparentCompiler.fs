@@ -914,7 +914,7 @@ type internal TransparentCompiler
 
                 fileParsed.Trigger(fileName, Unchecked.defaultof<_>)
 
-                return FSharpParsedFile(fileName, inputHash, input, diagnosticsLogger.GetDiagnostics())
+                return FSharpParsedFile(fileName, inputHash, sourceText, input, diagnosticsLogger.GetDiagnostics())
             }
         )
 
@@ -1088,17 +1088,44 @@ type internal TransparentCompiler
                 let tcGlobals = bootstrapInfo.TcGlobals
                 let tcImports = bootstrapInfo.TcImports
 
-                let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
+                let mainInputFileName = file.FileName
+                let sourceText = file.SourceText
+                let parsedMainInput = file.ParsedInput
 
-                let diagnosticsLogger =
-                    GetDiagnosticsLoggerFilteringByScopedPragmas(
-                        false,
-                        input.ScopedPragmas,
+                // Initialize the error handler
+                let errHandler =
+                    ParseAndCheckFile.DiagnosticsHandler(
+                        true,
+                        mainInputFileName,
                         tcConfig.diagnosticsOptions,
-                        capturingDiagnosticsLogger
+                        sourceText,
+                        suggestNamesForErrors,
+                        tcConfig.flatErrors
                     )
 
-                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
+                use _ = new CompilationGlobalsScope(errHandler.DiagnosticsLogger, BuildPhase.TypeCheck)
+
+                // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
+                let tcConfig =
+                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName)
+
+                // update the error handler with the modified tcConfig
+                errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
+
+                let diagnosticsLogger = errHandler.DiagnosticsLogger
+
+
+                //let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
+
+                //let diagnosticsLogger =
+                //    GetDiagnosticsLoggerFilteringByScopedPragmas(
+                //        false,
+                //        input.ScopedPragmas,
+                //        tcConfig.diagnosticsOptions,
+                //        capturingDiagnosticsLogger
+                //    )
+
+                //use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
                 //beforeFileChecked.Trigger fileName
 
@@ -1135,7 +1162,7 @@ type internal TransparentCompiler
                     //fileChecked.Trigger fileName
 
                     let newErrors =
-                        Array.append file.ParseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
+                        Array.append file.ParseErrors (errHandler.CollectedPhasedDiagnostics)
 
                     fileChecked.Trigger(fileName, Unchecked.defaultof<_>)
 
