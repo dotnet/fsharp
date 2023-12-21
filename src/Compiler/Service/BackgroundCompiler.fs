@@ -1687,8 +1687,9 @@ type internal BackgroundCompiler
             ) =
             self.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
 
-        member _.ParseFile(_fileName: string, _projectSnapshot: FSharpProjectSnapshot, _userOpName: string) =
-            raise (System.NotImplementedException())
+        member _.ParseFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
+            let options = projectSnapshot.ToOptions()
+            self.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName) |> Async.AwaitNodeCode
 
         member _.ProjectChecked: IEvent<FSharpProjectOptions> = self.ProjectChecked
 
