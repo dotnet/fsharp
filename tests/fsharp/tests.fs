@@ -1612,9 +1612,6 @@ module VersionTests =
     let ``member-selfidentifier-version4_7``() = singleTestBuildAndRunVersion "core/members/self-identifier/version47" (FSC_BUILDONLY true) "4.7"
 
     [<Test>]
-    let ``indent-version4_6``() = singleTestBuildAndRunVersion "core/indent/version46" (FSC_BUILDONLY true) "4.6"
-
-    [<Test>]
     let ``indent-version4_7``() = singleTestBuildAndRunVersion "core/indent/version47" (FSC_BUILDONLY true) "4.7"
 
     [<Test>]

@@ -45,7 +45,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         let startLineNumber, openDeclaration =
             match ctx.ScopeKind with
             | ScopeKind.TopModule ->
-                match sourceText.Lines[ insertionLineNumber ].ToString().Trim() with
+                match sourceText.Lines[insertionLineNumber].ToString().Trim() with
 
                 // explicit top level module
                 | line when line.StartsWith "module" && not (line.EndsWith "=") -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
@@ -67,7 +67,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                     | Some number ->
                         // add back the skipped lines
                         let moduleDeclLineNumber = insertionLineNumber + number
-                        let moduleDeclLineText = sourceText.Lines[ moduleDeclLineNumber ].ToString().Trim()
+                        let moduleDeclLineText = sourceText.Lines[moduleDeclLineNumber].ToString().Trim()
 
                         if moduleDeclLineText.EndsWith "=" then
                             insertionLineNumber, $"{margin}open {ns}{br}{br}"
@@ -188,8 +188,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                         let entities =
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
-                            |> List.collect (fun s ->
-                                [
+                            |> Array.collect (fun s ->
+                                [|
                                     yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
                                     if isAttribute then
                                         let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
@@ -203,8 +203,10 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                                 s.AutoOpenParent,
                                                 s.Namespace,
                                                 s.CleanedIdents
-                                                |> Array.replace (s.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9))
-                                ])
+                                                |> Array.replace
+                                                    (s.CleanedIdents.Length - 1)
+                                                    (lastIdent.Substring(0, lastIdent.Length - 9))
+                                |])
 
                         ParsedInput.GetLongIdentAt parseResults.ParseTree unresolvedIdentRange.End
                         |> Option.bind (fun longIdent ->

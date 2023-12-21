@@ -4,6 +4,7 @@
 /// Implements the offside rule and a couple of other lexical transformations.
 module internal FSharp.Compiler.LexFilter
 
+open System
 open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler
@@ -537,7 +538,7 @@ let (|TyparsCloseOp|_|) (txt: string) =
          | "$" -> Some DOLLAR
          | "%" -> Some (PERCENT_OP("%") )
          | "%%" -> Some (PERCENT_OP("%%"))
-         | "" -> None
+         | s when String.IsNullOrEmpty(s) -> None
          | s ->
              match List.ofSeq afterAngles with
               | '=' :: _
@@ -1171,6 +1172,11 @@ type LexFilterImpl (
                         | INFIX_COMPARE_OP "<^" ->
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
+                            pool.Return tokenTup
+                            
+                        | INFIX_COMPARE_OP ">:" ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, COLON, 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -1))
                             pool.Return tokenTup
                         // NOTE: this is "<@"
                         | LQUOTE ("<@ @>", false) ->

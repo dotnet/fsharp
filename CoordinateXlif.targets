@@ -1,3 +1,0 @@
-<Project>
-  <Target Name = "CoordinateXlif" DependsOnTargets="GenerateFSharpTextResources" BeforeTargets="GetXlfSources" />
-</Project>

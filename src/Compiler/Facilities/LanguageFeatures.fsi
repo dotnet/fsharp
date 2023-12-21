@@ -33,6 +33,7 @@ type LanguageFeature =
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard
+    | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
@@ -67,8 +68,13 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | WhileBang
+    | ReuseSameFieldsInStructUnions
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
+    /// RFC-1137
+    | PreferExtensionMethodOverPlainProperty
+    | WarningIndexedPropertiesGetSetSameType
+    | WarningWhenTailCallAttrOnNonRec
 
 /// LanguageVersion management
 type LanguageVersion =

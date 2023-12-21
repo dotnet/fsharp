@@ -153,7 +153,7 @@ module QuickParse =
                 walkOutsideBackticks 0
 
             match tickColsOpt with
-            | Some (prevTickTick, idxTickTick) ->
+            | Some(prevTickTick, idxTickTick) ->
                 // inside ``identifier`` (which can contain any characters!) so we try returning its location
                 let pos = idxTickTick + 1 + MagicalAdjustmentConstant
                 let ident = lineStr.Substring(prevTickTick, idxTickTick - prevTickTick + 2)
@@ -318,9 +318,9 @@ module QuickParse =
                     if nesting = 1 then
                         // all right, we are at the end of comment, jump outside
                         match callContext with
-                        | EatCommentCallContext.SkipWhiteSpaces (ident, current, throwAway) ->
+                        | EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAway) ->
                             SkipWhitespaceBeforeDotIdentifier(pos + 2, ident, current, throwAway, lastDotPos)
-                        | EatCommentCallContext.StartIdentifier (current, throwAway) ->
+                        | EatCommentCallContext.StartIdentifier(current, throwAway) ->
                             AtStartOfIdentifier(pos + 2, current, throwAway, lastDotPos)
                     else
                         // reduce level of nesting and continue

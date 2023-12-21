@@ -288,6 +288,7 @@ let IsIdentifierName (name: string) =
        && IsIdentifierFirstCharacter name[0]
        && let rec loop i =
            (i >= nameLen || (IsIdentifierPartCharacter(name[i]) && loop (i + 1))) in
+
           loop 1
 
 let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
@@ -484,7 +485,7 @@ let decompileCustomOpName =
                     | None ->
                         // Couldn't decompile, so just return the original 'opName'.
                         opName
-                    | Some (opChar, opCharName) ->
+                    | Some(opChar, opCharName) ->
                         // 'opCharName' matched the current position in 'opName'.
                         // Append the corresponding operator character to the StringBuilder
                         // and continue decompiling at the index following this instance of 'opCharName'.
@@ -569,7 +570,8 @@ let ConvertValLogicalNameToDisplayName isBaseVal name =
 let ConvertLogicalNameToDisplayLayout nonOpLayout name =
     if DoesIdentifierNeedBackticks name then
         leftL (TaggedText.tagPunctuation "``")
-        ^^ wordL (TaggedText.tagOperator name) ^^ rightL (TaggedText.tagPunctuation "``")
+        ^^ wordL (TaggedText.tagOperator name)
+        ^^ rightL (TaggedText.tagPunctuation "``")
     else
         nonOpLayout name
 
@@ -583,10 +585,12 @@ let ConvertValLogicalNameToDisplayLayout isBaseVal nonOpLayout name =
             ConvertLogicalNameToDisplayLayout nonOpLayout name
         elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             wordL (TaggedText.tagPunctuation "(")
-            ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
+            ^^ wordL (TaggedText.tagOperator nm)
+            ^^ wordL (TaggedText.tagPunctuation ")")
         else
             leftL (TaggedText.tagPunctuation "(")
-            ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
+            ^^ wordL (TaggedText.tagOperator nm)
+            ^^ rightL (TaggedText.tagPunctuation ")")
     elif name = "get_Zero" then
         ConvertLogicalNameToDisplayLayout nonOpLayout "Zero"
     else
@@ -949,13 +953,13 @@ let IllegalCharactersInTypeAndNamespaceNames =
 type ActivePatternInfo =
     | APInfo of bool * (string * range) list * range
 
-    member x.IsTotal = let (APInfo (p, _, _)) = x in p
+    member x.IsTotal = let (APInfo(p, _, _)) = x in p
 
-    member x.ActiveTags = let (APInfo (_, tags, _)) = x in List.map fst tags
+    member x.ActiveTags = let (APInfo(_, tags, _)) = x in List.map fst tags
 
-    member x.ActiveTagsWithRanges = let (APInfo (_, tags, _)) = x in tags
+    member x.ActiveTagsWithRanges = let (APInfo(_, tags, _)) = x in tags
 
-    member x.Range = let (APInfo (_, _, m)) = x in m
+    member x.Range = let (APInfo(_, _, m)) = x in m
 
 let ActivePatternInfoOfValName nm (m: range) =
     // Note: The approximate range calculations in this code assume the name is of the form "(|A|B|)" not "(|  A   |   B   |)"
@@ -1001,7 +1005,7 @@ let tryDemangleStaticStringArg (mangledText: string) =
     match splitAroundQuotationWithCount mangledText '=' 2 with
     | [| nm; v |] ->
         if v.Length >= 2 then
-            Some(nm, v[ 1 .. v.Length - 2 ].Replace("\\\\", "\\").Replace("\\\"", "\""))
+            Some(nm, v[1 .. v.Length - 2].Replace("\\\\", "\\").Replace("\\\"", "\""))
         else
             Some(nm, v)
     | _ -> None
@@ -1030,7 +1034,7 @@ let MangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
     let nonDefaultArgsText =
         nonDefaultArgs |> Array.map mangleStaticStringArg |> String.concat ","
 
-    if nonDefaultArgsText = "" then
+    if String.IsNullOrEmpty(nonDefaultArgsText) then
         typeLogicalName
     else
         typeLogicalName + "," + nonDefaultArgsText

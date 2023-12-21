@@ -25,7 +25,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("Map")>]
-    val map: mapping: ('T -> 'U) -> result: Result<'T, 'TError> -> Result<'U, 'TError>
+    val inline map: mapping: ('T -> 'U) -> result: Result<'T, 'TError> -> Result<'U, 'TError>
 
     /// <summary><c>map f inp</c> evaluates to <c>match inp with Error x -> Error (f x) | Ok v -> Ok v</c>.</summary>
     ///
@@ -42,7 +42,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("MapError")>]
-    val mapError: mapping: ('TError -> 'U) -> result: Result<'T, 'TError> -> Result<'T, 'U>
+    val inline mapError: mapping: ('TError -> 'U) -> result: Result<'T, 'TError> -> Result<'T, 'U>
 
     /// <summary><c>bind f inp</c> evaluates to <c>match inp with Error e -> Error e | Ok x -> f x</c></summary>
     ///
@@ -67,7 +67,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("Bind")>]
-    val bind: binder: ('T -> Result<'U, 'TError>) -> result: Result<'T, 'TError> -> Result<'U, 'TError>
+    val inline bind: binder: ('T -> Result<'U, 'TError>) -> result: Result<'T, 'TError> -> Result<'U, 'TError>
 
     /// <summary>Returns true if the result is Ok.</summary>
     /// <param name="result">The input result.</param>
@@ -112,7 +112,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("DefaultValue")>]
-    val defaultValue: value: 'T -> result: Result<'T, 'Error> -> 'T
+    val inline defaultValue: value: 'T -> result: Result<'T, 'Error> -> 'T
 
     /// <summary>Gets the value of the result if the result is <c>Ok</c>, otherwise evaluates <paramref name="defThunk"/> and returns the result.</summary>
     ///
@@ -129,7 +129,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("DefaultWith")>]
-    val defaultWith: defThunk: ('Error -> 'T) -> result: Result<'T, 'Error> -> 'T
+    val inline defaultWith: defThunk: ('Error -> 'T) -> result: Result<'T, 'Error> -> 'T
 
     /// <summary><c>count inp</c> evaluates to <c>match inp with Error _ -> 0 | Ok _ -> 1</c>.</summary>
     ///
@@ -144,7 +144,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("Count")>]
-    val count: result: Result<'T, 'Error> -> int
+    val inline count: result: Result<'T, 'Error> -> int
 
     /// <summary><c>fold f s inp</c> evaluates to <c>match inp with Error _ -> s | Ok x -> f s x</c>.</summary>
     ///
@@ -163,10 +163,10 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'T, 'Error, 'State> :
+    val inline fold<'T, 'Error, 'State> :
         folder: ('State -> 'T -> 'State) -> state: 'State -> result: Result<'T, 'Error> -> 'State
 
-    /// <summary><c>fold f inp s</c> evaluates to <c>match inp with Error _ -> s | Ok x -> f x s</c>.</summary>
+    /// <summary><c>foldBack f inp s</c> evaluates to <c>match inp with Error _ -> s | Ok x -> f x s</c>.</summary>
     ///
     /// <param name="folder">A function to update the state data when given a value from an result.</param>
     /// <param name="result">The input result.</param>
@@ -183,7 +183,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'T, 'Error, 'State> :
+    val inline foldBack<'T, 'Error, 'State> :
         folder: ('T -> 'State -> 'State) -> result: Result<'T, 'Error> -> state: 'State -> 'State
 
     /// <summary><c>exists p inp</c> evaluates to <c>match inp with Error _ -> false | Ok x -> p x</c>.</summary>
@@ -202,7 +202,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
-    val exists: predicate: ('T -> bool) -> result: Result<'T, 'Error> -> bool
+    val inline exists: predicate: ('T -> bool) -> result: Result<'T, 'Error> -> bool
 
     /// <summary><c>forall p inp</c> evaluates to <c>match inp with Error _ -> true | Ok x -> p x</c>.</summary>
     ///
@@ -220,7 +220,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
-    val forall: predicate: ('T -> bool) -> result: Result<'T, 'Error> -> bool
+    val inline forall: predicate: ('T -> bool) -> result: Result<'T, 'Error> -> bool
 
     /// <summary>Evaluates to true if <paramref name="result"/> is <c>Ok</c> and its value is equal to <paramref name="value"/>.</summary>
     ///
@@ -251,7 +251,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("Iterate")>]
-    val iter: action: ('T -> unit) -> result: Result<'T, 'Error> -> unit
+    val inline iter: action: ('T -> unit) -> result: Result<'T, 'Error> -> unit
 
     /// <summary>Convert the result to an array of length 0 or 1.</summary>
     ///
@@ -266,7 +266,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: result: Result<'T, 'Error> -> 'T[]
+    val inline toArray: result: Result<'T, 'Error> -> 'T[]
 
     /// <summary>Convert the result to a list of length 0 or 1.</summary>
     ///
@@ -281,7 +281,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("ToList")>]
-    val toList: result: Result<'T, 'Error> -> 'T list
+    val inline toList: result: Result<'T, 'Error> -> 'T list
 
     /// <summary>Convert the result to an Option value.</summary>
     ///
@@ -296,7 +296,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("ToOption")>]
-    val toOption: result: Result<'T, 'Error> -> 'T option
+    val inline toOption: result: Result<'T, 'Error> -> 'T option
 
     /// <summary>Convert the result to an Option value.</summary>
     ///
@@ -311,4 +311,4 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("ToValueOption")>]
-    val toValueOption: result: Result<'T, 'Error> -> 'T voption
+    val inline toValueOption: result: Result<'T, 'Error> -> 'T voption

@@ -249,14 +249,11 @@
   <data name="Enable_Background_ItemKeyStore_And_Semantic_Classification" xml:space="preserve">
     <value>Keep background symbol keys</value>
   </data>
-  <data name="Capture_Identifiers_When_Parsing" xml:space="preserve">
-    <value>Capture identifiers while parsing</value>
-  </data>
   <data name="Enable_Live_Buffers" xml:space="preserve">
-    <value>Use live (unsaved) buffers for checking (restart required)</value>
+    <value>Use live (unsaved) buffers for analysis (restart required)</value>
   </data>
   <data name="LiveBuffers" xml:space="preserve">
-    <value>Live Buffers (experimental)</value>
+    <value>Live Buffers</value>
   </data>
   <data name="AdditionalTelemetry" xml:space="preserve">
     <value>Additional performance telemetry (experimental)</value>
@@ -287,5 +284,11 @@
   </data>
   <data name="Background_analysis" xml:space="preserve">
     <value>Background analysis</value>
+  </data>
+  <data name="Remove_parens_code_fix" xml:space="preserve">
+    <value>Remove unnecessary parentheses (experimental, might affect typing performance)</value>
+  </data>
+  <data name="Show_remarks_in_Quick_Info" xml:space="preserve">
+    <value>Show remarks in Quick Info</value>
   </data>
 </root>

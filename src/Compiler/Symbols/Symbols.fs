@@ -204,7 +204,7 @@ module Impl =
 type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) = 
     member _.Contents g = denv g
 
-    static member Empty = FSharpDisplayContext(fun g -> DisplayEnv.Empty g)
+    static member Empty = FSharpDisplayContext DisplayEnv.Empty 
 
     member _.WithShortTypeNames shortNames =
          FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
@@ -331,7 +331,6 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         // TODO: the following don't currently return any interesting subtype
         | Item.ImplicitOp _
         | Item.ILField _ 
-        | Item.FakeInterfaceCtor _
         | Item.NewDef _ -> dflt()
         // These cases cover unreachable cases
         | Item.CustomOperation (_, _, None) 
@@ -1461,18 +1460,18 @@ type FSharpGenericParameterMemberConstraint(cenv, info: TraitConstraintInfo) =
                           (fun () -> Item.Trait(info)), 
                           (fun _ _ _ad -> true))
 
-    let (TTrait(tys, nm, flags, atys, retTy, _)) = info 
     member _.MemberSources = 
-        tys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
+        info.SupportTypes |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 
-    member _.MemberName = nm
+    member _.MemberName = info.MemberLogicalName
 
-    member _.MemberIsStatic = not flags.IsInstance
+    member _.MemberIsStatic = not info.MemberFlags.IsInstance
 
-    member _.MemberArgumentTypes = atys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
+    member _.MemberArgumentTypes =
+        info.CompiledObjectAndArgumentTypes |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 
     member _.MemberReturnType =
-        match retTy with 
+        match info.CompiledReturnType with 
         | None -> FSharpType(cenv, cenv.g.unit_ty) 
         | Some ty -> FSharpType(cenv, ty) 
     override x.ToString() = "<member constraint info>"
@@ -1670,7 +1669,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let methods =
                     if matchParameterNumber then
                         methodInfos
-                        |> List.filter (fun methodInfo -> not (methodInfo.NumArgs = m.NumArgs) )
+                        |> List.filter (fun methodInfo -> methodInfo.NumArgs <> m.NumArgs )
                     else methodInfos
                 methods
                 |> List.map (fun mi ->
@@ -1765,6 +1764,13 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | P p -> mkMethSym p.SetterMethod
         | E _ | M _ | C _ | V _ -> invalidOp "the value or member doesn't have an associated setter method" 
+
+    member _.IsUnionCaseTester =
+        checkIsResolved()
+        match d with
+        | P p -> p.IsUnionCaseTester
+        | M m -> m.IsUnionCaseTester
+        | E _ | C _ | V _ -> invalidOp "the value or member is not a property"
 
     member _.EventAddMethod =
         checkIsResolved()

@@ -119,3 +119,4 @@ namespace Microsoft.FSharp.Core
     type voidptr = (# "void*" #)
 
     type ilsigptr<'T> = (# "!0*" #)
+

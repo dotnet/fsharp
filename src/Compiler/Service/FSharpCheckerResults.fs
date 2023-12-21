@@ -118,19 +118,20 @@ type FSharpReferencedProject =
 
     member this.OutputFile =
         match this with
-        | FSharpReference (projectOutputFile = projectOutputFile)
-        | ILModuleReference (projectOutputFile = projectOutputFile) -> projectOutputFile
-        | PEReference (delayedReader = reader) -> reader.OutputFile
+        | FSharpReference(projectOutputFile = projectOutputFile)
+        | ILModuleReference(projectOutputFile = projectOutputFile) -> projectOutputFile
+        | PEReference(delayedReader = reader) -> reader.OutputFile
 
     override this.Equals(o) =
         match o with
         | :? FSharpReferencedProject as o ->
             match this, o with
-            | FSharpReference (projectOutputFile1, options1), FSharpReference (projectOutputFile2, options2) ->
-                projectOutputFile1 = projectOutputFile2 && options1 = options2
-            | PEReference (getStamp1, reader1), PEReference (getStamp2, reader2) ->
+            | FSharpReference(projectOutputFile1, options1), FSharpReference(projectOutputFile2, options2) ->
+                projectOutputFile1 = projectOutputFile2
+                && FSharpProjectOptions.AreSameForChecking(options1, options2)
+            | PEReference(getStamp1, reader1), PEReference(getStamp2, reader2) ->
                 reader1.OutputFile = reader2.OutputFile && (getStamp1 ()) = (getStamp2 ())
-            | ILModuleReference (projectOutputFile1, getStamp1, _), ILModuleReference (projectOutputFile2, getStamp2, _) ->
+            | ILModuleReference(projectOutputFile1, getStamp1, _), ILModuleReference(projectOutputFile2, getStamp2, _) ->
                 projectOutputFile1 = projectOutputFile2 && (getStamp1 ()) = (getStamp2 ())
             | _ -> false
         | _ -> false
@@ -155,7 +156,7 @@ and FSharpProjectOptions =
 
     static member UseSameProject(options1, options2) =
         match options1.ProjectId, options2.ProjectId with
-        | Some (projectId1), Some (projectId2) when
+        | Some(projectId1), Some(projectId2) when
             not (String.IsNullOrWhiteSpace(projectId1))
             && not (String.IsNullOrWhiteSpace(projectId2))
             ->
@@ -174,14 +175,7 @@ and FSharpProjectOptions =
             && options1.UnresolvedReferences = options2.UnresolvedReferences
             && options1.OriginalLoadReferences = options2.OriginalLoadReferences
             && options1.ReferencedProjects.Length = options2.ReferencedProjects.Length
-            && (options1.ReferencedProjects, options2.ReferencedProjects)
-               ||> Array.forall2 (fun r1 r2 ->
-                   match r1, r2 with
-                   | FSharpReferencedProject.FSharpReference (n1, a), FSharpReferencedProject.FSharpReference (n2, b) ->
-                       n1 = n2 && FSharpProjectOptions.AreSameForChecking(a, b)
-                   | FSharpReferencedProject.PEReference (getStamp1, reader1), FSharpReferencedProject.PEReference (getStamp2, reader2) ->
-                       reader1.OutputFile = reader2.OutputFile && (getStamp1 ()) = (getStamp2 ())
-                   | _ -> false)
+            && options1.ReferencedProjects = options2.ReferencedProjects
             && options1.LoadTime = options2.LoadTime
 
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
@@ -200,9 +194,7 @@ module internal FSharpCheckerResultsSettings =
     // Look for DLLs in the location of the service DLL first.
     let defaultFSharpBinariesDir =
         FSharpEnvironment
-            .BinFolderOfDefaultFSharpCompiler(
-                Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))
-            )
+            .BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location)))
             .Value
 
 [<Sealed>]
@@ -378,7 +370,7 @@ type internal TypeCheckInfo
         |> ResizeArray.iter (fun (mPossible, env, ad) ->
             if rangeContainsPos mPossible cursorPos then
                 match bestSoFar with
-                | Some (bestm, _, _) ->
+                | Some(bestm, _, _) ->
                     if rangeContainsRange bestm mPossible then
                         bestSoFar <- Some(mPossible, env, ad)
                 | None -> bestSoFar <- Some(mPossible, env, ad))
@@ -399,12 +391,12 @@ type internal TypeCheckInfo
             if rangeBeforePos mPossible cursorPos && not (posEq mPossible.End cursorPos) then
                 let contained =
                     match mostDeeplyNestedEnclosingScope with
-                    | Some (bestm, _, _) -> rangeContainsRange bestm mPossible
+                    | Some(bestm, _, _) -> rangeContainsRange bestm mPossible
                     | None -> true
 
                 if contained then
                     match bestAlmostIncludedSoFar with
-                    | Some (mRight: range, _, _) ->
+                    | Some(mRight: range, _, _) ->
                         if
                             posGt mPossible.End mRight.End
                             || (posEq mPossible.End mRight.End && posGt mPossible.Start mRight.Start)
@@ -414,14 +406,14 @@ type internal TypeCheckInfo
 
         let resEnv =
             match bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with
-            | Some (_, env, ad), None -> env, ad
-            | Some (_, almostIncludedEnv, ad), Some (_, mostDeeplyNestedEnv, _) when
+            | Some(_, env, ad), None -> env, ad
+            | Some(_, almostIncludedEnv, ad), Some(_, mostDeeplyNestedEnv, _) when
                 almostIncludedEnv.eFieldLabels.Count >= mostDeeplyNestedEnv.eFieldLabels.Count
                 ->
                 almostIncludedEnv, ad
             | _ ->
                 match mostDeeplyNestedEnclosingScope with
-                | Some (_, env, ad) -> env, ad
+                | Some(_, env, ad) -> env, ad
                 | None -> sFallback, AccessibleFromSomeFSharpCode
 
         let pm = mkRange mainInputFileName cursorPos cursorPos
@@ -491,7 +483,9 @@ type internal TypeCheckInfo
         //
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR (Item.Types (_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
+        | CNR(_, ItemOccurence.InvalidUse, _, _, _, _) :: _, _ -> NameResResult.Empty
+
+        | CNR(Item.Types(_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
                 ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
@@ -500,7 +494,7 @@ type internal TypeCheckInfo
             ReturnItemsOfType items g denv m filterCtors
 
         // Exact resolution via 'T.$
-        | CNR (Item.TypeVar (_, tp), _, denv, nenv, ad, m) :: _, Some _ ->
+        | CNR(Item.TypeVar(_, tp), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
                 ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
@@ -515,7 +509,7 @@ type internal TypeCheckInfo
         //   let varA = if b then 0 else varA.
         // then the expression typings get confused (thinking 'varA:int'), so we use name resolution even for usual values.
 
-        | CNR (Item.Value (vref), occurence, denv, nenv, ad, m) :: _, Some _ ->
+        | CNR(Item.Value(vref), occurence, denv, nenv, ad, m) :: _, Some _ ->
             if occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern then
                 // Return empty list to stop further lookup - for value declarations
                 NameResResult.Cancel(denv, m)
@@ -526,7 +520,7 @@ type internal TypeCheckInfo
                 // patch accessibility domain to remove protected members if accessing NormalVal
                 let ad =
                     match vref.BaseOrThisInfo, ad with
-                    | ValBaseOrThisInfo.NormalVal, AccessibleFrom (paths, Some tcref) ->
+                    | ValBaseOrThisInfo.NormalVal, AccessibleFrom(paths, Some tcref) ->
                         let thisTy = generalizedTyconRef g tcref
                         // check that type of value is the same or subtype of tcref
                         // yes - allow access to protected members
@@ -545,7 +539,7 @@ type internal TypeCheckInfo
                 ReturnItemsOfType items g denv m filterCtors
 
         // No residue, so the items are the full resolution of the name
-        | CNR (_, _, denv, _, _, m) :: _, None ->
+        | CNR(_, _, denv, _, _, m) :: _, None ->
             let items =
                 cnrs
                 |> List.map (fun cnr -> cnr.ItemWithInst)
@@ -553,7 +547,7 @@ type internal TypeCheckInfo
                 // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
                 |> List.filter (fun item ->
                     match item.Item with
-                    | Item.CustomOperation (CustomOperations.Into, _, _) -> false
+                    | Item.CustomOperation(CustomOperations.Into, _, _) -> false
                     | _ -> true)
 
             ReturnItemsOfType items g denv m filterCtors
@@ -568,8 +562,8 @@ type internal TypeCheckInfo
             |> List.rev
 
         match items, membersByResidue with
-        | CNR (Item.Types (_, ty :: _), _, _, _, _, _) :: _, Some _ -> Some ty
-        | CNR (Item.Value (vref), occurence, _, _, _, _) :: _, Some _ ->
+        | CNR(Item.Types(_, ty :: _), _, _, _, _, _) :: _, Some _ -> Some ty
+        | CNR(Item.Value(vref), occurence, _, _, _, _) :: _, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then
                 None
             else
@@ -582,7 +576,7 @@ type internal TypeCheckInfo
             match meth.GetParamDatas(amap, m, meth.FormalMethodInst) with
             | x :: _ ->
                 x
-                |> List.choose (fun (ParamData (_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) ->
+                |> List.choose (fun (ParamData(_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) ->
                     match name with
                     | Some id -> Some(Item.OtherName(Some id, ty, None, Some(ArgumentContainer.Method meth), id.idRange))
                     | None -> None)
@@ -596,7 +590,7 @@ type internal TypeCheckInfo
 
         let result =
             match cnrs with
-            | CNR (Item.CtorGroup (_, (ctor :: _ as ctors)), _, denv, nenv, ad, m) :: _ ->
+            | CNR(Item.CtorGroup(_, (ctor :: _ as ctors)), _, denv, nenv, ad, m) :: _ ->
                 let props =
                     ResolveCompletionsInType
                         ncenv
@@ -610,7 +604,7 @@ type internal TypeCheckInfo
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
                 Some(denv, m, items)
-            | CNR (Item.MethodGroup (_, methods, _), _, denv, nenv, ad, m) :: _ ->
+            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
                 let props =
                     methods
                     |> List.collect (fun meth ->
@@ -624,7 +618,7 @@ type internal TypeCheckInfo
 
         match result with
         | None -> NameResResult.Empty
-        | Some (denv, m, items) ->
+        | Some(denv, m, items) ->
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs
 
@@ -680,7 +674,7 @@ type internal TypeCheckInfo
                             dive ty denv ad m rest false wasPathEmpty
             else
                 match tryDestAnonRecdTy denv.g ty with
-                | ValueSome (anonInfo, tys) ->
+                | ValueSome(anonInfo, tys) ->
                     match plid with
                     | [] ->
                         let items =
@@ -701,7 +695,7 @@ type internal TypeCheckInfo
             |> snd
             |> Array.tryFind (fun (_, _, _, rq) -> posEq identRange.Start rq.Start)
         with
-        | Some (ty, nenv, ad, m) -> dive ty nenv.DisplayEnv ad m plid false plid.IsEmpty
+        | Some(ty, nenv, ad, m) -> dive ty nenv.DisplayEnv ad m plid false plid.IsEmpty
         | _ -> None
 
     /// Looks at the exact expression types at the position to the left of the
@@ -721,7 +715,7 @@ type internal TypeCheckInfo
                 let input = parseResults.ParseTree
 
                 match ParsedInput.GetRangeOfExprLeftOfDot(endOfExprPos, input) with // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
-                | Some (exprRange) ->
+                | Some(exprRange) ->
                     // We have an up-to-date sync parse, and know the exact range of the prior expression.
                     // The quals all already have the same ending position, so find one with a matching starting position, if it exists.
                     // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
@@ -790,14 +784,14 @@ type internal TypeCheckInfo
     let IsInheritsCompletionCandidate item =
         match item with
         | Item.ModuleOrNamespaces _ -> true
-        | Item.Types (_, ty :: _) when isClassTy g ty && not (isSealedTy g ty) -> true
+        | Item.Types(_, ty :: _) when isClassTy g ty && not (isSealedTy g ty) -> true
         | _ -> false
 
     /// Is the item suitable for completion at "interface $"
     let IsInterfaceCompletionCandidate item =
         match item with
         | Item.ModuleOrNamespaces _ -> true
-        | Item.Types (_, ty :: _) when isInterfaceTy g ty -> true
+        | Item.Types(_, ty :: _) when isInterfaceTy g ty -> true
         | _ -> false
 
     /// Is the item suitable for completion in a pattern
@@ -836,7 +830,7 @@ type internal TypeCheckInfo
 
             match item with
             | Item.Types _ -> nameMatchesResidue n1
-            | Item.CtorGroup (_, meths) ->
+            | Item.CtorGroup(_, meths) ->
                 nameMatchesResidue n1
                 || meths
                    |> List.exists (fun meth ->
@@ -899,10 +893,9 @@ type internal TypeCheckInfo
     let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
         let kind =
             match item.Item with
-            | Item.FakeInterfaceCtor _
             | Item.DelegateCtor _
             | Item.CtorGroup _ -> CompletionItemKind.Method false
-            | Item.MethodGroup (_, minfos, _) ->
+            | Item.MethodGroup(_, minfos, _) ->
                 match minfos with
                 | [] -> CompletionItemKind.Method false
                 | minfo :: _ -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -988,7 +981,7 @@ type internal TypeCheckInfo
     /// Suggest name based on type
     let SuggestNameBasedOnType (g: TcGlobals) pos ty =
         match stripTyparEqns ty with
-        | TType_app (tyconRef = tcref) when tcref.IsTypeAbbrev && (tcref.IsLocalRef || not (ccuEq g.fslibCcu tcref.nlr.Ccu)) ->
+        | TType_app(tyconRef = tcref) when tcref.IsTypeAbbrev && (tcref.IsLocalRef || not (ccuEq g.fslibCcu tcref.nlr.Ccu)) ->
             // Respect user-defined aliases
             CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
         | ty ->
@@ -1056,7 +1049,7 @@ type internal TypeCheckInfo
         sResolutions.CapturedNameResolutions
         |> ResizeArray.tryPick (fun r ->
             match r.Item with
-            | Item.Types (_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
+            | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
                 let superTy =
                     (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
 
@@ -1088,7 +1081,7 @@ type internal TypeCheckInfo
         sResolutions.CapturedNameResolutions
         |> ResizeArray.tryPick (fun r ->
             match r.Item with
-            | Item.UnionCase (uci, _) when equals r.Range caseIdRange ->
+            | Item.UnionCase(uci, _) when equals r.Range caseIdRange ->
                 uci.UnionCase.RecdFields
                 |> List.indexed
                 |> List.choose (fun (index, field) ->
@@ -1111,7 +1104,7 @@ type internal TypeCheckInfo
         // so let's show options for both.
         let fields indexOrName isTheOnlyField (uci: UnionCaseInfo) =
             match indexOrName, isTheOnlyField with
-            | Choice1Of2 (Some 0), true ->
+            | Choice1Of2(Some 0), true ->
                 uci.UnionCase.RecdFields
                 |> List.mapi (fun index _ -> Item.UnionCaseField(uci, index) |> ItemWithNoInst |> DefaultCompletionItem)
             | _ -> []
@@ -1119,7 +1112,7 @@ type internal TypeCheckInfo
         sResolutions.CapturedNameResolutions
         |> ResizeArray.tryPick (fun r ->
             match r.Item with
-            | Item.UnionCase (uci, _) when equals r.Range caseIdRange ->
+            | Item.UnionCase(uci, _) when equals r.Range caseIdRange ->
                 let list =
                     declaredItems
                     |> Option.map p13
@@ -1163,7 +1156,7 @@ type internal TypeCheckInfo
                 |> List.filter (fun item ->
                     match item.Item with
                     | Item.ModuleOrNamespaces _ -> true
-                    | Item.Types (_, ty :: _) -> isRecdTy g ty
+                    | Item.Types(_, ty :: _) -> isRecdTy g ty
                     | _ -> false)
                 |> List.append fields
 
@@ -1223,8 +1216,8 @@ type internal TypeCheckInfo
             let plid, exactMatchResidueOpt =
                 match origLongIdentOpt, residueOpt with
                 | None, _ -> [], None
-                | Some (origLongIdent), Some _ -> origLongIdent, None
-                | Some (origLongIdent), None ->
+                | Some(origLongIdent), Some _ -> origLongIdent, None
+                | Some(origLongIdent), None ->
                     Debug.Assert(not (isNil origLongIdent), "origLongIdent is empty")
                     // note: as above, this happens when we are called for "precise" resolution - (F1 keyword, data tip etc..)
                     let plid, residue = List.frontAndBack origLongIdent
@@ -1253,8 +1246,8 @@ type internal TypeCheckInfo
                     | _ -> ValueNone
 
             match nameResItems with
-            | NameResResult.Cancel (denv, m) -> Some([], denv, m)
-            | NameResResult.Members (FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) ->
+            | NameResResult.Cancel(denv, m) -> Some([], denv, m)
+            | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) ->
                 // lookup based on name resolution results successful
                 Some(items |> List.map (CompletionItem (getType ()) ValueNone), denv, m)
             | _ ->
@@ -1281,7 +1274,7 @@ type internal TypeCheckInfo
                                 )
 
                             match leftOfDot with
-                            | Some (pos, _) -> GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors), true
+                            | Some(pos, _) -> GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors), true
                             | None ->
                                 // Can get here in a case like: if "f xxx yyy" is legal, and we do "f xxx y"
                                 // We have no interest in expression typings, those are only useful for dot-completion.  We want to fallback
@@ -1289,7 +1282,7 @@ type internal TypeCheckInfo
                                 ExprTypingsResult.None, false
 
                     match qualItems, thereIsADotInvolved with
-                    | ExprTypingsResult.Some (FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty), _ when
+                    | ExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty), _ when
                         // Initially we only use the expression typings when looking up, e.g. (expr).Nam or (expr).Name1.Nam
                         // These come through as an empty plid and residue "". Otherwise we try an environment lookup
                         // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
@@ -1319,7 +1312,7 @@ type internal TypeCheckInfo
                             match nameResItems, (envItems, denv, m), qualItems with
 
                             // First, use unfiltered name resolution items, if they're not empty
-                            | NameResResult.Members (items, denv, m), _, _ when not (isNil items) ->
+                            | NameResResult.Members(items, denv, m), _, _ when not (isNil items) ->
                                 // lookup based on name resolution results successful
                                 ValueSome(items |> List.map (CompletionItem (getType ()) ValueNone), denv, m)
 
@@ -1330,7 +1323,7 @@ type internal TypeCheckInfo
                                 ValueSome(items |> List.map (CompletionItem (getType ()) ValueNone), denv, m)
 
                             // Try again with the qualItems
-                            | _, _, ExprTypingsResult.Some (FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
+                            | _, _, ExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
                                 ValueSome(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
 
                             | _ -> ValueNone
@@ -1366,7 +1359,7 @@ type internal TypeCheckInfo
                             | _ -> ValueNone // do not return unresolved items after dot
 
                         match envResult, globalResult with
-                        | ValueSome (items, denv, m), ValueSome (gItems, _, _) -> Some(items @ gItems, denv, m)
+                        | ValueSome(items, denv, m), ValueSome(gItems, _, _) -> Some(items @ gItems, denv, m)
                         | ValueSome x, ValueNone -> Some x
                         | ValueNone, ValueSome y -> Some y
                         | ValueNone, ValueNone -> None
@@ -1389,7 +1382,7 @@ type internal TypeCheckInfo
             (fieldItems, nenv.DisplayEnv, m) |> toCompletionItems
 
         match envItems with
-        | Some (items, denv, m) -> Some(fieldCompletionItems @ items, denv, m)
+        | Some(items, denv, m) -> Some(fieldCompletionItems @ items, denv, m)
         | _ -> Some(fieldsResult)
 
     /// Get the auto-complete items at a particular location.
@@ -1438,7 +1431,7 @@ type internal TypeCheckInfo
             // If the completion context we have computed higher up the stack is for the same position,
             // reuse it, otherwise recompute
             match completionContextAtPos with
-            | Some (contextForPos, context) when contextForPos = pos -> context
+            | Some(contextForPos, context) when contextForPos = pos -> context
             | _ ->
                 parseResultsOpt
                 |> Option.map (fun x -> x.ParseTree)
@@ -1450,19 +1443,19 @@ type internal TypeCheckInfo
             | Some CompletionContext.Invalid -> None
 
             // Completion at 'inherit C(...)"
-            | Some (CompletionContext.Inherit (InheritanceContext.Class, (plid, _))) ->
+            | Some(CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy getItem None (getItem >> IsInheritsCompletionCandidate)
                 |> Option.map toCompletionItems
 
             // Completion at 'interface ..."
-            | Some (CompletionContext.Inherit (InheritanceContext.Interface, (plid, _))) ->
+            | Some(CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy getItem None (getItem >> IsInterfaceCompletionCandidate)
                 |> Option.map toCompletionItems
 
             // Completion at 'implement ..."
-            | Some (CompletionContext.Inherit (InheritanceContext.Unknown, (plid, _))) ->
+            | Some(CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy
                     getItem
@@ -1472,7 +1465,7 @@ type internal TypeCheckInfo
                 |> Option.map toCompletionItems
 
             // Completion at ' { XXX = ... } "
-            | Some (CompletionContext.RecordField (RecordContext.New ((plid, _), isFirstField))) ->
+            | Some(CompletionContext.RecordField(RecordContext.New((plid, _), isFirstField))) ->
                 if isFirstField then
                     let cursorPos = mkPos line loc
 
@@ -1518,7 +1511,7 @@ type internal TypeCheckInfo
                     | result -> Some(result)
 
             // Completion at '{ ... }'
-            | Some (CompletionContext.RecordField RecordContext.Empty) ->
+            | Some(CompletionContext.RecordField RecordContext.Empty) ->
                 let cursorPos = mkPos line loc
 
                 let envItems =
@@ -1540,30 +1533,30 @@ type internal TypeCheckInfo
                 GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos [] envItems
 
             // Completion at ' { XXX = ... with ... } "
-            | Some (CompletionContext.RecordField (RecordContext.CopyOnUpdate (identRange, (plid, _)))) ->
+            | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(identRange, (plid, _)))) ->
                 match GetRecdFieldsForCopyAndUpdateExpr(identRange, plid) with
                 | None ->
                     Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false))
                     |> Option.map toCompletionItems
-                | Some (items, denv, m) -> Some(List.map ItemWithNoInst items, denv, m) |> Option.map toCompletionItems
+                | Some(items, denv, m) -> Some(List.map ItemWithNoInst items, denv, m) |> Option.map toCompletionItems
 
             // Completion at ' { XXX = ... with ... } "
-            | Some (CompletionContext.RecordField (RecordContext.Constructor (typeName))) ->
+            | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
                 GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false)
                 |> toCompletionItems
                 |> Some
 
             // No completion at '...: string'
-            | Some (CompletionContext.RecordField (RecordContext.Declaration true)) -> None
+            | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
 
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
-            | Some (CompletionContext.ParameterList (endPos, fields)) ->
+            | Some(CompletionContext.ParameterList(endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
                 match results with
-                | NameResResult.Members (items, denv, m) ->
+                | NameResResult.Members(items, denv, m) ->
                     let filtered =
                         items
                         |> RemoveDuplicateItems g
@@ -1581,10 +1574,10 @@ type internal TypeCheckInfo
 
                     match declaredItems with
                     | None -> Some(toCompletionItems (items, denv, m))
-                    | Some (declItems, declaredDisplayEnv, declaredRange) -> Some(filtered @ declItems, declaredDisplayEnv, declaredRange)
+                    | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(filtered @ declItems, declaredDisplayEnv, declaredRange)
                 | _ -> declaredItems
 
-            | Some (CompletionContext.AttributeApplication) ->
+            | Some(CompletionContext.AttributeApplication) ->
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.map (fun (items, denv, m) ->
                     items
@@ -1596,7 +1589,7 @@ type internal TypeCheckInfo
                     denv,
                     m)
 
-            | Some (CompletionContext.OpenDeclaration isOpenType) ->
+            | Some(CompletionContext.OpenDeclaration isOpenType) ->
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.map (fun (items, denv, m) ->
                     items
@@ -1615,21 +1608,21 @@ type internal TypeCheckInfo
             // Completion at 'type Long = int6...' or 'type SomeUnion = Abc...'
             | Some CompletionContext.TypeAbbreviationOrSingleCaseUnion
             // Completion at 'Field1: ...'
-            | Some (CompletionContext.RecordField (RecordContext.Declaration false)) ->
+            | Some(CompletionContext.RecordField(RecordContext.Declaration false)) ->
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
 
-            | Some (CompletionContext.Pattern patternContext) ->
+            | Some(CompletionContext.Pattern patternContext) ->
                 match patternContext with
-                | PatternContext.UnionCaseFieldIdentifier (referencedFields, caseIdRange) ->
+                | PatternContext.UnionCaseFieldIdentifier(referencedFields, caseIdRange) ->
                     GetUnionCaseFields caseIdRange referencedFields
                     |> Option.map (fun completions ->
                         let (nenv, _ad), m = GetBestEnvForPos pos
                         completions, nenv.DisplayEnv, m)
-                | PatternContext.PositionalUnionCaseField (fieldIndex, isTheOnlyField, caseIdRange) ->
+                | PatternContext.PositionalUnionCaseField(fieldIndex, isTheOnlyField, caseIdRange) ->
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
                     |> GetCompletionsForUnionCaseField pos (Choice1Of2 fieldIndex) caseIdRange isTheOnlyField
-                | PatternContext.NamedUnionCaseField (fieldName, caseIdRange) ->
+                | PatternContext.NamedUnionCaseField(fieldName, caseIdRange) ->
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
                     |> GetCompletionsForUnionCaseField pos (Choice2Of2 fieldName) caseIdRange false
                 | PatternContext.RecordFieldIdentifier referencedFields ->
@@ -1639,7 +1632,7 @@ type internal TypeCheckInfo
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
                     |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
 
-            | Some (CompletionContext.MethodOverride enclosingTypeNameRange) -> GetOverridableMethods pos enclosingTypeNameRange
+            | Some(CompletionContext.MethodOverride enclosingTypeNameRange) -> GetOverridableMethods pos enclosingTypeNameRange
 
             // Other completions
             | cc ->
@@ -1730,7 +1723,7 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None -> DeclarationListInfo.Empty
-                | Some (items, denv, ctx, m) ->
+                | Some(items, denv, ctx, m) ->
                     let items =
                         if isSigFile then
                             items |> List.filter (fun x -> IsValidSignatureFileItem x.Item)
@@ -1790,7 +1783,7 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None -> List.Empty
-                | Some (items, denv, _, m) ->
+                | Some(items, denv, _, m) ->
                     let items =
                         if isSigFile then
                             items |> List.filter (fun x -> IsValidSignatureFileItem x.Item)
@@ -1808,12 +1801,11 @@ type internal TypeCheckInfo
                         |> List.sortBy (fun d ->
                             let n =
                                 match d.Item with
-                                | Item.Types (_, AbbrevOrAppTy tcref :: _) -> 1 + tcref.TyparsNoRange.Length
+                                | Item.Types(_, AbbrevOrAppTy tcref :: _) -> 1 + tcref.TyparsNoRange.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                                | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
-                                | Item.DelegateCtor (AbbrevOrAppTy tcref) -> 1000 + tcref.TyparsNoRange.Length
+                                | Item.DelegateCtor(AbbrevOrAppTy tcref) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                                | Item.CtorGroup (_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
+                                | Item.CtorGroup(_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
                                 | _ -> 0
 
                             (d.Item.DisplayName, n))
@@ -1827,12 +1819,11 @@ type internal TypeCheckInfo
                         items
                         |> List.groupBy (fun d ->
                             match d.Item with
-                            | Item.Types (_, AbbrevOrAppTy tcref :: _)
+                            | Item.Types(_, AbbrevOrAppTy tcref :: _)
                             | Item.ExnCase tcref -> tcref.LogicalName
-                            | Item.UnqualifiedType (tcref :: _)
-                            | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
-                            | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.CompiledName
-                            | Item.CtorGroup (_, cinfo :: _) -> cinfo.ApparentEnclosingTyconRef.CompiledName
+                            | Item.UnqualifiedType(tcref :: _)
+                            | Item.DelegateCtor(AbbrevOrAppTy tcref) -> tcref.CompiledName
+                            | Item.CtorGroup(_, cinfo :: _) -> cinfo.ApparentEnclosingTyconRef.CompiledName
                             | _ -> d.Item.DisplayName)
 
                     // Filter out operators (and list)
@@ -1841,7 +1832,7 @@ type internal TypeCheckInfo
                         let isOpItem (nm, item: CompletionItem list) =
                             match item |> List.map (fun x -> x.Item) with
                             | [ Item.Value _ ]
-                            | [ Item.MethodGroup (_, [ _ ], _) ] -> IsOperatorDisplayName nm
+                            | [ Item.MethodGroup(_, [ _ ], _) ] -> IsOperatorDisplayName nm
                             | [ Item.UnionCase _ ] -> IsOperatorDisplayName nm
                             | _ -> false
 
@@ -1888,7 +1879,7 @@ type internal TypeCheckInfo
             let matches =
                 match loadClosure with
                 | None -> []
-                | Some (loadClosure) ->
+                | Some(loadClosure) ->
                     loadClosure.References
                     |> List.collect snd
                     |> List.filter (fun ar -> isPosMatch (pos, ar.originalReference))
@@ -1908,16 +1899,16 @@ type internal TypeCheckInfo
                 let matches =
                     match loadClosure with
                     | None -> None
-                    | Some (loadClosure) ->
+                    | Some(loadClosure) ->
                         loadClosure.PackageReferences
                         |> Array.tryFind (fun (m, _) -> rangeContainsPos m pos)
 
                 match matches with
                 | None -> emptyToolTip
-                | Some (_, lines) ->
+                | Some(_, lines) ->
                     let lines =
                         lines
-                        |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
+                        |> List.filter (fun line -> not (line.StartsWithOrdinal("//")) && not (String.IsNullOrEmpty line))
 
                     ToolTipText.ToolTipText
                         [
@@ -1973,13 +1964,32 @@ type internal TypeCheckInfo
 
                     match declItemsOpt with
                     | None -> emptyToolTip
-                    | Some (items, denv, _, m) ->
-                        ToolTipText(
-                            items
-                            |> List.map (fun x ->
-                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
-                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
-                        ))
+                    | Some(items, denv, _, m) ->
+                        match items with
+                        | [ { Kind = CompletionItemKind.Property } as prop
+                            { Kind = CompletionItemKind.Field }
+                            { Kind = CompletionItemKind.Field } ] ->
+                            let symbol = FSharpSymbol.Create(cenv, prop.Item)
+
+                            let tt =
+                                FormatStructuredDescriptionOfItem
+                                    false
+                                    infoReader
+                                    tcAccessRights
+                                    m
+                                    denv
+                                    prop.ItemWithInst
+                                    (Some symbol)
+                                    width
+
+                            ToolTipText([ tt ])
+                        | _ ->
+                            ToolTipText(
+                                items
+                                |> List.map (fun x ->
+                                    let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                    FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
+                            ))
                 (fun err ->
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
                     ToolTipText [ ToolTipElement.CompositionError err ])
@@ -2016,7 +2026,7 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None -> None
-                | Some (items: CompletionItem list, _, _, _) ->
+                | Some(items: CompletionItem list, _, _, _) ->
                     match items with
                     | [] -> None
                     | [ item ] -> GetF1Keyword g item.Item
@@ -2062,7 +2072,7 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None -> MethodGroup("", [||])
-                | Some (items, denv, _, m) ->
+                | Some(items, denv, _, m) ->
                     // GetDeclItemsForNamesAtPosition returns Items.Types and Item.CtorGroup for `new T(|)`,
                     // the Item.Types is not needed here as it duplicates (at best) parameterless ctor.
                     let ctors =
@@ -2103,8 +2113,8 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None
-                | Some ([], _, _, _) -> None
-                | Some (items, denv, _, m) ->
+                | Some([], _, _, _) -> None
+                | Some(items, denv, _, m) ->
                     let allItems =
                         items
                         |> List.collect (fun item -> SelectMethodGroupItems2 g m item.ItemWithInst)
@@ -2139,8 +2149,8 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None
-                | Some ([], _, _, _) -> FindDeclResult.DeclNotFound(FindDeclFailureReason.Unknown "")
-                | Some (item :: _, _, _, _) ->
+                | Some([], _, _, _) -> FindDeclResult.DeclNotFound(FindDeclFailureReason.Unknown "")
+                | Some(item :: _, _, _, _) ->
                     let getTypeVarNames (ilinfo: ILMethInfo) =
                         let classTypeParams =
                             ilinfo.DeclaringTyconRef.ILTyconRawMetadata.GenericParams
@@ -2153,7 +2163,7 @@ type internal TypeCheckInfo
                     // references from nuget packages are not labelled as external.
                     let result =
                         match item.Item with
-                        | Item.CtorGroup (_, ILMeth (_, ilinfo, _) :: _) ->
+                        | Item.CtorGroup(_, ILMeth(_, ilinfo, _) :: _) ->
                             match ilinfo.MetadataScope with
                             | ILScopeRef.Assembly assemblyRef ->
                                 let typeVarNames = getTypeVarNames ilinfo
@@ -2166,7 +2176,7 @@ type internal TypeCheckInfo
                                     FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.MethodGroup (name, ILMeth (_, ilinfo, _) :: _, _) ->
+                        | Item.MethodGroup(name, ILMeth(_, ilinfo, _) :: _, _) ->
                             match ilinfo.MetadataScope with
                             | ILScopeRef.Assembly assemblyRef ->
                                 let typeVarNames = getTypeVarNames ilinfo
@@ -2184,7 +2194,7 @@ type internal TypeCheckInfo
                                     FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.Property (name, ILProp propInfo :: _, _) ->
+                        | Item.Property(name, ILProp propInfo :: _, _) ->
                             let methInfo =
                                 if propInfo.HasGetter then Some propInfo.GetterMethod
                                 elif propInfo.HasSetter then Some propInfo.SetterMethod
@@ -2201,7 +2211,7 @@ type internal TypeCheckInfo
                                 | _ -> None
                             | None -> None
 
-                        | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
+                        | Item.ILField(ILFieldInfo(typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                             match typeInfo.ILScopeRef with
                             | ILScopeRef.Assembly assemblyRef ->
                                 let externalSym =
@@ -2210,7 +2220,7 @@ type internal TypeCheckInfo
                                 Some(FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
+                        | Item.Event(ILEvent(ILEventInfo(typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                             match typeInfo.ILScopeRef with
                             | ILScopeRef.Assembly assemblyRef ->
                                 let externalSym =
@@ -2219,14 +2229,14 @@ type internal TypeCheckInfo
                                 Some(FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.Types (_, ty :: _) ->
+                        | Item.Types(_, ty :: _) ->
                             match stripTyparEqns ty with
-                            | TType_app (tr, _, _) ->
+                            | TType_app(tr, _, _) ->
                                 if tr.IsLocalRef then
                                     None
                                 else
                                     match tr.TypeReprInfo, tr.PublicPath with
-                                    | TILObjectRepr (TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
+                                    | TILObjectRepr(TILObjectReprData(ILScopeRef.Assembly assemblyRef, _, _)), Some(PubPath parts) ->
                                         let fullName = parts |> String.concat "."
                                         Some(FindDeclResult.ExternalDecl(assemblyRef.Name, FindDeclExternalSymbol.Type fullName))
                                     | _ -> None
@@ -2241,7 +2251,7 @@ type internal TypeCheckInfo
                         | Some itemRange ->
                             let projectDir =
                                 FileSystem.GetDirectoryNameShim(
-                                    if projectFileName = "" then
+                                    if String.IsNullOrEmpty(projectFileName) then
                                         mainInputFileName
                                     else
                                         projectFileName
@@ -2253,11 +2263,11 @@ type internal TypeCheckInfo
                             match item.Item with
 #if !NO_TYPEPROVIDERS
                             // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
-                            | Item.CtorGroup (name, ProvidedMeth _ :: _)
-                            | Item.MethodGroup (name, ProvidedMeth _ :: _, _)
-                            | Item.Property (name, ProvidedProp _ :: _, _) -> FindDeclFailureReason.ProvidedMember name
-                            | Item.Event (ProvidedEvent _ as e) -> FindDeclFailureReason.ProvidedMember e.EventName
-                            | Item.ILField (ProvidedField _ as f) -> FindDeclFailureReason.ProvidedMember f.FieldName
+                            | Item.CtorGroup(name, ProvidedMeth _ :: _)
+                            | Item.MethodGroup(name, ProvidedMeth _ :: _, _)
+                            | Item.Property(name, ProvidedProp _ :: _, _) -> FindDeclFailureReason.ProvidedMember name
+                            | Item.Event(ProvidedEvent _ as e) -> FindDeclFailureReason.ProvidedMember e.EventName
+                            | Item.ILField(ProvidedField _ as f) -> FindDeclFailureReason.ProvidedMember f.FieldName
                             | ItemIsProvidedType g tcref -> FindDeclFailureReason.ProvidedType tcref.DisplayName
 #endif
                             | _ -> FindDeclFailureReason.Unknown ""
@@ -2287,8 +2297,8 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None
-                | Some ([], _, _, _) -> None
-                | Some (item :: _, denv, _, m) ->
+                | Some([], _, _, _) -> None
+                | Some(item :: _, denv, _, m) ->
                     let symbol = FSharpSymbol.Create(cenv, item.Item)
                     Some(symbol, item.ItemWithInst, denv, m))
             (fun msg ->
@@ -2316,7 +2326,7 @@ type internal TypeCheckInfo
 
                 match declItemsOpt with
                 | None -> List.empty
-                | Some (items, denv, _, m) ->
+                | Some(items, denv, _, m) ->
                     items
                     |> List.map (fun item ->
                         let symbol = FSharpSymbol.Create(cenv, item.Item)
@@ -2455,7 +2465,7 @@ module internal ParseAndCheckFile =
             //    the formatting of types in it may change (for example, 'a to obj)
             //
             // So we'll create a diagnostic later, but cache the FormatCore message now
-            diagnostic.Exception.Data[ "CachedFormatCore" ] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
             diagnosticsCollector.Add(struct (diagnostic, severity))
 
             if severity = FSharpDiagnosticSeverity.Error then
@@ -2661,7 +2671,7 @@ module internal ParseAndCheckFile =
                 | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
                     let braceOffset =
                         match tok with
-                        | INTERP_STRING_BEGIN_PART (_, SynStringKind.TripleQuote, (LexerContinuation.Token (_, (_, _, dl, _) :: _))) ->
+                        | INTERP_STRING_BEGIN_PART(_, SynStringKind.TripleQuote, (LexerContinuation.Token(_, (_, _, dl, _) :: _))) ->
                             dl - 1
                         | _ -> 0
 
@@ -2999,7 +3009,7 @@ type FSharpCheckFileResults
     member _.TryGetCurrentTcImports() =
         match details with
         | None -> None
-        | Some (scope, _builderOpt) -> Some scope.TcImports
+        | Some(scope, _builderOpt) -> Some scope.TcImports
 
     /// Intellisense autocompletions
     member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos) =
@@ -3007,7 +3017,7 @@ type FSharpCheckFileResults
 
         match details with
         | None -> DeclarationListInfo.Empty
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             scope.GetDeclarations(parsedFileResults, line, lineText, partialName, completionContextAtPos, getAllEntities)
 
     member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
@@ -3015,7 +3025,7 @@ type FSharpCheckFileResults
 
         match details with
         | None -> []
-        | Some (scope, _builderOpt) -> scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities)
+        | Some(scope, _builderOpt) -> scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities)
 
     member _.GetKeywordTooltip(names: string list) =
         ToolTipText.ToolTipText
@@ -3034,34 +3044,34 @@ type FSharpCheckFileResults
         | TOKEN_IDENT ->
             match details with
             | None -> emptyToolTip
-            | Some (scope, _builderOpt) -> scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names, width)
+            | Some(scope, _builderOpt) -> scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names, width)
         | TOKEN_STRING
         | TOKEN_STRING_TEXT ->
             match details with
             | None -> emptyToolTip
-            | Some (scope, _builderOpt) -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames, width)
+            | Some(scope, _builderOpt) -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames, width)
         | _ -> emptyToolTip
 
     member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, range: range) =
         match details with
         | None -> emptyToolTip
-        | Some (scope, _builderOpt) -> scope.GetDescription(symbol, inst, displayFullName, range)
+        | Some(scope, _builderOpt) -> scope.GetDescription(symbol, inst, displayFullName, range)
 
     member _.GetF1Keyword(line, colAtEndOfNames, lineText, names) =
         match details with
         | None -> None
-        | Some (scope, _builderOpt) -> scope.GetF1Keyword(line, lineText, colAtEndOfNames, names)
+        | Some(scope, _builderOpt) -> scope.GetF1Keyword(line, lineText, colAtEndOfNames, names)
 
     // Resolve the names at the given location to a set of methods
     member _.GetMethods(line, colAtEndOfNames, lineText, names) =
         match details with
         | None -> MethodGroup.Empty
-        | Some (scope, _builderOpt) -> scope.GetMethods(line, lineText, colAtEndOfNames, names)
+        | Some(scope, _builderOpt) -> scope.GetMethods(line, lineText, colAtEndOfNames, names)
 
     member _.GetDeclarationLocation(line, colAtEndOfNames, lineText, names, ?preferFlag) =
         match details with
         | None -> emptyFindDeclResult
-        | Some (scope, _builderOpt) -> scope.GetDeclarationLocation(line, lineText, colAtEndOfNames, names, preferFlag)
+        | Some(scope, _builderOpt) -> scope.GetDeclarationLocation(line, lineText, colAtEndOfNames, names, preferFlag)
 
     member this.GetSymbolUseAtLocation(line, colAtEndOfNames, lineText, names) =
         this.GetSymbolUsesAtLocation(line, colAtEndOfNames, lineText, names)
@@ -3070,7 +3080,7 @@ type FSharpCheckFileResults
     member _.GetSymbolUsesAtLocation(line, colAtEndOfNames, lineText, names) =
         match details with
         | None -> List.empty
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             scope.GetSymbolUsesAtLocation(line, lineText, colAtEndOfNames, names)
             |> List.map (fun (sym, itemWithInst, denv, m) ->
                 FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurence.Use, m))
@@ -3078,7 +3088,7 @@ type FSharpCheckFileResults
     member _.GetMethodsAsSymbols(line, colAtEndOfNames, lineText, names) =
         match details with
         | None -> None
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             scope.GetMethodsAsSymbols(line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (symbols, denv, m) ->
                 symbols
@@ -3087,7 +3097,7 @@ type FSharpCheckFileResults
     member _.GetSymbolAtLocation(line, colAtEndOfNames, lineStr, names) =
         match details with
         | None -> None
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             scope.GetSymbolUseAtLocation(line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (sym, _, _, _) -> sym)
 
@@ -3097,22 +3107,22 @@ type FSharpCheckFileResults
     member _.GetFormatSpecifierLocationsAndArity() =
         match details with
         | None -> [||]
-        | Some (scope, _builderOpt) -> scope.GetFormatSpecifierLocationsAndArity()
+        | Some(scope, _builderOpt) -> scope.GetFormatSpecifierLocationsAndArity()
 
     member _.GetSemanticClassification(range: range option) =
         match details with
         | None -> [||]
-        | Some (scope, _builderOpt) -> scope.GetSemanticClassification(range)
+        | Some(scope, _builderOpt) -> scope.GetSemanticClassification(range)
 
     member _.PartialAssemblySignature =
         match details with
         | None -> failwith "not available"
-        | Some (scope, _builderOpt) -> scope.PartialAssemblySignatureForFile
+        | Some(scope, _builderOpt) -> scope.PartialAssemblySignatureForFile
 
     member _.ProjectContext =
         match details with
         | None -> failwith "not available"
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights, scope.ProjectOptions)
 
     member _.DependencyFiles = dependencyFiles
@@ -3120,7 +3130,7 @@ type FSharpCheckFileResults
     member _.GetAllUsesOfAllSymbolsInFile(?cancellationToken: CancellationToken) =
         match details with
         | None -> Seq.empty
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             let cenv = scope.SymbolEnv
 
             seq {
@@ -3137,7 +3147,7 @@ type FSharpCheckFileResults
     member _.GetUsesOfSymbolInFile(symbol: FSharpSymbol, ?cancellationToken: CancellationToken) =
         match details with
         | None -> [||]
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             [|
                 for symbolUse in
                     scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item)
@@ -3152,34 +3162,34 @@ type FSharpCheckFileResults
     member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) =
         match details with
         | None -> [||]
-        | Some (scope, _builderOpt) -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray
+        | Some(scope, _builderOpt) -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray
 
     member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) =
         match details with
         | None -> true
-        | Some (scope, _builderOpt) -> scope.IsRelativeNameResolvable(cursorPos, plid, item)
+        | Some(scope, _builderOpt) -> scope.IsRelativeNameResolvable(cursorPos, plid, item)
 
     member _.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) =
         match details with
         | None -> true
-        | Some (scope, _builderOpt) -> scope.IsRelativeNameResolvableFromSymbol(cursorPos, plid, symbol)
+        | Some(scope, _builderOpt) -> scope.IsRelativeNameResolvableFromSymbol(cursorPos, plid, symbol)
 
     member _.GetDisplayContextForPos(cursorPos: pos) =
         match details with
         | None -> None
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv))
 
     member _.GenerateSignature(?pageWidth: int) =
         match details with
         | None -> None
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             scope.ImplementationFile
             |> Option.map (fun implFile ->
                 let denv = DisplayEnv.InitialForSigFileGeneration scope.TcGlobals
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
-                let (CheckedImplFile (contents = mexpr)) = implFile
+                let (CheckedImplFile(contents = mexpr)) = implFile
 
                 let ad =
                     match scopeOptX with
@@ -3200,7 +3210,7 @@ type FSharpCheckFileResults
 
         match details with
         | None -> failwith "Typechecked details not available for CalculateSignatureHash() operation."
-        | Some (scope, _builderOpt) ->
+        | Some(scope, _builderOpt) ->
             scope.ImplementationFile
             |> Option.map (fun implFile ->
                 Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles [ implFile ] scope.TcGlobals visibility)
@@ -3360,7 +3370,19 @@ type FSharpCheckProjectResults
         tcConfigOption: TcConfig option,
         keepAssemblyContents: bool,
         diagnostics: FSharpDiagnostic[],
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option
+        details:
+            (TcGlobals *
+            TcImports *
+            CcuThunk *
+            ModuleOrNamespaceType *
+            Choice<IncrementalBuilder, TcSymbolUses> *
+            TopAttribs option *
+            (unit -> IRawFSharpAssemblyData option) *
+            ILAssemblyRef *
+            AccessorDomain *
+            CheckedImplFile list option *
+            string[] *
+            FSharpProjectOptions) option
     ) =
 
     let getDetails () =
@@ -3463,7 +3485,7 @@ type FSharpCheckProjectResults
                     match builder.GetCheckResultsForFileInProjectEvenIfStale x with
                     | Some partialCheckResults ->
                         match partialCheckResults.TryPeekTcInfoWithExtras() with
-                        | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
+                        | Some(_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
                         | _ -> [||]
                     | _ -> [||])
             | Choice2Of2 tcSymbolUses -> tcSymbolUses.GetUsesOfSymbol symbol.Item
@@ -3493,7 +3515,7 @@ type FSharpCheckProjectResults
                     match builder.GetCheckResultsForFileInProjectEvenIfStale x with
                     | Some partialCheckResults ->
                         match partialCheckResults.TryPeekTcInfoWithExtras() with
-                        | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses
+                        | Some(_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses
                         | _ -> TcSymbolUses.Empty
                     | _ -> TcSymbolUses.Empty)
             | Choice2Of2 tcSymbolUses -> [| tcSymbolUses |]
@@ -3537,6 +3559,9 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
 
     member _.ParseAndCheckInteraction(sourceText: ISourceText, ?userOpName: string) =
         cancellable {
+            let! ct = Cancellable.token ()
+            use _ = Cancellable.UsingToken(ct)
+
             let userOpName = defaultArg userOpName "Unknown"
             let fileName = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             let suggestNamesForErrors = true // Will always be true, this is just for readability

@@ -69,7 +69,7 @@ let processIdentifier (queryResult: QueryTrieNodeResult) (state: FileContentQuer
 /// Typically used to fold FileContentEntry items over a FileContentQueryState
 let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry: FileContentEntry) : FileContentQueryState =
     match entry with
-    | FileContentEntry.TopLevelNamespace (topLevelPath, content) ->
+    | FileContentEntry.TopLevelNamespace(topLevelPath, content) ->
         let state =
             match topLevelPath with
             | [] -> state
@@ -107,7 +107,7 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
                     let queryResult = queryTrieDual trie openNS path
                     processIdentifier queryResult acc))
 
-    | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
+    | FileContentEntry.NestedModule(nestedContent = nestedContent) ->
         // We don't want our current state to be affect by any open statements in the nested module
         let nestedState = List.fold (processStateEntry trie) state nestedContent
         // Afterward we are only interested in the found dependencies in the nested module
@@ -154,7 +154,7 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (result: Fi
             // Both Root and module would expose data, so we can ignore them.
             | Root _
             | Module _ -> None
-            | Namespace (filesDefiningNamespaceWithoutTypes = filesDefiningNamespaceWithoutTypes) ->
+            | Namespace(filesDefiningNamespaceWithoutTypes = filesDefiningNamespaceWithoutTypes) ->
                 if filesDefiningNamespaceWithoutTypes.Overlaps(result.FoundDependencies) then
                     // The ghost dependency is already covered by a real dependency.
                     None
@@ -196,20 +196,25 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
         else
             let fileContent = fileContents[file.Idx]
 
-            let knownFiles = [| 0 .. (file.Idx - 1) |] |> set
+            // The Trie we want to use is the one that contains only files before our current index.
+            // As we skip implementation files (backed by a signature), we cannot just use the current file index to find the right Trie.
+            let trieForFile =
+                trie
+                |> Array.fold (fun acc (idx, t) -> if idx < file.Idx then t else acc) TrieNode.Empty
+
             // File depends on all files above it that define accessible symbols at the root level (global namespace).
-            let filesFromRoot = trie.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
+            let filesFromRoot =
+                trieForFile.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
             // Start by listing root-level dependencies.
-            let initialDepsResult =
-                (FileContentQueryState.Create file.Idx knownFiles filesFromRoot), fileContent
+            let initialDepsResult = (FileContentQueryState.Create filesFromRoot), fileContent
             // Sequentially process all relevant entries of the file and keep updating the state and set of dependencies.
             let depsResult =
                 initialDepsResult
                 // Seq is faster than List in this case.
-                ||> Seq.fold (processStateEntry trie)
+                ||> Seq.fold (processStateEntry trieForFile)
 
             // Add missing links for cases where an unused open namespace did not create a link.
-            let ghostDependencies = collectGhostDependencies file.Idx trie depsResult
+            let ghostDependencies = collectGhostDependencies file.Idx trieForFile depsResult
 
             // Add a link from implementation files to their signature files.
             let signatureDependency =
@@ -231,5 +236,7 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
         files
         |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)
         |> readOnlyDict
+
+    let trie = trie |> Array.last |> snd
 
     graph, trie

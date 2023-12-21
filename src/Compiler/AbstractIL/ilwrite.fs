@@ -50,6 +50,13 @@ let emitBytesViaBuffer f = use bb = ByteBuffer.Create EmitBytesViaBufferCapacity
 /// Alignment and padding
 let align alignment n = ((n + alignment - 1) / alignment) * alignment
 
+
+/// Maximum number of methods in a dotnet type
+/// This differs from the spec and file formats slightly which suggests 0xfffe is the maximum
+/// this value was identified empirically.
+[<Literal>]
+let maximumMethodsPerDotNetType = 0xfff0
+
 //---------------------------------------------------------------------
 // Concrete token representations etc. used in PE files
 //---------------------------------------------------------------------
@@ -652,7 +659,7 @@ let GetBytesAsBlobIdx cenv (bytes: byte[]) =
     else cenv.blobs.FindOrAddSharedEntry bytes
 
 let GetStringHeapIdx cenv s =
-    if s = "" then 0
+    if String.IsNullOrEmpty(s) then 0
     else cenv.strings.FindOrAddSharedEntry s
 
 let GetGuidIdx cenv info = cenv.guids.FindOrAddSharedEntry info
@@ -672,8 +679,14 @@ let GetTypeNameAsElemPair cenv n =
 //=====================================================================
 
 let rec GenTypeDefPass1 enc cenv (tdef: ILTypeDef) =
-  ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, tdef.Name)))
-  GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
+    ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, tdef.Name)))
+ 
+    // Verify that the typedef contains fewer than maximumMethodsPerDotNetType
+    let count = tdef.Methods.AsArray().Length
+    if count > maximumMethodsPerDotNetType then
+        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
+
+    GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
 
 and GenTypeDefsPass1 enc cenv tdefs = List.iter (GenTypeDefPass1 enc cenv) tdefs
 
@@ -682,7 +695,8 @@ and GenTypeDefsPass1 enc cenv tdefs = List.iter (GenTypeDefPass1 enc cenv) tdefs
 //=====================================================================
 
 let rec GetIdxForTypeDef cenv key =
-    try cenv.typeDefs.GetTableEntry key
+    try
+        cenv.typeDefs.GetTableEntry key
     with
       :? KeyNotFoundException ->
         let (TdKey (enc, n) ) = key
@@ -1151,8 +1165,11 @@ let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
         match mdef.Access with
         | ILMemberAccess.Public -> true
         // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
+        // REVIEW: Addded(vlza, fixes #14937):
+        //   We also emit methods that are marked as HideBySig and static,
+        //   since they're not virtual or abstract, but we want (?) the same behaviour as normal instance implementations.
         | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
-            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal || mdef.IsEntryPoint -> true
+            when (mdef.IsHideBySig && mdef.IsStatic) || mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal || mdef.IsEntryPoint -> true
         // When emitting a reference assembly, only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
         | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
@@ -1189,7 +1206,7 @@ let canGenPropertyDef cenv (prop: ILPropertyDef) =
         // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
         // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
         // Only generate property if we have at least getter or setter, otherwise, we skip.
-        [| prop.GetMethod; prop.SetMethod |]      
+        [| prop.GetMethod; prop.SetMethod |]
         |> Array.choose id
         |> Array.exists (MethodDefIdxExists cenv)
 
@@ -1300,14 +1317,14 @@ and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
         // Now generate or assign index numbers for tables referenced by the maps.
         // Don't yet generate contents of these tables - leave that to pass3, as
         // code may need to embed these entries.
-        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)        
-        events |> List.iter (GenEventDefPass2 cenv tidx)
+        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass2 tdef cenv tidx)
         tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
-        // Generation of property definitions for **ref assemblies** is checking existence of generated method definitions.
+        // Generation of property & event definitions for **ref assemblies** is checking existence of generated method definitions.
         // Therefore, due to mutable state within "cenv", order of operations matters.
         // Who could have thought that using shared mutable state can bring unexpected bugs...?
         props |> List.iter (GenPropertyDefPass2 cenv tidx)
+        events |> List.iter (GenEventDefPass2 cenv tidx)
         tdef.NestedTypes.AsList() |> GenTypeDefsPass2 tidx (enc@[tdef.Name]) cenv
    with exn ->
      failwith ("Error in pass2 for type "+tdef.Name+", error: " + exn.Message)
@@ -2678,7 +2695,7 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
     let midx2Tag, midx2Row = GetOverridesSpecAsMethodDefOrRef cenv env mimpl.Overrides
     AddUnsharedRow cenv TableNames.MethodImpl
         (UnsharedRow
-             [| SimpleIndex (TableNames.TypeDef, tidx)
+            [|  SimpleIndex (TableNames.TypeDef, tidx)
                 MethodDefOrRef (midxTag, midxRow)
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
 

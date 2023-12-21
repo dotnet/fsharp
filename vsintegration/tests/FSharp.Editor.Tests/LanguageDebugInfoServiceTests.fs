@@ -71,7 +71,7 @@ let main argv =
 
         match actualDataTipSpanOption with
         | None -> Assert.True(expectedDataTip.IsNone, "LanguageDebugInfoService failed to produce a data tip")
-        | Some (actualDataTipSpan) ->
+        | Some(actualDataTipSpan) ->
             let actualDataTipText = sourceText.GetSubText(actualDataTipSpan).ToString()
 
             Assert.True(expectedDataTip.IsSome, $"LanguageDebugInfoService produced a data tip while it shouldn't at: {actualDataTipText}")

@@ -23,7 +23,7 @@ let ``Should fail in F# 7 and lower`` (implFileName:string) =
     |> typecheck
     |> shouldFail
     |> withErrorCode 902
-    |> withDiagnosticMessageMatches "static value definitions may only be used in types with a primary constructor"
+    |> withDiagnosticMessageMatches "For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor.*"
 
 [<Theory>]
 [<InlineData("7.0")>]
@@ -119,6 +119,21 @@ let ``Static let in empty generic type`` compilation =
     |> withStdOutContains """Accessing name for Int32
 Accessing name for String
 Accessing name for Byte"""
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMemberValInEmptyType.fs"|])>]
+let ``Static member val in empty type`` compilation =
+    compilation
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMemberValInEmptyType.fs"|])>]
+let ``Static member val in empty type Fsharp 7`` compilation =
+    compilation
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 902, Line 4, Col 5, Line 4, Col 41, "For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher."]
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleUnion.fs"|])>]
 let ``Static let in simple union`` compilation =
@@ -562,3 +577,85 @@ Console.Write(MyTypes.X.GetX)
   } 
 
 }"""]
+
+[<Theory>]
+[<InlineData("preview")>]
+let ``Regression 16009 - module rec does not initialize let bindings`` langVersion =
+    let moduleWithBinding = """
+module rec Module
+
+open System
+
+let binding = 
+    do Console.WriteLine("Asked for Module.binding")
+    let b = Foo.StaticMember
+    do Console.Write("isNull b in Module.binding after the call to Foo.StaticMember? ")
+    do Console.WriteLine(isNull b)
+    b
+
+module NestedModule =
+    let Binding =         
+        do Console.WriteLine("Asked for NestedModule.Binding, before creating obj()")
+        let b = new obj()
+        do Console.Write("isNull b in NestedModule.Binding after 'new obj()'? ")
+        do Console.WriteLine(isNull b)
+        b
+
+type Foo =
+    static member StaticMember = 
+        do Console.WriteLine("Asked for Foo.StaticMember")
+        let b = NestedModule.Binding
+        do Console.Write("isNull b in Foo.StaticMember after access to NestedModule.Binding? ")
+        do Console.WriteLine(isNull b)
+        b
+"""
+
+    let program = """
+open Module
+open System
+
+do Console.WriteLine("Right before calling binding.ToString() in program.fs")
+let b = binding
+b.ToString() |> ignore
+"""
+
+    FSharp moduleWithBinding
+    |> withAdditionalSourceFiles [SourceCodeFileKind.Create("program.fs", program)]
+    |> withLangVersion langVersion
+    |> asExe
+    |> ignoreWarnings
+    |> compileAndRun
+    |> shouldSucceed 
+
+
+[<Theory>]
+[<InlineData("preview")>]
+let ``Regression 16009 - as a single file program`` langVersion =
+    let code = """
+namespace MyProgram
+
+module rec Module = 
+
+    open System
+
+    let binding = Foo.StaticMember
+
+    module NestedModule =
+        let Binding = new obj()
+
+    type Foo =
+        static member StaticMember = NestedModule.Binding
+            
+module ActualProgram = 
+    open Module
+    open System
+    
+    binding.ToString() |> Console.WriteLine
+"""
+
+    FSharp code
+    |> withLangVersion langVersion
+    |> asExe
+    |> ignoreWarnings
+    |> compileAndRun
+    |> shouldSucceed  

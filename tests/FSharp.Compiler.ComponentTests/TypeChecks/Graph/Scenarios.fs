@@ -688,4 +688,116 @@ module ColdTasks =
 """
                     (set [| 0; 2 |])
             ]
+        scenario
+            "ModuleSuffix clash"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "ModuleSuffix clash, module before namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Ghost dependency via top-level namespace"
+            [
+                sourceFile
+                    "Graph.fs"
+                    """
+namespace Graphoscope.Graph
+
+type UndirectedGraph = obj
+"""
+                    Set.empty
+                sourceFile
+                    "DiGraph.fs"
+                    """
+namespace Graphoscope
+
+open Graphoscope
+
+type DiGraph = obj
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Unused namespace should be detected"
+            [
+                sourceFile
+                    "File1.fs"
+                    """
+namespace My.Great.Namespace
+"""
+                    Set.empty
+
+                sourceFile
+                    "File2.fs"
+                    """
+namespace My.Great.Namespace
+
+open My.Great.Namespace
+
+type Foo = class end
+"""
+                    (set [| 0 |])
+                    
+                sourceFile
+                    "Program"
+                    """
+printfn "Hello"
+"""
+                    Set.empty
+            ]
     ]

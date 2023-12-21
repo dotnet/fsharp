@@ -10,8 +10,7 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Tuple
                     (false,
                      [Wild (3,4--3,4);
@@ -28,8 +27,7 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Tuple
                     (false,
                      [Paren
@@ -46,8 +44,7 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((7,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Tuple
                     (false, [Wild (7,4--7,4); Wild (7,5--7,5)], [(7,4--7,5)],
                      (7,4--7,7)), None, Const (Unit, (7,8--7,10)), (7,4--7,7),

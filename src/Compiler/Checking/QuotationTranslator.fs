@@ -263,11 +263,12 @@ and ConvWitnessInfo cenv env m traitInfo =
     let witnessInfo = traitInfo.GetWitnessInfo()
     let env = { env with suppressWitnesses = true }
     // First check if this is a witness in ReflectedDefinition code
-    if env.witnessesInScope.ContainsKey witnessInfo then 
-        let witnessArgIdx = env.witnessesInScope[witnessInfo]
+    match env.witnessesInScope.TryGetValue witnessInfo with
+    | true, witnessesInScopeValue ->
+        let witnessArgIdx = witnessesInScopeValue
         QP.mkVar witnessArgIdx
     // Otherwise it is a witness in a quotation literal 
-    else
+    | false, _ ->
         let holeTy = GenWitnessTy g witnessInfo
         let idx = cenv.exprSplices.Count
         let fillExpr = Expr.WitnessArg(traitInfo, m)
@@ -708,7 +709,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
 
         | TOp.TraitCall traitInfo, _, args ->
-            let g = g
+            //let g = g
             let inWitnessPassingScope = not env.witnessesInScope.IsEmpty
             let witnessArgInfo = 
                 if g.generateWitnesses && inWitnessPassingScope then 

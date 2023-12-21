@@ -6,18 +6,18 @@ open System.IO
 open System.Diagnostics
 
 /// Checks if the filePath ends with ".fsi"
-let isSignatureFile (filePath: string) =
+let inline isSignatureFile (filePath: string) =
     String.Equals(Path.GetExtension filePath, ".fsi", StringComparison.OrdinalIgnoreCase)
 
 /// Returns the corresponding signature file path for given implementation file path or vice versa
-let getOtherFile (filePath: string) =
+let inline getOtherFile (filePath: string) =
     if isSignatureFile filePath then
         Path.ChangeExtension(filePath, ".fs")
     else
         Path.ChangeExtension(filePath, ".fsi")
 
 /// Checks if the file paht ends with '.fsx' or '.fsscript'
-let isScriptFile (filePath: string) =
+let inline isScriptFile (filePath: string) =
     let ext = Path.GetExtension filePath
 
     String.Equals(ext, ".fsx", StringComparison.OrdinalIgnoreCase)
@@ -42,7 +42,7 @@ type MaybeBuilder() =
 
     // (unit -> M<'T>) -> M<'T>
     [<DebuggerStepThrough>]
-    member _.Delay(f: unit -> 'T option) : 'T option = f ()
+    member inline _.Delay([<InlineIfLambda>] f: unit -> 'T option) : 'T option = f ()
 
     // M<'T> -> M<'T> -> M<'T>
     // or
@@ -51,15 +51,22 @@ type MaybeBuilder() =
     member inline _.Combine(r1, r2: 'T option) : 'T option =
         match r1 with
         | None -> None
-        | Some () -> r2
+        | Some() -> r2
 
     // M<'T> * ('T -> M<'U>) -> M<'U>
     [<DebuggerStepThrough>]
-    member inline _.Bind(value, f: 'T -> 'U option) : 'U option = Option.bind f value
+    member inline _.Bind(value, [<InlineIfLambda>] f: 'T -> 'U option) : 'U option = Option.bind f value
+
+    // M<'T> * ('T -> M<'U>) -> M<'U>
+    [<DebuggerStepThrough>]
+    member inline _.Bind(value: 'T voption, [<InlineIfLambda>] f: 'T -> 'U option) : 'U option =
+        match value with
+        | ValueNone -> None
+        | ValueSome value -> f value
 
     // 'T * ('T -> M<'U>) -> M<'U> when 'U :> IDisposable
     [<DebuggerStepThrough>]
-    member _.Using(resource: ('T :> System.IDisposable), body: _ -> _ option) : _ option =
+    member inline _.Using(resource: ('T :> System.IDisposable), [<InlineIfLambda>] body: _ -> _ option) : _ option =
         try
             body resource
         finally
@@ -79,28 +86,28 @@ type MaybeBuilder() =
     // or
     // seq<'T> * ('T -> M<'U>) -> seq<M<'U>>
     [<DebuggerStepThrough>]
-    member x.For(sequence: seq<_>, body: 'T -> unit option) : _ option =
+    member inline x.For(sequence: seq<_>, [<InlineIfLambda>] body: 'T -> unit option) : _ option =
         // OPTIMIZE: This could be simplified so we don't need to make calls to Using, While, Delay.
         x.Using(sequence.GetEnumerator(), (fun enum -> x.While(enum.MoveNext, x.Delay(fun () -> body enum.Current))))
 
 let maybe = MaybeBuilder()
 
-[<Sealed>]
+[<Sealed; NoComparison; NoEquality>]
 type AsyncMaybeBuilder() =
     [<DebuggerStepThrough>]
-    member _.Return value : Async<'T option> = Some value |> async.Return
+    member inline _.Return value : Async<'T option> = async.Return(Some value)
 
     [<DebuggerStepThrough>]
-    member _.ReturnFrom value : Async<'T option> = value
+    member inline _.ReturnFrom value : Async<'T option> = value
 
     [<DebuggerStepThrough>]
-    member _.ReturnFrom(value: 'T option) : Async<'T option> = async.Return value
+    member inline _.ReturnFrom(value: 'T option) : Async<'T option> = async.Return value
 
     [<DebuggerStepThrough>]
-    member _.Zero() : Async<unit option> = Some() |> async.Return
+    member inline _.Zero() : Async<unit option> = async.Return(Some())
 
     [<DebuggerStepThrough>]
-    member _.Delay(f: unit -> Async<'T option>) : Async<'T option> = async.Delay f
+    member inline _.Delay([<InlineIfLambda>] f: unit -> Async<'T option>) : Async<'T option> = async.Delay f
 
     [<DebuggerStepThrough>]
     member _.Combine(r1, r2: Async<'T option>) : Async<'T option> =
@@ -109,11 +116,11 @@ type AsyncMaybeBuilder() =
 
             match r1' with
             | None -> return None
-            | Some () -> return! r2
+            | Some() -> return! r2
         }
 
     [<DebuggerStepThrough>]
-    member _.Bind(value: Async<'T option>, f: 'T -> Async<'U option>) : Async<'U option> =
+    member inline _.Bind(value: Async<'T option>, [<InlineIfLambda>] f: 'T -> Async<'U option>) : Async<'U option> =
         async {
             let! value' = value
 
@@ -123,14 +130,14 @@ type AsyncMaybeBuilder() =
         }
 
     [<DebuggerStepThrough>]
-    member _.Bind(value: System.Threading.Tasks.Task<'T>, f: 'T -> Async<'U option>) : Async<'U option> =
+    member inline _.Bind(value: System.Threading.Tasks.Task<'T>, [<InlineIfLambda>] f: 'T -> Async<'U option>) : Async<'U option> =
         async {
             let! value' = Async.AwaitTask value
             return! f value'
         }
 
     [<DebuggerStepThrough>]
-    member _.Bind(value: 'T option, f: 'T -> Async<'U option>) : Async<'U option> =
+    member inline _.Bind(value: 'T option, [<InlineIfLambda>] f: 'T -> Async<'U option>) : Async<'U option> =
         async {
             match value with
             | None -> return None
@@ -138,7 +145,15 @@ type AsyncMaybeBuilder() =
         }
 
     [<DebuggerStepThrough>]
-    member _.Using(resource: ('T :> IDisposable), body: 'T -> Async<'U option>) : Async<'U option> =
+    member inline _.Bind(value: 'T voption, [<InlineIfLambda>] f: 'T -> Async<'U option>) : Async<'U option> =
+        async {
+            match value with
+            | ValueNone -> return None
+            | ValueSome result -> return! f result
+        }
+
+    [<DebuggerStepThrough>]
+    member inline _.Using(resource: ('T :> IDisposable), [<InlineIfLambda>] body: 'T -> Async<'U option>) : Async<'U option> =
         async {
             use resource = resource
             return! body resource
@@ -152,7 +167,7 @@ type AsyncMaybeBuilder() =
             x.Zero()
 
     [<DebuggerStepThrough>]
-    member x.For(sequence: seq<_>, body: 'T -> Async<unit option>) : Async<unit option> =
+    member inline x.For(sequence: seq<_>, [<InlineIfLambda>] body: 'T -> Async<unit option>) : Async<unit option> =
         x.Using(sequence.GetEnumerator(), (fun enum -> x.While(enum.MoveNext, x.Delay(fun () -> body enum.Current))))
 
     [<DebuggerStepThrough>]
