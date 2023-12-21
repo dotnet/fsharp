@@ -118,7 +118,6 @@ type internal BootstrapInfo =
         LastFileName: string
     }
 
-
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
 [<RequireQualifiedAccess>]
@@ -794,7 +793,7 @@ type internal TransparentCompiler
                         LoadedSources = loadedSources
                         LoadClosure = loadClosureOpt
                         LastFileName = sourceFiles |> List.last
-                        //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
+                    //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
                     }
         }
 
@@ -1103,7 +1102,8 @@ type internal TransparentCompiler
                         tcConfig.flatErrors
                     )
 
-                use _ = new CompilationGlobalsScope(errHandler.DiagnosticsLogger, BuildPhase.TypeCheck)
+                use _ =
+                    new CompilationGlobalsScope(errHandler.DiagnosticsLogger, BuildPhase.TypeCheck)
 
                 // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
                 let tcConfig =
@@ -1113,7 +1113,6 @@ type internal TransparentCompiler
                 errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
 
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
-
 
                 //let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
 
@@ -1610,7 +1609,7 @@ type internal TransparentCompiler
                 with
                 | TaskCancelled ex -> return raise ex
                 | ex ->
-                    errorR(exn($"Error while computing assembly data for project {projectSnapshot.Label}: {ex}"))
+                    errorR (exn ($"Error while computing assembly data for project {projectSnapshot.Label}: {ex}"))
                     return ProjectAssemblyDataResult.Unavailable true
             }
         )

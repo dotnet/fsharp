@@ -1689,7 +1689,9 @@ type internal BackgroundCompiler
 
         member _.ParseFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
             let options = projectSnapshot.ToOptions()
-            self.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName) |> Async.AwaitNodeCode
+
+            self.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
+            |> Async.AwaitNodeCode
 
         member _.ProjectChecked: IEvent<FSharpProjectOptions> = self.ProjectChecked
 

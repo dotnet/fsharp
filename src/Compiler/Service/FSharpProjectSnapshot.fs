@@ -113,7 +113,13 @@ type FSharpFileSnapshotWithSource
         member this.IsSignatureFile = this.IsSignatureFile
 
 type FSharpParsedFile
-    (FileName: string, SyntaxTreeHash: byte array, SourceText: ISourceText, ParsedInput: ParsedInput, ParseErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]) =
+    (
+        FileName: string,
+        SyntaxTreeHash: byte array,
+        SourceText: ISourceText,
+        ParsedInput: ParsedInput,
+        ParseErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+    ) =
 
     member _.FileName = FileName
     member _.SourceText = SourceText
