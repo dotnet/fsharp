@@ -95,7 +95,8 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
                                             | _ -> ()
 
                                             defaultTraverse pat
-                                    })
+                                    }
+                                )
 
                                 return ranges
                             }
