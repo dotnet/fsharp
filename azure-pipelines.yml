@@ -458,15 +458,20 @@ stages:
           # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
-              ${{ if eq(variables['Agent.JobName'], 'WindowsCompressedMetadata experimental_features') }}:
-                FSHARP_EXPERIMENTAL_FEATURES: 1
               NativeToolsOnMachine: true
             displayName: Build / Test
-            condition: ne(variables['_testKind'], 'testIntegration')
+            condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'experimental_features') )
+            
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
-              ${{ if eq(variables['Agent.JobName'], 'WindowsCompressedMetadata experimental_features') }}:
-                FSHARP_EXPERIMENTAL_FEATURES: 1
+              FSHARP_EXPERIMENTAL_FEATURES: 1
+              NativeToolsOnMachine: true
+            displayName: Build / Test Experimental Features
+            condition: and( eq(variables['System.JobName'], 'experimental_features'), ne(variables['_testKind'], 'testIntegration') )
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: 1
               NativeToolsOnMachine: true
             displayName: Build / Integration Test
             continueOnError: true

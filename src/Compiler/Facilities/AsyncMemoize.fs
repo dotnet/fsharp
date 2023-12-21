@@ -30,15 +30,15 @@ module internal Utils =
 
     let replayDiagnostics (logger: DiagnosticsLogger) = Seq.iter ((<|) logger.DiagnosticSink)
 
-    let (|TaskCancelled|_|) (ex : exn) =
+    let (|TaskCancelled|_|) (ex: exn) =
         match ex with
-            | :? System.Threading.Tasks.TaskCanceledException as tce -> Some tce
-            //| :? System.AggregateException as ae ->
-            //    if ae.InnerExceptions |> Seq.forall (fun e -> e :? System.Threading.Tasks.TaskCanceledException) then
-            //        ae.InnerExceptions |> Seq.tryHead |> Option.map (fun e -> e :?> System.Threading.Tasks.TaskCanceledException)
-            //    else
-            //        None
-            | _ -> None
+        | :? System.Threading.Tasks.TaskCanceledException as tce -> Some tce
+        //| :? System.AggregateException as ae ->
+        //    if ae.InnerExceptions |> Seq.forall (fun e -> e :? System.Threading.Tasks.TaskCanceledException) then
+        //        ae.InnerExceptions |> Seq.tryHead |> Option.map (fun e -> e :?> System.Threading.Tasks.TaskCanceledException)
+        //    else
+        //        None
+        | _ -> None
 
 type internal StateUpdate<'TValue> =
     | CancelRequest
@@ -50,8 +50,7 @@ type internal MemoizeReply<'TValue> =
     | New of CancellationToken
     | Existing of Task<'TValue>
 
-type internal MemoizeRequest<'TValue> =
-    | GetOrCompute of NodeCode<'TValue> * CancellationToken
+type internal MemoizeRequest<'TValue> = GetOrCompute of NodeCode<'TValue> * CancellationToken
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal Job<'TValue> =
@@ -299,7 +298,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         let ex = exn (message)
         failures.Add(key, ex)
         Interlocked.Increment &errors |> ignore
-        // raise ex -- Suppose there's no need to raise here - where does it even go?
+    // raise ex -- Suppose there's no need to raise here - where does it even go?
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
         task {
@@ -600,4 +599,3 @@ type internal AsyncMemoizeDisabled<'TKey, 'TVersion, 'TValue when 'TKey: equalit
         computation
 
     member _.DebuggerDisplay = $"(disabled) requests: {requests}"
- 
