@@ -762,7 +762,6 @@ let check (ilscope: ILScopeRef) (inMap: NodeInTable<_, _>) =
       let n = inMap.Get i
       if not (inMap.IsLinked n) then
         warning(Error(FSComp.SR.pickleMissingDefinition (i, inMap.Name, ilscope.QualifiedName), range0))
-        failwith "It's broken"
         // Note for compiler developers: to get information about which item this index relates to,
         // enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
