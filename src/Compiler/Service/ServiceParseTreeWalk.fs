@@ -44,7 +44,7 @@ type SyntaxNode =
         | SynBinding binding -> binding.RangeOfBindingWithRhs
         | SynModuleOrNamespaceSig moduleOrNamespaceSig -> moduleOrNamespaceSig.Range
         | SynModuleSigDecl moduleSigDecl -> moduleSigDecl.Range
-        | SynValSig (SynValSig.SynValSig(range = range)) -> range
+        | SynValSig(SynValSig.SynValSig(range = range)) -> range
         | SynTypeDefnSig tyDefSig -> tyDefSig.Range
         | SynMemberSig memberSig -> memberSig.Range
 
@@ -1077,12 +1077,15 @@ module SyntaxTraversal =
                 attributeApplicationDives path attributes |> pick m.Range attributes
             | SynMemberSig.NestedType(nestedType = nestedType) -> traverseSynTypeDefnSig path nestedType
 
-        let fileRange = (range0, tree) ||> List.fold (fun acc node -> unionRanges acc node.Range)
+        let fileRange =
+            (range0, tree) ||> List.fold (fun acc node -> unionRanges acc node.Range)
 
         tree
         |> List.map (function
-            | SyntaxNode.SynModuleOrNamespace moduleOrNamespace -> dive moduleOrNamespace moduleOrNamespace.Range (traverseSynModuleOrNamespace [])
-            | SyntaxNode.SynModuleOrNamespaceSig moduleOrNamespaceSig -> dive moduleOrNamespaceSig moduleOrNamespaceSig.Range (traverseSynModuleOrNamespaceSig [])
+            | SyntaxNode.SynModuleOrNamespace moduleOrNamespace ->
+                dive moduleOrNamespace moduleOrNamespace.Range (traverseSynModuleOrNamespace [])
+            | SyntaxNode.SynModuleOrNamespaceSig moduleOrNamespaceSig ->
+                dive moduleOrNamespaceSig moduleOrNamespaceSig.Range (traverseSynModuleOrNamespaceSig [])
             | SyntaxNode.SynPat pat -> dive pat pat.Range (traversePat [])
             | SyntaxNode.SynType ty -> dive ty ty.Range (traverseSynType [])
             | SyntaxNode.SynExpr expr -> dive expr expr.Range (traverseSynExpr [])
@@ -1092,7 +1095,7 @@ module SyntaxTraversal =
             | SyntaxNode.SynMatchClause matchClause -> dive matchClause matchClause.Range (traverseSynMatchClause [])
             | SyntaxNode.SynBinding binding -> dive binding binding.RangeOfBindingWithRhs (traverseSynBinding [])
             | SyntaxNode.SynModuleSigDecl moduleSigDecl -> dive moduleSigDecl moduleSigDecl.Range (traverseSynModuleSigDecl [])
-            | SyntaxNode.SynValSig (SynValSig.SynValSig(range = range) as valSig) -> dive valSig range (traverseSynValSig [])
+            | SyntaxNode.SynValSig(SynValSig.SynValSig(range = range) as valSig) -> dive valSig range (traverseSynValSig [])
             | SyntaxNode.SynTypeDefnSig tyDefSig -> dive tyDefSig tyDefSig.Range (traverseSynTypeDefnSig [])
             | SyntaxNode.SynMemberSig memberSig -> dive memberSig memberSig.Range (traverseSynMemberSig []))
         |> pick fileRange tree
@@ -1214,35 +1217,35 @@ module ParsedInput =
                     | Some state' ->
                         state <- state'
                         defaultTraverse expr
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitPat(path, defaultTraverse, pat) =
                     match folder state path (SyntaxNode.SynPat pat) with
                     | Some state' ->
                         state <- state'
                         defaultTraverse pat
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitType(path, defaultTraverse, synType) =
                     match folder state path (SyntaxNode.SynType synType) with
                     | Some state' ->
                         state <- state'
                         defaultTraverse synType
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
                     match folder state path (SyntaxNode.SynModule synModuleDecl) with
                     | Some state' ->
                         state <- state'
                         defaultTraverse synModuleDecl
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitModuleOrNamespace(path, synModuleOrNamespace) =
                     match folder state path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace) with
                     | Some state' ->
                         state <- state'
                         None
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitComponentInfo(path, _synComponentInfo) =
                     match path with
@@ -1259,21 +1262,21 @@ module ParsedInput =
                     | Some state' ->
                         state <- state'
                         defaultTraverse matchClause
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitBinding(path, defaultTraverse, synBinding) =
                     match folder state path (SyntaxNode.SynBinding synBinding) with
                     | Some state' ->
                         state <- state'
                         defaultTraverse synBinding
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
                     match folder state path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig) with
                     | Some state' ->
                         state <- state'
                         None
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
                     match folder state path (SyntaxNode.SynModuleSigDecl synModuleSigDecl) with
@@ -1281,14 +1284,14 @@ module ParsedInput =
                         state <- state'
                         defaultTraverse synModuleSigDecl
 
-                    | None -> Some ()
+                    | None -> Some()
 
                 member _.VisitValSig(path, defaultTraverse, valSig) =
                     match folder state path (SyntaxNode.SynValSig valSig) with
                     | Some state' ->
                         state <- state'
                         defaultTraverse valSig
-                    | None -> Some ()
+                    | None -> Some()
             }
 
         ignore<unit option> (SyntaxTraversal.traverseUntil pickAll parsedInput.Range.End visitor (contents parsedInput))
@@ -1316,7 +1319,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1330,7 +1333,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1344,7 +1347,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1358,7 +1361,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1372,7 +1375,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1388,7 +1391,7 @@ module ParsedInput =
 
                         | state', Some [] ->
                             state <- state'
-                            Some ()
+                            Some()
 
                         | state', Some children ->
                             state <- state'
@@ -1404,7 +1407,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1418,7 +1421,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1432,7 +1435,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1446,7 +1449,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1460,7 +1463,7 @@ module ParsedInput =
 
                     | state', Some [] ->
                         state <- state'
-                        Some ()
+                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1494,8 +1497,7 @@ module ParsedInput =
 
                 member _.VisitComponentInfo(path, _synComponentInfo) =
                     match path with
-                    | (SyntaxNode.SynTypeDefn _ | SyntaxNode.SynTypeDefnSig _ as node) :: path ->
-                        chooser path node
+                    | (SyntaxNode.SynTypeDefn _ | SyntaxNode.SynTypeDefnSig _ as node) :: path -> chooser path node
                     | _ -> None
 
                 member _.VisitMatchClause(path, defaultTraverse, matchClause) =
@@ -1520,7 +1522,8 @@ module ParsedInput =
 
         SyntaxTraversal.traverseUntil pick position visitor (contents parsedInput)
 
-    let tryPickUntil position chooser parsedInput = tryPickImpl SyntaxTraversal.pick position chooser parsedInput
+    let tryPickUntil position chooser parsedInput =
+        tryPickImpl SyntaxTraversal.pick position chooser parsedInput
 
     let tryPick chooser (parsedInput: ParsedInput) =
         let pick _ _ _ diveResults =
@@ -1533,8 +1536,13 @@ module ParsedInput =
 
         tryPickImpl pick parsedInput.Range.End chooser parsedInput
 
-    let pick chooser parsedInput = tryPick chooser parsedInput |> Option.defaultWith (fun () -> raise (System.Collections.Generic.KeyNotFoundException "No matching node found."))
+    let pick chooser parsedInput =
+        tryPick chooser parsedInput
+        |> Option.defaultWith (fun () -> raise (System.Collections.Generic.KeyNotFoundException "No matching node found."))
 
-    let tryFind predicate parsedInput = tryPick (fun path node -> if predicate path node then Some node else None) parsedInput
+    let tryFind predicate parsedInput =
+        tryPick (fun path node -> if predicate path node then Some node else None) parsedInput
 
-    let find predicate parsedInput = tryFind predicate parsedInput |> Option.defaultWith (fun () -> raise (System.Collections.Generic.KeyNotFoundException "No matching node found."))
+    let find predicate parsedInput =
+        tryFind predicate parsedInput
+        |> Option.defaultWith (fun () -> raise (System.Collections.Generic.KeyNotFoundException "No matching node found."))

@@ -225,10 +225,7 @@ module public ParsedInput =
     /// <param name="parsedInput">The AST to search.</param>
     /// <returns>The matching node.</returns>
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Raised if no matching node is found.</exception>
-    val find:
-        predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) ->
-        parsedInput: ParsedInput ->
-            SyntaxNode
+    val find: predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) -> parsedInput: ParsedInput -> SyntaxNode
 
     /// <summary>
     /// Applies a function to each node of the AST and its context (path),
@@ -268,10 +265,7 @@ module public ParsedInput =
     /// <param name="parsedInput">The AST to search.</param>
     /// <returns>The first value for which the function returns <c>Some</c>.</returns>
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Raised if no matching node is found.</exception>
-    val pick:
-        chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) ->
-        parsedInput: ParsedInput ->
-            'T
+    val pick: chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> parsedInput: ParsedInput -> 'T
 
     /// <summary>
     /// Returns the first node for which the given predicate holds true,
@@ -280,10 +274,7 @@ module public ParsedInput =
     /// <param name="predicate">The function to use to test each node.</param>
     /// <param name="parsedInput">The AST to search.</param>
     /// <returns>The matching node, or <c>None</c> if no matching node is found.</returns>
-    val tryFind:
-        predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) ->
-        parsedInput: ParsedInput ->
-            SyntaxNode option
+    val tryFind: predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) -> parsedInput: ParsedInput -> SyntaxNode option
 
     /// <summary>
     /// Applies the given function to each node of the AST and its context (path),
@@ -293,10 +284,7 @@ module public ParsedInput =
     /// <param name="chooser">The function to apply to each node and its context to derive an optional value.</param>
     /// <param name="parsedInput">The AST to search.</param>
     /// <returns>The first value for which the function returns <c>Some</c>, or <c>None</c> if no matching node is found.</returns>
-    val tryPick:
-        chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) ->
-        parsedInput: ParsedInput ->
-            'T option
+    val tryPick: chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> parsedInput: ParsedInput -> 'T option
 
     /// <summary>
     /// Applies the given function to each node of the AST and its context (path)
