@@ -31,6 +31,23 @@ type SyntaxNode =
     | SynTypeDefnSig of SynTypeDefnSig
     | SynMemberSig of SynMemberSig
 
+    member internal this.Range =
+        match this with
+        | SynPat pat -> pat.Range
+        | SynType ty -> ty.Range
+        | SynExpr expr -> expr.Range
+        | SynModule modul -> modul.Range
+        | SynModuleOrNamespace moduleOrNamespace -> moduleOrNamespace.Range
+        | SynTypeDefn tyDef -> tyDef.Range
+        | SynMemberDefn memberDef -> memberDef.Range
+        | SynMatchClause matchClause -> matchClause.Range
+        | SynBinding binding -> binding.RangeOfBindingWithRhs
+        | SynModuleOrNamespaceSig moduleOrNamespaceSig -> moduleOrNamespaceSig.Range
+        | SynModuleSigDecl moduleSigDecl -> moduleSigDecl.Range
+        | SynValSig (SynValSig.SynValSig(range = range)) -> range
+        | SynTypeDefnSig tyDefSig -> tyDefSig.Range
+        | SynMemberSig memberSig -> memberSig.Range
+
 type SyntaxVisitorPath = SyntaxNode list
 
 [<AbstractClass>]
@@ -304,7 +321,7 @@ module SyntaxTraversal =
         (pick: pos -> range -> obj -> (range * (unit -> 'T option)) list -> 'T option)
         (pos: pos)
         (visitor: SyntaxVisitorBase<'T>)
-        (parseTree: ParsedInput)
+        (tree: SyntaxNode list)
         : 'T option =
         let pick x = pick pos x
 
@@ -1060,35 +1077,25 @@ module SyntaxTraversal =
                 attributeApplicationDives path attributes |> pick m.Range attributes
             | SynMemberSig.NestedType(nestedType = nestedType) -> traverseSynTypeDefnSig path nestedType
 
-        match parseTree with
-        | ParsedInput.ImplFile file ->
-            let l = file.Contents
+        let fileRange = (range0, tree) ||> List.fold (fun acc node -> unionRanges acc node.Range)
 
-            let fileRange =
-#if DEBUG
-                match l with
-                | [] -> range0
-                | _ -> l |> List.map (fun x -> x.Range) |> List.reduce unionRanges
-#else
-                range0 // only used for asserting, does not matter in non-debug
-#endif
-            l
-            |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespace []))
-            |> pick fileRange l
-        | ParsedInput.SigFile sigFile ->
-            let l = sigFile.Contents
-
-            let fileRange =
-#if DEBUG
-                match l with
-                | [] -> range0
-                | _ -> l |> List.map (fun x -> x.Range) |> List.reduce unionRanges
-#else
-                range0 // only used for asserting, does not matter in non-debug
-#endif
-            l
-            |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespaceSig []))
-            |> pick fileRange l
+        tree
+        |> List.map (function
+            | SyntaxNode.SynModuleOrNamespace moduleOrNamespace -> dive moduleOrNamespace moduleOrNamespace.Range (traverseSynModuleOrNamespace [])
+            | SyntaxNode.SynModuleOrNamespaceSig moduleOrNamespaceSig -> dive moduleOrNamespaceSig moduleOrNamespaceSig.Range (traverseSynModuleOrNamespaceSig [])
+            | SyntaxNode.SynPat pat -> dive pat pat.Range (traversePat [])
+            | SyntaxNode.SynType ty -> dive ty ty.Range (traverseSynType [])
+            | SyntaxNode.SynExpr expr -> dive expr expr.Range (traverseSynExpr [])
+            | SyntaxNode.SynModule modul -> dive modul modul.Range (traverseSynModuleDecl [])
+            | SyntaxNode.SynTypeDefn tyDef -> dive tyDef tyDef.Range (traverseSynTypeDefn [])
+            | SyntaxNode.SynMemberDefn memberDef -> dive memberDef memberDef.Range (traverseSynMemberDefn [] (fun _ -> None))
+            | SyntaxNode.SynMatchClause matchClause -> dive matchClause matchClause.Range (traverseSynMatchClause [])
+            | SyntaxNode.SynBinding binding -> dive binding binding.RangeOfBindingWithRhs (traverseSynBinding [])
+            | SyntaxNode.SynModuleSigDecl moduleSigDecl -> dive moduleSigDecl moduleSigDecl.Range (traverseSynModuleSigDecl [])
+            | SyntaxNode.SynValSig (SynValSig.SynValSig(range = range) as valSig) -> dive valSig range (traverseSynValSig [])
+            | SyntaxNode.SynTypeDefnSig tyDefSig -> dive tyDefSig tyDefSig.Range (traverseSynTypeDefnSig [])
+            | SyntaxNode.SynMemberSig memberSig -> dive memberSig memberSig.Range (traverseSynMemberSig []))
+        |> pick fileRange tree
 
     let traverseAll (visitor: SyntaxVisitorBase<'T>) (parseTree: ParsedInput) : unit =
         let pick _ _ _ diveResults =
@@ -1101,9 +1108,433 @@ module SyntaxTraversal =
 
             loop diveResults
 
-        ignore<'T option> (traverseUntil pick parseTree.Range.End visitor parseTree)
+        let contents =
+            match parseTree with
+            | ParsedInput.ImplFile implFile -> implFile.Contents |> List.map SyntaxNode.SynModuleOrNamespace
+            | ParsedInput.SigFile sigFile -> sigFile.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
+
+        ignore<'T option> (traverseUntil pick parseTree.Range.End visitor contents)
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
     let Traverse (pos: pos, parseTree, visitor: SyntaxVisitorBase<'T>) =
-        traverseUntil pick pos visitor parseTree
+        let contents =
+            match parseTree with
+            | ParsedInput.ImplFile implFile -> implFile.Contents |> List.map SyntaxNode.SynModuleOrNamespace
+            | ParsedInput.SigFile sigFile -> sigFile.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
+
+        traverseUntil pick pos visitor contents
+
+[<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ParsedInput =
+
+    /// Loops over all dive results and unconditionally
+    /// invokes the project function for each one.
+    let private pickAll _ _ _ diveResults =
+        let rec loop =
+            function
+            | [] -> None
+            | (_, project) :: rest ->
+                ignore (project ())
+                loop rest
+
+        loop diveResults
+
+    let contents parsedInput =
+        match parsedInput with
+        | ParsedInput.ImplFile file -> file.Contents |> List.map SyntaxNode.SynModuleOrNamespace
+        | ParsedInput.SigFile file -> file.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
+
+    let fold folder state (parsedInput: ParsedInput) =
+        let mutable state = state
+
+        let visitor =
+            // TODO(?):
+            //     | SynMemberDefn of SynMemberDefn
+            //     | SynMemberSig of SynMemberSig
+            { new SyntaxVisitorBase<unit>() with
+                member _.VisitExpr(path, _, defaultTraverse, expr) =
+                    state <- folder state path (SyntaxNode.SynExpr expr)
+                    defaultTraverse expr
+
+                member _.VisitPat(path, defaultTraverse, pat) =
+                    state <- folder state path (SyntaxNode.SynPat pat)
+                    defaultTraverse pat
+
+                member _.VisitType(path, defaultTraverse, synType) =
+                    state <- folder state path (SyntaxNode.SynType synType)
+                    defaultTraverse synType
+
+                member _.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
+                    state <- folder state path (SyntaxNode.SynModule synModuleDecl)
+                    defaultTraverse synModuleDecl
+
+                member _.VisitModuleOrNamespace(path, synModuleOrNamespace) =
+                    state <- folder state path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace)
+                    None
+
+                member _.VisitComponentInfo(path, _synComponentInfo) =
+                    match path with
+                    | (SyntaxNode.SynTypeDefn _ | SyntaxNode.SynTypeDefnSig _ as node) :: path ->
+                        state <- folder state path node
+                        None
+                    | _ -> None
+
+                member _.VisitMatchClause(path, defaultTraverse, matchClause) =
+                    state <- folder state path (SyntaxNode.SynMatchClause matchClause)
+                    defaultTraverse matchClause
+
+                member _.VisitBinding(path, defaultTraverse, synBinding) =
+                    state <- folder state path (SyntaxNode.SynBinding synBinding)
+                    defaultTraverse synBinding
+
+                member _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
+                    state <- folder state path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig)
+                    None
+
+                member _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
+                    state <- folder state path (SyntaxNode.SynModuleSigDecl synModuleSigDecl)
+                    defaultTraverse synModuleSigDecl
+
+                member _.VisitValSig(path, defaultTraverse, valSig) =
+                    state <- folder state path (SyntaxNode.SynValSig valSig)
+                    defaultTraverse valSig
+            }
+
+        ignore<unit option> (SyntaxTraversal.traverseUntil pickAll parsedInput.Range.End visitor (contents parsedInput))
+        state
+
+    let foldWhile folder state (parsedInput: ParsedInput) =
+        let mutable state = state
+
+        let visitor =
+            { new SyntaxVisitorBase<unit>() with
+                member _.VisitExpr(path, _, defaultTraverse, expr) =
+                    match folder state path (SyntaxNode.SynExpr expr) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse expr
+                    | None -> Some ()
+
+                member _.VisitPat(path, defaultTraverse, pat) =
+                    match folder state path (SyntaxNode.SynPat pat) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse pat
+                    | None -> Some ()
+
+                member _.VisitType(path, defaultTraverse, synType) =
+                    match folder state path (SyntaxNode.SynType synType) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse synType
+                    | None -> Some ()
+
+                member _.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
+                    match folder state path (SyntaxNode.SynModule synModuleDecl) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse synModuleDecl
+                    | None -> Some ()
+
+                member _.VisitModuleOrNamespace(path, synModuleOrNamespace) =
+                    match folder state path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace) with
+                    | Some state' ->
+                        state <- state'
+                        None
+                    | None -> Some ()
+
+                member _.VisitComponentInfo(path, _synComponentInfo) =
+                    match path with
+                    | (SyntaxNode.SynTypeDefn _ | SyntaxNode.SynTypeDefnSig _ as node) :: path ->
+                        match folder state path node with
+                        | Some state' ->
+                            state <- state'
+                            None
+                        | None -> None
+                    | _ -> None
+
+                member _.VisitMatchClause(path, defaultTraverse, matchClause) =
+                    match folder state path (SyntaxNode.SynMatchClause matchClause) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse matchClause
+                    | None -> Some ()
+
+                member _.VisitBinding(path, defaultTraverse, synBinding) =
+                    match folder state path (SyntaxNode.SynBinding synBinding) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse synBinding
+                    | None -> Some ()
+
+                member _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
+                    match folder state path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig) with
+                    | Some state' ->
+                        state <- state'
+                        None
+                    | None -> Some ()
+
+                member _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
+                    match folder state path (SyntaxNode.SynModuleSigDecl synModuleSigDecl) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse synModuleSigDecl
+
+                    | None -> Some ()
+
+                member _.VisitValSig(path, defaultTraverse, valSig) =
+                    match folder state path (SyntaxNode.SynValSig valSig) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse valSig
+                    | None -> Some ()
+            }
+
+        ignore<unit option> (SyntaxTraversal.traverseUntil pickAll parsedInput.Range.End visitor (contents parsedInput))
+        state
+
+    let walk walker state (parsedInput: ParsedInput) =
+        let pick _ _ _ diveResults =
+            let rec loop =
+                function
+                | [] -> None
+                | (_, project) :: rest -> project () |> Option.orElseWith (fun () -> loop rest)
+
+            loop diveResults
+
+        let finish = parsedInput.Range.End
+        let mutable state = state
+
+        let visitor =
+            { new SyntaxVisitorBase<unit>() with
+                member this.VisitExpr(path, _, defaultTraverse, expr) =
+                    match walker state path (SyntaxNode.SynExpr expr) with
+                    | state', None ->
+                        state <- state'
+                        defaultTraverse expr
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitPat(path, defaultTraverse, pat) =
+                    match walker state path (SyntaxNode.SynPat pat) with
+                    | state', None ->
+                        state <- state'
+                        defaultTraverse pat
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitType(path, defaultTraverse, synType) =
+                    match walker state path (SyntaxNode.SynType synType) with
+                    | state', None ->
+                        state <- state'
+                        defaultTraverse synType
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
+                    match walker state path (SyntaxNode.SynModule synModuleDecl) with
+                    | state', None ->
+                        state <- state'
+                        defaultTraverse synModuleDecl
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitModuleOrNamespace(path, synModuleOrNamespace) =
+                    match walker state path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace) with
+                    | state', None ->
+                        state <- state'
+                        None
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitComponentInfo(path, _synComponentInfo) =
+                    match path with
+                    | (SyntaxNode.SynTypeDefn _ | SyntaxNode.SynTypeDefnSig _ as node) :: path ->
+                        match walker state path node with
+                        | state', None ->
+                            state <- state'
+                            None
+
+                        | state', Some [] ->
+                            state <- state'
+                            Some ()
+
+                        | state', Some children ->
+                            state <- state'
+                            SyntaxTraversal.traverseUntil pick finish this children
+
+                    | _ -> None
+
+                member this.VisitMatchClause(path, defaultTraverse, matchClause) =
+                    match walker state path (SyntaxNode.SynMatchClause matchClause) with
+                    | state', None ->
+                        state <- state'
+                        defaultTraverse matchClause
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitBinding(path, defaultTraverse, synBinding) =
+                    match walker state path (SyntaxNode.SynBinding synBinding) with
+                    | state', None ->
+                        state <- state'
+                        defaultTraverse synBinding
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
+                    match walker state path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig) with
+                    | state', None ->
+                        state <- state'
+                        None
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
+                    match walker state path (SyntaxNode.SynModuleSigDecl synModuleSigDecl) with
+                    | state', None ->
+                        state <- state'
+                        defaultTraverse synModuleSigDecl
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+
+                member this.VisitValSig(path, defaultTraverse, valSig) =
+                    match walker state path (SyntaxNode.SynValSig valSig) with
+                    | state', None ->
+                        state <- state'
+                        defaultTraverse valSig
+
+                    | state', Some [] ->
+                        state <- state'
+                        Some ()
+
+                    | state', Some children ->
+                        state <- state'
+                        SyntaxTraversal.traverseUntil pick finish this children
+            }
+
+        ignore<unit option> (SyntaxTraversal.traverseUntil pick finish visitor (contents parsedInput))
+        state
+
+    let private tryPickImpl pick position chooser parsedInput =
+        let visitor =
+            { new SyntaxVisitorBase<'T>() with
+                member _.VisitExpr(path, _, defaultTraverse, expr) =
+                    chooser path (SyntaxNode.SynExpr expr)
+                    |> Option.orElseWith (fun () -> defaultTraverse expr)
+
+                member _.VisitPat(path, defaultTraverse, pat) =
+                    chooser path (SyntaxNode.SynPat pat)
+                    |> Option.orElseWith (fun () -> defaultTraverse pat)
+
+                member _.VisitType(path, defaultTraverse, synType) =
+                    chooser path (SyntaxNode.SynType synType)
+                    |> Option.orElseWith (fun () -> defaultTraverse synType)
+
+                member _.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
+                    chooser path (SyntaxNode.SynModule synModuleDecl)
+                    |> Option.orElseWith (fun () -> defaultTraverse synModuleDecl)
+
+                member _.VisitModuleOrNamespace(path, synModuleOrNamespace) =
+                    chooser path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace)
+
+                member _.VisitComponentInfo(path, _synComponentInfo) =
+                    match path with
+                    | (SyntaxNode.SynTypeDefn _ | SyntaxNode.SynTypeDefnSig _ as node) :: path ->
+                        chooser path node
+                    | _ -> None
+
+                member _.VisitMatchClause(path, defaultTraverse, matchClause) =
+                    chooser path (SyntaxNode.SynMatchClause matchClause)
+                    |> Option.orElseWith (fun () -> defaultTraverse matchClause)
+
+                member _.VisitBinding(path, defaultTraverse, synBinding) =
+                    chooser path (SyntaxNode.SynBinding synBinding)
+                    |> Option.orElseWith (fun () -> defaultTraverse synBinding)
+
+                member _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
+                    chooser path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig)
+
+                member _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
+                    chooser path (SyntaxNode.SynModuleSigDecl synModuleSigDecl)
+                    |> Option.orElseWith (fun () -> defaultTraverse synModuleSigDecl)
+
+                member _.VisitValSig(path, defaultTraverse, valSig) =
+                    chooser path (SyntaxNode.SynValSig valSig)
+                    |> Option.orElseWith (fun () -> defaultTraverse valSig)
+            }
+
+        SyntaxTraversal.traverseUntil pick position visitor (contents parsedInput)
+
+    let tryPickUntil position chooser parsedInput = tryPickImpl SyntaxTraversal.pick position chooser parsedInput
+
+    let tryPick chooser (parsedInput: ParsedInput) =
+        let pick _ _ _ diveResults =
+            let rec loop =
+                function
+                | [] -> None
+                | (_, project) :: rest -> project () |> Option.orElseWith (fun () -> loop rest)
+
+            loop diveResults
+
+        tryPickImpl pick parsedInput.Range.End chooser parsedInput
+
+    let pick chooser parsedInput = tryPick chooser parsedInput |> Option.defaultWith (fun () -> raise (System.Collections.Generic.KeyNotFoundException "No matching node found."))
+
+    let tryFind predicate parsedInput = tryPick (fun path node -> if predicate path node then Some node else None) parsedInput
+
+    let find predicate parsedInput = tryFind predicate parsedInput |> Option.defaultWith (fun () -> raise (System.Collections.Generic.KeyNotFoundException "No matching node found."))
