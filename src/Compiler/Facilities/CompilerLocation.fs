@@ -299,7 +299,7 @@ module internal FSharpEnvironment =
         // How to find dotnet.exe --- woe is me; probing rules make me sad.
         // Algorithm:
         // 1. Look for DOTNET_HOST_PATH environment variable
-        //    this is the main user programable override .. provided by user to find a specific dotnet.exe
+        //    this is the main user programmable override .. provided by user to find a specific dotnet.exe
         // 2. Probe for are we part of an .NetSDK install
         //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
         //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
