@@ -1678,13 +1678,15 @@ type TraitWitnessInfo =
 type TraitConstraintInfo =
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
-    /// to store the inferred solution of the constraint.
+    /// to store the inferred solution of the constraint. And a mutable source cell to store
+    /// the name of the type or member that defined the constraint.
     | TTrait of
         tys: TTypes *
         memberName: string *
         memberFlags: Syntax.SynMemberFlags *
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
+        source: string option ref *
         solution: TraitConstraintSln option ref
 
     override ToString: unit -> string
@@ -1718,6 +1720,10 @@ type TraitConstraintInfo =
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
     /// the extension property MemberDisplayNameCore
     member WithMemberKind: SynMemberKind -> TraitConstraintInfo
+
+    member WithSupportTypes: TTypes -> TraitConstraintInfo
+
+    member WithMemberName: string -> TraitConstraintInfo
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]

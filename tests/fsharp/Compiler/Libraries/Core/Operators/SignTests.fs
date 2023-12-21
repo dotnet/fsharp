@@ -45,7 +45,7 @@ sign 0uy |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'byte' does not support the operator 'get_Sign'"
+            "The type 'byte' does not support the operator 'sign'"
 
     [<Test>]
     let ``Sign of uint16``() =
@@ -56,7 +56,7 @@ sign 0us |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'uint16' does not support the operator 'get_Sign'"
+            "The type 'uint16' does not support the operator 'sign'"
 
     [<Test>]
     let ``Sign of uint32``() =
@@ -67,7 +67,7 @@ sign 0u |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 8)
-            "The type 'uint32' does not support the operator 'get_Sign'"
+            "The type 'uint32' does not support the operator 'sign'"
 
     [<Test>]
     let ``Sign of uint64``() =
@@ -78,4 +78,4 @@ sign 0uL |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'uint64' does not support the operator 'get_Sign'"
+            "The type 'uint64' does not support the operator 'sign'"

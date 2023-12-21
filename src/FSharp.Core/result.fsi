@@ -166,7 +166,7 @@ module Result =
     val inline fold<'T, 'Error, 'State> :
         folder: ('State -> 'T -> 'State) -> state: 'State -> result: Result<'T, 'Error> -> 'State
 
-    /// <summary><c>fold f inp s</c> evaluates to <c>match inp with Error _ -> s | Ok x -> f x s</c>.</summary>
+    /// <summary><c>foldBack f inp s</c> evaluates to <c>match inp with Error _ -> s | Ok x -> f x s</c>.</summary>
     ///
     /// <param name="folder">A function to update the state data when given a value from an result.</param>
     /// <param name="result">The input result.</param>
