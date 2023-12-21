@@ -103,11 +103,9 @@ let ``We can cancel a job`` () =
 
         cts1.Cancel()
         cts2.Cancel()
-
-        //jobStarted.WaitOne() |> ignore
-
-        //Assert.Equal<(JobEvent * int) array>([| Started, key; Started, key |], eventLog |> Seq.toArray )
-
+        
+        do! Task.Delay 100
+        
         cts3.Cancel()
 
         do! Task.Delay 100
