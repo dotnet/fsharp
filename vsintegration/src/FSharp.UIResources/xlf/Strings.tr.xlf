@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="new">Use live (unsaved) buffers for analysis (restart required)</target>
+        <target state="translated">Analiz için canlı (kaydedilmemiş) arabellekleri kullan (yeniden başlatma gerekir)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="new">Live Buffers</target>
+        <target state="translated">Canlı Arabellekler</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
