@@ -137,7 +137,7 @@ let mkTestFileAndOptions source additionalArgs =
     let fileSource1 = "module M"
     FileSystem.OpenFileForWriteShim(fileName).Write(fileSource1)
 
-    let args = Array.append (mkProjectCommandLineArgs (dllName, [fileName])) additionalArgs
+    let args = Array.append (mkProjectCommandLineArgs (dllName, [])) additionalArgs
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = [| fileName |] }
     fileName, options
 
