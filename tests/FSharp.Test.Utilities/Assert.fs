@@ -15,6 +15,9 @@ module Assert =
     let inline shouldBe (expected : ^T) (actual : ^U) =
         actual.Should().Be(expected, "") |> ignore
 
+    let inline shouldEqual (expected : ^T) (actual : ^T) =
+        actual.Should().Be(expected, "") |> ignore
+
     let inline shouldBeEmpty (actual : ^T when ^T :> IEnumerable) =
         actual.Should().BeEmpty("") |> ignore
 

@@ -1,22 +1,20 @@
 #if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
-#load "FsUnit.fs"
-#load "Common.fs"
+#r "../../artifacts/bin/fcs/net461/xunit.dll"
 #else
-module Tests.Service.AssemblyContentProviderTests
+module FSharp.Compiler.UnitTests.AssemblyContentProviderTests
 #endif
 
 open System
-open NUnit.Framework
+open System.IO
+open Xunit
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Service.Tests.Common
 
-let private filePath = "C:\\test.fs"
+let private filePath = "Test.fs"
 
 let private projectOptions : FSharpProjectOptions = 
-    { ProjectFileName = "C:\\test.fsproj"
+    { ProjectFileName = Path.Combine(Environment.CurrentDirectory, "Test.fsproj")
       ProjectId = None
       SourceFiles =  [| filePath |]
       ReferencedProjects = [| |]
@@ -69,7 +67,7 @@ let private getSymbolMap (getSymbolProperty: AssemblySymbol -> 'a) (source: stri
     |> List.map (fun s -> getCleanedFullName s, getSymbolProperty s)
     |> Map.ofList
 
-[<Test>]
+[<Fact>]
 let ``implicitly added Module suffix is removed``() =
     """
 type MyType = { F: int }
@@ -82,7 +80,7 @@ module MyType =
         "Test.MyType"
         "Test.MyType.func123"]
         
-[<Test>]
+[<Fact>]
 let ``Module suffix added by an explicitly applied ModuleSuffix attribute is removed``() =
     """
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -93,7 +91,7 @@ module MyType =
          "Test.MyType"
          "Test.MyType.func123" ]
 
-[<Test>]
+[<Fact>]
 let ``Property getters and setters are removed``() =
     """
     type MyType() =
@@ -103,7 +101,7 @@ let ``Property getters and setters are removed``() =
          "Test.MyType"
          "Test.MyType.MyProperty" ]
 
-[<Test>]
+[<Fact>]
 let ``TopRequireQualifiedAccessParent property should be valid``() =
     let source = """
         module M1 = 

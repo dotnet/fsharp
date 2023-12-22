@@ -51,20 +51,11 @@
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="..\service\SyntaxTreeTests.fs" />
-    <Compile Include="..\service\FileSystemTests.fs">
-      <Link>FileSystemTests.fs</Link>
-    </Compile>
     <Compile Include="..\service\ProjectAnalysisTests.fs">
       <Link>ProjectAnalysisTests.fs</Link>
     </Compile>
-    <Compile Include="..\service\MultiProjectAnalysisTests.fs">
-      <Link>MultiProjectAnalysisTests.fs</Link>
-    </Compile>
     <Compile Include="..\service\PerfTests.fs">
       <Link>PerfTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\InteractiveCheckerTests.fs">
-      <Link>InteractiveCheckerTests.fs</Link>
     </Compile>
     <Compile Include="..\service\ExprTests.fs">
       <Link>ExprTests.fs</Link>

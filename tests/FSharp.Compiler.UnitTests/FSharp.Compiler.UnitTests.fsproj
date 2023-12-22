@@ -42,24 +42,16 @@
     <Compile Include="..\..\tests\service\EditorTests.fs">
       <Link>CompilerService\EditorTests.fs</Link>
     </Compile>
-    <Compile Include="..\..\tests\service\FileSystemTests.fs">
-      <Link>CompilerService\FileSystemTests.fs</Link>
-    </Compile>
+    <Compile Include="FileSystemTests.fs" />
     <Compile Include="..\..\tests\service\ProjectAnalysisTests.fs">
       <Link>CompilerService\ProjectAnalysisTests.fs</Link>
     </Compile>
     <Compile Include="TokenizerTests.fs" />
-<!-- TODO:  Fix this test
-    <Compile Include="..\..\tests\service\MultiProjectAnalysisTests.fs">
-      <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
-    </Compile>
--->
+    <Compile Include="MultiProjectAnalysisTests.fs" />
     <Compile Include="..\..\tests\service\PerfTests.fs">
       <Link>CompilerService\PerfTests.fs</Link>
     </Compile>
-    <Compile Include="..\..\tests\service\InteractiveCheckerTests.fs">
-      <Link>CompilerService\InteractiveCheckerTests.fs</Link>
-    </Compile>
+    <Compile Include="InteractiveCheckerTests.fs" />
     <Compile Include="..\..\tests\service\ExprTests.fs">
       <Link>CompilerService\ExprTests.fs</Link>
     </Compile>
@@ -67,9 +59,7 @@
       <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>
     <Compile Include="StructureTests.fs" />
-    <Compile Include="..\..\tests\service\AssemblyContentProviderTests.fs">
-      <Link>CompilerService\AssemblyContentProviderTests.fs</Link>
-    </Compile>
+    <Compile Include="AssemblyContentProviderTests.fs" />
     <Compile Include="..\..\tests\service\ServiceUntypedParseTests.fs">
       <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
     </Compile>
