@@ -147,6 +147,11 @@
         <target state="translated">사용 가능한 오버로드:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
+        <target state="new">'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">제네릭 구문을 사용하려면 구조체 또는 참조 형식의 제네릭 형식 매개 변수가 필요합니다. 형식 주석을 추가하세요.</target>
@@ -1455,6 +1460,11 @@
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
         <target state="translated">\"interfaces with static abstract methods\"를 선언하는 것은 고급 기능입니다. 지침은 https://aka.ms/fsharp-iwsams를 참조하세요. '#nowarn \"3535\"' 또는 '--nowarn:3535'를 사용하여 이 경고를 비활성화할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">

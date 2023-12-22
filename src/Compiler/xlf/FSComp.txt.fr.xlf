@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
         <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
-        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
+        <target state="translated">Les méthodes getter et setter d’une propriété indexée doivent avoir le même type. La propriété « {0} » a une méthode getter de type « {1} » alors que sa méthode setter est de type « {2} ».</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -145,6 +145,11 @@
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Surcharges disponibles :\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
+        <target state="new">'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -254,7 +259,7 @@
       </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
-        <target state="translated">Émet des avertissements si l’attribut 'TailCall' est utilisé sur des fonctions non récursives.</target>
+        <target state="translated">Émet des avertissements si l’attribut « TailCall » est utilisé sur des fonctions non récursives.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -519,7 +524,7 @@
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
-        <target state="translated">La méthode getter et la méthode setter des propriétés indexées doivent avoir le même type</target>
+        <target state="translated">Les propriétés indexées getter et setter doivent avoir le même type</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -959,7 +964,7 @@
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
         <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
-        <target state="translated">Déclaration incomplète d’une construction statique. Utilisez 'static let','static do','static member' ou 'static val' pour la déclaration.</target>
+        <target state="translated">Déclaration incomplète d’une construction statique. Utilisez « static let », « static do », « static member » ou « static val » pour la déclaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -1159,7 +1164,7 @@
       </trans-unit>
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
         <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
-        <target state="translated">La syntaxe lambda raccourcie est uniquement prise en charge pour les expressions atomiques, telles que la méthode, la propriété, le champ ou l’indexeur sur l’argument '_' implicite. Par exemple : 'let f = _. Longueur.</target>
+        <target state="translated">La syntaxe lambda raccourcie est prise en charge uniquement pour les expressions atomiques, telles que la méthode, la propriété, le champ ou l’indexeur sur l’argument ’_’ implicite. Par exemple : « let f = _. Longueur ».</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1299,12 +1304,12 @@
       </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
-        <target state="new">No static abstract member was found that corresponds to this override</target>
+        <target state="translated">Désolé, nous n’avons pas pu trouver un membre abstrait statique qui corresponde à cette substitution</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoStaticPropertyFoundForOverride">
         <source>No static abstract property was found that corresponds to this override</source>
-        <target state="new">No static abstract property was found that corresponds to this override</target>
+        <target state="translated">Désolé, nous n’avons pas pu trouver une propriété abstraite statique qui corresponde à cette substitution</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1455,6 +1460,11 @@
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
         <target state="translated">La déclaration de \"interfaces with static abstract methods\" est une fonctionnalité avancée. Consultez https://aka.ms/fsharp-iwsams pour obtenir de l’aide. Vous pouvez désactiver cet avertissement à l’aide de '#nowarn \"3535\"' or '--nowarn:3535'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1619,7 +1629,7 @@
       </trans-unit>
       <trans-unit id="unnecessaryParentheses">
         <source>Parentheses can be removed.</source>
-        <target state="new">Parentheses can be removed.</target>
+        <target state="translated">Vous pouvez supprimer les parenthèses.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
