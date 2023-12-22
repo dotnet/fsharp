@@ -1522,7 +1522,7 @@ module ParsedInput =
 
         SyntaxTraversal.traverseUntil pick position visitor (contents parsedInput)
 
-    let tryPickUntil position chooser parsedInput =
+    let tryPickDownTo position chooser parsedInput =
         tryPickImpl SyntaxTraversal.pick position chooser parsedInput
 
     let tryPick chooser (parsedInput: ParsedInput) =

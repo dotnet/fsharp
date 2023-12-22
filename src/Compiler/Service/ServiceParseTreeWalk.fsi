@@ -288,15 +288,15 @@ module public ParsedInput =
 
     /// <summary>
     /// Applies the given function to each node of the AST and its context (path)
-    /// up through a given position, returning <c>Some x</c> for the first node
+    /// down to a given position, returning <c>Some x</c> for the first node
     /// for which the function returns <c>Some x</c> for some value <c>x</c>, otherwise <c>None</c>.
     /// Traversal is short-circuited if no matching node is found through the given position.
     /// </summary>
-    /// <param name="position">The position in the input file through which to apply the function.</param>
+    /// <param name="position">The position in the input file down to which to apply the function.</param>
     /// <param name="chooser">The function to apply to each node and its context to derive an optional value.</param>
     /// <param name="parsedInput">The AST to search.</param>
     /// <returns>The first value for which the function returns <c>Some</c>, or <c>None</c> if no matching node is found.</returns>
-    val tryPickUntil:
+    val tryPickDownTo:
         position: pos ->
         chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) ->
         parsedInput: ParsedInput ->
