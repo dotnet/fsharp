@@ -225,7 +225,7 @@ stages:
               regular:
                 _experimental_flag: ''
               experimental_features:
-                _experimental_flag: 1
+                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
@@ -439,9 +439,9 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              experimental_features:
-                _configuration: Release
-                _testKind: testCoreclr
+              # experimental_features:
+              #   _configuration: Release
+              #   _testKind: testCoreclr
 
               ${{ if eq(variables['Build.Reason'], 'Flaky, disabled, was PullRequest') }}:
                 inttests_release:
@@ -461,7 +461,7 @@ stages:
               NativeToolsOnMachine: true
             displayName: Build / Test
             condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'experimental_features') )
-            
+
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
               FSHARP_EXPERIMENTAL_FEATURES: 1
@@ -471,7 +471,6 @@ stages:
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
-              FSHARP_EXPERIMENTAL_FEATURES: 1
               NativeToolsOnMachine: true
             displayName: Build / Integration Test
             continueOnError: true
@@ -618,7 +617,7 @@ stages:
               regular:
                 _experimental_flag: ''
               experimental_features:
-                _experimental_flag: 1
+                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
