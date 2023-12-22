@@ -439,7 +439,7 @@ module UnusedDeclarations =
                 su.IsFromDefinition
                 && su.Symbol.DeclarationLocation.IsSome
                 && (isScript || su.IsPrivateToFile)
-                && not (su.Symbol.DisplayName.StartsWith "_")
+                && not (su.Symbol.DisplayName.StartsWithOrdinal "_")
                 && isPotentiallyUnusedDeclaration su.Symbol
             then
                 Some(su, usages.Contains su.Symbol.DeclarationLocation.Value)
@@ -462,14 +462,67 @@ module UnnecessaryParentheses =
 
     let (|Ident|) (ident: Ident) = ident.idText
 
-    /// Represents an expression's precedence, or,
-    /// for a few few types of expression whose exact
-    /// kind can be significant, the expression's exact kind.
+    /// Represents a symbolic infix operator with the precedence of *, /, or %.
+    /// All instances of this type are considered equal.
+    [<CustomComparison; CustomEquality>]
+    type MulDivMod =
+        | Mul
+        | Div
+        | Mod
+
+        member _.CompareTo(_other: MulDivMod) = 0
+        override this.Equals obj = this.CompareTo(unbox obj) = 0
+        override _.GetHashCode() = 0
+
+        interface IComparable with
+            member this.CompareTo obj = this.CompareTo(unbox obj)
+
+    /// Represents a symbolic infix operator with the precedence of + or -.
+    /// All instances of this type are considered equal.
+    [<CustomComparison; CustomEquality>]
+    type AddSub =
+        | Add
+        | Sub
+
+        member _.CompareTo(_other: AddSub) = 0
+        override this.Equals obj = this.CompareTo(unbox obj) = 0
+        override _.GetHashCode() = 0
+
+        interface IComparable with
+            member this.CompareTo obj = this.CompareTo(unbox obj)
+
+    /// Holds a symbolic operator's original notation.
+    /// Equality is based on the contents of the string.
+    /// Comparison always returns 0.
+    [<CustomComparison; CustomEquality>]
+    type OriginalNotation =
+        | OriginalNotation of string
+
+        member _.CompareTo(_other: OriginalNotation) = 0
+
+        override this.Equals obj =
+            match this, obj with
+            | OriginalNotation this, (:? OriginalNotation as OriginalNotation other) -> String.Equals(this, other, StringComparison.Ordinal)
+            | _ -> false
+
+        override this.GetHashCode() =
+            match this with
+            | OriginalNotation notation -> notation.GetHashCode()
+
+        interface IComparable with
+            member this.CompareTo obj = this.CompareTo(unbox obj)
+
+    /// Represents an expression's precedence.
+    /// Comparison is based only on the precedence case.
+    /// Equality considers the embedded original notation, if any.
     ///
-    /// Use Precedence.sameKind to determine whether two expressions
-    /// have the same kind. Use Precedence.compare to compare two
-    /// expressions' precedence. Avoid using relational operators or the
-    /// built-in compare function on this type.
+    /// For example:
+    ///
+    ///     compare (AddSub (Add, OriginalNotation "+")) (AddSub (Add, OriginalNotation "++")) = 0
+    ///
+    /// but
+    ///
+    ///     AddSub (Add, OriginalNotation "+") <> AddSub (Add, OriginalNotation "++")
     type Precedence =
         /// yield, yield!, return, return!
         | Low
@@ -487,46 +540,22 @@ module UnnecessaryParentheses =
         ///
         /// Refers to the exact operators or and ||.
         /// Instances with leading dots or question marks or trailing characters are parsed as Bar instead.
-        | BarBar
+        | BarBar of OriginalNotation
 
         /// &, &&
         ///
         /// Refers to the exact operators & and &&.
         /// Instances with leading dots or question marks or trailing characters are parsed as Amp instead.
-        | AmpAmp
+        | AmpAmp of OriginalNotation
 
-        /// :?>
-        | Downcast
+        /// :>, :?>
+        | UpcastDowncast
 
-        /// :>
-        | Upcast
+        /// =…, |…, &…, $…, >…, <…, !=…
+        | Relational of OriginalNotation
 
-        /// =…
-        | Eq
-
-        /// |…
-        | Bar
-
-        /// &…
-        | Amp
-
-        /// $…
-        | Dollar
-
-        /// >…
-        | Greater
-
-        /// <…
-        | Less
-
-        /// !=…
-        | BangEq
-
-        /// ^…
-        | Hat
-
-        /// @…
-        | At
+        /// ^…, @…
+        | HatAt
 
         /// ::
         | Cons
@@ -534,20 +563,11 @@ module UnnecessaryParentheses =
         /// :?
         | TypeTest
 
-        /// -…
-        | Sub
+        /// +…, -…
+        | AddSub of AddSub * OriginalNotation
 
-        /// +…
-        | Add
-
-        /// %…
-        | Mod
-
-        /// /…
-        | Div
-
-        /// *…
-        | Mul
+        /// *…, /…, %…
+        | MulDivMod of MulDivMod * OriginalNotation
 
         /// **…
         | Exp
@@ -563,85 +583,6 @@ module UnnecessaryParentheses =
 
         // x.y
         | Dot
-
-    module Precedence =
-        /// Returns true only if the two expressions are of the
-        /// exact same kind. E.g., Add = Add and Sub = Sub,
-        /// but Add <> Sub, even though their precedence compares equally.
-        let sameKind prec1 prec2 = prec1 = prec2
-
-        /// Compares two expressions' precedence.
-        let compare prec1 prec2 =
-            match prec1, prec2 with
-            | Dot, Dot -> 0
-            | Dot, _ -> 1
-            | _, Dot -> -1
-
-            | High, High -> 0
-            | High, _ -> 1
-            | _, High -> -1
-
-            | Apply, Apply -> 0
-            | Apply, _ -> 1
-            | _, Apply -> -1
-
-            | UnaryPrefix, UnaryPrefix -> 0
-            | UnaryPrefix, _ -> 1
-            | _, UnaryPrefix -> -1
-
-            | Exp, Exp -> 0
-            | Exp, _ -> 1
-            | _, Exp -> -1
-
-            | (Mod | Div | Mul), (Mod | Div | Mul) -> 0
-            | (Mod | Div | Mul), _ -> 1
-            | _, (Mod | Div | Mul) -> -1
-
-            | (Sub | Add), (Sub | Add) -> 0
-            | (Sub | Add), _ -> 1
-            | _, (Sub | Add) -> -1
-
-            | TypeTest, TypeTest -> 0
-            | TypeTest, _ -> 1
-            | _, TypeTest -> -1
-
-            | Cons, Cons -> 0
-            | Cons, _ -> 1
-            | _, Cons -> -1
-
-            | (Hat | At), (Hat | At) -> 0
-            | (Hat | At), _ -> 1
-            | _, (Hat | At) -> -1
-
-            | (Eq | Bar | Amp | Dollar | Greater | Less | BangEq), (Eq | Bar | Amp | Dollar | Greater | Less | BangEq) -> 0
-            | (Eq | Bar | Amp | Dollar | Greater | Less | BangEq), _ -> 1
-            | _, (Eq | Bar | Amp | Dollar | Greater | Less | BangEq) -> -1
-
-            | (Downcast | Upcast), (Downcast | Upcast) -> 0
-            | (Downcast | Upcast), _ -> 1
-            | _, (Downcast | Upcast) -> -1
-
-            | AmpAmp, AmpAmp -> 0
-            | AmpAmp, _ -> 1
-            | _, AmpAmp -> -1
-
-            | BarBar, BarBar -> 0
-            | BarBar, _ -> 1
-            | _, BarBar -> -1
-
-            | Comma, Comma -> 0
-            | Comma, _ -> 1
-            | _, Comma -> -1
-
-            | ColonEquals, ColonEquals -> 0
-            | ColonEquals, _ -> 1
-            | _, ColonEquals -> -1
-
-            | Set, Set -> 0
-            | Set, _ -> 1
-            | _, Set -> -1
-
-            | Low, Low -> 0
 
     /// Associativity/association.
     type Assoc =
@@ -661,26 +602,15 @@ module UnnecessaryParentheses =
             | Set -> Non
             | ColonEquals -> Right
             | Comma -> Non
-            | BarBar -> Left
-            | AmpAmp -> Left
-            | Upcast
-            | Downcast -> Right
-            | Eq
-            | Bar
-            | Amp
-            | Dollar
-            | Greater
-            | Less
-            | BangEq -> Left
-            | At
-            | Hat -> Right
+            | BarBar _ -> Left
+            | AmpAmp _ -> Left
+            | UpcastDowncast -> Right
+            | Relational _ -> Left
+            | HatAt -> Right
             | Cons -> Right
             | TypeTest -> Non
-            | Add
-            | Sub -> Left
-            | Mul
-            | Div
-            | Mod -> Left
+            | AddSub _ -> Left
+            | MulDivMod _ -> Left
             | Exp -> Right
             | UnaryPrefix -> Left
             | Apply -> Left
@@ -783,25 +713,29 @@ module UnnecessaryParentheses =
 
             match trimmed[0], originalNotation with
             | _, ":=" -> ValueSome ColonEquals
-            | _, ("||" | "or") -> ValueSome BarBar
-            | _, ("&" | "&&") -> ValueSome AmpAmp
-            | '|', _ -> ValueSome Bar
-            | '&', _ -> ValueSome Amp
-            | '<', _ -> ValueSome Less
-            | '>', _ -> ValueSome Greater
-            | '=', _ -> ValueSome Eq
-            | '$', _ -> ValueSome Dollar
-            | '!', _ when trimmed.Length > 1 && trimmed[1] = '=' -> ValueSome BangEq
-            | '^', _ -> ValueSome Hat
-            | '@', _ -> ValueSome At
+            | _, ("||" | "or") -> ValueSome(BarBar(OriginalNotation originalNotation))
+            | _, ("&" | "&&") -> ValueSome(AmpAmp(OriginalNotation originalNotation))
+            | '|', _
+            | '&', _
+            | '<', _
+            | '>', _
+            | '=', _
+            | '$', _ -> ValueSome(Relational(OriginalNotation originalNotation))
+            | '!', _ when trimmed.Length > 1 && trimmed[1] = '=' -> ValueSome(Relational(OriginalNotation originalNotation))
+            | '^', _
+            | '@', _ -> ValueSome HatAt
             | _, "::" -> ValueSome Cons
-            | '+', _ -> ValueSome Add
-            | '-', _ -> ValueSome Sub
-            | '/', _ -> ValueSome Div
-            | '%', _ -> ValueSome Mod
+            | '+', _ -> ValueSome(AddSub(Add, OriginalNotation originalNotation))
+            | '-', _ -> ValueSome(AddSub(Sub, OriginalNotation originalNotation))
+            | '/', _ -> ValueSome(MulDivMod(Div, OriginalNotation originalNotation))
+            | '%', _ -> ValueSome(MulDivMod(Mod, OriginalNotation originalNotation))
             | '*', _ when trimmed.Length > 1 && trimmed[1] = '*' -> ValueSome Exp
-            | '*', _ -> ValueSome Mul
+            | '*', _ -> ValueSome(MulDivMod(Mul, OriginalNotation originalNotation))
             | _ -> ValueNone
+
+        [<return: Struct>]
+        let (|Contains|_|) (c: char) (s: string) =
+            if s.IndexOf c >= 0 then ValueSome Contains else ValueNone
 
         /// Any expressions in which the removal of parens would
         /// lead to something like the following that would be
@@ -815,9 +749,9 @@ module UnnecessaryParentheses =
             match synExpr with
             | SynExpr.Paren(expr = ConfusableWithTypeApp)
             | SynExpr.App(funcExpr = ConfusableWithTypeApp)
-            | SynExpr.App(isInfix = true; funcExpr = FuncExpr.SymbolicOperator(SymbolPrec Greater); argExpr = ConfusableWithTypeApp) ->
+            | SynExpr.App(isInfix = true; funcExpr = FuncExpr.SymbolicOperator(Contains '>'); argExpr = ConfusableWithTypeApp) ->
                 ValueSome ConfusableWithTypeApp
-            | SynExpr.App(isInfix = true; funcExpr = funcExpr & FuncExpr.SymbolicOperator(SymbolPrec Less); argExpr = argExpr) when
+            | SynExpr.App(isInfix = true; funcExpr = funcExpr & FuncExpr.SymbolicOperator(Contains '<'); argExpr = argExpr) when
                 argExpr.Range.IsAdjacentTo funcExpr.Range
                 ->
                 ValueSome ConfusableWithTypeApp
@@ -843,8 +777,8 @@ module UnnecessaryParentheses =
             | SynExpr.App(funcExpr = SynExpr.App(isInfix = true; funcExpr = FuncExpr.SymbolicOperator(SymbolPrec prec))) ->
                 ValueSome(prec, Right)
             | SynExpr.App(isInfix = true; funcExpr = FuncExpr.SymbolicOperator(SymbolPrec prec)) -> ValueSome(prec, Left)
-            | SynExpr.Upcast _ -> ValueSome(Upcast, Left)
-            | SynExpr.Downcast _ -> ValueSome(Downcast, Left)
+            | SynExpr.Upcast _
+            | SynExpr.Downcast _ -> ValueSome(UpcastDowncast, Left)
             | SynExpr.TypeTest _ -> ValueSome(TypeTest, Left)
             | _ -> ValueNone
 
@@ -1228,11 +1162,11 @@ module UnnecessaryParentheses =
             //
             //     o.M((x = y))
             //     o.N((x = y), z)
-            | SynExpr.Paren(expr = SynExpr.Paren(expr = InfixApp(Eq, _))),
+            | SynExpr.Paren(expr = SynExpr.Paren(expr = InfixApp(Relational(OriginalNotation "="), _))),
               SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
-            | SynExpr.Paren(expr = InfixApp(Eq, _)),
+            | SynExpr.Paren(expr = InfixApp(Relational(OriginalNotation "="), _)),
               SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
-            | SynExpr.Paren(expr = InfixApp(Eq, _)),
+            | SynExpr.Paren(expr = InfixApp(Relational(OriginalNotation "="), _)),
               SyntaxNode.SynExpr(SynExpr.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(
                   funcExpr = SynExpr.LongIdent _)) :: _ -> ValueNone
 
@@ -1378,7 +1312,7 @@ module UnnecessaryParentheses =
 
                 | OuterBinaryExpr inner (outerPrecedence, side), InnerBinaryExpr innerPrecedence ->
                     let ambiguous =
-                        match Precedence.compare outerPrecedence innerPrecedence with
+                        match compare outerPrecedence innerPrecedence with
                         | 0 ->
                             match side, Assoc.ofPrecedence innerPrecedence with
                             | Non, _
@@ -1387,11 +1321,12 @@ module UnnecessaryParentheses =
                             | Right, Right
                             | Left, Left -> false
                             | Right, Left ->
-                                not (Precedence.sameKind outerPrecedence innerPrecedence)
-                                || match innerPrecedence with
-                                   | Div
-                                   | Mod
-                                   | Sub -> true
+                                outerPrecedence <> innerPrecedence
+                                || match outerPrecedence, innerPrecedence with
+                                   | _, MulDivMod(Div, _)
+                                   | _, MulDivMod(Mod, _)
+                                   | _, AddSub(Sub, _) -> true
+                                   | Relational _, Relational _ -> true
                                    | _ -> false
 
                         | c -> c > 0

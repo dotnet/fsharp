@@ -2695,7 +2695,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
     match selfArgOpt with
     | Some selfArg when
         selfArg.LogicalName <> "this"
-        && not (selfArg.LogicalName.StartsWith("_"))
+        && not (selfArg.LogicalName.StartsWithOrdinal("_"))
         && not cenv.options.localOptimizationsEnabled
         ->
         let ilTy = selfArg.Type |> GenType cenv m eenv.tyenv

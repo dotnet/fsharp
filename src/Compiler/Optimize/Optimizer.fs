@@ -1534,11 +1534,11 @@ let ValueOfExpr expr =
 
 let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.EndsWith suffixForTupleElementAssignmentTarget
+    vref.LogicalName.EndsWithOrdinal suffixForTupleElementAssignmentTarget
 
 let IsMutableForOutArg (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.StartsWith(outArgCompilerGeneratedName)
+    vref.LogicalName.StartsWithOrdinal(outArgCompilerGeneratedName)
 
 let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
     IsMutableStructuralBindingForTupleElement vref || 
@@ -1672,7 +1672,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
-    elif vspec1.LogicalName.StartsWith stackVarPrefix ||
+    elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
 
