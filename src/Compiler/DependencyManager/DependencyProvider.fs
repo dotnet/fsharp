@@ -612,7 +612,7 @@ type DependencyProvider
                 let managers =
                     RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
 
-                match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":")) with
+                match managers |> Seq.tryFind (fun kv -> path.StartsWithOrdinal(kv.Value.Key + ":")) with
                 | None ->
                     let err, msg =
                         this.CreatePackageManagerUnknownError(compilerTools, outputDir, path.Split(':').[0], reportError)

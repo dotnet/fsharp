@@ -315,6 +315,7 @@ csExpectTypeWithOperatorButGivenFunction,"Expecting a type supporting the operat
 csExpectTypeWithOperatorButGivenTuple,"Expecting a type supporting the operator '%s' but given a tuple type"
 csTypesDoNotSupportOperator,"None of the types '%s' support the operator '%s'"
 csTypeDoesNotSupportOperator,"The type '%s' does not support the operator '%s'"
+csFunctionDoesNotSupportType,"'%s' does not support the type '%s', because the latter lacks the required (real or built-in) member '%s'"
 csTypesDoNotSupportOperatorNullable,"None of the types '%s' support the operator '%s'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'."
 csTypeDoesNotSupportOperatorNullable,"The type '%s' does not support the operator '%s'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'."
 csTypeDoesNotSupportConversion,"The type '%s' does not support a conversion to the type '%s'"
@@ -1739,3 +1740,4 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3861,chkTailCallAttrOnNonRec,"The TailCall attribute should only be applied to recursive functions."
 3862,parsStaticMemberImcompleteSyntax,"Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration."
 3863,parsExpectingField,"Expecting record field"
+3864,tooManyMethodsInDotNetTypeWritingAssembly,"The type '%s' has too many methods. Found: '%d', maximum: '%d'"

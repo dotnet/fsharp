@@ -118,8 +118,7 @@ module internal SymbolHelpers =
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(vref=vref))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
-        | Item.DelegateCtor ty 
-        | Item.FakeInterfaceCtor ty -> ty |> tryNiceEntityRefOfTyOption |> Option.map (rangeOfEntityRef preferFlag)
+        | Item.DelegateCtor ty -> ty |> tryNiceEntityRefOfTyOption |> Option.map (rangeOfEntityRef preferFlag)
         | Item.NewDef _ -> None
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
@@ -190,7 +189,6 @@ module internal SymbolHelpers =
         | Item.Types(_, tys) ->
             tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.bind computeCcuOfTyconRef)
 
-        | Item.FakeInterfaceCtor(ty)
         | Item.DelegateCtor(ty) ->
             ty |> tryNiceEntityRefOfTyOption |> Option.bind computeCcuOfTyconRef
 
@@ -283,7 +281,6 @@ module internal SymbolHelpers =
         | Item.ILField finfo ->
             mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
 
-        | Item.FakeInterfaceCtor ty
         | Item.DelegateCtor ty
         | Item.Types(_, ty :: _) ->
             match ty with
@@ -363,7 +360,6 @@ module internal SymbolHelpers =
         match item with 
         | Item.DelegateCtor ty
         | Item.CtorGroup(_, [DefaultStructCtor(_, ty)])
-        | Item.FakeInterfaceCtor ty
         | Item.Types(_, [ty])  -> Some ty
         | _ -> None
 
@@ -398,7 +394,6 @@ module internal SymbolHelpers =
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
               | Item.OtherName _
-              | Item.FakeInterfaceCtor _
               | Item.ImplicitOp _
               | Item.NewDef _
               | Item.UnionCaseField _
@@ -504,7 +499,6 @@ module internal SymbolHelpers =
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
               | Item.OtherName _
-              | Item.FakeInterfaceCtor _
               | Item.ImplicitOp _
               | Item.NewDef _
               | Item.UnionCaseField _
@@ -571,7 +565,6 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, _, Some minfo) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.MethodGroup(_, minfo :: _, _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.UnqualifiedType (tcref :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os tcref)
-        | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
         | Item.Types(_, ty :: _) -> 
             match tryTcrefOfAppTy g ty with
@@ -716,7 +709,6 @@ module internal SymbolHelpers =
         | Item.ActivePatternResult _
         | Item.NewDef _
         | Item.ILField _
-        | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ ->
         //|  _ ->
             GetXmlCommentForItemAux None infoReader m item
@@ -848,7 +840,6 @@ module internal SymbolHelpers =
 #endif
         | Item.Types(_, AppTy g (tcref, _) :: _) 
         | Item.DelegateCtor(AppTy g (tcref, _))
-        | Item.FakeInterfaceCtor(AppTy g (tcref, _))
         | Item.UnqualifiedType (tcref :: _)
         | Item.ExnCase tcref -> 
             // strip off any abbreviation
@@ -859,7 +850,6 @@ module internal SymbolHelpers =
         // Pathological cases of the above
         | Item.Types _ 
         | Item.DelegateCtor _
-        | Item.FakeInterfaceCtor _
         | Item.UnqualifiedType [] -> 
             None
 
@@ -958,7 +948,6 @@ module internal SymbolHelpers =
             minfos |> List.map (fun minfo -> { Item = Item.MethodGroup(nm, [minfo], orig); TyparInstantiation = item.TyparInstantiation })
         | Item.CtorGroup(nm, cinfos) ->
             cinfos |> List.map (fun minfo -> { Item = Item.CtorGroup(nm, [minfo]); TyparInstantiation = item.TyparInstantiation }) 
-        | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 
         | Item.ILField _ -> []

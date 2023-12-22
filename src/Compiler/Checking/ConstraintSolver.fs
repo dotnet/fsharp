@@ -1394,7 +1394,7 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 ///
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
 and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> = trackErrors {
-    let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, sln)) = traitInfo
+    let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, source, sln)) = traitInfo
     // Do not re-solve if already solved
     if sln.Value.IsSome then return true else
 
@@ -1411,8 +1411,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
     let supportTys = ListSet.setify (typeAEquiv g aenv) supportTys
 
     // Rebuild the trait info after removing duplicates 
-    let traitInfo = TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, sln)
-    let retTy = GetFSharpViewOfReturnType g retTy    
+    let traitInfo = traitInfo.WithSupportTypes supportTys
+    let retTy = GetFSharpViewOfReturnType g retTy
     
     // Assert the object type if the constraint is for an instance member    
     if memFlags.IsInstance then 
@@ -1713,7 +1713,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   None
 
           let anonRecdPropSearch = 
-              let isGetProp = nm.StartsWith "get_" 
+              let isGetProp = nm.StartsWithOrdinal("get_")
               if not isRigid && isGetProp && memFlags.IsInstance  then
                   let propName = nm[4..]
                   let props = 
@@ -1754,8 +1754,17 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                              if List.isSingleton supportTys then FSComp.SR.csTypeDoesNotSupportOperatorNullable(tyString, opName)
                              else FSComp.SR.csTypesDoNotSupportOperatorNullable(tyString, opName)
                           | _ ->
-                             if List.isSingleton supportTys then FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
-                             else FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
+                             match supportTys, source.Value with
+                                | [_], Some s when s.StartsWith("Operators.") ->
+                                    let opSource = s[10..]
+                                    if opSource = nm then FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
+                                    else FSComp.SR.csTypeDoesNotSupportOperator(tyString, opSource)
+                                | [_], Some s ->
+                                    FSComp.SR.csFunctionDoesNotSupportType(s, tyString, nm)
+                                | [_], _
+                                    -> FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
+                                | _, _ 
+                                    -> FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
                       return! ErrorD(ConstraintSolverError(err, m, m2))
 
           | _ -> 
@@ -1928,7 +1937,6 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm traitInfo : (TType * MethInfo) list =
-    let (TTrait(_, _, memFlags, _, _, _)) = traitInfo
     let results = 
         if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
@@ -1938,7 +1946,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             let minfos =
                 [ for (supportTy, nominalTy) in nominalTys do
                     let infos =
-                        match memFlags.MemberKind with
+                        match traitInfo.MemberFlags.MemberKind with
                         | SynMemberKind.Constructor ->
                             GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m nominalTy
                         | _ ->
@@ -1962,8 +1970,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then 
-        let (TTrait(supportTys, _, memFlags, argTys, retTy, soln)) = traitInfo
-        let traitInfo2 = TTrait(supportTys, "op_Implicit", memFlags, argTys, retTy, soln)
+        let traitInfo2 = traitInfo.WithMemberName "op_Implicit"
         results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" traitInfo2
     else
         results
@@ -2020,7 +2027,7 @@ and SupportTypeOfMemberConstraintIsSolved (csenv: ConstraintSolverEnv) (traitInf
     
 /// Get all the unsolved typars (statically resolved or not) relevant to the member constraint
 and GetFreeTyparsOfMemberConstraint (csenv: ConstraintSolverEnv) traitInfo =
-    let (TTrait(supportTys, _, _, argTys, retTy, _)) = traitInfo
+    let (TTrait(tys=supportTys; objAndArgTys=argTys; returnTyOpt=retTy)) = traitInfo
     freeInTypesLeftToRightSkippingConstraints csenv.g (supportTys @ argTys @ Option.toList retTy)
 
 and MemberConstraintIsReadyForWeakResolution csenv traitInfo =
@@ -2104,8 +2111,8 @@ and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     
 and TraitsAreRelated (csenv: ConstraintSolverEnv) retry traitInfo1 traitInfo2 =
     let g = csenv.g
-    let (TTrait(tys1, nm1, memFlags1, argTys1, _, _)) = traitInfo1
-    let (TTrait(tys2, nm2, memFlags2, argTys2, _, _)) = traitInfo2
+    let (TTrait(tys=tys1; memberName=nm1; memberFlags=memFlags1; objAndArgTys=argTys1)) = traitInfo1
+    let (TTrait(tys=tys2; memberName=nm2; memberFlags=memFlags2; objAndArgTys=argTys2)) = traitInfo2
     memFlags1.IsInstance = memFlags2.IsInstance &&
     nm1 = nm2 &&
     // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
@@ -2130,8 +2137,8 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
     match tpc1, tpc2 with
     | TyparConstraint.MayResolveMember(traitInfo1, _), TyparConstraint.MayResolveMember(traitInfo2, _)
         when TraitsAreRelated csenv retry traitInfo1 traitInfo2 ->
-        let (TTrait(tys1, _, _, argTys1, rty1, _)) = traitInfo1
-        let (TTrait(tys2, _, _, argTys2, rty2, _)) = traitInfo2
+        let (TTrait(tys=tys1; objAndArgTys=argTys1; returnTyOpt=rty1)) = traitInfo1
+        let (TTrait(tys=tys2; objAndArgTys=argTys2; returnTyOpt=rty2)) = traitInfo2
         if retry then
             match tys1, tys2 with
             | [ty1], [ty2] -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2
