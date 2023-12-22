@@ -22,6 +22,11 @@
         <target state="translated">Aggiungi la parola chiave 'new'</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Aggiungere l'annotazione di tipo</target>
