@@ -1389,12 +1389,16 @@ type internal TransparentCompiler
 
                     let tcDependencyFiles = [] // TODO add as a set to TcIntermediate
 
-                    let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
-
                     // TODO: Apparently creating diagnostics can produce further diagnostics. So let's capture those too. Hopefully there is a more elegant solution...
                     // Probably diagnostics need to be evaluated during typecheck anyway for proper formatting, which might take care of this too.
                     let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
                     use _ = new CompilationGlobalsScope(extraLogger, BuildPhase.TypeCheck)
+
+                    // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
+                    let tcConfig =
+                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName)
+
+                    let diagnosticsOptions = tcConfig.diagnosticsOptions
 
                     let symbolEnv =
                         SymbolEnv(bootstrapInfo.TcGlobals, tcState.Ccu, Some tcState.CcuSig, bootstrapInfo.TcImports)
