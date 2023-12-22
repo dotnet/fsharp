@@ -5109,7 +5109,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="needs-review-translation">Per F#7 e versioni precedenti, le definizioni di valori statici possono essere usate solo in tipi con un costruttore primario ('type X(args) = ...'). Per abilitarli in tutti gli altri tipi, usare la versione di "anteprima" del linguaggio.</target>
+        <target state="new">For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8514,7 +8514,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="needs-review-translation">Non è possibile chiamare il metodo di estensione byref '{0}. Il valore del primo parametro deve essere modificabile oppure un tipo byref non di sola lettura.</target>
+        <target state="new">Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8604,7 +8604,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">La chiave "'{0}" del gestione pacchetti non è stata registrata in {1}. Attualmente registrata: {2}. Per altre informazioni sulle estensioni, vedere: https://aka.ms/dotnetdepmanager</target>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
