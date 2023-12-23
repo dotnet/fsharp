@@ -306,7 +306,7 @@ module public ParsedInput =
     /// Like fold, but the walker function may optionally specify which child nodes to walk in what order.
     ///
     /// If the walker function specifies <c>None</c> for the child nodes, the node's children are traversed in the default way.
-    /// If the walker function specifies <c>Some []</c> for the child nodes, traversal ends.
+    /// If the walker function specifies <c>Some []</c> for the child nodes, none of the node's children are traversed.
     /// </summary>
     /// <param name="walker">The function to use to update the state given each node and its context.</param>
     /// <param name="state">The initial state.</param>
