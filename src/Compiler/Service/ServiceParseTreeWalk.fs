@@ -321,7 +321,7 @@ module SyntaxTraversal =
         (pick: pos -> range -> obj -> (range * (unit -> 'T option)) list -> 'T option)
         (pos: pos)
         (visitor: SyntaxVisitorBase<'T>)
-        (tree: SyntaxNode list)
+        (forestWithContext: struct (SyntaxNode * SyntaxVisitorPath) list)
         : 'T option =
         let pick x = pick pos x
 
@@ -1078,27 +1078,29 @@ module SyntaxTraversal =
             | SynMemberSig.NestedType(nestedType = nestedType) -> traverseSynTypeDefnSig path nestedType
 
         let fileRange =
-            (range0, tree) ||> List.fold (fun acc node -> unionRanges acc node.Range)
+            (range0, forestWithContext)
+            ||> List.fold (fun acc struct (node, _) -> unionRanges acc node.Range)
 
-        tree
-        |> List.map (function
+        forestWithContext
+        |> List.map (fun struct (node, path) ->
+            match node with
             | SyntaxNode.SynModuleOrNamespace moduleOrNamespace ->
-                dive moduleOrNamespace moduleOrNamespace.Range (traverseSynModuleOrNamespace [])
+                dive moduleOrNamespace moduleOrNamespace.Range (traverseSynModuleOrNamespace path)
             | SyntaxNode.SynModuleOrNamespaceSig moduleOrNamespaceSig ->
-                dive moduleOrNamespaceSig moduleOrNamespaceSig.Range (traverseSynModuleOrNamespaceSig [])
-            | SyntaxNode.SynPat pat -> dive pat pat.Range (traversePat [])
-            | SyntaxNode.SynType ty -> dive ty ty.Range (traverseSynType [])
-            | SyntaxNode.SynExpr expr -> dive expr expr.Range (traverseSynExpr [])
-            | SyntaxNode.SynModule modul -> dive modul modul.Range (traverseSynModuleDecl [])
-            | SyntaxNode.SynTypeDefn tyDef -> dive tyDef tyDef.Range (traverseSynTypeDefn [])
-            | SyntaxNode.SynMemberDefn memberDef -> dive memberDef memberDef.Range (traverseSynMemberDefn [] (fun _ -> None))
-            | SyntaxNode.SynMatchClause matchClause -> dive matchClause matchClause.Range (traverseSynMatchClause [])
-            | SyntaxNode.SynBinding binding -> dive binding binding.RangeOfBindingWithRhs (traverseSynBinding [])
-            | SyntaxNode.SynModuleSigDecl moduleSigDecl -> dive moduleSigDecl moduleSigDecl.Range (traverseSynModuleSigDecl [])
-            | SyntaxNode.SynValSig(SynValSig.SynValSig(range = range) as valSig) -> dive valSig range (traverseSynValSig [])
-            | SyntaxNode.SynTypeDefnSig tyDefSig -> dive tyDefSig tyDefSig.Range (traverseSynTypeDefnSig [])
-            | SyntaxNode.SynMemberSig memberSig -> dive memberSig memberSig.Range (traverseSynMemberSig []))
-        |> pick fileRange tree
+                dive moduleOrNamespaceSig moduleOrNamespaceSig.Range (traverseSynModuleOrNamespaceSig path)
+            | SyntaxNode.SynPat pat -> dive pat pat.Range (traversePat path)
+            | SyntaxNode.SynType ty -> dive ty ty.Range (traverseSynType path)
+            | SyntaxNode.SynExpr expr -> dive expr expr.Range (traverseSynExpr path)
+            | SyntaxNode.SynModule modul -> dive modul modul.Range (traverseSynModuleDecl path)
+            | SyntaxNode.SynTypeDefn tyDef -> dive tyDef tyDef.Range (traverseSynTypeDefn path)
+            | SyntaxNode.SynMemberDefn memberDef -> dive memberDef memberDef.Range (traverseSynMemberDefn path (fun _ -> None))
+            | SyntaxNode.SynMatchClause matchClause -> dive matchClause matchClause.Range (traverseSynMatchClause path)
+            | SyntaxNode.SynBinding binding -> dive binding binding.RangeOfBindingWithRhs (traverseSynBinding path)
+            | SyntaxNode.SynModuleSigDecl moduleSigDecl -> dive moduleSigDecl moduleSigDecl.Range (traverseSynModuleSigDecl path)
+            | SyntaxNode.SynValSig(SynValSig.SynValSig(range = range) as valSig) -> dive valSig range (traverseSynValSig path)
+            | SyntaxNode.SynTypeDefnSig tyDefSig -> dive tyDefSig tyDefSig.Range (traverseSynTypeDefnSig path)
+            | SyntaxNode.SynMemberSig memberSig -> dive memberSig memberSig.Range (traverseSynMemberSig path))
+        |> pick fileRange (List.map (fun struct (node, _) -> node) forestWithContext)
 
     let traverseAll (visitor: SyntaxVisitorBase<'T>) (parseTree: ParsedInput) : unit =
         let pick _ _ _ diveResults =
@@ -1113,8 +1115,12 @@ module SyntaxTraversal =
 
         let contents =
             match parseTree with
-            | ParsedInput.ImplFile implFile -> implFile.Contents |> List.map SyntaxNode.SynModuleOrNamespace
-            | ParsedInput.SigFile sigFile -> sigFile.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
+            | ParsedInput.ImplFile implFile ->
+                implFile.Contents
+                |> List.map (fun node -> struct (SyntaxNode.SynModuleOrNamespace node, []))
+            | ParsedInput.SigFile sigFile ->
+                sigFile.Contents
+                |> List.map (fun node -> struct (SyntaxNode.SynModuleOrNamespaceSig node, []))
 
         ignore<'T option> (traverseUntil pick parseTree.Range.End visitor contents)
 
@@ -1123,8 +1129,12 @@ module SyntaxTraversal =
     let Traverse (pos: pos, parseTree, visitor: SyntaxVisitorBase<'T>) =
         let contents =
             match parseTree with
-            | ParsedInput.ImplFile implFile -> implFile.Contents |> List.map SyntaxNode.SynModuleOrNamespace
-            | ParsedInput.SigFile sigFile -> sigFile.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
+            | ParsedInput.ImplFile implFile ->
+                implFile.Contents
+                |> List.map (fun node -> struct (SyntaxNode.SynModuleOrNamespace node, []))
+            | ParsedInput.SigFile sigFile ->
+                sigFile.Contents
+                |> List.map (fun node -> struct (SyntaxNode.SynModuleOrNamespaceSig node, []))
 
         traverseUntil pick pos visitor contents
 
@@ -1204,7 +1214,8 @@ module ParsedInput =
                     defaultTraverse valSig
             }
 
-        ignore<unit option> (SyntaxTraversal.traverseUntil pickAll parsedInput.Range.End visitor (contents parsedInput))
+        let contents = contents parsedInput |> List.map (fun node -> struct (node, []))
+        ignore<unit option> (SyntaxTraversal.traverseUntil pickAll parsedInput.Range.End visitor contents)
         state
 
     let foldWhile folder state (parsedInput: ParsedInput) =
@@ -1294,7 +1305,8 @@ module ParsedInput =
                     | None -> Some()
             }
 
-        ignore<unit option> (SyntaxTraversal.traverseUntil pickAll parsedInput.Range.End visitor (contents parsedInput))
+        let contents = contents parsedInput |> List.map (fun node -> struct (node, []))
+        ignore<unit option> (SyntaxTraversal.traverseUntil pickAll parsedInput.Range.End visitor contents)
         state
 
     let walk walker state (parsedInput: ParsedInput) =
@@ -1309,6 +1321,9 @@ module ParsedInput =
         let finish = parsedInput.Range.End
         let mutable state = state
 
+        let withPath path children =
+            children |> List.map (fun node -> struct (node, path))
+
         let visitor =
             { new SyntaxVisitorBase<unit>() with
                 member this.VisitExpr(path, _, defaultTraverse, expr) =
@@ -1319,7 +1334,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitPat(path, defaultTraverse, pat) =
                     match walker state path (SyntaxNode.SynPat pat) with
@@ -1329,7 +1344,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitType(path, defaultTraverse, synType) =
                     match walker state path (SyntaxNode.SynType synType) with
@@ -1339,7 +1354,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
                     match walker state path (SyntaxNode.SynModule synModuleDecl) with
@@ -1349,7 +1364,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitModuleOrNamespace(path, synModuleOrNamespace) =
                     match walker state path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace) with
@@ -1359,7 +1374,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitComponentInfo(path, _synComponentInfo) =
                     match path with
@@ -1371,7 +1386,7 @@ module ParsedInput =
 
                         | state', Some children ->
                             state <- state'
-                            SyntaxTraversal.traverseUntil pick finish this children
+                            SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                     | _ -> None
 
@@ -1383,7 +1398,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitBinding(path, defaultTraverse, synBinding) =
                     match walker state path (SyntaxNode.SynBinding synBinding) with
@@ -1393,7 +1408,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
                     match walker state path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig) with
@@ -1403,7 +1418,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
                     match walker state path (SyntaxNode.SynModuleSigDecl synModuleSigDecl) with
@@ -1413,7 +1428,7 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
 
                 member this.VisitValSig(path, defaultTraverse, valSig) =
                     match walker state path (SyntaxNode.SynValSig valSig) with
@@ -1423,10 +1438,11 @@ module ParsedInput =
 
                     | state', Some children ->
                         state <- state'
-                        SyntaxTraversal.traverseUntil pick finish this children
+                        SyntaxTraversal.traverseUntil pick finish this (withPath path children)
             }
 
-        ignore<unit option> (SyntaxTraversal.traverseUntil pick finish visitor (contents parsedInput))
+        let contents = contents parsedInput |> List.map (fun node -> struct (node, []))
+        ignore<unit option> (SyntaxTraversal.traverseUntil pick finish visitor contents)
         state
 
     let private tryPickImpl pick position chooser parsedInput =
@@ -1476,7 +1492,8 @@ module ParsedInput =
                     |> Option.orElseWith (fun () -> defaultTraverse valSig)
             }
 
-        SyntaxTraversal.traverseUntil pick position visitor (contents parsedInput)
+        let contents = contents parsedInput |> List.map (fun node -> struct (node, []))
+        SyntaxTraversal.traverseUntil pick position visitor contents
 
     let tryPickDownTo position chooser parsedInput =
         tryPickImpl SyntaxTraversal.pick position chooser parsedInput
