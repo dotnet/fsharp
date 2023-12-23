@@ -1317,10 +1317,6 @@ module ParsedInput =
                         state <- state'
                         defaultTraverse expr
 
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
-
                     | state', Some children ->
                         state <- state'
                         SyntaxTraversal.traverseUntil pick finish this children
@@ -1330,10 +1326,6 @@ module ParsedInput =
                     | state', None ->
                         state <- state'
                         defaultTraverse pat
-
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1345,10 +1337,6 @@ module ParsedInput =
                         state <- state'
                         defaultTraverse synType
 
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
-
                     | state', Some children ->
                         state <- state'
                         SyntaxTraversal.traverseUntil pick finish this children
@@ -1359,10 +1347,6 @@ module ParsedInput =
                         state <- state'
                         defaultTraverse synModuleDecl
 
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
-
                     | state', Some children ->
                         state <- state'
                         SyntaxTraversal.traverseUntil pick finish this children
@@ -1372,10 +1356,6 @@ module ParsedInput =
                     | state', None ->
                         state <- state'
                         None
-
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1389,10 +1369,6 @@ module ParsedInput =
                             state <- state'
                             None
 
-                        | state', Some [] ->
-                            state <- state'
-                            Some()
-
                         | state', Some children ->
                             state <- state'
                             SyntaxTraversal.traverseUntil pick finish this children
@@ -1405,10 +1381,6 @@ module ParsedInput =
                         state <- state'
                         defaultTraverse matchClause
 
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
-
                     | state', Some children ->
                         state <- state'
                         SyntaxTraversal.traverseUntil pick finish this children
@@ -1418,10 +1390,6 @@ module ParsedInput =
                     | state', None ->
                         state <- state'
                         defaultTraverse synBinding
-
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
 
                     | state', Some children ->
                         state <- state'
@@ -1433,10 +1401,6 @@ module ParsedInput =
                         state <- state'
                         None
 
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
-
                     | state', Some children ->
                         state <- state'
                         SyntaxTraversal.traverseUntil pick finish this children
@@ -1447,10 +1411,6 @@ module ParsedInput =
                         state <- state'
                         defaultTraverse synModuleSigDecl
 
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
-
                     | state', Some children ->
                         state <- state'
                         SyntaxTraversal.traverseUntil pick finish this children
@@ -1460,10 +1420,6 @@ module ParsedInput =
                     | state', None ->
                         state <- state'
                         defaultTraverse valSig
-
-                    | state', Some [] ->
-                        state <- state'
-                        Some()
 
                     | state', Some children ->
                         state <- state'
