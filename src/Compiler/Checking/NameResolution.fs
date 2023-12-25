@@ -3479,7 +3479,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) occurrence nenv ty
     let _, tinst, args = FreshenTypeInst ncenv.g m (tcref.Typars m)
     let ttype = TType_app(tcref, args, ncenv.g.knownWithoutNull)
     let item = Item.Types(tcref.DisplayName, [ttype])
-    CallNameResolutionSink sink (m, nenv, item, tinst, occurrence, ad)
+    CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, occurrence, ad)
     tcref, args
 
 /// Create an UndefinedName error with details
