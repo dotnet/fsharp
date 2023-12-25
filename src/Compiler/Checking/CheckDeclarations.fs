@@ -4099,7 +4099,7 @@ module TcDeclarations =
         let g = cenv.g
         let ad = envForDecls.AccessRights
         
-        let tcref, reqTypars = 
+        let tcref = 
           match tyconOpt with
           | Some tycon when isAtOriginalTyconDefn -> 
 
@@ -4108,17 +4108,15 @@ module TcDeclarations =
             ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No 
                |> ignore
 
-            let tcref = mkLocalTyconRef tycon
-            let reqTypars = tcref.Typars m
-            tcref, reqTypars
+            mkLocalTyconRef tycon
 
           | _ ->
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
-            let _, tcref, reqTypars =
+            let tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
                 | Result res ->
                     // Update resolved type parameters with the names from the source.
-                    let types, tcref, ttypes = res
+                    let _, tcref, _ = res
                     if tcref.TyparsNoRange.Length = synTypars.Length then
                         (tcref.TyparsNoRange, synTypars)
                         ||> List.zip
@@ -4128,14 +4126,13 @@ module TcDeclarations =
                                 typar.SetIdent(untypedIdent)
                         )
 
-                    let tps = ttypes |> List.map (function TType_var(typar, _) -> typar | t -> failwith $"ComputeTyconDeclKind: {t}")
-                    types, tcref, tps
+                    tcref
 
                 | Exception exn ->
                     if inSig && List.isSingleton longPath then
                         errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
                     ForceRaise (Exception exn)
-            tcref, reqTypars
+            tcref
 
         let isInterfaceOrDelegateOrEnum = 
             tcref.Deref.IsFSharpInterfaceTycon || 
@@ -4145,6 +4142,8 @@ module TcDeclarations =
         let isDelegateOrEnum = 
             tcref.Deref.IsFSharpDelegateTycon ||
             tcref.Deref.IsFSharpEnumTycon
+
+        let reqTypars = tcref.Typars m
 
         // Member definitions are intrinsic (added directly to the type) if:
         // a) For interfaces, only if it is in the original defn.
