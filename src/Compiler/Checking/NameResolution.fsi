@@ -727,7 +727,6 @@ val internal ResolvePatternLongIdent:
 val internal ResolveTypeLongIdentInTyconRef:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
-    occurrence: ItemOccurence ->
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     ad: AccessorDomain ->

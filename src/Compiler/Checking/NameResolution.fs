@@ -3467,7 +3467,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInf
         AtMostOneResult m tyconSearch
 
 /// Resolve a long identifier representing a type name and report the result
-let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) occurrence nenv typeNameResInfo ad m tcref (lid: Ident list) =
+let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResInfo ad m tcref (lid: Ident list) =
     let resInfo, tcref =
         match lid with
         | [] ->
@@ -3479,7 +3479,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) occurrence nenv ty
     let _, tinst, args = FreshenTypeInst ncenv.g m (tcref.Typars m)
     let ttype = TType_app(tcref, args, ncenv.g.knownWithoutNull)
     let item = Item.Types(tcref.DisplayName, [ttype])
-    CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, occurrence, ad)
+    CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, ItemOccurence.UseInType, ad)
     tcref, args
 
 /// Create an UndefinedName error with details

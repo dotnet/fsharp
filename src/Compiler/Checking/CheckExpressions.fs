@@ -4518,7 +4518,7 @@ and TcNestedAppType (cenv: cenv) newOk checkConstraints occ iwsam env tpenv synL
     let leftTy, tpenv = TcType cenv newOk checkConstraints occ iwsam env tpenv synLeftTy
     match leftTy with
     | AppTy g (tcref, tinst) ->
-        let tcref, inst = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver occ env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId
+        let tcref, inst = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId
         TcTypeApp cenv newOk checkConstraints occ env tpenv m tcref tinst args inst
     | _ ->
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
