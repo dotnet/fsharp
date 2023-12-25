@@ -5047,7 +5047,13 @@ atomicExpr:
 atomicExprQualification:
   | identOrOp
       { let idm = rhs parseState 1
-        (fun e mLhs mDot -> mkSynDot mDot mLhs e $1) }
+        fun e mLhs mDot -> mkSynDot mDot mLhs e $1 }
+
+  | LPAREN rparen
+      { reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName ())
+        let lpr = rhs parseState 1
+        let ident = SynIdent(mkSynId lpr.EndRange "", Some(IdentTrivia.HasParenthesis(lpr, rhs parseState 2)))
+        fun e mLhs mDot -> mkSynDot mDot mLhs e ident }
 
   | GLOBAL
       { (fun e mLhs mDot ->

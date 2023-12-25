@@ -963,7 +963,7 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | ".[]"  | ".[]<-" | ".[,]<-" | ".[,,]<-" | ".[,,,]<-" | ".[,,,]" | ".[,,]" | ".[,]" | ".[..]" | ".[..,..]" | ".[..,..,..]" | ".[..,..,..,..]"
 
- | ".()"  | ".()<-"  { FUNKY_OPERATOR_NAME(lexeme lexbuf) }
+ | ".()<-"  { FUNKY_OPERATOR_NAME(lexeme lexbuf) }
 
  | "#!" op_char*
    { // Treat shebangs like regular comments, but they are only allowed at the start of a file
