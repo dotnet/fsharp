@@ -1566,6 +1566,85 @@ let FreshenUnionCaseRef (ncenv: NameResolver) m (ucref: UnionCaseRef) =
 let FreshenRecdFieldRef (ncenv: NameResolver) m (rfref: RecdFieldRef) =
     RecdFieldInfo(ncenv.InstantiationGenerator m (rfref.Tycon.Typars m), rfref)
 
+//-------------------------------------------------------------------------
+// Generate type variables and record them in within the scope of the
+// compilation environment, which currently corresponds to the scope
+// of the constraint resolution carried out by type checking.
+//------------------------------------------------------------------------- 
+   
+let compgenId = mkSynId range0 unassignedTyparName
+
+let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
+    Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
+    
+let AnonTyparId m = mkSynId m unassignedTyparName
+
+let NewAnonTypar (kind, m, rigid, var, dyn) = 
+    Construct.NewTypar (kind, rigid, SynTypar(AnonTyparId m, var, true), false, dyn, [], false, false)
+    
+let NewNamedInferenceMeasureVar (_m: range, rigid, var, id) = 
+    Construct.NewTypar(TyparKind.Measure, rigid, SynTypar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
+
+let NewInferenceMeasurePar () =
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
+
+let NewErrorTypar () =
+    NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
+
+let NewErrorMeasureVar () =
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
+
+let NewInferenceType (g: TcGlobals) = 
+    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
+    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
+
+let NewErrorType () =
+    mkTyparTy (NewErrorTypar ())
+
+let NewErrorMeasure () =
+    Measure.Var (NewErrorMeasureVar ())
+
+let NewByRefKindInferenceType (g: TcGlobals) m = 
+    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)
+    if g.byrefkind_InOut_tcr.CanDeref then
+        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull), m)]
+    mkTyparTy tp
+
+let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
+
+let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
+    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
+    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
+    let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
+    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
+
+// QUERY: should 'rigid' ever really be 'true'? We set this when we know
+// we are going to have to generalize a typar, e.g. when implementing a 
+// abstract generic method slot. But we later check the generalization 
+// condition anyway, so we could get away with a non-rigid typar. This 
+// would sort of be cleaner, though give errors later. 
+let FreshenAndFixupTypars g m rigid fctps tinst tpsorig =
+    let tps = tpsorig |> List.map (FreshenTypar g rigid)
+    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
+    tps, renaming, tinst
+
+let FreshenTypeInst g m tpsorig =
+    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig
+
+let FreshMethInst g m fctps tinst tpsorig =
+    FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig
+
+let FreshenTypars g m tpsorig =
+    match tpsorig with 
+    | [] -> []
+    | _ -> 
+        let _, _, tpTys = FreshenTypeInst g m tpsorig
+        tpTys
+
+let FreshenMethInfo m (minfo: MethInfo) =
+    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+    tpTys
+
 /// This must be called after fetching unqualified items that may need to be freshened 
 /// or have type instantiations
 let ResolveUnqualifiedItem (ncenv: NameResolver) nenv m res =
@@ -2977,31 +3056,6 @@ let ResolveUnqualifiedTyconRefs nenv tcrefs =
             (resInfo, tcref)
         | Some tinst ->
             (resInfo.WithEnclosingTypeInst tinst, tcref))
-
-let compgenId = mkSynId range0 unassignedTyparName
-
-let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
-    Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false)
-
-let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
-    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
-    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
-    let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
-    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
-
-// QUERY: should 'rigid' ever really be 'true'? We set this when we know
-// we are going to have to generalize a typar, e.g. when implementing a 
-// abstract generic method slot. But we later check the generalization 
-// condition anyway, so we could get away with a non-rigid typar. This 
-// would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars g m rigid fctps tinst tpsorig =
-    let tps = tpsorig |> List.map (FreshenTypar g rigid)
-    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
-    tps, renaming, tinst
-
-let FreshenTypeInst g m tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig
-
 
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers
