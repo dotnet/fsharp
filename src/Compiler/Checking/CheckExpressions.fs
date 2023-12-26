@@ -4954,7 +4954,12 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv m tcref pathType
     if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref synArgTys m else
 #endif
 
-    let tps = tinst |> List.map (fun t ->
+    let synArgTysLength = synArgTys.Length
+    let pathTypeArgsLength = pathTypeArgs.Length
+    if tinst.Length <> pathTypeArgsLength + synArgTysLength then
+        error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgsLength + synArgTysLength, m))
+
+    let tps = tinst |> List.skip pathTypeArgsLength |> List.map (fun t ->
         match t with
         | TType_var(typar, _)
         | TType_measure(Measure.Var typar) -> typar
@@ -4964,10 +4969,6 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv m tcref pathType
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized.
     if checkConstraints = NoCheckCxs then tps |> List.iter (fun tp -> tp.SetConstraints [])
-    let synArgTysLength = synArgTys.Length
-    let pathTypeArgsLength = pathTypeArgs.Length
-    if tinst.Length <> pathTypeArgsLength + synArgTysLength then
-        error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgsLength + synArgTysLength, m))
 
     let argTys, tpenv =
         // Get the suffix of typars
