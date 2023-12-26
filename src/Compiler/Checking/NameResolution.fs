@@ -3162,10 +3162,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                     match tyconSearch () with
                     | Result((resInfo, tcref) :: _) ->
-                        let inst = FreshenTypeInst ncenv.g m (tcref.Typars m)
-                        let _, _, tTypes = inst
-                        let tType = TType_app(tcref, tTypes, ncenv.g.knownWithoutNull)
-                        let item = Item.Types(id.idText, [ tType ])
+                        let _, _, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+                        let item = Item.Types(id.idText, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
                         success (resInfo, item)
                     | _ ->
 
@@ -3530,11 +3528,11 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
             ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref id rest)
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> true))
 
-    let _, tinst, args = FreshenTypeInst ncenv.g m (tcref.Typars m)
-    let ttype = TType_app(tcref, args, ncenv.g.knownWithoutNull)
-    let item = Item.Types(tcref.DisplayName, [ttype])
+    let _, tinst, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+    let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
     CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, ItemOccurence.UseInType, ad)
-    tcref, args
+
+    tcref, tyargs
 
 /// Create an UndefinedName error with details
 let SuggestTypeLongIdentInModuleOrNamespace depth (modref: ModuleOrNamespaceRef) amap ad m (id: Ident) =
@@ -3692,12 +3690,12 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurence fullyQualified 
     match res with
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
-        let inst = FreshenTypeInst ncenv.g m (tcref.Typars m)
-        let _, inst2, tTypes = inst
-        let ttype = TType_app(tcref, tTypes, ncenv.g.knownWithoutNull)
-        let item = Item.Types(tcref.DisplayName, [ttype])
-        CallNameResolutionSink sink (m, nenv, item, inst2, occurence, ad)
-        Result(resInfo, tcref, tTypes)
+
+        let _, tinst, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+        let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
+        CallNameResolutionSink sink (m, nenv, item, tinst, occurence, ad)
+
+        Result(resInfo, tcref, tyargs)
 
     | Exception exn ->
         Exception exn
