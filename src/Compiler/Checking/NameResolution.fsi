@@ -719,7 +719,14 @@ val FreshenMethInfo: range -> MethInfo -> TType list
 ///   1. the new type parameters
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
-val FreshenAndFixupTypars: g: TcGlobals -> m: range -> rigid: TyparRigidity -> fctps: Typars -> tinst: TType list -> tpsorig: Typar list -> Typar list * TyparInstantiation * TTypes
+val FreshenAndFixupTypars:
+    g: TcGlobals ->
+    m: range ->
+    rigid: TyparRigidity ->
+    fctps: Typars ->
+    tinst: TType list ->
+    tpsorig: Typar list ->
+        Typar list * TyparInstantiation * TTypes
 
 /// Given a set of type parameters, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted.
