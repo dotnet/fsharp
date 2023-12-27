@@ -1967,16 +1967,6 @@ FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.Docume
 FSharp.Compiler.CodeAnalysis.DocumentSource: Int32 Tag
 FSharp.Compiler.CodeAnalysis.DocumentSource: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.DocumentSource: System.String ToString()
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 braceMatchCacheSize
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 checkFileInProjectCacheSize
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 frameworkTcImportsCacheStrongSize
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 get_braceMatchCacheSize()
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 get_checkFileInProjectCacheSize()
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 get_frameworkTcImportsCacheStrongSize()
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 get_parseFileCacheSize()
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 get_projectCacheSizeDefault()
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 parseFileCacheSize
-FSharp.Compiler.CodeAnalysis.EnvMisc: Int32 projectCacheSizeDefault
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults Item
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_Item()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Tags: Int32 Aborted
@@ -2304,8 +2294,6 @@ FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: System.String get_baggage()
 FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: System.String get_itemSpec()
 FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: System.String itemSpec
 FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.String],System.String], System.String)
-FSharp.Compiler.CodeAnalysis.ParseCacheLockToken: Void .ctor()
-FSharp.Compiler.CodeAnalysis.ScriptClosureCacheToken: Void .ctor()
 FSharp.Compiler.CompilerEnvironment: Boolean IsCheckerSupportedSubcategory(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean IsCompilable(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean IsScriptFile(System.String)
@@ -10200,12 +10188,12 @@ FSharp.Compiler.Text.ISourceText: Char get_Item(Int32)
 FSharp.Compiler.Text.ISourceText: Int32 GetLineCount()
 FSharp.Compiler.Text.ISourceText: Int32 Length
 FSharp.Compiler.Text.ISourceText: Int32 get_Length()
-FSharp.Compiler.Text.ISourceText: System.Collections.Immutable.ImmutableArray`1[System.Byte] GetChecksum()
 FSharp.Compiler.Text.ISourceText: System.String GetLineString(Int32)
 FSharp.Compiler.Text.ISourceText: System.String GetSubTextFromRange(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Text.ISourceText: System.String GetSubTextString(Int32, Int32)
 FSharp.Compiler.Text.ISourceText: System.Tuple`2[System.Int32,System.Int32] GetLastCharacterPosition()
 FSharp.Compiler.Text.ISourceText: Void CopyTo(Int32, Char[], Int32, Int32)
+FSharp.Compiler.Text.ISourceTextNew: System.Collections.Immutable.ImmutableArray`1[System.Byte] GetChecksum()
 FSharp.Compiler.Text.Line: Int32 fromZ(Int32)
 FSharp.Compiler.Text.Line: Int32 toZ(Int32)
 FSharp.Compiler.Text.NavigableTaggedText: FSharp.Compiler.Text.Range Range
@@ -10285,6 +10273,8 @@ FSharp.Compiler.Text.RangeModule: System.Tuple`2[System.String,System.Tuple`2[Sy
 FSharp.Compiler.Text.RangeModule: System.Tuple`2[System.Tuple`2[System.Int32,System.Int32],System.Tuple`2[System.Int32,System.Int32]] toZ(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Text.RangeModule: Void outputRange(System.IO.TextWriter, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Text.SourceText: FSharp.Compiler.Text.ISourceText ofString(System.String)
+FSharp.Compiler.Text.SourceTextNew: FSharp.Compiler.Text.ISourceTextNew ofISourceText(FSharp.Compiler.Text.ISourceText)
+FSharp.Compiler.Text.SourceTextNew: FSharp.Compiler.Text.ISourceTextNew ofString(System.String)
 FSharp.Compiler.Text.TaggedText: FSharp.Compiler.Text.TextTag Tag
 FSharp.Compiler.Text.TaggedText: FSharp.Compiler.Text.TextTag get_Tag()
 FSharp.Compiler.Text.TaggedText: System.String Text
