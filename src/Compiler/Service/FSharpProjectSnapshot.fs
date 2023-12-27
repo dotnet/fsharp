@@ -244,7 +244,7 @@ type ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: ProjectCore, 
 
     member this.Replace(changedSourceFiles: 'T list) =
         // TODO: validate if changed files are not present in the original list?
-        
+
         let sourceFiles =
             sourceFiles
             |> List.map (fun x ->
@@ -435,10 +435,14 @@ and [<NoComparison; CustomEquality>] internal FSharpReferencedProjectSnapshot =
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
-
 and FSharpProjectSnapshot internal(projectSnapshot) =
 
     member internal _.ProjectSnapshot: ProjectSnapshot = projectSnapshot
+
+    member _.Replace(changedSourceFiles: FSharpFileSnapshot list) =
+        projectSnapshot.Replace(changedSourceFiles) |> FSharpProjectSnapshot
+
+    member _.Label = projectSnapshot.Label
 
     static member Create
         (

@@ -20,6 +20,8 @@ open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open System.Text.Json.Nodes
 
+#nowarn "57" // Experimental stuff
+
 [<RequireQualifiedAccess>]
 module internal ProjectCache =
 
@@ -195,7 +197,7 @@ module private CheckerExtensions =
                         let changedDocuments = changes.GetChangedDocuments() |> Seq.toList
 
                         System.Diagnostics.Trace.TraceInformation
-                            $"Incremental update of FSharpProjectSnapshot ({oldSnapshot.ProjectCore.Label}) - {changedDocuments.Length} changed documents"
+                            $"Incremental update of FSharpProjectSnapshot ({oldSnapshot.Label}) - {changedDocuments.Length} changed documents"
 
                         if changedDocuments.Length = 0 then
                             // this is suspicious
@@ -267,7 +269,7 @@ module private CheckerExtensions =
 
                         let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
 
-                        System.Diagnostics.Trace.TraceInformation $"Created new FSharpProjectSnapshot ({snapshot.ProjectCore.Label})"
+                        System.Diagnostics.Trace.TraceInformation $"Created new FSharpProjectSnapshot ({snapshot.Label})"
 
                         return snapshot
                     }
