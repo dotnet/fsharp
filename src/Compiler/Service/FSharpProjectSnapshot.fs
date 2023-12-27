@@ -23,7 +23,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 
-type IFileSnapshot =
+type internal IFileSnapshot =
     abstract member FileName: string
     abstract member Version: byte array
     abstract member IsSignatureFile: bool
@@ -59,6 +59,7 @@ module internal Helpers =
         |> fst,
         lastFile
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Task<ISourceTextNew>) =
 
     static member Create(fileName: string, version: string, getSource: unit -> Task<ISourceTextNew>) =
@@ -92,7 +93,7 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
         member this.Version = this.Version |> System.Text.Encoding.UTF8.GetBytes
         member this.IsSignatureFile = this.IsSignatureFile
 
-type FSharpFileSnapshotWithSource
+type internal FSharpFileSnapshotWithSource
     (FileName: string, SourceHash: ImmutableArray<byte>, Source: ISourceText, IsLastCompiland: bool, IsExe: bool) =
 
     let version = lazy (SourceHash.ToBuilder().ToArray())
@@ -112,7 +113,7 @@ type FSharpFileSnapshotWithSource
         member this.Version = this.Version
         member this.IsSignatureFile = this.IsSignatureFile
 
-type FSharpParsedFile
+type internal FSharpParsedFile
     (
         FileName: string,
         SyntaxTreeHash: byte array,
@@ -133,12 +134,12 @@ type FSharpParsedFile
         member this.Version = SyntaxTreeHash
         member this.IsSignatureFile = this.IsSignatureFile
 
-type ReferenceOnDisk =
+type internal ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
-type ProjectSnapshotKey = string * string
+type internal ProjectSnapshotKey = string * string
 
-type ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: ProjectCore, sourceFiles: 'T list) =
+type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: ProjectCore, sourceFiles: 'T list) =
 
     let noFileVersionsHash =
         lazy
@@ -299,10 +300,10 @@ type ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: ProjectCore, 
     member this.FileKey(fileName: string) = this.UpTo(fileName).LastFileKey
     member this.FileKey(index: FileIndex) = this.UpTo(index).LastFileKey
 
-and ProjectSnapshot = ProjectSnapshotBase<FSharpFileSnapshot>
-and ProjectSnapshotWithSources = ProjectSnapshotBase<FSharpFileSnapshotWithSource>
+and internal ProjectSnapshot = ProjectSnapshotBase<FSharpFileSnapshot>
+and internal ProjectSnapshotWithSources = ProjectSnapshotBase<FSharpFileSnapshotWithSource>
 
-and ProjectCore
+and internal ProjectCore
     (
         ProjectFileName: string,
         ProjectId: string option,
@@ -435,7 +436,8 @@ and [<NoComparison; CustomEquality>] internal FSharpReferencedProjectSnapshot =
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
-and FSharpProjectSnapshot internal(projectSnapshot) =
+and [<Experimental("This FCS API is experimental and subject to change.")>]
+    FSharpProjectSnapshot internal(projectSnapshot) =
 
     member internal _.ProjectSnapshot: ProjectSnapshot = projectSnapshot
 
@@ -569,7 +571,7 @@ and FSharpProjectSnapshot internal(projectSnapshot) =
 
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
 
-let rec snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
+let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
     {
         ProjectFileName = projectSnapshot.ProjectFileName
         ProjectId = projectSnapshot.ProjectId
