@@ -25,6 +25,8 @@ open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 
 
+#nowarn "57"
+
 [<Fact>]
 let ``Use Transparent Compiler`` () =
 

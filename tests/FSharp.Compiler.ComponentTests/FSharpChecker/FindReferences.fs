@@ -5,6 +5,8 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Test.ProjectGeneration
 open FSharp.Test.ProjectGeneration.Helpers
 
+#nowarn "57"
+
 type Occurence = Definition | InType | Use
 
 let deriveOccurence (su:FSharpSymbolUse) =
