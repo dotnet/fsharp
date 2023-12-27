@@ -330,6 +330,7 @@ and internal ProjectCore
         lazy
             (hashForParsing.Value
              |> Md5Hasher.addStrings (ReferencesOnDisk |> Seq.map (fun r -> r.Path))
+             |> Md5Hasher.addDateTimes (ReferencesOnDisk |> Seq.map (fun r -> r.LastModified))
              |> Md5Hasher.addBytes' (
                  ReferencedProjects
                  |> Seq.map (fun (FSharpReference(_name, p)) -> p.ProjectSnapshot.SignatureVersion)
