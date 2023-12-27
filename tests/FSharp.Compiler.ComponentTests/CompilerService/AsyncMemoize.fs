@@ -92,21 +92,19 @@ let ``We can cancel a job`` () =
         let key = 1
 
         let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
-        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
-        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
         jobStarted.WaitOne() |> ignore
-
         jobStarted.Reset() |> ignore
+
+        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
+        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
         Assert.Equal<(JobEvent * int) array>([| Started, key |], eventLog |> Seq.toArray )
 
         cts1.Cancel()
         cts2.Cancel()
 
-        //jobStarted.WaitOne() |> ignore
-
-        //Assert.Equal<(JobEvent * int) array>([| Started, key; Started, key |], eventLog |> Seq.toArray )
+        do! Task.Delay 100
 
         cts3.Cancel()
 
@@ -242,7 +240,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         cts1.Cancel()
 
-        //jobStarted.WaitOne() |> ignore
+        jobStarted.WaitOne() |> ignore
 
         cts2.Cancel()
 

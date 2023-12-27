@@ -679,7 +679,7 @@ let Fuzzing signatureFiles =
                     ExtraSource = extraCode }
         |]
 
-    let initialProject = SyntheticProject.Create("TCFuzzing", files)
+    let initialProject = SyntheticProject.Create(files)
 
     let builder = ProjectWorkflowBuilder(initialProject, useTransparentCompiler = true, autoStart = false)
     let checker = builder.Checker
@@ -698,7 +698,7 @@ let giraffeSignaturesTestsDir = reposDir ++ "giraffe-signatures" ++ "tests" ++ "
 
 type GiraffeTheoryAttribute() =
     inherit Xunit.TheoryAttribute()
-        do 
+        do
             if not (Directory.Exists giraffeDir) then
                 do base.Skip <- $"Giraffe not found ({giraffeDir}). You can get it here: https://github.com/giraffe-fsharp/Giraffe"
             if not (Directory.Exists giraffeSignaturesDir) then

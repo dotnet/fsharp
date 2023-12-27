@@ -762,7 +762,6 @@ let check (ilscope: ILScopeRef) (inMap: NodeInTable<_, _>) =
       let n = inMap.Get i
       if not (inMap.IsLinked n) then
         warning(Error(FSComp.SR.pickleMissingDefinition (i, inMap.Name, ilscope.QualifiedName), range0))
-        failwith "It's broken"
         // Note for compiler developers: to get information about which item this index relates to,
         // enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
@@ -1438,7 +1437,7 @@ let p_trait_sln sln st =
          p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
 
-let p_trait (TTrait(a, b, c, d, e, f)) st  =
+let p_trait (TTrait(a, b, c, d, e, _, f)) st  =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
@@ -1478,7 +1477,7 @@ let u_trait_sln st =
 
 let u_trait st =
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
-    TTrait (a, b, c, d, e, ref f)
+    TTrait (a, b, c, d, e, ref None, ref f)
 
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st

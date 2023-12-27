@@ -654,7 +654,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [|fileName1|]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let args = mkProjectCommandLineArgs (dllName, [||])
     let options =
         let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
@@ -678,7 +678,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [|fileName1|]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let args = mkProjectCommandLineArgs (dllName, [||])
     let options =
         let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
@@ -775,7 +775,7 @@ let fizzBuzz = function
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
     let fileNames = [|fileName1|]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let args = mkProjectCommandLineArgs (dllName, [||])
     let options =
         let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
