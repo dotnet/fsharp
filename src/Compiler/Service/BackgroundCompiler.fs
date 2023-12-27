@@ -1560,7 +1560,7 @@ type internal BackgroundCompiler
 
         member _.GetAssemblyData
             (
-                projectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot.FSharpProjectSnapshot,
+                projectSnapshot: FSharpProjectSnapshot,
                 _fileName: string,
                 userOpName: string
             ) : NodeCode<ProjectAssemblyDataResult> =
@@ -1662,7 +1662,7 @@ type internal BackgroundCompiler
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
             node {
                 let fileSnapshot =
-                    projectSnapshot.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
+                    projectSnapshot.ProjectSnapshot.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
 
                 let! sourceText = fileSnapshot.GetSource() |> NodeCode.AwaitTask
                 let options = projectSnapshot.ToOptions()

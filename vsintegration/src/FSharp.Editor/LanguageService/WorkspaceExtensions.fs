@@ -62,6 +62,7 @@ module internal FSharpProjectSnapshotSerialization =
     and serializeSnapshot (snapshot: FSharpProjectSnapshot) =
 
         let output = JObject()
+        let snapshot = snapshot.ProjectSnapshot
 
         output.Add("ProjectFileName", snapshot.ProjectFileName)
         output.Add("ProjectId", (snapshot.ProjectId |> Option.defaultValue null |> JToken.FromObject))
