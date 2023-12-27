@@ -149,6 +149,18 @@ module private CheckerExtensions =
         |> CancellableTask.whenAll
         |> CancellableTask.map (Seq.map (fun x -> x.ToString()) >> Set)
 
+    let getOnDiskReferences (options: FSharpProjectOptions) =
+        options.OtherOptions
+        |> Seq.filter (fun x -> x.StartsWith("-r:"))
+        |> Seq.map (fun x ->
+            let path = x.Substring(3)
+
+            {
+                Path = path
+                LastModified = System.IO.File.GetLastWriteTimeUtc path
+            })
+        |> Seq.toList
+
     let createProjectSnapshot (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
         cancellableTask {
 
@@ -167,13 +179,20 @@ module private CheckerExtensions =
 
             let updatedSnapshot =
                 match latestSnapshots.TryGetValue project.Id with
-                | true, (_, oldProjectVersion, _, _, oldSnapshot) when projectVersion = oldProjectVersion ->
-                    Some(CancellableTask.singleton oldSnapshot)
                 | true, (_, _, oldReferenceVersions, _, _) when referenceVersions <> oldReferenceVersions ->
                     System.Diagnostics.Trace.TraceWarning "Reference versions changed"
                     None
 
-                | true, (oldProject, _, _oldProjectVersion, oldOptions, oldSnapshot: FSharpProjectSnapshot) when
+                | true, (_, _, _, _, oldSnapshot: FSharpProjectSnapshot) when
+                    oldSnapshot.ProjectSnapshot.ReferencesOnDisk <> (getOnDiskReferences options)
+                    ->
+                    System.Diagnostics.Trace.TraceWarning "References on disk changed"
+                    None
+
+                | true, (_, oldProjectVersion, _, _, oldSnapshot: FSharpProjectSnapshot) when projectVersion = oldProjectVersion ->
+                    Some(CancellableTask.singleton oldSnapshot)
+
+                | true, (oldProject, _oldProjectVersion, _oldReferencesVersion, oldOptions, oldSnapshot: FSharpProjectSnapshot) when
                     FSharpProjectOptions.AreSameForChecking(options, oldOptions)
                     ->
 
@@ -260,14 +279,17 @@ module private CheckerExtensions =
 
                                         // Fall back to file system
                                         let version = System.IO.File.GetLastWriteTimeUtc(path)
+
                                         let getSource () =
                                             task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceTextNew.ofString }
+
                                         async.Return(version.ToString(), getSource)
 
                                 return FSharpFileSnapshot(FileName = path, Version = version, GetSource = getSource)
                             }
 
-                        let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
+                        let! snapshot =
+                            FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
 
                         System.Diagnostics.Trace.TraceInformation $"Created new FSharpProjectSnapshot ({snapshot.Label})"
 
