@@ -138,7 +138,7 @@ type ReferenceOnDisk =
 
 type ProjectSnapshotKey = string * string
 
-type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: ProjectCore, sourceFiles: 'T list) =
+type ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: ProjectCore, sourceFiles: 'T list) =
 
     let noFileVersionsHash =
         lazy
@@ -207,39 +207,6 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
 
     let sourceFileNames = lazy (sourceFiles |> List.map (fun x -> x.FileName))
 
-    static member Create
-        (
-            projectFileName: string,
-            projectId: string option,
-            sourceFiles: 'T list,
-            referencesOnDisk: ReferenceOnDisk list,
-            otherOptions: string list,
-            referencedProjects: FSharpReferencedProjectSnapshot list,
-            isIncompleteTypeCheckEnvironment: bool,
-            useScriptResolutionRules: bool,
-            loadTime: DateTime,
-            unresolvedReferences: FSharpUnresolvedReferencesSet option,
-            originalLoadReferences: (range * string * string) list,
-            stamp: int64 option
-        ) =
-
-        let projectCore =
-            ProjectCore(
-                projectFileName,
-                projectId,
-                referencesOnDisk,
-                otherOptions,
-                referencedProjects,
-                isIncompleteTypeCheckEnvironment,
-                useScriptResolutionRules,
-                loadTime,
-                unresolvedReferences,
-                originalLoadReferences,
-                stamp
-            )
-
-        FSharpProjectSnapshotBase(projectCore, sourceFiles)
-
     member _.ProjectFileName = projectCore.ProjectFileName
     member _.ProjectId = projectCore.ProjectId
     member _.ReferencesOnDisk = projectCore.ReferencesOnDisk
@@ -273,7 +240,7 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
         |> Option.defaultWith (fun () -> failwith (sprintf "Unable to find file %s in project %s" fileName projectCore.ProjectFileName))
 
     member private _.With(sourceFiles: 'T list) =
-        FSharpProjectSnapshotBase(projectCore, sourceFiles)
+        ProjectSnapshotBase(projectCore, sourceFiles)
 
     member this.Replace(changedSourceFiles: 'T list) =
         // TODO: validate if changed files are not present in the original list?
@@ -332,101 +299,8 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
     member this.FileKey(fileName: string) = this.UpTo(fileName).LastFileKey
     member this.FileKey(index: FileIndex) = this.UpTo(index).LastFileKey
 
-    static member FromOptions(options: FSharpProjectOptions, getFileSnapshot, ?snapshotAccumulator) =
-        let snapshotAccumulator = defaultArg snapshotAccumulator (Dictionary())
-
-        async {
-
-            // TODO: check if options is a good key here
-            if not (snapshotAccumulator.ContainsKey options) then
-
-                let! sourceFiles = options.SourceFiles |> Seq.map (getFileSnapshot options) |> Async.Parallel
-
-                let! referencedProjects =
-                    options.ReferencedProjects
-                    |> Seq.choose (function
-                        | FSharpReferencedProject.FSharpReference(outputName, options) ->
-                            Some(
-                                async {
-                                    let! snapshot =
-                                        FSharpProjectSnapshotBase<_>
-                                            .FromOptions(options, getFileSnapshot, snapshotAccumulator)
-
-                                    return FSharpReferencedProjectSnapshot.FSharpReference(outputName, snapshot)
-                                }
-                            )
-                        // TODO: other types
-                        | _ -> None)
-                    |> Async.Sequential
-
-                let referencesOnDisk, otherOptions =
-                    options.OtherOptions
-                    |> Array.partition (fun x -> x.StartsWith("-r:"))
-                    |> map1Of2 (
-                        Array.map (fun x ->
-                            let path = x.Substring(3)
-
-                            {
-                                Path = path
-                                LastModified = FileSystem.GetLastWriteTimeShim(path)
-                            })
-                    )
-
-                let snapshot =
-                    FSharpProjectSnapshot.Create(
-                        projectFileName = options.ProjectFileName,
-                        projectId = options.ProjectId,
-                        sourceFiles = (sourceFiles |> List.ofArray),
-                        referencesOnDisk = (referencesOnDisk |> List.ofArray),
-                        otherOptions = (otherOptions |> List.ofArray),
-                        referencedProjects = (referencedProjects |> List.ofArray),
-                        isIncompleteTypeCheckEnvironment = options.IsIncompleteTypeCheckEnvironment,
-                        useScriptResolutionRules = options.UseScriptResolutionRules,
-                        loadTime = options.LoadTime,
-                        unresolvedReferences = options.UnresolvedReferences,
-                        originalLoadReferences = options.OriginalLoadReferences,
-                        stamp = options.Stamp
-                    )
-
-                snapshotAccumulator.Add(options, snapshot)
-
-            return snapshotAccumulator[options]
-        }
-
-    static member GetFileSnapshotFromDisk _ fileName =
-        async {
-            let timeStamp = FileSystem.GetLastWriteTimeShim(fileName)
-            let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-
-            return
-                FSharpFileSnapshot.Create(
-                    fileName,
-                    timeStamp.Ticks.ToString(),
-                    (fun () -> Task.FromResult(SourceTextNew.ofString contents))
-                )
-        }
-
-    static member FromOptions(options: FSharpProjectOptions) =
-        FSharpProjectSnapshot.FromOptions(options, FSharpProjectSnapshot.GetFileSnapshotFromDisk)
-
-    static member FromOptions(options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText) =
-
-        let getFileSnapshot _ fName =
-            if fName = fileName then
-                async.Return(
-                    FSharpFileSnapshot.Create(
-                        fileName,
-                        $"{fileVersion}{sourceText.GetHashCode().ToString()}",
-                        fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
-                    )
-                )
-            else
-                FSharpProjectSnapshot.GetFileSnapshotFromDisk () fName
-
-        FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
-
-and FSharpProjectSnapshot = FSharpProjectSnapshotBase<FSharpFileSnapshot>
-and FSharpProjectSnapshotWithSources = FSharpProjectSnapshotBase<FSharpFileSnapshotWithSource>
+and ProjectSnapshot = ProjectSnapshotBase<FSharpFileSnapshot>
+and ProjectSnapshotWithSources = ProjectSnapshotBase<FSharpFileSnapshotWithSource>
 
 and ProjectCore
     (
@@ -457,7 +331,7 @@ and ProjectCore
              |> Md5Hasher.addStrings (ReferencesOnDisk |> Seq.map (fun r -> r.Path))
              |> Md5Hasher.addBytes' (
                  ReferencedProjects
-                 |> Seq.map (fun (FSharpReference(_name, p)) -> p.SignatureVersion)
+                 |> Seq.map (fun (FSharpReference(_name, p)) -> p.ProjectSnapshot.SignatureVersion)
              ))
 
     let fullHashString = lazy (fullHash.Value |> Md5Hasher.toString)
@@ -561,24 +435,163 @@ and [<NoComparison; CustomEquality>] internal FSharpReferencedProjectSnapshot =
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
+
+and FSharpProjectSnapshot internal(projectSnapshot) =
+
+    member internal _.ProjectSnapshot: ProjectSnapshot = projectSnapshot
+
+    static member Create
+        (
+            projectFileName: string,
+            projectId: string option,
+            sourceFiles: FSharpFileSnapshot list,
+            referencesOnDisk: ReferenceOnDisk list,
+            otherOptions: string list,
+            referencedProjects: FSharpReferencedProjectSnapshot list,
+            isIncompleteTypeCheckEnvironment: bool,
+            useScriptResolutionRules: bool,
+            loadTime: DateTime,
+            unresolvedReferences: FSharpUnresolvedReferencesSet option,
+            originalLoadReferences: (range * string * string) list,
+            stamp: int64 option
+        ) =
+
+        let projectCore =
+            ProjectCore(
+                projectFileName,
+                projectId,
+                referencesOnDisk,
+                otherOptions,
+                referencedProjects,
+                isIncompleteTypeCheckEnvironment,
+                useScriptResolutionRules,
+                loadTime,
+                unresolvedReferences,
+                originalLoadReferences,
+                stamp
+            )
+
+        ProjectSnapshotBase(projectCore, sourceFiles) |> FSharpProjectSnapshot
+
+    static member FromOptions(options: FSharpProjectOptions, getFileSnapshot, ?snapshotAccumulator) =
+        let snapshotAccumulator = defaultArg snapshotAccumulator (Dictionary())
+
+        async {
+
+            // TODO: check if options is a good key here
+            if not (snapshotAccumulator.ContainsKey options) then
+
+                let! sourceFiles = options.SourceFiles |> Seq.map (getFileSnapshot options) |> Async.Parallel
+
+                let! referencedProjects =
+                    options.ReferencedProjects
+                    |> Seq.choose (function
+                        | FSharpReferencedProject.FSharpReference(outputName, options) ->
+                            Some(
+                                async {
+                                    let! snapshot =
+                                        FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, snapshotAccumulator)
+
+                                    return FSharpReferencedProjectSnapshot.FSharpReference(outputName, snapshot)
+                                }
+                            )
+                        // TODO: other types
+                        | _ -> None)
+                    |> Async.Sequential
+
+                let referencesOnDisk, otherOptions =
+                    options.OtherOptions
+                    |> Array.partition (fun x -> x.StartsWith("-r:"))
+                    |> map1Of2 (
+                        Array.map (fun x ->
+                            let path = x.Substring(3)
+
+                            {
+                                Path = path
+                                LastModified = FileSystem.GetLastWriteTimeShim(path)
+                            })
+                    )
+
+                let snapshot =
+                    FSharpProjectSnapshot.Create(
+                        projectFileName = options.ProjectFileName,
+                        projectId = options.ProjectId,
+                        sourceFiles = (sourceFiles |> List.ofArray),
+                        referencesOnDisk = (referencesOnDisk |> List.ofArray),
+                        otherOptions = (otherOptions |> List.ofArray),
+                        referencedProjects = (referencedProjects |> List.ofArray),
+                        isIncompleteTypeCheckEnvironment = options.IsIncompleteTypeCheckEnvironment,
+                        useScriptResolutionRules = options.UseScriptResolutionRules,
+                        loadTime = options.LoadTime,
+                        unresolvedReferences = options.UnresolvedReferences,
+                        originalLoadReferences = options.OriginalLoadReferences,
+                        stamp = options.Stamp
+                    )
+
+                snapshotAccumulator.Add(options, snapshot)
+
+            return snapshotAccumulator[options]
+        }
+
+    static member GetFileSnapshotFromDisk _ fileName =
+        async {
+            let timeStamp = FileSystem.GetLastWriteTimeShim(fileName)
+            let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
+
+            return
+                FSharpFileSnapshot.Create(
+                    fileName,
+                    timeStamp.Ticks.ToString(),
+                    (fun () -> Task.FromResult(SourceTextNew.ofString contents))
+                )
+        }
+
+    static member FromOptions(options: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(options, FSharpProjectSnapshot.GetFileSnapshotFromDisk)
+
+    static member FromOptions(options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText) =
+
+        let getFileSnapshot _ fName =
+            if fName = fileName then
+                async.Return(
+                    FSharpFileSnapshot.Create(
+                        fileName,
+                        $"{fileVersion}{sourceText.GetHashCode().ToString()}",
+                        fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
+                    )
+                )
+            else
+                FSharpProjectSnapshot.GetFileSnapshotFromDisk () fName
+
+        FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+
+let rec snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
+    {
+        ProjectFileName = projectSnapshot.ProjectFileName
+        ProjectId = projectSnapshot.ProjectId
+        SourceFiles = projectSnapshot.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
+        OtherOptions = projectSnapshot.CommandLineOptions |> List.toArray
+        ReferencedProjects =
+            projectSnapshot.ReferencedProjects
+            |> Seq.map (function
+                | FSharpReference(name, opts) -> FSharpReferencedProject.FSharpReference(name, opts.ProjectSnapshot |> snapshotToOptions))
+            |> Seq.toArray
+        IsIncompleteTypeCheckEnvironment = projectSnapshot.IsIncompleteTypeCheckEnvironment
+        UseScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
+        LoadTime = projectSnapshot.LoadTime
+        UnresolvedReferences = projectSnapshot.UnresolvedReferences
+        OriginalLoadReferences = projectSnapshot.OriginalLoadReferences
+        Stamp = projectSnapshot.Stamp
+    }
+
+
 [<Extension>]
 type Extensions =
+
+    [<Extension>]
+    static member ToOptions(this: ProjectSnapshot) =
+        this |> snapshotToOptions
+
     [<Extension>]
     static member ToOptions(this: FSharpProjectSnapshot) =
-        {
-            ProjectFileName = this.ProjectFileName
-            ProjectId = this.ProjectId
-            SourceFiles = this.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
-            OtherOptions = this.CommandLineOptions |> List.toArray
-            ReferencedProjects =
-                this.ReferencedProjects
-                |> Seq.map (function
-                    | FSharpReference(name, opts) -> FSharpReferencedProject.FSharpReference(name, opts.ToOptions()))
-                |> Seq.toArray
-            IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
-            UseScriptResolutionRules = this.UseScriptResolutionRules
-            LoadTime = this.LoadTime
-            UnresolvedReferences = this.UnresolvedReferences
-            OriginalLoadReferences = this.OriginalLoadReferences
-            Stamp = this.Stamp
-        }
+        this.ProjectSnapshot |> snapshotToOptions
