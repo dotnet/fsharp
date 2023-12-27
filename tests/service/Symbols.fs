@@ -302,6 +302,32 @@ type E = Ns1.Ns2.T
             | _ -> Assert.Fail (sprintf "Couldn't get entity: %s" symbolName))
 
     [<Test>]
+    let ``Interface 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+open System
+
+IDisposable
+"""
+        findSymbolUseByName "IDisposable" checkResults |> ignore
+
+    [<Test>]
+    let ``Interface 02`` () =
+        let _, checkResults = getParseAndCheckResults """
+System.IDisposable
+"""
+        findSymbolUseByName "IDisposable" checkResults |> ignore
+
+    [<Test>]
+    let ``Interface 03`` () =
+        let _, checkResults = getParseAndCheckResults """
+open System
+
+{ new IDisposable with }
+"""
+        findSymbolUseByName "IDisposable" checkResults |> ignore
+
+
+    [<Test>]
     let ``FSharpType.Format can use prefix representations`` () =
             let _, checkResults = getParseAndCheckResults """
 type 't folks =

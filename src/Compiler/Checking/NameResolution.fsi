@@ -94,9 +94,6 @@ type Item =
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list
 
-    /// Represents the resolution of a name to the fake constructor simulated for an interface type.
-    | FakeInterfaceCtor of TType
-
     /// Represents the resolution of a name to a delegate
     | DelegateCtor of TType
 
@@ -385,6 +382,7 @@ type internal ItemOccurence =
     | Implemented
     | RelatedText
     | Open
+    | InvalidUse
 
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual: TcGlobals -> Item -> Item -> bool
