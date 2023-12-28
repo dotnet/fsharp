@@ -43,7 +43,7 @@ type Pattern =
     | TPat_as of  Pattern * PatternValBinding * range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
     | TPat_disjs of  Pattern list * range
     | TPat_conjs of  Pattern list * range
-    | TPat_query of (Expr * TType list * bool * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
+    | TPat_query of (Expr * TType list * ActivePatternReturnType * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
     | TPat_exnconstr of TyconRef * Pattern list * range
     | TPat_tuple of  TupInfo * Pattern list * TType list * range
@@ -1298,7 +1298,7 @@ let CompilePatternBasic
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkApps g ((activePatExpr, tyOfExpr g activePatExpr), [], [argExpr], m)
 
-             let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g isStructRetTy false NeverMutates appExpr None mMatch
+             let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g (isStructRetTy = ActivePatternReturnType.voption) false NeverMutates appExpr None mMatch
              match vOpt with
              | None -> 
                 let v, vExpr = mkCompGenLocal m ("activePatternResult" + string (newUnique())) resTy
@@ -1360,7 +1360,9 @@ let CompilePatternBasic
                          if not total && aparity > 1 then
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(), m))
 
-                         if not total then DecisionTreeTest.UnionCase(mkAnySomeCase g isStructRetTy, resTys)
+                         if not total then 
+                            if isStructRetTy = ActivePatternReturnType.bool then DecisionTreeTest.Const(Const.Bool true)
+                            else DecisionTreeTest.UnionCase(mkAnySomeCase g isStructRetTy.IsStruct, resTys)
                          elif aparity <= 1 then DecisionTreeTest.Const(Const.Unit)
                          else DecisionTreeTest.UnionCase(mkChoiceCaseRef g m aparity idx, resTys)
                      | _ -> discrim
@@ -1460,10 +1462,12 @@ let CompilePatternBasic
                     if i = iInvestigated then
                         let subAccess _j tpinst _ =
                             let expr = Option.get inpExprOpt
-                            if isStructRetTy then 
+                            match isStructRetTy with
+                            | ActivePatternReturnType.bool -> expr
+                            | ActivePatternReturnType.voption ->
                                 // In this case, the inpExprOpt is already an address-of expression
                                 mkUnionCaseFieldGetProvenViaExprAddr (expr, mkValueSomeCase g, instTypes tpinst resTys, 0, mExpr)
-                            else
+                            | ActivePatternReturnType.option ->
                                 mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, instTypes tpinst resTys, 0, mExpr)
                         mkSubFrontiers path subAccess newActives [p] (fun path j -> PathQuery(path, int64 j))
                     else

@@ -242,6 +242,11 @@
         <target state="translated">自动生成“异常”声明的“消息”属性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBoolPartialActivePattern">
+        <source>bool representation for partial pctive pattern</source>
+        <target state="new">bool representation for partial pctive pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">允许对声明类型、模块使用隐式扩展属性</target>

@@ -242,6 +242,11 @@
         <target state="translated">自動產生 'exception' 宣告的 'Message' 屬性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBoolPartialActivePattern">
+        <source>bool representation for partial pctive pattern</source>
+        <target state="new">bool representation for partial pctive pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">允許宣告類型、模組上的隱含擴充屬性</target>

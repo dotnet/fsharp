@@ -242,6 +242,11 @@
         <target state="translated">'exception' bildirimleri için 'Message' özelliğinin otomatik olarak oluşturulması</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBoolPartialActivePattern">
+        <source>bool representation for partial pctive pattern</source>
+        <target state="new">bool representation for partial pctive pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">Türler, modüller bildirirken örtük Extension özniteliğine izin ver</target>

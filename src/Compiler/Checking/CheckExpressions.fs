@@ -10737,14 +10737,24 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         | Some (apinfo, apOverallTy, _) ->
             let activePatResTys = NewInferenceTypes g apinfo.ActiveTags
             let _, apReturnTy = stripFunTy g apOverallTy
+            let apRetTy =
+                if isStructRetTy || isValueOptionTy cenv.g apReturnTy then ActivePatternReturnType.voption
+                elif isBoolTy cenv.g apReturnTy then ActivePatternReturnType.bool
+                else ActivePatternReturnType.option
 
-            if isStructRetTy && apinfo.IsTotal then
+            if apRetTy.IsStruct && apinfo.IsTotal then
                 errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
-
-            if isStructRetTy then
+            
+            match apRetTy with
+            | ActivePatternReturnType.bool ->
+                checkLanguageFeatureError g.langVersion LanguageFeature.BoolPartialActivePattern mBinding
+            | ActivePatternReturnType.voption when not isStructRetTy ->
+                checkLanguageFeatureError g.langVersion LanguageFeature.BoolPartialActivePattern mBinding
+            | ActivePatternReturnType.voption ->
                 checkLanguageFeatureError g.langVersion LanguageFeature.StructActivePattern mBinding
+            | ActivePatternReturnType.option -> ()
 
-            UnifyTypes cenv env mBinding (apinfo.ResultType g rhsExpr.Range activePatResTys isStructRetTy) apReturnTy
+            UnifyTypes cenv env mBinding (apinfo.ResultType g rhsExpr.Range activePatResTys apRetTy) apReturnTy
 
         | None ->
             if isStructRetTy then

@@ -4553,6 +4553,13 @@ type DecisionTreeCase =
     member x.DebugText = x.ToString()
 
     override x.ToString() = sprintf "DecisionTreeCase(...)"
+    
+[<Struct; RequireQualifiedAccess>]
+type ActivePatternReturnType =
+    | option
+    | voption
+    | bool
+    member this.IsStruct with get () = this <> option 
 
 [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
 type DecisionTreeTest = 
@@ -4586,7 +4593,7 @@ type DecisionTreeTest =
     | ActivePatternCase of
         activePatExpr: Expr *        
         activePatResTys: TTypes *
-        isStructRetTy: bool *
+        isStructRetTy: ActivePatternReturnType *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
         activePatternInfo: ActivePatternInfo
@@ -4655,7 +4662,7 @@ type ActivePatternElemRef =
         activePatternInfo: ActivePatternInfo *
         activePatternVal: ValRef *
         caseIndex: int *
-        isStructRetTy: bool
+        isStructRetTy: ActivePatternReturnType
 
     /// Get the full information about the active pattern being referred to
     member x.ActivePatternInfo = (let (APElemRef(info, _, _, _)) = x in info)

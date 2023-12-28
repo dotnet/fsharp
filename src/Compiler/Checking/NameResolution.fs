@@ -89,7 +89,7 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
         
         let isStructRetTy = 
             if apinfo.IsTotal then
-                false
+                ActivePatternReturnType.option
             else
                 let _, apReturnTy = stripFunTy g vref.TauType
                 let hasStructAttribute() = 
@@ -97,7 +97,9 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
                     |> List.exists (function 
                         | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> IsMatchingFSharpAttribute g g.attrib_StructAttribute a  
                         | _ -> false)
-                isStructTy g apReturnTy || hasStructAttribute()
+                if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnType.voption
+                elif isBoolTy g apReturnTy then ActivePatternReturnType.bool
+                else ActivePatternReturnType.option
         apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, isStructRetTy))
     | None -> []
 

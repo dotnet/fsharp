@@ -3261,6 +3261,14 @@ type DecisionTreeCase =
     /// Get the discriminator associated with the case
     member Discriminator: DecisionTreeTest
 
+[<Struct; RequireQualifiedAccess>]
+type ActivePatternReturnType =
+    | option
+    | voption
+    | bool
+
+    member IsStruct: bool
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type DecisionTreeTest =
 
@@ -3294,7 +3302,7 @@ type DecisionTreeTest =
     | ActivePatternCase of
         activePatExpr: Expr *
         activePatResTys: TTypes *
-        isStructRetTy: bool *
+        isStructRetTy: ActivePatternReturnType *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
         activePatternInfo: Syntax.PrettyNaming.ActivePatternInfo
@@ -3353,7 +3361,7 @@ type ActivePatternElemRef =
         activePatternInfo: Syntax.PrettyNaming.ActivePatternInfo *
         activePatternVal: ValRef *
         caseIndex: int *
-        isStructRetTy: bool
+        isStructRetTy: ActivePatternReturnType
 
     override ToString: unit -> string
 
@@ -3370,7 +3378,7 @@ type ActivePatternElemRef =
     member DebugText: string
 
     /// Get a reference to the value for the active pattern being referred to
-    member IsStructReturn: bool
+    member IsStructReturn: ActivePatternReturnType
 
 /// Records the "extra information" for a value compiled as a method (rather
 /// than a closure or a local), including argument names, attributes etc.
