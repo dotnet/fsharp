@@ -29,7 +29,7 @@ abs -1uy |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'byte' does not support the operator 'Abs'"
+            "The type 'byte' does not support the operator 'abs'"
     
     [<Test>]
     let ``Abs of uint16``() =
@@ -40,7 +40,7 @@ abs -1us |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'uint16' does not support the operator 'Abs'"
+            "The type 'uint16' does not support the operator 'abs'"
 
     [<Test>]
     let ``Abs of uint32``() =
@@ -51,7 +51,7 @@ abs -1ul |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'uint32' does not support the operator 'Abs'"
+            "The type 'uint32' does not support the operator 'abs'"
 
         CompilerAssert.TypeCheckSingleError
             """
@@ -60,7 +60,7 @@ abs -1u |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 8)
-            "The type 'uint32' does not support the operator 'Abs'"
+            "The type 'uint32' does not support the operator 'abs'"
             
     [<Test>]
     let ``Abs of unativeint``() =
@@ -71,7 +71,7 @@ abs -1un |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'unativeint' does not support the operator 'Abs'"
+            "The type 'unativeint' does not support the operator 'abs'"
             
     [<Test>]
     let ``Abs of uint64``() =
@@ -82,7 +82,7 @@ abs -1uL |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'uint64' does not support the operator 'Abs'"
+            "The type 'uint64' does not support the operator 'abs'"
             
         CompilerAssert.TypeCheckSingleError
             """
@@ -91,4 +91,4 @@ abs -1UL |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
-            "The type 'uint64' does not support the operator 'Abs'"
+            "The type 'uint64' does not support the operator 'abs'"

@@ -616,7 +616,8 @@ in x
             "([] : int list).Length", "([] : int list).Length"
 
             // DotLambda
-            "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
+            """_.ToString("x")""", """_.ToString("x")"""
+            """_.ToString(("x"))""", """_.ToString("x")"""
 
             // DotSet
             "(ref 3).Value <- (3)", "(ref 3).Value <- 3"
@@ -1078,7 +1079,7 @@ in x
                 |> id
                 "
 
-                "x |> (id |> fun x -> x)", "x |> id |> fun x -> x"
+                "x |> (id |> fun x -> x)", "x |> (id |> fun x -> x)"
                 "x |> (id <| fun x -> x)", "x |> (id <| fun x -> x)"
                 "id <| (fun x -> x)", "id <| fun x -> x"
                 "id <| (fun x -> x) |> id", "id <| (fun x -> x) |> id"
@@ -1119,6 +1120,10 @@ in x
                 "id ~~~(-x)", "id ~~~(-x)" // We could actually remove here, but probably best not to.
                 "id (-(-x))", "id -(-x)"
                 "id -(-x)", "id -(-x)"
+
+                "f <| (g << h)", "f <| (g << h)"
+                "x <> (y <> z)", "x <> (y <> z)"
+                "x > (y > z)", "x > (y > z)"
 
                 "
                 let f x y = 0
@@ -1191,6 +1196,8 @@ in x
 
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
+                """[1..10] |> List.map _.ToString("x")""", """[1..10] |> List.map _.ToString("x")"""
+                """[1..10] |> List.map _.ToString(("x"))""", """[1..10] |> List.map _.ToString("x")"""
 
                 // DotSet
                 "id ((ref x).Value <- y)", "id ((ref x).Value <- y)"
@@ -1423,6 +1430,12 @@ let _ = (2 + 2) { return 5 }
                 /// (x λ y) ρ z
                 | OuterRight of l: string * r: string
 
+                /// Indicates whether both operators are the same exact symbolic operator.
+                member this.Identical =
+                    match this with
+                    | OuterLeft(l, r)
+                    | OuterRight(l, r) -> l = r
+
                 override this.ToString() =
                     match this with
                     | OuterLeft(l, r) -> $"x {l} (y {r} z)"
@@ -1471,11 +1484,11 @@ let _ = (2 + 2) { return 5 }
                     | OuterLeft((":?" | ":>" | ":?>"), _) -> invalidPairing
                     | OuterLeft(_, "**op") -> fixable pair
                     | OuterLeft("**op", _) -> unfixable pair
-                    | OuterLeft("*op", "*op") -> fixable pair
+                    | OuterLeft("*op", "*op") -> if pair.Identical then fixable pair else unfixable pair
                     | OuterLeft(("%op" | "/op" | "*op"), ("%op" | "/op" | "*op")) -> unfixable pair
                     | OuterLeft(_, ("%op" | "/op" | "*op")) -> fixable pair
                     | OuterLeft(("%op" | "/op" | "*op"), _) -> unfixable pair
-                    | OuterLeft("+op", "+op") -> fixable pair
+                    | OuterLeft("+op", "+op") -> if pair.Identical then fixable pair else unfixable pair
                     | OuterLeft(("-op" | "+op"), ("-op" | "+op")) -> unfixable pair
                     | OuterLeft(_, ("-op" | "+op")) -> fixable pair
                     | OuterLeft(("-op" | "+op"), _) -> unfixable pair
@@ -1484,14 +1497,15 @@ let _ = (2 + 2) { return 5 }
                     | OuterLeft("::", _) -> unfixable pair
                     | OuterLeft(_, ("^op" | "@op")) -> fixable pair
                     | OuterLeft(("^op" | "@op"), _) -> unfixable pair
-                    | OuterLeft(l & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"),
-                                r & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) ->
-                        if l = r then fixable pair else unfixable pair
+                    | OuterLeft(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"),
+                                ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> unfixable pair
                     | OuterLeft(_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> fixable pair
                     | OuterLeft(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> unfixable pair
                     | OuterLeft(_, (":>" | ":?>")) -> fixable pair
+                    | OuterLeft(("&" | "&&"), ("&" | "&&")) -> if pair.Identical then fixable pair else unfixable pair
                     | OuterLeft(_, ("&" | "&&")) -> fixable pair
                     | OuterLeft(("&" | "&&"), _) -> unfixable pair
+                    | OuterLeft(("||" | "or"), ("||" | "or")) -> if pair.Identical then fixable pair else unfixable pair
                     | OuterLeft(_, ("||" | "or")) -> fixable pair
                     | OuterLeft(("||" | "or"), _) -> unfixable pair
                     | OuterLeft(":=", ":=") -> fixable pair
@@ -1524,11 +1538,14 @@ let _ = (2 + 2) { return 5 }
             let operators =
                 [
                     "**"
+                    "***"
                     "*"
+                    "*."
                     "/"
                     "%"
                     "-"
                     "+"
+                    "++"
                     ":?"
                     "::"
                     "^^^"

@@ -2454,29 +2454,41 @@ type TraitWitnessInfo =
 type TraitConstraintInfo = 
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
-    /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref 
+    /// to store the inferred solution of the constraint. And a mutable source cell to store
+    /// the name of the type or member that defined the constraint.
+    | TTrait of
+        tys: TTypes * 
+        memberName: string * 
+        memberFlags: SynMemberFlags * 
+        objAndArgTys: TTypes * 
+        returnTyOpt: TType option * 
+        source: string option ref * 
+        solution: TraitConstraintSln option ref 
 
     /// Get the types that may provide solutions for the traits
-    member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _)) = x in tys)
+    member x.SupportTypes = (let (TTrait(tys = tys)) = x in tys)
 
     /// Get the logical member name associated with the member constraint.
-    member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    member x.MemberLogicalName = (let (TTrait(memberName = nm)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
-    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
+    member x.MemberFlags = (let (TTrait(memberFlags = flags)) = x in flags)
 
-    member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _)) = x in objAndArgTys)
-
-    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f))
-
+    member x.CompiledObjectAndArgumentTypes = (let (TTrait(objAndArgTys = objAndArgTys)) = x in objAndArgTys)
+    
     /// Get the optional return type recorded in the member constraint.
-    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _)) = x in retTy)
-
+    member x.CompiledReturnType = (let (TTrait(returnTyOpt = retTy)) = x in retTy)
+    
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
-        with get() = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value)
-        and set v = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value <- v)
+        with get() = (let (TTrait(solution = sln)) = x in sln.Value)
+        and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
+
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
+
+    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g)) = x in TTrait(tys, b, c, d, e, f, g))
+
+    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g)) = x in TTrait(a, name, c, d, e, f, g))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()

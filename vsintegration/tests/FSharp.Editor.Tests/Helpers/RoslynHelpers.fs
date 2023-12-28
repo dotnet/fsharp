@@ -304,6 +304,11 @@ type RoslynTestHelpers private () =
         let document = project.Documents |> Seq.exactlyOne
         document
 
+    static member GetLastDocument(solution: Solution) =
+        let project = solution.Projects |> Seq.exactlyOne
+        let document = project.Documents |> Seq.last
+        document
+
     static member CreateSolution(syntheticProject: SyntheticProject) =
 
         let checker = syntheticProject.SaveAndCheck()

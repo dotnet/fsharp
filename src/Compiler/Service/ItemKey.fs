@@ -562,7 +562,6 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
 
         // We should consider writing ItemKey for each of these
         | Item.OtherName _ -> ()
-        | Item.FakeInterfaceCtor _ -> ()
         | Item.CustomOperation _ -> ()
         | Item.CustomBuilder _ -> ()
         | Item.ImplicitOp _ -> ()
