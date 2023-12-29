@@ -173,7 +173,7 @@ val internal isTildeOnlyString: s: string -> bool
 
 val internal IsValidPrefixOperatorUse: s: string -> bool
 
-val internal IsValidPrefixOperatorDefinitionName: s: string -> bool
+val IsValidPrefixOperatorDefinitionName: s: string -> bool
 
 val IsLogicalPrefixOperator: logicalName: string -> bool
 

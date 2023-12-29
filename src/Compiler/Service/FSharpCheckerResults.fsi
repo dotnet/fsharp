@@ -225,6 +225,10 @@ type public FSharpParsingOptions =
         CompilingFSharpCore: bool
 
         IsExe: bool
+
+        /// Don't pass in any other conditional defines other than specified in the parsing options.
+        /// This avoid the passing `COMPILED` or `INTERACTIVE`.
+        OnlyUseSpecifiedDefines: bool
     }
 
     static member Default: FSharpParsingOptions

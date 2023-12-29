@@ -2392,6 +2392,7 @@ type FSharpParsingOptions =
         StrictIndentation: bool option
         CompilingFSharpCore: bool
         IsExe: bool
+        OnlyUseSpecifiedDefines: bool
     }
 
     member x.LastFileName =
@@ -2410,6 +2411,7 @@ type FSharpParsingOptions =
             StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
+            OnlyUseSpecifiedDefines = false
         }
 
     static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
@@ -2424,6 +2426,7 @@ type FSharpParsingOptions =
             StrictIndentation = tcConfig.strictIndentation
             CompilingFSharpCore = tcConfig.compilingFSharpCore
             IsExe = tcConfig.target.IsExe
+            OnlyUseSpecifiedDefines = false
         }
 
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
@@ -2438,6 +2441,7 @@ type FSharpParsingOptions =
             StrictIndentation = tcConfigB.strictIndentation
             CompilingFSharpCore = tcConfigB.compilingFSharpCore
             IsExe = tcConfigB.target.IsExe
+            OnlyUseSpecifiedDefines = false
         }
 
 module internal ParseAndCheckFile =
@@ -2550,8 +2554,11 @@ module internal ParseAndCheckFile =
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
         let conditionalDefines =
-            SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive
-            @ options.ConditionalDefines
+            [
+                if not options.OnlyUseSpecifiedDefines then
+                    yield! SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive
+                yield! options.ConditionalDefines
+            ]
 
         // Note: we don't really attempt to intern strings across a large scope.
         let lexResourceManager = LexResourceManager()

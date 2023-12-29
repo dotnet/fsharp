@@ -2118,10 +2118,12 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsExe
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsInteractive
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean OnlyUseSpecifiedDefines
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_ApplyLineDirectives()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_CompilingFSharpCore()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsExe()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsInteractive()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_OnlyUseSpecifiedDefines()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions Default
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions get_Default()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions DiagnosticOptions
@@ -2142,7 +2144,7 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] get_SourceFiles()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_ProjectOptions()
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.Symbols.FSharpAccessibilityRights AccessibilityRights
@@ -5918,6 +5920,7 @@ FSharp.Compiler.Syntax.PrettyNaming: Boolean IsLogicalTernaryOperator(System.Str
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsLongIdentifierPartCharacter(Char)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsOperatorDisplayName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsPunctuation(System.String)
+FSharp.Compiler.Syntax.PrettyNaming: Boolean IsValidPrefixOperatorDefinitionName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Microsoft.FSharp.Collections.FSharpList`1[System.String] GetLongNameFromString(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryChopPropertyName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String CompileOpName(System.String)
