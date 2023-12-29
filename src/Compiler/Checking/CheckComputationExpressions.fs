@@ -266,14 +266,22 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     /// Decide if the builder is an auto-quote builder
     let isAutoQuote = hasMethInfo "Quote"
 
-    let customOperationMethods = 
+    let customOperationMethods =
         AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides mBuilderVal builderTy
-        |> List.choose (fun methInfo -> 
+        |> List.choose (fun methInfo ->
                 if not (IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo) then None else
-                let nameSearch = 
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                let nameSearch =
+                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo
                         IgnoreAttribute // We do not respect this attribute for IL methods
-                        (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
+                        (fun attr ->
+                            match attr with
+                            | Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) when msg = "" ->
+                                Some methInfo.LogicalName
+                            | Attrib(_, _, [ ], _, _, _, _) ->
+                                Some methInfo.LogicalName
+                            | Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) ->
+                                Some msg
+                            | _ -> None)
                         IgnoreAttribute // We do not respect this attribute for provided methods
 
                 match nameSearch with
