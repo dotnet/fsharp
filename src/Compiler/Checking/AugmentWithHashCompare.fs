@@ -1082,7 +1082,11 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
     | false, _, _, _, _, Some true, _, _, _
     | false, _, _, _, _, _, _, _, Some true -> errorR (Error(FSComp.SR.augOnlyCertainTypesCanHaveAttrs (), m))
     // All other cases
-    | _ -> errorR (Error(FSComp.SR.augInvalidAttrs (), m))
+    | _ ->
+        if tycon.IsFSharpObjectModelTycon then
+            errorR (Error(FSComp.SR.augInvalidAttrsForFSharpObjectModelType(), m))
+        else
+            errorR (Error(FSComp.SR.augInvalidAttrs (), m))
 
     let hasNominalInterface tcref =
         let ty = generalizedTyconRef g (mkLocalTyconRef tycon)
