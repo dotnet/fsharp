@@ -5085,8 +5085,9 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
 
             if dtys.Length = args.Length + 1 &&
                 ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
-                (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy)) ||
-                isBoolTy g retTy) then
+                (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy))) ||
+                // `bool` partial AP always be treated as `unit option`
+                isBoolTy g retTy then
                 args, SynPat.Const(SynConst.Unit, m)
             else
                 List.frontAndBack args
