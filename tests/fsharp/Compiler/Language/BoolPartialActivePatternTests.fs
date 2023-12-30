@@ -56,8 +56,7 @@ match "x" with
     [<Test>]
     let ``bool active pattern (-langversion:8.0)`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:8.0" |]
-            """
-let (|OddBool|_|) x = x % 2 = 1
+            """let (|OddBool|_|) x = x % 2 = 1
 let (|OddVOption|_|) x = if x % 2 = 1 then ValueSome() else ValueNone
             """
             [|(FSharpDiagnosticSeverity.Error, 3350, (1, 5, 1, 20),
@@ -66,10 +65,9 @@ let (|OddVOption|_|) x = if x % 2 = 1 then ValueSome() else ValueNone
                "Feature 'bool representation for partial pctive pattern' is not available in F# 8.0. Please use language version 'PREVIEW' or greater")|]
 
     [<Test>]
-    let ``StructAttribute must explicitly target active pattern return value`` () =
+    let ``Can not receive result from bool active pattern`` () =
         fail
-            """
-let (|IsA|_|) x = x = "A"
+            """let (|IsA|_|) x = x = "A"
 
 match "A" with 
 | IsA result -> "A" 
@@ -91,11 +89,6 @@ but here has type
               (FSharpDiagnosticSeverity.Error, 39, (4, 7, 4, 13),
                "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result");
-              (FSharpDiagnosticSeverity.Error, 1, (4, 3, 4, 13),
-               "This expression was expected to have type
-'string -> bool'
-but here has type
-'bool'");
               (FSharpDiagnosticSeverity.Error, 1, (8, 3, 8, 13),
                "This expression was expected to have type
     'string -> bool'
@@ -104,16 +97,6 @@ but here has type
               (FSharpDiagnosticSeverity.Error, 39, (8, 7, 8, 13),
                "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result");
-              (FSharpDiagnosticSeverity.Error, 1, (8, 3, 8, 13),
-               "This expression was expected to have type
-    'string -> bool'
-but here has type
-    'bool'");
-              (FSharpDiagnosticSeverity.Error, 1, (12, 3, 12, 30),
-               "This expression was expected to have type
-    'string -> bool'
-but here has type
-    'bool'");
               (FSharpDiagnosticSeverity.Error, 1, (12, 3, 12, 30),
                "This expression was expected to have type
     'string -> bool'

@@ -180,10 +180,7 @@ let (|Foo|_|) x = ValueNone
             [|(FSharpDiagnosticSeverity.Error, 842, (2, 3, 2, 9),
                "This attribute is not valid for use on this language element");
               (FSharpDiagnosticSeverity.Error, 1, (2, 1, 3, 16),
-               "This expression was expected to have type
-    ''a option'    
-but here has type
-    ''b voption'    ")|]
+               "Feature 'bool representation for partial pctive pattern' is not available in F# 8.0. Please use language version 'PREVIEW' or greater")|]
 
     [<Test>]
     let ``StructAttribute not allowed on other bindings than partial active pattern definitions`` () =
