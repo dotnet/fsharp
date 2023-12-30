@@ -60,9 +60,9 @@ match "x" with
 let (|OddVOption|_|) x = if x % 2 = 1 then ValueSome() else ValueNone
             """
             [|(FSharpDiagnosticSeverity.Error, 3350, (1, 5, 1, 20),
-               "Feature 'bool representation for partial pctive pattern' is not available in F# 8.0. Please use language version 'PREVIEW' or greater")
+               "Feature 'bool representation for partial pctive pattern' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
               (FSharpDiagnosticSeverity.Error, 3350, (2, 5, 2, 23),
-               "Feature 'bool representation for partial pctive pattern' is not available in F# 8.0. Please use language version 'PREVIEW' or greater")|]
+               "Feature 'bool representation for partial pctive pattern' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")|]
 
     [<Test>]
     let ``Can not receive result from bool active pattern`` () =
@@ -83,23 +83,23 @@ match "A" with
 """
             [|(FSharpDiagnosticSeverity.Error, 1, (4, 3, 4, 13),
                "This expression was expected to have type
-    'string -> bool'
+    'string -> bool'    
 but here has type
-    'bool'");
+    'bool'    ");
               (FSharpDiagnosticSeverity.Error, 39, (4, 7, 4, 13),
                "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result");
               (FSharpDiagnosticSeverity.Error, 1, (8, 3, 8, 13),
                "This expression was expected to have type
-    'string -> bool'
+    'string -> bool'    
 but here has type
-    'bool'");
+    'bool'    ");
               (FSharpDiagnosticSeverity.Error, 39, (8, 7, 8, 13),
                "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result");
               (FSharpDiagnosticSeverity.Error, 1, (12, 3, 12, 30),
                "This expression was expected to have type
-    'string -> bool'
+    'string -> bool'    
 but here has type
-    'bool'");
+    'bool'    ");
    |]
