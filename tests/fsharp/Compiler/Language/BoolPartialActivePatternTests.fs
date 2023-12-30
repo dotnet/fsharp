@@ -28,6 +28,13 @@ let fail msg =
         pass "let (|P1|_|) x = false"
         
     [<Test>]
+    let ``Single case active pattern returning bool should success`` () =
+        pass """
+let (|IsA|) x = x = "A"
+let (IsA r) = "A"
+        """
+        
+    [<Test>]
     let ``Partial struct active pattern results can be retrieved`` () =
         run """
 let (|P1|_|) x = x <> 0
