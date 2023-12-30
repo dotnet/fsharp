@@ -3267,11 +3267,15 @@ type DecisionTreeCase =
     /// Get the discriminator associated with the case
     member Discriminator: DecisionTreeTest
 
-[<Struct; RequireQualifiedAccess>]
-type ActivePatternReturnType =
-    | option
-    | voption
-    | bool
+/// Indicating what is returning from an AP
+[<Struct; NoComparison; RequireQualifiedAccess>]
+type ActivePatternReturnKind =
+    /// Returning `_ option` or `Choice<_, _, .., _>`
+    | WrapByRefType
+    /// Returning `_ voption`
+    | WrapByStruct
+    /// Returning bool
+    | SimpleReturn
 
     member IsStruct: bool
 
@@ -3295,20 +3299,20 @@ type DecisionTreeTest =
     /// Test if the input to a decision tree is an instance of the given type
     | IsInst of source: TType * target: TType
 
-    /// Test.ActivePatternCase(activePatExpr, activePatResTys, isStructRetTy, activePatIdentity, idx, activePatInfo)
+    /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatRetKind, activePatIdentity, idx, activePatInfo)
     ///
     /// Run the active pattern type bind a successful result to a
     /// variable in the remaining tree.
     ///     activePatExpr -- The active pattern function being called, perhaps applied to some active pattern parameters.
     ///     activePatResTys -- The result types (case types) of the active pattern.
-    ///     isStructRetTy -- Is the active pattern a struct return
+    ///     activePatRetKind -- Indicating what is returning from the active pattern
     ///     activePatIdentity -- The value type the types it is applied to. If there are any active pattern parameters then this is empty.
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of
         activePatExpr: Expr *
         activePatResTys: TTypes *
-        isStructRetTy: ActivePatternReturnType *
+        activePatRetKind: ActivePatternReturnKind *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
         activePatternInfo: Syntax.PrettyNaming.ActivePatternInfo
@@ -3367,7 +3371,7 @@ type ActivePatternElemRef =
         activePatternInfo: Syntax.PrettyNaming.ActivePatternInfo *
         activePatternVal: ValRef *
         caseIndex: int *
-        isStructRetTy: ActivePatternReturnType
+        activePatRetKind: ActivePatternReturnKind
 
     override ToString: unit -> string
 
@@ -3384,7 +3388,7 @@ type ActivePatternElemRef =
     member DebugText: string
 
     /// Get a reference to the value for the active pattern being referred to
-    member IsStructReturn: ActivePatternReturnType
+    member ActivePatternRetKind: ActivePatternReturnKind
 
 /// Records the "extra information" for a value compiled as a method (rather
 /// than a closure or a local), including argument names, attributes etc.

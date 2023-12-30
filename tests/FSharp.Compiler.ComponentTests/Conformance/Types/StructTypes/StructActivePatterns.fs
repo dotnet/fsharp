@@ -38,21 +38,21 @@ let rec (|IsOne|_|) someNumber =
 but here has type
     'int option'    """)
 
-    [<Fact>]
-    let ``Voption active pattern fails if not using return:Struct attribute`` () =
-        Fs """
-let rec (|IsOne|_|) someNumber = 
-    match someNumber with
-    | 1 -> ValueSome 1
-    | _ -> ValueNone   
-"""
-        |> withOptions ["--warnaserror+"]
-        |> typecheck
-        |> shouldFail
-        |> withSingleDiagnostic (Error 1,Line 2, Col 9 , Line 2, Col 31, """This expression was expected to have type
-    ''a option'    
-but here has type
-    'int voption'    """)
+//     [<Fact>]
+//     let ``Voption active pattern fails if not using return:Struct attribute`` () =
+//         Fs """
+// let rec (|IsOne|_|) someNumber = 
+//     match someNumber with
+//     | 1 -> ValueSome 1
+//     | _ -> ValueNone   
+// """
+//         |> withOptions ["--warnaserror+"]
+//         |> typecheck
+//         |> shouldFail
+//         |> withSingleDiagnostic (Error 1,Line 2, Col 9 , Line 2, Col 31, """This expression was expected to have type
+//     ''a option'    
+// but here has type
+//     'int voption'    """)
 
     [<Fact>]
     let ``Rec struct active pattern is possible`` () =

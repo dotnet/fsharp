@@ -9234,17 +9234,17 @@ type ActivePatternInfo with
 
     member x.DisplayNameByIdx idx = x.ActiveTags[idx] |> ConvertLogicalNameToDisplayName
 
-    member apinfo.ResultType g m retTys isStruct = 
+    member apinfo.ResultType g m retTys retKind = 
         let choicety = mkChoiceTy g m retTys
         if apinfo.IsTotal then choicety 
         else
-            match isStruct with
-            | ActivePatternReturnType.option -> mkOptionTy g choicety
-            | ActivePatternReturnType.voption -> mkValueOptionTy g choicety
-            | ActivePatternReturnType.bool -> g.bool_ty
+            match retKind with
+            | ActivePatternReturnKind.WrapByRefType -> mkOptionTy g choicety
+            | ActivePatternReturnKind.WrapByStruct -> mkValueOptionTy g choicety
+            | ActivePatternReturnKind.SimpleReturn -> g.bool_ty
     
-    member apinfo.OverallType g m argTy retTys isStruct = 
-        mkFunTy g argTy (apinfo.ResultType g m retTys isStruct)
+    member apinfo.OverallType g m argTy retTys retKind = 
+        mkFunTy g argTy (apinfo.ResultType g m retTys retKind)
 
 //---------------------------------------------------------------------------
 // Active pattern validation

@@ -28,7 +28,7 @@ type Pattern =
     | TPat_disjs of Pattern list * range
     | TPat_conjs of Pattern list * range
     | TPat_query of
-        (Expr * TType list * ActivePatternReturnType * (ValRef * TypeInst) option * int * ActivePatternInfo) *
+        (Expr * TType list * ActivePatternReturnKind * (ValRef * TypeInst) option * int * ActivePatternInfo) *
         Pattern *
         range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
