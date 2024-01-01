@@ -3271,11 +3271,11 @@ type DecisionTreeCase =
 [<Struct; NoComparison; RequireQualifiedAccess>]
 type ActivePatternReturnKind =
     /// Returning `_ option` or `Choice<_, _, .., _>`
-    | WrapByRefType
+    | RefTypeWrapper
     /// Returning `_ voption`
-    | WrapByStruct
+    | StructTypeWrapper
     /// Returning bool
-    | SimpleReturn
+    | Boolean
 
     member IsStruct: bool
 

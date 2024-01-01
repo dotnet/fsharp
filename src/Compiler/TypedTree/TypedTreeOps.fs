@@ -9239,9 +9239,9 @@ type ActivePatternInfo with
         if apinfo.IsTotal then choicety 
         else
             match retKind with
-            | ActivePatternReturnKind.WrapByRefType -> mkOptionTy g choicety
-            | ActivePatternReturnKind.WrapByStruct -> mkValueOptionTy g choicety
-            | ActivePatternReturnKind.SimpleReturn -> g.bool_ty
+            | ActivePatternReturnKind.RefTypeWrapper -> mkOptionTy g choicety
+            | ActivePatternReturnKind.StructTypeWrapper -> mkValueOptionTy g choicety
+            | ActivePatternReturnKind.Boolean -> g.bool_ty
     
     member apinfo.OverallType g m argTy retTys retKind = 
         mkFunTy g argTy (apinfo.ResultType g m retTys retKind)

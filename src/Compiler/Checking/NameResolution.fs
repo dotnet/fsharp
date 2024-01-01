@@ -87,9 +87,9 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
     match TryGetActivePatternInfo vref with
     | Some apinfo ->
         
-        let isStructRetTy = 
+        let retKind = 
             if apinfo.IsTotal then
-                ActivePatternReturnKind.WrapByRefType
+                ActivePatternReturnKind.RefTypeWrapper
             else
                 let _, apReturnTy = stripFunTy g vref.TauType
                 let hasStructAttribute() = 
@@ -97,10 +97,10 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
                     |> List.exists (function 
                         | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> IsMatchingFSharpAttribute g g.attrib_StructAttribute a  
                         | _ -> false)
-                if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnKind.WrapByStruct
-                elif isBoolTy g apReturnTy then ActivePatternReturnKind.SimpleReturn
-                else ActivePatternReturnKind.WrapByRefType
-        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, isStructRetTy))
+                if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnKind.StructTypeWrapper
+                elif isBoolTy g apReturnTy then ActivePatternReturnKind.Boolean
+                else ActivePatternReturnKind.RefTypeWrapper
+        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, retKind))
     | None -> []
 
 /// Try to make a reference to a value in a module.

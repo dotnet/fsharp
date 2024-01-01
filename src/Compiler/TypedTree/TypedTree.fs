@@ -4568,10 +4568,10 @@ type DecisionTreeCase =
     
 [<Struct; NoComparison; RequireQualifiedAccess>]
 type ActivePatternReturnKind =
-    | WrapByRefType
-    | WrapByStruct
-    | SimpleReturn
-    member this.IsStruct with get () = this <> WrapByRefType 
+    | RefTypeWrapper
+    | StructTypeWrapper
+    | Boolean
+    member this.IsStruct with get () = this <> RefTypeWrapper 
 
 [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
 type DecisionTreeTest = 

@@ -10749,20 +10749,20 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             let apRetTy =
                 if apinfo.IsTotal then 
                     if isStructRetTy then errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
-                    ActivePatternReturnKind.WrapByRefType
+                    ActivePatternReturnKind.RefTypeWrapper
                 else
-                    if isStructRetTy || isValueOptionTy cenv.g apReturnTy then ActivePatternReturnKind.WrapByStruct
-                    elif isBoolTy cenv.g apReturnTy then ActivePatternReturnKind.SimpleReturn
-                    else ActivePatternReturnKind.WrapByRefType
+                    if isStructRetTy || isValueOptionTy cenv.g apReturnTy then ActivePatternReturnKind.StructTypeWrapper
+                    elif isBoolTy cenv.g apReturnTy then ActivePatternReturnKind.Boolean
+                    else ActivePatternReturnKind.RefTypeWrapper
             
             match apRetTy with
-            | ActivePatternReturnKind.SimpleReturn ->
+            | ActivePatternReturnKind.Boolean ->
                 checkLanguageFeatureError g.langVersion LanguageFeature.BoolPartialActivePattern mBinding
-            | ActivePatternReturnKind.WrapByStruct when not isStructRetTy ->
+            | ActivePatternReturnKind.StructTypeWrapper when not isStructRetTy ->
                 checkLanguageFeatureError g.langVersion LanguageFeature.BoolPartialActivePattern mBinding
-            | ActivePatternReturnKind.WrapByStruct ->
+            | ActivePatternReturnKind.StructTypeWrapper ->
                 checkLanguageFeatureError g.langVersion LanguageFeature.StructActivePattern mBinding
-            | ActivePatternReturnKind.WrapByRefType -> ()
+            | ActivePatternReturnKind.RefTypeWrapper -> ()
 
             UnifyTypes cenv env mBinding (apinfo.ResultType g rhsExpr.Range activePatResTys apRetTy) apReturnTy
 
