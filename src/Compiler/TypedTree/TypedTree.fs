@@ -2494,7 +2494,7 @@ type TraitConstraintInfo =
     member x.DebugText = x.ToString()
 
     override x.ToString() = "TTrait(" + x.MemberLogicalName + ")"
-    
+
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TraitConstraintSln = 
@@ -2528,6 +2528,14 @@ type TraitConstraintSln =
     ///    minst -- the generic method instantiation 
     ///    staticTyOpt -- the static type governing a static virtual call, if any
     | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst * staticTyOpt: TType option
+
+    /// ILFieldSln(tinst, ilfref, isSet)
+    ///
+    /// Indicates a trait is solved by a .NET field.
+    ///   tinst  -- the instantiation of the declaring type
+    ///   ilfref -- the reference to the field
+    ///  isSet   -- indicates if this is a set of a field
+    | ILFieldSln of tinst: TypeInst * ilfref: ILFieldRef * isSet: bool
 
     /// ClosedExprSln expr
     ///
