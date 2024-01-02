@@ -3268,7 +3268,7 @@ type DecisionTreeCase =
     member Discriminator: DecisionTreeTest
 
 /// Indicating what is returning from an AP
-[<Struct; NoComparison; RequireQualifiedAccess>]
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
 type ActivePatternReturnKind =
     /// Returning `_ option` or `Choice<_, _, .., _>`
     | RefTypeWrapper

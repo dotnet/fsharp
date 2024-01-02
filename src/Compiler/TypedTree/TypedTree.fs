@@ -4566,12 +4566,16 @@ type DecisionTreeCase =
 
     override x.ToString() = sprintf "DecisionTreeCase(...)"
     
-[<Struct; NoComparison; RequireQualifiedAccess>]
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
 type ActivePatternReturnKind =
     | RefTypeWrapper
     | StructTypeWrapper
     | Boolean
-    member this.IsStruct with get () = this <> RefTypeWrapper 
+    member this.IsStruct with get () = 
+        match this with
+        | RefTypeWrapper -> false
+        | StructTypeWrapper
+        | Boolean -> true
 
 [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
 type DecisionTreeTest = 
