@@ -5666,3 +5666,4 @@ type ILPropertyRef =
     member x.DeclaringTypeRef = x.prA
 
     member x.Name = x.prB
+
