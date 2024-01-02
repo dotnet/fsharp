@@ -5,10 +5,7 @@ open FSharp.Test.Compiler
 
 module CustomOperations =
 
-// it becomes increasingly difficult to use packaged fslib in tests.
-#if !FSHARPCORE_USE_PACKAGE
     [<Fact>]
-#endif
     let ``[<CustomOperation>] without explicit name is allowed, uses method name as operation name`` () =
         FSharp """
             module CustomOperationTest
