@@ -116,4 +116,3 @@ type LanguageVersion =
     static member GetFeatureVersionString: feature: LanguageFeature -> string
 
     static member Default: LanguageVersion
-
