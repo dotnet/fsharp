@@ -2111,7 +2111,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
     let sln = 
         match traitInfo.Solution with 
-        | None -> Choice5Of5()
+        | None -> Choice6Of6()
         | Some sln ->
 
             // Given the solution information, reconstruct the MethInfo for the solution
@@ -2124,27 +2124,30 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     match extOpt with 
                     | None -> MethInfo.CreateILMeth(amap, m, origTy, mdef)
                     | Some ilActualTypeRef -> 
-                        let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
+                        let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef
                         MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
-                Choice1Of5 (ilMethInfo, minst, staticTyOpt)
+                Choice1Of6 (ilMethInfo, minst, staticTyOpt)
 
             | FSMethSln(ty, vref, minst, staticTyOpt) ->
-                Choice1Of5  (FSMeth(g, ty, vref, None), minst, staticTyOpt)
+                Choice1Of6  (FSMeth(g, ty, vref, None), minst, staticTyOpt)
 
             | FSRecdFieldSln(tinst, rfref, isSetProp) ->
-                Choice2Of5  (tinst, rfref, isSetProp)
+                Choice2Of6  (tinst, rfref, isSetProp)
 
-            | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
-                Choice3Of5  (anonInfo, tinst, i)
+            | FSAnonRecdFieldSln(anonInfo, tinst, i) ->
+                Choice3Of6  (anonInfo, tinst, i)
 
-            | ClosedExprSln expr -> 
-                Choice4Of5 expr
+            | ClosedExprSln expr ->
+                Choice4Of6 expr
 
-            | BuiltInSln -> 
-                Choice5Of5 ()
+            | ILFieldSln _ -> Choice5Of6 ()
+
+            | BuiltInSln ->
+                Choice6Of6 ()
+
 
     match sln with
-    | Choice1Of5(minfo, methArgTys, staticTyOpt) -> 
+    | Choice1Of6(minfo, methArgTys, staticTyOpt) -> 
         let argExprs = 
             // FIX for #421894 - typechecker assumes that coercion can be applied for the trait
             // calls arguments but codegen doesn't emit coercion operations
@@ -2188,7 +2191,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         else        
             Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
 
-    | Choice2Of5 (tinst, rfref, isSet) -> 
+    | Choice2Of6 (tinst, rfref, isSet) -> // Recd field
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
         // static setter
         | true, true, 1 -> 
@@ -2218,17 +2221,19 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         | _ -> None 
 
-    | Choice3Of5 (anonInfo, tinst, i) -> 
+    | Choice3Of6 (anonInfo, tinst, i) -> // Anon recd field
         let tupInfo = anonInfo.TupInfo
         if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs[0]) then 
             Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
         else 
             Some (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))
 
-    | Choice4Of5 expr -> 
+    | Choice4Of6 expr -> 
         Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
 
-    | Choice5Of5 () -> 
+    | Choice5Of6 _ -> // IL Field
+        failwith "6of6"
+    | Choice6Of6 () -> // Default branch, sort of
         match traitInfo.Solution with 
         | None -> None // the trait has been generalized
         | Some _-> 
