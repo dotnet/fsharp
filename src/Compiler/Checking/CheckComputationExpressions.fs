@@ -266,14 +266,25 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     /// Decide if the builder is an auto-quote builder
     let isAutoQuote = hasMethInfo "Quote"
 
-    let customOperationMethods = 
+    let customOperationMethods =
         AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides mBuilderVal builderTy
-        |> List.choose (fun methInfo -> 
+        |> List.choose (fun methInfo ->
                 if not (IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo) then None else
-                let nameSearch = 
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                let nameSearch =
+                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo
                         IgnoreAttribute // We do not respect this attribute for IL methods
-                        (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
+                        (fun attr ->
+                            // NOTE: right now, we support of custom operations with spaces in them ([<CustomOperation("foo bar")>])
+                            // In the parameterless CustomOperationAttribute - we use the method name, and also allow it to be ````-quoted (member _.``foo bar`` _ = ...)
+                            match attr with
+                            // Empty string and parameterless constructor - we use the method name
+                            | Attrib(_, _, [ AttribStringArg "" ], _, _, _, _) // Empty string as parameter
+                            | Attrib(_, _, [ ], _, _, _, _) -> // No parameters, same as empty string for compat reasons.
+                                Some methInfo.LogicalName
+                            // Use the specified name
+                            | Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) ->
+                                Some msg
+                            | _ -> None)
                         IgnoreAttribute // We do not respect this attribute for provided methods
 
                 match nameSearch with
