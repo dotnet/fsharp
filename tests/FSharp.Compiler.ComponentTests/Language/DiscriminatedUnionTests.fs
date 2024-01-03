@@ -54,7 +54,10 @@ if foo.IsA then failwith "Should not be A"
         let libCode =  """module rec TestLib
 
 type X = A | B"""
-        let appCode = """printfn "%s" "exit" """
+        let appCode = """
+let x = TestLib.X.A
+let isA = x.IsA
+printfn "%A" isA """
         let lib = 
             Fsi(libCode)
             |> withAdditionalSourceFile (FsSource libCode)
@@ -75,7 +78,8 @@ instance bool  get_IsA() cil managed """]
         |> withName "AppCodeProjectName"
         |> withLangVersionPreview
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnosticMessageMatches "does not define the field, constructor or member 'IsA'"
 
     
 
