@@ -14,6 +14,8 @@ module CustomOperations =
                 member this.Foo _ = "Foo"
                 [<CustomOperation>]
                 member this.foo _ = "foo"
+                [<CustomOperation("")>]
+                member this.bar _ = "bar"
                 member this.Yield _ = ()
                 member this.Zero _ = ()
 
@@ -24,6 +26,7 @@ module CustomOperations =
 
                 let x = cb { Foo }
                 let y = cb { foo }
+                let z = cb { bar }
                 printfn $"{x}"
                 printfn $"{y}"
 
@@ -31,6 +34,8 @@ module CustomOperations =
                     failwith "not Foo"
                 if y <> "foo" then
                     failwith "not foo"
+                if z <> "bar" then
+                    failwith "not bar"
                 0
         """
         |> asExe
