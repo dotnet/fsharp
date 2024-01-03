@@ -68,7 +68,7 @@ let processFunc{number} (x) (func:MyFunctionType{number}) =
     }}
 //$COMMENTAREA$"""
 
-/// Code create using FSharpCheckFileResults.GenerateSignature()
+/// Code created using FSharpCheckFileResults.GenerateSignature()
     let generateFsi number = 
         $"""
 module Benchmark{number}
