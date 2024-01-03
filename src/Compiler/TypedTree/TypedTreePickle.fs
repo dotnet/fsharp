@@ -1285,6 +1285,7 @@ let p_tcref ctxt (x: EntityRef) st =
 
 let p_ucref (UnionCaseRef(a, b)) st = p_tup2 (p_tcref "ucref") p_string (a, b) st
 let p_rfref (RecdFieldRef(a, b)) st = p_tup2 (p_tcref "rfref") p_string (a, b) st
+
 let p_tpref x st = p_local_item_ref "typar" st.otypars  x st
 
 let u_local_item_ref tab st = u_osgn_ref tab st
@@ -1435,6 +1436,8 @@ let p_trait_sln sln st =
          p_byte 6 st; p_tup5 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys p_ty (a, b, c, d, e) st
     | FSMethSln(a, b, c, Some d) ->
          p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
+    | ILFieldSln(a, b, c) ->
+         p_byte 8 st; p_tup3 p_tys p_ILFieldRef p_bool (a, b, c) st
 
 
 let p_trait (TTrait(a, b, c, d, e, _, f)) st  =

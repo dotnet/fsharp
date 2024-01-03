@@ -1742,14 +1742,24 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                 let fields =
                     [| for ty in supportTys do
                         let item = TryFindIntrinsicNamedItemOfType csenv.InfoReader (nm, AccessibleFromEverywhere, false) FindMemberFlag.IgnoreOverrides m ty
-                        match item with 
-                        | Some (ILFieldItem [ ilfinfo ]) when
-                            ilfinfo.IsStatic = (not memFlags.IsInstance)
-                            && ilfinfo.IsInitOnly = (not isSet)
-                            && IsILFieldInfoAccessible g amap m AccessibleFromEverywhere ilfinfo 
-                            && ilfinfo.LiteralValue.IsSome 
-                            && not ilfinfo.IsSpecialName ->
-                                yield ilfinfo
+                        match item with
+                        | Some (ILFieldItem [ ilfinfo ]) ->
+                            (* let _calconvMatches = ilfinfo.IsStatic = (not memFlags.IsInstance)
+                            let _canCall = ((ilfinfo.IsInitOnly && isGet) || (not ilfinfo.IsInitOnly && isSet))
+                            let _accessible = IsILFieldInfoAccessible g amap m AccessibleFromEverywhere ilfinfo
+                            let _isNotLiteral = ilfinfo.LiteralValue.IsNone
+                            let _isNotSpecialName = not ilfinfo.IsSpecialName *)
+
+                            if ilfinfo.IsStatic = (not memFlags.IsInstance)
+                                // If the field is backing init-only property, we don't want solution to be selected as "setter".
+                                && (isGet || not ilfinfo.IsInitOnly)
+                                // We only consider public fields
+                                && IsILFieldInfoAccessible g amap m AccessibleFromEverywhere ilfinfo
+                                // We don't consider constant fields
+                                && ilfinfo.LiteralValue.IsNone
+                                // We don't consider special name fields
+                                && not ilfinfo.IsSpecialName then
+                                    yield ilfinfo
                         | _ -> ()
                     |]
                 if fields.Length = 1 then
