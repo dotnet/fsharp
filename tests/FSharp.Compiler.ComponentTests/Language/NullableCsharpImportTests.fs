@@ -70,6 +70,8 @@ let ``Consumption of nullable C# - no generics, just strings in methods and fiel
     |> withLangVersionPreview
     |> withReferences [csharpLib]
     |> withCheckNulls
+    |> withWarnOn 3261
+    |> withOptions ["--warnaserror+"]
     |> compile
     |> shouldFail
     |> withDiagnostics [
