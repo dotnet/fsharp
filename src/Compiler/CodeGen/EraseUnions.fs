@@ -922,7 +922,7 @@ let convAlternativeDef
                                 imports
                             )
                         ))
-                            .With(customAttrs = additionalAttributes)                           
+                            .With(customAttrs = additionalAttributes)
                         |> addMethodGeneratedAttrs
                     ],
                     [
