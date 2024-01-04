@@ -49,7 +49,8 @@ if foo.IsA then failwith "Should not be A"
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    // TODO nullness - wait for https://github.com/fsharp/fslang-design/discussions/760
+    // [<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* DU property roundtrip over pickled metadata and with fsi file`` () = 
         let libCode =  """module rec TestLib
 
@@ -164,7 +165,8 @@ let isFoo = foo.IsFoo
         |> withErrorMessage "The type 'Foo' does not define the field, constructor or member 'IsFoo'. Maybe you want one of the following:
    Foo"
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    // TODO nullness - wait for https://github.com/fsharp/fslang-design/discussions/760
+    //[<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties are unavailable on voption`` () =
         Fsx """
 let x = (ValueSome 1).IsSome
