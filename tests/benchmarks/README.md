@@ -16,20 +16,6 @@ Note that there are plans to update the performance testing infrastructure. More
 * https://github.com/dotnet/fsharp/discussions/12526
 * https://github.com/dotnet/performance/issues/2457
 
-### Types of performance tests
-
-Performance tests in this codebase can be broadly put into two groups:
-1. tests that measure runtime performance of code produced from F# source code,
-2. tests that measure performance of the compilation process itself. This involves any computations required by IDEs, for example type checking.
-
-Group 1. affects end users of programs, while group 2. affects developer experience.
-
-### Directory structure
-
-Tests are structured as follows
-* `CompiledCodeBenchmarks/` - benchmarks that test compiled code performance.
-* `FCSBenchmarks/` - benchmarks of the compiler service itself.
-
 ### Jupyter notebooks
 
 Some benchmarks are written using F# Notebooks that use the .NET Interactive kernel.
