@@ -437,16 +437,14 @@ let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (s
 // ctxt is for debugging
 let p_osgn_ref (_ctxt: string) (outMap : NodeOutTable<_, _>) x st =
     let idx = outMap.Table.FindOrAdd (outMap.NodeStamp x)
-    if ((idx >= 6400 && idx < 6450) && outMap.Name = "ovals") then
-        let msg =
-            sprintf "idx %d#%d in table %s has name '%s', was defined at '%s' and is referenced from context %s\n"
-                idx (outMap.NodeStamp x)
-                outMap.Name (outMap.NodeName x)
-                (stringOfRange (outMap.GetRange x))
-                _ctxt
-        System.Diagnostics.Debug.Assert(false, msg )
-        System.IO.File.AppendAllLines(@"D:\protobuild.log",[msg])
-        printfn "%s" msg
+    //if ((idx = 0) && outMap.Name = "oentities") then
+    //    let msg =
+    //        sprintf "idx %d#%d in table %s has name '%s', was defined at '%s' and is referenced from context %s\n"
+    //            idx (outMap.NodeStamp x)
+    //            outMap.Name (outMap.NodeName x)
+    //            (stringOfRange (outMap.GetRange x))
+    //            _ctxt
+    //    System.Diagnostics.Debug.Assert(false, msg )
     p_int idx st
 
 let p_osgn_decl (outMap : NodeOutTable<_, _>) p x st =
