@@ -5,7 +5,7 @@ namespace FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
-/// Used to track route during traversal of syntax using SyntaxTraversal.Traverse
+/// Represents a major syntax node in the untyped abstract syntax tree.
 [<RequireQualifiedAccess>]
 type SyntaxNode =
     | SynPat of SynPat
@@ -23,7 +23,18 @@ type SyntaxNode =
     | SynTypeDefnSig of SynTypeDefnSig
     | SynMemberSig of SynMemberSig
 
+    /// The range of the syntax node, inclusive of its contents.
+    member Range: range
+
+/// Represents the set of ancestor nodes traversed before reaching
+/// the current node in a traversal of the untyped abstract syntax tree.
 type SyntaxVisitorPath = SyntaxNode list
+
+/// <summary>
+/// Represents a forest of sibling <see cref="T:FSharp.Compiler.SyntaxNode"/>s
+/// in the untyped abstract syntax tree (AST).
+/// </summary>
+type Ast = SyntaxNode list
 
 [<AbstractClass>]
 type SyntaxVisitorBase<'T> =
@@ -204,87 +215,53 @@ module public SyntaxTraversal =
     val Traverse: pos: pos * parseTree: ParsedInput * visitor: SyntaxVisitorBase<'T> -> 'T option
 
 /// <summary>
-/// Holds operations for working with the untyped abstract syntax tree (AST)
-/// contained in <see cref="T:FSharp.Compiler.Syntax.ParsedInput"/> values.
+/// Holds operations for working with <see cref="T:FSharp.Compiler.Syntax.SyntaxNode"/>s
+/// in the untyped abstract syntax tree (AST).
+/// </summary>
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module SyntaxNode =
+    /// <summary>
+    /// Extracts the <see cref="T:FSharp.Compiler.Syntax.SynAttributes"/>, if any,
+    /// from the given <see cref="T:FSharp.Compiler.Syntax.SyntaxNode"/>.
+    /// </summary>
+    val (|Attributes|): node: SyntaxNode -> SynAttributes
+
+/// <summary>
+/// Holds operations for working with the
+/// untyped abstract syntax tree (<see cref="T:FSharp.Compiler.Syntax.Ast"/>).
 /// </summary>
 [<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module public ParsedInput =
-
-    /// <summary>
-    /// Gets the parsed input's contents as a forest of top-level syntax nodes.
-    /// </summary>
-    /// <param name="parsedInput">The parsed implementation or signature file.</param>
-    /// <returns>The parsed file's contents as a forest of top-level syntax nodes.</returns>
-    val contents: parsedInput: ParsedInput -> SyntaxNode list
-
-    /// <summary>
-    /// Returns the first node for which the given predicate holds true.
-    /// Raises an exception if no matching node is found.
-    /// </summary>
-    /// <param name="predicate">The function to use to test each node.</param>
-    /// <param name="parsedInput">The AST to search.</param>
-    /// <returns>The matching node.</returns>
-    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Raised if no matching node is found.</exception>
-    val find: predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) -> parsedInput: ParsedInput -> SyntaxNode
-
+module Ast =
     /// <summary>
     /// Applies a function to each node of the AST and its context (path),
     /// threading an accumulator through the computation.
     /// </summary>
     /// <param name="folder">The function to use to update the state given each node and its context.</param>
     /// <param name="state">The initial state.</param>
-    /// <param name="parsedInput">The AST to fold over.</param>
+    /// <param name="ast">The AST to fold over.</param>
     /// <returns>The final state.</returns>
-    val fold:
-        folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State) ->
-        state: 'State ->
-        parsedInput: ParsedInput ->
-            'State
-
-    /// <summary>
-    /// Applies a function to each node of the AST and its context (path)
-    /// until the folder returns <c>None</c>, threading an accumulator through the computation.
-    /// </summary>
-    /// <param name="folder">The function to use to update the state given each node and its context, or to stop traversal by returning <c>None</c>.</param>
-    /// <param name="state">The initial state.</param>
-    /// <param name="parsedInput">The AST to fold over.</param>
-    /// <returns>The final state.</returns>
-    val foldWhile:
-        folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State option) ->
-        state: 'State ->
-        parsedInput: ParsedInput ->
-            'State
-
-    /// <summary>
-    /// Applies the given function to each node of the AST and its context (path),
-    /// returning <c>Some x</c> for the first node for which the function
-    /// returns <c>Some x</c> for some value <c>x</c>.
-    /// Raises an exception if no matching node is found.
-    /// </summary>
-    /// <param name="chooser">The function to apply to each node and its context to derive an optional value.</param>
-    /// <param name="parsedInput">The AST to search.</param>
-    /// <returns>The first value for which the function returns <c>Some</c>.</returns>
-    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Raised if no matching node is found.</exception>
-    val pick: chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> parsedInput: ParsedInput -> 'T
-
-    /// <summary>
-    /// Returns the first node for which the given predicate holds true,
-    /// or <c>None</c> if no matching node is found.
-    /// </summary>
-    /// <param name="predicate">The function to use to test each node.</param>
-    /// <param name="parsedInput">The AST to search.</param>
-    /// <returns>The matching node, or <c>None</c> if no matching node is found.</returns>
-    val tryFind: predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) -> parsedInput: ParsedInput -> SyntaxNode option
-
-    /// <summary>
-    /// Applies the given function to each node of the AST and its context (path),
-    /// returning <c>Some x</c> for the first node for which the function
-    /// returns <c>Some x</c> for some value <c>x</c>, otherwise <c>None</c>.
-    /// </summary>
-    /// <param name="chooser">The function to apply to each node and its context to derive an optional value.</param>
-    /// <param name="parsedInput">The AST to search.</param>
-    /// <returns>The first value for which the function returns <c>Some</c>, or <c>None</c> if no matching node is found.</returns>
-    val tryPick: chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> parsedInput: ParsedInput -> 'T option
+    /// <example>
+    /// <code lang="fsharp">
+    /// let unnecessaryParentheses =
+    ///    (HashSet Range.comparer, parseResults.ParseTree.Contents) ||> Ast.fold (fun acc path node ->
+    ///        match node with
+    ///        | SyntaxNode.SynExpr (SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range)) when
+    ///            not (SynExpr.shouldBeParenthesizedInContext getLineString path inner)
+    ///            ->
+    ///            ignore (acc.Add range)
+    ///            acc
+    ///
+    ///        | SyntaxNode.SynPat (SynPat.Paren (inner, range)) when
+    ///            not (SynPat.shouldBeParenthesizedInContext path inner)
+    ///            ->
+    ///            ignore (acc.Add range)
+    ///            acc
+    ///
+    ///        | _ -> acc)
+    /// </code>
+    /// </example>
+    val fold: folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State) -> state: 'State -> ast: Ast -> 'State
 
     /// <summary>
     /// Applies the given function to each node of the AST and its context (path)
@@ -294,26 +271,27 @@ module public ParsedInput =
     /// </summary>
     /// <param name="position">The position in the input file down to which to apply the function.</param>
     /// <param name="chooser">The function to apply to each node and its context to derive an optional value.</param>
-    /// <param name="parsedInput">The AST to search.</param>
+    /// <param name="ast">The AST to search.</param>
     /// <returns>The first value for which the function returns <c>Some</c>, or <c>None</c> if no matching node is found.</returns>
-    val tryPickDownTo:
-        position: pos ->
-        chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) ->
-        parsedInput: ParsedInput ->
-            'T option
+    /// <example>
+    /// <code lang="fsharp">
+    /// let range =
+    ///     parseResults.ParseTree.Contents |> Ast.tryPick pos (fun _path node ->
+    ///       match node with
+    ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
+    ///       | _ -> None)
+    /// </code>
+    /// </example>
+    val tryPick: position: pos -> chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> ast: Ast -> 'T option
 
-    /// <summary>
-    /// Like fold, but the walker function may optionally specify which child nodes to walk in what order.
-    ///
-    /// If the walker function specifies <c>None</c> for the child nodes, the node's children are traversed in the default way.
-    /// If the walker function specifies <c>Some []</c> for the child nodes, none of the node's children are traversed.
-    /// </summary>
-    /// <param name="walker">The function to use to update the state given each node and its context.</param>
-    /// <param name="state">The initial state.</param>
-    /// <param name="parsedInput">The AST to fold over.</param>
-    /// <returns>The final state.</returns>
-    val walk:
-        walker: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State * SyntaxNode list option) ->
-        state: 'State ->
-        parsedInput: ParsedInput ->
-            'State
+/// <summary>
+/// Holds extension methods for <see cref="T:FSharp.Compiler.Syntax.ParsedInput"/>.
+/// </summary>
+[<AutoOpen>]
+module ParsedInputExtensions =
+    type ParsedInput with
+
+        /// <summary>
+        /// Gets the parsed file's contents as forest of <see cref="T:FSharp.Compiler.Syntax.SyntaxNode"/>s.
+        /// </summary>
+        member Contents: Ast
