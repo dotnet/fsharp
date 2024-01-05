@@ -4,7 +4,7 @@ open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
-[<Fact>]
+[<FactForNETCOREAPP>]
 let ``Consumption of nullable C# - no generics, just strings in methods and fields`` () =
     let csharpLib =
         CSharp """
