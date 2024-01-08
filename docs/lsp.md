@@ -54,7 +54,7 @@ graph TD
 
 VS(VS) --> NewVsix(NewVsix)
 
-VsCode(VS Code) --> Ionide(Ionide)
+VsCode(VS Code) --> Ionide(Ionide/FSAC)
 
 Vim(Vim) --> Ionide(Ionide)
 
