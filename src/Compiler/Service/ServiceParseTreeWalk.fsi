@@ -234,6 +234,26 @@ module SyntaxNode =
 [<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Ast =
     /// <summary>
+    /// Applies the given predicate to each node of the AST and its context (path)
+    /// down to a given position, returning true if a matching node is found, otherwise false.
+    /// Traversal is short-circuited if no matching node is found through the given position.
+    /// </summary>
+    /// <param name="position">The position in the input file down to which to apply the function.</param>
+    /// <param name="predicate">The function to match each node against.</param>
+    /// <param name="ast">The AST to search.</param>
+    /// <returns>True if a matching node is found, or false if no matching node is found.</returns>
+    /// <example>
+    /// <code lang="fsharp">
+    /// let range =
+    ///     parseResults.ParseTree.Contents |> Ast.tryPick pos (fun _path node ->
+    ///       match node with
+    ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
+    ///       | _ -> None)
+    /// </code>
+    /// </example>
+    val exists: position: pos -> predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) -> ast: Ast -> bool
+
+    /// <summary>
     /// Applies a function to each node of the AST and its context (path),
     /// threading an accumulator through the computation.
     /// </summary>
@@ -262,6 +282,27 @@ module Ast =
     /// </code>
     /// </example>
     val fold: folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State) -> state: 'State -> ast: Ast -> 'State
+
+    /// <summary>
+    /// Applies a function to each node of the AST and its context (path)
+    /// until the folder returns <c>None</c>, threading an accumulator through the computation.
+    /// </summary>
+    /// <param name="folder">The function to use to update the state given each node and its context, or to stop traversal by returning <c>None</c>.</param>
+    /// <param name="state">The initial state.</param>
+    /// <param name="ast">The AST to fold over.</param>
+    /// <returns>The final state.</returns>
+    val foldWhile:
+        folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State option) -> state: 'State -> ast: Ast -> 'State
+
+    /// <summary>
+    /// Dives to the deepest node that contains the given position,
+    /// returning the node and its path if found, or <c>None</c> if no
+    /// node contains the position.
+    /// </summary>
+    /// <param name="position">The position in the input file down to which to dive.</param>
+    /// <param name="ast">The AST to search.</param>
+    /// <returns>The deepest node containing the given position, along with the path taken through the tree to find it.</returns>
+    val tryNode: position: pos -> ast: Ast -> (SyntaxNode * SyntaxVisitorPath) option
 
     /// <summary>
     /// Applies the given function to each node of the AST and its context (path)
