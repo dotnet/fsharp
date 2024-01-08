@@ -253,21 +253,24 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         input.Contents
         |> Ast.tryPick pos (fun _path node ->
             match node with
-            | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = range)) -> Some range
+            | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = range)) when rangeContainsPos range pos -> Some range
             | _ -> None)
 
     member _.TryRangeOfExprInYieldOrReturn pos =
         input.Contents
         |> Ast.tryPick pos (fun _path node ->
             match node with
-            | SyntaxNode.SynExpr(SynExpr.YieldOrReturn(expr = expr) | SynExpr.YieldOrReturnFrom(expr = expr)) -> Some expr.Range
+            | SyntaxNode.SynExpr(SynExpr.YieldOrReturn(expr = expr; range = range) | SynExpr.YieldOrReturnFrom(expr = expr; range = range)) when
+                rangeContainsPos range pos
+                ->
+                Some expr.Range
             | _ -> None)
 
     member _.TryRangeOfRecordExpressionContainingPos pos =
         input.Contents
         |> Ast.tryPick pos (fun _path node ->
             match node with
-            | SyntaxNode.SynExpr(SynExpr.Record(range = range)) -> Some range
+            | SyntaxNode.SynExpr(SynExpr.Record(range = range)) when rangeContainsPos range pos -> Some range
             | _ -> None)
 
     member _.TryRangeOfRefCellDereferenceContainingPos expressionPos =
