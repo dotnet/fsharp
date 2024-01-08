@@ -42,7 +42,8 @@ F# LSP support design proposal. To be expanded as we learn more / settle on thin
   - Independent of any particular project system - this needs to be handled by the client
   - Target LSP protocol version 3.17 (at least initially, we can upgrade as we go)
   - Support all useful LSP APIs
-  - Support for analyzers and refactoring
+  - Support for analyzers
+  - Support for code fixes and refactoring
   - Support for mixed F# / C# solutions (being able to delegate to C# LSP server)
   - Good performance
   - Support for a single solution/workspace per instance
