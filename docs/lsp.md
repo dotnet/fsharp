@@ -17,6 +17,7 @@ F# LSP support design proposal. To be expanded as we learn more / settle on thin
       - [Example sequence diagram](#example-sequence-diagram)
       - [Concurrency and cancellation](#concurrency-and-cancellation)
       - [Request tracking](#request-tracking)
+      - [Extensibility](#extensibility)
     - [NewVsix](#newvsix)
     - [FCS](#fcs)
   - [LSP library](#lsp-library)
@@ -36,15 +37,17 @@ F# LSP support design proposal. To be expanded as we learn more / settle on thin
 
 ## Goals / Requirements
 
-- A single LSP server implementation that can be used by both VS and VS Code (or any other consumer)
-- Independent of any particular project system
-- Target LSP protocol version 3.17 (at least initially, we can upgrade as we go)
-- Support all useful LSP APIs
-- Support for analyzers and refactoring
-- Support for mixed F# / C# solutions (being able to delegate to C# LSP server)
-- Good performance
-- Support for a single solution/workspace per instance (?)
-- Support for LSIF
+- Fully featured F# LSP server implementation that can be used by any editor
+  - Can be used as a library (with optional customization) or executable
+  - Independent of any particular project system - this needs to be handled by the client
+  - Target LSP protocol version 3.17 (at least initially, we can upgrade as we go)
+  - Support all useful LSP APIs
+  - Support for analyzers and refactoring
+  - Support for mixed F# / C# solutions (being able to delegate to C# LSP server)
+  - Good performance
+  - Support for a single solution/workspace per instance
+  - Support for LSIF
+- Visual Studio extension that will use the LSP server
 
 ## Overview
 
@@ -198,6 +201,12 @@ FsLSP-->>-Client: DocumentDiagnosticReport
 #### Request tracking
 
 This will hopefully be handled by the LSP library. Although we might need to be able to keep track of requests in progress for the purpose of cancellation.
+
+#### Extensibility
+
+The FsLSP library should be extensible by adding custom endpoints or overriding existing ones.
+
+It should also allow to hook into background processes or events to customize behavior.
 
 ### NewVsix
 
