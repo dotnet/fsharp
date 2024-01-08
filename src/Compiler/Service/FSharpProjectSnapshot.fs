@@ -3,7 +3,7 @@
 // Open up the compiler as an incremental service for parsing,
 // type checking and intellisense-like environment-reporting.
 
-module internal FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+module FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 open System
 open System.Collections.Generic
@@ -402,8 +402,9 @@ and internal ProjectCore
 
     member _.CacheKey = cacheKey.Value
 
-and [<NoComparison; CustomEquality>] internal FSharpReferencedProjectSnapshot =
-    internal
+and [<NoComparison; CustomEquality>]
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    FSharpReferencedProjectSnapshot =
     | FSharpReference of projectOutputFile: string * options: FSharpProjectSnapshot
     //| PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
     //| ILModuleReference of
@@ -594,7 +595,7 @@ let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
 
 
 [<Extension>]
-type Extensions =
+type internal Extensions =
 
     [<Extension>]
     static member ToOptions(this: ProjectSnapshot) =
