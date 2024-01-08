@@ -56,7 +56,7 @@ VS(VS) --> NewVsix(NewVsix)
 
 VsCode(VS Code) --> Ionide(Ionide/FSAC)
 
-Vim(Vim) --> Ionide(Ionide)
+Vim(Vim) --> Ionide(Ionide/FSAC)
 
 NewVsix --> FsLSPServer(FsLSP Server)
 NewVsix --> CPS(CPS)
