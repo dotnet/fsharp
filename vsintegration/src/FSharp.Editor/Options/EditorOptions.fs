@@ -120,6 +120,7 @@ type AdvancedOptions =
         IsInlineReturnTypeHintsEnabled: bool
         IsUseLiveBuffersEnabled: bool
         UseTransparentCompiler: bool
+        TransparentCompilerSnapshotReuse: bool
         SendAdditionalTelemetry: bool
         SolutionBackgroundAnalysis: bool
     }
@@ -132,6 +133,7 @@ type AdvancedOptions =
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
             UseTransparentCompiler = false
+            TransparentCompilerSnapshotReuse = true
             IsUseLiveBuffersEnabled = true
             SendAdditionalTelemetry = true
             SolutionBackgroundAnalysis = false
@@ -271,6 +273,9 @@ module EditorOptionsExtensions =
             this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
         member this.UseTransparentCompiler = this.EditorOptions.Advanced.UseTransparentCompiler
+
+        member this.IsTransparentCompilerSnapshotReuseEnabled =
+            this.EditorOptions.Advanced.TransparentCompilerSnapshotReuse
 
         member this.TransparentCompilerCacheFactor =
             this.EditorOptions.LanguageServicePerformance.TransparentCompilerCacheFactor

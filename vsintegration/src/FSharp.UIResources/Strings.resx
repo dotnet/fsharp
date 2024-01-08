@@ -303,4 +303,7 @@
   <data name="Show_remarks_in_Quick_Info" xml:space="preserve">
     <value>Show remarks in Quick Info</value>
   </data>
+  <data name="Transparent_Compiler_Snapshot_Reuse" xml:space="preserve">
+    <value>Create new project snapshots from existing ones</value>
+  </data>
 </root>

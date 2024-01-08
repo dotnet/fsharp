@@ -14,7 +14,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,23,0,-184">
             <StackPanel>
                 <GroupBox Header="{x:Static local:Strings.Block_Structure}">
                     <CheckBox x:Name="toggleBlockStructure" IsChecked="{Binding IsBlockStructureEnabled}"
@@ -39,8 +39,12 @@
                               Content="{x:Static local:Strings.Enable_Live_Buffers}"/>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.TransparentCompiler}">
+                    <StackPanel>
                     <CheckBox x:Name="toggleTransparentCompiler" IsChecked="{Binding UseTransparentCompiler}"
                               Content="{x:Static local:Strings.Use_Transparent_Compiler}"/>
+                    <CheckBox x:Name="snapshotReuse" IsChecked="{Binding TransparentCompilerSnapshotReuse}"
+                              Content="{x:Static local:Strings.Transparent_Compiler_Snapshot_Reuse}"/>
+                    </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.AdditionalTelemetry}">
                     <CheckBox x:Name="toggleSendAdditionalTelemetry" IsChecked="{Binding SendAdditionalTelemetry}"

@@ -178,21 +178,21 @@ module private CheckerExtensions =
             let! referenceVersions = getReferencedProjectVersions project
 
             let updatedSnapshot =
-                match latestSnapshots.TryGetValue project.Id with
-                | true, (_, _, oldReferenceVersions, _, _) when referenceVersions <> oldReferenceVersions ->
+                match project.IsTransparentCompilerSnapshotReuseEnabled, latestSnapshots.TryGetValue project.Id with
+                | true, (true, (_, _, oldReferenceVersions, _, _)) when referenceVersions <> oldReferenceVersions ->
                     System.Diagnostics.Trace.TraceWarning "Reference versions changed"
                     None
 
-                | true, (_, _, _, _, oldSnapshot: FSharpProjectSnapshot) when
+                | true, (true, (_, _, _, _, oldSnapshot: FSharpProjectSnapshot)) when
                     oldSnapshot.ProjectSnapshot.ReferencesOnDisk <> (getOnDiskReferences options)
                     ->
                     System.Diagnostics.Trace.TraceWarning "References on disk changed"
                     None
 
-                | true, (_, oldProjectVersion, _, _, oldSnapshot: FSharpProjectSnapshot) when projectVersion = oldProjectVersion ->
+                | true, (true, (_, oldProjectVersion, _, _, oldSnapshot: FSharpProjectSnapshot)) when projectVersion = oldProjectVersion ->
                     Some(CancellableTask.singleton oldSnapshot)
 
-                | true, (oldProject, _oldProjectVersion, _oldReferencesVersion, oldOptions, oldSnapshot: FSharpProjectSnapshot) when
+                | true, (true, (oldProject, _oldProjectVersion, _oldReferencesVersion, oldOptions, oldSnapshot: FSharpProjectSnapshot)) when
                     FSharpProjectOptions.AreSameForChecking(options, oldOptions)
                     ->
 

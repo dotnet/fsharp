@@ -217,6 +217,11 @@
         <target state="new">Higher number means more memory will be used for caching. Changing the value wipes cache.</target>
         <note />
       </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="new">Create new project snapshots from existing ones</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Kullanılmayan açık deyimleri kaldır</target>
