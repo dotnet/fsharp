@@ -250,10 +250,9 @@ It probably makes sense to start with an existing library which should be able t
 
 ## Diagnostic mode
 
-We will be offering the **Pull Diagnostics** mode where the client will request diagnostics for a particular document. This should be easier to implement and probably more practical anyway.
+Initially we will be offering the **Pull Diagnostics** mode where the client will request diagnostics for a particular document. It will be up to the client to ask for diagnostics for documents at appropriate times and cancel requests that are no longer needed. The client can also use this to implement background checking of all documents in the workspace.
 
-We could experiment with **Publish Diagnostics** in combination with "keep checking the whole solution in background" option, if we decide to implement it on the server side. But this is a low priority item.
-
+Later we can also add an option to have the server control diagnostics and publish them via **Publish Diagnostics**. Then it will be pushing diagnostics as they are discovered either for active document, open documents or all documents.
 
 ## LSIF
 
@@ -422,6 +421,7 @@ This is a preliminary list of LSP APIs we want (or don't want) to implement, rou
 | `textDocument/formatting`                | Request      | ↩️         | Language features                 | 3                    | ✅                 |                                                   |
 | `textDocument/rename`                    | Request      | ↩️         | Language features                 | 3                    | ✅                 |                                                   |
 | `textDocument/signatureHelp`             | Request      | ↩️         | Language features                 | 3                    | ✅                 |                                                   |
+| `$/progress`                             | Notification | ⬅️         | Window Features                   | 3                    | ✅                | Would be nice to have for long running operations |
 | `workspace/didChangeWatchedFiles`        | Notification | ➡️         | Workspace Features                | 3                    | ✅                 |                                                   |
 | `textDocument/willSave`                  | Notification | ➡️         | Document synchronization          | 4                    |                   |                                                   |
 | `textDocument/willSaveWaitUntil`         | Request      | ↩️         | Document synchronization          | 4                    |                   |                                                   |
@@ -433,7 +433,6 @@ This is a preliminary list of LSP APIs we want (or don't want) to implement, rou
 | `textDocument/prepareRename`             | Request      | ↩️         | Language features                 | 4                    |                   |                                                   |
 | `textDocument/publishDiagnostics`        | Notification | ⬅️         | Language features                 | 4                    | ✅                 |                                                   |
 | `workspace/codeLens/refresh`             | Request      | ↪️         | Language Features                 | 4                    | ✅                 |                                                   |
-| `$/progress`                             | Notification | ⬅️         | Window Features                   | 3                    | ✅                | Would be nice to have for long running operations |
 | `window/showMessage`                     | Notification | ⬅️         | Window Features                   | 4                    | ✅                 |                                                   |
 | `workspace/configuration`                | Request      | ↪️         | Workspace Features                | 4                    |                   |                                                   |
 | `workspace/diagnostic`                   | Request      | ↩️         | Workspace Features                | 4                    |                   |                                                   |
