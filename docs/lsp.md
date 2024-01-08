@@ -424,7 +424,7 @@ This is a preliminary list of LSP APIs we want (or don't want) to implement, rou
 | `textDocument/prepareRename`             | Request      | ↩️         | Language features                 | 4                    |                   |                                                   |
 | `textDocument/publishDiagnostics`        | Notification | ⬅️         | Language features                 | 4                    | ✅                 |                                                   |
 | `workspace/codeLens/refresh`             | Request      | ↪️         | Language Features                 | 4                    | ✅                 |                                                   |
-| `$/progress`                             | Notification | ⬅️         | Window Features                   | 4                    |                   | Would be nice to have for long running operations |
+| `$/progress`                             | Notification | ⬅️         | Window Features                   | 3                    | ✅                | Would be nice to have for long running operations |
 | `window/showMessage`                     | Notification | ⬅️         | Window Features                   | 4                    | ✅                 |                                                   |
 | `workspace/configuration`                | Request      | ↪️         | Workspace Features                | 4                    |                   |                                                   |
 | `workspace/diagnostic`                   | Request      | ↩️         | Workspace Features                | 4                    |                   |                                                   |
