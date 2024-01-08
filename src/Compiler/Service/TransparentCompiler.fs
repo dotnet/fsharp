@@ -513,7 +513,12 @@ type internal TransparentCompiler
                                 node {
                                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
 
-                                    return! self.GetAssemblyData(projectSnapshot.ProjectSnapshot, nm, userOpName + ".CheckReferencedProject(" + nm + ")")
+                                    return!
+                                        self.GetAssemblyData(
+                                            projectSnapshot.ProjectSnapshot,
+                                            nm,
+                                            userOpName + ".CheckReferencedProject(" + nm + ")"
+                                        )
                                 }
 
                             member x.TryGetLogicalTimeStamp(cache) =
@@ -2080,7 +2085,8 @@ type internal TransparentCompiler
             }
 
         member this.ParseFile(fileName, projectSnapshot, userOpName) =
-            this.ParseFile(fileName, projectSnapshot.ProjectSnapshot, userOpName) |> Async.AwaitNodeCode
+            this.ParseFile(fileName, projectSnapshot.ProjectSnapshot, userOpName)
+            |> Async.AwaitNodeCode
 
         member this.ParseFile
             (

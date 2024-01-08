@@ -402,9 +402,7 @@ and internal ProjectCore
 
     member _.CacheKey = cacheKey.Value
 
-and [<NoComparison; CustomEquality>]
-    [<Experimental("This FCS API is experimental and subject to change.")>]
-    FSharpReferencedProjectSnapshot =
+and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental and subject to change.")>] FSharpReferencedProjectSnapshot =
     | FSharpReference of projectOutputFile: string * options: FSharpProjectSnapshot
     //| PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
     //| ILModuleReference of
@@ -439,8 +437,7 @@ and [<NoComparison; CustomEquality>]
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
-and [<Experimental("This FCS API is experimental and subject to change.")>]
-    FSharpProjectSnapshot internal(projectSnapshot) =
+and [<Experimental("This FCS API is experimental and subject to change.")>] FSharpProjectSnapshot internal (projectSnapshot) =
 
     member internal _.ProjectSnapshot: ProjectSnapshot = projectSnapshot
 
@@ -498,8 +495,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>]
                         | FSharpReferencedProject.FSharpReference(outputName, options) ->
                             Some(
                                 async {
-                                    let! snapshot =
-                                        FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, snapshotAccumulator)
+                                    let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, snapshotAccumulator)
 
                                     return FSharpReferencedProjectSnapshot.FSharpReference(outputName, snapshot)
                                 }
@@ -593,13 +589,11 @@ let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
         Stamp = projectSnapshot.Stamp
     }
 
-
 [<Extension>]
 type internal Extensions =
 
     [<Extension>]
-    static member ToOptions(this: ProjectSnapshot) =
-        this |> snapshotToOptions
+    static member ToOptions(this: ProjectSnapshot) = this |> snapshotToOptions
 
     [<Extension>]
     static member ToOptions(this: FSharpProjectSnapshot) =

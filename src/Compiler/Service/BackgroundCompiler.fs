@@ -1662,7 +1662,8 @@ type internal BackgroundCompiler
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
             node {
                 let fileSnapshot =
-                    projectSnapshot.ProjectSnapshot.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
+                    projectSnapshot.ProjectSnapshot.SourceFiles
+                    |> Seq.find (fun f -> f.FileName = fileName)
 
                 let! sourceText = fileSnapshot.GetSource() |> NodeCode.AwaitTask
                 let options = projectSnapshot.ToOptions()
