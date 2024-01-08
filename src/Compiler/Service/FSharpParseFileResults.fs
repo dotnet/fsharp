@@ -371,11 +371,17 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> false)
 
     member _.IsPositionWithinRecordDefinition pos =
+        let isWithin left right middle =
+            Position.posGt right left && Position.posLt middle right
+
         input.Contents
         |> Ast.exists pos (fun _path node ->
             match node with
-            | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record _, _)))
-            | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.TypeAbbrev _, _))) -> true
+            | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record _, range)))
+            | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.TypeAbbrev _, range))) when
+                pos |> isWithin range.Start range.End
+                ->
+                true
             | _ -> false)
 
     /// Get declared items and the selected item at the specified location
