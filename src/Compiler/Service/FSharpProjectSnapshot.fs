@@ -134,7 +134,8 @@ type internal FSharpParsedFile
         member this.Version = SyntaxTreeHash
         member this.IsSignatureFile = this.IsSignatureFile
 
-type internal ReferenceOnDisk =
+[<Experimental("This FCS API is experimental and subject to change.")>]
+type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
 type internal ProjectSnapshotKey = string * string
