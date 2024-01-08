@@ -783,6 +783,7 @@ type ProjectWorkflowBuilder
         initialProject: SyntheticProject,
         ?initialContext,
         ?checker: FSharpChecker,
+        ?useGetSource,
         ?useChangeNotifications,
         ?useSyntaxTreeCache,
         ?useTransparentCompiler,
@@ -791,6 +792,7 @@ type ProjectWorkflowBuilder
     ) =
 
     let useTransparentCompiler = defaultArg useTransparentCompiler false
+    let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true
 
@@ -808,7 +810,7 @@ type ProjectWorkflowBuilder
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
                 enablePartialTypeChecking = true,
                 captureIdentifiersWhenParsing = true,
-                documentSource = (if useChangeNotifications then DocumentSource.Custom getSource else DocumentSource.FileSystem),
+                documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
                 useSyntaxTreeCache = defaultArg useSyntaxTreeCache false))
 
     let mapProjectAsync f workflow =
@@ -835,6 +837,7 @@ type ProjectWorkflowBuilder
         ProjectWorkflowBuilder(
             ctx.Project,
             ctx,
+            useGetSource = useGetSource,
             useChangeNotifications = useChangeNotifications,
             useTransparentCompiler = useTransparentCompiler,
             ?runTimeout = runTimeout)
