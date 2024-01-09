@@ -149,7 +149,7 @@
       </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
-        <target state="new">'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</target>
+        <target state="translated">'{0}' non supporta il tipo '{1}', perché in quest'ultimo manca il membro '{2}' richiesto (reale o predefinito)</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -1464,7 +1464,7 @@
       </trans-unit>
       <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
         <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
-        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
+        <target state="translated">Il tipo '{0}' contiene troppi metodi. Trovato: '{1}', massimo: '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
