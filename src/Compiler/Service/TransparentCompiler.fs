@@ -749,42 +749,6 @@ type internal TransparentCompiler
                 tcConfig.GetAvailableLoadedSources()
                 |> List.map (fun (m, fileName) -> m, FSharpFileSnapshot.CreateFromFileSystem(fileName))
 
-            //// Mark up the source files with an indicator flag indicating if they are the last source file in the project
-            //let sourceFiles =
-            //    let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
-            //    ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
-
-            //let sourceFiles =
-            //    sourceFiles
-            //    |> List.map (fun (m, fileName, (isLastCompiland, isExe)) ->
-            //        let source =
-            //            fileSnapshots.TryFind fileName
-            //            |> Option.defaultWith (fun () ->
-            //                // TODO: does this commonly happen?
-
-            //                // It can happen when source files are inferred from command line options and are not part of FSharpProjectOptions.SourceFiles - which we use to create the Snapshot
-
-            //                let snapshotFileSummary =
-            //                    match projectSnapshot.SourceFiles with
-            //                    | [] -> "The project snapshot has no source files."
-            //                    | files ->
-            //                        "The project snapshot contains the following files:\n"
-            //                        + (files |> Seq.map (fun x -> x.FileName |> shortPath) |> String.concat "\n")
-
-            //                failwith
-            //                    $"Trying to check a file ({shortPath fileName}) which is not part of the project snapshot. {snapshotFileSummary}"
-
-            //                FSharpFileSnapshot.Create(
-            //                    fileName,
-            //                    (FileSystem.GetLastWriteTimeShim fileName).Ticks.ToString(),
-            //                    (fun () -> fileName |> File.ReadAllText |> SourceText.ofString |> Task.FromResult)))
-            //        {
-            //            Range = m // TODO: is this used for anything?
-            //            Source = source
-            //            IsLastCompiland = isLastCompiland
-            //            IsExe = isExe
-            //        })
-
             return
                 Some
                     {
@@ -1210,8 +1174,7 @@ type internal TransparentCompiler
                             // we need to do it differently
                             //    |> Set.contains (NodeToTypeCheck.ArtificialImplFile(index - 1))
                             //then
-                            // TODO: this can actually happen, probably related to adding new files or moving files around
-                            //failwith $"Oops???"
+                            //  failwith $"Oops???"
 
                             let partialResult, tcState = finisher tcInfo.tcState
 
@@ -1593,6 +1556,12 @@ type internal TransparentCompiler
                         else
                             None
 
+                    // TODO: This kinda works, but the problem is that in order to switch a project to "in-memory" mode 
+                    //  - some file needs to be edited (this tirggers a re-check, but LastModifiedTimeOnDisk won't change)
+                    //  - saved (this will not trigger anything)
+                    //  - and then another change has to be made (to any file buffer) - so that recheck is triggered and we get here again 
+                    // Until that sequence happens the project will be used from disk (if available).
+                    // To get around it we probably need to detect changes made in the editor and record a timestamp for them.
                     let shouldUseOnDisk =
                         availableOnDiskModifiedTime
                         |> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())

@@ -1,8 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Open up the compiler as an incremental service for parsing,
-// type checking and intellisense-like environment-reporting.
-
 module FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 open System
@@ -23,6 +20,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 
+/// A common interface for an F# source file snapshot that can be used accross all stages (lazy, source loaded, parsed)
 type internal IFileSnapshot =
     abstract member FileName: string
     abstract member Version: byte array
@@ -59,6 +57,7 @@ module internal Helpers =
         |> fst,
         lastFile
 
+/// A snapshot of an F# source file.
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Task<ISourceTextNew>) =
 
@@ -69,7 +68,7 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
         FSharpFileSnapshot(
             fileName,
             FileSystem.GetLastWriteTimeShim(fileName).Ticks.ToString(),
-            fun () -> fileName |> File.ReadAllText |> SourceTextNew.ofString |> Task.FromResult
+            fun () -> FileSystem.OpenFileForReadShim(fileName).ReadAllText() |> SourceTextNew.ofString |> Task.FromResult
         )
 
     member public _.FileName = FileName
@@ -93,6 +92,7 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
         member this.Version = this.Version |> System.Text.Encoding.UTF8.GetBytes
         member this.IsSignatureFile = this.IsSignatureFile
 
+/// A source file snapshot with loaded source text.
 type internal FSharpFileSnapshotWithSource
     (FileName: string, SourceHash: ImmutableArray<byte>, Source: ISourceText, IsLastCompiland: bool, IsExe: bool) =
 
@@ -113,6 +113,7 @@ type internal FSharpFileSnapshotWithSource
         member this.Version = this.Version
         member this.IsSignatureFile = this.IsSignatureFile
 
+/// A source file snapshot with parsed syntax tree
 type internal FSharpParsedFile
     (
         FileName: string,
@@ -134,12 +135,12 @@ type internal FSharpParsedFile
         member this.Version = SyntaxTreeHash
         member this.IsSignatureFile = this.IsSignatureFile
 
+/// An on-disk reference needed for project compilation.
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
-type internal ProjectSnapshotKey = string * string
-
+/// A snapshot of an F# project. The source file type can differ based on which stage of compilation the snapshot is used for.
 type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: ProjectCore, sourceFiles: 'T list) =
 
     let noFileVersionsHash =
@@ -244,6 +245,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
     member private _.With(sourceFiles: 'T list) =
         ProjectSnapshotBase(projectCore, sourceFiles)
 
+    /// Create a new snapshot with given source files replacing files in this snapshot with the same name. Other files remain unchanged.
     member this.Replace(changedSourceFiles: 'T list) =
         // TODO: validate if changed files are not present in the original list?
 
@@ -254,12 +256,15 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
                 | Some y -> y
                 | None -> x)
 
-        this.With(sourceFiles)
+        this.With sourceFiles
 
+    /// Create a new snapshot with source files only up to the given index (inclusive)
     member this.UpTo fileIndex = this.With sourceFiles[..fileIndex]
 
+    /// Create a new snapshot with source files only up to the given file name (inclusive)
     member this.UpTo fileName = this.UpTo(this.IndexOf fileName)
 
+    /// Create a new snapshot with only source files at the given indexes
     member this.OnlyWith fileIndexes =
         this.With(
             fileIndexes
@@ -268,42 +273,52 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
             |> List.choose (fun x -> sourceFiles |> List.tryItem x)
         )
 
-    member this.WithoutSourceFiles = this.With []
-
     override this.ToString() =
         Path.GetFileNameWithoutExtension this.ProjectFileName
         |> sprintf "FSharpProjectSnapshot(%s)"
 
-    member this.GetLastModifiedTimeOnDisk() =
-        // TODO:
-        DateTime.Now
+    /// The newest last modified time of any file in this snapshot including the project file
+    member _.GetLastModifiedTimeOnDisk() =
+        seq {
+            projectCore.ProjectFileName
+            yield! 
+                sourceFiles 
+                |> Seq.filter (fun x -> not (x.FileName.EndsWith(".AssemblyInfo.fs"))) // TODO: is this safe? any better way of doing this?
+                |> Seq.filter (fun x -> not (x.FileName.EndsWith(".AssemblyAttributes.fs"))) 
+                |> Seq.map (fun x -> x.FileName)
+        } |> Seq.map FileSystem.GetLastWriteTimeShim |> Seq.max
 
-    member this.FullVersion = fullHash.Value
-    member this.SignatureVersion = signatureHash.Value |> fst
-    member this.LastFileVersion = lastFileHash.Value |> fst
+    member _.FullVersion = fullHash.Value
+    member _.SignatureVersion = signatureHash.Value |> fst
+    member _.LastFileVersion = lastFileHash.Value |> fst
 
     /// Version for parsing - doesn't include any references because they don't affect parsing (...right?)
-    member this.ParsingVersion = projectCore.VersionForParsing |> Md5Hasher.toString
+    member _.ParsingVersion = projectCore.VersionForParsing |> Md5Hasher.toString
 
     /// A key for this snapshot but without file versions. So it will be the same across any in-file changes.
-    member this.NoFileVersionsKey = noFileVersionsKey.Value
+    member _.NoFileVersionsKey = noFileVersionsKey.Value
 
     /// A full key for this snapshot, any change will cause this to change.
-    member this.FullKey = fullKey.Value
+    member _.FullKey = fullKey.Value
 
     /// A key including the public surface or signature for this snapshot
-    member this.SignatureKey = signatureKey.Value
+    member _.SignatureKey = signatureKey.Value
 
     /// A key including the public surface or signature for this snapshot and the last file (even if it's not a signature file)
-    member this.LastFileKey = lastFileKey.Value
+    member _.LastFileKey = lastFileKey.Value
 
     //TODO: cache it here?
     member this.FileKey(fileName: string) = this.UpTo(fileName).LastFileKey
     member this.FileKey(index: FileIndex) = this.UpTo(index).LastFileKey
 
+/// Project snapshot with filenames and versions given as initial input
 and internal ProjectSnapshot = ProjectSnapshotBase<FSharpFileSnapshot>
+
+/// Project snapshot with file sources loaded
 and internal ProjectSnapshotWithSources = ProjectSnapshotBase<FSharpFileSnapshotWithSource>
 
+/// All required information for compiling a project except the source files. It's kept separate so it can be reused
+/// for different stages of a project snapshot and also between changes to the source files.
 and internal ProjectCore
     (
         ProjectFileName: string,
@@ -422,9 +437,9 @@ and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental a
     /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
     /// </summary>
     /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
-    /// <param name="options">The Project Options for this F# project</param>
-    static member CreateFSharp(projectOutputFile, options: FSharpProjectSnapshot) =
-        FSharpReference(projectOutputFile, options)
+    /// <param name="snapshot">The project snapshot for this F# project</param>
+    static member CreateFSharp(projectOutputFile, snapshot: FSharpProjectSnapshot) =
+        FSharpReference(projectOutputFile, snapshot)
 
     override this.Equals(o) =
         match o with
@@ -437,10 +452,12 @@ and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental a
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
+/// A snapshot of an F# project. This type contains all the necessary information for type checking a project.
 and [<Experimental("This FCS API is experimental and subject to change.")>] FSharpProjectSnapshot internal (projectSnapshot) =
 
     member internal _.ProjectSnapshot: ProjectSnapshot = projectSnapshot
 
+    /// Create a new snapshot with given source files replacing files in this snapshot with the same name. Other files remain unchanged.
     member _.Replace(changedSourceFiles: FSharpFileSnapshot list) =
         projectSnapshot.Replace(changedSourceFiles) |> FSharpProjectSnapshot
 
@@ -538,19 +555,9 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             return snapshotAccumulator[options]
         }
 
-    static member GetFileSnapshotFromDisk _ fileName =
-        async {
-            let timeStamp = FileSystem.GetLastWriteTimeShim(fileName)
-            let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-
-            return
-                FSharpFileSnapshot.Create(
-                    fileName,
-                    timeStamp.Ticks.ToString(),
-                    (fun () -> Task.FromResult(SourceTextNew.ofString contents))
-                )
-        }
-
+    static member internal GetFileSnapshotFromDisk _ fileName =
+        FSharpFileSnapshot.CreateFromFileSystem fileName |> async.Return
+        
     static member FromOptions(options: FSharpProjectOptions) =
         FSharpProjectSnapshot.FromOptions(options, FSharpProjectSnapshot.GetFileSnapshotFromDisk)
 
@@ -558,15 +565,14 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
         let getFileSnapshot _ fName =
             if fName = fileName then
-                async.Return(
-                    FSharpFileSnapshot.Create(
-                        fileName,
-                        $"{fileVersion}{sourceText.GetHashCode().ToString()}",
-                        fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
-                    )
+                FSharpFileSnapshot.Create(
+                    fileName,
+                    $"{fileVersion}{sourceText.GetHashCode().ToString()}",
+                    fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
                 )
             else
-                FSharpProjectSnapshot.GetFileSnapshotFromDisk () fName
+                FSharpFileSnapshot.CreateFromFileSystem fName
+            |> async.Return
 
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
 
