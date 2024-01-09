@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">Agregar una anotación de tipo</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
