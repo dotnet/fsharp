@@ -45,7 +45,6 @@ open System.Threading
 open Internal.Utilities.Hashing
 
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
-open System.Runtime.Serialization.Formatters.Binary
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]

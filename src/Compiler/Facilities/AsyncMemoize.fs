@@ -141,16 +141,6 @@ type internal CachingDiagnosticsLogger(originalLogger: DiagnosticsLogger option)
 
     member _.CapturedDiagnostics = capturedDiagnostics |> Seq.toList
 
-/// <summary>
-/// A cache/memoization for computations that makes sure that the same computation wil only be computed once even if it's needed
-/// at multiple places/times. 
-///
-/// Strongly holds at most one result per key.
-/// </summary>
-/// <param name="keepStrongly">Maximum number of strongly held results to keep in the cache</param>
-/// <param name="keepWeakly">Maximum number of weakly held results to keep in the cache</param>
-/// <param name="name">Name of the cache - used in tracing messages</param>
-/// <param name="cancelDuplicateRunningJobs">If true, when a job is started, all other jobs with the same key will be canceled.</param>
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality>
     (?keepStrongly, ?keepWeakly, ?name: string, ?cancelDuplicateRunningJobs: bool) =
@@ -308,7 +298,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         let ex = exn (message)
         failures.Add(key, ex)
         Interlocked.Increment &errors |> ignore
-        // raise ex -- Suppose there's no need to raise here - where does it even go?
+    // raise ex -- Suppose there's no need to raise here - where does it even go?
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
         task {
