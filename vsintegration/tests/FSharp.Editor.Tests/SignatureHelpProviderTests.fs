@@ -162,10 +162,11 @@ module SignatureHelpProvider =
                     pos
                 else
                     let nextPos = pos - 1
+
                     if not (Char.IsWhiteSpace sourceText[nextPos]) then
                         pos
                     else
-                        loop (nextPos)
+                        loop nextPos
 
             loop (caretPosition - 1)
 
