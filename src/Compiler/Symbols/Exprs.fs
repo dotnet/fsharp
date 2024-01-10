@@ -631,8 +631,8 @@ module FSharpExprConvert =
                 let argsR = ConvExprs cenv env args
                 E.NewAnonRecord(typR, argsR) 
 
-            | TOp.Tuple tupInfo, tyargs, _ -> 
-                let tyR = ConvType cenv (mkAnyTupledTy g tupInfo tyargs)
+            | TOp.Tuple isStruct, tyargs, _ -> 
+                let tyR = ConvType cenv (mkAnyTupledTy g isStruct tyargs)
                 let argsR = ConvExprs cenv env args
                 E.NewTuple(tyR, argsR) 
 
@@ -674,8 +674,8 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy rfref.TyconRef tyargs)
                 E.FSharpFieldGet(Some objR, typR, projR) 
 
-            | TOp.TupleFieldGet (tupInfo, n), tyargs, [e] -> 
-                let tyR = ConvType cenv (mkAnyTupledTy g tupInfo tyargs)
+            | TOp.TupleFieldGet (isStruct, n), tyargs, [e] -> 
+                let tyR = ConvType cenv (mkAnyTupledTy g isStruct tyargs)
                 E.TupleGet(tyR, n, ConvExpr cenv env e) 
 
             | TOp.ILAsm ([ I_ldfld (_, _, fspec) ], _), enclTypeArgs, [obj] -> 

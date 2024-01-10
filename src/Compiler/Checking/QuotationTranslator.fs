@@ -508,8 +508,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let argsR = ConvExprs cenv env args
             QP.mkUnion(tcR, s, tyargsR, argsR)
 
-        | TOp.Tuple tupInfo, tyargs, _ ->
-            let tyR = ConvType cenv env m (mkAnyTupledTy g tupInfo tyargs)
+        | TOp.Tuple isStruct, tyargs, _ ->
+            let tyR = ConvType cenv env m (mkAnyTupledTy g isStruct tyargs)
             let argsR = ConvExprs cenv env args
             QP.mkTuple(tyR, argsR)
 
@@ -548,9 +548,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ValFieldGet rfref, tyargs, args ->
             ConvClassOrRecdFieldGet cenv env m rfref tyargs args
 
-        | TOp.TupleFieldGet (tupInfo, n), tyargs, [e] ->
+        | TOp.TupleFieldGet (isStruct, n), tyargs, [e] ->
             let eR = ConvLValueExpr cenv env e
-            let tyR = ConvType cenv env m (mkAnyTupledTy g tupInfo tyargs)
+            let tyR = ConvType cenv env m (mkAnyTupledTy g isStruct tyargs)
             QP.mkTupleGet(tyR, n, eR)
 
         | TOp.ILAsm (([ I_ldfld (_, _, fspec) ]

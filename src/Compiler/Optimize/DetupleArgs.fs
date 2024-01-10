@@ -307,7 +307,7 @@ module GlobalUsageAnalysis =
                         // NO: app but function is not val
                         noInterceptF z origExpr
 
-                | Expr.Op(TOp.TupleFieldGet(tupInfo, n), ts, [ x ], _) when not (evalTupInfoIsStruct tupInfo) ->
+                | Expr.Op(TOp.TupleFieldGet(isStruct, n), ts, [ x ], _) when not isStruct ->
                     let context = TupleGet(n, ts) :: context
                     recognise context x
 
@@ -405,7 +405,7 @@ let checkTS =
 /// explicit tuple-structure in expr
 let rec uncheckedExprTS expr =
     match expr with
-    | Expr.Op(TOp.Tuple tupInfo, _tys, args, _) when not (evalTupInfoIsStruct tupInfo) ->
+    | Expr.Op(TOp.Tuple isStruct, _tys, args, _) when not isStruct ->
         TupleTS(List.map uncheckedExprTS args)
     | _ -> UnknownTS
 
@@ -790,7 +790,7 @@ let rec collapseArg env bindings ts (x: Expr) =
     | UnknownTS, x ->
         let bindings, vx = noEffectExpr env bindings x
         bindings, [ vx ]
-    | TupleTS tss, Expr.Op(TOp.Tuple tupInfo, _xtys, xs, _) when not (evalTupInfoIsStruct tupInfo) ->
+    | TupleTS tss, Expr.Op(TOp.Tuple isStruct, _xtys, xs, _) when not isStruct ->
         let env = suffixE env "'"
         collapseArgs env bindings 1 tss xs
     | TupleTS tss, x ->

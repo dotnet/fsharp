@@ -3024,7 +3024,7 @@ type TType =
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
 
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
-    | TType_tuple of tupInfo: TupInfo * elementTypes: TTypes
+    | TType_tuple of isStruct: bool * elementTypes: TTypes
 
     /// Indicates the type is a function type.
     ///
@@ -3061,13 +3061,13 @@ type TTypes = TType list
 [<RequireQualifiedAccess>]
 type AnonRecdTypeInfo =
     { mutable Assembly: CcuThunk
-      mutable TupInfo: TupInfo
+      mutable IsStruct: bool
       mutable SortedIds: Syntax.Ident[]
       mutable Stamp: Stamp
       mutable SortedNames: string[] }
 
     /// Create an AnonRecdTypeInfo from the basic data
-    static member Create: ccu: CcuThunk * tupInfo: TupInfo * ids: Syntax.Ident[] -> AnonRecdTypeInfo
+    static member Create: ccu: CcuThunk * isStruct: bool * ids: Syntax.Ident[] -> AnonRecdTypeInfo
 
     static member NewUnlinked: unit -> AnonRecdTypeInfo
 
@@ -3569,7 +3569,7 @@ type TOp =
     | ExnConstr of TyconRef
 
     /// An operation representing the creation of a tuple value
-    | Tuple of TupInfo
+    | Tuple of isStruct: bool
 
     /// An operation representing the creation of an anonymous record
     | AnonRecd of AnonRecdTypeInfo
@@ -3636,7 +3636,7 @@ type TOp =
     | ExnFieldSet of TyconRef * int
 
     /// An operation representing a field-get from an F# tuple value.
-    | TupleFieldGet of TupInfo * int
+    | TupleFieldGet of isStruct: bool * int
 
     /// IL assembly code - type list are the types pushed on the stack
     | ILAsm of instrs: ILInstr list * retTypes: TTypes

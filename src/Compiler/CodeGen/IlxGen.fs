@@ -2955,7 +2955,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             | TOp.Recd (isCtor, tcref), _, _ -> GenAllocRecd cenv cgbuf eenv isCtor (tcref, tyargs, args, m) sequel
             | TOp.AnonRecd anonInfo, _, _ -> GenAllocAnonRecd cenv cgbuf eenv (anonInfo, tyargs, args, m) sequel
             | TOp.AnonRecdGet (anonInfo, n), [ e ], _ -> GenGetAnonRecdField cenv cgbuf eenv (anonInfo, e, tyargs, n, m) sequel
-            | TOp.TupleFieldGet (tupInfo, n), [ e ], _ -> GenGetTupleField cenv cgbuf eenv (tupInfo, e, tyargs, n, m) sequel
+            | TOp.TupleFieldGet (isStruct, n), [ e ], _ -> GenGetTupleField cenv cgbuf eenv (isStruct, e, tyargs, n, m) sequel
             | TOp.ExnFieldGet (ecref, n), [ e ], _ -> GenGetExnField cenv cgbuf eenv (e, ecref, n, m) sequel
             | TOp.UnionCaseFieldGet (ucref, n), [ e ], _ -> GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel
             | TOp.UnionCaseFieldGetAddr (ucref, n, _readonly), [ e ], _ ->
@@ -2970,7 +2970,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             | TOp.ValFieldGetAddr (f, _readonly), [], _ -> GenGetStaticFieldAddr cenv cgbuf eenv (f, tyargs, m) sequel
             | TOp.ValFieldSet f, [ e1; e2 ], _ -> GenSetRecdField cenv cgbuf eenv (e1, f, tyargs, e2, m) sequel
             | TOp.ValFieldSet f, [ e2 ], _ -> GenSetStaticField cenv cgbuf eenv (f, tyargs, e2, m) sequel
-            | TOp.Tuple tupInfo, _, _ -> GenAllocTuple cenv cgbuf eenv (tupInfo, args, tyargs, m) sequel
+            | TOp.Tuple isStruct, _, _ -> GenAllocTuple cenv cgbuf eenv (isStruct, args, tyargs, m) sequel
             | TOp.ILAsm (instrs, retTypes), _, _ -> GenAsmCode cenv cgbuf eenv (instrs, tyargs, args, retTypes, m) sequel
             | TOp.While (sp, _), [ Expr.Lambda (_, _, _, [ _ ], e1, _, _); Expr.Lambda (_, _, _, [ _ ], e2, _, _) ], [] ->
                 GenWhileLoop cenv cgbuf eenv (sp, e1, e2, m) sequel

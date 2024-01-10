@@ -579,27 +579,26 @@ let ShrinkContext env oldRange newRange =
 
 /// Allow the inference of structness from the known type, e.g.
 ///    let (x: struct (int * int)) = (3,4)
-let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct ps =
+let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy (isExplicitStruct: bool) ps =
     let g = cenv.g
-    let tupInfo, ptys =
+    let isStruct, ptys =
         if isAnyTupleTy g knownTy then
             let tupInfo, ptys = destAnyTupleTy g knownTy
-            let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
             let ptys =
                 if List.length ps = List.length ptys then ptys
                 else NewInferenceTypes g ps
             tupInfo, ptys
         else
-            mkTupInfo isExplicitStruct, NewInferenceTypes g ps
+            isExplicitStruct, NewInferenceTypes g ps
 
     let contextInfo =
         match contextInfo with
         | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
         | _ -> contextInfo
 
-    let ty2 = TType_tuple (tupInfo, ptys)
+    let ty2 = TType_tuple (isExplicitStruct, ptys)
     AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
-    tupInfo, ptys
+    {| isStruct = isStruct; ArgTypes = ptys |}
 
 // Allow inference of assembly-affinity and structness from the known type - even from another assembly. This is a rule of
 // the language design and allows effective cross-assembly use of anonymous types in some limited circumstances.
@@ -4474,10 +4473,9 @@ and TcNestedAppType (cenv: cenv) newOk checkConstraints occ iwsam env tpenv synL
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
 
 and TcTupleType kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv isStruct (args: SynTupleTypeSegment list) m =
-    let tupInfo = mkTupInfo isStruct
     if isStruct then
         let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
-        TType_tuple(tupInfo, argsR), tpenv
+        TType_tuple(isStruct, argsR), tpenv
     else
         let isMeasure =
             match kindOpt with
@@ -4490,7 +4488,7 @@ and TcTupleType kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv isStru
             TType_measure ms,tpenv
         else
             let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
-            TType_tuple(tupInfo, argsR), tpenv
+            TType_tuple(isStruct, argsR), tpenv
 
 and TcAnonRecdType (cenv: cenv) newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
@@ -5846,8 +5844,8 @@ and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
 
         CheckTupleIsCorrectLength g env m overallTy args (fun argTys -> TcExprsNoFlexes cenv env m tpenv argTys args |> ignore)
 
-        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
-        let argsR, tpenv = TcExprsNoFlexes cenv env m tpenv argTys args
+        let tupInfoArgTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
+        let argsR, tpenv = TcExprsNoFlexes cenv env m tpenv tupInfoArgTys.tTypes args
         let expr = mkAnyTupled g m tupInfo argsR argTys
         expr, tpenv
     )

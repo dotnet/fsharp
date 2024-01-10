@@ -621,7 +621,7 @@ val destForallTy: TcGlobals -> TType -> Typars * TType
 
 val destFunTy: TcGlobals -> TType -> TType * TType
 
-val destAnyTupleTy: TcGlobals -> TType -> TupInfo * TTypes
+val destAnyTupleTy: TcGlobals -> TType -> bool * TTypes
 
 val destRefTupleTy: TcGlobals -> TType -> TTypes
 
@@ -2325,7 +2325,7 @@ val isRefTupleExpr: Expr -> bool
 
 val tryDestRefTupleExpr: Expr -> Exprs
 
-val mkAnyTupledTy: TcGlobals -> TupInfo -> TType list -> TType
+val mkAnyTupledTy: TcGlobals -> bool -> TType list -> TType
 
 val mkAnyTupled: TcGlobals -> range -> TupInfo -> Exprs -> TType list -> Expr
 
