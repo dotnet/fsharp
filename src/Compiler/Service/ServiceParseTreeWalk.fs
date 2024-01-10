@@ -1287,7 +1287,7 @@ module Ast =
         ignore<unit option> (SyntaxTraversal.traverseUntil pickAll m.End visitor ast)
         state
 
-    let foldWhile folder state (ast: Ast) =
+    let private foldWhileImpl pick pos folder state (ast: Ast) =
         let mutable state = state
 
         let visitor =
@@ -1301,21 +1301,21 @@ module Ast =
                             | Some state' ->
                                 state <- state'
                                 defaultTraverse expr
-                            | None -> None
-                        | _ -> None
+                            | None -> Some()
+                        | None -> Some()
                     | _ ->
                         match folder state path (SyntaxNode.SynExpr expr) with
                         | Some state' ->
                             state <- state'
                             defaultTraverse expr
-                        | None -> None
+                        | None -> Some()
 
                 member _.VisitPat(path, defaultTraverse, pat) =
                     match folder state path (SyntaxNode.SynPat pat) with
                     | Some state' ->
                         state <- state'
                         defaultTraverse pat
-                    | None -> None
+                    | None -> Some()
 
                 member _.VisitType(path, defaultTraverse, synType) =
                     match path with
@@ -1326,14 +1326,14 @@ module Ast =
                             | Some state' ->
                                 state <- state'
                                 defaultTraverse synType
-                            | None -> None
-                        | None -> None
+                            | None -> Some()
+                        | None -> Some()
                     | _ ->
                         match folder state path (SyntaxNode.SynType synType) with
                         | Some state' ->
                             state <- state'
                             defaultTraverse synType
-                        | None -> None
+                        | None -> Some()
 
                 member _.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
                     match folder state path (SyntaxNode.SynModule synModuleDecl) with
@@ -1352,27 +1352,27 @@ module Ast =
                                     | Some state' ->
                                         state <- state'
                                         loop types
-                                    | None -> None
+                                    | None -> Some()
 
                             loop types
 
                         | _ -> defaultTraverse synModuleDecl
 
-                    | None -> None
+                    | None -> Some()
 
                 member _.VisitModuleOrNamespace(path, synModuleOrNamespace) =
                     match folder state path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace) with
-                    | Some state' -> state <- state'
-                    | None -> ()
-
-                    None
+                    | Some state' ->
+                        state <- state'
+                        None
+                    | None -> Some()
 
                 member _.VisitMatchClause(path, defaultTraverse, matchClause) =
                     match folder state path (SyntaxNode.SynMatchClause matchClause) with
                     | Some state' ->
                         state <- state'
                         defaultTraverse matchClause
-                    | None -> None
+                    | None -> Some()
 
                 member _.VisitBinding(path, defaultTraverse, synBinding) =
                     match path with
@@ -1383,21 +1383,21 @@ module Ast =
                             | Some state' ->
                                 state <- state'
                                 defaultTraverse synBinding
-                            | None -> None
-                        | None -> None
+                            | None -> Some()
+                        | None -> Some()
                     | _ ->
                         match folder state path (SyntaxNode.SynBinding synBinding) with
                         | Some state' ->
                             state <- state'
                             defaultTraverse synBinding
-                        | None -> None
+                        | None -> Some()
 
                 member _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
                     match folder state path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig) with
-                    | Some state' -> state <- state'
-                    | None -> ()
-
-                    None
+                    | Some state' ->
+                        state <- state'
+                        None
+                    | None -> Some()
 
                 member _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
                     match folder state path (SyntaxNode.SynModuleSigDecl synModuleSigDecl) with
@@ -1416,13 +1416,13 @@ module Ast =
                                     | Some state' ->
                                         state <- state'
                                         loop types
-                                    | None -> None
+                                    | None -> Some()
 
                             loop types
 
                         | _ -> defaultTraverse synModuleSigDecl
 
-                    | None -> None
+                    | None -> Some()
 
                 member _.VisitValSig(path, defaultTraverse, valSig) =
                     match path with
@@ -1433,36 +1433,40 @@ module Ast =
                             | Some state' ->
                                 state <- state'
                                 defaultTraverse valSig
-                            | None -> None
-                        | None -> None
+                            | None -> Some()
+                        | None -> Some()
                     | _ ->
                         match folder state path (SyntaxNode.SynValSig valSig) with
                         | Some state' ->
                             state <- state'
                             defaultTraverse valSig
-                        | None -> None
+                        | None -> Some()
 
                 member _.VisitSimplePats(path, _synPats) =
                     match path with
                     | SyntaxNode.SynMemberDefn _ as node :: path ->
                         match folder state path node with
-                        | Some state' -> state <- state'
-                        | None -> ()
-                    | _ -> ()
-
-                    None
+                        | Some state' ->
+                            state <- state'
+                            None
+                        | None -> Some()
+                    | _ -> None
 
                 member _.VisitInterfaceSynMemberDefnType(path, _synType) =
                     match path with
                     | SyntaxNode.SynMemberDefn _ as node :: path ->
                         match folder state path node with
-                        | Some state' -> state <- state'
-                        | None -> ()
-                    | _ -> ()
-
-                    None
+                        | Some state' ->
+                            state <- state'
+                            None
+                        | None -> Some()
+                    | _ -> None
             }
 
+        ignore<unit option> (SyntaxTraversal.traverseUntil pick pos visitor ast)
+        state
+
+    let foldWhile folder state (ast: Ast) =
         let pickAll _ _ _ diveResults =
             let rec loop =
                 function
@@ -1474,8 +1478,7 @@ module Ast =
             loop diveResults
 
         let m = (range0, ast) ||> List.fold (fun acc node -> unionRanges acc node.Range)
-        ignore<unit option> (SyntaxTraversal.traverseUntil pickAll m.End visitor ast)
-        state
+        foldWhileImpl pickAll m.End folder state ast
 
     let tryPick position chooser ast =
         let visitor =
@@ -1555,11 +1558,18 @@ module Ast =
 
         SyntaxTraversal.traverseUntil SyntaxTraversal.pick position visitor ast
 
+    let tryPickLast position chooser ast =
+        (None, ast)
+        ||> foldWhileImpl SyntaxTraversal.pick position (fun prev path node ->
+            match chooser path node with
+            | Some _ as next -> Some next
+            | None -> Some prev)
+
     let tryNode position ast =
         let Matching = Some
 
         (None, ast)
-        ||> foldWhile (fun _prev path node ->
+        ||> foldWhileImpl SyntaxTraversal.pick position (fun _prev path node ->
             if rangeContainsPos node.Range position then
                 Some(Matching(node, path))
             else

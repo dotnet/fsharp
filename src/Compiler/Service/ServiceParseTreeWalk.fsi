@@ -325,6 +325,27 @@ module Ast =
     /// </example>
     val tryPick: position: pos -> chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> ast: Ast -> 'T option
 
+    /// <summary>
+    /// Applies the given function to each node of the AST and its context (path)
+    /// down to a given position, returning <c>Some x</c> for the last (deepest) node
+    /// for which the function returns <c>Some x</c> for some value <c>x</c>, otherwise <c>None</c>.
+    /// Traversal is short-circuited if no matching node is found through the given position.
+    /// </summary>
+    /// <param name="position">The position in the input file down to which to apply the function.</param>
+    /// <param name="chooser">The function to apply to each node and its context to derive an optional value.</param>
+    /// <param name="ast">The AST to search.</param>
+    /// <returns>The last (deepest) value for which the function returns <c>Some</c>, or <c>None</c> if no matching node is found.</returns>
+    /// <example>
+    /// <code lang="fsharp">
+    /// let range =
+    ///     parseResults.ParseTree.Contents |> Ast.tryPick pos (fun _path node ->
+    ///       match node with
+    ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
+    ///       | _ -> None)
+    /// </code>
+    /// </example>
+    val tryPickLast: position: pos -> chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> ast: Ast -> 'T option
+
 /// <summary>
 /// Holds extension methods for <see cref="T:FSharp.Compiler.Syntax.ParsedInput"/>.
 /// </summary>
