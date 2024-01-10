@@ -174,9 +174,6 @@ type internal IBackgroundCompiler =
 type internal ParseCacheLockToken() =
     interface LockToken
 
-type internal ScriptClosureCacheToken() =
-    interface LockToken
-
 type CheckFileCacheKey = FileName * SourceTextHash * FSharpProjectOptions
 type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash * DateTime
 

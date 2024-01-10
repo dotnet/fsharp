@@ -161,20 +161,6 @@ type internal IBackgroundCompiler =
 
     abstract ProjectChecked: IEvent<FSharpProjectOptions>
 
-type internal ParseCacheLockToken =
-    interface Internal.Utilities.Library.LockToken
-
-    new: unit -> ParseCacheLockToken
-
-type internal ScriptClosureCacheToken =
-    interface Internal.Utilities.Library.LockToken
-
-    new: unit -> ScriptClosureCacheToken
-
-type CheckFileCacheKey = FileName * SourceTextHash * FSharpProjectOptions
-
-type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash * System.DateTime
-
 [<AutoOpen>]
 module internal EnvMisc =
 
