@@ -592,6 +592,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to WARNING! Transparent does not yet support all features and can cause crashes or give incorrect results..
+        /// </summary>
+        public static string TransparentCompiler_Discalimer1 {
+            get {
+                return ResourceManager.GetString("TransparentCompiler_Discalimer1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use at your own risk!.
+        /// </summary>
+        public static string TransparentCompiler_Discalimer2 {
+            get {
+                return ResourceManager.GetString("TransparentCompiler_Discalimer2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Analyze and suggest fixes for unused values.
         /// </summary>
         public static string Unused_declaration_code_fix {

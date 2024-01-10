@@ -207,6 +207,16 @@
         <target state="new">Transparent Compiler (experimental)</target>
         <note />
       </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="new">WARNING! Transparent does not yet support all features and can cause crashes or give incorrect results.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="new">Use at your own risk!</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
         <source>Transparent Compiler Cache Factor</source>
         <target state="new">Transparent Compiler Cache Factor</target>
