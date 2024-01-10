@@ -1009,8 +1009,8 @@ and ConvType cenv env m ty =
     | TType_fun(a, b, _) -> 
         QP.mkFunTy(ConvType cenv env m a, ConvType cenv env m b)
 
-    | TType_tuple(tupInfo, l) -> 
-        ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
+    | TType_tuple(isStruct, l) -> 
+        ConvType cenv env m (mkCompiledTupleTy cenv.g isStruct l)
 
     | TType_anon(anonInfo, tinst) -> 
         let tref = anonInfo.ILTypeRef

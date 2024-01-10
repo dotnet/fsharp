@@ -911,9 +911,9 @@ module PrintTypes =
                 braceBarL core
 
         // Layout a tuple type 
-        | TType_tuple (tupInfo, t) ->
+        | TType_tuple (isStruct, t) ->
             let elsL = layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) t
-            if evalTupInfoIsStruct tupInfo then 
+            if isStruct then 
                 WordL.keywordStruct --- bracketL elsL
             else 
                 bracketIfL (prec <= 2) elsL

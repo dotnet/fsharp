@@ -3084,12 +3084,6 @@ type AnonRecdTypeInfo =
     /// Get the core of the display name for one of the fields of the anonymous record, by index
     member DisplayNameCoreByIdx: idx: int -> string
 
-[<RequireQualifiedAccess>]
-type TupInfo =
-
-    /// Some constant, e.g. true or false for tupInfo
-    | Const of bool
-
 /// Represents a unit of measure in the typed AST
 [<RequireQualifiedAccess>]
 type Measure =

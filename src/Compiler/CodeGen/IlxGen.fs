@@ -649,7 +649,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     match stripTyEqnsAndMeasureEqns g ty with
     | TType_app (tcref, tinst, _) -> GenNamedTyAppAux cenv m tyenv ptrsOK tcref tinst
 
-    | TType_tuple (tupInfo, args) -> GenTypeAux cenv m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
+    | TType_tuple (isStruct, args) -> GenTypeAux cenv m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g isStruct args)
 
     | TType_fun (dty, returnTy, _) ->
         EraseClosures.mkILFuncTy cenv.ilxPubCloEnv (GenTypeArgAux cenv m tyenv dty) (GenTypeArgAux cenv m tyenv returnTy)
@@ -3249,10 +3249,9 @@ and GenUnitThenSequel cenv eenv m cloc cgbuf sequel =
 // Generate simple data-related constructs
 //--------------------------------------------------------------------------
 
-and GenAllocTuple cenv cgbuf eenv (tupInfo, args, argTys, m) sequel =
+and GenAllocTuple cenv cgbuf eenv (isStruct, args, argTys, m) sequel =
 
-    let tupInfo = evalTupInfoIsStruct tupInfo
-    let tcref, tys, args, newm = mkCompiledTuple cenv.g tupInfo (argTys, args, m)
+    let tcref, tys, args, newm = mkCompiledTuple cenv.g isStruct (argTys, args, m)
     let ty = GenNamedTyApp cenv newm eenv.tyenv tcref tys
 
     let ntyvars =
@@ -3272,8 +3271,7 @@ and GenAllocTuple cenv cgbuf eenv (tupInfo, args, argTys, m) sequel =
     CG.EmitInstr cgbuf (pop args.Length) (Push [ ty ]) (mkNormalNewobj (mkILCtorMethSpecForTy (ty, formalTyvars)))
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenGetTupleField cenv cgbuf eenv (tupInfo, e, tys, n, m) sequel =
-    let tupInfo = evalTupInfoIsStruct tupInfo
+and GenGetTupleField cenv cgbuf eenv (isStruct, e, tys, n, m) sequel =
 
     let rec getCompiledTupleItem g (e, tys: TTypes, n, m) =
         let ar = tys.Length
@@ -3281,17 +3279,17 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo, e, tys, n, m) sequel =
         if ar <= 0 then
             failwith "getCompiledTupleItem"
         elif ar < maxTuple then
-            let tcref = mkCompiledTupleTyconRef g tupInfo ar
+            let tcref = mkCompiledTupleTyconRef g isStruct ar
             let ty = GenNamedTyApp cenv m eenv.tyenv tcref tys
-            mkGetTupleItemN g m n ty tupInfo e tys[n]
+            mkGetTupleItemN g m n ty isStruct e tys[n]
         else
             let tysA, tysB = List.splitAfter goodTupleFields tys
-            let tyB = mkCompiledTupleTy g tupInfo tysB
+            let tyB = mkCompiledTupleTy g isStruct tysB
             let tysC = tysA @ [ tyB ]
-            let tcref = mkCompiledTupleTyconRef g tupInfo (List.length tysC)
+            let tcref = mkCompiledTupleTyconRef g isStruct (List.length tysC)
             let tyR = GenNamedTyApp cenv m eenv.tyenv tcref tysC
             let nR = min n goodTupleFields
-            let elast = mkGetTupleItemN g m nR tyR tupInfo e tysC[nR]
+            let elast = mkGetTupleItemN g m nR tyR isStruct e tysC[nR]
 
             if n < goodTupleFields then
                 elast
@@ -3957,7 +3955,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr =
             assert (tys.Length = numRequiredExprs)
 
             argInfos
-            |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef, loce, tys, i, m) Continue))
+            |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (false, loce, tys, i, m) Continue))
 
 //--------------------------------------------------------------------------
 // Generate calls (try to detect direct calls)

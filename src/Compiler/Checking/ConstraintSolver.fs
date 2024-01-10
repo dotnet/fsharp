@@ -1090,7 +1090,7 @@ and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
  }
 
 and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) = 
-    if evalTupInfoIsStruct anonInfo1.TupInfo <> evalTupInfoIsStruct anonInfo2.TupInfo then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
+    if anonInfo1.IsStruct <> anonInfo2.IsStruct then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
     (match anonInfo1.Assembly, anonInfo2.Assembly with 
         | ccu1, ccu2 -> if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else ResultD ()
         ) ++ (fun () -> 
@@ -1182,8 +1182,8 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     | TType_app _, TType_app _ ->
         localAbortD
 
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) -> 
-        if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
+    | TType_tuple (isStruct1, l1), TType_tuple (isStruct2, l2) -> 
+        if isStruct1 <> isStruct2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
     | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) -> 
@@ -1269,8 +1269,8 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     | _, TType_var (r, _) when not csenv.MatchingOnly ->
         SolveTyparSubtypeOfType csenv ndeep m2 trace r ty1
 
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
-        if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
+    | TType_tuple (isStruct1, l1), TType_tuple (isStruct2, l2)      -> 
+        if isStruct1 <> isStruct2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
 
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2)      -> 

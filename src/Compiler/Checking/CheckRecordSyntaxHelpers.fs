@@ -116,7 +116,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) env overallTy (lid: LongIde
 
             match anonInfo with
             | Some {
-                       AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
+                       AnonRecdTypeInfo.IsStruct = isStruct
                    } ->
                 let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
                 SynExpr.AnonRecd(isStruct, copyInfo id, fields, m, { OpeningBraceRange = range0 })

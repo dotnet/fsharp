@@ -283,7 +283,7 @@ val mkReraise: range -> TType -> Expr
 val mkReraiseLibCall: TcGlobals -> TType -> range -> Expr
 
 /// Make an expression that gets an item from a tuple
-val mkTupleFieldGet: TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
+val mkTupleFieldGet: TcGlobals -> bool * Expr * TypeInst * int * range -> Expr
 
 /// Make an expression that gets an item from an anonymous record
 val mkAnonRecdFieldGet: TcGlobals -> AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
@@ -369,10 +369,6 @@ val mkCompiledTuple: TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * T
 
 /// Make a TAST expression representing getting an item fromm a tuple
 val mkGetTupleItemN: TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
-
-/// Evaluate the TupInfo to work out if it is a struct or a ref.  Currently this is very simple
-/// but TupInfo may later be used carry variables that infer structness.
-val evalTupInfoIsStruct: TupInfo -> bool
 
 /// Evaluate the AnonRecdTypeInfo to work out if it is a struct or a ref.
 val evalAnonInfoIsStruct: AnonRecdTypeInfo -> bool
@@ -712,7 +708,7 @@ val stripFunTyN: TcGlobals -> int -> TType -> TType list * TType
 
 val applyForallTy: TcGlobals -> TType -> TypeInst -> TType
 
-val tryDestAnyTupleTy: TcGlobals -> TType -> TupInfo * TType list
+val tryDestAnyTupleTy: TcGlobals -> TType -> bool * TType list
 
 val tryDestRefTupleTy: TcGlobals -> TType -> TType list
 
@@ -2327,7 +2323,7 @@ val tryDestRefTupleExpr: Expr -> Exprs
 
 val mkAnyTupledTy: TcGlobals -> bool -> TType list -> TType
 
-val mkAnyTupled: TcGlobals -> range -> TupInfo -> Exprs -> TType list -> Expr
+val mkAnyTupled: TcGlobals -> range -> bool -> Exprs -> TType list -> Expr
 
 val mkRefTupled: TcGlobals -> range -> Exprs -> TType list -> Expr
 
