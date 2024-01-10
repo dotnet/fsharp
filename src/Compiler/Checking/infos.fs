@@ -471,7 +471,7 @@ type ILTypeInfo =
             failwith ("ILTypeInfo.FromType - no IL metadata for type" + System.Environment.StackTrace)
 
 [<NoComparison; NoEquality>]
-type ILMethodsType =
+type ILMethParentTypeInfo =
     | IlType of ILTypeInfo
     | CSharpStyleExtension of declaring:TyconRef * apparent:TType
     
@@ -487,7 +487,7 @@ type ILMethInfo =
     ///
     /// If ilDeclaringTyconRefOpt is 'Some' then this is an F# use of an C#-style extension method.
     /// If ilDeclaringTyconRefOpt is 'None' then ilApparentType is an IL type definition.
-    | ILMethInfo of g: TcGlobals * ilType:ILMethodsType * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
+    | ILMethInfo of g: TcGlobals * ilType:ILMethParentTypeInfo * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
 
     member x.TcGlobals = match x with ILMethInfo(g, _, _, _) -> g
 

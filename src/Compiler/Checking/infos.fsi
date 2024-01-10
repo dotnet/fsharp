@@ -179,7 +179,7 @@ type ILTypeInfo =
     member TypeInstOfRawMetadata: TypeInst
 
 [<NoComparison; NoEquality>]
-type ILMethodsType =
+type ILMethParentTypeInfo =
     | IlType of ILTypeInfo
     | CSharpStyleExtension of declaring: TyconRef * apparent: TType
 
@@ -188,7 +188,7 @@ type ILMethodsType =
 /// Describes an F# use of an IL method.
 [<NoComparison; NoEquality>]
 type ILMethInfo =
-    | ILMethInfo of g: TcGlobals * ilType: ILMethodsType * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
+    | ILMethInfo of g: TcGlobals * ilType: ILMethParentTypeInfo * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
     member ApparentEnclosingAppType: TType
