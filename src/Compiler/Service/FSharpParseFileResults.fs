@@ -349,16 +349,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     member _.IsTypeAnnotationGivenAtPosition pos =
         input.Contents
         |> Ast.exists pos (fun _path node ->
-            let (|AnyTypedAt|_|) pos =
-                List.tryPick (function
-                    | SynSimplePat.Typed(range = range) when Position.posEq range.Start pos -> Some()
-                    | _ -> None)
-
             match node with
             | SyntaxNode.SynExpr(SynExpr.Typed(range = range))
             | SyntaxNode.SynPat(SynPat.Typed(range = range)) -> Position.posEq range.Start pos
-            | SyntaxNode.SynTypeDefn(SynTypeDefn(
-                implicitConstructor = Some(SynMemberDefn.ImplicitCtor(ctorArgs = SynSimplePats.SimplePats(pats = AnyTypedAt pos)))))
             | SyntaxNode.SynBinding(SynBinding(
                 headPat = SynPat.Named _; returnInfo = Some(SynBindingReturnInfo(typeName = SynType.LongIdent _)))) -> true
             | _ -> false)
