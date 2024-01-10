@@ -349,9 +349,22 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     member _.IsTypeAnnotationGivenAtPosition pos =
         input.Contents
         |> Ast.exists pos (fun _path node ->
+            let rec (|Typed|_|) (pat: SynPat) =
+                if not (rangeContainsPos pat.Range pos) then
+                    None
+                else
+                    let (|AnyTyped|_|) = List.tryPick (|Typed|_|)
+
+                    match pat with
+                    | SynPat.Typed(range = range) when Position.posEq range.Start pos -> Some Typed
+                    | SynPat.Paren(pat = Typed) -> Some Typed
+                    | SynPat.Tuple(elementPats = AnyTyped) -> Some Typed
+                    | _ -> None
+
             match node with
             | SyntaxNode.SynExpr(SynExpr.Typed(range = range))
             | SyntaxNode.SynPat(SynPat.Typed(range = range)) -> Position.posEq range.Start pos
+            | SyntaxNode.SynTypeDefn(SynTypeDefn(implicitConstructor = Some(SynMemberDefn.ImplicitCtor(ctorArgs = Typed))))
             | SyntaxNode.SynBinding(SynBinding(
                 headPat = SynPat.Named _; returnInfo = Some(SynBindingReturnInfo(typeName = SynType.LongIdent _)))) -> true
             | _ -> false)
