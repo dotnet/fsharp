@@ -962,6 +962,11 @@
         <target state="translated">Este acesso de membro é ambíguo. Use parênteses em torno da criação do objeto, por exemplo, '(new SomeType(args)).MemberName''.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
+        <source>Only simple patterns are allowed in primary constructors</source>
+        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
         <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
         <target state="new">Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</target>
