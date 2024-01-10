@@ -167,12 +167,17 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> None
 
         and (|DeepestIdentifiedFuncInAppChain|_|) expr =
+            let (|Contains|_|) pos (expr: SynExpr) =
+                if rangeContainsPos expr.Range pos then
+                    Some Contains
+                else
+                    None
+
             match expr with
-            | SynExpr.TypeApp(expr = Identifier range)
-            | SynExpr.App(isInfix = false; funcExpr = Identifier range | DeepestIdentifiedFuncInAppChain range)
-            | SynExpr.App(argExpr = DeepestIdentifiedFuncInAppChain range) -> Some range
-            | _ when not (rangeContainsPos expr.Range pos) -> None
-            | SynExpr.Paren(expr = DeepestIdentifiedFuncInAppChain range) -> Some range
+            | SynExpr.App(argExpr = Contains pos & DeepestIdentifiedFuncInAppChain range) -> Some range
+            | SynExpr.App(isInfix = false; funcExpr = Identifier range | DeepestIdentifiedFuncInAppChain range) -> Some range
+            | SynExpr.TypeApp(expr = Identifier range) -> Some range
+            | SynExpr.Paren(expr = Contains pos & DeepestIdentifiedFuncInAppChain range) -> Some range
             | _ -> None
 
         and (|DeepestIdentifiedFuncInPath|_|) path =
@@ -217,7 +222,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             // The cursor is outside any existing node's range,
             // so try to drill down into the nearest one.
             input.Contents
-            |> Ast.tryPick pos (fun path node ->
+            |> Ast.tryPickLast pos (fun path node ->
                 match node, path with
                 | FuncIdent range -> Some range
                 | _ -> None)
