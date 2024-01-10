@@ -39,6 +39,7 @@ type ISourceText =
     /// <exception cref="System.ArgumentException">Throws an exception when the input range is outside the file boundaries.</exception>
     abstract GetSubTextFromRange: range: range -> string
 
+/// Just like ISourceText, but with a checksum. Added as a separate type to avoid breaking changes.
 type ISourceTextNew =
     inherit ISourceText
 

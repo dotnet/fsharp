@@ -42,7 +42,7 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                 Tasks.Task.FromResult(ImmutableArray.Empty)
             else
                 cancellableTask {
-                    // do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
+                    do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
                     let! sourceText = document.GetTextAsync()
                     let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges document
 

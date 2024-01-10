@@ -14,7 +14,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,23,0,-184">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <GroupBox Header="{x:Static local:Strings.Block_Structure}">
                     <CheckBox x:Name="toggleBlockStructure" IsChecked="{Binding IsBlockStructureEnabled}"

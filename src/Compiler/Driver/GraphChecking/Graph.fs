@@ -50,6 +50,7 @@ module internal Graph =
         |> Array.Parallel.map (fun node -> node, graph |> transitiveDeps node)
         |> readOnlyDict
 
+    // TODO: optimize
     /// Get subgraph of the given graph that contains only nodes that are reachable from the given node.
     let subGraphFor node graph =
         let allDeps = graph |> transitiveDeps node
