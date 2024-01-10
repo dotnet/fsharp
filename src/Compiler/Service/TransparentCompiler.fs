@@ -1556,10 +1556,10 @@ type internal TransparentCompiler
                         else
                             None
 
-                    // TODO: This kinda works, but the problem is that in order to switch a project to "in-memory" mode 
+                    // TODO: This kinda works, but the problem is that in order to switch a project to "in-memory" mode
                     //  - some file needs to be edited (this tirggers a re-check, but LastModifiedTimeOnDisk won't change)
                     //  - saved (this will not trigger anything)
-                    //  - and then another change has to be made (to any file buffer) - so that recheck is triggered and we get here again 
+                    //  - and then another change has to be made (to any file buffer) - so that recheck is triggered and we get here again
                     // Until that sequence happens the project will be used from disk (if available).
                     // To get around it we probably need to detect changes made in the editor and record a timestamp for them.
                     let shouldUseOnDisk =

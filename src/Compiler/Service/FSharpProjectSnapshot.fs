@@ -68,7 +68,10 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
         FSharpFileSnapshot(
             fileName,
             FileSystem.GetLastWriteTimeShim(fileName).Ticks.ToString(),
-            fun () -> FileSystem.OpenFileForReadShim(fileName).ReadAllText() |> SourceTextNew.ofString |> Task.FromResult
+            fun () ->
+                FileSystem.OpenFileForReadShim(fileName).ReadAllText()
+                |> SourceTextNew.ofString
+                |> Task.FromResult
         )
 
     member public _.FileName = FileName
@@ -281,12 +284,15 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
     member _.GetLastModifiedTimeOnDisk() =
         seq {
             projectCore.ProjectFileName
-            yield! 
-                sourceFiles 
+
+            yield!
+                sourceFiles
                 |> Seq.filter (fun x -> not (x.FileName.EndsWith(".AssemblyInfo.fs"))) // TODO: is this safe? any better way of doing this?
-                |> Seq.filter (fun x -> not (x.FileName.EndsWith(".AssemblyAttributes.fs"))) 
+                |> Seq.filter (fun x -> not (x.FileName.EndsWith(".AssemblyAttributes.fs")))
                 |> Seq.map (fun x -> x.FileName)
-        } |> Seq.map FileSystem.GetLastWriteTimeShim |> Seq.max
+        }
+        |> Seq.map FileSystem.GetLastWriteTimeShim
+        |> Seq.max
 
     member _.FullVersion = fullHash.Value
     member _.SignatureVersion = signatureHash.Value |> fst
@@ -557,7 +563,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
     static member internal GetFileSnapshotFromDisk _ fileName =
         FSharpFileSnapshot.CreateFromFileSystem fileName |> async.Return
-        
+
     static member FromOptions(options: FSharpProjectOptions) =
         FSharpProjectSnapshot.FromOptions(options, FSharpProjectSnapshot.GetFileSnapshotFromDisk)
 

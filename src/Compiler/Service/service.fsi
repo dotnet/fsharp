@@ -62,7 +62,8 @@ type public FSharpChecker =
             DocumentSource *
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache:
             bool *
-        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useTransparentCompiler: bool ->
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useTransparentCompiler:
+            bool ->
             FSharpChecker
 
     member internal UsesTransparentCompiler: bool
