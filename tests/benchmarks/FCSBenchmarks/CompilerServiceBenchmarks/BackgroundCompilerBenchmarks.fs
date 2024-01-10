@@ -152,10 +152,7 @@ type NoFileSystemCheckerBenchmark() =
     let mutable benchmark : ProjectWorkflowBuilder = Unchecked.defaultof<_>
 
     [<ParamsAllValues>]
-    member val UseGetSource = true with get,set
-
-    [<ParamsAllValues>]
-    member val UseChangeNotifications = true with get,set
+    member val UseInMemoryDocuments = true with get,set
 
     [<ParamsAllValues>]
     member val EmptyCache = true with get,set
@@ -165,8 +162,8 @@ type NoFileSystemCheckerBenchmark() =
         benchmark <-
             ProjectWorkflowBuilder(
             project,
-            useGetSource = this.UseGetSource,
-            useChangeNotifications = this.UseChangeNotifications).CreateBenchmarkBuilder()
+            useGetSource = this.UseInMemoryDocuments,
+            useChangeNotifications = this.UseInMemoryDocuments).CreateBenchmarkBuilder()
 
     [<IterationSetup>]
     member this.EditFirstFile_OnlyInternalChange() =
@@ -178,15 +175,14 @@ type NoFileSystemCheckerBenchmark() =
     member this.ExampleWorkflow() =
 
         use _ = Activity.start "Benchmark" [
-            "UseGetSource", this.UseGetSource.ToString()
-            "UseChangeNotifications", this.UseChangeNotifications.ToString()
+            "UseInMemoryDocuments", this.UseInMemoryDocuments.ToString()
         ]
 
         let first = "File001"
         let middle = $"File%03d{size / 2}"
         let last = $"File%03d{size}"
 
-        if this.UseGetSource && this.UseChangeNotifications then
+        if this.UseInMemoryDocuments then
 
             benchmark {
                 updateFile first updatePublicSurface
