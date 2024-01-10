@@ -161,7 +161,6 @@
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
     <Compile Include="Facilities\AsyncMemoize.fs" />
-    <Compile Include="Facilities\TaskAgent.fs" />
     <Compile Include="Utilities\ReadOnlySpan.fsi" />
     <Compile Include="Utilities\ReadOnlySpan.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
