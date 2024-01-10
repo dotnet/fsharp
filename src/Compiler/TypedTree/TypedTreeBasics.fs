@@ -252,17 +252,19 @@ let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) =
         | NullnessInfo.AmbivalentToNull -> nullnessNew
         | NullnessInfo.WithNull -> nullnessOrig
 
+let nullnessEquiv (nullnessOrig: Nullness) (nullnessNew: Nullness) = LanguagePrimitives.PhysicalEquality nullnessOrig nullnessNew
+
 let tryAddNullnessToTy nullnessNew (ty:TType) = 
     match ty with
     | TType_var (tp, nullnessOrig) -> 
         let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessAfter = nullnessOrig then
+        if nullnessEquiv nullnessAfter nullnessOrig then
             Some ty
         else 
             Some (TType_var (tp, nullnessAfter))
     | TType_app (tcr, tinst, nullnessOrig) -> 
         let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessAfter = nullnessOrig then
+        if nullnessEquiv nullnessAfter nullnessOrig then
             Some ty
         else 
             Some (TType_app (tcr, tinst, nullnessAfter))
@@ -271,7 +273,7 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
     | TType_anon _ -> None // TODO NULLNESS
     | TType_fun (d, r, nullnessOrig) ->
         let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessAfter = nullnessOrig then
+        if nullnessEquiv nullnessAfter nullnessOrig then
             Some ty
         else 
             Some (TType_fun (d, r, nullnessAfter))

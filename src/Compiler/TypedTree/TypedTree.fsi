@@ -3034,7 +3034,7 @@ type NullnessInfo =
     /// we know we don't care
     | AmbivalentToNull
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoComparison;NoEquality>]
 type Nullness =
     | Known of NullnessInfo
     | Variable of NullnessVar
@@ -3043,6 +3043,7 @@ type Nullness =
 
     member TryEvaluate: unit -> NullnessInfo voption
 
+[<NoComparison;NoEquality>]
 type NullnessVar =
     new: unit -> NullnessVar
     member Evaluate: unit -> NullnessInfo
