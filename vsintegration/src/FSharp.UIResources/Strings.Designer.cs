@@ -592,7 +592,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to WARNING! Transparent does not yet support all features and can cause crashes or give incorrect results..
+        ///   Looks up a localized string similar to WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results..
         /// </summary>
         public static string TransparentCompiler_Discalimer1 {
             get {
@@ -606,6 +606,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string TransparentCompiler_Discalimer2 {
             get {
                 return ResourceManager.GetString("TransparentCompiler_Discalimer2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to By checking this you also opt-in for additional performance telemetry.
+        /// </summary>
+        public static string TransparentCompiler_Discalimer3 {
+            get {
+                return ResourceManager.GetString("TransparentCompiler_Discalimer3", resourceCulture);
             }
         }
         

@@ -217,6 +217,11 @@
         <target state="new">Use at your own risk!</target>
         <note />
       </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
         <source>Transparent Compiler Cache Factor</source>
         <target state="new">Transparent Compiler Cache Factor</target>
