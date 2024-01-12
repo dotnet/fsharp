@@ -385,6 +385,10 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.ClearCache(options, userOpName)
 
+    member _.ClearCache(projects: ProjectSnapshot.FSharpProjectIdentifier seq, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.ClearCache(projects, userOpName)
+
     /// This function is called when a project has been cleaned, and thus type providers should be refreshed.
     member _.NotifyProjectCleaned(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"

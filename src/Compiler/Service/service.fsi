@@ -415,6 +415,8 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ClearCache: options: FSharpProjectOptions seq * ?userOpName: string -> unit
 
+    member ClearCache: projects: ProjectSnapshot.FSharpProjectIdentifier seq * ?userOpName: string -> unit
+
     /// Report a statistic for testability
     static member ActualParseFileCount: int
 

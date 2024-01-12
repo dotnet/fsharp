@@ -82,6 +82,7 @@ type internal JobEvent =
     | Weakened
     | Strengthened
     | Failed
+    | Cleared
 
 type internal ICacheKey<'TKey, 'TVersion> =
     abstract member GetKey: unit -> 'TKey
@@ -160,6 +161,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let mutable evicted = 0
     let mutable collected = 0
     let mutable strengthened = 0
+    let mutable cleared = 0
 
     let mutable cancel_ct_registration_original = 0
     let mutable cancel_exception_original = 0
@@ -195,7 +197,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 | CacheEvent.Strengthened ->
                     (fun k ->
                         Interlocked.Increment &strengthened |> ignore
-                        event.Trigger(JobEvent.Strengthened, k)))
+                        event.Trigger(JobEvent.Strengthened, k))
+                | CacheEvent.Cleared ->
+                    (fun k ->
+                        Interlocked.Increment &cleared |> ignore
+                        event.Trigger(JobEvent.Cleared, k)))
         )
 
     let requestCounts = Dictionary<KeyData<_, _>, int>()
@@ -526,6 +532,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member _.Clear() = cache.Clear()
 
+    member _.Clear predicate = cache.Clear predicate
+
     member val Event = event.Publish
 
     member this.OnEvent = this.Event.Add
@@ -577,6 +585,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 if restarted > 0 then $"| restarted: {restarted} " else ""
                 if evicted > 0 then $"| evicted: {evicted} " else ""
                 if collected > 0 then $"| collected: {collected} " else ""
+                if cleared > 0 then $"| cleared: {cleared} " else ""
                 if strengthened > 0 then
                     $"| strengthened: {strengthened} "
                 else

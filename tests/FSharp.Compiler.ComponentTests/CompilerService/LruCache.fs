@@ -137,3 +137,61 @@ let ``Looking up a weakened item will strengthen it`` () =
     ]
 
     Assert.Equal<list<_>>(expected, eventLog |> Seq.toList)
+
+
+[<Fact>]
+let ``New version doesn't push other keys out of strong list``() =
+
+    let eventLog = ResizeArray()
+
+    let cache = new LruCache<_, int, _>(keepStrongly = 2, keepWeakly = 2, event = (fun e v -> eventLog.Add(e, v)))
+
+    cache.Set(1, 1, "one1")
+    cache.Set(1, 2, "one2")
+    cache.Set(1, 3, "one3")
+    cache.Set(1, 4, "one4")
+    cache.Set(2, 1, "two1")
+    cache.Set(2, 2, "two2")
+
+    let expected = [
+        CacheEvent.Weakened, ("[no label]", 1, 1)
+        CacheEvent.Weakened, ("[no label]", 1, 2)
+        CacheEvent.Weakened, ("[no label]", 1, 3)
+        CacheEvent.Evicted, ("[no label]", 1, 1)
+        CacheEvent.Weakened, ("[no label]", 2, 1)
+        CacheEvent.Evicted, ("[no label]", 1, 2)
+    ]
+
+    Assert.Equal<list<_>>(expected, eventLog |> Seq.toList)
+
+[<Fact>]
+let ``We can clear specific keys based on a predicate``() =
+
+    let eventLog = ResizeArray()
+
+    let cache = new LruCache<_, int, _>(keepStrongly = 2, keepWeakly = 2, event = (fun e v -> eventLog.Add(e, v)))
+
+    cache.Set(1, 1, "one1")
+    cache.Set(1, 2, "one2")
+    cache.Set(1, 3, "one3")
+    cache.Set(1, 4, "one4")
+    cache.Set(2, 1, "two1")
+    cache.Set(2, 2, "two2")
+
+    cache.Clear((=) 1)
+
+    let result = cache.TryGet(1, 2)
+    Assert.True(result.IsNone)
+
+    let expected = [
+        CacheEvent.Weakened, ("[no label]", 1, 1)
+        CacheEvent.Weakened, ("[no label]", 1, 2)
+        CacheEvent.Weakened, ("[no label]", 1, 3)
+        CacheEvent.Evicted, ("[no label]", 1, 1)
+        CacheEvent.Weakened, ("[no label]", 2, 1)
+        CacheEvent.Evicted, ("[no label]", 1, 2)
+        CacheEvent.Cleared, ("[no label]", 1, 3)
+        CacheEvent.Cleared, ("[no label]", 1, 4)
+    ]
+
+    Assert.Equal<list<_>>(expected, eventLog |> Seq.toList)

@@ -20,6 +20,10 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 
+
+type internal ProjectIdentifier = string * string
+
+
 /// A common interface for an F# source file snapshot that can be used accross all stages (lazy, source loaded, parsed)
 type internal IFileSnapshot =
     abstract member FileName: string
@@ -56,6 +60,11 @@ module internal Helpers =
                     res |> addFileNameAndVersion file, sigs)
         |> fst,
         lastFile
+
+    let findOutputFileName options =
+        options
+        |> Seq.tryFind (fun (x: string) -> x.StartsWith("-o:"))
+        |> Option.map (fun x -> x.Substring(3))
 
 /// A snapshot of an F# source file.
 [<Experimental("This FCS API is experimental and subject to change.")>]
@@ -154,11 +163,12 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
     let noFileVersionsKey =
         lazy
             ({ new ICacheKey<_, _> with
-                 member this.GetLabel() = projectCore.Label
-                 member this.GetKey() = projectCore.Key
+                 member _.GetLabel() = projectCore.Label
+                 member _.GetKey() = projectCore.Identifier
 
-                 member this.GetVersion() =
+                 member _.GetVersion() =
                      noFileVersionsHash.Value |> Md5Hasher.toString
+
              })
 
     let fullHash =
@@ -176,9 +186,9 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
     let fullKey =
         lazy
             ({ new ICacheKey<_, _> with
-                 member this.GetLabel() = projectCore.Label
-                 member this.GetKey() = projectCore.Key
-                 member this.GetVersion() = fullHash.Value |> Md5Hasher.toString
+                 member _.GetLabel() = projectCore.Label
+                 member _.GetKey() = projectCore.Identifier
+                 member _.GetVersion() = fullHash.Value |> Md5Hasher.toString
              })
 
     let addHash (file: 'T) hash =
@@ -207,7 +217,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
 
              { new ICacheKey<_, _> with
                  member _.GetLabel() = $"{f.FileName} ({projectCore.Label})"
-                 member _.GetKey() = f.FileName, projectCore.Key
+                 member _.GetKey() = f.FileName, projectCore.Identifier
                  member _.GetVersion() = hash |> Md5Hasher.toString
              })
 
@@ -215,6 +225,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
 
     member _.ProjectFileName = projectCore.ProjectFileName
     member _.ProjectId = projectCore.ProjectId
+    member _.Identifier = projectCore.Identifier
     member _.ReferencesOnDisk = projectCore.ReferencesOnDisk
     member _.OtherOptions = projectCore.OtherOptions
     member _.ReferencedProjects = projectCore.ReferencedProjects
@@ -371,10 +382,7 @@ and internal ProjectCore
              |> Seq.toList)
 
     let outputFileName =
-        lazy
-            (OtherOptions
-             |> List.tryFind (fun x -> x.StartsWith("-o:"))
-             |> Option.map (fun x -> x.Substring(3)))
+        lazy (OtherOptions |> findOutputFileName)
 
     let key = lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")
 
@@ -382,13 +390,13 @@ and internal ProjectCore
         lazy
             ({ new ICacheKey<_, _> with
                  member _.GetLabel() = self.Label
-                 member _.GetKey() = self.Key
+                 member _.GetKey() = self.Identifier
                  member _.GetVersion() = fullHashString.Value
              })
 
     member val ProjectDirectory = Path.GetDirectoryName(ProjectFileName)
     member _.OutputFileName = outputFileName.Value
-    member _.Key = key.Value
+    member _.Identifier: ProjectIdentifier = key.Value
     member _.Version = fullHash.Value
     member _.Label = ProjectFileName |> shortPath
     member _.VersionForParsing = hashForParsing.Value
@@ -410,14 +418,14 @@ and internal ProjectCore
     member _.CacheKeyWith(label, version) =
         { new ICacheKey<_, _> with
             member _.GetLabel() = $"{label} ({self.Label})"
-            member _.GetKey() = self.Key
+            member _.GetKey() = self.Identifier
             member _.GetVersion() = fullHashString.Value, version
         }
 
     member _.CacheKeyWith(label, key, version) =
         { new ICacheKey<_, _> with
             member _.GetLabel() = $"{label} ({self.Label})"
-            member _.GetKey() = key, self.Key
+            member _.GetKey() = key, self.Identifier
             member _.GetVersion() = fullHashString.Value, version
         }
 
@@ -458,6 +466,10 @@ and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental a
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
+/// An identifier of an F# project. This serves to identify the same project as it changes over time and enables us to clear obsolete data from caches.
+and [<Experimental("This FCS API is experimental and subject to change.")>]
+    FSharpProjectIdentifier = FSharpProjectIdentifier of projectFileName: string * outputFileName: string
+
 /// A snapshot of an F# project. This type contains all the necessary information for type checking a project.
 and [<Experimental("This FCS API is experimental and subject to change.")>] FSharpProjectSnapshot internal (projectSnapshot) =
 
@@ -468,6 +480,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         projectSnapshot.Replace(changedSourceFiles) |> FSharpProjectSnapshot
 
     member _.Label = projectSnapshot.Label
+    member _.Identifier = FSharpProjectIdentifier projectSnapshot.ProjectCore.Identifier
 
     static member Create
         (
@@ -610,3 +623,7 @@ type internal Extensions =
     [<Extension>]
     static member ToOptions(this: FSharpProjectSnapshot) =
         this.ProjectSnapshot |> snapshotToOptions
+
+    [<Extension>]
+    static member GetProjectIdentifier(this: FSharpProjectOptions): ProjectIdentifier =
+        this.ProjectFileName, this.OtherOptions |> findOutputFileName |> Option.defaultValue ""

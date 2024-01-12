@@ -208,8 +208,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer1">
-        <source>WARNING! Transparent does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="new">WARNING! Transparent does not yet support all features and can cause crashes or give incorrect results.</target>
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer2">

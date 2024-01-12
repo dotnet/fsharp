@@ -20,6 +20,7 @@ type internal JobEvent =
     | Weakened
     | Strengthened
     | Failed
+    | Cleared
 
 type internal ICacheKey<'TKey, 'TVersion> =
 
@@ -59,6 +60,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             AsyncMemoize<'TKey, 'TVersion, 'TValue>
 
     member Clear: unit -> unit
+
+    member Clear: predicate: ('TKey -> bool) -> unit
 
     member Get: key: ICacheKey<'TKey, 'TVersion> * computation: NodeCode<'TValue> -> NodeCode<'TValue>
 

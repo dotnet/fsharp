@@ -14,6 +14,7 @@ type internal CacheEvent =
     | Collected
     | Weakened
     | Strengthened
+    | Cleared
 
 [<StructuralEquality; NoComparison>]
 type internal ValueLink<'T when 'T: not struct> =
@@ -77,6 +78,8 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
     let cutStrongListIfTooLong () =
         let mutable node = strongList.Last
 
+        let mutable anythingWeakened = false
+
         while strongList.Count > keepStrongly && node <> null do
             let previous = node.Previous
 
@@ -87,11 +90,13 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                 node.Value <- key, version, label, Weak(WeakReference<_> v)
                 weakList.AddFirst node
                 event CacheEvent.Weakened (label, key, version)
+                anythingWeakened <- true
             | _key, _version, _label, _ -> failwith "Invalid state, weak reference in strong list"
 
             node <- previous
 
-        cutWeakListIfTooLong ()
+        if anythingWeakened then
+            cutWeakListIfTooLong ()
 
     let pushNodeToTop (node: LinkedListNode<_>) =
         match node.Value with
@@ -101,9 +106,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
         | _, _, _, Weak _ -> failwith "Invalid operation, pushing weak reference to strong list"
 
     let pushValueToTop key version label value =
-        let node = strongList.AddFirst(value = (key, version, label, Strong value))
-        cutStrongListIfTooLong ()
-        node
+        strongList.AddFirst(value = (key, version, label, Strong value))
 
     member _.DebuggerDisplay = $"Cache(S:{strongList.Count} W:{weakList.Count})"
 
@@ -148,9 +151,12 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
 
                 if anythingWeakened then
                     cutWeakListIfTooLong ()
+                else
+                    cutStrongListIfTooLong ()
 
         | false, _ ->
             let node = pushValueToTop key version label value
+            cutStrongListIfTooLong ()
             dictionary[key] <- Dictionary()
             dictionary[key][version] <- node
 
@@ -177,6 +183,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                         weakList.Remove node
                         let node = pushValueToTop key version label value
                         event CacheEvent.Strengthened (label, key, version)
+                        cutStrongListIfTooLong()
                         versionDict[version] <- node
                         Some value
                     | _ ->
@@ -236,6 +243,23 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
         dictionary.Clear()
         strongList.Clear()
         weakList.Clear()
+
+    member _.Clear(predicate) =
+        let keysToRemove = dictionary.Keys |> Seq.filter predicate |> Seq.toList
+
+        for key in keysToRemove do
+            match dictionary.TryGetValue key with
+            | true, versionDict ->
+                versionDict.Values
+                |> Seq.iter (fun node ->
+                    match node.Value with
+                    | _, _, _, Strong _ -> strongList.Remove node
+                    | _, _, _, Weak _ -> weakList.Remove node
+                    match node.Value with
+                    | key, version, label, _ -> event CacheEvent.Cleared (label, key, version))
+
+                dictionary.Remove key |> ignore
+            | _ -> ()
 
     member _.GetValues() =
         strongList

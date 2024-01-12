@@ -2082,6 +2082,7 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.CodeA
 FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParsingOptions,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic]] GetParsingOptionsFromProjectOptions(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.Tokenization.FSharpTokenInfo[],FSharp.Compiler.Tokenization.FSharpTokenizerLexState] TokenizeLine(System.String, FSharp.Compiler.Tokenization.FSharpTokenizerLexState)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearCache(System.Collections.Generic.IEnumerable`1[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearCache(System.Collections.Generic.IEnumerable`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2312,6 +2313,24 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String g
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String get_Version()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.Threading.Tasks.Task`1[FSharp.Compiler.Text.ISourceTextNew] GetSource()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Void .ctor(System.String, System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Threading.Tasks.Task`1[FSharp.Compiler.Text.ISourceTextNew]])
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Boolean Equals(FSharpProjectIdentifier)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: FSharpProjectIdentifier NewFSharpProjectIdentifier(System.String, System.String)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 CompareTo(FSharpProjectIdentifier)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 Tag
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String ToString()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_outputFileName()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_projectFileName()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String outputFileName
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String projectFileName
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectIdentifier Identifier
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectIdentifier get_Identifier()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Create(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Replace(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot] FromOptions(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
@@ -2347,6 +2366,7 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: System.String ToSt
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: System.String get_Path()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Void .ctor(System.String, System.DateTime)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk

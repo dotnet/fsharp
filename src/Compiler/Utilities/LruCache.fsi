@@ -6,6 +6,7 @@ type internal CacheEvent =
     | Collected
     | Weakened
     | Strengthened
+    | Cleared
 
 /// A cache where least recently used items are removed when the cache is full.
 ///
@@ -25,6 +26,9 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
             LruCache<'TKey, 'TVersion, 'TValue>
 
     member Clear: unit -> unit
+
+    /// Clear any keys that match the given predicate
+    member Clear: predicate: ('TKey -> bool) -> unit
 
     /// Returns an option of a value for given key and version, and also a list of all other versions for given key
     member GetAll: key: 'TKey * version: 'TVersion -> 'TValue option * ('TVersion * 'TValue) list

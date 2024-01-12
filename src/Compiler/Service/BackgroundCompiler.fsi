@@ -46,6 +46,8 @@ type internal IBackgroundCompiler =
 
     abstract ClearCache: options: FSharpProjectOptions seq * userOpName: string -> unit
 
+    abstract ClearCache: projects: ProjectSnapshot.FSharpProjectIdentifier seq * userOpName: string -> unit
+
     abstract ClearCaches: unit -> unit
 
     abstract DownsizeCaches: unit -> unit

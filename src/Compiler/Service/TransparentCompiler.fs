@@ -119,6 +119,7 @@ type internal BootstrapInfo =
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
+
 [<RequireQualifiedAccess>]
 type internal DependencyGraphType =
     /// A dependency graph for a single file - it will be missing files which this file does not depend on
@@ -290,6 +291,19 @@ type internal CompilerCaches(sizeFactor: int) =
     member val SemanticClassification = AsyncMemoize(sf, 2 * sf, name = "SemanticClassification")
 
     member val ItemKeyStore = AsyncMemoize(sf, 2 * sf, name = "ItemKeyStore")
+
+    member this.Clear(projects: Set<ProjectIdentifier>) =
+        let shouldClear project = projects |> Set.contains project
+
+        this.ParseFile.Clear(fst >> shouldClear)
+        this.ParseAndCheckFileInProject.Clear(snd >> shouldClear)
+        this.ParseAndCheckProject.Clear(shouldClear)
+        this.BootstrapInfoStatic.Clear(shouldClear)
+        this.BootstrapInfo.Clear(shouldClear)
+        this.TcIntermediate.Clear(snd >> shouldClear)
+        this.AssemblyData.Clear(shouldClear)
+        this.SemanticClassification.Clear(snd >> shouldClear)
+        this.ItemKeyStore.Clear(snd >> shouldClear)
 
 type internal TransparentCompiler
     (
@@ -844,7 +858,7 @@ type internal TransparentCompiler
                 member _.GetLabel() = file.FileName |> shortPath
 
                 member _.GetKey() =
-                    projectSnapshot.ProjectCore.Key, file.FileName
+                    projectSnapshot.ProjectCore.Identifier, file.FileName
 
                 member _.GetVersion() =
                     projectSnapshot.ParsingVersion,
@@ -1843,8 +1857,16 @@ type internal TransparentCompiler
                 return Some result
             }
 
-        member _.ClearCache(options: seq<FSharpProjectOptions>, userOpName: string) : unit =
+        member this.ClearCache(projects: FSharpProjectIdentifier seq, userOpName: string): unit =
+            use _ =
+                Activity.start "TransparentCompiler.ClearCache" [| Activity.Tags.userOpName, userOpName |]
+            this.Caches.Clear (projects |> Seq.map (function FSharpProjectIdentifier (x, y) -> (x, y)) |> Set)
+
+        member this.ClearCache(options: seq<FSharpProjectOptions>, userOpName: string) : unit =
+            use _ =
+                Activity.start "TransparentCompiler.ClearCache" [| Activity.Tags.userOpName, userOpName |]
             backgroundCompiler.ClearCache(options, userOpName)
+            this.Caches.Clear(options |> Seq.map (fun o -> o.GetProjectIdentifier()) |> Set)
 
         member _.ClearCaches() : unit =
             backgroundCompiler.ClearCaches()

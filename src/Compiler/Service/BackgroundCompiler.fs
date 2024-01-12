@@ -71,6 +71,8 @@ type internal IBackgroundCompiler =
 
     abstract member ClearCache: options: seq<FSharpProjectOptions> * userOpName: string -> unit
 
+    abstract member ClearCache: projects: ProjectSnapshot.FSharpProjectIdentifier seq * userOpName: string -> unit
+
     abstract member ClearCaches: unit -> unit
 
     abstract member DownsizeCaches: unit -> unit
@@ -1527,6 +1529,10 @@ type internal BackgroundCompiler
             self.CheckFileInProjectAllowingStaleCachedResults(parseResults, fileName, fileVersion, sourceText, options, userOpName)
 
         member _.ClearCache(options: seq<FSharpProjectOptions>, userOpName: string) : unit = self.ClearCache(options, userOpName)
+
+        member _.ClearCache(projects: ProjectSnapshot.FSharpProjectIdentifier seq, userOpName: string) =
+            ignore (projects, userOpName)
+
         member _.ClearCaches() : unit = self.ClearCaches()
         member _.DownsizeCaches() : unit = self.DownsizeCaches()
         member _.FileChecked: IEvent<string * FSharpProjectOptions> = self.FileChecked
