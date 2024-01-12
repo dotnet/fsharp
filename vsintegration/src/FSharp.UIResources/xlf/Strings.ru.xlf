@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="needs-review-translation">Использовать динамические (несохраненные) буферы для проверки (требуется перезагрузка)</target>
+        <target state="translated">Используйте для анализа живые (несохраненные) буферы (требуется перезагрузка)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="needs-review-translation">Динамические буферы (экспериментальная функция)</target>
+        <target state="translated">Живые буферы</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="Remove_parens_code_fix">
         <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
-        <target state="new">Remove unnecessary parentheses (experimental, might affect typing performance)</target>
+        <target state="translated">Удалите ненужные круглые скобки (экспериментально, может повлиять на производительность набора текста)</target>
         <note />
       </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="Show_remarks_in_Quick_Info">
         <source>Show remarks in Quick Info</source>
-        <target state="new">Show remarks in Quick Info</target>
+        <target state="translated">Показать заметки в кратких сведениях</target>
         <note />
       </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
