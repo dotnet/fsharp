@@ -56,16 +56,20 @@ F# LSP support design proposal. To be expanded as we learn more / settle on thin
 
 graph TD
 
-VS(VS) --> NewVsix(NewVsix)
+VS(VS) -->|VS LSP client| NewVsix("NewVsix (Out-of-process)")
 
 VsCode(VS Code) --> Ionide(Ionide/FSAC)
 
 Vim(Vim) --> Ionide(Ionide/FSAC)
 
-NewVsix --> FsLSPServer(FsLSP Server)
-NewVsix --> CPS(CPS)
+FsLSPServer(FsLSP Server)
+
+NewVsix --> ProjectQuery(Project Query API)
+NewVsix --> FsLSP
 
 FsLSPServer --> FsLSP
+
+
 
 subgraph FsLSP
 ProjectModel(Project Model)
@@ -82,9 +86,9 @@ style VS stroke-dasharray: 2 4
 style Vim stroke-dasharray: 2 4
 style VsCode stroke-dasharray: 2 4
 style Ionide stroke-dasharray: 2 4
-style CPS stroke-dasharray: 2 4
 style ProjInfo stroke-dasharray: 2 4
 style LSPLibrary stroke-dasharray: 2 4
+style ProjectQuery stroke-dasharray: 2 4
 
 ```
 
@@ -213,13 +217,15 @@ It should also allow to hook into background processes or events to customize be
 
 New VS extension that will be backed by the LSP server. It should mostly contain plumbing to connect LSP to the editor and CPS.
 
-> Is there a library available to simplify some of this?
+We should build on new [VisualStudio.Extensibility](https://github.com/microsoft/VSExtensibility/) model to run the extension out-of-process. It can also directly connect native VS LSP directly to our server which we can host directly in the extension.
 
-> Will we be able to build this on top of the new VisualStudio.Extensibility?
+We might need a wrapper C# project because the new extensibility model relies on source generation.
 
-It should be able to run side by side with the current extension gradually take over the functionality we will add to LSP.
+We should be able to load project information via [ProjectQuery API](https://github.com/microsoft/VSExtensibility/tree/main/New_Extensibility_Model/Samples/VSProjectQueryAPISample) to which we can also subscribe for changes.
 
-Depending on the extensibility model we will either use the FsLSPServer executable or just load the library directly.
+The new extension should be able to run side by side with the current and extension gradually take over the functionality we will add to LSP.
+
+If there is any missing functionality in any of these, we might need to supplement it from our current MEF extension and connect from it to the new one.
 
 ### FCS
 
