@@ -618,22 +618,6 @@ stages:
               FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: End to end build tests
 
-        # Up-to-date - disabled due to it being flaky
-        #- job: UpToDate_Windows
-        #  pool:
-        #    vmImage: windows-latest
-        #  steps:
-        #  - checkout: self
-        #    clean: true
-        #  - task: PowerShell@2
-        #    displayName: Run up-to-date build check
-        #    inputs:
-        #      filePath: eng\tests\UpToDate.ps1
-        #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
-
-        # Run Build with Fsharp Experimental Features
-        # Possible change: --times:$(Build.SourcesDirectory)/artifacts/log/Release/compiler_timing.csv
-
         # Plain FCS build Windows
         - job: Plain_Build_Windows
           pool:
@@ -755,21 +739,6 @@ stages:
               artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
             continueOnError: true
             condition: always()
-
-    # Arcade-powered source build
-    # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
-    # - template: /eng/common/templates/jobs/jobs.yml
-    #   parameters:
-    #     enablePublishUsingPipelines: true
-    #     enablePublishBuildArtifacts: true
-    #     enablePublishBuildAssets: true
-    #     artifacts:
-    #       publish:
-    #         artifacts: true
-    #         manifests: true
-    #     runSourceBuild: true
-    #     sourceBuildParameters:
-    #       includeDefaultManagedPlatform: true
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
