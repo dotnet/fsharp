@@ -14,58 +14,64 @@ ImplFile
                     (Class,
                      [ImplicitCtor
                         (None, [],
-                         SimplePats
-                           ([Typed
-                               (Id
-                                  (readAllBytes, None, false, false, false,
-                                   (2,33--2,45)),
-                                Fun
-                                  (LongIdent
-                                     (SynLongIdent ([string], [], [None])),
-                                   Array
-                                     (1,
-                                      LongIdent
-                                        (SynLongIdent ([byte], [], [None])),
-                                      (2,57--2,63)), (2,47--2,63),
-                                   { ArrowRange = (2,54--2,56) }), (2,33--2,63));
-                             Typed
-                               (Id
-                                  (projectOptions, None, false, false, false,
-                                   (2,65--2,79)),
-                                LongIdent
-                                  (SynLongIdent
-                                     ([FSharpProjectOptions], [], [None])),
-                                (2,65--2,101))], [(2,63--2,64)], (2,32--2,102)),
-                         Some this,
+                         Paren
+                           (Tuple
+                              (false,
+                               [Typed
+                                  (Named
+                                     (SynIdent (readAllBytes, None), false, None,
+                                      (2,33--2,45)),
+                                   Fun
+                                     (LongIdent
+                                        (SynLongIdent ([string], [], [None])),
+                                      Array
+                                        (1,
+                                         LongIdent
+                                           (SynLongIdent ([byte], [], [None])),
+                                         (2,57--2,63)), (2,47--2,63),
+                                      { ArrowRange = (2,54--2,56) }),
+                                   (2,33--2,63));
+                                Typed
+                                  (Named
+                                     (SynIdent (projectOptions, None), false,
+                                      None, (2,65--2,79)),
+                                   LongIdent
+                                     (SynLongIdent
+                                        ([FSharpProjectOptions], [], [None])),
+                                   (2,65--2,101))], [(2,63--2,64)],
+                               (2,33--2,101)), (2,32--2,102)), Some this,
                          PreXmlDoc ((2,32), FSharp.Compiler.Xml.XmlDocCollector),
                          (2,14--2,32), { AsKeyword = Some (4,4--4,6) })],
                      (8,4--8,13)), [],
                   Some
                     (ImplicitCtor
                        (None, [],
-                        SimplePats
-                          ([Typed
-                              (Id
-                                 (readAllBytes, None, false, false, false,
-                                  (2,33--2,45)),
-                               Fun
-                                 (LongIdent
-                                    (SynLongIdent ([string], [], [None])),
-                                  Array
-                                    (1,
-                                     LongIdent
-                                       (SynLongIdent ([byte], [], [None])),
-                                     (2,57--2,63)), (2,47--2,63),
-                                  { ArrowRange = (2,54--2,56) }), (2,33--2,63));
-                            Typed
-                              (Id
-                                 (projectOptions, None, false, false, false,
-                                  (2,65--2,79)),
-                               LongIdent
-                                 (SynLongIdent
-                                    ([FSharpProjectOptions], [], [None])),
-                               (2,65--2,101))], [(2,63--2,64)], (2,32--2,102)),
-                        Some this,
+                        Paren
+                          (Tuple
+                             (false,
+                              [Typed
+                                 (Named
+                                    (SynIdent (readAllBytes, None), false, None,
+                                     (2,33--2,45)),
+                                  Fun
+                                    (LongIdent
+                                       (SynLongIdent ([string], [], [None])),
+                                     Array
+                                       (1,
+                                        LongIdent
+                                          (SynLongIdent ([byte], [], [None])),
+                                        (2,57--2,63)), (2,47--2,63),
+                                     { ArrowRange = (2,54--2,56) }),
+                                  (2,33--2,63));
+                               Typed
+                                 (Named
+                                    (SynIdent (projectOptions, None), false,
+                                     None, (2,65--2,79)),
+                                  LongIdent
+                                    (SynLongIdent
+                                       ([FSharpProjectOptions], [], [None])),
+                                  (2,65--2,101))], [(2,63--2,64)], (2,33--2,101)),
+                           (2,32--2,102)), Some this,
                         PreXmlDoc ((2,32), FSharp.Compiler.Xml.XmlDocCollector),
                         (2,14--2,32), { AsKeyword = Some (4,4--4,6) })),
                   (2,5--8,13), { LeadingKeyword = Type (2,0--2,4)
