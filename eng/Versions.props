@@ -16,7 +16,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>8</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>200</FSBuildVersion>
+    <FSBuildVersion>300</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -58,7 +58,7 @@
   <PropertyGroup>
     <!-- These have to be in sync with latest release branch -->
     <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>9</VSMinorVersion>
+    <VSMinorVersion>10</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -192,7 +192,7 @@
     <XUnitRunnerVersion>2.4.2</XUnitRunnerVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
-    <MicrosoftDotNetXliffTasksVersion>1.0.0-beta.23426.1</MicrosoftDotNetXliffTasksVersion>
+    <MicrosoftDotNetXliffTasksVersion>1.0.0-beta.23475.1</MicrosoftDotNetXliffTasksVersion>
     <!-- MIBC profile packages -->
     <optimizationwindows_ntx64MIBCRuntimeVersion>1.0.0-prerelease.23614.4</optimizationwindows_ntx64MIBCRuntimeVersion>
     <optimizationwindows_ntx86MIBCRuntimeVersion>1.0.0-prerelease.23614.4</optimizationwindows_ntx86MIBCRuntimeVersion>

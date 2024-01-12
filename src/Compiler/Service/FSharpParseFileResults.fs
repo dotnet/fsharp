@@ -476,17 +476,23 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | SynExpr.Typed(_expr, _typeExpr, range) when Position.posEq range.Start pos -> Some range
                     | _ -> defaultTraverse expr
 
-                override _.VisitSimplePats(_path, pats) =
-                    match pats with
-                    | [] -> None
-                    | _ ->
-                        let exprFunc pat =
+                override _.VisitSimplePats(_path, pat) =
+                    let rec loop (pat: SynPat) =
+                        if not (rangeContainsPos pat.Range pos) then
+                            None
+                        else
+
                             match pat with
-                            // (s: string)
-                            | SynSimplePat.Typed(_pat, _targetExpr, range) when Position.posEq range.Start pos -> Some range
+                            | SynPat.Attrib(pat = pat)
+                            | SynPat.Paren(pat = pat) -> loop pat
+
+                            | SynPat.Tuple(elementPats = pats) -> List.tryPick loop pats
+
+                            | SynPat.Typed(range = range) when Position.posEq range.Start pos -> Some pat.Range
+
                             | _ -> None
 
-                        pats |> List.tryPick exprFunc
+                    loop pat
 
                 override _.VisitPat(_path, defaultTraverse, pat) =
                     // (s: string)
