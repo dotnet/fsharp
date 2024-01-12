@@ -436,7 +436,12 @@ let AdjustCalledArgType (infoReader: InfoReader) ad isConstraint enforceNullable
             else 
                 destByrefTy g calledArgTy
 #else
-            calledArgTy, TypeDirectedConversionUsed.No, None
+            // If caller argument is a refcell type called is inref, convert to refcell.
+            // Ad-hoc fix for https://github.com/dotnet/fsharp/issues/16524
+            if isRefCellTy g callerArgTy then
+                mkRefCellTy g (destByrefTy g calledArgTy), TypeDirectedConversionUsed.No, None
+            else
+                calledArgTy, TypeDirectedConversionUsed.No, None
 #endif
 
         // If the called method argument is a (non inref) byref type, then the caller may provide a byref or ref.
