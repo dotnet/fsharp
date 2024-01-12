@@ -119,7 +119,6 @@ type internal BootstrapInfo =
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
-
 [<RequireQualifiedAccess>]
 type internal DependencyGraphType =
     /// A dependency graph for a single file - it will be missing files which this file does not depend on
@@ -1857,14 +1856,21 @@ type internal TransparentCompiler
                 return Some result
             }
 
-        member this.ClearCache(projects: FSharpProjectIdentifier seq, userOpName: string): unit =
+        member this.ClearCache(projects: FSharpProjectIdentifier seq, userOpName: string) : unit =
             use _ =
                 Activity.start "TransparentCompiler.ClearCache" [| Activity.Tags.userOpName, userOpName |]
-            this.Caches.Clear (projects |> Seq.map (function FSharpProjectIdentifier (x, y) -> (x, y)) |> Set)
+
+            this.Caches.Clear(
+                projects
+                |> Seq.map (function
+                    | FSharpProjectIdentifier(x, y) -> (x, y))
+                |> Set
+            )
 
         member this.ClearCache(options: seq<FSharpProjectOptions>, userOpName: string) : unit =
             use _ =
                 Activity.start "TransparentCompiler.ClearCache" [| Activity.Tags.userOpName, userOpName |]
+
             backgroundCompiler.ClearCache(options, userOpName)
             this.Caches.Clear(options |> Seq.map (fun o -> o.GetProjectIdentifier()) |> Set)
 

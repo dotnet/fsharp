@@ -1530,8 +1530,7 @@ type internal BackgroundCompiler
 
         member _.ClearCache(options: seq<FSharpProjectOptions>, userOpName: string) : unit = self.ClearCache(options, userOpName)
 
-        member _.ClearCache(projects: ProjectSnapshot.FSharpProjectIdentifier seq, userOpName: string) =
-            ignore (projects, userOpName)
+        member _.ClearCache(projects: ProjectSnapshot.FSharpProjectIdentifier seq, userOpName: string) = ignore (projects, userOpName)
 
         member _.ClearCaches() : unit = self.ClearCaches()
         member _.DownsizeCaches() : unit = self.DownsizeCaches()

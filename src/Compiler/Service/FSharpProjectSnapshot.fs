@@ -20,9 +20,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 
-
 type internal ProjectIdentifier = string * string
-
 
 /// A common interface for an F# source file snapshot that can be used accross all stages (lazy, source loaded, parsed)
 type internal IFileSnapshot =
@@ -381,8 +379,7 @@ and internal ProjectCore
              }
              |> Seq.toList)
 
-    let outputFileName =
-        lazy (OtherOptions |> findOutputFileName)
+    let outputFileName = lazy (OtherOptions |> findOutputFileName)
 
     let key = lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")
 
@@ -467,8 +464,8 @@ and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental a
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
 /// An identifier of an F# project. This serves to identify the same project as it changes over time and enables us to clear obsolete data from caches.
-and [<Experimental("This FCS API is experimental and subject to change.")>]
-    FSharpProjectIdentifier = FSharpProjectIdentifier of projectFileName: string * outputFileName: string
+and [<Experimental("This FCS API is experimental and subject to change.")>] FSharpProjectIdentifier =
+    | FSharpProjectIdentifier of projectFileName: string * outputFileName: string
 
 /// A snapshot of an F# project. This type contains all the necessary information for type checking a project.
 and [<Experimental("This FCS API is experimental and subject to change.")>] FSharpProjectSnapshot internal (projectSnapshot) =
@@ -625,5 +622,5 @@ type internal Extensions =
         this.ProjectSnapshot |> snapshotToOptions
 
     [<Extension>]
-    static member GetProjectIdentifier(this: FSharpProjectOptions): ProjectIdentifier =
+    static member GetProjectIdentifier(this: FSharpProjectOptions) : ProjectIdentifier =
         this.ProjectFileName, this.OtherOptions |> findOutputFileName |> Option.defaultValue ""

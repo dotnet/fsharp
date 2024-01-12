@@ -183,7 +183,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                         weakList.Remove node
                         let node = pushValueToTop key version label value
                         event CacheEvent.Strengthened (label, key, version)
-                        cutStrongListIfTooLong()
+                        cutStrongListIfTooLong ()
                         versionDict[version] <- node
                         Some value
                     | _ ->
@@ -255,6 +255,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                     match node.Value with
                     | _, _, _, Strong _ -> strongList.Remove node
                     | _, _, _, Weak _ -> weakList.Remove node
+
                     match node.Value with
                     | key, version, label, _ -> event CacheEvent.Cleared (label, key, version))
 
