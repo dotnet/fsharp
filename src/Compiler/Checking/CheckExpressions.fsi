@@ -885,7 +885,7 @@ val UnifyTupleTypeAndInferCharacteristics:
     knownTy: TType ->
     isExplicitStruct: bool ->
     'T list ->
-        {| isStruct: bool; argTypes: TTypes |}
+        TupleInfo
 
 /// Helper used to check both record expressions and record patterns
 val BuildFieldMap:

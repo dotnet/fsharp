@@ -3023,8 +3023,8 @@ type TType =
     /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
 
-    /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
-    | TType_tuple of isStruct: bool * elementTypes: TTypes
+    /// Indicates the type is a tuple type.
+    | TType_tuple of TupleInfo
 
     /// Indicates the type is a function type.
     ///
@@ -3083,6 +3083,13 @@ type AnonRecdTypeInfo =
 
     /// Get the core of the display name for one of the fields of the anonymous record, by index
     member DisplayNameCoreByIdx: idx: int -> string
+    
+/// Type information about a tuple. ArgTypes must be of length 2 or greater.
+[<Struct>]
+type TupleInfo =
+    new: isStruct: bool * argTypes: TType list -> TupleInfo
+    member IsStruct: bool
+    member ArgTypes: TType list
 
 /// Represents a unit of measure in the typed AST
 [<RequireQualifiedAccess>]

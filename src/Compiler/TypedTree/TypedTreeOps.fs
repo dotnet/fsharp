@@ -185,10 +185,10 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       if l === lR then ty else
         TType_anon (AnonRecdTypeInfo.Create(anonInfo.Assembly, anonInfo.IsStruct, anonInfo.SortedIds), lR)
 
-  | TType_tuple (isStruct, l) as ty ->
-      let lR = remapTypesAux tyenv l
-      if l === lR then ty else  
-      TType_tuple (isStruct, lR)
+  | TType_tuple tupleInfo as ty ->
+      let lR = remapTypesAux tyenv tupleInfo.ArgTypes
+      if tupleInfo.ArgTypes === lR then ty else  
+      TType_tuple (TupleInfo(tupleInfo.IsStruct, lR))
 
   | TType_fun (domainTy, rangeTy, flags) as ty -> 
       let domainTyR = remapTypeAux tyenv domainTy
@@ -654,30 +654,30 @@ let mkCompiledTupleTyconRef (g: TcGlobals) isStruct n =
     else failwithf "mkCompiledTupleTyconRef, n = %d" n
 
 /// Convert from F# tuple types to .NET tuple types
-let rec mkCompiledTupleTy g isStruct tupElemTys = 
-    let n = List.length tupElemTys 
+let rec mkCompiledTupleTy g (tupleInfo: TupleInfo) = 
+    let n = List.length tupleInfo.ArgTypes
     if n < maxTuple then
-        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, g.knownWithoutNull)
+        TType_app (mkCompiledTupleTyconRef g tupleInfo.IsStruct n, tupleInfo.ArgTypes, g.knownWithoutNull)
     else 
-        let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
-        TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB], g.knownWithoutNull)
+        let tysA, tysB = List.splitAfter goodTupleFields tupleInfo.ArgTypes
+        TType_app ((if tupleInfo.IsStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g (TupleInfo(tupleInfo.IsStruct, tysB))], g.knownWithoutNull)
 
 /// Convert from F# tuple types to .NET tuple types, but only the outermost level
-let mkOuterCompiledTupleTy g isStruct tupElemTys = 
-    let n = List.length tupElemTys 
+let mkOuterCompiledTupleTy g (tInfo: TupleInfo) = 
+    let n = List.length tInfo.ArgTypes
     if n < maxTuple then 
-        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, g.knownWithoutNull)
+        TType_app (mkCompiledTupleTyconRef g tInfo.IsStruct n, tInfo.ArgTypes, g.knownWithoutNull)
     else 
-        let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
-        let tcref = (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
+        let tysA, tysB = List.splitAfter goodTupleFields tInfo.ArgTypes
+        let tcref = (if tInfo.IsStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
         // In the case of an 8-tuple we add the Tuple<_> marker. For other sizes we keep the type 
         // as a regular F# tuple type.
         match tysB with 
         | [ tyB ] -> 
-            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB], g.knownWithoutNull)
+            let marker = TType_app (mkCompiledTupleTyconRef g tInfo.IsStruct 1, [tyB], g.knownWithoutNull)
             TType_app (tcref, tysA@[marker], g.knownWithoutNull)
         | _ ->
-            TType_app (tcref, tysA@[TType_tuple (isStruct, tysB)], g.knownWithoutNull)
+            TType_app (tcref, tysA@[TType_tuple(TupleInfo(tInfo.IsStruct, tysB))], g.knownWithoutNull)
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -758,8 +758,8 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
     | TType_fun(domainTy, rangeTy, flags) when eraseFuncAndTuple ->
         TType_app(g.fastFunc_tcr, [ domainTy; rangeTy ], flags) 
 
-    | TType_tuple(isStruct, l) when eraseFuncAndTuple ->
-        mkCompiledTupleTy g (isStruct) l
+    | TType_tuple tupleInfo when eraseFuncAndTuple ->
+        mkCompiledTupleTy g tupleInfo
 
     | ty -> ty
 
@@ -784,11 +784,11 @@ let primDestForallTy g ty = ty |> stripTyEqns g |> (function TType_forall (tyvs,
 
 let destFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (domainTy, rangeTy, _) -> (domainTy, rangeTy) | _ -> failwith "destFunTy: not a function type")
 
-let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) -> isStruct, l | _ -> failwith "destAnyTupleTy: not a tuple type")
+let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple tupleInfo -> tupleInfo | _ -> failwith "destAnyTupleTy: not a tuple type")
 
-let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) when not isStruct -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
+let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple tupleInfo when not tupleInfo.IsStruct -> tupleInfo.ArgTypes | _ -> failwith "destRefTupleTy: not a reference tuple type")
 
-let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) when isStruct -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
+let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple tupleInfo when tupleInfo.IsStruct -> tupleInfo.ArgTypes | _ -> failwith "destStructTupleTy: not a struct tuple type")
 
 let destTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> v | _ -> failwith "destTyparTy: not a typar type")
 
@@ -802,9 +802,9 @@ let isForallTy g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | 
 
 let isAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> true | _ -> false)
 
-let isRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, _) -> not isStruct | _ -> false)
+let isRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple tInfo -> not tInfo.IsStruct | _ -> false)
 
-let isStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, _) -> isStruct | _ -> false)
+let isStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple tInfo -> tInfo.IsStruct | _ -> false)
 
 let isAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | _ -> false)
 
@@ -858,7 +858,7 @@ let tryAnyParTyOption g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -
 
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> Some (tcref, tinst) | _ -> None) 
 
-let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(isStruct, tys) when not isStruct -> Some tys | _ -> None)
+let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple tInfo when not tInfo.IsStruct -> Some tInfo.ArgTypes | _ -> None)
 
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(domainTy, rangeTy, _) -> Some (domainTy, rangeTy) | _ -> None)
 
@@ -886,8 +886,8 @@ let rangeOfFunTy g ty = snd (destFunTy g ty)
 
 let convertToTypeWithMetadataIfPossible g ty = 
     if isAnyTupleTy g ty then 
-        let isStruct, tupElemTys = destAnyTupleTy g ty
-        mkOuterCompiledTupleTy g isStruct tupElemTys
+        let tInfo = destAnyTupleTy g ty
+        mkOuterCompiledTupleTy g tInfo
     elif isFunTy g ty then 
         let a,b = destFunTy g ty
         mkAppTy g.fastFunc_tcr [a; b]
@@ -1029,8 +1029,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         tcrefAEquiv g aenv tcref1 tcref2 &&
         typesAEquivAux erasureFlag g aenv tinst1 tinst2
 
-    | TType_tuple (isStruct1, l1), TType_tuple (isStruct2, l2) -> 
-        isStruct1 = isStruct2 && typesAEquivAux erasureFlag g aenv l1 l2
+    | TType_tuple tInfo1, TType_tuple tInfo2 -> 
+        tInfo1.IsStruct = tInfo2.IsStruct && typesAEquivAux erasureFlag g aenv tInfo1.ArgTypes tInfo2.ArgTypes
 
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2) -> 
         anonInfoEquiv anonInfo1 anonInfo2 &&
@@ -1109,8 +1109,10 @@ let rec getErasedTypes g ty =
         getErasedTypes g bodyTy
     | TType_var (tp, _) -> 
         if tp.IsErased then [ty] else []
-    | TType_app (_, b, _) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
+    | TType_app (_, b, _) | TType_ucase(_, b) | TType_anon (_, b) ->
         List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
+    | TType_tuple tInfo ->
+        List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) tInfo.ArgTypes []
     | TType_fun (domainTy, rangeTy, _) -> 
         getErasedTypes g domainTy @ getErasedTypes g rangeTy
     | TType_measure _ -> 
@@ -1673,7 +1675,7 @@ let rec stripFunTyN g n ty =
     else [], ty
         
 let tryDestAnyTupleTy g ty = 
-    if isAnyTupleTy g ty then destAnyTupleTy g ty else false, [ty]
+    if isAnyTupleTy g ty then destAnyTupleTy g ty else TupleInfo(false, [ty])
 
 let tryDestRefTupleTy g ty = 
     if isRefTupleTy g ty then destRefTupleTy g ty else [ty]
@@ -2374,8 +2376,8 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty =
     | TType_anon (anonInfo, anonTys) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc anonTys 
 
-    | TType_tuple (_isStruct, tupTys) ->
-        accFreeInTypesLeftToRight g cxFlag thruFlag acc tupTys 
+    | TType_tuple tInfo ->
+        accFreeInTypesLeftToRight g cxFlag thruFlag acc tInfo.ArgTypes
 
     | TType_app (_, tinst, _) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
@@ -2930,9 +2932,10 @@ module SimplifyTypes =
 
         | TType_app (_, tys, _) 
         | TType_ucase (_, tys) 
-        | TType_anon (_, tys) 
-        | TType_tuple (_, tys) ->
+        | TType_anon (_, tys) ->
             List.fold (foldTypeButNotConstraints f) z tys
+        | TType_tuple tInfo ->
+            List.fold (foldTypeButNotConstraints f) z tInfo.ArgTypes
 
         | TType_fun (domainTy, rangeTy, _) ->
             foldTypeButNotConstraints f (foldTypeButNotConstraints f z domainTy) rangeTy
@@ -3865,8 +3868,8 @@ module DebugPrint =
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
 
-        | TType_tuple (_isStruct, tys) ->
-            sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
+        | TType_tuple tInfo ->
+            sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tInfo.ArgTypes) |> wrap
 
         | TType_fun (domainTy, rangeTy, _) ->
             ((auxTypeAtomL env domainTy ^^ wordL (tagText "->")) --- auxTypeL env rangeTy) |> wrap
@@ -6398,16 +6401,16 @@ let mkQuotedExprTy (g: TcGlobals) ty = TType_app(g.expr_tcr, [ty], g.knownWithou
 
 let mkRawQuotedExprTy (g: TcGlobals) = TType_app(g.raw_expr_tcr, [], g.knownWithoutNull)
 
-let mkAnyTupledTy (g: TcGlobals) (isStruct: bool) tys =
-    match tys with
+let mkAnyTupledTy (g: TcGlobals) (tInfo: TupleInfo) =
+    match tInfo.ArgTypes with
     | [] -> g.unit_ty
     | [h] -> h
-    | _ -> TType_tuple(isStruct, tys)
+    | _ -> TType_tuple tInfo
 
 let mkAnyAnonRecdTy (_g: TcGlobals) anonInfo tys =
     TType_anon(anonInfo, tys)
 
-let mkRefTupledTy g tys = mkAnyTupledTy g false tys
+let mkRefTupledTy g tys = mkAnyTupledTy g (TupleInfo(false, tys))
 
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
@@ -6471,7 +6474,7 @@ let rec tyOfExpr g expr =
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
         | TOp.AnonRecdGet (_, i) -> List.item i tinst
         | TOp.TupleFieldGet (_, i) -> List.item i tinst
-        | TOp.Tuple isStruct -> mkAnyTupledTy g isStruct tinst
+        | TOp.Tuple isStruct -> mkAnyTupledTy g (TupleInfo(isStruct, tinst))
         | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
         | TOp.IntegerForLoop _ | TOp.While _ -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
@@ -8663,11 +8666,11 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
     | TType_anon (anonInfo, tinst) -> 
         sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)
 
-    | TType_tuple (isStruct, tys) -> 
-        if isStruct then 
-            sprintf "System.ValueTuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
+    | TType_tuple tInfo -> 
+        if tInfo.IsStruct then 
+            sprintf "System.ValueTuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tInfo.ArgTypes)
         else 
-            sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
+            sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tInfo.ArgTypes)
 
     | TType_fun (domainTy, rangeTy, _) -> 
         "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [domainTy; rangeTy]
@@ -8898,8 +8901,8 @@ let rec TypeHasDefaultValue g m ty =
 /// a set of residual types that must also satisfy the constraint
 let (|SpecialComparableHeadType|_|) g ty =           
     if isAnyTupleTy g ty then 
-        let _tupInfo, elemTys = destAnyTupleTy g ty
-        Some elemTys 
+        let tInfo = destAnyTupleTy g ty
+        Some tInfo.ArgTypes
     elif isAnonRecdTy g ty then 
         match tryDestAnonRecdTy g ty with
         | ValueNone -> Some []

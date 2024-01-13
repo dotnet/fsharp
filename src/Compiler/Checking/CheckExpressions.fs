@@ -581,24 +581,24 @@ let ShrinkContext env oldRange newRange =
 ///    let (x: struct (int * int)) = (3,4)
 let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy (isExplicitStruct: bool) ps =
     let g = cenv.g
-    let isStruct, ptys =
+    let tupInfo =
         if isAnyTupleTy g knownTy then
             let isStruct, ptys = destAnyTupleTy g knownTy
             let ptys =
                 if List.length ps = List.length ptys then ptys
                 else NewInferenceTypes g ps
-            isStruct, ptys
+            TupleInfo(isStruct, ptys)
         else
-            isExplicitStruct, NewInferenceTypes g ps
+            TupleInfo(isExplicitStruct, NewInferenceTypes g ps)
 
     let contextInfo =
         match contextInfo with
         | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
         | _ -> contextInfo
 
-    let ty2 = TType_tuple (isExplicitStruct, ptys)
+    let ty2 = TType_tuple (isExplicitStruct, tupInfo.ArgTypes)
     AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
-    {| isStruct = isStruct; argTypes = ptys |}
+    tupInfo
 
 // Allow inference of assembly-affinity and structness from the known type - even from another assembly. This is a rule of
 // the language design and allows effective cross-assembly use of anonymous types in some limited circumstances.
@@ -5844,8 +5844,8 @@ and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
         CheckTupleIsCorrectLength g env m overallTy args (fun argTys -> TcExprsNoFlexes cenv env m tpenv argTys args |> ignore)
 
         let tupInfo = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
-        let argsR, tpenv = TcExprsNoFlexes cenv env m tpenv tupInfo.argTypes args
-        let expr = mkAnyTupled g m tupInfo.isStruct argsR tupInfo.argTypes
+        let argsR, tpenv = TcExprsNoFlexes cenv env m tpenv tupInfo.ArgTypes args
+        let expr = mkAnyTupled g m tupInfo.IsStruct argsR tupInfo.ArgTypes
         expr, tpenv
     )
 
