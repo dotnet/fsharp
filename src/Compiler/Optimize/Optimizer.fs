@@ -2704,7 +2704,7 @@ and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r)
             Some finfos[n]
     | _ -> None
   
-and TryOptimizeTupleFieldGet cenv _env (_tupInfo, e1info, tys, n, m) =
+and TryOptimizeTupleFieldGet cenv _env (_isStruct, e1info, tys, n, m) =
     match destTupleValue e1info.Info with
     | Some tups when cenv.settings.EliminateTupleFieldGet && not e1info.HasEffect ->
         let len = tups.Length 
@@ -3831,7 +3831,7 @@ and ReshapeExpr cenv (shape, e) =
     | TupleValue subshapes, Expr.Val (_vref, _vFlags, m) ->
         let tinst = destRefTupleTy g (tyOfExpr g e)
         let subshapes = Array.toList subshapes
-        mkRefTupled g m (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape, mkTupleFieldGet g (tupInfoRef, e, tinst, i, m))) subshapes) tinst
+        mkRefTupled g m (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape, mkTupleFieldGet g (false, e, tinst, i, m))) subshapes) tinst
     | _ ->  
         e
 

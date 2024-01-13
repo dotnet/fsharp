@@ -583,11 +583,11 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
     let g = cenv.g
     let isStruct, ptys =
         if isAnyTupleTy g knownTy then
-            let tupInfo, ptys = destAnyTupleTy g knownTy
+            let isStruct, ptys = destAnyTupleTy g knownTy
             let ptys =
                 if List.length ps = List.length ptys then ptys
                 else NewInferenceTypes g ps
-            tupInfo, ptys
+            isStruct, ptys
         else
             isExplicitStruct, NewInferenceTypes g ps
 
@@ -610,8 +610,8 @@ let UnifyAnonRecdTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m ty 
             // Note: use the assembly of the known type, not the current assembly
             // Note: use the structness of the known type, unless explicit
             // Note: use the names of our type, since they are always explicit
-            let tupInfo = (if isExplicitStruct then true else anonInfo.IsStruct)
-            let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo, unsortedNames)
+            let tupIsStruct = (if isExplicitStruct then true else anonInfo.IsStruct)
+            let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupIsStruct, unsortedNames)
             let ptys =
                 if List.length ptys = Array.length unsortedNames then ptys
                 else NewInferenceTypes g (Array.toList anonInfo.SortedNames)
@@ -4491,11 +4491,10 @@ and TcTupleType kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv isStru
             TType_tuple(isStruct, argsR), tpenv
 
 and TcAnonRecdType (cenv: cenv) newOk checkConstraints occ env tpenv isStruct args m =
-    let tupInfo = isStruct
     let tup = args |> List.map (fun (_, t) -> SynTupleTypeSegment.Type t)
     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv tup m
     let unsortedFieldIds = args |> List.map fst |> List.toArray
-    let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, tupInfo, unsortedFieldIds)
+    let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, isStruct, unsortedFieldIds)
 
     // Check for duplicate field IDs
     unsortedFieldIds
@@ -5827,12 +5826,12 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
 
 and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy (args: 'a list) tcArgs =
     if isAnyTupleTy g tupleTy then
-        let tupInfo, ptys = destAnyTupleTy g tupleTy
+        let isStruct, ptys = destAnyTupleTy g tupleTy
 
         if args.Length <> ptys.Length then
             let argTys = NewInferenceTypes g args
             suppressErrorReporting (fun () -> tcArgs argTys)
-            let expectedTy = TType_tuple (tupInfo, argTys)
+            let expectedTy = TType_tuple (isStruct, argTys)
 
             // We let error recovery handle this exception
             error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,

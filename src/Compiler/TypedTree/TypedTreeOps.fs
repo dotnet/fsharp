@@ -2374,7 +2374,7 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty =
     | TType_anon (anonInfo, anonTys) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc anonTys 
 
-    | TType_tuple (tupInfo, tupTys) ->
+    | TType_tuple (_isStruct, tupTys) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc tupTys 
 
     | TType_app (_, tinst, _) ->
@@ -3865,7 +3865,7 @@ module DebugPrint =
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
 
-        | TType_tuple (_tupInfo, tys) ->
+        | TType_tuple (_isStruct, tys) ->
             sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
 
         | TType_fun (domainTy, rangeTy, _) ->

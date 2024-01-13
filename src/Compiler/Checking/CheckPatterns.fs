@@ -54,7 +54,7 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
         | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
         | _ -> contextInfo
 
-    AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoRef, ptys))
+    AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (false, ptys))
     ptys
 
 let rec TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
@@ -425,9 +425,9 @@ and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
     try
         CheckTupleIsCorrectLength g env m ty args (fun argTys -> TcPatterns warnOnUpper cenv env vFlags patEnv argTys args |> ignore)
 
-        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
-        let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv argTys args
-        let phase2 values = TPat_tuple(tupInfo, List.map (fun f -> f values) argsR, argTys, m)
+        let tupInfo = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
+        let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv tupInfo.argTypes args
+        let phase2 values = TPat_tuple(tupInfo.isStruct, List.map (fun f -> f values) argsR, tupInfo.argTypes, m)
         phase2, acc
     with e ->
         errorRecovery e m

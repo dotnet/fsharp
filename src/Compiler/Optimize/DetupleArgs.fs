@@ -773,7 +773,7 @@ let buildProjections env bindings x xtys =
             let vi, vix = newLocalN env i xty
 
             let bind =
-                mkBind DebugPointAtBinding.NoneAtInvisible vi (mkTupleFieldGet env.eg (tupInfoRef, x, xtys, i, env.m))
+                mkBind DebugPointAtBinding.NoneAtInvisible vi (mkTupleFieldGet env.eg (false, x, xtys, i, env.m))
 
             bind, vix)
         |> List.unzip
