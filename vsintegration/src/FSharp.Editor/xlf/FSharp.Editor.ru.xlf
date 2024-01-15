@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">Добавить аннотацию типа возвращаемого значения</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -43,7 +43,7 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">Руководства по блочной структуре;
+        <target state="translated">Руководства по блочной структуре;
 Показать рекомендации по структуре кода F#;
 Структурирование;
 Показать структурные и сворачиваемые узлы кода F#;
@@ -52,7 +52,7 @@ Use live (unsaved) buffers for analysis</source>
 Отображать подсказки типа возвращаемого значения (предварительная версия);
 Отображать подсказки имен встроенных параметров (предварительная версия);
 Динамические буферы;
-Использовать динамические (несохраненные) буферы для проверки</target>
+Используйте для анализа живые (несохраненные) буферы.</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -174,17 +174,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">Параметры производительности проекта F# и кэширования;
-Включить перекрестные ссылки проекта в памяти;
-Enable_partial_type_checking;
-Параметры производительности IntelliSense;
-Включить устаревшие данные для функций IntelliSense;
-Время до использования устаревших результатов (в миллисекундах);
-Параллелизация (требуется перезагрузка);
-Включить параллельную проверку типов с файлами подписей;
-Включить параллельное эталонное разрешение;
-Включить быстрый поиск ссылок и переименование (экспериментально);
-Результаты анализа кэша (экспериментально)</target>
+        <target state="translated">Параметры производительности проекта и кэширования F#; 
+Включить перекрестные ссылки проектов в памяти; 
+Enable_partial_type_checking; 
+Параметры производительности IntelliSense; 
+Включите устаревшие данные для функций IntelliSense; 
+Время до использования устаревших результатов (в миллисекундах); 
+Распараллеливание (требуется перезагрузка); 
+Включить параллельную проверку типов с файлами сигнатур; 
+Включить параллельное разрешение ссылок; 
+Включить быстрый поиск ссылок и переименование (требуется перезагрузка); 
+Результаты анализа кэша (экспериментальная функция)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -202,19 +202,20 @@ Solid underline;
 Dot underline;
 Dash underline;
 Show remarks in Quick Info</source>
-        <target state="needs-review-translation">Форматирование;
-Предпочитаемая ширина описания в символах;
-Форматирование подписи до заданной ширины путем добавления разрывов строк в соответствии с правилами синтаксиса F#;
-Ссылки навигации;
-Показать ссылки навигации как;
-Сплошное подчеркивание;
-Пунктирное подчеркивание;
-Штриховое подчеркивание;</target>
+        <target state="translated">Форматирование; 
+Предпочтительная ширина описания в символах; 
+Отформатируйте подпись до заданной ширины, добавив разрывы строк в соответствии с правилами синтаксиса F#; 
+Навигационные ссылки; 
+Показывать навигационные ссылки как; 
+Сплошное подчеркивание; 
+Точка подчеркивания; 
+Подчеркивание тире; 
+Показать заметки в кратких сведениях</target>
         <note />
       </trans-unit>
       <trans-unit id="RemarksHeader">
         <source>Remarks:</source>
-        <target state="new">Remarks:</target>
+        <target state="translated">Комментарии:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -229,7 +230,7 @@ Show remarks in Quick Info</source>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">Удалить ненужные круглые скобки</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -254,7 +255,7 @@ Show remarks in Quick Info</source>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">Возврат:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
