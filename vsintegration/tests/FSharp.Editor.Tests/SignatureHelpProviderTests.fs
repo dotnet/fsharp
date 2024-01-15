@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis
 open Microsoft.IO
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module SignatureHelpProvider =
     let private DefaultDocumentationProvider =
@@ -25,6 +26,7 @@ module SignatureHelpProvider =
 
     let GetSignatureHelp (project: FSharpProject) (fileName: string) (caretPosition: int) =
         async {
+            let! ct = Async.CancellationToken
             let triggerChar = None
             let fileContents = File.ReadAllText(fileName)
             let sourceText = SourceText.From(fileContents)
@@ -38,13 +40,11 @@ module SignatureHelpProvider =
 
             let parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
-                |> Async.RunSynchronously
+                |> CancellableTask.runSynchronously ct
 
             let paramInfoLocations =
                 parseResults
-                    .FindParameterLocations(
-                        Position.fromZ caretLinePos.Line caretLineColumn
-                    )
+                    .FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
                     .Value
 
             let triggered =
@@ -105,7 +105,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
-            |> Async.RunSynchronously
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let actual =
             let paramInfoLocations =
@@ -152,7 +152,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
-            |> Async.RunSynchronously
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let adjustedColumnInSource =
             let rec loop ch pos =
@@ -169,6 +169,7 @@ module SignatureHelpProvider =
                 checkFileResults,
                 document.Id,
                 [],
+                None,
                 None,
                 DefaultDocumentationProvider,
                 sourceText,
@@ -494,7 +495,7 @@ M.f
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
-            |> Async.RunSynchronously
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let adjustedColumnInSource =
             let rec loop ch pos =
@@ -511,6 +512,7 @@ M.f
                 checkFileResults,
                 document.Id,
                 [],
+                None,
                 None,
                 DefaultDocumentationProvider,
                 sourceText,

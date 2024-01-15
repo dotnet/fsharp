@@ -78,10 +78,12 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
 
     interface ITaggedTextCollector with
         member _.Add taggedText =
-            // TODO: bail out early if line limit is already hit
-            match taggedText.Tag with
-            | TextTag.Text -> reportTextLines taggedText.Text
-            | _ -> addTaggedTextEntry taggedText
+            match lineLimit with
+            | Some lineLimit when lineLimit < count -> ()
+            | _ ->
+                match taggedText.Tag with
+                | TextTag.Text -> reportTextLines taggedText.Text
+                | _ -> addTaggedTextEntry taggedText
 
         member _.IsEmpty = isEmpty
         member _.EndsWithLineBreak = isEmpty || endsWithLineBreak
@@ -335,7 +337,7 @@ module internal XmlDocumentation =
                 ) =
                 try
                     match GetMemberIndexOfAssembly(fileName) with
-                    | Some (index) ->
+                    | Some(index) ->
                         let _, idx = index.ParseMemberSignature(signature)
 
                         if idx <> 0u then
@@ -369,7 +371,7 @@ module internal XmlDocumentation =
         ) =
         match xml with
         | FSharpXmlDoc.None -> ()
-        | FSharpXmlDoc.FromXmlFile (fileName, signature) ->
+        | FSharpXmlDoc.FromXmlFile(fileName, signature) ->
             documentationProvider.AppendDocumentation(
                 xmlCollector,
                 exnCollector,
@@ -379,7 +381,7 @@ module internal XmlDocumentation =
                 showParameters,
                 paramName
             )
-        | FSharpXmlDoc.FromXmlText (xmlDoc) ->
+        | FSharpXmlDoc.FromXmlText(xmlDoc) ->
             let elaboratedXml = xmlDoc.GetElaboratedXmlLines()
             let processedXml = ProcessXml("\n\n" + String.concat "\n" elaboratedXml)
 
@@ -485,7 +487,7 @@ module internal XmlDocumentation =
 
             item0.Symbol, mainDescription |> List.ofSeq, collectDocumentation ()
 
-        | ToolTipElement.CompositionError (errText) ->
+        | ToolTipElement.CompositionError(errText) ->
             textCollector.Add(tagText errText)
             None, mainDescription |> List.ofSeq, collectDocumentation ()
 
@@ -540,7 +542,7 @@ module internal XmlDocumentation =
             match dataTipElement with
             | ToolTipElement.None -> false
 
-            | ToolTipElement.Group (overloads) ->
+            | ToolTipElement.Group(overloads) ->
                 let overloads = Array.ofList overloads
                 let len = overloads.Length
 
@@ -598,7 +600,7 @@ module internal XmlDocumentation =
                 else
                     false
 
-            | ToolTipElement.CompositionError (errText) ->
+            | ToolTipElement.CompositionError(errText) ->
                 textCollector.Add(tagText errText)
                 true
 
@@ -612,7 +614,7 @@ module internal XmlDocumentation =
             typeParameterMapCollector,
             usageCollector,
             exnCollector,
-            ToolTipText (dataTipText)
+            ToolTipText(dataTipText)
         ) =
         BuildTipText(
             documentationProvider,
@@ -627,7 +629,7 @@ module internal XmlDocumentation =
             false
         )
 
-    let BuildMethodOverloadTipText (documentationProvider, textCollector, xmlCollector, ToolTipText (dataTipText), showParams) =
+    let BuildMethodOverloadTipText (documentationProvider, textCollector, xmlCollector, ToolTipText(dataTipText), showParams) =
         BuildTipText(
             documentationProvider,
             dataTipText,

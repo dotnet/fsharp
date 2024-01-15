@@ -16,7 +16,7 @@ module Library =
 
     let x5 = nonNull<String> "" // Should not give a Nullness warning
     check "ekjnceoiwe5" x5 ""
-    let x6 = nonNull<String __withnull> "" // **Expected to give a Nullness warning, expected also to give a warning with nullness checking off
+    let x6 = nonNull<String | null> "" // **Expected to give a Nullness warning, expected also to give a warning with nullness checking off
     check "ekjnceoiwe6" x6 ""
     let x7 = nonNull ""
     check "ekjnceoiwe7" x7 ""
@@ -35,31 +35,31 @@ module Library =
     check "ekjnceoiwe13" x13 (Nullable())
     let x14 = withNullV 6L
     check "ekjnceoiwe14" x14 (Nullable(6L))
-    let x15 : String __withnull = withNull x4
+    let x15 : String | null = withNull x4
     check "ekjnceoiwe15" x15 ""
-    let x15a : String __withnull = withNull ""
+    let x15a : String | null = withNull ""
     check "ekjnceoiwe15a" x15a ""
-    let x15b : String __withnull = withNull<String> x4
+    let x15b : String | null = withNull<String> x4
     check "ekjnceoiwe15b" x15b ""
-    let x15c : String __withnull = withNull<String __withnull> x4 // **Expected to give a Nullness warning
+    let x15c : String | null = withNull<String | null> x4 // **Expected to give a Nullness warning
     check "ekjnceoiwe15c" x15c ""
     let x16 : Nullable<int> = withNullV 3
     check "ekjnceoiwe16" x16 (Nullable(3))
     
     let y0 = isNull null // Should not give a Nullness warning (obj)
     check "ekjnceoiwey0" y0 true
-    let y1 = isNull (null: obj __withnull) // Should not give a Nullness warning
+    let y1 = isNull (null: obj | null) // Should not give a Nullness warning
     check "ekjnceoiwey1" y1 true
-    let y1b = isNull (null: String __withnull) // Should not give a Nullness warning
+    let y1b = isNull (null: String | null) // Should not give a Nullness warning
     check "ekjnceoiwey1b" y1b true
     let y2 = isNull "" // **Expected to give a Nullness warning - type instantiation of a nullable type is non-nullable String
     check "ekjnceoiwey2" y2 false
     let y9 = isNull<String> "" // **Expected to give a Nullness warning - type instantiation of a nullable type is non-nullable String
     check "ekjnceoiwey9" y9 false
-    let y10 = isNull<String __withnull> "" // Should not give a Nullness warning.
+    let y10 = isNull<String | null> "" // Should not give a Nullness warning.
     check "ekjnceoiwey10" y10 false
     // Not yet allowed 
-    //let f7 () : 'T __withnull when 'T : struct = null
+    //let f7 () : 'T | null when 'T : struct = null
     let f7b () : Nullable<'T> = nullV // BUG: Incorrectly gives a warning about System.ValueType with /test:AssumeNullOnImport
 
     let f0b line = 

@@ -107,7 +107,7 @@ type public Fsc() as this =
 
             array
             |> Array.map (fun item -> item.Trim(wsCharsToTrim))
-            |> Array.filter (fun s -> not (String.IsNullOrEmpty s))
+            |> Array.filter (String.IsNullOrEmpty >> not)
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true

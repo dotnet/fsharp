@@ -244,25 +244,26 @@ type UsingMSBuild()  =
     [<Test>]
     member public this.``ErrorRecovery.5878_1``() =
         Helper.AssertMemberDataTipContainsInOrder
-            (this.TestRunner,
-            (*code *)
-              [
-               "module Module ="
-               "    /// Union comment"
-               "    type Union ="
-               "        /// Case comment"
-               "        | Case of int"
-               "Module."
-               ] ,
-             (* marker *)
-             "Module.",
-             (* completed item *)             
-             "Case", 
-             (* expect to see in order... *)
-             [
-              "union case Module.Union.Case: int -> Module.Union";
-              "Case comment";
-             ]
+            (
+                this.TestRunner,
+                (*code *)
+                [
+                    "module Module ="
+                    "    /// Union comment"
+                    "    type Union ="
+                    "        /// Case comment"
+                    "        | Case of int"
+                    "Module."
+                ] ,
+                (* marker *)
+                "Module.",
+                (* completed item *)             
+                "Case", 
+                (* expect to see in order... *)
+                [
+                    "union case Module.Union.Case: int -> Module.Union";
+                    "Case comment";
+                ]
             )
 
 

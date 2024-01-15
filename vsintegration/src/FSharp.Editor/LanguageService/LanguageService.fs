@@ -94,11 +94,13 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
             let getSource filename =
                 async {
+                    let! ct = Async.CancellationToken
+
                     match workspace.CurrentSolution.TryGetDocumentFromPath filename with
-                    | Some document ->
-                        let! text = document.GetTextAsync() |> Async.AwaitTask
+                    | ValueSome document ->
+                        let! text = document.GetTextAsync(ct) |> Async.AwaitTask
                         return Some(text.ToFSharpSourceText())
-                    | None -> return None
+                    | ValueNone -> return None
                 }
 
             lock gate (fun () ->
@@ -112,9 +114,12 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableParallelReferenceResolution =
                                 editorOptions.LanguageServicePerformance.EnableParallelReferenceResolution
 
-                            let enableLiveBuffers = editorOptions.Advanced.IsLiveBuffersEnabled
+                            let enableLiveBuffers = editorOptions.Advanced.IsUseLiveBuffersEnabled
 
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
+
+                            let enableInMemoryCrossProjectReferences =
+                                editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
 
                             let enableFastFindReferences =
                                 editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
@@ -142,9 +147,8 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableBackgroundItemKeyStoreAndSemanticClassification =
                                 editorOptions.LanguageServicePerformance.EnableBackgroundItemKeyStoreAndSemanticClassification
 
-                            // Default should be true
-                            let captureIdentifiersWhenParsing =
-                                editorOptions.LanguageServicePerformance.CaptureIdentifiersWhenParsing
+                            // Default is false here
+                            let solutionCrawler = editorOptions.Advanced.SolutionBackgroundAnalysis
 
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(
@@ -153,6 +157,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableLiveBuffers, enableLiveBuffers
                                         nameof useSyntaxTreeCache, useSyntaxTreeCache
                                         nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                        nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                                         nameof enableFastFindReferences, enableFastFindReferences
                                         nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
                                         nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
@@ -162,7 +167,8 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof keepAllBackgroundSymbolUses, keepAllBackgroundSymbolUses
                                         nameof enableBackgroundItemKeyStoreAndSemanticClassification,
                                         enableBackgroundItemKeyStoreAndSemanticClassification
-                                        nameof captureIdentifiersWhenParsing, captureIdentifiersWhenParsing
+                                        "captureIdentifiersWhenParsing", enableFastFindReferences
+                                        nameof solutionCrawler, solutionCrawler
                                     |],
                                     TelemetryThrottlingStrategy.NoThrottling
                                 )
@@ -178,7 +184,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         enableBackgroundItemKeyStoreAndSemanticClassification,
                                     enablePartialTypeChecking = enablePartialTypeChecking,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
-                                    captureIdentifiersWhenParsing = captureIdentifiersWhenParsing,
+                                    captureIdentifiersWhenParsing = enableFastFindReferences,
                                     documentSource =
                                         (if enableLiveBuffers then
                                              DocumentSource.Custom getSource
@@ -190,7 +196,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
-                                        backgroundTask {
+                                        cancellableTask {
                                             let document = args.NewSolution.GetDocument(args.DocumentId)
 
                                             let! _, _, _, options =
@@ -198,6 +204,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
                                             do! checker.NotifyFileChanged(document.FilePath, options)
                                         }
+                                        |> CancellableTask.startAsTask CancellationToken.None
                                         |> ignore)
 
                             checker
@@ -258,9 +265,7 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<FSharp.Interactive.FsiPropertyPage>, "F# Tools", "F# Interactive", 6000s, 6001s, true)>] // true = supports automation
 
-
 [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
-
 
 [<ProvideToolWindow(typeof<FSharp.Interactive.FsiToolWindow>,
                     Orientation = ToolWindowOrientation.Bottom,
@@ -270,8 +275,8 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
                     Width = 360,
                     Height = 120,
                     Window = "34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")
-  // The following should place the ToolWindow with the OutputWindow by default.
-  >]
+// The following should place the ToolWindow with the OutputWindow by default.
+>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008", "IntelliSensePageKeywords")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009", "QuickInfoPageKeywords")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010", "CodeFixesPageKeywords")>]
@@ -363,15 +368,12 @@ type internal FSharpPackage() as this =
                 this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
 
             let optionsManager =
-                workspace
-                    .Services
+                workspace.Services
                     .GetService<IFSharpWorkspaceService>()
                     .FSharpProjectOptionsManager
 
             let metadataAsSource =
-                this
-                    .ComponentModel
-                    .DefaultExportProvider
+                this.ComponentModel.DefaultExportProvider
                     .GetExport<FSharpMetadataAsSourceService>()
                     .Value
 
@@ -394,6 +396,10 @@ type internal FSharpPackage() as this =
 
             do
                 SingleFileWorkspaceMap(FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory), rdt)
+                |> ignore
+
+            do
+                LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
                 |> ignore
 
         }
@@ -423,28 +429,21 @@ type internal FSharpLanguageService(package: FSharpPackage) =
     override _.Initialize() =
         base.Initialize()
 
-        let globalOptions =
-            package
-                .ComponentModel
-                .DefaultExportProvider
-                .GetExport<FSharpGlobalOptions>()
-                .Value
+        let exportProvider = package.ComponentModel.DefaultExportProvider
+        let globalOptions = exportProvider.GetExport<FSharpGlobalOptions>().Value
 
-        globalOptions.BlockForCompletionItems <- false
-        globalOptions.SetBackgroundAnalysisScope(openFilesOnly = true)
+        let workspace = package.ComponentModel.GetService<VisualStudioWorkspace>()
 
-        let globalOptions =
-            package
-                .ComponentModel
-                .DefaultExportProvider
-                .GetExport<FSharpGlobalOptions>()
-                .Value
+        let solutionAnalysis =
+            workspace.Services
+                .GetService<EditorOptions>()
+                .Advanced.SolutionBackgroundAnalysis
+
+        globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
 
         globalOptions.BlockForCompletionItems <- false
 
-        let theme =
-            package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
-
+        let theme = exportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
 
     override _.ContentTypeName = FSharpConstants.FSharpContentTypeName
@@ -472,10 +471,9 @@ type internal FSharpLanguageService(package: FSharpPackage) =
 
 [<Composition.Shared>]
 [<ComponentModel.Composition.Export(typeof<HackCpsCommandLineChanges>)>]
-type internal HackCpsCommandLineChanges [<ComponentModel.Composition.ImportingConstructor>]
-    (
-        [<ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace
-    ) =
+type internal HackCpsCommandLineChanges
+    [<ComponentModel.Composition.ImportingConstructor>]
+    ([<ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace) =
 
     static let projectDisplayNameOf projectFileName =
         if String.IsNullOrWhiteSpace projectFileName then

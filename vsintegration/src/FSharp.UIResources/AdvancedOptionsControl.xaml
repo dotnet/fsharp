@@ -35,12 +35,16 @@
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.LiveBuffers}">
-                    <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsLiveBuffersEnabled}"
+                    <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsUseLiveBuffersEnabled}"
                               Content="{x:Static local:Strings.Enable_Live_Buffers}"/>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.AdditionalTelemetry}">
                     <CheckBox x:Name="toggleSendAdditionalTelemetry" IsChecked="{Binding SendAdditionalTelemetry}"
                               Content="{x:Static local:Strings.Send_Additional_Telemetry}"/>
+                </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Background_analysis}">
+                    <CheckBox x:Name="toggleSolutionBackgroundAnalysis" IsChecked="{Binding SolutionBackgroundAnalysis}"
+                              Content="{x:Static local:Strings.Analyze_full_solution_on_background}"/>
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>

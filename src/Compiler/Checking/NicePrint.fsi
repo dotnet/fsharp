@@ -81,6 +81,9 @@ val prettyLayoutOfPropInfoFreeStyle:
 
 val stringOfMethInfo: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> string
 
+/// Convert a MethInfo to a F# signature
+val stringOfMethInfoFSharpStyle: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> string
+
 val multiLineStringOfMethInfos:
     infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfos: MethInfo list -> string
 
@@ -134,6 +137,8 @@ val stringOfExnDef: denv: DisplayEnv -> infoReader: InfoReader -> x: EntityRef -
 val stringOfFSAttrib: denv: DisplayEnv -> x: Attrib -> string
 
 val stringOfILAttrib: denv: DisplayEnv -> ILType * ILAttribElem list -> string
+
+val fqnOfEntityRef: g: TcGlobals -> x: EntityRef -> string
 
 val layoutImpliedSignatureOfModuleOrNamespace:
     showHeader: bool ->

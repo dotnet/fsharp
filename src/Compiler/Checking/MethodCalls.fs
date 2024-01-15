@@ -841,6 +841,7 @@ let InferLambdaArgsForLambdaPropagation origRhsExpr =
         match e with 
         | SynExpr.Lambda (body = rest) -> 1 + loop rest
         | SynExpr.MatchLambda _ -> 1
+        | SynExpr.DotLambda (expr = body) -> 1 + loop body
         | _ -> 0
     loop origRhsExpr
 
@@ -1275,8 +1276,23 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             if List.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(delArgTys.Length), m)) 
 
+            let delFuncArgNamesIfFeatureEnabled =
+                match delFuncExpr with
+                | Expr.Val (valRef = vref) when g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames ->
+                    match vref.ValReprInfo with
+                    | Some repr when repr.ArgNames.Length = delArgTys.Length -> Some repr.ArgNames
+                    | _ -> None
+                | _ -> None
+
             let delArgVals =
-                delArgTys |> List.mapi (fun i argTy -> fst (mkCompGenLocal m ("delegateArg" + string i) argTy)) 
+                delArgTys
+                |> List.mapi (fun i argTy ->
+                    let argName =
+                        match delFuncArgNamesIfFeatureEnabled with
+                        | Some argNames -> argNames[i]
+                        | None -> "delegateArg" + string i
+
+                    fst (mkCompGenLocal m argName argTy)) 
 
             let expr = 
                 let args = 

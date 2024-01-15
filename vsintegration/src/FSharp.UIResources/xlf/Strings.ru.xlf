@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AdditionalTelemetry">
         <source>Additional performance telemetry (experimental)</source>
-        <target state="new">Additional performance telemetry (experimental)</target>
+        <target state="translated">Дополнительные диагностические данные о производительности (экспериментальная функция)</target>
         <note />
       </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
@@ -12,14 +12,19 @@
         <target state="translated">Всегда располагайте открытые операторы на верхнем уровне</target>
         <note />
       </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="new">Capture identifiers while parsing</target>
+      <trans-unit id="Analyze_full_solution_on_background">
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
+        <target state="translated">Продолжать анализ всего решения для диагностики в качестве низкоприоритетной фоновой задачи (требуется перезагрузка)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Background_analysis">
+        <source>Background analysis</source>
+        <target state="translated">Фоновый анализ</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
-        <target state="new">Keep background symbol keys</target>
+        <target state="translated">Сохранить фоновые символьные клавиши</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -28,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">Использовать динамические (несохраненные) буферы для проверки (требуется перезагрузка)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="needs-review-translation">Использовать динамические (несохраненные) буферы для проверки (требуется перезагрузка)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -74,12 +79,12 @@
       </trans-unit>
       <trans-unit id="Keep_All_Background_Resolutions">
         <source>Keep all background intermediate resolutions (increases memory usage)</source>
-        <target state="new">Keep all background intermediate resolutions (increases memory usage)</target>
+        <target state="translated">Сохранить все промежуточные разрешения фона (увеличивает использование памяти)</target>
         <note />
       </trans-unit>
       <trans-unit id="Keep_All_Background_Symbol_Uses">
         <source>Keep all background symbol uses (increases memory usage)</source>
-        <target state="new">Keep all background symbol uses (increases memory usage)</target>
+        <target state="translated">Сохранить все используемые фоновые символы (увеличивает использование памяти)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -99,12 +104,12 @@
       </trans-unit>
       <trans-unit id="Language_Service_Settings">
         <source>Language service settings (advanced)</source>
-        <target state="new">Language service settings (advanced)</target>
+        <target state="translated">Параметры языковой службы (дополнительно)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="translated">Динамические буферы (экспериментальная функция)</target>
+        <source>Live Buffers</source>
+        <target state="needs-review-translation">Динамические буферы (экспериментальная функция)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -122,9 +127,14 @@
         <target state="translated">Предпочитаемая ширина описания в символах</target>
         <note />
       </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="new">Remove unnecessary parentheses (experimental, might affect typing performance)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
-        <target state="new">Send additional performance telemetry</target>
+        <target state="translated">Отправить дополнительные диагностические данные о производительности</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
@@ -155,6 +165,11 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">_Показывать список завершения после ввода знака</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_in_memory_cross_project_references">
+        <source>_Enable in-memory cross project references</source>
+        <target state="translated">_Включить перекрестные ссылки между проектами в памяти</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -230,6 +245,11 @@
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
         <target state="translated">Включение устаревших данных для функций IntelliSense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_in_memory_cross_project_references">
+        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
+        <target state="translated">Перекрестные ссылки между проектами в памяти хранят данные уровня проекта в памяти, поэтому функции и компоненты IDE могут работать в разных проектах.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

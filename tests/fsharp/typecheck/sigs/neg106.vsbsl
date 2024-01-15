@@ -46,16 +46,16 @@ neg106.fs(40,18,40,32): typecheck error FS0041: No overloads match for method 'M
 Known types of arguments: string * inref<int>
 
 Available overloads:
- - static member C.M: a: int * x: byref<int> -> unit // Argument 'a' doesn't match
- - static member C.M: a: string * x: byref<int> -> unit // Argument 'x' doesn't match
+ - static member C.M: a: int * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'a' doesn't match
+ - static member C.M: a: string * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'x' doesn't match
 
 neg106.fs(41,19,41,31): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: int * inref<int>
 
 Available overloads:
- - static member C.M: a: int * x: byref<int> -> unit // Argument 'x' doesn't match
- - static member C.M: a: string * x: byref<int> -> unit // Argument 'a' doesn't match
+ - static member C.M: a: int * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'x' doesn't match
+ - static member C.M: a: string * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'a' doesn't match
 
 neg106.fs(49,22,49,26): typecheck error FS0001: Type mismatch. Expecting a
     'byref<int>'    

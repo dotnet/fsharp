@@ -1,7 +1,7 @@
 open System
 
 module Basics2 = 
-    let f6 () : 'T __withnull when 'T : not struct and 'T : null = null // Expected to give an error about inconistent constraints
+    let f6 () : 'T | null when 'T : not struct and 'T : null = null // Expected to give an error about inconistent constraints
 
 module NullConstraintTests =
     type C<'T when 'T : null>() = class end
@@ -10,7 +10,7 @@ module NullConstraintTests =
 
     let f2 (y : C<FSharp.Collections.List<int>>) = y // This gave an error in previous F# and we expect it to continue to give an error
 
-    let f7 (y : C<FSharp.Collections.List<String>> __withnull) = y // We expect this to give an error
+    let f7 (y : C<FSharp.Collections.List<String>> | null) = y // We expect this to give an error
 
     module StructExamples = 
 

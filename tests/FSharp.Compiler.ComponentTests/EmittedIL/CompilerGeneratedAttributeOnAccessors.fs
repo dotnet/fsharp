@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.ComponentTests.EmittedIL
+﻿namespace EmittedIL
 
 open Microsoft.FSharp.Core
 open Xunit

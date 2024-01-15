@@ -37,17 +37,22 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Blok Yapısı Kılavuzları;
+F# kodu için yapı yönergelerini göster;
+Anahat oluşturma;
+F# kodu için ana hattı ve daraltılabilir düğümleri göster;
+Satır içi ipuçları;
+Satır içi tür ipuçlarını görüntüle (önizleme);
+Dönüş türü ipuçlarını görüntüle (önizleme);
+Satır içi parametre adı ipuçlarını görüntüle (önizleme);
+Canlı Arabellekler;
+Denetim için canlı (kaydedilmemiş) arabellekler kullan</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">Alan bildirimindeki tür için ':' kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -162,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
+        <target state="needs-review-translation">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
 Bellek içi çapraz proje başvurularını etkinleştir;
 Enable_partial_type_checking;
 IntelliSense Performans Seçenekleri;
@@ -209,6 +214,11 @@ Tire alt çizgisi;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' öğesini kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -259,6 +269,11 @@ Tire alt çizgisi;</target>
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">Kullanılmayan açık bildirimleri kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">Alan bildiriminde beklenmeyen '=' sembolü. ':' veya başka bir belirteç bekleniyordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

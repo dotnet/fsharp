@@ -168,7 +168,7 @@ module internal Tainted =
     let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
 #else
-    let (|Null|NonNull|) (p:Tainted<'T __withnull>) : Choice<unit, Tainted<'T>> when 'T : __notnull and 'T : not struct =
+    let (|Null|NonNull|) (p:Tainted<'T | null>) : Choice<unit, Tainted<'T>> when 'T : not null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
 #endif
 
@@ -177,7 +177,7 @@ module internal Tainted =
     let EqTainted (t1:Tainted<'T>) (t2:Tainted<'T>) = 
         t1.PUntaintNoFailure(fun t1 -> t1 === t2.AccessObjectDirectly)
 
-    let GetHashCodeTainted (t:Tainted<'T>) = t.PUntaintNoFailure(fun t -> hash t)
+    let GetHashCodeTainted (t:Tainted<'T>) = t.PUntaintNoFailure hash
     
 #endif
     

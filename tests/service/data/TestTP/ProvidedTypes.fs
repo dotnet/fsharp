@@ -5934,7 +5934,7 @@ module internal AssemblyReader =
                let tidx =
                  seekReadIndexedRow (getNumRows ILTableNames.TypeDef, 
                                         (fun i -> i, seekReadTypeDefRowWithExtents i), 
-                                        (fun r -> r), 
+                                        id, 
                                         (fun (_, ((_, _, _, _, _, methodsIdx), 
                                                   (_, endMethodsIdx)))  ->
                                                     if endMethodsIdx <= idx then 1

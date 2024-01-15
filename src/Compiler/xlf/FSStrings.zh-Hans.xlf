@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSStrings.resx">
     <body>
+      <trans-unit id="ArgumentsInSigAndImplMismatch">
+        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
+        <target state="translated">签名“{0}”和实现“{1}”中的参数名称不匹配。将使用签名文件中的参数名称。在进行调试或分析时这可能会导致问题。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarning">
         <source>Nullness warning: {0}.</source>
         <target state="new">Nullness warning: {0}.</target>
@@ -37,6 +42,21 @@
         <target state="translated">仅当使用 RequireQualifiedAccess 属性时才允许区分小写的联合事例</target>
         <note />
       </trans-unit>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="new"> Non-static member is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="new"> Static member is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">符号 "..^"</target>
@@ -62,14 +82,9 @@
         <target state="translated">内插字符串(部分)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.NOTNULL__">
-        <source>keyword '__notnull'</source>
-        <target state="new">keyword '__notnull'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.WITHNULL__">
-        <source>keyword '__withnull'</source>
-        <target state="new">keyword '__withnull'</target>
+      <trans-unit id="Parser.TOKEN.WHILE.BANG">
+        <source>keyword 'while!'</source>
+        <target state="translated">关键字 "while!"</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

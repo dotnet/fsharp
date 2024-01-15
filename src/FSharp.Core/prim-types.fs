@@ -376,6 +376,11 @@ namespace Microsoft.FSharp.Core
     type NoCompilerInliningAttribute() =
         inherit Attribute()
 
+    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<Sealed>]
+    type TailCallAttribute() =
+        inherit System.Attribute()
+
 #if !NET5_0_OR_GREATER
 namespace System.Diagnostics.CodeAnalysis
 
@@ -4241,7 +4246,7 @@ namespace Microsoft.FSharp.Core
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
 
         [<CompiledName("NonNull")>]
-        let inline nonNull (value : 'T __withnull when 'T : __notnull and 'T : not struct) = 
+        let inline nonNull (value : 'T | null when 'T : not null and 'T : not struct) = 
             match box value with 
             | null -> raise (NullReferenceException()) 
             | _ -> (# "" value : 'T #)
@@ -4254,7 +4259,7 @@ namespace Microsoft.FSharp.Core
                 raise (NullReferenceException())
 
         [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NonNull|) (value : 'T __withnull when 'T : __notnull and 'T : not struct) = 
+        let inline (|Null|NonNull|) (value : 'T | null when 'T : not null and 'T : not struct) = 
             match value with 
             | null -> Null () 
             | _ -> NonNull (# "" value : 'T #)
@@ -4265,7 +4270,7 @@ namespace Microsoft.FSharp.Core
             else NullV ()
 
         [<CompiledName("NonNullQuickPattern")>]
-        let inline (|NonNullQuick|) (value : 'T __withnull when 'T : __notnull and 'T : not struct) =
+        let inline (|NonNullQuick|) (value : 'T | null when 'T : not null and 'T : not struct) =
             match box value with 
             | null -> raise (NullReferenceException()) 
             | _ -> (# "" value : 'T #)
@@ -4276,7 +4281,7 @@ namespace Microsoft.FSharp.Core
             else raise (NullReferenceException()) 
 
         [<CompiledName("WithNull")>]
-        let inline withNull (value : 'T when 'T : __notnull and 'T : not struct) = (# "" value : 'T __withnull #)
+        let inline withNull (value : 'T when 'T : not null and 'T : not struct) = (# "" value : 'T | null #)
 
         [<CompiledName("WithNullV")>]
         let inline withNullV (value : 'T) : Nullable<'T> = Nullable<'T>(value)
@@ -4285,7 +4290,7 @@ namespace Microsoft.FSharp.Core
         let inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType>  = Nullable<'T>()
 
         [<CompiledName("NullArgCheck")>]
-        let inline nullArgCheck (argumentName:string) (value: 'T __withnull when 'T : __notnull and 'T : not struct) = 
+        let inline nullArgCheck (argumentName:string) (value: 'T | null when 'T : not null and 'T : not struct) = 
             match value with 
             | null -> raise (new ArgumentNullException(argumentName))        
             | _ ->  (# "" value : 'T #)
@@ -4385,7 +4390,7 @@ namespace Microsoft.FSharp.Core
 
 #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
         [<CompiledName("DefaultIfNull")>]
-        let inline defaultIfNull defaultValue (arg: 'T __withnull when 'T : __notnull and 'T : not struct) = 
+        let inline defaultIfNull defaultValue (arg: 'T | null when 'T : not null and 'T : not struct) = 
             match arg with null -> defaultValue | _ -> (# "" arg : 'T #)
         
         [<CompiledName("DefaultIfNullV")>]

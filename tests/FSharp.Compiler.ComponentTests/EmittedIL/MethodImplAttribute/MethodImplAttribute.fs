@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL
 
 open Xunit
 open FSharp.Test
@@ -37,7 +37,7 @@ module MethodImplAttribute =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MethodImplAttribute.NoInlining_InlineKeyword.fs"|])>]
     let ``NoInlining_fs with inline keyword => should warn in preview version`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> withSingleDiagnostic (Warning 3151, Line 2, Col 1, Line 3, Col 38, "This member, function or value declaration may not be declared 'inline'")
     

@@ -28,13 +28,15 @@ open FSharp.Compiler.Text
 
 /// Delays the creation of an ILModuleReader
 [<Sealed>]
-type internal DelayedILModuleReader =
+type DelayedILModuleReader =
 
     new: name: string * getStream: (CancellationToken -> Stream option) -> DelayedILModuleReader
 
+    member OutputFile: string
+
     /// Will lazily create the ILModuleReader.
     /// Is only evaluated once and can be called by multiple threads.
-    member TryGetILModuleReader: unit -> Cancellable<ILModuleReader option>
+    member internal TryGetILModuleReader: unit -> Cancellable<ILModuleReader option>
 
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
@@ -92,10 +94,31 @@ type public FSharpProjectOptions =
     /// Compute the project directory.
     member internal ProjectDirectory: string
 
-and [<NoComparison; CustomEquality>] public FSharpReferencedProject =
-    internal
+and [<NoComparison; CustomEquality; RequireQualifiedAccess>] FSharpReferencedProject =
+
+    /// <summary>
+    /// A reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="options">The Project Options for this F# project</param>
     | FSharpReference of projectOutputFile: string * options: FSharpProjectOptions
-    | PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+
+    /// <summary>
+    /// A reference for any portable executable, including F#. The stream is owned by this reference.
+    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
+    /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
+    /// If the stream evaluation throws an exception, it will be automatically handled.
+    /// </summary>
+    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    /// <param name="delayedReader">A function that opens a Portable Executable data stream for reading.</param>
+    | PEReference of getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+
+    /// <summary>
+    /// A reference from an ILModuleReader.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    /// <param name="getReader">A function that creates an ILModuleReader for reading module data.</param>
     | ILModuleReference of
         projectOutputFile: string *
         getStamp: (unit -> DateTime) *
@@ -106,36 +129,6 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProject =
     /// reference in the project options for this referenced project.
     /// </summary>
     member OutputFile: string
-
-    /// <summary>
-    /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
-    /// </summary>
-    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
-    /// <param name="options">The Project Options for this F# project</param>
-    static member CreateFSharp: projectOutputFile: string * options: FSharpProjectOptions -> FSharpReferencedProject
-
-    /// <summary>
-    /// Creates a reference for any portable executable, including F#. The stream is owned by this reference.
-    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
-    /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
-    /// If the stream evaluation throws an exception, it will be automatically handled.
-    /// </summary>
-    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
-    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
-    /// <param name="getStream">A function that opens a Portable Executable data stream for reading.</param>
-    static member CreatePortableExecutable:
-        projectOutputFile: string * getStamp: (unit -> DateTime) * getStream: (CancellationToken -> Stream option) ->
-            FSharpReferencedProject
-
-    /// <summary>
-    /// Creates a reference from an ILModuleReader.
-    /// </summary>
-    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
-    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
-    /// <param name="getReader">A function that creates an ILModuleReader for reading module data.</param>
-    static member CreateFromILModuleReader:
-        projectOutputFile: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) ->
-            FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
@@ -226,6 +219,8 @@ type public FSharpParsingOptions =
         IsInteractive: bool
 
         IndentationAwareSyntax: bool option
+
+        StrictIndentation: bool option
 
         CompilingFSharpCore: bool
 
@@ -390,6 +385,15 @@ type public FSharpCheckFileResults =
     member GetSymbolUseAtLocation:
         line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse option
 
+    /// <summary>Similar to GetSymbolUseAtLocation, but returns all found symbols if there are multiple.</summary>
+    ///
+    /// <param name="line">The line number where the information is being requested.</param>
+    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
+    /// <param name="lineText">The text of the line where the information is being requested.</param>
+    /// <param name="names">The identifiers at the location where the information is being requested.</param>
+    member GetSymbolUsesAtLocation:
+        line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse list
+
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
     member GetSemanticClassification: range option -> SemanticClassificationItem[]
 
@@ -425,6 +429,8 @@ type public FSharpCheckFileResults =
 
     /// Lays out and returns the formatted signature for the typechecked file as source text.
     member GenerateSignature: ?pageWidth: int -> ISourceText option
+
+    member internal CalculateSignatureHash: unit -> int option
 
     /// Internal constructor
     static member internal MakeEmpty:
@@ -526,7 +532,19 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         diagnostics: FSharpDiagnostic[] *
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option ->
+        details:
+            (TcGlobals *
+            TcImports *
+            CcuThunk *
+            ModuleOrNamespaceType *
+            Choice<IncrementalBuilder, TcSymbolUses> *
+            TopAttribs option *
+            (unit -> IRawFSharpAssemblyData option) *
+            ILAssemblyRef *
+            AccessorDomain *
+            CheckedImplFile list option *
+            string[] *
+            FSharpProjectOptions) option ->
             FSharpCheckProjectResults
 
 module internal ParseAndCheckFile =
@@ -537,7 +555,9 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions *
         userOpName: string *
         suggestNamesForErrors: bool *
-        identCapture: bool ->
+        flatErrors: bool *
+        identCapture: bool *
+        ct: CancellationToken ->
             FSharpDiagnostic[] * ParsedInput * bool
 
     val matchBraces:
@@ -545,7 +565,8 @@ module internal ParseAndCheckFile =
         fileName: string *
         options: FSharpParsingOptions *
         userOpName: string *
-        suggestNamesForErrors: bool ->
+        suggestNamesForErrors: bool *
+        ct: CancellationToken ->
             (range * range)[]
 
 // An object to typecheck source in a given typechecking environment.

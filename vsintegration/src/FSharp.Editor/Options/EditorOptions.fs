@@ -63,6 +63,7 @@ type CodeFixesOptions =
         UnusedOpens: bool
         UnusedDeclarations: bool
         SuggestNamesForErrors: bool
+        RemoveParens: bool
     }
 
     static member Default =
@@ -73,11 +74,13 @@ type CodeFixesOptions =
             UnusedOpens = true
             UnusedDeclarations = true
             SuggestNamesForErrors = true
+            RemoveParens = false
         }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions =
     {
+        EnableInMemoryCrossProjectReferences: bool
         AllowStaleCompletionResults: bool
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
@@ -87,11 +90,11 @@ type LanguageServicePerformanceOptions =
         KeepAllBackgroundResolutions: bool
         KeepAllBackgroundSymbolUses: bool
         EnableBackgroundItemKeyStoreAndSemanticClassification: bool
-        CaptureIdentifiersWhenParsing: bool
     }
 
     static member Default =
         {
+            EnableInMemoryCrossProjectReferences = true
             AllowStaleCompletionResults = true
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
@@ -101,7 +104,6 @@ type LanguageServicePerformanceOptions =
             KeepAllBackgroundResolutions = false
             KeepAllBackgroundSymbolUses = false
             EnableBackgroundItemKeyStoreAndSemanticClassification = true
-            CaptureIdentifiersWhenParsing = true
         }
 
 [<CLIMutable>]
@@ -112,8 +114,9 @@ type AdvancedOptions =
         IsInlineTypeHintsEnabled: bool
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
-        IsLiveBuffersEnabled: bool
+        IsUseLiveBuffersEnabled: bool
         SendAdditionalTelemetry: bool
+        SolutionBackgroundAnalysis: bool
     }
 
     static member Default =
@@ -123,8 +126,9 @@ type AdvancedOptions =
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
-            IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
+            IsUseLiveBuffersEnabled = true
             SendAdditionalTelemetry = true
+            SolutionBackgroundAnalysis = false
         }
 
 [<CLIMutable>]
@@ -157,6 +161,8 @@ type EditorOptions() =
 
     [<Export(typeof<SettingsStore.ISettingsStore>)>]
     member private _.SettingsStore = store
+
+    member _.With value = store.Register value
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
@@ -225,6 +231,9 @@ module EditorOptionsExtensions =
         member private this.EditorOptions =
             this.Solution.Workspace.Services.GetService<EditorOptions>()
 
+        member this.AreFSharpInMemoryCrossProjectReferencesEnabled =
+            this.EditorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
+
         member this.IsFSharpCodeFixesAlwaysPlaceOpensAtTopLevelEnabled =
             this.EditorOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel
 
@@ -242,6 +251,11 @@ module EditorOptionsExtensions =
 
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
+
+        member this.IsFsharpRemoveParensEnabled = this.EditorOptions.CodeFixes.RemoveParens
+
+        member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
+            this.EditorOptions.CodeFixes.SuggestNamesForErrors
 
         member this.IsFSharpBlockStructureEnabled =
             this.EditorOptions.Advanced.IsBlockStructureEnabled

@@ -105,7 +105,9 @@ let reusingLexbufForParsing lexbuf f =
 
     try
         f ()
-    with e ->
+    with
+    | :? OperationCanceledException -> reraise ()
+    | e ->
         raise (
             WrappedError(
                 e,
@@ -390,17 +392,13 @@ module Keywords =
             (*------- for prototyping and explaining offside rule *)
             FSHARP, "__token_OBLOCKSEP", OBLOCKSEP
             FSHARP, "__token_OWITH", OWITH
-            FSHARP, "__token_ODECLEND", ODECLEND
+            FSHARP, "__token_ODECLEND", ODECLEND range0
             FSHARP, "__token_OTHEN", OTHEN
             FSHARP, "__token_OELSE", OELSE
             FSHARP, "__token_OEND", OEND
             FSHARP, "__token_ODO", ODO
             FSHARP, "__token_OLET", OLET(true)
             FSHARP, "__token_constraint", CONSTRAINT
-            (*------- for prototyping *)
-            FSHARP, "__maybenull", MAYBENULL__
-            FSHARP, "__notnull", NOTNULL__
-            FSHARP, "__withnull", WITHNULL__
         ]
         (*------- reserved keywords which are ml-compatibility ids *)
         @ List.map

@@ -16,9 +16,12 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
     let policy =
         defaultArg cacheItemPolicy (CacheItemPolicy(SlidingExpiration = (TimeSpan.FromSeconds defaultSlidingExpiration)))
 
+    new(name: string, slidingExpirationSeconds: float) =
+        new DocumentCache<'Value>(name, CacheItemPolicy(SlidingExpiration = (TimeSpan.FromSeconds slidingExpirationSeconds)))
+
     member _.TryGetValueAsync(doc: Document) =
         cancellableTask {
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = doc.GetTextVersionAsync ct
 
             match cache.Get(doc.Id.ToString()) with
@@ -33,9 +36,9 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
 
     member _.SetAsync(doc: Document, value: 'Value) =
         cancellableTask {
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = doc.GetTextVersionAsync ct
-            cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
+            do cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
         }
 
     interface IDisposable with

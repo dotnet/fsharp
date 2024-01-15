@@ -160,6 +160,8 @@ type TokenizeOption =
 
     | Only
 
+    | Debug
+
     | Unfiltered
 
 type PackageManagerLine =
@@ -472,6 +474,8 @@ type TcConfigBuilder =
         isInvalidationSupported: bool
 
         mutable emitDebugInfoInQuotations: bool
+
+        mutable strictIndentation: bool option
 
         mutable exename: string option
 
@@ -811,6 +815,8 @@ type TcConfig =
     member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
     member FxResolver: FxResolver
+
+    member strictIndentation: bool option
 
     member ComputeIndentationAwareSyntaxInitialStatus: string -> bool
 

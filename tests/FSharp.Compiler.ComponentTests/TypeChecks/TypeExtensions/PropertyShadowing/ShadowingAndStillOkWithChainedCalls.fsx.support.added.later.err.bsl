@@ -1,0 +1,2 @@
+ShadowingAndStillOkWithChainedCalls.fsx (18,1)-(18,4) typecheck error This value is not a function and cannot be applied.
+ShadowingAndStillOkWithChainedCalls.fsx (22,1)-(22,4) typecheck error This value is not a function and cannot be applied.

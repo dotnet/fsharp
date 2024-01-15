@@ -808,6 +808,15 @@ type MethInfo =
         | ProvidedMeth(_, mi, _, m) -> [mi.PUntaint((fun mi -> mi.GetParameters().Length), m)] // Why is this a list? Answer: because the method might be curried
 #endif
 
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member x.IsUnionCaseTester =
+        let tcref = x.ApparentEnclosingTyconRef
+        tcref.IsUnionTycon &&
+        x.LogicalName.StartsWith("get_Is") &&
+        match x.ArbitraryValRef with 
+        | Some v -> v.IsImplied
+        | None -> false
+
     member x.IsCurried = x.NumArgs.Length > 1
 
     /// Does the method appear to the user as an instance method?
@@ -1099,6 +1108,21 @@ type MethInfo =
     /// Get the return type of a method info, where 'void' is returned as 'unit'
     member x.GetFSharpReturnType(amap, m, minst) =
         x.GetCompiledReturnType(amap, m, minst) |> GetFSharpViewOfReturnType amap.g
+
+    member x.GetParamNames() =
+        match x with
+        | FSMeth (g, _, vref, _) ->
+            ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref |> List.mapSquared (fun (ParamNameAndType (name, _)) -> name |> Option.map (fun x -> x.idText))
+        | ILMeth (ilMethInfo = ilminfo) ->
+            // A single group of tupled arguments
+            [ ilminfo.ParamMetadata |> List.map (fun x -> x.Name) ]
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth (_, mi, _, m) ->
+            // A single group of tupled arguments
+            [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
+                yield p.PUntaint((fun p -> Some p.Name), m) ] ]
+#endif
+        | _ -> []
 
     /// Get the parameter types of a method info
     member x.GetParamTypes(amap, m, minst) =
@@ -1836,6 +1860,11 @@ type PropInfo =
         | None -> false
 
     /// Indicates if this property is an indexer property, i.e. a property with arguments.
+    /// <code lang="fsharp">
+    /// member x.Prop with 
+    ///     get (indexPiece1:int,indexPiece2: string) = ...
+    ///     and set (indexPiece1:int,indexPiece2: string) value = ... 
+    /// </code>
     member x.IsIndexer =
         match x with
         | ILProp(ILPropInfo(_, pdef)) -> pdef.Args.Length <> 0
@@ -1995,6 +2024,11 @@ type PropInfo =
         | ProvidedProp(_, pi1, _), ProvidedProp(_, pi2, _) -> ProvidedPropertyInfo.TaintedEquals (pi1, pi2)
 #endif
         | _ -> false
+
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member x.IsUnionCaseTester =
+        x.HasGetter &&
+        x.GetterMethod.IsUnionCaseTester
 
     /// Calculates a hash code of property info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member pi.ComputeHashCode() =
@@ -2356,3 +2390,19 @@ let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: P
 let SettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasSetter then Some(pinfo.SetterMethod, Some pinfo) else None)
 
 let GettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod, Some pinfo) else None)
+
+let (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
+    if not (pinfo.HasGetter && pinfo.HasSetter) then
+        None
+    else
+        match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
+        | Some getValRef, Some setValRef ->
+            if getValRef.Accessibility <> setValRef.Accessibility then
+                Some (getValRef, setValRef)
+            else
+                match getValRef.ValReprInfo with
+                | Some getValReprInfo when
+                    // Getter has an index parameter
+                    getValReprInfo.TotalArgCount > 1  -> Some (getValRef, setValRef)
+                | _ -> None 
+        | _ -> None

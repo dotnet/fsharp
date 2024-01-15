@@ -578,6 +578,10 @@ val PublishTypeDefn: cenv: TcFileState -> env: TcEnv -> mspec: Tycon -> unit
 /// Publish a value definition to the module/namespace type accumulator.
 val PublishValueDefn: cenv: TcFileState -> env: TcEnv -> declKind: DeclKind -> vspec: Val -> unit
 
+/// Publish a value definition to the module/namespace type accumulator.
+val PublishValueDefnMaybeInclCompilerGenerated:
+    cenv: TcFileState -> env: TcEnv -> inclCompilerGenerated: bool -> declKind: DeclKind -> vspec: Val -> unit
+
 /// Mark a typar as no longer being an inference type variable
 val SetTyparRigid: DisplayEnv -> range -> Typar -> unit
 
@@ -863,7 +867,7 @@ val TranslateSynValInfo:
 val TranslatePartialValReprInfo: tps: Typar list -> PrelimValReprInfo -> ValReprInfo
 
 /// Constrain two types to be equal within this type checking context
-val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> actualTy: TType -> expectedTy: TType -> unit
+val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> expectedTy: TType -> actualTy: TType -> unit
 
 val TcRuntimeTypeTest:
     isCast: bool ->

@@ -37,17 +37,22 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
+Use live (unsaved) buffers for analysis</source>
         <target state="needs-review-translation">ブロック構造ガイド;
-F# コードの構造ガイドラインを表示します。
-アウトライン;
-F# コードのアウトラインと折りたたみ可能なノードを表示します。
+F# コードの構造ガイドラインを表示する;
+アウトラインを表示する;
+アウトラインと折りたたみ可能なノードを F# コードに表示する;
 インライン ヒント;
-インライン型のヒントを表示する (プレビュー);
-戻り値型のヒントを表示する (プレビュー);
-インライン パラメーター名のヒントを表示する (プレビュー);ビール;
+インライン型ヒントを表示する (プレビュー);
+戻り値の型ヒントを表示する (プレビュー);
+インライン パラメーター名のヒントを表示する (プレビュー);
 ライブ バッファー;
-ライブ (未保存) バッファーをチェックに使用する</target>
+ライブ (保存されていない) バッファーを使用してチェックする</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">フィールド宣言の型に ':' を使用する</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -162,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">F# プロジェクトとキャッシュのパフォーマンス オプション;
+        <target state="needs-review-translation">F# プロジェクトとキャッシュのパフォーマンス オプション;
 メモリ内のプロジェクト間参照を有効にする。
 Enable_partial_type_checking;
 IntelliSense パフォーマンス オプション;
@@ -209,6 +214,11 @@ F# 構文規則に準拠するよう、改行を追加して指定された幅�
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' の削除</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -259,6 +269,11 @@ F# 構文規則に準拠するよう、改行を追加して指定された幅�
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">未使用の Open 宣言を削除する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">フィールド宣言で予期しないシンボル '=' が発生しました。':' またはその他のトークンが必要です。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

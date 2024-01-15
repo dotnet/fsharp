@@ -234,7 +234,8 @@ module ValueOption =
         | ValueSome x -> Some x
         | _ -> None
 
-type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
+type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
 /// Bound model of an underlying syntax and typed tree.
 type BoundModel private (
@@ -299,7 +300,7 @@ type BoundModel private (
                         | _ ->
                             None
                 }
-            return tcInfo, sink, implFile, fileName
+            return tcInfo, sink, implFile, fileName, newErrors
         }
 
     let skippedImplemetationTypeCheck =
@@ -322,19 +323,19 @@ type BoundModel private (
 
     let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
         node {
-            let! tcInfo , _, _, _ = typeCheck.GetOrComputeValue()
+            let! tcInfo , _, _, _, _ = typeCheck.GetOrComputeValue()
             return tcInfo
         } |> GraphNode
 
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         node {
-            let! _ , sink, implFile, fileName = typeCheck.GetOrComputeValue()
+            let! _ , sink, implFile, fileName, _ = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
                     use _ = Activity.start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|Activity.Tags.fileName, fileName|]
                     let sResolutions = sink.GetResolutions()
-                    let builder = ItemKeyStoreBuilder()
+                    let builder = ItemKeyStoreBuilder(tcGlobals)
                     let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
                                                         member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
                                                         member _.GetHashCode o = o.GetHashCode() })
@@ -365,21 +366,35 @@ type BoundModel private (
                 }
         } |> GraphNode
 
+    let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree", [||] }
+    let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
+    let tcInfoExtras = getTcInfoExtras typeCheckNode
+    let diagnostics  =
+        node {
+            let! _, _, _, _, diags = typeCheckNode.GetOrComputeValue()
+            return diags
+        } |> GraphNode
+
+    let startComputingFullTypeCheck =
+        node {
+            let! _ = tcInfoExtras.GetOrComputeValue()
+            return! diagnostics.GetOrComputeValue()
+        }
+
     let tcInfo, tcInfoExtras =
-        let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree" }
-        let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
         match tcStateOpt with
         | Some tcState -> tcState
         | _ ->
             match skippedImplemetationTypeCheck with
-            | Some info ->
+            | Some tcInfo ->
                 // For skipped implementation sources do full type check only when requested.
-                GraphNode.FromResult info, getTcInfoExtras typeCheckNode
+                GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
-                let tcInfoExtras = getTcInfoExtras typeCheckNode
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
+
+    member val Diagnostics = diagnostics
 
     member val TcInfo = tcInfo
 
@@ -631,7 +646,7 @@ module IncrementalBuilderHelpers =
 #if !NO_TYPEPROVIDERS
         ,importsInvalidatedByTypeProvider: Event<unit>
 #endif
-        ) : NodeCode<BoundModel> =
+        ) : NodeCode<BoundModel * SingleFileDiagnostics> =
 
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
@@ -704,7 +719,7 @@ module IncrementalBuilderHelpers =
                 fileChecked,
                 tcInfo,
                 None
-            )
+            ), initialErrors
       }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
@@ -794,7 +809,17 @@ module IncrementalBuilderHelpers =
                 mkSimpleAssemblyRef assemblyName, ProjectAssemblyDataResult.Unavailable true, None
 
         let finalBoundModel = Array.last computedBoundModels
-        let diagnostics = diagnosticsLogger.GetDiagnostics() :: finalInfo.tcDiagnosticsRev
+
+        // Collect diagnostics. This will type check in parallel any implementation files skipped so far.
+        let! partialDiagnostics =
+            computedBoundModels
+            |> Seq.map (fun m -> m.Diagnostics.GetOrComputeValue())
+            |> NodeCode.Parallel
+        let diagnostics = [
+            diagnosticsLogger.GetDiagnostics()
+            yield! partialDiagnostics |> Seq.rev
+        ]
+
         let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
@@ -803,6 +828,7 @@ module IncrementalBuilderHelpers =
 type IncrementalBuilderInitialState =
     {
         initialBoundModel: BoundModel
+        initialErrors: SingleFileDiagnostics
         tcGlobals: TcGlobals
         referencedAssemblies: ImmutableArray<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
         tcConfig: TcConfig
@@ -828,6 +854,7 @@ type IncrementalBuilderInitialState =
     static member Create
         (
             initialBoundModel: BoundModel,
+            initialErrors: SingleFileDiagnostics,
             tcGlobals,
             nonFrameworkAssemblyInputs,
             tcConfig: TcConfig,
@@ -850,6 +877,7 @@ type IncrementalBuilderInitialState =
         let initialState =
             {
                 initialBoundModel = initialBoundModel
+                initialErrors = initialErrors
                 tcGlobals = tcGlobals
                 referencedAssemblies = nonFrameworkAssemblyInputs |> ImmutableArray.ofSeq
                 tcConfig = tcConfig
@@ -896,7 +924,6 @@ type IncrementalBuilderState =
     {
         slots: Slot list
         stampedReferencedAssemblies: ImmutableArray<DateTime>
-        initialBoundModel: GraphNode<BoundModel>
         finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
     }
     member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
@@ -1027,16 +1054,15 @@ type IncrementalBuilderState with
         let boundModels = 
             syntaxTrees
             |> Seq.scan createBoundModelGraphNode initialBoundModel
-            |> Seq.skip 1
 
         let slots =
             [
-                for model, syntaxTree, hasSignature in Seq.zip3 boundModels syntaxTrees hasSignature do
+                for model, syntaxTree, hasSignature in Seq.zip3 (boundModels |> Seq.skip 1) syntaxTrees hasSignature do
                     {
                         HasSignature = hasSignature
                         Stamp = DateTime.MinValue
                         LogicalStamp = DateTime.MinValue
-                        Notified = false
+                        Notified = true
                         SyntaxTree = syntaxTree
                         BoundModel = model
                     }
@@ -1046,7 +1072,6 @@ type IncrementalBuilderState with
             {
                 slots = slots
                 stampedReferencedAssemblies = ImmutableArray.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
-                initialBoundModel = initialBoundModel
                 finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
             }
         let state = computeStampedReferencedAssemblies initialState state false cache
@@ -1530,7 +1555,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let defaultTimeStamp = DateTime.UtcNow
 
-            let! initialBoundModel = 
+            let! initialBoundModel, initialErrors = 
                 CombineImportedAssembliesTask(
                     assemblyName,
                     tcConfig,
@@ -1570,6 +1595,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let initialState =
                 IncrementalBuilderInitialState.Create(
                     initialBoundModel,
+                    initialErrors,
                     tcGlobals,
                     nonFrameworkAssemblyInputs,
                     tcConfig,
@@ -1597,16 +1623,18 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
          }
 
         let diagnostics =
-            match builderOpt with
-            | Some builder ->
-                let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
-                let diagnosticsLogger = CompilationDiagnosticLogger("IncrementalBuilderCreation", diagnosticsOptions)
-                delayedLogger.CommitDelayedDiagnostics diagnosticsLogger
-                diagnosticsLogger.GetDiagnostics()
-            | _ ->
-                Array.ofList delayedLogger.Diagnostics
+            let diagnostics, flatErrors =
+                match builderOpt with
+                | Some builder ->
+                    let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
+                    let diagnosticsLogger = CompilationDiagnosticLogger("IncrementalBuilderCreation", diagnosticsOptions)
+                    delayedLogger.CommitDelayedDiagnostics diagnosticsLogger
+                    diagnosticsLogger.GetDiagnostics(), builder.TcConfig.flatErrors
+                | _ ->
+                    Array.ofList delayedLogger.Diagnostics, false
+            diagnostics
             |> Array.map (fun (diagnostic, severity) ->
-                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors))
+                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
 
         return builderOpt, diagnostics
       }

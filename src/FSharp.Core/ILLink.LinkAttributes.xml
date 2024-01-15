@@ -122,6 +122,9 @@
     <type fullname="Microsoft.FSharp.Core.StructuralEqualityAttribute">
       <attribute internal="RemoveAttributeInstances" />
     </type>
+    <type fullname="Microsoft.FSharp.Core.TailCallAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
     <type fullname="Microsoft.FSharp.Core.UnverifiableAttribute">
       <attribute internal="RemoveAttributeInstances" />
     </type>
@@ -164,6 +167,12 @@
       <attribute internal="RemoveAttributeInstances" />
     </type>
     <type fullname="Microsoft.FSharp.Core.CompilerServices.TypeProviderXmlDocAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="System.Runtime.CompilerServices.NullableAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="System.Runtime.CompilerServices.NullableContextAttribute">
       <attribute internal="RemoveAttributeInstances" />
     </type>
   </assembly>

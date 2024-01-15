@@ -51,7 +51,7 @@ type Test with
     static member nullable codec z = Test.nullableE(codec, z)
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -72,7 +72,7 @@ type Test with
     static member nullable codec = Test.nullableE codec
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -93,7 +93,7 @@ type Test with
     static member nullable codec = Test.nullableE codec
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore

@@ -807,7 +807,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// printfn "C"
         /// </code>
-        /// Prints "C", then "A" quickly, and then "B" 1 second later
+        /// Prints "C" and "A" quickly in any order, and then "B" 1 second later
         /// </example>
         static member Sleep: millisecondsDueTime:int -> Async<unit>
 

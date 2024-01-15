@@ -42,7 +42,7 @@ module QuickInfoProviderTests =
     let private tooltipElementToExpected expected =
         function
         | ToolTipElement.None -> Empty
-        | ToolTipElement.Group (xs) ->
+        | ToolTipElement.Group(xs) ->
             let descriptions = xs |> List.map (fun item -> item.MainDescription)
 
             let descriptionTexts =
@@ -85,14 +85,14 @@ module QuickInfoProviderTests =
             | QuickInfo _ -> QuickInfo(desc, docs)
             | _ -> Desc desc
 
-        | ToolTipElement.CompositionError (error) -> Error
+        | ToolTipElement.CompositionError _ -> Error
 
     let executeQuickInfoTest (programText: string) testCases =
         let document =
             RoslynTestHelpers.CreateSolution(programText)
             |> RoslynTestHelpers.GetSingleDocument
 
-        for TestCase (symbol, expected) in testCases do
+        for TestCase(symbol, expected) in testCases do
             let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
 
             let quickInfo =
@@ -280,7 +280,7 @@ Full name: Microsoft.FSharp.Core.Operators.(||>)
 'U is float"
                 mkDesc
                     "let res4 = (1.0,[1]) ||> List.fold"
-                    "val fold: folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
+                    "val fold<'T,'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
 Full name: Microsoft.FSharp.Collections.List.fold
 'T is int
 'State is float"

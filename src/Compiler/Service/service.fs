@@ -99,14 +99,14 @@ module Helpers =
         | _ -> false
 
 module CompileHelpers =
-    let mkCompilationDiagnosticsHandlers () =
+    let mkCompilationDiagnosticsHandlers (flatErrors) =
         let diagnostics = ResizeArray<_>()
 
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
 
                 member _.DiagnosticSink(diag, isError) =
-                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true)) // Suggest names for errors
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true, flatErrors, None)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics
@@ -137,7 +137,8 @@ module CompileHelpers =
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag.
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator) =
 
-        let diagnostics, diagnosticsLogger, loggerProvider = mkCompilationDiagnosticsHandlers ()
+        let diagnostics, diagnosticsLogger, loggerProvider =
+            mkCompilationDiagnosticsHandlers (argv |> Array.contains "--flaterrors")
 
         let result =
             tryCompile diagnosticsLogger (fun exiter ->
@@ -159,7 +160,7 @@ module CompileHelpers =
     let setOutputStreams execute =
         // Set the output streams, if requested
         match execute with
-        | Some (writer, error) ->
+        | Some(writer, error) ->
             Console.SetOut writer
             Console.SetError error
         | None -> ()
@@ -228,7 +229,7 @@ type BackgroundCompiler
             for r in options.ReferencedProjects do
 
                 match r with
-                | FSharpReferencedProject.FSharpReference (nm, opts) ->
+                | FSharpReferencedProject.FSharpReference(nm, opts) ->
                     // Don't use cross-project references for FSharp.Core, since various bits of code
                     // require a concrete FSharp.Core to exist on-disk. The only solutions that have
                     // these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The ramification
@@ -254,7 +255,7 @@ type BackgroundCompiler
                             member x.FileName = nm
                         }
 
-                | FSharpReferencedProject.PEReference (nm, getStamp, delayedReader) ->
+                | FSharpReferencedProject.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
                             node {
@@ -272,18 +273,19 @@ type BackgroundCompiler
                             }
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
-                        member x.FileName = nm
+                        member x.FileName = delayedReader.OutputFile
                     }
 
-                | FSharpReferencedProject.ILModuleReference (nm, getStamp, getReader) ->
+                | FSharpReferencedProject.ILModuleReference(nm, getStamp, getReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            node {
+                            cancellable {
                                 let ilReader = getReader ()
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
+                            |> NodeCode.FromCancellable
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm
@@ -487,7 +489,7 @@ type BackgroundCompiler
                 checkFileInProjectCache.Set(ltok, key, res)
                 res)
 
-    member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
+    member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string) =
         async {
             use _ =
                 Activity.start
@@ -498,6 +500,9 @@ type BackgroundCompiler
                         Activity.Tags.cache, cache.ToString()
                     |]
 
+            let! ct = Async.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             if cache then
                 let hash = sourceText.GetHashCode() |> int64
 
@@ -505,16 +510,28 @@ type BackgroundCompiler
                 | Some res -> return res
                 | None ->
                     Interlocked.Increment(&actualParseFileCount) |> ignore
+                    let! ct = Async.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
-                        ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, suggestNamesForErrors, captureIdentifiersWhenParsing)
+                        ParseAndCheckFile.parseFile (
+                            sourceText,
+                            fileName,
+                            options,
+                            userOpName,
+                            suggestNamesForErrors,
+                            flatErrors,
+                            captureIdentifiersWhenParsing,
+                            ct
+                        )
 
                     let res = FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
                     parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
                     return res
             else
+                let! ct = Async.CancellationToken
+
                 let parseDiagnostics, parseTree, anyErrors =
-                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, captureIdentifiersWhenParsing)
+                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, flatErrors, captureIdentifiersWhenParsing, ct)
 
                 return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
         }
@@ -527,6 +544,9 @@ type BackgroundCompiler
                     "BackgroundCompiler.GetBackgroundParseResultsForFileInProject"
                     [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
 
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -537,7 +557,15 @@ type BackgroundCompiler
                 let parseTree, _, _, parseDiagnostics = builder.GetParseResultsForFile fileName
 
                 let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(builder.TcConfig.diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        builder.TcConfig.diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors,
+                        None
+                    )
 
                 let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
 
@@ -567,7 +595,7 @@ type BackgroundCompiler
                 | parseResults, checkResults, _, priorTimeStamp when
                     (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName with
                      | None -> false
-                     | Some (tcPrior) ->
+                     | Some(tcPrior) ->
                          tcPrior.ProjectTimeStamp = priorTimeStamp
                          && builder.AreCheckResultsBeforeFileInProjectReady(fileName))
                     ->
@@ -639,7 +667,7 @@ type BackgroundCompiler
 
         node {
             match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
-            | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
+            | Some(_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
                 let lazyCheckFile =
                     getCheckFileNode (parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
@@ -668,6 +696,9 @@ type BackgroundCompiler
                         Activity.Tags.userOpName, userOpName
                     |]
 
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let! cachedResults =
                 node {
                     let! builderOpt, creationDiags = getAnyBuilder (options, userOpName)
@@ -675,15 +706,15 @@ type BackgroundCompiler
                     match builderOpt with
                     | Some builder ->
                         match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
-                        | Some (_, checkResults) -> return Some(builder, creationDiags, Some(FSharpCheckFileAnswer.Succeeded checkResults))
+                        | Some(_, checkResults) -> return Some(builder, creationDiags, Some(FSharpCheckFileAnswer.Succeeded checkResults))
                         | _ -> return Some(builder, creationDiags, None)
                     | _ -> return None // the builder wasn't ready
                 }
 
             match cachedResults with
             | None -> return None
-            | Some (_, _, Some x) -> return Some x
-            | Some (builder, creationDiags, None) ->
+            | Some(_, _, Some x) -> return Some x
+            | Some(builder, creationDiags, None) ->
                 Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CheckFileInProjectAllowingStaleCachedResults.CacheMiss", fileName)
 
                 match builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName with
@@ -710,6 +741,9 @@ type BackgroundCompiler
                         Activity.Tags.userOpName, userOpName
                     |]
 
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -719,7 +753,7 @@ type BackgroundCompiler
                 let! cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options)
 
                 match cachedResults with
-                | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
+                | Some(_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                 | _ ->
                     let! tcPrior = builder.GetCheckResultsBeforeFileInProject fileName
                     let! tcInfo = tcPrior.GetOrComputeTcInfo()
@@ -738,6 +772,9 @@ type BackgroundCompiler
                         Activity.Tags.userOpName, userOpName
                     |]
 
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -750,7 +787,7 @@ type BackgroundCompiler
                 let! cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options)
 
                 match cachedResults with
-                | Some (parseResults, checkResults) -> return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
+                | Some(parseResults, checkResults) -> return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
                 | _ ->
                     let! tcPrior = builder.GetCheckResultsBeforeFileInProject fileName
                     let! tcInfo = tcPrior.GetOrComputeTcInfo()
@@ -759,6 +796,7 @@ type BackgroundCompiler
                         FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
 
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
+                    let! ct = NodeCode.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -767,7 +805,9 @@ type BackgroundCompiler
                             parsingOptions,
                             userOpName,
                             suggestNamesForErrors,
-                            captureIdentifiersWhenParsing
+                            builder.TcConfig.flatErrors,
+                            captureIdentifiersWhenParsing,
+                            ct
                         )
 
                     let parseResults =
@@ -790,6 +830,9 @@ type BackgroundCompiler
                         Activity.Tags.userOpName, userOpName
                     |]
 
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let! builderOpt, _ = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -808,6 +851,9 @@ type BackgroundCompiler
                         Activity.Tags.fileName, fileName
                         Activity.Tags.userOpName, userOpName
                     |]
+
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
 
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
@@ -834,13 +880,33 @@ type BackgroundCompiler
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
 
+                let symbolEnv =
+                    SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports)
+                    |> Some
+
                 let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors,
+                        None
+                    )
 
                 let parseDiagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
 
                 let tcDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, false, fileName, tcDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        tcDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors,
+                        symbolEnv
+                    )
 
                 let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
 
@@ -929,6 +995,9 @@ type BackgroundCompiler
                         Activity.Tags.userOpName, userOpName
                     |]
 
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let! builderOpt, _ = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -963,7 +1032,7 @@ type BackgroundCompiler
             match resOpt with
             | Some res ->
                 match res.TryPeekValue() with
-                | ValueSome (a, b, c, _) -> Some(a, b, c)
+                | ValueSome(a, b, c, _) -> Some(a, b, c)
                 | ValueNone -> None
             | None -> None
         | None -> None
@@ -971,6 +1040,9 @@ type BackgroundCompiler
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private _.ParseAndCheckProjectImpl(options, userOpName) =
         node {
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -993,8 +1065,20 @@ type BackgroundCompiler
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
 
+                let symbolEnv =
+                    SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports)
+                    |> Some
+
                 let tcDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, true, fileName, tcDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        true,
+                        fileName,
+                        tcDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors,
+                        symbolEnv
+                    )
 
                 let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
 
@@ -1047,7 +1131,7 @@ type BackgroundCompiler
         match tryGetBuilderNode options with
         | Some lazyWork ->
             match lazyWork.TryPeekValue() with
-            | ValueSome (Some builder, _) -> Some(builder.GetLogicalTimeStampForProject(cache))
+            | ValueSome(Some builder, _) -> Some(builder.GetLogicalTimeStampForProject(cache))
             | _ -> None
         | _ -> None
 
@@ -1083,8 +1167,6 @@ type BackgroundCompiler
                 [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, _userOpName |]
 
         cancellable {
-            use diagnostics = new DiagnosticsScope()
-
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             let useSdkRefs = defaultArg useSdkRefs true
@@ -1094,6 +1176,9 @@ type BackgroundCompiler
             // Do we assume .NET Framework references for scripts?
             let assumeDotNetFramework = defaultArg assumeDotNetFramework true
 
+            let! ct = Cancellable.token ()
+            use _ = Cancellable.UsingToken(ct)
+
             let extraFlags =
                 if previewEnabled then
                     [| "--langversion:preview" |]
@@ -1101,6 +1186,8 @@ type BackgroundCompiler
                     [||]
 
             let otherFlags = defaultArg otherFlags extraFlags
+
+            use diagnostics = new DiagnosticsScope(otherFlags |> Array.contains "--flaterrors")
 
             let useSimpleResolution = otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
 
@@ -1159,7 +1246,15 @@ type BackgroundCompiler
 
             let diags =
                 loadClosure.LoadClosureRootFileDiagnostics
-                |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
+                |> List.map (fun (exn, isError) ->
+                    FSharpDiagnostic.CreateFromException(
+                        exn,
+                        isError,
+                        range.Zero,
+                        false,
+                        options.OtherOptions |> Array.contains "--flaterrors",
+                        None
+                    ))
 
             return options, (diags @ diagnostics.Diagnostics)
         }
@@ -1187,7 +1282,12 @@ type BackgroundCompiler
 
         lock gate (fun () ->
             options
-            |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options)))
+            |> Seq.iter (fun options ->
+                incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options)
+
+                parseCacheLock.AcquireLock(fun ltok ->
+                    for sourceFile in options.SourceFiles do
+                        checkFileInProjectCache.RemoveAnySimilar(ltok, (sourceFile, 0L, options)))))
 
     member _.NotifyProjectCleaned(options: FSharpProjectOptions, userOpName) =
         use _ =
@@ -1199,6 +1299,9 @@ type BackgroundCompiler
                 |]
 
         async {
+            let! ct = Async.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let! ct = Async.CancellationToken
             // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This
             // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous
@@ -1351,7 +1454,7 @@ type FSharpChecker
 
         let useChangeNotifications =
             match documentSource with
-            | Some (DocumentSource.Custom _) -> true
+            | Some(DocumentSource.Custom _) -> true
             | _ -> false
 
         let useSyntaxTreeCache = defaultArg useSyntaxTreeCache true
@@ -1374,7 +1477,7 @@ type FSharpChecker
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             (match documentSource with
-             | Some (DocumentSource.Custom f) -> Some f
+             | Some(DocumentSource.Custom f) -> Some f
              | _ -> None),
             useChangeNotifications,
             useSyntaxTreeCache
@@ -1394,8 +1497,10 @@ type FSharpChecker
             match braceMatchCache.TryGet(AnyCallerThread, (fileName, hash, options)) with
             | Some res -> return res
             | None ->
+                let! ct = Async.CancellationToken
+
                 let res =
-                    ParseAndCheckFile.matchBraces (sourceText, fileName, options, userOpName, suggestNamesForErrors)
+                    ParseAndCheckFile.matchBraces (sourceText, fileName, options, userOpName, suggestNamesForErrors, ct)
 
                 braceMatchCache.Set(AnyCallerThread, (fileName, hash, options), res)
                 return res
@@ -1414,7 +1519,7 @@ type FSharpChecker
     member _.ParseFile(fileName, sourceText, options, ?cache, ?userOpName: string) =
         let cache = defaultArg cache true
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.ParseFile(fileName, sourceText, options, cache, userOpName)
+        backgroundCompiler.ParseFile(fileName, sourceText, options, cache, false, userOpName)
 
     member ic.ParseFileInProject(fileName, source: string, options, ?cache: bool, ?userOpName: string) =
         let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
@@ -1442,6 +1547,9 @@ type FSharpChecker
         use _ = Activity.start "FSharpChecker.Compile" [| Activity.Tags.userOpName, _userOpName |]
 
         async {
+            let! ct = Async.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let ctok = CompilationThreadToken()
             return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
         }
@@ -1561,6 +1669,9 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         node {
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             if fastCheck <> Some true || not captureIdentifiersWhenParsing then
                 return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
             else
@@ -1650,7 +1761,7 @@ type FSharpChecker
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
         let isEditing = defaultArg isEditing false
         let isInteractive = defaultArg isInteractive false
-        use errorScope = new DiagnosticsScope()
+        use errorScope = new DiagnosticsScope(argv |> List.contains "--flaterrors")
 
         let tcConfigB =
             TcConfigBuilder.CreateNew(
@@ -1699,7 +1810,7 @@ type FSharpChecker
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
-        let tokenizer = FSharpSourceTokenizer([], None, None)
+        let tokenizer = FSharpSourceTokenizer([], None, None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
         let mutable state = (None, state)
 

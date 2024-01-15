@@ -6,6 +6,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Test
 open NUnit.Framework
 
 let testCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree")
@@ -189,7 +190,7 @@ let ParseFile fileName =
     let equals = expected = actual
     let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
-    if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
+    if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" && not equals then
         File.WriteAllText(bslPath, actual)
     elif not equals then
         File.WriteAllText(actualPath, actual)
@@ -197,3 +198,6 @@ let ParseFile fileName =
         File.Delete(actualPath)
 
     Assert.AreEqual(expected, actual)
+
+    // Run type checker to assert that it doesn't fail with the tree produced by the parser
+    CompilerAssert.ParseAndTypeCheck([|"--langversion:preview"|], fileName, contents) |> ignore

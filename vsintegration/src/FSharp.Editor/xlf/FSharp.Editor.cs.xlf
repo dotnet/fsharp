@@ -37,19 +37,22 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="needs-review-translation">Vodítka struktury bloků; 
-
-Zobrazit pokyny pro strukturu kódu F#;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Vodítka struktury bloků;
+Zobrazit pokyny ke struktuře pro kód F#;
 Osnova;
-Zobrazit sbalitelné a sbalitelné uzly pro kód F#;
+Zobrazit osnovu a sbalitelné uzly kódu F#;
 Vložené tipy;
-Zobrazovat pomocné parametry vloženého typu (Preview);
-Zobrazit pomocné parametry návratového typu (Preview);
-Zobrazit vložené nápovědy k názvům parametrů (Preview); Pivo;
- 
+Zobrazit tipy pro vložený typ (náhled);
+Zobrazení tipů pro návratový typ (náhled);
+Zobrazit nápovědy k názvům vložených parametrů (náhled);
 Živé vyrovnávací paměti;
-Pro kontrolu použijte živé (neuložené) vyrovnávací paměti.</target>
+Použití živých (neuložených) vyrovnávacích pamětí pro kontrolu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">Pro typ v deklaraci pole použijte „:“</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -164,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Možnosti výkonu projektu F# a ukládání do mezipaměti;
+        <target state="needs-review-translation">Možnosti výkonu projektu F# a ukládání do mezipaměti;
 Povolit odkazy mezi projekty v paměti;
 Enable_partial_type_checking;
 Možnosti výkonu IntelliSense;
@@ -211,6 +214,11 @@ Přerušované podtržení;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Odebrat return!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -261,6 +269,11 @@ Přerušované podtržení;</target>
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">Odeberte nepoužité otevřené deklarace.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">Neočekávaný symbol „=“ v deklaraci pole. Očekával se token „:“ nebo nějaký jiný.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

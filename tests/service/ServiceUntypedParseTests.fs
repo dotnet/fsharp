@@ -291,7 +291,7 @@ type T =
 type T =
     member val Property1 = "" with get, set
 """
-        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 29) ]
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 43) ]
 
     
     [<Test>]
@@ -839,7 +839,7 @@ add2 1 2
         | Some range ->
             range
             |> tups
-            |> shouldEqual ((3, 17), (3, 18))
+            |> shouldEqual ((3, 18), (3, 18))
 
     [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE``() =

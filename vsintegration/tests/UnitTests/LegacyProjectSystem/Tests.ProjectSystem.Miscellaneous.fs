@@ -496,42 +496,45 @@ type Miscellaneous() =
 
     [<Test>]
     member this.``MSBuildExtensibility.BrokenCompileDependsOn.WithRecovery`` () =
-        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs";"bar.fs"], [], 
-// define a legal 'Foo' configuration
-@"<PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Foo|AnyCPU' "">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>3</WarningLevel>
-  </PropertyGroup>", fun project configChangeNotifier projFile -> 
-            let projFileText = File.ReadAllText(projFile)
-            // We need to add text _after_ the import of Microsoft.FSharp.Targets.  
-            let i = projFileText.IndexOf("<Import Project=")
-            let i = projFileText.IndexOf(">", i)
-            let newProjFileText = projFileText.Insert(i+1, @"
-                  <PropertyGroup>
-                    <CompileDependsOn>MyTarget;$(CompileDependsOn)</CompileDependsOn>
-                  </PropertyGroup>
-                  <Target Name=""MyTarget"">
-                    <Error Condition="" '$(Configuration)'!='Foo' "" Text=""This is my error message."" ContinueOnError=""false"" />
-                  </Target>")
-            File.WriteAllText(projFile, newProjFileText)
-            project.Reload()
-            // Ensure we are not in 'Foo' config, and thus expect failure
-            let curCfgCanonicalName = this.GetCurrentConfigCanonicalName(project)
-            Assert.IsFalse(curCfgCanonicalName.StartsWith("Foo"), sprintf "default config should not be 'Foo'! in fact it had canonical name '%s'" curCfgCanonicalName)
-            // Now the project system is in a state where ComputeSourcesAndFlags will fail.
-            // Our goal is to at least be able to open individual source files and treat them like 'files outside a project' with regards to intellisense, etc.
-            // Also, if the user does 'Build', he will get an error which will help diagnose the problem.
-            let ipps = project :> IProvideProjectSite
-            let ips = ipps.GetProjectSite()
-            let expected = [| |] // Ideal behavior is [|"foo.fs";"bar.fs"|], and we could choose to improve this in the future.  For now we are just happy to now throw/crash.
-            let actual = ips.CompilationSourceFiles
-            Assert.AreEqual(expected, actual, "project site did not report expected set of source files")
-        )
+        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(
+            ["foo.fs";"bar.fs"],
+            [],
+            // define a legal 'Foo' configuration
+            @"<PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Foo|AnyCPU' "">
+                <DebugSymbols>true</DebugSymbols>
+                <DebugType>full</DebugType>
+                <Optimize>false</Optimize>
+                <OutputPath>bin\Debug\</OutputPath>
+                <DefineConstants>DEBUG;TRACE</DefineConstants>
+                <ErrorReport>prompt</ErrorReport>
+                <WarningLevel>3</WarningLevel>
+            </PropertyGroup>",
+            fun project configChangeNotifier projFile -> 
+                let projFileText = File.ReadAllText(projFile)
+                // We need to add text _after_ the import of Microsoft.FSharp.Targets.  
+                let i = projFileText.IndexOf("<Import Project=")
+                let i = projFileText.IndexOf(">", i)
+                let newProjFileText = projFileText.Insert(i+1, @"
+                    <PropertyGroup>
+                        <CompileDependsOn>MyTarget;$(CompileDependsOn)</CompileDependsOn>
+                    </PropertyGroup>
+                    <Target Name=""MyTarget"">
+                        <Error Condition="" '$(Configuration)'!='Foo' "" Text=""This is my error message."" ContinueOnError=""false"" />
+                    </Target>")
+                File.WriteAllText(projFile, newProjFileText)
+                project.Reload()
+                // Ensure we are not in 'Foo' config, and thus expect failure
+                let curCfgCanonicalName = this.GetCurrentConfigCanonicalName(project)
+                Assert.IsFalse(curCfgCanonicalName.StartsWith("Foo"), sprintf "default config should not be 'Foo'! in fact it had canonical name '%s'" curCfgCanonicalName)
+                // Now the project system is in a state where ComputeSourcesAndFlags will fail.
+                // Our goal is to at least be able to open individual source files and treat them like 'files outside a project' with regards to intellisense, etc.
+                // Also, if the user does 'Build', he will get an error which will help diagnose the problem.
+                let ipps = project :> IProvideProjectSite
+                let ips = ipps.GetProjectSite()
+                let expected = [| |] // Ideal behavior is [|"foo.fs";"bar.fs"|], and we could choose to improve this in the future.  For now we are just happy to now throw/crash.
+                let actual = ips.CompilationSourceFiles
+                Assert.AreEqual(expected, actual, "project site did not report expected set of source files")
+            )
 
     [<Test>]
     member public this.TestBuildActions () =

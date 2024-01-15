@@ -121,7 +121,7 @@ let CreateTypeProvider (
     let getReferencedAssemblies () =
         resolutionEnvironment.GetReferencedAssemblies() |> Array.distinct
 
-    if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
+    if not(isNull(typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]))) then
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
@@ -146,7 +146,7 @@ let CreateTypeProvider (
 #endif
         protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
 
-    elif typeProviderImplementationType.GetConstructor [| |] <> null then 
+    elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
         protect (fun () -> Activator.CreateInstance typeProviderImplementationType :?> ITypeProvider )
 
     else
@@ -231,8 +231,8 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
 let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
     match TryTypeMember(st, fullName, memberName, m, recover, f) with 
 #else
-let TryTypeMemberNonNull<'T, 'U when 'U : __notnull and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U __withnull)) : Tainted<'U> =
-    match TryTypeMember<'T, 'U __withnull>(st, fullName, memberName, m, withNull recover, f) with 
+let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U | null)) : Tainted<'U> =
+    match TryTypeMember<'T, 'U | null>(st, fullName, memberName, m, withNull recover, f) with 
 #endif
     | Tainted.Null -> 
         errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
@@ -305,7 +305,7 @@ type ProvidedTypeComparer() =
 type ProvidedTypeContext = 
     | NoEntries
     // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
-    | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * Lazy<ConcurrentDictionary<ProvidedType, obj>>
+    | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * InterruptibleLazy<ConcurrentDictionary<ProvidedType, obj>>
 
     static member Empty = NoEntries
 
@@ -339,9 +339,11 @@ type ProvidedTypeContext =
         match ctxt with 
         | NoEntries -> NoEntries
         | Entries(d1, d2) ->
-            Entries(d1, lazy (let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
-                              for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
-                              dict))
+            Entries(d1, InterruptibleLazy(fun _ ->
+                let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
+                for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
+                dict
+            ))
 
 [<Sealed>]
 #if NO_CHECKNULLS
@@ -1122,7 +1124,7 @@ let ValidateExpectedName m expectedPath expectedName (st: Tainted<ProvidedType>)
 #if NO_CHECKNULLS
     let namespaceName = TryTypeMember(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal
 #else
-    let namespaceName = TryTypeMember<_, string __withnull>(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal // TODO NULLNESS: why is this explicit instantiation needed?
+    let namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal // TODO NULLNESS: why is this explicit instantiation needed?
 #endif
 
     let rec declaringTypes (st: Tainted<ProvidedType>) accu =
@@ -1149,7 +1151,7 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
 #if NO_CHECKNULLS
         let namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
 #else
-        let namespaceName = TryTypeMember<_, string __withnull>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
+        let namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
 #endif
         let fullName = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName) |> unmarshal
         ValidateExpectedName m expectedPath expectedName st
@@ -1258,7 +1260,7 @@ let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: s
 #if NO_CHECKNULLS
     let _namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
 #else
-    let _namespaceName = TryTypeMember<_, string __withnull>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
+    let _namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
 #endif
     let _fullname = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName)  |> unmarshal
     ValidateExpectedName m expectedPath expectedName st
@@ -1315,7 +1317,7 @@ let TryResolveProvidedType(resolver: Tainted<ITypeProvider>, m, moduleOrNamespac
         match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
         | Tainted.Null -> None
         | Tainted.NonNull ty -> Some ty
-    with e -> 
+    with RecoverableException e -> 
         errorRecovery e m
         None
 
