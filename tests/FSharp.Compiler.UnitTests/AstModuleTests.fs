@@ -8,7 +8,7 @@ open Xunit
 [<Fact>]
 let ``tryPick type test`` () =
     let source = "123 :? int"
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     parseTree.Contents
     |> Ast.tryPick (mkPos 1 11) (fun _path node -> match node with SyntaxNode.SynType _ -> Some() | _ -> None)
@@ -21,7 +21,7 @@ let ``tryPick type test`` () =
 [<Fact>]
 let ``tryPick record definition test`` () =
     let source = "type R = { A: int; B: string }"
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let fields =
         parseTree.Contents
@@ -37,7 +37,7 @@ let ``tryPick record definition test`` () =
 [<Fact>]
 let ``tryPick union definition test`` () =
     let source = "type U = A | B of string"
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let cases =
         parseTree.Contents
@@ -53,7 +53,7 @@ let ``tryPick union definition test`` () =
 [<Fact>]
 let ``tryPick enum definition test`` () =
     let source = "type E = A = 0 | B = 1"
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let cases =
         parseTree.Contents
@@ -69,7 +69,7 @@ let ``tryPick enum definition test`` () =
 [<Fact>]
 let ``tryPick recursive let binding`` () =
     let source = "let rec fib n = if n < 2 then n else fib (n - 1) + fib (n - 2) in fib 10"
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let bindings =
         parseTree.Contents
@@ -91,7 +91,7 @@ module X
 val y: int -> int
 """
 
-    let parseTree = parseSourceCode("C:\\test.fsi", source)
+    let parseTree = parseSourceCode ("C:\\test.fsi", source)
 
     let ident =
         parseTree.Contents
@@ -113,7 +113,7 @@ module Y =
     val z: int -> int
 """
 
-    let parseTree = parseSourceCode("C:\\test.fsi", source)
+    let parseTree = parseSourceCode ("C:\\test.fsi", source)
 
     let ident =
         parseTree.Contents
@@ -139,7 +139,7 @@ type Y =
     }
 """
 
-    let parseTree = parseSourceCode("C:\\test.fsi", source)
+    let parseTree = parseSourceCode ("C:\\test.fsi", source)
 
     let ident =
         parseTree.Contents
@@ -166,7 +166,7 @@ type Meh =
     member Foo: y: int -> int
 """
 
-    let parseTree = parseSourceCode("C:\\test.fsi", source)
+    let parseTree = parseSourceCode ("C:\\test.fsi", source)
     let pos = mkPos 6 4
 
     let ident =
@@ -190,7 +190,7 @@ module N =
         module P = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
         parseTree.Contents
@@ -212,7 +212,7 @@ module N =
         module P = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
         parseTree.Contents
@@ -234,7 +234,7 @@ module N =
         module P = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
         parseTree.Contents
@@ -256,7 +256,7 @@ module N =
         module P = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
         parseTree.Contents
@@ -278,7 +278,7 @@ module N =
         module P = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let mutable start = 0, 0
 
@@ -304,7 +304,7 @@ module N =
         module P = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let mutable start = 0, 0
 
@@ -330,7 +330,7 @@ module N =
         module P = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
         parseTree.Contents
@@ -353,7 +353,7 @@ module N =
         module P = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` = parseTree.Contents |> Ast.tryNode (mkPos 6 30)
 
@@ -373,7 +373,7 @@ module Q =
         module S = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let modules =
         ([], parseTree.Contents)
@@ -402,7 +402,7 @@ module Q =
         module S = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let modules =
         ([], parseTree.Contents)
@@ -431,7 +431,7 @@ module Q =
         module S = begin end
 """
 
-    let parseTree = parseSourceCode("C:\\test.fs", source)
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let modules =
         ([], parseTree.Contents)
