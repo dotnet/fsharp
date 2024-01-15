@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">Rückgabetypanmerkung hinzufügen</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -43,7 +43,7 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">Führungslinien für Blockstruktur;
+        <target state="translated">Führungslinien für Blockstruktur;
 Strukturrichtlinien für F#-Code anzeigen;
 Gliederung;
 Gliederungs- und reduzierbare Knoten für F#-Code anzeigen;
@@ -52,7 +52,7 @@ Hinweise zu Inlinetypen anzeigen (Vorschau);
 Hinweise zu Rückgabetypen anzeigen (Vorschau);
 Hinweise zu Inlineparameternamen anzeigen (Vorschau);
 Livepuffer;
-Livepuffer (nicht gespeichert) zur Überprüfung verwenden</target>
+Livepuffer (nicht gespeichert) zur Analyse verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -174,16 +174,16 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">F#-Projekt- und Cacheleistungsoptionen;
-Projektübergreifende Verweise im Arbeitsspeicher aktivieren;
-Enable_partial_type_checking;
-IntelliSense-Leistungsoptionen;
+        <target state="translated">Optionen zur F#-Projekt- und Cacheleistung;
+Proj_ektübergreifende Verweise im Arbeitsspeicher aktivieren;
+Aktivieren der partiellen Typüberprüfung;
+Optionen zur IntelliSense-Leistung;
 Veraltete Daten für IntelliSense-Features aktivieren;
 Zeit bis zur Verwendung veralteter Ergebnisse (in Millisekunden);
 Parallelisierung (Neustart erforderlich);
 Parallele Typüberprüfung mit Signaturdateien aktivieren;
 Parallele Verweisauflösung aktivieren;
-Schnellsuche und Umbenennen von Verweisen aktivieren (experimentell);
+Schnellsuche und Umbenennen von Verweisen aktivieren (Neustart erforderlich);
 Cacheanalyseergebnisse (experimentell)</target>
         <note />
       </trans-unit>
@@ -202,19 +202,20 @@ Solid underline;
 Dot underline;
 Dash underline;
 Show remarks in Quick Info</source>
-        <target state="needs-review-translation">Formatierung;
+        <target state="translated">Formatierung;
 Bevorzugte Beschreibungsbreite in Zeichen;
-Signatur in der angegebenen Breite formatieren, indem Zeilenumbrüche hinzugefügt werden, die den F#-Syntaxregeln entsprechen;
+Formatieren Sie die Signatur in der angegebenen Breite, indem Sie Zeilenumbrüche hinzufügen, die F#-Syntaxregeln entsprechen;
 Navigationslinks;
 Navigationslinks anzeigen als;
-Unterstreichung einfarbig;
-Punkt unterstrichen;
-Strich unterstrichen;</target>
+Durchgezogene Unterstreichung;
+Gepunktete Unterstreichung;
+Gestrichelte Unterstreichung;
+Hinweise in QuickInfo anzeigen</target>
         <note />
       </trans-unit>
       <trans-unit id="RemarksHeader">
         <source>Remarks:</source>
-        <target state="new">Remarks:</target>
+        <target state="translated">Bemerkungen:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -229,7 +230,7 @@ Strich unterstrichen;</target>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">Unnötige Klammern entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -254,7 +255,7 @@ Strich unterstrichen;</target>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">Rückgabe:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
