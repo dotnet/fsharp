@@ -5749,6 +5749,12 @@ let CheckOneImplFile
                 try  
                     let reportErrors = not (checkForErrors())
                     let tcVal = LightweightTcValForUsingInBuildMethodCall g
+                    use _ =
+                        Activity.start "PostTypeCheckSemanticChecks.CheckImplFile"
+                            [|
+                                Activity.Tags.fileName, fileName
+                                Activity.Tags.qualifiedNameOfFile, qualNameOfFile.Text
+                            |]
                     PostTypeCheckSemanticChecks.CheckImplFile 
                        (g, cenv.amap, reportErrors, cenv.infoReader, 
                         env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 

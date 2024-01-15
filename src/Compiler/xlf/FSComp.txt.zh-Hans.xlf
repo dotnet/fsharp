@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
         <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
-        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
+        <target state="translated">索引属性的 Getter 和 Setter 的类型必须相同。属性“{0}”的 Getter 的类型为“{1}”，而 Setter 的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
-        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
+        <target state="translated">对象表达式无法实现具有静态抽象成员或声明静态成员的接口。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailCallAttrOnNonRec">
         <source>The TailCall attribute should only be applied to recursive functions.</source>
-        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
+        <target state="translated">TailCall 属性应仅应用于递归函数。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -149,7 +149,7 @@
       </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
-        <target state="new">'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</target>
+        <target state="translated">“{0}”不支持类型“{1}”，因为后者缺少所需的(实际或内置)成员“{2}”</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
-        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
+        <target state="translated">如果在非递归函数上使用“TailCall”属性，则引发警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -424,7 +424,7 @@
       </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
-        <target state="new">prefer extension method over plain property</target>
+        <target state="translated">首选扩展方法而不是纯属性</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
@@ -469,7 +469,7 @@
       </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
-        <target state="new">Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</target>
+        <target state="translated">只要它们具有相同的名称和类型，即可在 [&lt;Struct&gt;] 中共享基础字段</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
-        <target state="new">Union case test properties</target>
+        <target state="translated">联合用例测试属性</target>
         <note />
       </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
@@ -524,7 +524,7 @@
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
-        <target state="new">Indexed properties getter and setter must have the same type</target>
+        <target state="translated">索引属性 getter 和 setter 必须具有相同的类型</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -919,7 +919,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingField">
         <source>Expecting record field</source>
-        <target state="new">Expecting record field</target>
+        <target state="translated">应为记录字段</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPattern">
@@ -969,7 +969,7 @@
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
         <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
-        <target state="new">Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</target>
+        <target state="translated">静态构造的声明不完整。使用“static let”、“static do”、“static member”或“static val”进行声明。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -1169,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
         <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
-        <target state="new">Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</target>
+        <target state="translated">仅原子表达式支持速记 lambda 语法，例如隐含的“_”参数上的方法、属性、字段或索引器。例如:“let f = _.Length”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1209,7 +1209,7 @@
       </trans-unit>
       <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
         <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
-        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <target state="translated">这是一个隐藏联合事例的函数定义。如果这是你想要的，请忽略或取消此警告。如果希望它是联合大小写析构，请添加括号。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1309,12 +1309,12 @@
       </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
-        <target state="new">No static abstract member was found that corresponds to this override</target>
+        <target state="translated">找不到与此替代对应的静态抽象成员</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoStaticPropertyFoundForOverride">
         <source>No static abstract property was found that corresponds to this override</source>
-        <target state="new">No static abstract property was found that corresponds to this override</target>
+        <target state="translated">未找到与此重写对应的静态抽象属性</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1409,7 +1409,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
         <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
-        <target state="new">If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</target>
+        <target state="translated">如果多重联合类型是结构，则具有相同名称的所有字段必须具有相同的类型。对于未命名字段，此规则也适用于生成的“Item”名称。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1469,7 +1469,7 @@
       </trans-unit>
       <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
         <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
-        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
+        <target state="translated">类型“{0}”的方法太多。1️⃣找到:“{1}”，最大值:“{2}”</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1634,7 +1634,7 @@
       </trans-unit>
       <trans-unit id="unnecessaryParentheses">
         <source>Parentheses can be removed.</source>
-        <target state="new">Parentheses can be removed.</target>
+        <target state="translated">可以移除括号。</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -5114,7 +5114,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="needs-review-translation">对于 F#7 及更低版本，静态值定义只能用于具有主构造函数的类型 ("type X(args) = ...")。若要在所有其他类型中启用它们，请使用“预览版”语言版本。</target>
+        <target state="translated">对于 F#7 及更低版本，静态“let”、“do”和“member val”定义只能用于具有主构造函数的类型 ("type X(args) = ...")。若要在所有其他类型中启用它们，请使用语言版本“8”或更高版本。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8519,7 +8519,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="needs-review-translation">无法调用 byref 扩展方法 "{0}"。第一个参数要求该值是可变的或非只读的 byref 类型。</target>
+        <target state="translated">无法调用 byref 扩展方法 "{0}"。“'this”参数要求该值是可变的或非只读的 byref 类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8609,7 +8609,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">{0} 中未注册包管理器密钥“{1}”。当前已注册: {2}。若要详细了解扩展，请访问: https://aka.ms/dotnetdepmanager</target>
+        <target state="translated">未在 {1} 中注册包管理器密钥“{0}”。当前已注册: {2}。可以通过将“--compilertool:&lt;extensionsfolder&gt;”传递到命令行来提供额外的路径。若要了解有关扩展的详细信息，请访问: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
