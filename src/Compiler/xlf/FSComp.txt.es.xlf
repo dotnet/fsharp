@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
         <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
-        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
+        <target state="translated">El captador y el establecedor de una propiedad indexada deben tener el mismo tipo. La propiedad '{0}' tiene un captador de tipo '{1}', pero el establecedor es de tipo '{2}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
-        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
+        <target state="translated">Las expresiones de objeto no pueden implementar interfaces con miembros abstractos estáticos ni declarar miembros estáticos.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailCallAttrOnNonRec">
         <source>The TailCall attribute should only be applied to recursive functions.</source>
-        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
+        <target state="translated">El atributo TailCall solo se debe aplicar a funciones recursivas.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -149,7 +149,7 @@
       </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
-        <target state="new">'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</target>
+        <target state="translated">'{0}' no admite el tipo '{1}', porque a este último le falta el '{2}' de miembro necesario (real o integrado)</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
-        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
+        <target state="translated">Genera advertencias si el atributo 'TailCall' se usa en funciones no recursivas.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -424,7 +424,7 @@
       </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
-        <target state="new">prefer extension method over plain property</target>
+        <target state="translated">preferir método de extensión sobre propiedad sin formato</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
@@ -469,7 +469,7 @@
       </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
-        <target state="new">Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</target>
+        <target state="translated">Compartir campos subyacentes en una unión discriminada [&lt;Struct&gt;] siempre y cuando tengan el mismo nombre y tipo</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
-        <target state="new">Union case test properties</target>
+        <target state="translated">Propiedades de prueba de caso de unión</target>
         <note />
       </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
@@ -524,7 +524,7 @@
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
-        <target state="new">Indexed properties getter and setter must have the same type</target>
+        <target state="translated">El captador y el establecedor de propiedades indexadas deben tener el mismo tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -919,7 +919,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingField">
         <source>Expecting record field</source>
-        <target state="new">Expecting record field</target>
+        <target state="translated">Se espera un campo de registro</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPattern">
@@ -969,7 +969,7 @@
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
         <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
-        <target state="new">Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</target>
+        <target state="translated">Declaración incompleta de una construcción estática. Use "static let", "static do", "static member" o "static val" para la declaración.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -1169,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
         <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
-        <target state="new">Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</target>
+        <target state="translated">La sintaxis lambda abreviada solo se admite para expresiones atómicas, como el método, la propiedad, el campo o el indexador en el argumento '_' implícito. Por ejemplo: 'let f = _.Length'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1209,7 +1209,7 @@
       </trans-unit>
       <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
         <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
-        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <target state="translated">Esta es una definición de función que oculta un caso de unión. Si esto es lo que desea, omita o suprima esta advertencia. Si desea que sea una desconstrucción de caso de unión, agregue paréntesis.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1309,12 +1309,12 @@
       </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
-        <target state="new">No static abstract member was found that corresponds to this override</target>
+        <target state="translated">No se encontró ningún miembro abstracto estático que corresponda a esta invalidación.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoStaticPropertyFoundForOverride">
         <source>No static abstract property was found that corresponds to this override</source>
-        <target state="new">No static abstract property was found that corresponds to this override</target>
+        <target state="translated">No se encontró ninguna propiedad abstracta estática que corresponda a esta invalidación.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1409,7 +1409,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
         <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
-        <target state="new">If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</target>
+        <target state="translated">Si un tipo de unión multicase es un struct, todos los campos con el mismo nombre deben ser del mismo tipo. Esta regla se aplica también al nombre "Item" generado en el caso de campos sin nombre.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1469,7 +1469,7 @@
       </trans-unit>
       <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
         <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
-        <target state="new">The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</target>
+        <target state="translated">El tipo '{0}' tiene demasiados métodos. Encontrado: '{1}', máximo: '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1634,7 +1634,7 @@
       </trans-unit>
       <trans-unit id="unnecessaryParentheses">
         <source>Parentheses can be removed.</source>
-        <target state="new">Parentheses can be removed.</target>
+        <target state="translated">Los paréntesis se pueden quitar.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -5114,7 +5114,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="needs-review-translation">Para F#7 y versiones anteriores, las definiciones de valores estáticos solo se pueden usar en tipos con un constructor principal ('type X(args) = ...'). Para habilitarlos en todos los demás tipos, use la versión de idioma "preview".</target>
+        <target state="translated">Para F#7 y versiones anteriores, las definiciones estáticas 'let','do' y 'member val' solo se pueden usar en tipos con un constructor principal ('type X(args) = ...'). Para habilitarlos en todos los demás tipos, use la versión de idioma "8" o una versión posterior.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8519,7 +8519,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="needs-review-translation">No se puede llamar al método de extensión de byref "{0}". El primer parámetro requiere que el valor sea mutable o un tipo de byref que no sea de solo lectura.</target>
+        <target state="translated">No se puede llamar al método de extensión de byref "{0}". El parámetro 'this' requiere que el valor sea mutable o un tipo byref no de solo lectura.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8609,7 +8609,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">La clave del administrador de paquetes "{0}" no se registró en {1}. Registrado actualmente: {2}. Para obtener más información sobre las extensiones, visite https://aka.ms/dotnetdepmanager</target>
+        <target state="translated">La clave del administrador de paquetes "{0}" no se registró en {1}. Registrado actualmente: {2}. Puede proporcionar rutas adicionales pasando '--compilertool:&lt;extensionsfolder&gt;' a la línea de comando. Para obtener más información sobre las extensiones, visite https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

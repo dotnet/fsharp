@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="needs-review-translation">使用实时(未保存)缓冲区进行检查(需要重新启动)</target>
+        <target state="translated">使用实时(未保存)缓冲区进行分析(需要重新启动)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="needs-review-translation">实时缓冲区(实验性)</target>
+        <target state="translated">实时缓冲区</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="Remove_parens_code_fix">
         <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
-        <target state="new">Remove unnecessary parentheses (experimental, might affect typing performance)</target>
+        <target state="translated">删除不必要的括号(实验性，可能会影响键入性能)</target>
         <note />
       </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="Show_remarks_in_Quick_Info">
         <source>Show remarks in Quick Info</source>
-        <target state="new">Show remarks in Quick Info</target>
+        <target state="translated">在快速信息中显示备注</target>
         <note />
       </trans-unit>
       <trans-unit id="Simplify_name_code_fix">

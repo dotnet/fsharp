@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="needs-review-translation">Usar buffers dinâmicos (não salvos) para verificação (reinicialização necessária)</target>
+        <target state="translated">Usar buffers dinâmicos (não salvos) para verificação (reinicialização necessária)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="needs-review-translation">Buffers Dinâmicos (experimental)</target>
+        <target state="translated">Buffers Dinâmicos</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="Remove_parens_code_fix">
         <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
-        <target state="new">Remove unnecessary parentheses (experimental, might affect typing performance)</target>
+        <target state="translated">Remover parênteses desnecessários (experimental, pode afetar o desempenho da digitação)</target>
         <note />
       </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="Show_remarks_in_Quick_Info">
         <source>Show remarks in Quick Info</source>
-        <target state="new">Show remarks in Quick Info</target>
+        <target state="translated">Mostrar os comentários nas Informações Rápidas</target>
         <note />
       </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
