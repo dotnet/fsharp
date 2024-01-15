@@ -101,6 +101,8 @@ let ``We can cancel a job`` () =
 
         Assert.Equal<(JobEvent * int) array>([| Started, key |], eventLog |> Seq.toArray )
 
+        do! Task.Delay 100
+
         cts1.Cancel()
         cts2.Cancel()
 
@@ -142,6 +144,8 @@ let ``Job is restarted if first requestor cancels`` () =
 
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
+
+        do! Task.Delay 100
 
         cts1.Cancel()
 
