@@ -217,6 +217,7 @@ type OptionalArgInfo =
                             else MissingValue
                     else
                         DefaultValue
+                                    // See above - the typpe is imported only in order to be analyzed for optional default value, nullness is irrelevant here.
                 CallerSide (analyze (ImportILTypeFromMetadataSkipNullness amap m ilScope ilTypeInst [] ilParam.Type))
             | Some v ->
                 CallerSide (Constant v)
@@ -1701,6 +1702,7 @@ type ILPropInfo =
         else if x.HasSetter then
             x.SetterMethod.GetParamNamesAndTypes(amap,m,tinfo.TypeInstOfRawMetadata)
         else
+            // Fallback-only for invalid properties
             pdef.Args |> List.map (fun ty -> ParamNameAndType(None, ImportILTypeFromMetadataSkipNullness amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] ty) )
 
     /// Get the types of the indexer arguments associated with the IL property.
@@ -1713,6 +1715,7 @@ type ILPropInfo =
         else if x.HasSetter then
             x.SetterMethod.GetParamTypes(amap,m,tinfo.TypeInstOfRawMetadata)
         else
+            // Fallback-only for invalid properties
             pdef.Args |> List.map (fun ty -> ImportILTypeFromMetadataSkipNullness amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] ty)
 
     /// Get the return type of the IL property.

@@ -55,6 +55,7 @@ let GetSuperTypeOfType g amap m ty =
             let tinst = argsOfAppTy g ty
             match tdef.Extends with
             | None -> None
+                                // 'inherit' cannot refer to a nullable type
             | Some ilTy -> Some (RescopeAndImportILTypeSkipNullness scoref amap m tinst ilTy)
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
@@ -115,6 +116,7 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             // assume those are present.
             for intfTy in tdef.Implements do
                 if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+                    // Implementing an interface cannot refer to a nullable type
                     RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do

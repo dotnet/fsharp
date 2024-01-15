@@ -90,6 +90,7 @@ type AttribInfo =
          match x with 
          | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _)) -> tcref
          | ILAttribInfo (g, amap, scoref, a, m) -> 
+             // We are skipping nullness check here because this reference is an attribute usage, nullness does not apply.
              let ty = RescopeAndImportILTypeSkipNullness scoref amap m [] a.Method.DeclaringType
              tcrefOfAppTy g ty
 
@@ -104,6 +105,7 @@ type AttribInfo =
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
               [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes parms ->
+                    // We are skipping nullness check here because this reference is an attribute usage, nullness does not apply.
                     let ty = RescopeAndImportILTypeSkipNullness scoref amap m [] argTy
                     let obj = evalILAttribElem arg
                     ty, obj ]
@@ -119,6 +121,7 @@ type AttribInfo =
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
               [ for nm, argTy, isProp, arg in namedArgs ->
+                    // We are skipping nullness check here because this reference is an attribute usage, nullness does not apply.
                     let ty = RescopeAndImportILTypeSkipNullness scoref amap m [] argTy
                     let obj = evalILAttribElem arg
                     let isField = not isProp 

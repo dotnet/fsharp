@@ -1149,6 +1149,8 @@ module FSharpExprConvert =
                 // TODO: this will not work for curried methods in F# classes.
                 // This is difficult to solve as the information in the ILMethodRef
                 // is not sufficient to resolve to a symbol unambiguously in these cases.
+
+                                                              // If this was an ILTycon with potential nullness, try1 is Some(..) and this branch not hit
                 let argTys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadataSkipNullness cenv.amap m scoref tinst1 tinst2) ]
                 let retTy = 
                     let nullableAttributes = Import.Nullness.NullableAttributesSource.Empty
