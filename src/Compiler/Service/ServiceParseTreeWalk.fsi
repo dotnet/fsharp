@@ -152,8 +152,8 @@ type SyntaxVisitorBase<'T> =
     default VisitRecordField:
         path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: SynLongIdent option -> 'T option
 
-    abstract VisitSimplePats: path: SyntaxVisitorPath * synPats: SynSimplePat list -> 'T option
-    default VisitSimplePats: path: SyntaxVisitorPath * synPats: SynSimplePat list -> 'T option
+    abstract VisitSimplePats: path: SyntaxVisitorPath * pat: SynPat -> 'T option
+    default VisitSimplePats: path: SyntaxVisitorPath * pat: SynPat -> 'T option
 
     abstract VisitType:
         path: SyntaxVisitorPath * defaultTraverse: (SynType -> 'T option) * synType: SynType -> 'T option

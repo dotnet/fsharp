@@ -5,7 +5,6 @@
     <TargetFrameworks>net8.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DotNetBuildOffline>true</DotNetBuildOffline>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <OtherFlags>--standalone</OtherFlags>
   </PropertyGroup>
