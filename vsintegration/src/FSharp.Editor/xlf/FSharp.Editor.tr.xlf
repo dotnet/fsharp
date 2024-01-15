@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">Dönüş türü ek açıklaması ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -43,16 +43,16 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">Blok Yapısı Kılavuzları;
+        <target state="translated">Blok Yapısı Kılavuzları;
 F# kodu için yapı yönergelerini göster;
-Anahat oluşturma;
+Ana hat oluşturma;
 F# kodu için ana hattı ve daraltılabilir düğümleri göster;
 Satır içi ipuçları;
 Satır içi tür ipuçlarını görüntüle (önizleme);
 Dönüş türü ipuçlarını görüntüle (önizleme);
 Satır içi parametre adı ipuçlarını görüntüle (önizleme);
 Canlı Arabellekler;
-Denetim için canlı (kaydedilmemiş) arabellekler kullan</target>
+Analiz için canlı (kaydedilmemiş) arabellekleri kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -174,16 +174,16 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
+        <target state="translated">F# Proje ve Önbelleğe Alma Performansı Seçenekleri;
 Bellek içi çapraz proje başvurularını etkinleştir;
-Enable_partial_type_checking;
+Kısmi_tür_denetlemeyi_etkinleştir;
 IntelliSense Performans Seçenekleri;
 IntelliSense özellikleri için eski verileri etkinleştir;
-Eski sonuçlar kullanılana kadar geçen süre (milisaniye olarak);
+Eski sonuçların kullanılması için geçecek süre (milisaniye cinsinden);
 Paralelleştirme (yeniden başlatma gerektirir);
 İmza dosyalarıyla paralel tür denetlemeyi etkinleştir;
 Paralel başvuru çözümlemeyi etkinleştir;
-Başvuruları hızlı bulma ve yeniden adlandırmayı etkinleştir (deneysel)
+Başvuruları hızlı bulmayı ve yeniden adlandırmayı etkinleştir (yeniden başlatma gerektirir);
 Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
         <note />
       </trans-unit>
@@ -202,19 +202,20 @@ Solid underline;
 Dot underline;
 Dash underline;
 Show remarks in Quick Info</source>
-        <target state="needs-review-translation">Biçimlendirme; 
+        <target state="translated">Biçimlendirme;
 Karakter olarak tercih edilen açıklama genişliği;
-F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı verilen genişliğe biçimlendir;
+F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı belirtilen genişliğe biçimlendir;
 Gezinti bağlantıları;
-Gezinti bağlantılarını şöyle göster;
-Düz alt çizgi;
+Gezinti bağlantılarını farklı göster;
+Kesintisiz alt çizgi;
 Nokta alt çizgi;
-Tire alt çizgisi;</target>
+Tire alt çizgi;
+Açıklamaları Hızlı Bilgide göster</target>
         <note />
       </trans-unit>
       <trans-unit id="RemarksHeader">
         <source>Remarks:</source>
-        <target state="new">Remarks:</target>
+        <target state="translated">Açıklamalar:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -229,7 +230,7 @@ Tire alt çizgisi;</target>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">Gereksiz parantezleri kaldır</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -254,7 +255,7 @@ Tire alt çizgisi;</target>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">Şunu döndürür:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
