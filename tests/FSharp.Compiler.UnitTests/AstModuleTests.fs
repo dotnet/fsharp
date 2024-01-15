@@ -179,3 +179,271 @@ type Meh =
     match ident with
     | Some "Foo" -> ()
     | _ -> failwith "Did not visit SynValSig in SynMemberSig.Member"
+
+[<Fact>]
+let ``tryPick picks the first matching node`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let ``module`` =
+        parseTree.Contents
+        |> Ast.tryPick (mkPos 6 28) (fun _path node ->
+            match node with
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | _ -> None)
+
+    Assert.Equal(Some ["N"], ``module``)
+
+[<Fact>]
+let ``tryPick falls back to the nearest matching node to the left if pos is out of range`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let ``module`` =
+        parseTree.Contents
+        |> Ast.tryPick (mkPos 7 30) (fun _path node ->
+            match node with
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | _ -> None)
+
+    Assert.Equal(Some ["N"], ``module``)
+
+[<Fact>]
+let ``tryPickLast picks the last matching node`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let ``module`` =
+        parseTree.Contents
+        |> Ast.tryPickLast (mkPos 6 28) (fun _path node ->
+            match node with
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | _ -> None)
+
+    Assert.Equal(Some ["P"], ``module``)
+
+[<Fact>]
+let ``tryPickLast falls back to the nearest matching node to the left if pos is out of range`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let ``module`` =
+        parseTree.Contents
+        |> Ast.tryPickLast (mkPos 7 30) (fun _path node ->
+            match node with
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | _ -> None)
+
+    Assert.Equal(Some ["P"], ``module``)
+
+[<Fact>]
+let ``exists returns true for the first matching node`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let mutable start = 0, 0
+
+    let found =
+        parseTree.Contents
+        |> Ast.exists (mkPos 6 28) (fun _path node ->
+            match node with
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                start <- node.Range.StartLine, node.Range.StartColumn
+                true
+            | _ -> false)
+
+    Assert.True found
+    Assert.Equal((4, 0), start)
+
+[<Fact>]
+let ``exists falls back to the nearest matching node to the left if pos is out of range`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let mutable start = 0, 0
+
+    let found =
+        parseTree.Contents
+        |> Ast.exists (mkPos 7 30) (fun _path node ->
+            match node with
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                start <- node.Range.StartLine, node.Range.StartColumn
+                true
+            | _ -> false)
+
+    Assert.True found
+    Assert.Equal((4, 0), start)
+
+[<Fact>]
+let ``tryNode picks the last node containing the given position`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let ``module`` =
+        parseTree.Contents
+        |> Ast.tryNode (mkPos 6 28)
+        |> Option.bind (fun (node, _path) ->
+            match node with
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | _ -> None)
+
+    Assert.Equal(Some ["P"], ``module``)
+
+[<Fact>]
+let ``tryNode returns None if no node contains the given position`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let ``module`` = parseTree.Contents |> Ast.tryNode (mkPos 6 30)
+
+    Assert.Equal(None, ``module``)
+
+[<Fact>]
+let ``fold traverses nodes in order`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+
+module Q =
+    module R =
+        module S = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let modules =
+        ([], parseTree.Contents)
+        ||> Ast.fold (fun acc _path node ->
+            match node with
+            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                (longIdent |> List.map (fun ident -> ident.idText)) :: acc
+            | _ -> acc)
+
+    Assert.Equal<string list list>(
+        [["M"]; ["N"]; ["O"]; ["P"]; ["Q"]; ["R"]; ["S"]],
+        List.rev modules)
+
+[<Fact>]
+let ``foldWhile traverses nodes in order`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+
+module Q =
+    module R =
+        module S = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let modules =
+        ([], parseTree.Contents)
+        ||> Ast.foldWhile (fun acc _path node ->
+            match node with
+            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                Some((longIdent |> List.map (fun ident -> ident.idText)) :: acc)
+            | _ -> Some acc)
+
+    Assert.Equal<string list list>(
+        [["M"]; ["N"]; ["O"]; ["P"]; ["Q"]; ["R"]; ["S"]],
+        List.rev modules)
+
+[<Fact>]
+let ``foldWhile traverses nodes in order until the folder returns None`` () =
+    let source = """
+module M
+
+module N =
+    module O =
+        module P = begin end
+
+module Q =
+    module R =
+        module S = begin end
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fs", source)
+
+    let modules =
+        ([], parseTree.Contents)
+        ||> Ast.foldWhile (fun acc _path node ->
+            if posGt node.Range.Start (mkPos 7 0) then None
+            else
+                match node with
+                | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
+                | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                    Some((longIdent |> List.map (fun ident -> ident.idText)) :: acc)
+                | _ -> Some acc)
+
+    Assert.Equal<string list list>(
+        [["M"]; ["N"]; ["O"]; ["P"]],
+        List.rev modules)
