@@ -232,8 +232,12 @@ type ValFlags(flags: int64) =
     member x.WithIgnoresByrefScope                     =  ValFlags(flags ||| 0b10000000000000000000L)
 
     member x.InlineIfLambda                            =         (flags &&& 0b100000000000000000000L) <> 0L
-    
+
     member x.WithInlineIfLambda                        = ValFlags(flags ||| 0b100000000000000000000L)
+
+    member x.IsImplied                                 =        (flags &&& 0b1000000000000000000000L) <> 0L
+
+    member x.WithIsImplied                             = ValFlags(flags ||| 0b1000000000000000000000L)
 
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
@@ -563,6 +567,9 @@ type EntityOptionalData =
       // MUTABILITY: only for unpickle linkage
       mutable entity_xmldoc: XmlDoc
       
+      /// the signature xml doc for an item in an implementation file.
+      mutable entity_other_xmldoc : XmlDoc option
+      
       /// The XML document signature for this entity
       mutable entity_xmldocsig: string
 
@@ -651,7 +658,8 @@ type Entity =
         { entity_compiled_name = None 
           entity_other_range = None
           entity_kind = TyparKind.Type
-          entity_xmldoc = XmlDoc.Empty 
+          entity_xmldoc = XmlDoc.Empty
+          entity_other_xmldoc = None
           entity_xmldocsig = ""
           entity_tycon_abbrev = None
           entity_tycon_repr_accessibility = TAccess []
@@ -764,6 +772,11 @@ type Entity =
         match x.entity_opt_data with 
         | Some optData -> optData.entity_other_range <- Some m
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_other_range = Some m }
+        
+    member x.SetOtherXmlDoc xmlDoc =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_other_xmldoc <- Some xmlDoc
+        | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_other_xmldoc = Some xmlDoc }
 
     /// A unique stamp for this module, namespace or type definition within the context of this compilation. 
     /// Note that because of signatures, there are situations where in a single compilation the "same" 
@@ -787,7 +800,13 @@ type Entity =
         | _ -> 
 #endif
         match x.entity_opt_data with
-        | Some optData -> optData.entity_xmldoc
+        | Some optData ->
+            if not optData.entity_xmldoc.IsEmpty then
+                optData.entity_xmldoc
+            else
+                match optData.entity_other_xmldoc with
+                | Some xmlDoc -> xmlDoc
+                | None -> XmlDoc.Empty
         | _ -> XmlDoc.Empty
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
@@ -945,7 +964,7 @@ type Entity =
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
     member x.AllFieldTable = 
         match x.TypeReprInfo with 
-        | TFSharpRecdRepr x | TFSharpObjectRepr {fsobjmodel_rfields=x} -> x
+        | TFSharpTyconRepr {fsobjmodel_rfields=x} -> x
         | _ -> 
         match x.ExceptionInfo with 
         | TExnFresh x -> x
@@ -981,12 +1000,15 @@ type Entity =
     member x.GetFieldByName n = x.AllFieldTable.FieldByName n
 
     /// Indicate if this is a type whose r.h.s. is known to be a union type definition.
-    member x.IsUnionTycon = match x.TypeReprInfo with | TFSharpUnionRepr _ -> true | _ -> false
+    member x.IsUnionTycon =
+        match x.TypeReprInfo with 
+        | TFSharpTyconRepr {fsobjmodel_kind=TFSharpUnion} -> true
+        | _ -> false
 
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TFSharpUnionRepr x -> ValueSome x 
+        | TFSharpTyconRepr {fsobjmodel_kind=TFSharpUnion; fsobjmodel_cases=x} -> ValueSome x
         | _ -> ValueNone
 
     /// Get the union cases for a type, if any
@@ -1046,6 +1068,7 @@ type Entity =
                        entity_kind = tg.entity_kind
                        entity_xmldoc = tg.entity_xmldoc
                        entity_xmldocsig = tg.entity_xmldocsig
+                       entity_other_xmldoc = tg.entity_other_xmldoc 
                        entity_tycon_abbrev = tg.entity_tycon_abbrev
                        entity_tycon_repr_accessibility = tg.entity_tycon_repr_accessibility
                        entity_accessibility = tg.entity_accessibility
@@ -1057,9 +1080,9 @@ type Entity =
     member x.IsLinked = match box x.entity_attribs with null -> false | _ -> true 
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
-    member x.FSharpObjectModelTypeInfo = 
+    member x.FSharpTyconRepresentationData = 
          match x.TypeReprInfo with 
-         | TFSharpObjectRepr x -> x 
+         | TFSharpTyconRepr x -> x 
          | _ -> failwith "not an F# object model type definition"
 
     /// Indicate if this is a type definition backed by Abstract IL metadata.
@@ -1073,10 +1096,17 @@ type Entity =
     member x.ILTyconRawMetadata = let (TILObjectReprData(_, _, td)) = x.ILTyconInfo in td
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
-    member x.IsRecordTycon = match x.TypeReprInfo with | TFSharpRecdRepr _ -> true | _ -> false
+    member x.IsRecordTycon =
+        match x.TypeReprInfo with 
+        | TFSharpTyconRepr {fsobjmodel_kind=TFSharpRecord} -> true
+        | _ -> false
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
-    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TFSharpRecdRepr _ | TFSharpUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
+    member x.IsStructRecordOrUnionTycon =
+        match x.TypeReprInfo with 
+        | TFSharpTyconRepr { fsobjmodel_kind=TFSharpRecord } -> x.entity_flags.IsStructRecordOrUnionType
+        | TFSharpTyconRepr { fsobjmodel_kind=TFSharpUnion } -> x.entity_flags.IsStructRecordOrUnionType
+        | _ -> false
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike = x.entity_flags.TryIsByRefLike
@@ -1096,8 +1126,21 @@ type Entity =
     /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
     member x.SetIsAssumedReadOnly b = x.entity_flags <- x.entity_flags.WithIsAssumedReadOnly b 
 
-    /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
-    member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true | _ -> false
+    /// Indicates if this is an F# type definition known to be an F# class, interface, struct,
+    /// delegate or enum. This isn't generally a particularly useful thing to know,
+    /// it is better to use more specific predicates.
+    member x.IsFSharpObjectModelTycon =
+        match x.TypeReprInfo with
+        | TFSharpTyconRepr { fsobjmodel_kind = kind } ->
+            match kind with
+            | TFSharpRecord
+            | TFSharpUnion -> false
+            | TFSharpClass
+            | TFSharpInterface
+            | TFSharpDelegate _
+            | TFSharpStruct
+            | TFSharpEnum -> true
+        | _ -> false
 
     /// Indicates if this is an F# type definition which is one of the special types in FSharp.Core.dll which uses 
     /// an assembly-code representation for the type, e.g. the primitive array type constructor.
@@ -1112,16 +1155,16 @@ type Entity =
     member x.IsHiddenReprTycon = match x.TypeAbbrev, x.TypeReprInfo with | None, TNoRepr -> true | _ -> false
 
     /// Indicates if this is an F#-defined interface type definition 
-    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpInterface -> true | _ -> false
+    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpTyconRepresentationData.fsobjmodel_kind with TFSharpInterface -> true | _ -> false
 
     /// Indicates if this is an F#-defined delegate type definition 
-    member x.IsFSharpDelegateTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpDelegate _ -> true | _ -> false
+    member x.IsFSharpDelegateTycon = x.IsFSharpObjectModelTycon && match x.FSharpTyconRepresentationData.fsobjmodel_kind with TFSharpDelegate _ -> true | _ -> false
 
     /// Indicates if this is an F#-defined enum type definition 
-    member x.IsFSharpEnumTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpEnum -> true | _ -> false
+    member x.IsFSharpEnumTycon = x.IsFSharpObjectModelTycon && match x.FSharpTyconRepresentationData.fsobjmodel_kind with TFSharpEnum -> true | _ -> false
 
     /// Indicates if this is an F#-defined class type definition 
-    member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpClass -> true | _ -> false
+    member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpTyconRepresentationData.fsobjmodel_kind with TFSharpClass -> true | _ -> false
 
     /// Indicates if this is a .NET-defined enum type definition 
     member x.IsILEnumTycon = x.IsILTycon && x.ILTyconRawMetadata.IsEnum
@@ -1136,14 +1179,12 @@ type Entity =
 #endif
         x.IsILEnumTycon || x.IsFSharpEnumTycon
 
-
-    /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is an F#-defined value type definition, including struct records and unions
     member x.IsFSharpStructOrEnumTycon =
         match x.TypeReprInfo with
-        | TFSharpRecdRepr _ -> x.IsStructRecordOrUnionTycon
-        | TFSharpUnionRepr _ -> x.IsStructRecordOrUnionTycon
-        | TFSharpObjectRepr info ->
+        | TFSharpTyconRepr info ->
             match info.fsobjmodel_kind with
+            | TFSharpRecord | TFSharpUnion -> x.IsStructRecordOrUnionTycon
             | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> false
             | TFSharpStruct | TFSharpEnum -> true
         | _ -> false
@@ -1153,7 +1194,7 @@ type Entity =
         x.IsILTycon && 
         x.ILTyconRawMetadata.IsStructOrEnum
 
-    /// Indicates if this is a struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a struct or enum type definition, i.e. a value type definition, including struct records and unions
     member x.IsStructOrEnumTycon = 
 #if !NO_TYPEPROVIDERS
         match x.TypeReprInfo with 
@@ -1276,6 +1317,8 @@ type Entity =
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member x.HasSelfReferentialConstructor = x.entity_flags.HasSelfReferentialConstructor
+    
+    member x.HasSignatureFile = x.SigRange <> x.DefinitionRange
 
     /// Set the custom attributes on an F# type definition.
     member x.SetAttribs attribs = x.entity_attribs <- attribs
@@ -1409,13 +1452,7 @@ type TyconAugmentation =
 type TyconRepresentation = 
 
     /// Indicates the type is a class, struct, enum, delegate or interface 
-    | TFSharpObjectRepr of TyconObjModelData
-
-    /// Indicates the type is a record 
-    | TFSharpRecdRepr of TyconRecdFields
-
-    /// Indicates the type is a discriminated union 
-    | TFSharpUnionRepr of TyconUnionData 
+    | TFSharpTyconRepr of FSharpTyconData
 
     /// Indicates the type is a type from a .NET assembly without F# metadata.
     | TILObjectRepr of TILObjectReprData
@@ -1529,7 +1566,13 @@ type TProvidedTypeInfo =
 
 #endif
 
-type TyconFSharpObjModelKind = 
+type FSharpTyconKind = 
+    /// Indicates the type is an F#-declared record
+    | TFSharpRecord
+
+    /// Indicates the type is an F#-declared union
+    | TFSharpUnion
+
     /// Indicates the type is an F#-declared class (also used for units-of-measure)
     | TFSharpClass 
 
@@ -1545,18 +1588,15 @@ type TyconFSharpObjModelKind =
     /// Indicates the type is an F#-declared enumeration 
     | TFSharpEnum
     
-    /// Indicates if the type definition is a value type
-    member x.IsValueType =
-        match x with 
-        | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> false
-        | TFSharpStruct | TFSharpEnum -> true
-
 /// Represents member values and class fields relating to the F# object model
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TyconObjModelData = 
+type FSharpTyconData = 
     { 
+      /// Indicates the cases of a union type
+      fsobjmodel_cases: TyconUnionData
+
       /// Indicates whether the type declaration is an F# class, interface, enum, delegate or struct 
-      fsobjmodel_kind: TyconFSharpObjModelKind
+      fsobjmodel_kind: FSharpTyconKind
 
       /// The declared abstract slots of the class, interface or struct 
       fsobjmodel_vslots: ValRef list
@@ -1568,7 +1608,7 @@ type TyconObjModelData =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TyconObjModelData(...)"
+    override x.ToString() = "FSharpTyconData(...)"
 
 /// Represents record fields in an F# type definition
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -1631,6 +1671,7 @@ type TyconUnionCases =
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type TyconUnionData =
     {
+
       /// The cases contained in the discriminated union. 
       CasesTable: TyconUnionCases
 
@@ -1657,7 +1698,10 @@ type UnionCase =
       ReturnType: TType
 
       /// Documentation for the case 
-      XmlDoc: XmlDoc
+      OwnXmlDoc: XmlDoc
+      
+      /// Documentation for the case from signature file
+      mutable OtherXmlDoc: XmlDoc
 
       /// XML documentation signature for the case
       mutable XmlDocSig: string
@@ -1677,7 +1721,14 @@ type UnionCase =
       // MUTABILITY: used when propagating signature attributes into the implementation.
       mutable Attribs: Attribs
     }
-
+    
+    /// Documentation for the case 
+    member uc.XmlDoc: XmlDoc =
+        if not uc.OwnXmlDoc.IsEmpty then
+            uc.OwnXmlDoc
+        else
+            uc.OtherXmlDoc
+      
     /// Get the declaration location of the union case
     member uc.Range = uc.Id.idRange
 
@@ -1693,6 +1744,9 @@ type UnionCase =
         | Some (m, false) -> m
         | _ -> uc.Range 
 
+    member x.SetOtherXmlDoc xmlDoc =
+        x.OtherXmlDoc <- xmlDoc
+    
     /// Get the logical name of the union case
     member uc.LogicalName = uc.Id.idText
 
@@ -1749,6 +1803,9 @@ type RecdField =
 
       /// Documentation for the field 
       rfield_xmldoc: XmlDoc
+      
+      /// Documentation for the field from signature file 
+      mutable rfield_otherxmldoc: XmlDoc
 
       /// XML Documentation signature for the field
       mutable rfield_xmldocsig: string
@@ -1841,7 +1898,14 @@ type RecdField =
     member v.FormalType = v.rfield_type
 
     /// XML Documentation signature for the field
-    member v.XmlDoc = v.rfield_xmldoc
+    member v.XmlDoc =
+        if not v.rfield_xmldoc.IsEmpty then
+            v.rfield_xmldoc
+        else
+            v.rfield_otherxmldoc
+    
+    member v.SetOtherXmlDoc (xmlDoc: XmlDoc) =
+        v.rfield_otherxmldoc <- xmlDoc        
 
     /// Get or set the XML documentation signature for the field
     member v.XmlDocSig
@@ -1889,7 +1953,7 @@ type ExceptionInfo =
 
     override x.ToString() = sprintf "%+A" x 
 
-/// Represents the contents of of a module of namespace
+/// Represents the contents of a module or namespace
 [<Sealed; StructuredFormatDisplay("{DebugText}")>]
 type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
 
@@ -2390,29 +2454,41 @@ type TraitWitnessInfo =
 type TraitConstraintInfo = 
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
-    /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref 
+    /// to store the inferred solution of the constraint. And a mutable source cell to store
+    /// the name of the type or member that defined the constraint.
+    | TTrait of
+        tys: TTypes * 
+        memberName: string * 
+        memberFlags: SynMemberFlags * 
+        objAndArgTys: TTypes * 
+        returnTyOpt: TType option * 
+        source: string option ref * 
+        solution: TraitConstraintSln option ref 
 
     /// Get the types that may provide solutions for the traits
-    member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _)) = x in tys)
+    member x.SupportTypes = (let (TTrait(tys = tys)) = x in tys)
 
     /// Get the logical member name associated with the member constraint.
-    member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    member x.MemberLogicalName = (let (TTrait(memberName = nm)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
-    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
+    member x.MemberFlags = (let (TTrait(memberFlags = flags)) = x in flags)
 
-    member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _)) = x in objAndArgTys)
-
-    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f))
-
+    member x.CompiledObjectAndArgumentTypes = (let (TTrait(objAndArgTys = objAndArgTys)) = x in objAndArgTys)
+    
     /// Get the optional return type recorded in the member constraint.
-    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _)) = x in retTy)
-
+    member x.CompiledReturnType = (let (TTrait(returnTyOpt = retTy)) = x in retTy)
+    
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
-        with get() = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value)
-        and set v = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value <- v)
+        with get() = (let (TTrait(solution = sln)) = x in sln.Value)
+        and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
+
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
+
+    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g)) = x in TTrait(tys, b, c, d, e, f, g))
+
+    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g)) = x in TTrait(a, name, c, d, e, f, g))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -2537,13 +2613,20 @@ type ValOptionalData =
       /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
       mutable val_repr_info_for_display: ValReprInfo option
 
+      /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+      /// them with lambda arguments.
+      mutable arg_repr_info_for_display: ArgReprInfo option
+
       /// How visible is this? 
       /// MUTABILITY: for unpickle linkage
       mutable val_access: Accessibility 
 
       /// XML documentation attached to a value.
       /// MUTABILITY: for unpickle linkage
-      mutable val_xmldoc: XmlDoc 
+      mutable val_xmldoc: XmlDoc
+      
+      /// the signature xml doc for an item in an implementation file.
+      mutable val_other_xmldoc : XmlDoc option
 
       /// Is the value actually an instance method/property/event that augments 
       /// a type, and if so what name does it take in the IL?
@@ -2597,8 +2680,10 @@ type Val =
           val_defn = None
           val_repr_info = None
           val_repr_info_for_display = None
+          arg_repr_info_for_display = None
           val_access = TAccess []
           val_xmldoc = XmlDoc.Empty
+          val_other_xmldoc = None
           val_member_info = None
           val_declaring_entity = ParentNone
           val_xmldocsig = String.Empty
@@ -2611,8 +2696,9 @@ type Val =
         | _ -> x.val_range
 
     /// Range of the definition (signature) of the value, used by Visual Studio 
-    member x.SigRange = 
+    member x.SigRange =
         match x.val_opt_data with
+        | Some { arg_repr_info_for_display = Some { OtherRange = Some m } } -> m
         | Some { val_other_range = Some(m, false) } -> m
         | _ -> x.val_range
 
@@ -2664,6 +2750,11 @@ type Val =
     member x.ValReprInfoForDisplay: ValReprInfo option =
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info_for_display
+        | _ -> None
+
+    member x.ArgReprInfoForDisplay: ArgReprInfo option =
+        match x.val_opt_data with
+        | Some optData -> optData.arg_repr_info_for_display
         | _ -> None
 
     member x.Id = ident(x.LogicalName, x.Range)
@@ -2803,11 +2894,17 @@ type Val =
     //  Indicates if this value was declared to be a type function, e.g. "let f<'a> = typeof<'a>"
     member x.IsTypeFunction = x.val_flags.IsTypeFunction
 
+    member x.HasSignatureFile =
+        x.SigRange <> x.DefinitionRange
+    
     /// Get the inline declaration on the value
     member x.InlineInfo = x.val_flags.InlineInfo
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member x.InlineIfLambda = x.val_flags.InlineIfLambda
+
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member x.IsImplied = x.val_flags.IsImplied
 
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.MustInline = x.InlineInfo.MustInline
@@ -2819,8 +2916,8 @@ type Val =
 
     /// Indicates that this value's getter or setter are generated by the compiler
     member x.GetterOrSetterIsCompilerGenerated =
-        x.MemberInfo |> Option.exists (fun m -> m.MemberFlags.GetterOrSetterIsCompilerGenerated = true)
-    
+        x.MemberInfo |> Option.exists (fun m -> m.MemberFlags.GetterOrSetterIsCompilerGenerated)
+
     /// Get the declared attributes for the value
     member x.Attribs = 
         match x.val_opt_data with
@@ -2830,7 +2927,13 @@ type Val =
     /// Get the declared documentation for the value
     member x.XmlDoc =
         match x.val_opt_data with
-        | Some optData -> optData.val_xmldoc
+        | Some optData ->
+            if not optData.val_xmldoc.IsEmpty then
+                optData.val_xmldoc
+            else
+                match optData.val_other_xmldoc with
+                | Some xmlDoc -> xmlDoc
+                | None -> XmlDoc.Empty
         | _ -> XmlDoc.Empty
     
     ///Get the signature for the value's XML documentation
@@ -3043,6 +3146,8 @@ type Val =
 
     member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
 
+    member x.SetIsImplied() = x.val_flags <- x.val_flags.WithIsImplied
+
     member x.SetValReprInfo info = 
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info <- info
@@ -3053,6 +3158,11 @@ type Val =
         | Some optData -> optData.val_repr_info_for_display <- info
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info_for_display = info }
 
+    member x.SetArgReprInfoForDisplay info =
+        match x.val_opt_data with
+        | Some optData -> optData.arg_repr_info_for_display <- info
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with arg_repr_info_for_display = info }
+
     member x.SetType ty = x.val_type <- ty
 
     member x.SetOtherRange m =
@@ -3060,6 +3170,11 @@ type Val =
         | Some optData -> optData.val_other_range <- Some m
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_other_range = Some m }
 
+    member x.SetOtherXmlDoc xmlDoc =
+        match x.val_opt_data with
+        | Some optData -> optData.val_other_xmldoc <- Some xmlDoc
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_other_xmldoc = Some xmlDoc }
+    
     member x.SetDeclaringEntity parent = 
         match x.val_opt_data with
         | Some optData -> optData.val_declaring_entity <- parent
@@ -3111,9 +3226,11 @@ type Val =
                        val_const = tg.val_const
                        val_defn = tg.val_defn
                        val_repr_info_for_display = tg.val_repr_info_for_display
+                       arg_repr_info_for_display = tg.arg_repr_info_for_display
                        val_repr_info = tg.val_repr_info
                        val_access = tg.val_access
                        val_xmldoc = tg.val_xmldoc
+                       val_other_xmldoc = tg.val_other_xmldoc
                        val_member_info = tg.val_member_info
                        val_declaring_entity = tg.val_declaring_entity
                        val_xmldocsig = tg.val_xmldocsig
@@ -3351,10 +3468,6 @@ type NonLocalEntityRef =
         | ValueNone -> 
               errorR (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespace, nleref.DisplayName, nleref.AssemblyName, "<some module on this path>")) 
               raise (KeyNotFoundException())
-        
-    /// Get the details of the module or namespace fragment for the entity referred to by this non-local reference.
-    member nleref.ModuleOrNamespaceType = 
-        nleref.Deref.ModuleOrNamespaceType
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -3470,7 +3583,15 @@ type EntityRef =
     /// then this _does_ include this documentation. If the entity is backed by Abstract IL metadata
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
-    member x.XmlDoc = x.Deref.XmlDoc
+    member x.XmlDoc =
+        if not (x.Deref.XmlDoc.IsEmpty) then
+                x.Deref.XmlDoc
+        else
+            x.Deref.entity_opt_data
+            |> Option.bind (fun d -> d.entity_other_xmldoc)
+            |> Option.defaultValue XmlDoc.Empty
+    
+    member x.SetOtherXmlDoc (xmlDoc: XmlDoc) = x.Deref.SetOtherXmlDoc(xmlDoc)
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
@@ -3604,7 +3725,7 @@ type EntityRef =
     member x.GetUnionCaseByName n = x.Deref.GetUnionCaseByName n
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
-    member x.FSharpObjectModelTypeInfo = x.Deref.FSharpObjectModelTypeInfo
+    member x.FSharpTyconRepresentationData = x.Deref.FSharpTyconRepresentationData
 
     /// Gets the immediate interface definitions of an F# type definition. Further interfaces may be supported through class and interface inheritance.
     member x.ImmediateInterfacesOfFSharpTycon = x.Deref.ImmediateInterfacesOfFSharpTycon
@@ -3620,7 +3741,7 @@ type EntityRef =
     /// Note: result is a indexed table, and for each name the results are in reverse declaration order
     member x.MembersOfFSharpTyconByName = x.Deref.MembersOfFSharpTyconByName
 
-    /// Indicates if this is a struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a struct or enum type definition, i.e. a value type definition, including struct records and unions
     member x.IsStructOrEnumTycon = x.Deref.IsStructOrEnumTycon
 
     /// Indicates if this is an F# type definition which is one of the special types in FSharp.Core.dll which uses 
@@ -3662,7 +3783,9 @@ type EntityRef =
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member x.IsRecordTycon = x.Deref.IsRecordTycon
 
-    /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
+    /// Indicates if this is an F# type definition known to be an F# class, interface, struct,
+    /// delegate or enum. This isn't generally a particularly useful thing to know,
+    /// it is better to use more specific predicates.
     member x.IsFSharpObjectModelTycon = x.Deref.IsFSharpObjectModelTycon
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
@@ -3702,7 +3825,7 @@ type EntityRef =
     /// Indicates if this is an enum type definition 
     member x.IsEnumTycon = x.Deref.IsEnumTycon
 
-    /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is an F#-defined value type definition, including struct records and unions
     member x.IsFSharpStructOrEnumTycon = x.Deref.IsFSharpStructOrEnumTycon
 
     /// Indicates if this is a .NET-defined struct or enum type definition, i.e. a value type definition
@@ -3935,6 +4058,9 @@ type ValRef =
     /// Get the inline declaration on the value
     member x.InlineInfo = x.Deref.InlineInfo
 
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member x.IsImplied = x.Deref.IsImplied
+
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member x.InlineIfLambda = x.Deref.InlineIfLambda
 
@@ -4040,7 +4166,7 @@ type UnionCaseRef =
 type RecdFieldRef = 
     | RecdFieldRef of tyconRef: TyconRef * fieldName: string
 
-    /// Get a reference to the type containing this union case
+    /// Get a reference to the type containing this record field
     member x.TyconRef = let (RecdFieldRef(tcref, _)) = x in tcref
 
     /// Get the name of the field
@@ -4049,7 +4175,7 @@ type RecdFieldRef =
     /// Get the name of the field, with backticks added for non-identifier names
     member x.DisplayName = x.FieldName |> ConvertLogicalNameToDisplayName
 
-    /// Get the Entity for the type containing this union case
+    /// Get the Entity for the type containing this record field
     member x.Tycon = x.TyconRef.Deref
 
     /// Dereference the reference 
@@ -4183,33 +4309,51 @@ type AnonRecdTypeInfo =
       mutable Stamp: Stamp
 
       mutable SortedNames: string[]
+
+      mutable IlTypeName : int64
     }
 
     /// Create an AnonRecdTypeInfo from the basic data
     static member Create(ccu: CcuThunk, tupInfo, ids: Ident[]) = 
         let sortedIds = ids |> Array.sortBy (fun id -> id.idText)
-        // Hash all the data to form a unique stamp
-        let stamp = 
-            sha1HashInt64 
+
+        // Hash all the data to form a unique stamp.
+        // This used to be used as an input for generating IL type name, however the stamp generation
+        // had to be modified to fix #6411, and the IL type name must remain unchanged for back compat reasons.
+        let stamp =
+            sha1HashInt64
                 [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
                    match tupInfo with 
                    | TupInfo.Const b -> yield (if b then 0uy else 1uy)
                    for id in sortedIds do 
+                       for c in id.idText do yield byte c; yield byte (int32 c >>> 8)
+                       yield 0uy |]
+
+        // Hash data to form a code used in generating IL type name.
+        // To maintain backward compatibility this should not be changed.
+        let ilName =
+            sha1HashInt64
+                [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
+                   match tupInfo with
+                   | TupInfo.Const b -> yield (if b then 0uy else 1uy)
+                   for id in sortedIds do
                        for c in id.idText do yield byte c; yield byte (int32 c >>> 8) |]
+
         let sortedNames = Array.map textOfId sortedIds
-        { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames }
+        { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames; IlTypeName = ilName }
 
     /// Get the ILTypeRef for the generated type implied by the anonymous type
     member x.ILTypeRef = 
-        let ilTypeName = sprintf "<>f__AnonymousType%s%u`%d" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.Stamp) x.SortedIds.Length
+        let ilTypeName = sprintf "<>f__AnonymousType%s%u`%d" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.IlTypeName) x.SortedIds.Length
         mkILTyRef(x.Assembly.ILScopeRef, ilTypeName)
 
     static member NewUnlinked() : AnonRecdTypeInfo = 
         { Assembly = Unchecked.defaultof<_>
           TupInfo = Unchecked.defaultof<_>
           SortedIds = Unchecked.defaultof<_>
-          Stamp = Unchecked.defaultof<_> 
-          SortedNames = Unchecked.defaultof<_> }
+          Stamp = Unchecked.defaultof<_>
+          SortedNames = Unchecked.defaultof<_>
+          IlTypeName = Unchecked.defaultof<_> }
 
     member x.Link d = 
         let sortedNames = Array.map textOfId d.SortedIds
@@ -4218,6 +4362,7 @@ type AnonRecdTypeInfo =
         x.SortedIds <- d.SortedIds
         x.Stamp <- d.Stamp
         x.SortedNames <- sortedNames
+        x.IlTypeName <- d.IlTypeName
 
     member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
     
@@ -4597,8 +4742,8 @@ type ValReprInfo =
 /// Records the "extra information" for an argument compiled as a real
 /// method argument, specifically the argument name and attributes.
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
-type ArgReprInfo = 
-    { 
+type ArgReprInfo =
+    {
       /// The attributes for the argument
       // MUTABILITY: used when propagating signature attributes into the implementation.
       mutable Attribs: Attribs 
@@ -4606,6 +4751,10 @@ type ArgReprInfo =
       /// The name for the argument at this position, if any
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
       mutable Name: Ident option
+
+      /// The range of the signature/implementation counterpart to this argument, if any
+      // MUTABILITY: used when propagating ranges from signature into the implementation.
+      mutable OtherRange: range option
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4810,7 +4959,7 @@ type Expr =
         | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
-        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToShortString()) + e.ToDebugString(depth) + ")"
+        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
 
     /// Get the mark/range/position information from an expression
     member expr.Range =
@@ -5673,6 +5822,12 @@ type Construct() =
     static member NewEmptyModuleOrNamespaceType mkind = 
         Construct.NewModuleOrNamespaceType mkind [] []
 
+    static member NewEmptyFSharpTyconData kind =
+        { fsobjmodel_cases = Construct.MakeUnionCases []
+          fsobjmodel_kind = kind 
+          fsobjmodel_vslots = []
+          fsobjmodel_rfields = Construct.MakeRecdFieldsTable [] }
+
 #if !NO_TYPEPROVIDERS
 
     /// Create a new node for the representation information for a provided type definition
@@ -5747,7 +5902,7 @@ type Construct() =
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_type = MaybeLazy.Lazy (lazy ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList []))
+            entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList [])))
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
@@ -5801,7 +5956,15 @@ type Construct() =
           CompiledRepresentation=newCache() }
 
     /// Create a node for a union type
-    static member MakeUnionRepr ucs = TFSharpUnionRepr (Construct.MakeUnionCases ucs)
+    static member MakeUnionRepr ucs =
+        let repr =
+            {
+                fsobjmodel_cases = Construct.MakeUnionCases ucs
+                fsobjmodel_rfields = Construct.MakeRecdFieldsTable []
+                fsobjmodel_kind = TFSharpUnion
+                fsobjmodel_vslots = []
+            }
+        TFSharpTyconRepr repr
 
     /// Create a new type parameter node
     static member NewTypar (kind, rigid, SynTypar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 
@@ -5823,7 +5986,8 @@ type Construct() =
     /// Create a new union case node
     static member NewUnionCase id tys retTy attribs docOption access: UnionCase = 
         { Id = id
-          XmlDoc = docOption
+          OwnXmlDoc = docOption
+          OtherXmlDoc = XmlDoc.Empty
           XmlDocSig = ""
           Accessibility = access
           FieldTable = Construct.MakeRecdFieldsTable tys
@@ -5862,7 +6026,8 @@ type Construct() =
           rfield_const = konst
           rfield_access = access
           rfield_secret = secret
-          rfield_xmldoc = docOption 
+          rfield_xmldoc = docOption
+          rfield_otherxmldoc = XmlDoc.Empty
           rfield_xmldocsig = ""
           rfield_id = id
           rfield_name_generated = nameGenerated

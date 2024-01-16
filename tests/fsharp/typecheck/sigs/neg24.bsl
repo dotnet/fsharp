@@ -21,11 +21,15 @@ neg24.fs(302,33,302,34): typecheck error FS0001: All elements of a list must be 
 
 neg24.fs(302,36,302,37): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'unit'. This element has type 'int'.
 
-neg24.fs(304,9,305,34): typecheck error FS0193: Type constraint mismatch. The type 
-    'int'    
-is not compatible with type
+neg24.fs(305,24,305,25): typecheck error FS0001: This expression was expected to have type
     'unit'    
+but here has type
+    'int'    
 
+neg24.fs(305,31,305,32): typecheck error FS0001: This expression was expected to have type
+    'unit'    
+but here has type
+    'int'    
 
 neg24.fs(308,30,308,31): typecheck error FS0020: The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.
 

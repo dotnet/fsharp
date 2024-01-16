@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.ConstraintSolver
+namespace ConstraintSolver
 
 open Xunit
 open FSharp.Test.Compiler
@@ -46,3 +46,71 @@ else ()
         |> run
         |> shouldSucceed
         |> withExitCode 0
+
+    [<Fact>]
+    let ``Respect nowarn 957 for extension method`` () =
+        FSharp """        
+module Foo
+
+type DataItem<'data> =
+    { Identifier: string
+      Label: string
+      Data: 'data }
+
+    static member Create<'data>(identifier: string, label: string, data: 'data) =
+        { DataItem.Identifier = identifier
+          DataItem.Label = label
+          DataItem.Data = data }
+
+#nowarn "957"
+
+type DataItem< ^input> with
+
+    static member inline Create(item: ^input) =
+        let stringValue: string = (^input: (member get_StringValue: unit -> string) (item))
+        let friendlyStringValue: string = (^input: (member get_FriendlyStringValue: unit -> string) (item))
+
+        DataItem.Create< ^input>(stringValue, friendlyStringValue, item)
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Indirect constraint by operator`` () =
+        FSharp """
+List.average [42] |> ignore
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 15, Line 2, Col 17, "'List.average' does not support the type 'int', because the latter lacks the required (real or built-in) member 'DivideByInt'")
+
+    [<Fact>]
+    let ``Direct constraint by named (pseudo) operator`` () =
+        FSharp """
+abs -1u |> ignore
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 6, Line 2, Col 8, "The type 'uint32' does not support the operator 'abs'")
+
+    [<Fact>]
+    let ``Direct constraint by simple operator`` () =
+        FSharp """
+"" >>> 1 |> ignore
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 1, Line 2, Col 3, "The type 'string' does not support the operator '>>>'")
+
+    [<Fact>]
+    let ``Direct constraint by pseudo operator`` () =
+        FSharp """
+ignore ["1" .. "42"]
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 9, Line 2, Col 12, "The type 'string' does not support the operator 'op_Range'")

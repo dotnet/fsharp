@@ -15,25 +15,30 @@ open FSharp.Compiler.Syntax
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
+open CancellableTasks
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeTypeofWithNameToNameofExpression"); Shared>]
-type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring
-    [<ImportingConstructor>]
-    (
-    ) =
+type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
 
     override _.ComputeRefactoringsAsync context =
         asyncMaybe {
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeTypeofWithNameToNameofExpressionRefactoring)) |> liftAsync
 
-            let selectionRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+            let! parseResults =
+                document.GetFSharpParseResultsAsync(nameof (FSharpChangeTypeofWithNameToNameofExpressionRefactoring))
+                |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
+                |> liftAsync
+
+            let selectionRange =
+                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+
             let! namedTypeOfResults = parseResults.TryRangeOfTypeofWithNameAndTypeExpr(selectionRange.Start)
 
             let! namedTypeSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.NamedIdentRange)
-            let! typeofAndNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText,namedTypeOfResults.FullExpressionRange)
+            let! typeofAndNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.FullExpressionRange)
             let namedTypeName = sourceText.GetSubText(namedTypeSpan)
             let replacementString = $"nameof({namedTypeName})"
 
@@ -49,8 +54,11 @@ type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring
                         async {
                             let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             return context.Document.WithText(getChangedText sourceText)
-                        } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                    title)
+                        }
+                        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                    title
+                )
+
             context.RegisterRefactoring(codeAction)
         }
         |> Async.Ignore

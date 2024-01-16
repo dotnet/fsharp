@@ -64,7 +64,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
 
     let TryGetKeyValueImpl (data, key) =
         match TryPeekKeyValueImpl(data, key) with
-        | Some (similarKey, value) as result ->
+        | Some(similarKey, value) as result ->
             // If the result existed, move it to the end of the list (more likely to keep it)
             result, Promote(data, similarKey, value)
         | None -> None, data
@@ -76,12 +76,12 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         [
             for key, value in refs do
                 match value with
-                | Strong (value) -> yield (key, value)
-                | Weak (weakReference) ->
+                | Strong(value) -> yield (key, value)
+                | Weak(weakReference) ->
 #if FX_NO_GENERIC_WEAKREFERENCE
                     match weakReference.Target with
-                    | null -> ()
-                    | value -> yield key, (value :?> 'Value)
+                    | Null -> ()
+                    | NonNull value -> yield key, (value :?> 'Value)
         ]
 #else
                     match weakReference.TryGetTarget() with
@@ -136,7 +136,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         AssignWithStrength(tok, newData)
 
         match result with
-        | Some (_, value) -> Some(value)
+        | Some(_, value) -> Some(value)
         | None -> None
 
     member al.Put(tok, key, value) =
@@ -164,14 +164,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         AssignWithStrength(tok, keep)
 
 type internal MruCache<'Token, 'Key, 'Value when 'Value: not struct>
-    (
-        keepStrongly,
-        areSame,
-        ?isStillValid: 'Key * 'Value -> bool,
-        ?areSimilar,
-        ?requiredToKeep,
-        ?keepMax
-    ) =
+    (keepStrongly, areSame, ?isStillValid: 'Key * 'Value -> bool, ?areSimilar, ?requiredToKeep, ?keepMax) =
 
     /// Default behavior of <c>areSimilar</c> function is areSame.
     let areSimilar = defaultArg areSimilar areSame
@@ -192,17 +185,17 @@ type internal MruCache<'Token, 'Key, 'Value when 'Value: not struct>
 
     member bc.ContainsSimilarKey(tok, key) =
         match cache.TryPeekKeyValue(tok, key) with
-        | Some (_similarKey, _value) -> true
+        | Some(_similarKey, _value) -> true
         | None -> false
 
     member bc.TryGetAny(tok, key) =
         match cache.TryPeekKeyValue(tok, key) with
-        | Some (similarKey, value) -> if areSame (similarKey, key) then Some(value) else None
+        | Some(similarKey, value) -> if areSame (similarKey, key) then Some(value) else None
         | None -> None
 
     member bc.TryGet(tok, key) =
         match cache.TryGetKeyValue(tok, key) with
-        | Some (similarKey, value) ->
+        | Some(similarKey, value) ->
             if areSame (similarKey, key) && isStillValid (key, value) then
                 Some value
             else
@@ -211,12 +204,12 @@ type internal MruCache<'Token, 'Key, 'Value when 'Value: not struct>
 
     member bc.TryGetSimilarAny(tok, key) =
         match cache.TryGetKeyValue(tok, key) with
-        | Some (_, value) -> Some value
+        | Some(_, value) -> Some value
         | None -> None
 
     member bc.TryGetSimilar(tok, key) =
         match cache.TryGetKeyValue(tok, key) with
-        | Some (_, value) -> if isStillValid (key, value) then Some value else None
+        | Some(_, value) -> if isStillValid (key, value) then Some value else None
         | None -> None
 
     member bc.Set(tok, key: 'Key, value: 'Value) = cache.Put(tok, key, value)

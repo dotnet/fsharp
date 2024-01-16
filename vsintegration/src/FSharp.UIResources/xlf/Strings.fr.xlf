@@ -2,29 +2,59 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="translated">Télémétrie de performance supplémentaire (expérimentale)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">Placer toujours les instructions open au niveau supérieur</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens">
-        <source>Lens</source>
-        <target state="translated">Lens</target>
+      <trans-unit id="Analyze_full_solution_on_background">
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
+        <target state="translated">Continuez à analyser l'intégralité de la solution pour les diagnostics en tant que tâche en arrière-plan de basse priorité (nécessite un redémarrage)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens_Switch">
-        <source>Enable Lens (Experimental)</source>
-        <target state="translated">Activer Lens (expérimental)</target>
+      <trans-unit id="Background_analysis">
+        <source>Background analysis</source>
+        <target state="translated">Analyse de fond</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">Préfixe d'annotation</target>
+      <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
+        <source>Keep background symbol keys</source>
+        <target state="translated">Conserver les clés des symboles d'arrière-plan</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">Utiliser des couleurs dans les annotations</target>
+      <trans-unit id="Enable_Fast_Find_References">
+        <source>Enable fast find references &amp; rename (experimental)</source>
+        <target state="translated">Activer les références de recherche rapide et renommer (expérimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="translated">Utiliser des tampons en direct (non enregistrés) pour l’analysye (redémarrage requis)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">Activer la vérification de type partielle</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Find_References_Performance">
+        <source>Find References Performance Options</source>
+        <target state="translated">Options de performances de recherche de références</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">Mise en forme</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Inline_Hints">
+        <source>Inline Hints</source>
+        <target state="translated">Indicateurs inline</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -42,14 +72,19 @@
         <target state="translated">Diagnostics</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="new">Enable parallel type checking with signature files</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
-        <target state="new">Enable parallel reference resolution</target>
+        <target state="translated">Activer la résolution de référence parallèle</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Resolutions">
+        <source>Keep all background intermediate resolutions (increases memory usage)</source>
+        <target state="translated">Conserver toutes les résolutions intermédiaires en arrière-plan (augmente l'utilisation de la mémoire)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Symbol_Uses">
+        <source>Keep all background symbol uses (increases memory usage)</source>
+        <target state="translated">Conserver toutes les utilisations des symboles d'arrière-plan (augmente l'utilisation de la mémoire)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -67,6 +102,16 @@
         <target state="translated">S_oulignement avec des points</target>
         <note />
       </trans-unit>
+      <trans-unit id="Language_Service_Settings">
+        <source>Language service settings (advanced)</source>
+        <target state="translated">Paramètres du service linguistique (avancés)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers</source>
+        <target state="translated">Tampons en direct</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">Liens de navigation</target>
@@ -74,7 +119,37 @@
       </trans-unit>
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
-        <target state="new">Parallelization (requires restart)</target>
+        <target state="translated">Parallélisation (Nécessite un redémarrage)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">Largeur de description préférée en caractères</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="translated">Supprimer les parenthèses inutiles (expérimental, peut affecter les performances de saisie)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="translated">Envoyer une télémétrie de performances supplémentaire</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Parameter_Name_Hints">
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="translated">Afficher les conseils de nom de paramètre en ligne (préversion)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Type_Hints">
+        <source>Display inline type hints (preview)</source>
+        <target state="translated">Afficher les conseils de type en ligne (aperçu)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="translated">Afficher les conseils de type de retour en ligne (préversion)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -102,6 +177,11 @@
         <target state="translated">Affic_her les liens de navigation en tant que</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="translated">Afficher les notes dans Info express</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
         <source>Simplify names (remove unnecessary qualifiers)</source>
         <target state="translated">Simplifier les noms (supprimer les qualificateurs inutiles)</target>
@@ -115,6 +195,46 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Survol du texte</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">Formatez la signature à la largeur donnée en ajoutant des sauts de ligne conformes aux règles de syntaxe F#. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="new">Transparent Compiler (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="new">Use at your own risk!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor">
+        <source>Transparent Compiler Cache Factor</source>
+        <target state="new">Transparent Compiler Cache Factor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
+        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
+        <target state="new">Higher number means more memory will be used for caching. Changing the value wipes cache.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="new">Create new project snapshots from existing ones</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -200,6 +320,16 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Suggérer des noms pour les identificateurs non résolus</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="new">Use Transparent Compiler (restart required)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">Résultats de l'analyse du cache (expérimental)</target>
         <note />
       </trans-unit>
     </body>

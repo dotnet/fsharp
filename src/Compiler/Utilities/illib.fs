@@ -10,9 +10,46 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-#if !FSHARPCORE_USE_PACKAGE
-open FSharp.Core.CompilerServices.StateMachineHelpers
-#endif
+
+[<Class>]
+type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
+    let syncObj = obj ()
+    let mutable valueFactory = valueFactory
+    let mutable value = value
+
+    new(valueFactory: unit -> 'T) = InterruptibleLazy(Unchecked.defaultof<_>, valueFactory)
+
+    member this.IsValueCreated =
+        match box valueFactory with
+        | null -> true
+        | _ -> false
+
+    member this.Value =
+        match box valueFactory with
+        | null -> value
+        | _ ->
+
+            Monitor.Enter(syncObj)
+
+            try
+                match box valueFactory with
+                | null -> ()
+                | _ ->
+
+                    value <- valueFactory ()
+                    valueFactory <- Unchecked.defaultof<_>
+            finally
+                Monitor.Exit(syncObj)
+
+            value
+
+    member this.Force() = this.Value
+
+    static member FromValue(value) =
+        InterruptibleLazy(value, Unchecked.defaultof<_>)
+
+module InterruptibleLazy =
+    let force (x: InterruptibleLazy<'T>) = x.Value
 
 [<AutoOpen>]
 module internal PervasiveAutoOpens =
@@ -20,7 +57,16 @@ module internal PervasiveAutoOpens =
     /// Code that uses this should probably be adjusted to use unsigned integer types.
     let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
 
-    let notlazy v = Lazy<_>.CreateFromValue v
+    let notlazy v = InterruptibleLazy.FromValue v
+
+    let (|InterruptibleLazy|) (l: InterruptibleLazy<_>) = l.Force()
+
+    [<return: Struct>]
+    let (|RecoverableException|_|) (exn: Exception) =
+        if exn :? OperationCanceledException then
+            ValueNone
+        else
+            ValueSome exn
 
     let inline isNil l = List.isEmpty l
 
@@ -63,7 +109,7 @@ module internal PervasiveAutoOpens =
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
-    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
@@ -78,6 +124,15 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
+        member inline x.IndexOfOrdinal value =
+            x.IndexOf(value, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex) =
+            x.IndexOf(value, startIndex, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex, count) =
+            x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
+
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with
@@ -85,27 +140,17 @@ module internal PervasiveAutoOpens =
         | Some x -> x
 
     let reportTime =
-        let mutable tFirst = None
-        let mutable tPrev = None
+        let mutable tPrev: IDisposable = null
 
-        fun showTimes descr ->
-            if showTimes then
-                let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+        fun descr ->
+            if isNotNull tPrev then
+                tPrev.Dispose()
 
-                let prev =
-                    match tPrev with
-                    | None -> 0.0
-                    | Some t -> t
-
-                let first =
-                    match tFirst with
-                    | None ->
-                        (tFirst <- Some t
-                         t)
-                    | Some t -> t
-
-                printf "  ilwrite: Cpu %4.1f (total)   %4.1f (delta) - %s\n" (t - first) (t - prev) descr
-                tPrev <- Some t
+            tPrev <-
+                if descr <> "Finish" then
+                    FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
+                else
+                    null
 
     let foldOn p f z x = f z (p x)
 
@@ -118,35 +163,55 @@ module internal PervasiveAutoOpens =
             let ts = TaskCompletionSource<'T>()
             let task = ts.Task
 
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken
-            )
+            Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
 
             task.Result
 
-/// An efficient lazy for inline storage in a class type. Results in fewer thunks.
-[<Struct>]
-type InlineDelayInit<'T when 'T: not struct> =
-    new(f: unit -> 'T) =
-        {
-            store = Unchecked.defaultof<'T>
-            func = Func<_>(f)
-        }
+[<AbstractClass>]
+type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
+    let syncObj = obj ()
 
-    val mutable store: 'T
-    val mutable func: Func<'T>
+    let mutable arrayStore = null
+    let mutable dictStore = null
 
-    member x.Value =
-        match x.func with
-        | null -> x.store
+    let mutable func = f
+
+    member this.GetArray() =
+        match arrayStore with
+        | NonNull value -> value
         | _ ->
-            let res = LazyInitializer.EnsureInitialized(&x.store, x.func)
-            x.func <- Unchecked.defaultof<_>
-            res
+            Monitor.Enter(syncObj)
+
+            try
+                match arrayStore with
+                | NonNull value -> value
+                | _ ->
+
+                    arrayStore <- func ()
+
+                    func <- Unchecked.defaultof<_>
+                    arrayStore
+            finally
+                Monitor.Exit(syncObj)
+
+    member this.GetDictionary() =
+        match dictStore with
+        | NonNull value -> value
+        | _ ->
+            let array = this.GetArray()
+            Monitor.Enter(syncObj)
+
+            try
+                match dictStore with
+                | NonNull value -> value
+                | _ ->
+
+                    dictStore <- this.CreateDictionary(array)
+                    dictStore
+            finally
+                Monitor.Exit(syncObj)
+
+    abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
 //-------------------------------------------------------------------------
 // Library: projections
@@ -192,7 +257,7 @@ module Array =
         Array.length l1 = Array.length l2 && Array.forall2 p l1 l2
 
     let order (eltOrder: IComparer<'T>) =
-        { new IComparer<array<'T>> with
+        { new IComparer<'T array> with
             member _.Compare(xs, ys) =
                 let c = compare xs.Length ys.Length
 
@@ -216,7 +281,7 @@ module Array =
         let rec loop p l n =
             (n < Array.length l)
             && (if p l[n] then
-                    forallFrom (fun x -> not (p x)) l (n + 1)
+                    forallFrom (p >> not) l (n + 1)
                 else
                     loop p l (n + 1))
 
@@ -344,6 +409,12 @@ module Array =
     /// Returns true if one array has trailing elements equal to another's.
     let endsWith (suffix: _[]) (whole: _[]) =
         isSubArray suffix whole (whole.Length - suffix.Length)
+
+    let prepend item (array: 'T[]) =
+        let res = Array.zeroCreate (array.Length + 1)
+        res[0] <- item
+        Array.blit array 0 res 1 array.Length
+        res
 
 module Option =
 
@@ -560,7 +631,7 @@ module List =
         xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
 
     let existsSquared f xss =
-        xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
+        xss |> List.exists (fun xs -> xs |> List.exists f)
 
     let mapiFoldSquared f z xss =
         mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
@@ -580,6 +651,11 @@ module List =
         match xs with
         | [ _ ] -> true
         | _ -> false
+
+    let prependIfSome x l =
+        match x with
+        | Some x -> x :: l
+        | _ -> l
 
 module ResizeArray =
 
@@ -627,6 +703,17 @@ module ResizeArray =
         // in order to prevent long-term storage of those values
         chunkBySize maxArrayItemCount f inp
 
+module Span =
+    let inline exists ([<InlineIfLambda>] predicate: 'T -> bool) (span: Span<'T>) =
+        let mutable state = false
+        let mutable i = 0
+
+        while not state && i < span.Length do
+            state <- predicate span[i]
+            i <- i + 1
+
+        state
+
 module ValueOptionInternal =
 
     let inline ofOption x =
@@ -634,7 +721,7 @@ module ValueOptionInternal =
         | Some x -> ValueSome x
         | None -> ValueNone
 
-    let inline bind f x =
+    let inline bind ([<InlineIfLambda>] f) x =
         match x with
         | ValueSome x -> f x
         | ValueNone -> ValueNone
@@ -709,7 +796,7 @@ module String =
 
         String digits
         |> function
-            | "" -> str, None
+            | x when String.IsNullOrEmpty(x) -> str, None
             | index -> str.Substring(0, str.Length - index.Length), Some(int index)
 
     /// Splits a string into substrings based on the strings in the array separators
@@ -861,208 +948,23 @@ module ResultOrException =
         | Result x -> success x
         | Exception _err -> f ()
 
-[<RequireQualifiedAccess; Struct>]
-type ValueOrCancelled<'TResult> =
-    | Value of result: 'TResult
-    | Cancelled of ``exception``: OperationCanceledException
-
-/// Represents a cancellable computation with explicit representation of a cancelled result.
-///
-/// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.
-/// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.
-[<Struct>]
-type Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
-
-module Cancellable =
-
-    /// Run a cancellable computation using the given cancellation token
-    let inline run (ct: CancellationToken) (Cancellable oper) =
-        if ct.IsCancellationRequested then
-            ValueOrCancelled.Cancelled(OperationCanceledException ct)
-        else
-            oper ct
-
-    let fold f acc seq =
-        Cancellable(fun ct ->
-            let mutable acc = ValueOrCancelled.Value acc
-
-            for x in seq do
-                match acc with
-                | ValueOrCancelled.Value accv -> acc <- run ct (f accv x)
-                | ValueOrCancelled.Cancelled _ -> ()
-
-            acc)
-
-    /// Run the computation in a mode where it may not be cancelled. The computation never results in a
-    /// ValueOrCancelled.Cancelled.
-    let runWithoutCancellation comp =
-        let res = run CancellationToken.None comp
-
-        match res with
-        | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation"
-        | ValueOrCancelled.Value r -> r
-
-    let toAsync c =
-        async {
-            let! ct = Async.CancellationToken
-            let res = run ct c
-
-            return!
-                Async.FromContinuations(fun (cont, _econt, ccont) ->
-                    match res with
-                    | ValueOrCancelled.Value v -> cont v
-                    | ValueOrCancelled.Cancelled ce -> ccont ce)
-        }
-
-    /// Bind the cancellation token associated with the computation
-    let token () =
-        Cancellable(fun ct -> ValueOrCancelled.Value ct)
-
-    /// Represents a canceled computation
-    let canceled () =
-        Cancellable(fun ct -> ValueOrCancelled.Cancelled(OperationCanceledException ct))
-
-type CancellableBuilder() =
-
-    member inline _.Delay([<InlineIfLambda>] f) =
-        Cancellable(fun ct ->
-            let (Cancellable g) = f ()
-            g ct)
-
-    member inline _.Bind(comp, [<InlineIfLambda>] k) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
-
-            match Cancellable.run ct comp with
-            | ValueOrCancelled.Value v1 -> Cancellable.run ct (k v1)
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
-
-            match Cancellable.run ct comp with
-            | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.Combine(comp1, comp2) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
-
-            match Cancellable.run ct comp1 with
-            | ValueOrCancelled.Value () -> Cancellable.run ct comp2
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
-
-            let compRes =
-                try
-                    match Cancellable.run ct comp with
-                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
-                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-                with err ->
-                    ValueOrCancelled.Value(Choice2Of2 err)
-
-            match compRes with
-            | ValueOrCancelled.Value res ->
-                match res with
-                | Choice1Of2 r -> ValueOrCancelled.Value r
-                | Choice2Of2 err -> Cancellable.run ct (handler err)
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.Using(resource, [<InlineIfLambda>] comp) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
-            let body = comp resource
-
-            let compRes =
-                try
-                    match Cancellable.run ct body with
-                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
-                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-                with err ->
-                    ValueOrCancelled.Value(Choice2Of2 err)
-
-            match compRes with
-            | ValueOrCancelled.Value res ->
-                (resource :> IDisposable).Dispose()
-
-                match res with
-                | Choice1Of2 r -> ValueOrCancelled.Value r
-                | Choice2Of2 err -> raise err
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
-
-            let compRes =
-                try
-                    match Cancellable.run ct comp with
-                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
-                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-                with err ->
-                    ValueOrCancelled.Value(Choice2Of2 err)
-
-            match compRes with
-            | ValueOrCancelled.Value res ->
-                compensation ()
-
-                match res with
-                | Choice1Of2 r -> ValueOrCancelled.Value r
-                | Choice2Of2 err -> raise err
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.Return v =
-        Cancellable(fun _ -> ValueOrCancelled.Value v)
-
-    member inline _.ReturnFrom(v: Cancellable<'T>) = v
-
-    member inline _.Zero() =
-        Cancellable(fun _ -> ValueOrCancelled.Value())
-
-[<AutoOpen>]
-module CancellableAutoOpens =
-    let cancellable = CancellableBuilder()
-
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T: equality>() =
-    let gate = obj ()
-    let encodeTab = ConcurrentDictionary<'T, int>(HashIdentity.Structural)
-    let mutable nItems = 0
+    let encodeTable = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
+    let mutable nItems = -1
 
-    let encode str =
-        match encodeTab.TryGetValue str with
-        | true, idx -> idx
-        | _ ->
-            lock gate (fun () ->
-                let idx = nItems
-                encodeTab[str] <- idx
-                nItems <- nItems + 1
-                idx)
+    let computeFunc = Func<'T, _>(fun _ -> lazy (Interlocked.Increment(&nItems)))
 
-    member _.Encode str = encode str
+    member _.Encode str =
+        encodeTable.GetOrAdd(str, computeFunc).Value
 
-    member _.Table = encodeTab.Keys
+    member _.Table = encodeTable.Keys
 
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
 
-    let table = new ConcurrentDictionary<'T, 'U>(keyComparer)
+    let table = new ConcurrentDictionary<'T, Lazy<'U>>(keyComparer)
+    let computeFunc = Func<_, _>(fun key -> lazy (compute key))
 
     member t.Apply x =
         if
@@ -1070,18 +972,31 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
              | None -> true
              | Some f -> f x)
         then
-            match table.TryGetValue x with
-            | true, res -> res
-            | _ ->
-                lock table (fun () ->
-                    match table.TryGetValue x with
-                    | true, res -> res
-                    | _ ->
-                        let res = compute x
-                        table[x] <- res
-                        res)
+            table.GetOrAdd(x, computeFunc).Value
         else
             compute x
+
+/// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
+type internal StampedDictionary<'T, 'U>(keyComparer: IEqualityComparer<'T>) =
+    let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
+    let mutable count = -1
+
+    member _.Add(key, value) =
+        let entry = table.GetOrAdd(key, lazy (Interlocked.Increment(&count), value))
+        entry.Force() |> ignore
+
+    member _.UpdateIfExists(key, valueReplaceFunc) =
+        match table.TryGetValue key with
+        | true, v ->
+            let (stamp, oldVal) = v.Value
+
+            match valueReplaceFunc oldVal with
+            | None -> ()
+            | Some newVal -> table.TryUpdate(key, lazy (stamp, newVal), v) |> ignore<bool>
+        | _ -> ()
+
+    member _.GetAll() =
+        table |> Seq.map (fun kvp -> kvp.Key, kvp.Value.Value)
 
 exception UndefinedException
 
@@ -1161,7 +1076,7 @@ type LazyWithContext<'T, 'Ctxt> =
                 x.value <- res
                 x.funcOrException <- null
                 res
-            with exn ->
+            with RecoverableException exn ->
                 x.funcOrException <- box (LazyWithContextFailure(exn))
                 reraise ()
         | _ -> failwith "unreachable"
@@ -1269,8 +1184,8 @@ module NameMap =
             for m in ms do
                 yield! m
         }
-        |> Seq.groupBy (fun (KeyValue (k, _v)) -> k)
-        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue (_k, v)) -> v) es)))
+        |> Seq.groupBy (fun (KeyValue(k, _v)) -> k)
+        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue(_k, v)) -> v) es)))
         |> Map.ofSeq
 
     /// For every entry in m2 find an entry in m1 and fold
@@ -1397,11 +1312,11 @@ module MapAutoOpens =
         static member Empty: Map<'Key, 'Value> = Map.empty
 
 #if FSHARPCORE_USE_PACKAGE
-        member x.Values = [ for KeyValue (_, v) in x -> v ]
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
 #endif
 
         member x.AddMany(kvs: _[]) =
-            (x, kvs) ||> Array.fold (fun x (KeyValue (k, v)) -> x.Add(k, v))
+            (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
         member x.AddOrModify(key, f: 'Value option -> 'Value) = x.Add(key, f (x.TryFind key))
 
@@ -1419,7 +1334,7 @@ type LayeredMultiMap<'Key, 'Value when 'Key: equality and 'Key: comparison>(cont
             | _ -> []
 
     member x.AddMany(kvs: _[]) =
-        (x, kvs) ||> Array.fold (fun x (KeyValue (k, v)) -> x.Add(k, v))
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
     member _.TryFind k = contents.TryFind k
 

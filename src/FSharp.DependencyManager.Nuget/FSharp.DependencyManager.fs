@@ -237,7 +237,7 @@ module FSharpDependencyManager =
                 |> Seq.distinct
                 |> Seq.toArray
                 |> Seq.sort
-                |> Seq.fold (fun acc s -> acc + s) ""
+                |> Seq.fold (+) ""
 
             let value =
                 $"""Tfm={targetFrameworkMoniker}:Rid={runtimeIdentifier}:PackageReferences={packageReferenceText}:Ext={match scriptExt with
@@ -251,14 +251,7 @@ module FSharpDependencyManager =
 
 /// The results of ResolveDependencies
 type ResolveDependenciesResult
-    (
-        success: bool,
-        stdOut: string array,
-        stdError: string array,
-        resolutions: string seq,
-        sourceFiles: string seq,
-        roots: string seq
-    ) =
+    (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
     /// Succeded?
     member _.Success = success
@@ -312,7 +305,19 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
         //   if a path was supplied if it was rooted then use the rooted path as the root
         //   if the path wasn't supplied or not rooted use the temp directory as the root.
         let specialDir =
-            Path.Combine(Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".packagemanagement", "nuget")
+            let getProfilePath =
+                // If it has a directory seperator remove it
+                let path = Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile)
+
+                if
+                    (path.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                    || (path.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+                then
+                    path.Substring(0, path.Length - 1)
+                else
+                    path
+            // Build path to cache root
+            $"{getProfilePath}/.packagemanagement/nuget"
 
         let path =
             Path.Combine(Process.GetCurrentProcess().Id.ToString() + "--" + Guid.NewGuid().ToString())
@@ -347,6 +352,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
     let prepareDependencyResolutionFiles
         (
+            scriptDirectory: string,
             scriptExt: string,
             directiveLines: (string * string) seq,
             targetFrameworkMoniker: string,
@@ -368,35 +374,43 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             |> List.map FSharpDependencyManager.formatPackageReference
             |> Seq.concat
 
+        let generatedNugetSources =
+            generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
+
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
         let projectPath = Path.Combine(projectDirectory.Value, "Project.fsproj")
+        let nugetPath = Path.Combine(projectDirectory.Value, "NuGet.config")
 
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
                 if not (generatedScripts.ContainsKey(body.GetHashCode().ToString())) then
                     emitFile path body
 
-            let generateProjBody =
-                generateProjectBody
+            let generateProjectFile =
+                generateProjectFile
                     .Replace("$(TARGETFRAMEWORK)", targetFrameworkMoniker)
                     .Replace("$(RUNTIMEIDENTIFIER)", runtimeIdentifier)
                     .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
                     .Replace("$(SCRIPTEXTENSION)", scriptExt)
+
+            let generateProjectNugetConfigFile =
+                generateProjectNugetConfigFile.Replace("$(NUGET_SOURCES)", generatedNugetSources)
 
             let timeout =
                 match package_timeout with
                 | Some _ -> package_timeout
                 | None -> Some timeout
 
-            writeFile projectPath generateProjBody
+            writeFile projectPath generateProjectFile
+            writeFile nugetPath generateProjectNugetConfigFile
             buildProject projectPath binLogPath timeout
 
         generateAndBuildProjectArtifacts
 
     let tryGetResultsForResolutionHash hash (projectDirectory: Lazy<string>) : PackageBuildResolutionResult option =
         match hash with
-        | Some hash when useResultsCache = true ->
+        | Some hash when useResultsCache ->
             let resolutionsFile =
                 Path.Combine(cacheDirectory.Value, (hash + ".resolvedReferences.paths"))
 
@@ -469,15 +483,10 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             | _ -> "#r @\""
 
         let generateAndBuildProjectArtifacts =
-            let configIncludes =
-                generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
-
-            let directiveLines = Seq.append packageManagerTextLines configIncludes
-
             let resolutionHash =
                 FSharpDependencyManager.computeHashForResolutionInputs (
                     scriptExt,
-                    directiveLines,
+                    packageManagerTextLines,
                     targetFrameworkMoniker,
                     runtimeIdentifier
                 )
@@ -486,7 +495,15 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 match tryGetResultsForResolutionHash resolutionHash projectDirectory with
                 | Some resolutionResult -> true, resolutionResult
                 | None ->
-                    false, prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
+                    false,
+                    prepareDependencyResolutionFiles (
+                        scriptDirectory,
+                        scriptExt,
+                        packageManagerTextLines,
+                        targetFrameworkMoniker,
+                        runtimeIdentifier,
+                        timeout
+                    )
 
             match resolutionResult.resolutionsFile with
             | Some file ->

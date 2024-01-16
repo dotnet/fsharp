@@ -197,7 +197,7 @@ type TaskBuilder() =
             }
 
         sm.ResumptionDynamicInfo <- resumptionInfo
-        sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create ()
+        sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
         sm.Data.MethodBuilder.Start(&sm)
         sm.Data.MethodBuilder.Task
 
@@ -224,7 +224,7 @@ type TaskBuilder() =
                 ))
                 (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine(state)))
                 (AfterCode<_, _>(fun sm ->
-                    sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create ()
+                    sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                     sm.Data.MethodBuilder.Start(&sm)
                     sm.Data.MethodBuilder.Task))
         else
@@ -270,7 +270,7 @@ type BackgroundTaskBuilder() =
                         isNull SynchronizationContext.Current
                         && obj.ReferenceEquals(TaskScheduler.Current, TaskScheduler.Default)
                     then
-                        sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create ()
+                        sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                         sm.Data.MethodBuilder.Start(&sm)
                         sm.Data.MethodBuilder.Task
                     else
@@ -278,7 +278,7 @@ type BackgroundTaskBuilder() =
 
                         Task.Run<'T>(fun () ->
                             let mutable sm = sm // host local mutable copy of contents of state machine on this thread pool thread
-                            sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create ()
+                            sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                             sm.Data.MethodBuilder.Start(&sm)
                             sm.Data.MethodBuilder.Task)))
         else
@@ -380,7 +380,7 @@ module LowPriority =
             (task: ^TaskLike)
             : TaskCode<'T, 'T> =
 
-            this.Bind(task, (fun v -> this.Return v))
+            this.Bind(task, this.Return)
 
         member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable>
             (
@@ -446,7 +446,7 @@ module HighPriority =
             )
 
         member inline this.ReturnFrom(task: Task<'T>) : TaskCode<'T, 'T> =
-            this.Bind(task, (fun v -> this.Return v))
+            this.Bind(task, this.Return)
 
 module MediumPriority =
     open HighPriority
@@ -459,7 +459,7 @@ module MediumPriority =
                 computation: Async<'TResult1>,
                 continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
             ) : TaskCode<'TOverall, 'TResult2> =
-            this.Bind(Async.StartAsTask computation, continuation)
+            this.Bind(Async.StartImmediateAsTask computation, continuation)
 
         member inline this.ReturnFrom(computation: Async<'T>) : TaskCode<'T, 'T> =
-            this.ReturnFrom(Async.StartAsTask computation)
+            this.ReturnFrom(Async.StartImmediateAsTask computation)

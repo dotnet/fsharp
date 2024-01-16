@@ -3,17 +3,8 @@
 
 
 
-
-.assembly extern mscorlib
-{
-  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         
-  .ver 4:0:0:0
-}
-.assembly extern FSharp.Core
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 6:0:0:0
-}
+.assembly extern runtime { }
+.assembly extern FSharp.Core { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -38,7 +29,7 @@
 }
 .module assembly.dll
 
-.imagebase 0x00400000
+.imagebase {value}
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       

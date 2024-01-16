@@ -3,48 +3,29 @@
     "version": "0.2.0",
     "inputs": [
         {
-            "id": "argsPrompt",
+            "id": "fscArgsPrompt",
             "description": "Enter arguments for fsc",
+            "default": "",
+            "type": "promptString"
+        },
+        {
+            "id": "fsiArgsPrompt",
+            "description": "Enter arguments for fsi (optional)",
             "default": "",
             "type": "promptString",
         }
     ],
     "configurations": [
         {
-            "name": "Launch FSI (Debug, .NET 7.0)",
+            "name": "Launch FSI (Debug)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
-            // "preLaunchTask": "Build (Debug)",
+            "preLaunchTask": "${defaultBuildTask}",
             // If you have changed target frameworks, make sure to update the program p
-            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net7.0/fsi.dll",
-            "cwd": "${workspaceFolder}/src",
-            "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
-            "internalConsoleOptions": "neverOpen",
-            "suppressJITOptimizations": true,
-            "stopAtEntry": false,
-            "justMyCode": true,
-            "enableStepFiltering": true,
-            "symbolOptions": {
-                "searchMicrosoftSymbolServer": true,
-                "searchNuGetOrgSymbolServer": true
-            },
-            "sourceLinkOptions": {
-                "*": {
-                    "enabled": true
-                }
-            },
-        },
-        {
-            "name": "Launch FSC (Debug, .NET 7.0)",
-            "type": "coreclr",
-            "request": "launch",
-            // TODO: Shall we assume that it's already been built, or build it every time we debug?
-            // "preLaunchTask": "Build (Debug)",
-            // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net7.0/fsc.dll",
+            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net8.0/fsi.dll",
             "args": [
-                "${input:argsPrompt}"
+                "${input:fsiArgsPrompt}"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
@@ -53,6 +34,7 @@
             "stopAtEntry": false,
             "justMyCode": true,
             "enableStepFiltering": true,
+            "requireExactSource": false,
             "symbolOptions": {
                 "searchMicrosoftSymbolServer": true,
                 "searchNuGetOrgSymbolServer": true
@@ -62,9 +44,42 @@
                     "enabled": true
                 }
             },
+            "allowFastEvaluate": true
         },
         {
-            "name": "Attach to a .NET process",
+            "name": "Launch FSC (Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            // TODO: Shall we assume that it's already been built, or build it every time we debug?
+            "preLaunchTask": "${defaultBuildTask}",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net8.0/fsc.dll",
+            "args": [
+                "--targetprofile:netstandard",
+                "--simpleresolution",
+                "${input:fscArgsPrompt}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
+            "internalConsoleOptions": "neverOpen",
+            "suppressJITOptimizations": true,
+            "stopAtEntry": false,
+            "justMyCode": true,
+            "enableStepFiltering": true,
+            "requireExactSource": false,
+            "symbolOptions": {
+                "searchMicrosoftSymbolServer": true,
+                "searchNuGetOrgSymbolServer": true
+            },
+            "sourceLinkOptions": {
+                "*": {
+                    "enabled": true
+                }
+            },
+            "allowFastEvaluate": true
+        },
+        {
+            "name": "Attach to a .NET process with debugger",
             "type": "coreclr",
             "request": "attach",
             "processId": "${command:pickProcess}",
@@ -75,6 +90,8 @@
             },
             "justMyCode": true,
             "enableStepFiltering": false,
+            "requireExactSource": false,
+            "allowFastEvaluate": true
         }
     ]
 }

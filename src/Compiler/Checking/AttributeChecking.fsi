@@ -96,7 +96,7 @@ val CheckValAttributes: g: TcGlobals -> x: ValRef -> m: range -> OperationResult
 val CheckRecdFieldInfoAttributes: g: TcGlobals -> x: RecdFieldInfo -> m: range -> OperationResult<unit>
 
 val IsSecurityAttribute:
-    g: TcGlobals -> amap: Import.ImportMap -> casmap: Dictionary<Stamp, bool> -> Attrib -> m: range -> bool
+    g: TcGlobals -> amap: Import.ImportMap -> casmap: IDictionary<Stamp, bool> -> Attrib -> m: range -> bool
 
 val IsSecurityCriticalAttribute: g: TcGlobals -> Attrib -> bool
 

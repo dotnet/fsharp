@@ -4,7 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
-
+open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Host
@@ -14,23 +14,23 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open Microsoft.VisualStudio.Shell
 
 type internal FSharpCompletionService
-    (
-        workspace: Workspace,
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider,
-        settings: EditorOptions
-    ) =
+    (workspace: Workspace, serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider, settings: EditorOptions) =
     inherit FSharpCompletionServiceWithProviders(workspace)
 
-    let projectInfoManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+    let projectInfoManager =
+        workspace.Services
+            .GetRequiredService<IFSharpWorkspaceService>()
+            .FSharpProjectOptionsManager
 
-    let builtInProviders = 
+    let builtInProviders =
         ImmutableArray.Create<CompletionProvider>(
-            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
-            FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager)))
+            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider, settings),
+            FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager))
+        )
 
     override _.Language = FSharpConstants.FSharpLanguageName
     override _.GetBuiltInProviders() = builtInProviders
+
     override _.GetRulesImpl() =
         let enterKeyRule =
             match settings.IntelliSense.EnterKeySetting with
@@ -47,20 +47,32 @@ type internal FSharpCompletionService
     override _.GetDefaultCompletionListSpan(sourceText, caretIndex) =
         let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
-        let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-        CompletionUtils.getDefaultCompletionListSpan(sourceText, caretIndex, documentId, document.FilePath, defines)
+
+        let defines, langVersion, strictIndentation =
+            projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
+
+        CompletionUtils.getDefaultCompletionListSpan (
+            sourceText,
+            caretIndex,
+            documentId,
+            document.FilePath,
+            defines,
+            Some langVersion,
+            strictIndentation,
+            CancellationToken.None
+        )
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpCompletionServiceFactory 
-    [<ImportingConstructor>] 
-    (
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider,
-        settings: EditorOptions
-    ) =
+type internal FSharpCompletionServiceFactory
+    [<ImportingConstructor>]
+    (serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider, settings: EditorOptions) =
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, assemblyContentProvider, settings)
-
-
+            upcast
+                FSharpCompletionService(
+                    hostLanguageServices.WorkspaceServices.Workspace,
+                    serviceProvider,
+                    assemblyContentProvider,
+                    settings
+                )

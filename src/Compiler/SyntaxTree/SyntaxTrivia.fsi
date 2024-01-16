@@ -119,6 +119,12 @@ type SynExprLambdaTrivia =
 
     static member Zero: SynExprLambdaTrivia
 
+/// Represents additional information for SynExpr.DotLambda
+[<NoEquality; NoComparison>]
+type SynExprDotLambdaTrivia =
+    { UnderscoreRange: range
+      DotRange: range }
+
 /// Represents additional information for SynExpr.LetOrUse
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
@@ -126,6 +132,8 @@ type SynExprLetOrUseTrivia =
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
+
+    static member Zero: SynExprLetOrUseTrivia
 
 /// Represents additional information for SynExpr.LetOrUseBang
 [<NoEquality; NoComparison>]
@@ -157,6 +165,14 @@ type SynExprMatchBangTrivia =
 
         /// The syntax range of the `with` keyword
         WithKeyword: range
+    }
+
+/// Represents additional information for SynExpr.AnonRecd
+[<NoEquality; NoComparison>]
+type SynExprAnonRecdTrivia =
+    {
+        /// The syntax range of the `{|` token.
+        OpeningBraceRange: range
     }
 
 /// Represents additional information for SynMatchClause
@@ -211,10 +227,16 @@ type SynPatListConsTrivia =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnLeadingKeyword =
     | Type of range
+
     | And of range
-    // Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
+
+    /// Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
     | StaticType of staticRange: range * typeRange: range
+
+    /// Produced during type checking, should not be used in actual parsed trees.
     | Synthetic
+
+    member Range: range
 
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
@@ -263,6 +285,7 @@ type SynLeadingKeyword =
     | OverrideVal of overrideRange: range * valRange: range
     | Abstract of abstractRange: range
     | AbstractMember of abstractRange: range * memberRange: range
+    | Static of staticRange: range
     | StaticMember of staticRange: range * memberRange: range
     | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
     | StaticAbstract of staticRange: range * abstractRange: range
@@ -286,6 +309,9 @@ type SynBindingTrivia =
     {
         /// Used leading keyword of SynBinding
         LeadingKeyword: SynLeadingKeyword
+
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
@@ -362,6 +388,9 @@ type SynValSigTrivia =
         /// but in case of `SynMemberDefn.AutoProperty` or `SynMemberDefn.AbstractSlot` it could be something else.
         LeadingKeyword: SynLeadingKeyword
 
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
+
         /// The syntax range of the `with` keyword
         WithKeyword: range option
 
@@ -383,6 +412,9 @@ type SynTypeFunTrivia =
 [<NoEquality; NoComparison>]
 type SynMemberGetSetTrivia =
     {
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
+
         /// The syntax range of the `with` keyword
         WithKeyword: range
 
@@ -396,6 +428,14 @@ type SynMemberGetSetTrivia =
         SetKeyword: range option
     }
 
+/// Represents additional information for SynMemberDefn.ImplicitCtor
+[<NoEquality; NoComparison>]
+type SynMemberDefnImplicitCtorTrivia =
+    {
+        /// The syntax range of the `as` keyword
+        AsKeyword: range option
+    }
+
 /// Represents additional information for SynArgPats.NamePatPairs
 [<NoEquality; NoComparison>]
 type SynArgPatsNamePatPairsTrivia =
@@ -403,6 +443,15 @@ type SynArgPatsNamePatPairsTrivia =
         /// The syntax range from the beginning of the `(` token till the end of the `)` token.
         ParenRange: range
     }
+
+/// Represents additional information for `get, set` syntax
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type GetSetKeywords =
+    | Get of range
+    | Set of range
+    | GetSet of get: range * set: range
+
+    member Range: range
 
 /// Represents additional information for SynMemberDefn.AutoProperty
 [<NoEquality; NoComparison>]
@@ -418,8 +467,18 @@ type SynMemberDefnAutoPropertyTrivia =
         EqualsRange: range option
 
         /// The syntax range of 'get, set'
-        GetSetKeyword: range option
+        GetSetKeywords: GetSetKeywords option
     }
+
+///  Represents additional information for SynMemberDefn.AbstractSlot
+[<NoEquality; NoComparison>]
+type SynMemberDefnAbstractSlotTrivia =
+    {
+        /// The syntax range of 'get, set'
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero: SynMemberDefnAbstractSlotTrivia
 
 /// Represents additional information for SynField
 [<NoEquality; NoComparison>]
@@ -427,6 +486,8 @@ type SynFieldTrivia =
     {
         /// Used leading keyword of SynField
         LeadingKeyword: SynLeadingKeyword option
+        /// The syntax range of the `mutable` keyword
+        MutableKeyword: range option
     }
 
     static member Zero: SynFieldTrivia
@@ -446,3 +507,29 @@ type SynBindingReturnInfoTrivia =
         /// The syntax range of the `:` token
         ColonRange: range option
     }
+
+/// Represents additional information for SynMemberSig.Member
+[<NoEquality; NoComparison>]
+type SynMemberSigMemberTrivia =
+    {
+        /// The syntax range of 'get, set'
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero: SynMemberSigMemberTrivia
+
+/// Represents additional information for SynTyparDecl
+[<NoEquality; NoComparison>]
+type SynTyparDeclTrivia =
+    {
+        /// The syntax ranges of the `&` tokens
+        AmpersandRanges: range list
+    }
+
+    static member Zero: SynTyparDeclTrivia
+
+/// Represents additional information for SynConst.Measure
+[<NoEquality; NoComparison>]
+type SynMeasureConstantTrivia =
+    { LessRange: range
+      GreaterRange: range }

@@ -41,6 +41,7 @@ type PropertyCollector =
     new:
         g: TcGlobals * amap: ImportMap * m: range * ty: TType * optFilter: string option * ad: AccessorDomain ->
             PropertyCollector
+
     member Close: unit -> PropInfo list
     member Collect: membInfo: ValMemberInfo * vref: ValRef -> unit
 
@@ -89,6 +90,10 @@ type FindMemberFlag =
     /// Get overrides instead of abstract slots when measuring whether a class/interface implements all its required slots.
     | PreferOverrides
 
+    /// Similar to "IgnoreOverrides", but filters the items bottom-to-top,
+    /// and discards all when finds first non-virtual member which hides one above it in hirearchy.
+    | DiscardOnFirstNonOverride
+
 /// An InfoReader is an object to help us read and cache infos.
 /// We create one of these for each file we typecheck.
 type InfoReader =
@@ -105,6 +110,7 @@ type InfoReader =
     /// Read the IL fields of a type, including inherited ones. Cache the result for monomorphic types.
     member GetILFieldInfosOfType:
         optFilter: string option * ad: AccessorDomain * m: range * ty: TType -> ILFieldInfo list
+
     member GetImmediateIntrinsicEventsOfType:
         optFilter: string option * ad: AccessorDomain * m: range * ty: TType -> EventInfo list
 

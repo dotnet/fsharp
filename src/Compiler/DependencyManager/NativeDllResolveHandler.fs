@@ -8,15 +8,15 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities
+open Internal.Utilities.Library
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.IO
-
 
 type internal ProbingPathsStore() =
 
     let addedPaths = ConcurrentBag<string>()
 
-    static member AppendPathSeparator (p: string) =
+    static member AppendPathSeparator(p: string) =
         let separator = string Path.PathSeparator
 
         if not (p.EndsWith(separator, StringComparison.OrdinalIgnoreCase)) then
@@ -27,14 +27,18 @@ type internal ProbingPathsStore() =
     static member RemoveProbeFromProcessPath probePath =
         if not (String.IsNullOrWhiteSpace(probePath)) then
             let probe = ProbingPathsStore.AppendPathSeparator probePath
-            let path = ProbingPathsStore.AppendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+
+            let path =
+                ProbingPathsStore.AppendPathSeparator(Environment.GetEnvironmentVariable("PATH"))
 
             if path.Contains(probe) then
                 Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
 
     member _.AddProbeToProcessPath probePath =
         let probe = ProbingPathsStore.AppendPathSeparator probePath
-        let path = ProbingPathsStore.AppendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+
+        let path =
+            ProbingPathsStore.AppendPathSeparator(Environment.GetEnvironmentVariable("PATH"))
 
         if not (path.Contains(probe)) then
             Environment.SetEnvironmentVariable("PATH", path + probe)
@@ -46,12 +50,14 @@ type internal ProbingPathsStore() =
 
     member this.Dispose() =
         let mutable probe: string = Unchecked.defaultof<string>
+
         while (addedPaths.TryTake(&probe)) do
             ProbingPathsStore.RemoveProbeFromProcessPath(probe)
 
     interface IDisposable with
         member _.Dispose() =
             let mutable probe: string = Unchecked.defaultof<string>
+
             while (addedPaths.TryTake(&probe)) do
                 ProbingPathsStore.RemoveProbeFromProcessPath(probe)
 
@@ -68,7 +74,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
         let nativeLibraryType: Type =
             Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
 
-        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType () |])
+        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
 
     let loadNativeLibrary path =
         let arguments = [| path :> obj; IntPtr.Zero :> obj |]
@@ -83,7 +89,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
         let isRooted = Path.IsPathRooted name
 
         let useSuffix s =
-            not (name.Contains(s + ".") || name.EndsWith(s)) // linux devs often append version # to libraries I.e mydll.so.5.3.2
+            not (name.Contains(s + ".") || name.EndsWithOrdinal(s)) // linux devs often append version # to libraries I.e mydll.so.5.3.2
 
         let usePrefix =
             name.IndexOf(Path.DirectorySeparatorChar) = -1 // If name has directory information no add no prefix
@@ -176,7 +182,7 @@ type NativeDllResolveHandler(nativeProbingRoots: NativeResolutionProbe option) =
 
     let handler: NativeDllResolveHandlerCoreClr option =
         nativeProbingRoots
-        |> Option.filter(fun _ -> isRunningOnCoreClr)
+        |> Option.filter (fun _ -> isRunningOnCoreClr)
         |> Option.map (fun _ -> new NativeDllResolveHandlerCoreClr(nativeProbingRoots))
 
     new(nativeProbingRoots: NativeResolutionProbe) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)

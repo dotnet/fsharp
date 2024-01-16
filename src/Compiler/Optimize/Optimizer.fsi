@@ -8,6 +8,15 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle
+open Internal.Utilities.Library
+
+[<RequireQualifiedAccess>]
+type OptimizationProcessingMode =
+    /// Process files sequentially, on a single thread, doing all optimization phases for each file next to each other.
+    | Sequential
+    /// Use multiple threads.
+    /// As soon as a given phase for a file has finished, start processing the next phase of the current file and the same phase of the next file.
+    | Parallel
 
 type OptimizationSettings =
     {
@@ -40,6 +49,8 @@ type OptimizationSettings =
         reportHasEffect: bool
 
         reportTotalSizes: bool
+
+        processingMode: OptimizationProcessingMode
     }
 
     member JitOptimizationsEnabled: bool
@@ -51,7 +62,7 @@ type OptimizationSettings =
 /// Optimization information
 type ModuleInfo
 
-type LazyModuleInfo = Lazy<ModuleInfo>
+type LazyModuleInfo = InterruptibleLazy<ModuleInfo>
 
 type ImplFileOptimizationInfo = LazyModuleInfo
 

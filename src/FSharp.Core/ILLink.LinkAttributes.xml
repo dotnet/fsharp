@@ -83,6 +83,9 @@
     <type fullname="Microsoft.FSharp.Core.NoComparisonAttribute">
       <attribute internal="RemoveAttributeInstances" />
     </type>
+    <type fullname="Microsoft.FSharp.Core.NoCompilerInliningAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
     <type fullname="Microsoft.FSharp.Core.NoDynamicInvocationAttribute">
       <attribute internal="RemoveAttributeInstances" />
     </type>
@@ -117,6 +120,9 @@
       <attribute internal="RemoveAttributeInstances" />
     </type>
     <type fullname="Microsoft.FSharp.Core.StructuralEqualityAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.TailCallAttribute">
       <attribute internal="RemoveAttributeInstances" />
     </type>
     <type fullname="Microsoft.FSharp.Core.UnverifiableAttribute">

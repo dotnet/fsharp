@@ -109,6 +109,8 @@ type ValFlags =
 
     member InlineInfo: ValInline
 
+    member IsImplied: bool
+
     member IsCompiledAsStaticPropertyWithoutField: bool
 
     member IsCompilerGenerated: bool
@@ -141,6 +143,8 @@ type ValFlags =
     member WithIgnoresByrefScope: ValFlags
 
     member WithInlineIfLambda: ValFlags
+
+    member WithIsImplied: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
@@ -353,6 +357,9 @@ type EntityOptionalData =
         /// The declared documentation for the type or module
         mutable entity_xmldoc: XmlDoc
 
+        /// the signature xml doc for an item in an implementation file.
+        mutable entity_other_xmldoc: XmlDoc option
+
         /// The XML document signature for this entity
         mutable entity_xmldocsig: string
 
@@ -460,6 +467,8 @@ type Entity =
 
     member SetOtherRange: m: (range * bool) -> unit
 
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
+
     member SetTypeAbbrev: tycon_abbrev: TType option -> unit
 
     member SetTypeOrMeasureKind: kind: TyparKind -> unit
@@ -554,7 +563,7 @@ type Entity =
     member ExceptionInfo: ExceptionInfo
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
-    member FSharpObjectModelTypeInfo: TyconObjModelData
+    member FSharpTyconRepresentationData: FSharpTyconData
 
     /// Gets any implicit CompareTo methods added to an F# record, union or struct type definition.
     member GeneratedCompareToValues: (ValRef * ValRef) option
@@ -570,6 +579,9 @@ type Entity =
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member HasSelfReferentialConstructor: bool
+
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
 
     /// Get the Abstract IL scope, nesting type metadata for this
     /// type definition, assuming it is backed by Abstract IL metadata.
@@ -612,10 +624,12 @@ type Entity =
     /// Indicates if this is an F#-defined interface type definition
     member IsFSharpInterfaceTycon: bool
 
-    /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
+    /// Indicates if this is an F# type definition known to be an F# class, interface, struct,
+    /// delegate or enum. This isn't generally a particularly useful thing to know,
+    /// it is better to use more specific predicates.
     member IsFSharpObjectModelTycon: bool
 
-    /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is an F#-defined value type definition, including struct records and unions
     member IsFSharpStructOrEnumTycon: bool
 
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
@@ -625,7 +639,7 @@ type Entity =
     /// Indicates if this is a .NET-defined enum type definition
     member IsILEnumTycon: bool
 
-    /// Indicates if this is a .NET-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a .NET-defined struct or enum type definition
     member IsILStructOrEnumTycon: bool
 
     /// Indicate if this is a type definition backed by Abstract IL metadata.
@@ -674,7 +688,7 @@ type Entity =
     member IsStaticInstantiationTycon: bool
 #endif
 
-    /// Indicates if this is a struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a struct or enum type definition, i.e. a value type definition, including struct records and unions
     member IsStructOrEnumTycon: bool
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
@@ -871,13 +885,7 @@ type TyconAugmentation =
 type TyconRepresentation =
 
     /// Indicates the type is a class, struct, enum, delegate or interface
-    | TFSharpObjectRepr of TyconObjModelData
-
-    /// Indicates the type is a record
-    | TFSharpRecdRepr of TyconRecdFields
-
-    /// Indicates the type is a discriminated union
-    | TFSharpUnionRepr of TyconUnionData
+    | TFSharpTyconRepr of FSharpTyconData
 
     /// Indicates the type is a type from a .NET assembly without F# metadata.
     | TILObjectRepr of TILObjectReprData
@@ -984,7 +992,12 @@ type TProvidedTypeInfo =
 
 #endif
 
-type TyconFSharpObjModelKind =
+type FSharpTyconKind =
+    /// Indicates the type is an F#-declared record
+    | TFSharpRecord
+
+    /// Indicates the type is an F#-declared union
+    | TFSharpUnion
 
     /// Indicates the type is an F#-declared class (also used for units-of-measure)
     | TFSharpClass
@@ -1001,16 +1014,15 @@ type TyconFSharpObjModelKind =
     /// Indicates the type is an F#-declared enumeration
     | TFSharpEnum
 
-    /// Indicates if the type definition is a value type
-    member IsValueType: bool
-
 /// Represents member values type class fields relating to the F# object model
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TyconObjModelData =
+type FSharpTyconData =
     {
+        /// Indicates the cases of a union type
+        fsobjmodel_cases: TyconUnionData
 
         /// Indicates whether the type declaration is an F# class, interface, enum, delegate or struct
-        fsobjmodel_kind: TyconFSharpObjModelKind
+        fsobjmodel_kind: FSharpTyconKind
 
         /// The declared abstract slots of the class, interface or struct
         fsobjmodel_vslots: ValRef list
@@ -1111,7 +1123,10 @@ type UnionCase =
         ReturnType: TType
 
         /// Documentation for the case
-        XmlDoc: XmlDoc
+        OwnXmlDoc: XmlDoc
+
+        /// Documentation for the case from signature file
+        mutable OtherXmlDoc: XmlDoc
 
         /// XML documentation signature for the case
         mutable XmlDocSig: string
@@ -1129,6 +1144,8 @@ type UnionCase =
         /// Attributes, attached to the generated static method to make instances of the case
         mutable Attribs: Attribs
     }
+
+    member XmlDoc: XmlDoc
 
     /// Get a field of the union case by position
     member GetFieldByIndex: n: int -> RecdField
@@ -1181,6 +1198,8 @@ type UnionCase =
     /// Get the signature location of the union case
     member SigRange: range
 
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
+
 /// Represents a class, struct, record or exception field in an F# type, exception or union-case definition.
 /// This may represent a "field" in either a struct, class, record or union.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1192,6 +1211,9 @@ type RecdField =
 
         /// Documentation for the field
         rfield_xmldoc: XmlDoc
+
+        /// Documentation for the field from signature file
+        mutable rfield_otherxmldoc: XmlDoc
 
         /// XML Documentation signature for the field
         mutable rfield_xmldocsig: string
@@ -1290,6 +1312,8 @@ type RecdField =
 
     /// Get or set the XML documentation signature for the field
     member XmlDocSig: string with get, set
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
 /// Represents the implementation of an F# exception definition.
 [<NoEquality; NoComparison>]
@@ -1654,13 +1678,15 @@ type TraitWitnessInfo =
 type TraitConstraintInfo =
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
-    /// to store the inferred solution of the constraint.
+    /// to store the inferred solution of the constraint. And a mutable source cell to store
+    /// the name of the type or member that defined the constraint.
     | TTrait of
         tys: TTypes *
         memberName: string *
         memberFlags: Syntax.SynMemberFlags *
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
+        source: string option ref *
         solution: TraitConstraintSln option ref
 
     override ToString: unit -> string
@@ -1694,6 +1720,10 @@ type TraitConstraintInfo =
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
     /// the extension property MemberDisplayNameCore
     member WithMemberKind: SynMemberKind -> TraitConstraintInfo
+
+    member WithSupportTypes: TTypes -> TraitConstraintInfo
+
+    member WithMemberName: string -> TraitConstraintInfo
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]
@@ -1809,6 +1839,10 @@ type ValOptionalData =
         /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
         mutable val_repr_info_for_display: ValReprInfo option
 
+        /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+        /// them with lambda arguments.
+        mutable arg_repr_info_for_display: ArgReprInfo option
+
         /// How visible is this?
         /// MUTABILITY: for unpickle linkage
         mutable val_access: Accessibility
@@ -1816,6 +1850,9 @@ type ValOptionalData =
         /// XML documentation attached to a value.
         /// MUTABILITY: for unpickle linkage
         mutable val_xmldoc: XmlDoc
+
+        /// the signature xml doc for an item in an implementation file.
+        mutable val_other_xmldoc: XmlDoc option
 
         /// Is the value actually an instance method/property/event that augments
         /// a type, type if so what name does it take in the IL?
@@ -1894,6 +1931,8 @@ type Val =
 
     member SetInlineIfLambda: unit -> unit
 
+    member SetIsImplied: unit -> unit
+
     member SetIsCompiledAsStaticPropertyWithoutField: unit -> unit
 
     member SetIsCompilerGenerated: v: bool -> unit
@@ -1910,6 +1949,8 @@ type Val =
 
     member SetOtherRange: m: (range * bool) -> unit
 
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
+
     member SetType: ty: TType -> unit
 
     member SetValDefn: val_defn: Expr -> unit
@@ -1919,6 +1960,8 @@ type Val =
     member SetValReprInfo: info: ValReprInfo option -> unit
 
     member SetValReprInfoForDisplay: info: ValReprInfo option -> unit
+
+    member SetArgReprInfoForDisplay: info: ArgReprInfo option -> unit
 
     override ToString: unit -> string
 
@@ -2002,6 +2045,9 @@ type Val =
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
 
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member IsImplied: bool
+
     /// Indicates if this is a 'base' value?
     member IsBaseVal: bool
 
@@ -2084,6 +2130,9 @@ type Val =
     member IsOverrideOrExplicitImpl: bool
 
     member IsTypeFunction: bool
+
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
 
     /// The value of a value or member marked with [<LiteralAttribute>]
     member LiteralValue: Const option
@@ -2177,6 +2226,10 @@ type Val =
     /// Records the "extra information" for display purposes for expression-level function definitions
     /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
     member ValReprInfoForDisplay: ValReprInfo option
+
+    /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+    /// them with lambda arguments.
+    member ArgReprInfoForDisplay: ArgReprInfo option
 
     /// Get the declared documentation for the value
     member XmlDoc: XmlDoc
@@ -2278,9 +2331,6 @@ type NonLocalEntityRef =
 
     /// Get the mangled name of the last item in the path of the nonlocal reference.
     member LastItemMangledName: string
-
-    /// Get the details of the module or namespace fragment for the entity referred to by this non-local reference.
-    member ModuleOrNamespaceType: ModuleOrNamespaceType
 
     /// Get the path into the CCU referenced by the nonlocal reference.
     member Path: string[]
@@ -2411,7 +2461,7 @@ type EntityRef =
     member ExceptionInfo: ExceptionInfo
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
-    member FSharpObjectModelTypeInfo: TyconObjModelData
+    member FSharpTyconRepresentationData: FSharpTyconData
 
     /// Gets any implicit CompareTo methods added to an F# record, union or struct type definition.
     member GeneratedCompareToValues: (ValRef * ValRef) option
@@ -2466,10 +2516,12 @@ type EntityRef =
     /// Indicates if this is an F#-defined interface type definition
     member IsFSharpInterfaceTycon: bool
 
-    /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
+    /// Indicates if this is an F# type definition known to be an F# class, interface, struct,
+    /// delegate or enum. This isn't generally a particularly useful thing to know,
+    /// it is better to use more specific predicates.
     member IsFSharpObjectModelTycon: bool
 
-    /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is an F#-defined value type definition, including struct records and unions
     member IsFSharpStructOrEnumTycon: bool
 
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
@@ -2529,7 +2581,7 @@ type EntityRef =
     member IsStaticInstantiationTycon: bool
 #endif
 
-    /// Indicates if this is a struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a struct or enum type definition, i.e. a value type definition, including struct records and unions
     member IsStructOrEnumTycon: bool
 
     /// Indicates if this entity is an F# type abbreviation definition
@@ -2628,6 +2680,8 @@ type EntityRef =
     /// or comes from another F# assembly then it does not (because the documentation will get read from
     /// an XML file).
     member XmlDoc: XmlDoc
+
+    member SetOtherXmlDoc: XmlDoc -> unit
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
@@ -2728,6 +2782,9 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member IsImplied: bool
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
@@ -2962,10 +3019,10 @@ type RecdFieldRef =
     /// Try to dereference the reference
     member TryRecdField: RecdField voption
 
-    /// Get the Entity for the type containing this union case
+    /// Get the Entity for the type containing this record field
     member Tycon: Entity
 
-    /// Get a reference to the type containing this union case
+    /// Get a reference to the type containing this record field
     member TyconRef: TyconRef
 
 /// Represents a type in the typed abstract syntax
@@ -3024,7 +3081,8 @@ type AnonRecdTypeInfo =
       mutable TupInfo: TupInfo
       mutable SortedIds: Syntax.Ident[]
       mutable Stamp: Stamp
-      mutable SortedNames: string[] }
+      mutable SortedNames: string[]
+      mutable IlTypeName: int64 }
 
     /// Create an AnonRecdTypeInfo from the basic data
     static member Create: ccu: CcuThunk * tupInfo: TupInfo * ids: Syntax.Ident[] -> AnonRecdTypeInfo
@@ -3367,6 +3425,9 @@ type ArgReprInfo =
 
         /// The name for the argument at this position, if any
         mutable Name: Syntax.Ident option
+
+        /// The range of the signature/implementation counterpart to this argument, if any
+        mutable OtherRange: range option
     }
 
     override ToString: unit -> string
@@ -3469,7 +3530,9 @@ type Expr =
     ///
     | Quote of
         quotedExpr: Expr *
-        quotationInfo: ((ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData) * (ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData)) option ref *
+        quotationInfo:
+            ((ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData) *
+            (ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData)) option ref *
         isFromQueryExpression: bool *
         range: Text.range *
         quotedType: TType
@@ -4221,14 +4284,13 @@ type FreeVars =
     member DebugText: string
 
 /// A set of static methods for constructing types.
+[<Class>]
 type Construct =
-
-    new: unit -> Construct
 
 #if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
-    static member ComputeDefinitionLocationOfProvidedItem:
-        p: Tainted<#IProvidedCustomAttributeProvider> -> Text.range option
+    static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> :
+        p: Tainted<'T> -> range option
 #endif
 
     /// Key a Tycon or TyconRef by both mangled type demangled name.
@@ -4260,6 +4322,9 @@ type Construct =
 
     /// Create a new node for an empty module or namespace contents
     static member NewEmptyModuleOrNamespaceType: mkind: ModuleOrNamespaceKind -> ModuleOrNamespaceType
+
+    /// Create a new node for an empty F# tycon data
+    static member NewEmptyFSharpTyconData: kind: FSharpTyconKind -> FSharpTyconData
 
     /// Create a new TAST Entity node for an F# exception definition
     static member NewExn:

@@ -238,7 +238,7 @@ type internal FxResolver
                             dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
                             + pattern.Length
 
-                        let endPos = dotnetConfig.IndexOf("\"", startPos)
+                        let endPos = dotnetConfig.IndexOfOrdinal("\"", startPos)
                         let ver = dotnetConfig[startPos .. endPos - 1]
 
                         let path =
@@ -364,7 +364,7 @@ type internal FxResolver
                 let implDir, warnings = getImplementationAssemblyDir ()
                 let version = DirectoryInfo(implDir).Name
 
-                if version.StartsWith("x") then
+                if version.StartsWithOrdinal("x") then
                     // Is running on the desktop
                     (None, None), warnings
                 else
@@ -382,16 +382,16 @@ type internal FxResolver
 
     let tryGetNetCoreRefsPackDirectoryRoot () = tryNetCoreRefsPackDirectoryRoot.Force()
 
+    let getTfmNumber (v: string) =
+        let arr = v.Split([| '.' |], 3)
+        arr[0] + "." + arr[1]
+
     // Tries to figure out the tfm for the compiler instance.
     // On coreclr it uses the deps.json file
     //
     // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation
-    let tryGetRunningTfm =
+    let tryGetRunningTfm () =
         let runningTfmOpt =
-            let getTfmNumber (v: string) =
-                let arr = v.Split([| '.' |], 3)
-                arr[0] + "." + arr[1]
-
             // Compute TFM from System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
             // System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;;
             // val it: string = ".NET 6.0.7"
@@ -403,7 +403,7 @@ type internal FxResolver
             | ".NET", "Core" when arr.Length >= 3 -> Some("netcoreapp" + (getTfmNumber arr[2]))
 
             | ".NET", "Framework" when arr.Length >= 3 ->
-                if arr[ 2 ].StartsWith("4.8") then
+                if arr[2].StartsWithOrdinal("4.8") then
                     Some "net48"
                 else
                     Some "net472"
@@ -416,7 +416,7 @@ type internal FxResolver
 
         match runningTfmOpt with
         | Some tfm -> tfm
-        | _ -> if isRunningOnCoreClr then "net7.0" else "net472"
+        | _ -> if isRunningOnCoreClr then "net8.0" else "net472"
 
     let trySdkRefsPackDirectory =
         lazy
@@ -547,6 +547,24 @@ type internal FxResolver
 
         assemblyReferences |> List.iter traverseDependencies
         assemblies
+
+    let tryGetTfmFromSdkDir (sdkDir: string) =
+        let dotnetConfigFile = Path.Combine(sdkDir, "dotnet.runtimeconfig.json")
+
+        try
+            use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
+            let dotnetConfig = stream.ReadAllText()
+            let pattern = "\"tfm\": \""
+
+            let startPos =
+                dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
+                + pattern.Length
+
+            let endPos = dotnetConfig.IndexOfOrdinal("\"", startPos)
+            let tfm = dotnetConfig[startPos .. endPos - 1]
+            tfm
+        with _ ->
+            tryGetRunningTfm ()
 
     // This list is the default set of references for "non-project" files.
     //
@@ -741,6 +759,7 @@ type internal FxResolver
                 "System.Runtime.Serialization.Xml"
                 "System.Security"
                 "System.Security.Claims"
+                "System.Security.Cryptography"
                 "System.Security.Cryptography.Algorithms"
                 "System.Security.Cryptography.Cng"
                 "System.Security.Cryptography.Csp"
@@ -799,18 +818,43 @@ type internal FxResolver
             RequireFxResolverLock(fxtok, "assuming all member require lock")
             tryGetSdkDir () |> replayWarnings)
 
-    /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
+    /// Gets
+    ///    1. The Target Framework Moniker (TFM) used for scripting (e.g netcore3.0, net472)
+    ///    2. The running RID of the current machine (e.g. win-x64)
+    ///
+    /// When analyzing scripts for editing, this is **not** necessarily the running TFM. Rather, it is the TFM to use for analysing
+    /// a script.
+    ///
+    /// Summary:
+    /// - When running scripts (isInteractive = true) this is identical to the running TFM.
+    ///
+    /// - When analyzing .NET Core scripts (isInteractive = false, tryGetSdkDir is Some),
+    ///   the scripting TFM is determined from dotnet.runtimeconfig.json in the SDK directory
+    ///
+    /// - Otherwise, the running TFM is used. That is, if editing with .NET Framework/Core-based tooling a script is assumed
+    ///   to be .NET Framework/Core respectively.
+    ///
+    /// The RID returned is always the RID of the running machine.
     member _.GetTfmAndRid() =
         fxlock.AcquireLock(fun fxtok ->
             RequireFxResolverLock(fxtok, "assuming all member require lock")
 
-            let runningTfm = tryGetRunningTfm
+            // Interactive processes read their own configuration to find the running tfm
+            let targetTfm =
+                if isInteractive then
+                    tryGetRunningTfm ()
+                else
+                    let sdkDir = tryGetSdkDir () |> replayWarnings
+
+                    match sdkDir with
+                    | Some dir -> tryGetTfmFromSdkDir dir
+                    | None -> tryGetRunningTfm ()
 
             // Coreclr has mechanism for getting rid
             //      System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier
             // On Desktop framework compile it using osplatform+processarch+
             // Computer valid dotnet-rids for this environment:
-            //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+            //      https://learn.microsoft.com/dotnet/core/rid-catalog
             //
             // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
             let runningRid =
@@ -855,7 +899,7 @@ type internal FxResolver
                     | Architecture.Arm64 -> baseRid + "-arm64"
                     | _ -> baseRid + "-arm"
 
-            runningTfm, runningRid)
+            targetTfm, runningRid)
 
     static member ClearStaticCaches() =
         desiredDotNetSdkVersionForDirectoryCache.Clear()
@@ -878,7 +922,7 @@ type internal FxResolver
             let defaultReferences =
                 if assumeDotNetFramework then
                     getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
-                else if useSdkRefs then
+                elif useSdkRefs then
                     // Go fetch references
                     let sdkDir = tryGetSdkRefsPackDirectory () |> replayWarnings
 
@@ -892,7 +936,7 @@ type internal FxResolver
                                     if useFsiAuxLib then
                                         getFsiLibraryImplementationReference ()
                                 ]
-                                |> List.filter (fun f -> systemAssemblies.Contains(Path.GetFileNameWithoutExtension(f)))
+                                |> List.filter (Path.GetFileNameWithoutExtension >> systemAssemblies.Contains)
 
                             sdkReferences, false
                         with e ->

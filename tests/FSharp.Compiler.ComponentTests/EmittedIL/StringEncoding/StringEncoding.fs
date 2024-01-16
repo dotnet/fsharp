@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL
 
 open System
 open Xunit
@@ -32,7 +32,7 @@ module StringEncoding =
 
     let normalization_CSharp (form:string) start =
         let lines = [|
-            yield "namespace FSharp.Compiler.ComponentTests.EmittedIL.StringEncoding.NormalizationForm"
+            yield "namespace EmittedIL.StringEncoding.NormalizationForm"
             yield "{"
             yield "    using System;"
             yield "    using System.Collections.Generic;"
@@ -56,7 +56,7 @@ module StringEncoding =
     let normalization_FSharp (form:string) start =
 
         let lines = [|
-            yield $"module FSharp.Compiler.ComponentTests.EmittedIL.StringEncoding.NormalizationForm.Normalization{form}FSharp_%04x{start}"
+            yield $"module EmittedIL.StringEncoding.NormalizationForm.Normalization{form}FSharp_%04x{start}"
             yield "open System.Collections.Generic"
             yield "open System.Text"
             yield ""

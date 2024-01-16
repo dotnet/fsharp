@@ -121,9 +121,6 @@ type Range =
     /// Check if the range is adjacent to another range
     member internal IsAdjacentTo: otherRange: Range -> bool
 
-    /// Convert a range to string
-    member internal ToShortString: unit -> string
-
     /// The range where all values are zero
     static member Zero: range
   
@@ -218,6 +215,21 @@ module Range =
 
     /// Union two ranges, taking their first occurring start position and last occurring end position
     val unionRanges: range -> range -> range
+    
+    // Create a new range with the given start and end positions
+    val withStartEnd: Position -> Position -> range -> range
+    
+    // Create a new range with the given start position
+    val withStart: Position -> range -> range
+    
+    // Create a new range with the given end position
+    val withEnd: Position -> range -> range
+    
+    // Create a new range with the start position shifted by the given deltas
+    val shiftStart: int -> int -> range -> range
+    
+    // Create a new range with the end position shifted by the given deltas
+    val shiftEnd: int -> int -> range -> range    
 
     /// Test to see if one range contains another range
     val rangeContainsRange: range -> range -> bool

@@ -1,21 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
   <ProductDependencies>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.xliff-tasks" Version="1.0.0-beta.21126.1">
-      <Uri>https://github.com/dotnet/xliff-tasks</Uri>
-      <Sha>7e80445ee82adbf9a8e6ae601ac5e239d982afaa</Sha>
-      <SourceBuild RepoName="xliff-tasks" ManagedOnly="true" />
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="9.0.0-alpha.1.24059.3">
+      <Uri>https://github.com/dotnet/source-build-reference-packages</Uri>
+      <Sha>f2c3fed62861b918dfe300f01b497551813a56df</Sha>
+      <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
+    </Dependency>
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+      <SourceBuild RepoName="msbuild" ManagedOnly="true" />
+    </Dependency>
+    <Dependency Name="Microsoft.Build" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.Build.Framework" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="8.0.0-beta.22513.2">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="8.0.0-beta.24060.4">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>32f13f8a8af8085ca09fbf93513ac848582c4a41</Sha>
+      <Sha>888985fb9a9ae4cb30bca75f98af9126c839e660</Sha>
       <SourceBuild RepoName="arcade" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.DotNet.Helix.Sdk" Version="8.0.0-beta.22513.2">
-      <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>32f13f8a8af8085ca09fbf93513ac848582c4a41</Sha>
+    <Dependency Name="Microsoft.DotNet.XliffTasks" Version="1.0.0-beta.23475.1" CoherentParentDependency="Microsoft.DotNet.Arcade.Sdk">
+      <Uri>https://github.com/dotnet/xliff-tasks</Uri>
+      <Sha>73f0850939d96131c28cf6ea6ee5aacb4da0083a</Sha>
+      <SourceBuild RepoName="xliff-tasks" ManagedOnly="true" />
+    </Dependency>
+    <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
+    </Dependency>
+    <Dependency Name="optimization.windows_nt-x86.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
+    </Dependency>
+    <Dependency Name="optimization.linux-x64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
+    </Dependency>
+    <Dependency Name="optimization.windows_nt-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
+    </Dependency>
+    <Dependency Name="optimization.linux-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
     </Dependency>
   </ToolsetDependencies>
 </Dependencies>

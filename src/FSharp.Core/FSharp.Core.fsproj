@@ -36,12 +36,18 @@
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSProductVersionPrefix) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Core-$(FSCoreReleaseNotesVersion)</PackageReleaseNotes>
-    <Configurations>Debug;Release;Proto</Configurations>
+    <Configurations>Debug;Release;Proto;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Core dll provides a referencable public interface -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
       <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  </PropertyGroup>
+
+  <!-- When we build FCS solution and we include FSCore as reference, set path explicitly -->
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

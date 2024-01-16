@@ -15,7 +15,6 @@ type Permutation =
     | FSC_NETFX of optimized: bool * buildOnly: bool
     | FSI_NETFX
     | FSI_NETFX_STDIN
-    | FSC_NETFX_TEST_GENERATED_SIGNATURE
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 #endif
 
@@ -126,7 +125,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
 
         sources
         |> List.map(fun src -> computeInclude src)
-        |> List.fold (fun acc s -> acc + s) ""
+        |> List.fold (+) ""
 
     let replace tag items addDirectory addCondition compileItem (template:string) = template.Replace(tag, computeSourceItems addDirectory addCondition compileItem items)
 
@@ -215,7 +214,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
     let utilitySources = []
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
-    let framework = "net7.0"
+    let framework = "net8.0"
 
     // Arguments:
     //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
@@ -311,8 +310,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     match p with
 #if NETCOREAPP
-    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net7.0" optimized buildOnly
-    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net7.0" true false
+    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net8.0" optimized buildOnly
+    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net8.0" true false
 #else
     | FSC_NETFX (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" optimized buildOnly
     | FSI_NETFX -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
@@ -325,25 +324,6 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
         testOkFile.CheckExists()
-
-    | FSC_NETFX_TEST_GENERATED_SIGNATURE ->
-        use _cleanup = (cleanUpFSharpCore cfg)
-
-        let source1 =
-            ["test.ml"; "test.fs"; "test.fsx"]
-            |> List.rev
-            |> List.tryFind (fileExists cfg)
-
-        source1 |> Option.iter (fun from -> copy cfg from "tmptest.fs")
-
-        log "Generated signature file..."
-        fsc cfg "%s --sig:tmptest.fsi --define:FSC_NETFX_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
-
-        log "Compiling against generated signature file..."
-        fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
-
-        log "Verifying built .exe..."
-        peverify cfg "tmptest1.exe"
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
@@ -392,7 +372,7 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
     let cfg = {
         cfg with
-            fsc_flags = sprintf "%s %s --preferreduilang:en-US --define:NEGATIVE" cfg.fsc_flags options
+            fsc_flags = sprintf """%s %s --preferreduilang:en-US --define:NEGATIVE --simpleresolution /r:"%s" """ cfg.fsc_flags options cfg.FSCOREDLLPATH
             fsi_flags = sprintf "%s --preferreduilang:en-US %s" cfg.fsi_flags options
             }
 

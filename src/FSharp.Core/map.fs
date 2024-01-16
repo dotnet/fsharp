@@ -23,13 +23,7 @@ type internal MapTree<'Key, 'Value>(k: 'Key, v: 'Value, h: int) =
 [<Sealed>]
 [<AllowNullLiteral>]
 type internal MapTreeNode<'Key, 'Value>
-    (
-        k: 'Key,
-        v: 'Value,
-        left: MapTree<'Key, 'Value>,
-        right: MapTree<'Key, 'Value>,
-        h: int
-    ) =
+    (k: 'Key, v: 'Value, left: MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) =
     inherit MapTree<'Key, 'Value>(k, v, h)
     member _.Left = left
     member _.Right = right
@@ -542,7 +536,7 @@ module MapTree =
         else
             acc
 
-    let ofArray comparer (arr: array<'Key * 'Value>) =
+    let ofArray comparer (arr: ('Key * 'Value) array) =
         let mutable res = empty
 
         for (x, y) in arr do
@@ -685,10 +679,7 @@ module MapTree =
 [<Sealed>]
 [<CompiledName("FSharpMap`2")>]
 type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonConditionalOn>] 'Value when 'Key: comparison>
-    (
-        comparer: IComparer<'Key>,
-        tree: MapTree<'Key, 'Value>
-    ) =
+    (comparer: IComparer<'Key>, tree: MapTree<'Key, 'Value>) =
 
     [<System.NonSerialized>]
     // This type is logically immutable. This field is only mutated during deserialization.
@@ -854,7 +845,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
         let mutable res = 0
 
-        for (KeyValue (x, y)) in this do
+        for (KeyValue(x, y)) in this do
             res <- combineHash res (hash x)
             res <- combineHash res (Unchecked.hash y)
 
@@ -881,6 +872,41 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     override this.GetHashCode() =
         this.ComputeHashCode()
+
+    interface IStructuralEquatable with
+        member this.Equals(that, comparer) =
+            match that with
+            | :? Map<'Key, 'Value> as that ->
+                use e1 = (this :> seq<_>).GetEnumerator()
+                use e2 = (that :> seq<_>).GetEnumerator()
+
+                let rec loop () =
+                    let m1 = e1.MoveNext()
+                    let m2 = e2.MoveNext()
+
+                    (m1 = m2)
+                    && (not m1
+                        || (let e1c = e1.Current
+                            let e2c = e2.Current
+
+                            (comparer.Equals(e1c.Key, e2c.Key)
+                             && comparer.Equals(e1c.Value, e2c.Value)
+                             && loop ())))
+
+                loop ()
+            | _ -> false
+
+        member this.GetHashCode(comparer) =
+            let combineHash x y =
+                (x <<< 1) + y + 631
+
+            let mutable res = 0
+
+            for (KeyValue(x, y)) in this do
+                res <- combineHash res (comparer.GetHashCode x)
+                res <- combineHash res (comparer.GetHashCode y)
+
+            res
 
     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
         member _.GetEnumerator() =
@@ -1018,9 +1044,7 @@ and [<Sealed>] MapDebugView<'Key, 'Value when 'Key: comparison>(v: Map<'Key, 'Va
         v |> Seq.truncate 10000 |> Seq.map KeyValuePairDebugFriendly |> Seq.toArray
 
 and [<DebuggerDisplay("{keyValue.Value}", Name = "[{keyValue.Key}]", Type = "")>] KeyValuePairDebugFriendly<'Key, 'Value>
-    (
-        keyValue: KeyValuePair<'Key, 'Value>
-    ) =
+    (keyValue: KeyValuePair<'Key, 'Value>) =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
     member x.KeyValue = keyValue

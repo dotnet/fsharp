@@ -13,7 +13,7 @@ open System.Reflection
 ///
 /// <namespacedoc><summary>
 ///   Library functionality for F# quotations.
-///    See also <a href="https: //docs.microsoft.com/dotnet/fsharp/language-reference/code-quotations">F# Code Quotations</a> in the F# Language Guide.
+///    See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/code-quotations">F# Code Quotations</a> in the F# Language Guide.
 /// </summary></namespacedoc>
 [<Sealed>]
 [<CompiledName("FSharpVar")>]
@@ -445,7 +445,7 @@ type Expr =
     ///
     /// Expr.ForIntegerRangeLoop(loopVariable, startExpr, endExpr, body)
     /// </code>
-    /// Evaluates to a quotation with the same structure as <c>&lt;@ if 1 > 3 then 6 else 7 @&gt;</c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ for x in 6..7 do System.Console.WriteLine("hello") @&gt;</c>.
     /// </example>
     static member ForIntegerRangeLoop: loopVariable: Var * start: Expr * endExpr: Expr * body: Expr -> Expr
 
@@ -672,6 +672,22 @@ type Expr =
     /// Evaluates to a quotation with the same structure as <c>&lt;@ struct (1, "a") @&gt;</c>.
     /// </example>
     static member NewStructTuple: asm: Assembly * elements: Expr list -> Expr
+
+    /// <summary>Builds an expression that represents the creation of an F# tuple value</summary>
+    ///
+    /// <param name="elements">The list of elements of the tuple.</param>
+    ///
+    /// <returns>The resulting expression.</returns>
+    ///
+    /// <example id="newstructtuple-1">
+    /// <code lang="fsharp">
+    /// open FSharp.Quotations
+    ///
+    /// Expr.NewStructTuple( [ &lt;@ 1 @&gt;; &lt;@ "a" @&gt; ])
+    /// </code>
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ struct (1, "a") @&gt;</c>.
+    /// </example>
+    static member NewStructTuple: elements: Expr list -> Expr
 
     /// <summary>Builds record-construction expressions </summary>
     ///

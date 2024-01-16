@@ -44,9 +44,9 @@ val x9: Lazy<string>
 type ClassInFile2 =
   new: unit -> ClassInFile2
 
-> val x1: seq<string>
-val x2: seq<string>
-val x3: seq<string>
+> val x1: string seq
+val x2: string seq
+val x3: string seq
 val f1: System.Windows.Forms.Form = System.Windows.Forms.Form, Text: f1 form
 val fs: System.Windows.Forms.Form array =
   [|System.Windows.Forms.Form, Text: fs #0;
@@ -208,7 +208,7 @@ val sxs0: Set<string> = set []
 > module M =
   val a: string = "sub-binding"
   val b:
-    (seq<string> * seq<string> * seq<string> * System.Windows.Forms.Form) option *
+    (string seq * string seq * string seq * System.Windows.Forms.Form) option *
     (string list * string list * string array2d) option =
     (Some (<seq>, <seq>, <seq>, System.Windows.Forms.Form, Text: f1 form),
      Some
@@ -1444,7 +1444,7 @@ module internal PrivateM =
   type private T14 =
     new: unit -> T14
 
-> val it: seq<int * string * int> =
+> val it: (int * string * int) seq =
   seq
     [(43, "10/28/2008", 1); (46, "11/18/2008", 1); (56, "1/27/2009", 2);
      (58, "2/10/2009", 1)]
@@ -1487,7 +1487,7 @@ module Test4343d =
   val xOption: int option = Some 12
   val xArray2: (int * int) array2d = [[(0, 0); (0, 1)]
                                       [(1, 0); (1, 1)]]
-  val xSeq: seq<int>
+  val xSeq: int seq
 module Test4343e =
   type C =
     new: x: int -> C
@@ -1531,8 +1531,8 @@ type F1 =
   static member C: unit -> int
   abstract AAA: int
   abstract BBB: bool with set
-  member D2: int
-  member E: int
+  member D2: int with get, set
+  member E: int with get, set
   abstract ZZZ: int
   static val mutable private sx: F1
   static val mutable private sx2: F1
@@ -2765,7 +2765,7 @@ val ShortName: string = "hi"
 > val list2: int list = [1]
 
 module FSI_0317.
-       C6f6ae524efb4d95b2b2eaa363022f9d4a28c777f788498ca81a55b9ec1aad1a
+       A8a951db8294f99e95ae1d276a7ddaefd93d1548e6bf749bdeae55d2649682b3
 
 {"ImmutableField0":6}
 type R1 =

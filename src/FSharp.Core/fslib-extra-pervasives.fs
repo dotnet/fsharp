@@ -46,15 +46,8 @@ module ExtraTopLevelOperators =
     [<DebuggerDisplay("Count = {Count}")>]
     [<DebuggerTypeProxy(typedefof<DictDebugView<_, _, _>>)>]
     type DictImpl<'SafeKey, 'Key, 'T>
-        (
-            t: Dictionary<'SafeKey, 'T>,
-            makeSafeKey: 'Key -> 'SafeKey,
-            getKey: 'SafeKey -> 'Key
-        ) =
-#if NETSTANDARD
-        static let emptyEnumerator =
-            (Array.empty<KeyValuePair<'Key, 'T>> :> seq<_>).GetEnumerator()
-#endif
+        (t: Dictionary<'SafeKey, 'T>, makeSafeKey: 'Key -> 'SafeKey, getKey: 'SafeKey -> 'Key) =
+
         member _.Count = t.Count
 
         // Give a read-only view of the dictionary
@@ -108,11 +101,11 @@ module ExtraTopLevelOperators =
             member _.TryGetValue(k, r) =
                 let safeKey = makeSafeKey k
 
-                if t.ContainsKey(safeKey) then
-                    (r <- t.[safeKey]
+                match t.TryGetValue safeKey with
+                | true, tsafe ->
+                    (r <- tsafe
                      true)
-                else
-                    false
+                | false, _ -> false
 
             member _.Remove(_: 'Key) =
                 (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))): bool)
@@ -147,13 +140,13 @@ module ExtraTopLevelOperators =
             member _.Remove(_) =
                 raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
 
-            member _.Contains(KeyValue (k, v)) =
+            member _.Contains(KeyValue(k, v)) =
                 ICollection_Contains t (KeyValuePair<_, _>(makeSafeKey k, v))
 
             member _.CopyTo(arr, i) =
                 let mutable n = 0
 
-                for (KeyValue (k, v)) in t do
+                for (KeyValue(k, v)) in t do
                     arr.[i + n] <- KeyValuePair<_, _>(getKey k, v)
                     n <- n + 1
 
@@ -169,54 +162,15 @@ module ExtraTopLevelOperators =
             member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
-                // Coreclr has a bug with SZGenericEnumerators --- implement a correct enumerator.  On desktop use the desktop implementation because it's ngened.
-#if !NETSTANDARD
-                let kvps = [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
+                let kvps = [| for (KeyValue(k, v)) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
                 kvps.GetEnumerator()
-#else
-                let endIndex = t.Count
-
-                if endIndex = 0 then
-                    emptyEnumerator
-                else
-                    let kvps = [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |]
-                    let mutable index = -1
-
-                    let current () =
-                        if index < 0 then
-                            raise <| InvalidOperationException(SR.GetString(SR.enumerationNotStarted))
-
-                        if index >= endIndex then
-                            raise <| InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished))
-
-                        kvps.[index]
-
-                    { new IEnumerator<_> with
-                        member _.Current = current ()
-                      interface System.Collections.IEnumerator with
-                          member _.Current = box (current ())
-
-                          member _.MoveNext() =
-                              if index < endIndex then
-                                  index <- index + 1
-                                  index < endIndex
-                              else
-                                  false
-
-                          member _.Reset() =
-                              index <- -1
-                      interface System.IDisposable with
-                          member _.Dispose() =
-                              ()
-                    }
-#endif
 
         interface System.Collections.IEnumerable with
             member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
                 let kvps =
-                    [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |] :> System.Collections.IEnumerable
+                    [| for (KeyValue(k, v)) in t -> KeyValuePair(getKey k, v) |] :> System.Collections.IEnumerable
 
                 kvps.GetEnumerator()
 
@@ -243,7 +197,7 @@ module ExtraTopLevelOperators =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let dictRefType (l: seq<'Key * 'T>) =
-        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
+        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (RuntimeHelpers.StructBox) (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs: seq<'Key * 'T>) : IDictionary<'Key, 'T> =
@@ -324,10 +278,6 @@ module ExtraTopLevelOperators =
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format =
         Printf.eprintfn format
-
-    [<CompiledName("FailWith")>]
-    let failwith s =
-        raise (Failure s)
 
     [<CompiledName("DefaultAsyncBuilder")>]
     let async = AsyncBuilder()
@@ -462,10 +412,7 @@ type TypeProviderTypeAttributes =
     | IsErased = 0x40000000
 
 type TypeProviderConfig
-    (
-        systemRuntimeContainsType: string -> bool,
-        getReferencedAssembliesOption: (unit -> string array) option
-    ) =
+    (systemRuntimeContainsType: string -> bool, getReferencedAssembliesOption: (unit -> string array) option) =
     let mutable resolutionFolder: string = null
     let mutable runtimeAssembly: string = null
     let mutable referencedAssemblies: string[] = null

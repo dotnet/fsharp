@@ -36,7 +36,7 @@ module private Helpers =
                 Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
             ReferencedProjects =
                 referencedProjects
-                |> List.map (fun x -> FSharpReferencedProject.CreateFSharp (x.ProjectFileName, x))
+                |> List.map (fun x -> FSharpReferencedProject.FSharpReference(x.ProjectFileName, x))
                 |> Array.ofList
             IsIncompleteTypeCheckEnvironment = false
             UseScriptResolutionRules = false
@@ -83,6 +83,7 @@ type CompilerServiceBenchmarks() =
             IsInteractive = false
             ApplyLineDirectives = false
             IndentationAwareSyntax = None
+            StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
         }
@@ -123,13 +124,13 @@ type CompilerServiceBenchmarks() =
                 |> Some
     
     [<Benchmark>]
-    member _.ParsingTypeCheckerFs() =
+    member _.ParsingCheckExpressionsFs() =
         let config = getConfig()
         let results = config.Checker.ParseFile("CheckExpressions.fs", config.Source |> SourceText.toFSharpSourceText, parsingOptions) |> Async.RunSynchronously
         if results.ParseHadErrors then failwithf $"parse had errors: %A{results.Diagnostics}"
 
-    [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
-    member _.ParsingTypeCheckerFsSetup() =
+    [<IterationCleanup(Target = "ParsingCheckExpressionsFs")>]
+    member _.ParsingCheckExpressionsFsSetup() =
         let checker = getConfig().Checker
         checker.InvalidateAll()
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()

@@ -49,7 +49,7 @@ The following are the most relevant parts of the F# compiler tooling, making up 
 
 * The corresponding APIs wrapping and accessing these structures in the public-facing [`FSharp.Compiler.Service` API](https://github.com/dotnet/fsharp/tree/main/src/Compiler/Service) and [Symbol API](https://github.com/dotnet/fsharp/tree/main/src/Compiler/Symbols).
 
-* The [F# Compiler Service Caches](https://fsharp.github.io/FSharp.Compiler.Service/caches.html), the various caches maintained by an instance of an `FSharpChecker`.
+* The [F# Compiler Service Caches](https://fsharp.github.io/fsharp-compiler-docs/fcs/caches.html), the various caches maintained by an instance of an `FSharpChecker`.
 
 ## Key compiler phases
 
@@ -137,7 +137,7 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling.
    There is a legacy aspect to this if references use old .NET Framework references including for
-   scripting.  See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Facilities/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Legacy/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Facilities/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler.
+   scripting.  See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Facilities/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](../src/LegacyMsBuildResolver/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Facilities/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler.
    See [DependencyManager](https://github.com/dotnet/fsharp/tree/main/src/Compiler/DependencyManager) for reference resolution and package management used in `fsi`.
 
 * _Importing referenced .NET binaries_, see [import.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/import.fsi)/[import.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/import.fs). Accepts file references and produces a Typed Tree node for each referenced assembly, including information about its type definitions (and type forwarders if any).
@@ -155,7 +155,7 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Post-inference type checks_, see [PostInferenceChecks.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/PostInferenceChecks.fsi)/[PostInferenceChecks.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/PostInferenceChecks.fs). Called at the end of type checking/inference for each file. A range of checks that can only be enforced after type checking on a file is complete, such as analysis when using `byref<'T>` or other `IsByRefLike` structs.
 
-* _Quotation translation_, see [QuotationTranslator.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/QuotationTranslator.fsi)/[QuotationTranslator.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/QuotationTranslator.fs)/[QuotationPickler.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/QuotationPickler.fsi)/[QuotationPickler.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/QuotationPickler.fs). Generates the stored information for F# quotation nodes, generated from the Typed Tree expression structures of the F# compiler. Quotations are ultimately stored as binary data plus some added type references. "ReflectedDefinition" quotations are collected and stored in a single blob.
+* _Quotation translation_, see [QuotationTranslator.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/QuotationTranslator.fsi)/[QuotationTranslator.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/QuotationTranslator.fs)/[QuotationPickler.fsi](../src/Compiler/TypedTree/QuotationPickler.fsi)/[QuotationPickler.fs](../src/Compiler/TypedTree/QuotationPickler.fs). Generates the stored information for F# quotation nodes, generated from the Typed Tree expression structures of the F# compiler. Quotations are ultimately stored as binary data plus some added type references. "ReflectedDefinition" quotations are collected and stored in a single blob.
 
 * _Optimization phases_, primarily the "Optimize" (peephole/inlining) and "Top Level Representation" (lambda lifting) phases, see [Optimizer.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/Optimizer.fsi)/[Optimizer.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/Optimizer.fs) and [InnerLambdasToTopLevelFuncs.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/InnerLambdasToTopLevelFuncs.fsi)/[InnerLambdasToTopLevelFuncs.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/InnerLambdasToTopLevelFuncs.fs) and [LowerCalls.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/LowerCalls.fs). Each of these takes Typed Tree nodes for types and expressions and either modifies the nodes in place or produces new Typed Tree nodes. These phases are orchestrated in [CompilerOptions.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/CompilerOptions.fs)
 
@@ -174,7 +174,7 @@ These and transformations used to build the following:
 
 * _The F# Interactive Shell_, see [fsi.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Interactive/fsi.fs).
 
-* _The F# Compiler Shell_, see [fsc.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/fsc.fs) and [fscmain.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/fscmain.fs).
+* _The F# Compiler Shell_, see [fsc.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/fsc.fs) and [fscmain.fs](../src/fsc/fscmain.fs).
 
 ## Bootstrapping
 

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.AttributeChecking
+namespace Language
 
 open Xunit
 open FSharp.Test.Compiler
@@ -43,11 +43,7 @@ type C() =
          |> compile
          |> shouldSucceed
     
-#if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Regression: typechecker does not fail when attribute is on type variable (https://github.com/dotnet/fsharp/issues/13525)`` () =
         let csharpBaseClass = 
             CSharp """

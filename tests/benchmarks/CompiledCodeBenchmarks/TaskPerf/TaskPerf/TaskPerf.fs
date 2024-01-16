@@ -1,19 +1,11 @@
-(*
-msbuild tests\fsharp\perf\tasks\FS\TaskPerf.fsproj /p:Configuration=Release
-dotnet artifacts\bin\TaskPerf\Release\netcoreapp2.1\TaskPerf.dll
-*)
-
 namespace TaskPerf
 
-//open FSharp.Control.Tasks
 open System
-open System.Diagnostics
 open System.Threading.Tasks
 open System.IO
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 open TaskBuilderTasks //.ContextSensitive // TaskBuilder.fs extension members
-//open FSharp.Control.ContextSensitiveTasks // the default
 open FSharp.Control // AsyncSeq
 open Tests.SyncBuilder
 open BenchmarkDotNet.Configs

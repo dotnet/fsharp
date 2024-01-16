@@ -316,15 +316,15 @@ let pdbGetDebugInfo
 let getDebugFileName outfile =
     (FileSystemUtils.chopExtension outfile) + ".pdb"
 
-let sortMethods showTimes info =
-    reportTime showTimes (sprintf "PDB: Defined %d documents" info.Documents.Length)
+let sortMethods info =
+    reportTime (sprintf "PDB: Defined %d documents" info.Documents.Length)
     Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
-    reportTime showTimes (sprintf "PDB: Sorted %d methods" info.Methods.Length)
+    reportTime (sprintf "PDB: Sorted %d methods" info.Methods.Length)
     ()
 
 let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
-    tableRowCounts |> Seq.iter (fun x -> builder.Add x)
+    tableRowCounts |> Seq.iter (builder.Add)
     builder.MoveToImmutable()
 
 let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
@@ -340,15 +340,7 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
         0
 
 type PortablePdbGenerator
-    (
-        embedAllSource: bool,
-        embedSourceList: string list,
-        sourceLink: string,
-        checksumAlgorithm,
-        showTimes,
-        info: PdbData,
-        pathMap: PathMap
-    ) =
+    (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, info: PdbData, pathMap: PathMap) =
 
     let docs =
         match info.Documents with
@@ -439,7 +431,7 @@ type PortablePdbGenerator
             // For F# Interactive, file name 'stdin' gets generated for interactive inputs
             let handle =
                 match checkSum doc.File checksumAlgorithm with
-                | Some (hashAlg, checkSum) ->
+                | Some(hashAlg, checkSum) ->
                     let dbgInfo =
                         (serializeDocumentName doc.File,
                          metadata.GetOrAddGuid hashAlg,
@@ -784,7 +776,7 @@ type PortablePdbGenerator
         | Some scope -> writeMethodScopes minfo.MethToken scope
 
     member _.Emit() =
-        sortMethods showTimes info
+        sortMethods info
         metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
 
         defineModuleImportScope ()
@@ -823,7 +815,7 @@ type PortablePdbGenerator
         let contentId = serializer.Serialize blobBuilder
         let portablePdbStream = new MemoryStream()
         blobBuilder.WriteContentTo portablePdbStream
-        reportTime showTimes "PDB: Created"
+        reportTime "PDB: Created"
         (portablePdbStream.Length, contentId, portablePdbStream, algorithmName, contentHash)
 
 let generatePortablePdb
@@ -831,12 +823,11 @@ let generatePortablePdb
     (embedSourceList: string list)
     (sourceLink: string)
     checksumAlgorithm
-    showTimes
     (info: PdbData)
     (pathMap: PathMap)
     =
     let generator =
-        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, showTimes, info, pathMap)
+        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, info, pathMap)
 
     generator.Emit()
 

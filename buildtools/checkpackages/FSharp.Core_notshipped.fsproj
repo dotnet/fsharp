@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildProjectDirectory)\..\..\eng\Versions.props" />
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>ne87.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -13,5 +13,13 @@
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="[$(FSCorePackageVersionValue)]" />
   </ItemGroup>
+
+  <Target Name="WritePackageVersion" BeforeTargets="Restore">
+      <WriteLinesToFile
+          File="Version.txt"
+          Lines="FSharp.Core=$(FSCorePackageVersionValue)"
+          Overwrite="true"
+          Encoding="Unicode"/>
+  </Target>
 
 </Project>

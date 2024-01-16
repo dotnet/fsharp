@@ -35,8 +35,6 @@ module internal Bytes =
 
     let zeroCreate n : byte[] = Array.zeroCreate n
 
-    let sub (b: byte[]) s l = Array.sub b s l
-
     let blit (a: byte[]) b c d e = Array.blit a b c d e
 
     let ofInt32Array (arr: int[]) =
@@ -510,6 +508,8 @@ type IFileSystem =
 
     abstract IsStableFileHeuristic: fileName: string -> bool
 
+    abstract ChangeExtensionShim: path: string * extension: string -> string
+
 // note: do not add members if you can put generic implementation under StreamExtensions below.
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
@@ -616,16 +616,16 @@ type DefaultFileSystem() as this =
 
     default _.IsInvalidPathShim(path: string) =
         let isInvalidPath (p: string MaybeNull) =
-            match p with
-            | Null
-            | "" -> true
-            | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+            if String.IsNullOrEmpty(p) then
+                true
+            else
+                p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
         let isInvalidFilename (p: string MaybeNull) =
-            match p with
-            | Null
-            | "" -> true
-            | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+            if String.IsNullOrEmpty(p) then
+                true
+            else
+                p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
         let isInvalidDirectory (d: string MaybeNull) =
             match d with
@@ -645,7 +645,7 @@ type DefaultFileSystem() as this =
     default _.GetDirectoryNameShim(path: string) =
         FileSystemUtils.checkPathForIllegalChars path
 
-        if path = "" then
+        if String.IsNullOrEmpty(path) then
             "."
         else
             match Path.GetDirectoryName(path) with
@@ -654,7 +654,7 @@ type DefaultFileSystem() as this =
                     path
                 else
                     "."
-            | res -> if res = "" then "." else res
+            | res -> if String.IsNullOrEmpty(res) then "." else res
 
     abstract GetLastWriteTimeShim: fileName: string -> DateTime
     default _.GetLastWriteTimeShim(fileName: string) = File.GetLastWriteTimeUtc fileName
@@ -700,6 +700,10 @@ type DefaultFileSystem() as this =
         || directory.Contains("packages\\")
         || directory.Contains("lib/mono/")
 
+    abstract ChangeExtensionShim: path: string * extension: string -> string
+
+    default _.ChangeExtensionShim(path: string, extension: string) : string = Path.ChangeExtension(path, extension)
+
     interface IFileSystem with
         member _.AssemblyLoader = this.AssemblyLoader
 
@@ -735,6 +739,9 @@ type DefaultFileSystem() as this =
         member _.EnumerateFilesShim(path: string, pattern: string) = this.EnumerateFilesShim(path, pattern)
         member _.EnumerateDirectoriesShim(path: string) = this.EnumerateDirectoriesShim path
         member _.IsStableFileHeuristic(fileName: string) = this.IsStableFileHeuristic fileName
+
+        member _.ChangeExtensionShim(path: string, extension: string) =
+            this.ChangeExtensionShim(path, extension)
 
 [<AutoOpen>]
 module public StreamExtensions =
@@ -879,6 +886,8 @@ type internal ByteStream =
         max: int
     }
 
+    member b.IsEOF = (b.pos >= b.max)
+
     member b.ReadByte() =
         if b.pos >= b.max then
             failwith "end of stream"
@@ -959,7 +968,7 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 1
         buf.Ensure newSize
-        buf.bbArray[ buf.bbCurrent ] <- byte i
+        buf.bbArray[buf.bbCurrent] <- byte i
         buf.bbCurrent <- newSize
 
     member buf.EmitByte(b: byte) =
@@ -981,10 +990,10 @@ type internal ByteBuffer =
 
     member bb.FixupInt32 pos value =
         bb.CheckDisposed()
-        bb.bbArray[ pos ] <- (Bytes.b0 value |> byte)
-        bb.bbArray[ pos + 1 ] <- (Bytes.b1 value |> byte)
-        bb.bbArray[ pos + 2 ] <- (Bytes.b2 value |> byte)
-        bb.bbArray[ pos + 3 ] <- (Bytes.b3 value |> byte)
+        bb.bbArray[pos] <- (Bytes.b0 value |> byte)
+        bb.bbArray[pos + 1] <- (Bytes.b1 value |> byte)
+        bb.bbArray[pos + 2] <- (Bytes.b2 value |> byte)
+        bb.bbArray[pos + 3] <- (Bytes.b3 value |> byte)
 
     member buf.EmitInt32 n =
         buf.CheckDisposed()
@@ -1021,8 +1030,8 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 2
         buf.Ensure newSize
-        buf.bbArray[ buf.bbCurrent ] <- (Bytes.b0 n |> byte)
-        buf.bbArray[ buf.bbCurrent + 1 ] <- (Bytes.b1 n |> byte)
+        buf.bbArray[buf.bbCurrent] <- (Bytes.b0 n |> byte)
+        buf.bbArray[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
         buf.bbCurrent <- newSize
 
     member buf.EmitBoolAsByte(b: bool) =

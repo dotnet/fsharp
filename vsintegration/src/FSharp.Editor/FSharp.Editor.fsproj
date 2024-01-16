@@ -14,6 +14,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Editor.Tests" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
   </ItemGroup>
 
@@ -22,6 +23,13 @@
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
     </EmbeddedResource>
+     <EmbeddedText Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyResolver.txt">
+      <Link>LegacyResolver.txt</Link>
+    </EmbeddedText>
+    <Compile Include="Common\CancellableTasks.fs" />
+    <Compile Include="Common\DocumentCache.fs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
     <Compile Include="Common\AssemblyInfo.fs" />
     <Compile Include="Common\Logger.fsi" />
     <Compile Include="Common\Logger.fs" />
@@ -34,9 +42,10 @@
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\Vs.fs" />
-    <Compile Include="Options\SettingsPersistence.fs" />
+    <Compile Include="Options\SettingsStore.fs" />
     <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />
+    <Compile Include="Telemetry\TelemetryReporter.fs" />
     <Compile Include="LanguageService\ProvideBraceCompletionAttribute.fs" />
     <Compile Include="LanguageService\FSharpEditorFactory.fs" />
     <Compile Include="LanguageService\TextViewCreationListener.fs" />
@@ -50,8 +59,8 @@
     <Compile Include="LanguageService\SingleFileWorkspaceMap.fs" />
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />
     <Compile Include="LanguageService\FSharpAnalysisSaveFileCommandHandler.fs" />
-    <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\WorkspaceExtensions.fs" />
+    <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
@@ -61,11 +70,13 @@
     <Compile Include="Formatting\EditorFormattingService.fs" />
     <Compile Include="Debugging\BreakpointResolutionService.fs" />
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
+    <Compile Include="Diagnostics\UnnecessaryParenthesesDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
     <Compile Include="DocComments\XMLDocumentation.fs" />
+    <Compile Include="TaskList\TaskListService.fs" />
     <Compile Include="Completion\CompletionUtils.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\PathCompletionUtilities.fs" />
@@ -80,61 +91,72 @@
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
-    <Compile Include="QuickInfo\NavigableTextRun.fs" />
-    <Compile Include="QuickInfo\WpfNagivableTextRunViewElementFactory.fs" />
+    <Compile Include="Navigation\FindDefinitionService.fs" />
+    <Compile Include="QuickInfo\WpfFactories.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="Refactor\AddReturnType.fs" />
     <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
-    <Compile Include="CodeFix\CodeFixHelpers.fs" />
-    <Compile Include="CodeFix\AddInstanceMemberParameter.fs" />
-    <Compile Include="CodeFix\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
-    <Compile Include="CodeFix\AddMissingRecToMutuallyRecFunctions.fs" />
-    <Compile Include="CodeFix\ConvertCSharpUsingToFSharpOpen.fs" />
-    <Compile Include="CodeFix\ConvertCSharpLambdaToFSharpLambda.fs" />
-    <Compile Include="CodeFix\MakeOuterBindingRecursive.fs" />
-    <Compile Include="CodeFix\RemoveReturnOrYield.fs" />
-    <Compile Include="CodeFix\AddMissingFunKeyword.fs" />
-    <Compile Include="CodeFix\ConvertToAnonymousRecord.fs" />
-    <Compile Include="CodeFix\UseMutationWhenValueIsMutable.fs" />
-    <Compile Include="CodeFix\MakeDeclarationMutable.fs" />
-    <Compile Include="CodeFix\ChangeToUpcast.fs" />
-    <Compile Include="CodeFix\AddMissingEqualsToTypeDefinition.fs" />
-    <Compile Include="CodeFix\ConvertToNotEqualsEqualityExpression.fs" />
-    <Compile Include="CodeFix\ConvertToSingleEqualsEqualityExpression.fs" />
-    <Compile Include="CodeFix\ChangeRefCellDerefToNotExpression.fs" />
-    <Compile Include="CodeFix\WrapExpressionInParentheses.fs" />
-    <Compile Include="CodeFix\ChangePrefixNegationToInfixSubtraction.fs" />
-    <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
-    <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
-    <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
-    <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
-    <Compile Include="CodeFix\RemoveUnusedBinding.fs" />
-    <Compile Include="CodeFix\RenameUnusedValue.fs" />
-    <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
-    <Compile Include="CodeFix\SimplifyName.fs" />
-    <Compile Include="CodeFix\RemoveUnusedOpens.fs" />
-    <Compile Include="CodeFix\MissingReferenceCodeFixProvider.fs" />
-    <Compile Include="CodeFix\FixIndexerAccess.fs" />
-    <Compile Include="CodeFix\RenameParamToMatchSignature.fs" />
-    <Compile Include="CodeFix\UseTripleQuotedInterpolation.fs" />
+    <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
+    <Compile Include="CodeFixes\CodeFixHelpers.fs" />
+    <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />
+    <Compile Include="CodeFixes\AddInstanceMemberParameter.fs" />
+    <Compile Include="CodeFixes\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
+    <Compile Include="CodeFixes\AddMissingRecToMutuallyRecFunctions.fs" />
+    <Compile Include="CodeFixes\ConvertCSharpUsingToFSharpOpen.fs" />
+    <Compile Include="CodeFixes\ConvertCSharpLambdaToFSharpLambda.fs" />
+    <Compile Include="CodeFixes\MakeOuterBindingRecursive.fs" />
+    <Compile Include="CodeFixes\RemoveReturnOrYield.fs" />
+    <Compile Include="CodeFixes\AddMissingFunKeyword.fs" />
+    <Compile Include="CodeFixes\ConvertToAnonymousRecord.fs" />
+    <Compile Include="CodeFixes\UseMutationWhenValueIsMutable.fs" />
+    <Compile Include="CodeFixes\MakeDeclarationMutable.fs" />
+    <Compile Include="CodeFixes\ChangeToUpcast.fs" />
+    <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinition.fs" />
+    <Compile Include="CodeFixes\ConvertToNotEqualsEqualityExpression.fs" />
+    <Compile Include="CodeFixes\ConvertToSingleEqualsEqualityExpression.fs" />
+    <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpression.fs" />
+    <Compile Include="CodeFixes\WrapExpressionInParentheses.fs" />
+    <Compile Include="CodeFixes\ChangePrefixNegationToInfixSubtraction.fs" />
+    <Compile Include="CodeFixes\AddNewKeywordToDisposableConstructorInvocation.fs" />
+    <Compile Include="CodeFixes\AddOpenCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\ProposeUppercaseLabel.fs" />
+    <Compile Include="CodeFixes\ReplaceWithSuggestion.fs" />
+    <Compile Include="CodeFixes\RemoveSuperfluousCaptureForUnionCaseWithNoData.fs" />
+    <Compile Include="CodeFixes\RemoveUnusedBinding.fs" />
+    <Compile Include="CodeFixes\PrefixUnusedValue.fs" />
+    <Compile Include="CodeFixes\DiscardUnusedValue.fs" />
+    <Compile Include="CodeFixes\ImplementInterface.fs" />
+    <Compile Include="CodeFixes\SimplifyName.fs" />
+    <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />
+    <Compile Include="CodeFixes\MissingReference.fs" />
+    <Compile Include="CodeFixes\FixIndexerAccessLegacy.fs" />
+    <Compile Include="CodeFixes\FixIndexerAccess.fs" />
+    <Compile Include="CodeFixes\RenameParamToMatchSignature.fs" />
+    <Compile Include="CodeFixes\UseTripleQuotedInterpolation.fs" />
+    <Compile Include="CodeFixes\RemoveUnnecessaryParentheses.fs" />
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
-    <Compile Include="Lens\LensDisplayService.fs" />
-    <Compile Include="Lens\LensService.fs" />
-    <Compile Include="Lens\LensProvider.fs" />
+    <Compile Include="Hints\Hints.fs" />
+    <Compile Include="Hints\InlineTypeHints.fs" />
+    <Compile Include="hints\InlineReturnTypeHints.fs" />
+    <Compile Include="Hints\InlineParameterNameHints.fs" />
+    <Compile Include="Hints\HintService.fs" />
+    <Compile Include="Hints\NativeToRoslynHintConverter.fs" />
+    <Compile Include="Hints\OptionParser.fs" />
+    <Compile Include="Hints\FSharpInlineHintsService.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="..\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
     <ProjectReference Include="..\FSharp.UIResources\FSharp.UIResources.csproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>

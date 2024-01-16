@@ -8,21 +8,25 @@ open Internal.Utilities.Text.Lexing
 
 type Lexbuf = LexBuffer<char>
 
-let StringAsLexbuf (reportLibraryOnlyFeatures, langVersion, s: string) =
-    LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, langVersion, s.ToCharArray())
+let StringAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, s: string) =
+    LexBuffer<char>
+        .FromChars(reportLibraryOnlyFeatures, langVersion, strictIndentation, s.ToCharArray())
 
-let FunctionAsLexbuf (reportLibraryOnlyFeatures, langVersion, bufferFiller) =
-    LexBuffer<char>.FromFunction (reportLibraryOnlyFeatures, langVersion, bufferFiller)
+let FunctionAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, bufferFiller) =
+    LexBuffer<char>
+        .FromFunction(reportLibraryOnlyFeatures, langVersion, strictIndentation, bufferFiller)
 
-let SourceTextAsLexbuf (reportLibraryOnlyFeatures, langVersion, sourceText) =
-    LexBuffer<char>.FromSourceText (reportLibraryOnlyFeatures, langVersion, sourceText)
+let SourceTextAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, sourceText) =
+    LexBuffer<char>
+        .FromSourceText(reportLibraryOnlyFeatures, langVersion, strictIndentation, sourceText)
 
-let StreamReaderAsLexbuf (reportLibraryOnlyFeatures, langVersion, reader: StreamReader) =
+let StreamReaderAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, reader: StreamReader) =
     let mutable isFinished = false
 
     FunctionAsLexbuf(
         reportLibraryOnlyFeatures,
         langVersion,
+        strictIndentation,
         fun (chars, start, length) ->
             if isFinished then
                 0

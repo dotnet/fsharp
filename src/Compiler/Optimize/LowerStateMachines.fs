@@ -39,7 +39,7 @@ type StateMachineConversionFirstPhaseResult =
    }
 
 #if DEBUG
-let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMachineVerbose") <> null with _ -> false
+let sm_verbose = try not (isNull(System.Environment.GetEnvironmentVariable "FSharp_StateMachineVerbose")) with _ -> false
 #else
 let sm_verbose = false
 #endif
@@ -114,7 +114,7 @@ let isExpandVar g (v: Val) =
 let isStateMachineBindingVar g (v: Val) = 
     isExpandVar g v  ||
     (let nm = v.LogicalName
-     (nm.StartsWith "builder@" || v.IsMemberThisVal) &&
+     (nm.StartsWithOrdinal("builder@") || v.IsMemberThisVal) &&
      not v.IsCompiledAsTopLevel)
 
 type env = 
@@ -447,7 +447,7 @@ type LowerStateMachine(g: TcGlobals) =
         let res = 
             match expr with 
             | ResumableCodeInvoke g (_, _, _, m, _) ->
-                Result.Error (FSComp.SR.reprResumableCodeInvokeNotReduced(m.ToShortString()))
+                Result.Error (FSComp.SR.reprResumableCodeInvokeNotReduced(m.ToString()))
 
             // Eliminate 'if __useResumableCode ...' within.  
             | IfUseResumableStateMachinesExpr g (thenExpr, _) -> 
@@ -494,10 +494,14 @@ type LowerStateMachine(g: TcGlobals) =
 
             // Non-control-flow let binding can appear as part of state machine. The body is considered state-machine code,
             // the expression being bound is not.
-            | Expr.Let (bind, bodyExpr, m, _)
-                  // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
-                  when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var) ->
-                ConvertResumableLet env pcValInfo (bind, bodyExpr, m)
+            | Expr.Let (bind, bodyExpr, m, _) ->
+                // Restriction: compilation of state machines containing non-toplevel constrained generic functions is not supported
+                if not bind.Var.IsCompiledAsTopLevel && IsGenericValWithGenericConstraints g bind.Var then
+                    if sm_verbose then 
+                        printfn " --> Failing state machine compilation, state machine contains non-toplevel constrained generic function"
+                    Result.Error (FSComp.SR.reprResumableCodeContainsConstrainedGenericLet())
+                else
+                    ConvertResumableLet env pcValInfo (bind, bodyExpr, m)
 
             | Expr.LetRec _ ->
                 Result.Error (FSComp.SR.reprResumableCodeContainsLetRec())
@@ -829,7 +833,7 @@ type LowerStateMachine(g: TcGlobals) =
                 |> Result.Ok
             elif bind.Var.IsCompiledAsTopLevel || 
                 not (resBody.resumableVars.FreeLocals.Contains(bind.Var)) || 
-                bind.Var.LogicalName.StartsWith stackVarPrefix then
+                bind.Var.LogicalName.StartsWithOrdinal(stackVarPrefix) then
                 if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
                 RepresentBindingAsTopLevelOrLocal bind resBody m
                 |> Result.Ok

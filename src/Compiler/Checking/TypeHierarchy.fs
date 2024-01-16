@@ -41,44 +41,47 @@ let GetSuperTypeOfType g amap m ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
 #endif
 
-    match metadataOfTy g ty with
+    let resBeforeNull = 
+        match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
-    | ProvidedTypeMetadata info ->
-        let st = info.ProvidedType
-        let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t), m)
-        match superOpt with
-        | None -> None
-        | Some super -> Some(ImportProvidedType amap m super)
+        | ProvidedTypeMetadata info ->
+            let st = info.ProvidedType
+            let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t), m)
+            match superOpt with
+            | None -> None
+            | Some super -> Some(ImportProvidedType amap m super)
 #endif
-    | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
-        let tinst = argsOfAppTy g ty
-        match tdef.Extends with
-        | None -> None
-        | Some ilTy -> Some (RescopeAndImportILType scoref amap m tinst ilTy)
+        | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
+            let tinst = argsOfAppTy g ty
+            match tdef.Extends with
+            | None -> None
+            | Some ilTy -> Some (RescopeAndImportILType scoref amap m tinst ilTy)
 
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-        if isFSharpObjModelTy g ty || isFSharpExceptionTy g ty then
-            let tcref = tcrefOfAppTy g ty
-            Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
-        elif isArrayTy g ty then
-            Some g.system_Array_ty
-        elif isRefTy g ty && not (isObjTy g ty) then
-            Some g.obj_ty
-        elif isStructTupleTy g ty then
-            Some g.system_Value_ty
-        elif isFSharpStructOrEnumTy g ty then
-            if isFSharpEnumTy g ty then
-                Some g.system_Enum_ty
-            else
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+            if isFSharpObjModelTy g ty || isFSharpExceptionTy g ty then
+                let tcref = tcrefOfAppTy g ty
+                Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
+            elif isArrayTy g ty then
+                Some g.system_Array_ty
+            elif isRefTy g ty && not (isObjTy g ty) then
+                Some g.obj_ty
+            elif isStructTupleTy g ty then
                 Some g.system_Value_ty
-        elif isStructAnonRecdTy g ty then
-            Some g.system_Value_ty
-        elif isAnonRecdTy g ty then
-            Some g.obj_ty
-        elif isRecdTy g ty || isUnionTy g ty then
-            Some g.obj_ty
-        else
-            None
+            elif isFSharpStructOrEnumTy g ty then
+                if isFSharpEnumTy g ty then
+                    Some g.system_Enum_ty
+                else
+                    Some g.system_Value_ty
+            elif isStructAnonRecdTy g ty then
+                Some g.system_Value_ty
+            elif isAnonRecdTy g ty then
+                Some g.obj_ty
+            elif isRecdTy g ty || isUnionTy g ty then
+                Some g.obj_ty
+            else
+                None
+
+    resBeforeNull
 
 /// Make a type for System.Collections.Generic.IList<ty>
 let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
@@ -352,8 +355,13 @@ let ImportILTypeFromMetadata amap m scoref tinst minst ilTy =
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
 let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilTy getCattrs =
     let ty = RescopeAndImportILType scoref amap m (tinst@minst) ilTy
-    // If the type is a byref and one of attributes from a return or parameter has IsReadOnly, then it's a inref.
-    if isByrefTy amap.g ty && TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (getCattrs ()) then
+    // If the type is a byref and one of attributes from a return or parameter has
+    // - a `IsReadOnlyAttribute` - it's an inref
+    // - a `RequiresLocationAttribute` (in which case it's a `ref readonly`) which we treat as inref,
+    // latter is an ad-hoc fix for https://github.com/dotnet/runtime/issues/94317.
+    if isByrefTy amap.g ty
+       && (TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (getCattrs ())
+           || TryFindILAttribute amap.g.attrib_RequiresLocationAttribute (getCattrs ())) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
     else
         ty
@@ -425,4 +433,3 @@ let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsori
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
     (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig))
     renaming, tptys
-

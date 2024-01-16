@@ -834,7 +834,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
             Set(a.Comparer, SetTree.intersection a.Comparer a.Tree b.Tree)
 
     static member Union(sets: seq<Set<'T>>) : Set<'T> =
-        Seq.fold (fun s1 s2 -> s1 + s2) Set<'T>.Empty sets
+        Seq.fold (+) Set<'T>.Empty sets
 
     static member Intersection(sets: seq<Set<'T>>) : Set<'T> =
         Seq.reduce (fun s1 s2 -> Set.Intersection(s1, s2)) sets
@@ -872,7 +872,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
     member x.ToArray() =
         SetTree.toArray x.Tree
 
-    member this.ComputeHashCode() =
+    member private this.ComputeHashCode() =
         let combineHash x y =
             (x <<< 1) + y + 631
 
@@ -903,6 +903,32 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
     interface System.IComparable with
         member this.CompareTo(that: obj) =
             SetTree.compare this.Comparer this.Tree ((that :?> Set<'T>).Tree)
+
+    interface IStructuralEquatable with
+        member this.Equals(that, comparer) =
+            match that with
+            | :? Set<'T> as that ->
+                use e1 = (this :> seq<_>).GetEnumerator()
+                use e2 = (that :> seq<_>).GetEnumerator()
+
+                let rec loop () =
+                    let m1 = e1.MoveNext()
+                    let m2 = e2.MoveNext()
+                    (m1 = m2) && (not m1 || ((comparer.Equals(e1.Current, e2.Current)) && loop ()))
+
+                loop ()
+            | _ -> false
+
+        member this.GetHashCode(comparer) =
+            let combineHash x y =
+                (x <<< 1) + y + 631
+
+            let mutable res = 0
+
+            for x in this do
+                res <- combineHash res (comparer.GetHashCode(x))
+
+            res
 
     interface ICollection<'T> with
         member s.Add x =
@@ -1036,7 +1062,7 @@ module Set =
 
     [<CompiledName("Intersect")>]
     let intersect (set1: Set<'T>) (set2: Set<'T>) =
-        Set<'T>.Intersection (set1, set2)
+        Set<'T>.Intersection(set1, set2)
 
     [<CompiledName("IntersectMany")>]
     let intersectMany sets =

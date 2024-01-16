@@ -18,6 +18,35 @@ open Microsoft.FSharp.Primitives.Basics
 
 module Internal =
 
+    [<Literal>]
+    let arrayBuilderStartingSize = 4
+
+    [<Struct>]
+    [<NoEquality>]
+    [<NoComparison>]
+    type ArrayBuilder<'T> =
+        {
+            mutable currentCount: int
+            mutable currentArray: 'T array
+        }
+
+    let inline addToBuilder (item: 'T) (builder: byref<ArrayBuilder<'T>>) =
+        match builder.currentCount = builder.currentArray.Length with
+        | false ->
+            builder.currentArray[builder.currentCount] <- item
+            builder.currentCount <- builder.currentCount + 1
+        | true ->
+            let newArr = Array.zeroCreateUnchecked (builder.currentArray.Length * 2)
+            builder.currentArray.CopyTo(newArr, 0)
+            builder.currentArray <- newArr
+            newArr[builder.currentCount] <- item
+            builder.currentCount <- builder.currentCount + 1
+
+    let inline builderToArray (builder: inref<ArrayBuilder<'T>>) =
+        match builder.currentCount = builder.currentArray.Length with
+        | true -> builder.currentArray
+        | false -> builder.currentArray |> Array.subUnchecked 0 builder.currentCount
+
     module IEnumerator =
 
         open Microsoft.FSharp.Collections.IEnumerator
@@ -109,7 +138,7 @@ module Internal =
                 }
 
         let mapi f (e: IEnumerator<_>) : IEnumerator<_> =
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (f)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
             let mutable i = -1
 
             upcast
@@ -128,7 +157,7 @@ module Internal =
                 }
 
         let map2 f (e1: IEnumerator<_>) (e2: IEnumerator<_>) : IEnumerator<_> =
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (f)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
 
             upcast
                 { new MapEnumerator<_>() with
@@ -150,7 +179,7 @@ module Internal =
                 }
 
         let mapi2 f (e1: IEnumerator<_>) (e2: IEnumerator<_>) : IEnumerator<_> =
-            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (f)
+            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(f)
             let mutable i = -1
 
             upcast
@@ -172,7 +201,7 @@ module Internal =
                 }
 
         let map3 f (e1: IEnumerator<_>) (e2: IEnumerator<_>) (e3: IEnumerator<_>) : IEnumerator<_> =
-            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (f)
+            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(f)
 
             upcast
                 { new MapEnumerator<_>() with
@@ -270,7 +299,7 @@ module Internal =
                     member _.DoMoveNext curr =
                         match f state with
                         | None -> false
-                        | Some (r, s) ->
+                        | Some(r, s) ->
                             curr <- r
                             state <- s
                             true
@@ -315,7 +344,7 @@ module Internal =
                         alreadyFinished ()
 
                     match box current with
-                    | null -> current <- Lazy<_>.Create (fun () -> f index)
+                    | null -> current <- Lazy<_>.Create(fun () -> f index)
                     | _ -> ()
                     // forced or re-forced immediately.
                     current.Force()
@@ -442,18 +471,19 @@ module Internal =
 
                         | Yield _ as res -> res
 
-                        | Goto next -> Goto(GenerateThen<_>.Bind (next, cont)))
+                        | Goto next -> Goto(GenerateThen<_>.Bind(next, cont)))
 
                 member _.Disposer = g.Disposer
 
             static member Bind(g: Generator<'T>, cont) =
                 match g with
                 | :? GenerateThen<'T> as g ->
-                    GenerateThen<_>.Bind (g.Generator, (fun () -> GenerateThen<_>.Bind (g.Cont(), cont)))
+                    GenerateThen<_>
+                        .Bind(g.Generator, (fun () -> GenerateThen<_>.Bind(g.Cont(), cont)))
                 | g -> (new GenerateThen<'T>(g, cont) :> Generator<'T>)
 
         let bindG g cont =
-            GenerateThen<_>.Bind (g, cont)
+            GenerateThen<_>.Bind(g, cont)
 
         // Internal type. Drive an underlying generator. Crucially when the generator returns
         // a new generator we simply update our current generator and continue. Thus the enumerator
@@ -630,7 +660,7 @@ module Seq =
     let iteri action (source: seq<'T>) =
         checkNonNull "source" source
         use e = source.GetEnumerator()
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
         let mutable i = 0
 
         while e.MoveNext() do
@@ -988,13 +1018,24 @@ module Seq =
         | :? ('T list) as res -> List.toArray res
         | :? ICollection<'T> as res ->
             // Directly create an array and copy ourselves.
-            // This avoids an extra copy if using ResizeArray in fallback below.
+            // This avoids copies if using ArrayBuilder in fallback below.
             let arr = Array.zeroCreateUnchecked res.Count
             res.CopyTo(arr, 0)
             arr
         | _ ->
-            let res = ResizeArray<_>(source)
-            res.ToArray()
+            use e = source.GetEnumerator()
+
+            if e.MoveNext() then
+                let arr = Array.zeroCreateUnchecked arrayBuilderStartingSize
+                arr[0] <- e.Current
+                let mutable builder = { currentCount = 1; currentArray = arr }
+
+                while e.MoveNext() do
+                    addToBuilder e.Current &builder
+
+                builderToArray &builder
+            else
+                [||]
 
     let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T[]) start fin acc =
         let mutable state = acc
@@ -1234,7 +1275,7 @@ module Seq =
                 prefix.Clear()
 
                 match enumeratorR with
-                | Some (Some e) -> IEnumerator.dispose e
+                | Some(Some e) -> IEnumerator.dispose e
                 | _ -> ()
 
                 enumeratorR <- None)
@@ -1299,10 +1340,7 @@ module Seq =
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let groupByRefType (keyf: 'T -> 'Key) (seq: seq<'T>) =
         seq
-        |> groupByImpl
-            RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(keyf t))
-            (fun sb -> sb.Value)
+        |> groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (keyf >> RuntimeHelpers.StructBox) (fun sb -> sb.Value)
 
     [<CompiledName("GroupBy")>]
     let groupBy (projection: 'T -> 'Key) (source: seq<'T>) =
@@ -1415,10 +1453,7 @@ module Seq =
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let countByRefType (keyf: 'T -> 'Key) (seq: seq<'T>) =
         seq
-        |> countByImpl
-            RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(keyf t))
-            (fun sb -> sb.Value)
+        |> countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (keyf >> RuntimeHelpers.StructBox) (fun sb -> sb.Value)
 
     [<CompiledName("CountBy")>]
     let countBy (projection: 'T -> 'Key) (source: seq<'T>) =

@@ -22,14 +22,61 @@
         <target state="translated">'new' anahtar sözcüğünü ekleme</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Tür ek açıklaması ekle</target>
         <note />
       </trans-unit>
+      <trans-unit id="AdvancedPageKeywords">
+        <source>Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
+Live Buffers;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Blok Yapısı Kılavuzları;
+F# kodu için yapı yönergelerini göster;
+Anahat oluşturma;
+F# kodu için ana hattı ve daraltılabilir düğümleri göster;
+Satır içi ipuçları;
+Satır içi tür ipuçlarını görüntüle (önizleme);
+Dönüş türü ipuçlarını görüntüle (önizleme);
+Satır içi parametre adı ipuçlarını görüntüle (önizleme);
+Canlı Arabellekler;
+Denetim için canlı (kaydedilmemiş) arabellekler kullan</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">Alan bildirimindeki tür için ':' kullan</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeFixesPageKeywords">
+        <source>Simplify names (remove unnecessary qualifiers);
+Always place open statements at the top level;
+Remove unused open statements;
+Analyze and suggest fixes for unused values;
+Suggest names for unresolved identifiers;</source>
+        <target state="translated">Adları basitleştir (gereksiz niteleyicileri kaldır);
+Açık deyimleri her zaman en üst düzeye yerleştir;
+Kullanılmayan açık deyimleri kaldır;
+Kullanılmayan değerleri analiz et ve bunlara düzeltmeler öner;
+Çözümlenmemiş tanımlayıcılar için ad öner;</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">C# 'using' sözcüğünü F# 'open' sözcüğüne dönüştür</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -72,6 +119,11 @@
         <target state="translated">F# İşlevleri</target>
         <note />
       </trans-unit>
+      <trans-unit id="FormattingPageKeywords">
+        <source>Re-format indentation on paste (Experimental)</source>
+        <target state="translated">Yapıştırırken girintiyi yeniden biçimlendir (Deneysel)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ImplementInterface">
         <source>Implement interface</source>
         <target state="translated">Arabirimi uygula</target>
@@ -80,6 +132,25 @@
       <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
         <source>Implement interface without type annotation</source>
         <target state="translated">Tür ek açıklaması olmadan arabirim uygulama</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSensePageKeywords">
+        <source>Completion Lists;
+Show completion list after a character is deleted;
+Show completion list after a character is typed;
+Show symbols in unopened namespaces;
+Enter key behavior;
+Never add new line on enter;
+Only add new line on enter after end of fully typed word;
+Always add new line on enter;</source>
+        <target state="translated">Tamamlama Listeleri;
+Bir karakter silindikten sonra tamamlama listesini göster;
+Bir karakter yazıldıktan sonra tamamlama listesini göster;
+Açılmamış ad alanlarında simgeleri göster;
+Enter tuşu davranışı;
+Enter tuşunda hiçbir zaman yeni satır ekleme;
+Yalnızca tam olarak yazılan sözcükten sonra basılan Enter tuşunda için yeni satır ekle;
+Enter tuşunda her zaman yeni satır ekle;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -92,9 +163,59 @@
         <target state="translated">'{0}' bağlamasını özyinelemeli yap</target>
         <note />
       </trans-unit>
+      <trans-unit id="PerformancePageKeywords">
+        <source>F# Project and Caching Performance Options;
+Enable in-memory cross project references;
+Enable_partial_type_checking;
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (restart required);
+Cache parsing results (experimental)</source>
+        <target state="needs-review-translation">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
+Bellek içi çapraz proje başvurularını etkinleştir;
+Enable_partial_type_checking;
+IntelliSense Performans Seçenekleri;
+IntelliSense özellikleri için eski verileri etkinleştir;
+Eski sonuçlar kullanılana kadar geçen süre (milisaniye olarak);
+Paralelleştirme (yeniden başlatma gerektirir);
+İmza dosyalarıyla paralel tür denetlemeyi etkinleştir;
+Paralel başvuru çözümlemeyi etkinleştir;
+Başvuruları hızlı bulma ve yeniden adlandırmayı etkinleştir (deneysel)
+Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">'{0}' öğesinin önüne alt çizgi ekleme</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QuickInfoPageKeywords">
+        <source>Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Biçimlendirme; 
+Karakter olarak tercih edilen açıklama genişliği;
+F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı verilen genişliğe biçimlendir;
+Gezinti bağlantıları;
+Gezinti bağlantılarını şöyle göster;
+Düz alt çizgi;
+Nokta alt çizgi;
+Tire alt çizgisi;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="new">Remarks:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -105,6 +226,11 @@
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' öğesini kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -125,6 +251,11 @@
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">'{0}' öğesini '_' olarak yeniden adlandırma</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
@@ -155,6 +286,11 @@
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">Kullanılmayan açık bildirimleri kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">Alan bildiriminde beklenmeyen '=' sembolü. ':' veya başka bir belirteç bekleniyordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">
@@ -240,11 +376,6 @@
       <trans-unit id="6012">
         <source>Advanced</source>
         <target state="translated">Gelişmiş</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6013">
-        <source>Lens</source>
-        <target state="translated">Lens</target>
         <note />
       </trans-unit>
       <trans-unit id="6014">

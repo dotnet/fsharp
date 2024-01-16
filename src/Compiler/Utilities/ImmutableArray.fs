@@ -74,41 +74,11 @@ module ImmutableArray =
 
             builder.MoveToImmutable()
 
-    let map2 (mapper: 'T1 -> 'T2 -> 'T) (arr1: ImmutableArray<'T1>) (arr2: ImmutableArray<'T2>) : ImmutableArray<_> =
-        if arr1.Length <> arr2.Length then
-            invalidOp "Block lengths do not match."
-
-        match arr1.Length with
-        | 0 -> ImmutableArray.Empty
-        | 1 -> ImmutableArray.Create(mapper arr1[0] arr2[0])
-        | n ->
-            let builder = ImmutableArray.CreateBuilder(n)
-
-            for i = 0 to n - 1 do
-                builder.Add(mapper arr1[i] arr2[i])
-
-            builder.MoveToImmutable()
-
-    let mapi2 (mapper: int -> 'T1 -> 'T2 -> 'T) (arr1: ImmutableArray<'T1>) (arr2: ImmutableArray<'T2>) : ImmutableArray<_> =
-        if arr1.Length <> arr2.Length then
-            invalidOp "Block lengths do not match."
-
-        match arr1.Length with
-        | 0 -> ImmutableArray.Empty
-        | 1 -> ImmutableArray.Create(mapper 0 arr1[0] arr2[0])
-        | n ->
-            let builder = ImmutableArray.CreateBuilder(n)
-
-            for i = 0 to n - 1 do
-                builder.Add(mapper i arr1[i] arr2[i])
-
-            builder.MoveToImmutable()
-
     let concat (arrs: ImmutableArray<ImmutableArray<'T>>) : ImmutableArray<'T> =
         match arrs.Length with
         | 0 -> ImmutableArray.Empty
         | 1 -> arrs[0]
-        | 2 -> arrs[ 0 ].AddRange(arrs[1])
+        | 2 -> arrs[0].AddRange(arrs[1])
         | _ ->
             let mutable acc = 0
 
@@ -134,7 +104,7 @@ module ImmutableArray =
         if arr1.Length <> arr2.Length then
             invalidOp "Block lengths do not match."
 
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (predicate)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
         let len1 = arr1.Length
 
         let rec loop i =
@@ -210,7 +180,7 @@ module ImmutableArray =
     let isEmpty (arr: ImmutableArray<_>) = arr.IsEmpty
 
     let fold folder state (arr: ImmutableArray<_>) =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
         let mutable state = state
 
         for i = 0 to arr.Length - 1 do

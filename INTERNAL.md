@@ -4,7 +4,7 @@ Note that usually only the most recent link in each section is interesting.  Old
 
 ## PR Build Definition
 
-The PR build definition can be found [here](https://dev.azure.com/dnceng/public/_build?definitionId=496) or by
+The PR build definition can be found [here](https://dev.azure.com/dnceng/internal/_build?definitionId=499&_a=summary) or by
 navigating through an existing PR.
 
 There is also a duplicate scouting PR build that is identical to the normal PR build _except_ that it uses a different Windows
@@ -66,8 +66,13 @@ Update the `insertTargetBranch` value at the bottom of `azure-pipelines.yml` in 
 ### When VS `main` is open for insertions for preview releases of VS:
 
 1. Create a new `release/dev*` branch (e.g., `release/dev17.4`) and initially set its HEAD commit to that of the previous release (e.g., `release/dev17.3` in this case).
-2. Set the new branch to receive auto-merges from `main`, and also set the old release branch to flow into the new one.  [This PR](https://github.com/dotnet/roslyn-tools/pull/1245/files) is a good example of what to do when a new `release/dev17.4` branch is created that should receive merges from both `main` and the previous release branch, `release/dev17.3`.
-3. Set the packages from the new branch to flow into the correct package feeds via the `darc` tool.  To do this:
+   ```console
+   git checkout -b release/dev17.4
+   git reset --hard upstream/release/dev17.3
+   git push --set-upstream upstream release/dev17.4
+   ```
+3. Set the new branch to receive auto-merges from `main`, and also set the old release branch to flow into the new one.  [This PR](https://github.com/dotnet/roslyn-tools/pull/1245/files) is a good example of what to do when a new `release/dev17.4` branch is created that should receive merges from both `main` and the previous release branch, `release/dev17.3`.
+4. Set the packages from the new branch to flow into the correct package feeds via the `darc` tool.  To do this:
    1. Ensure the latest `darc` tool is installed by running `eng/common/darc-init.ps1`.
    2. (only needed once) Run the command `darc authenticate`.  A text file will be opened with instructions on how to populate access tokens.
    3. Check the current package/channel subscriptions by running `darc get-default-channels --source-repo fsharp`.  For this example, notice that the latest subscription shows the F# branch `release/dev17.3` is getting added to the `VS 17.3` channel.
@@ -76,6 +81,11 @@ Update the `insertTargetBranch` value at the bottom of `azure-pipelines.yml` in 
    6. Ensure the subscription was added by repeating step 3 above.
    7. Note, the help in the `darc` tool is really good.  E.g., you can simply run `darc` to see a list of all commands available, and if you run `darc <some-command>` with no arguments, you'll be given a list of arguments you can use.
    8. Ensure that version numbers are bumped for a new branch.
+   9. Change needed subscriptions for arcade and SDK:
+      1. `darc get-subscriptions --target-repo fsharp`, and then use `darc update-subscription --id <subscription id>` for corresponding channels (e.g. target new VS channel to specific SDK channel, or set up arcade auto-merges to release/* or main branch, depending on the timeline of release/upgrade cycle).
+      2. If new subscription needs to be added, the following command should be used `darc add-subscription --source-repo https://github.com/dotnet/arcade --target-repo https://github.com/dotnet/fsharp --target-branch <target_branch> --channel "<target_channel>" --update-frequency everyDay --standard-automerge
+   10. Update mibc and other dependencies if needed, refer to https://github.com/dotnet/arcade/blob/main/Documentation/Darc.md#updating-dependencies-in-your-local-repository for more information 
+`
 
 ## Labeling issues on GitHub
 
@@ -88,29 +98,6 @@ Since github issue filtering is currently not flexible enough, that query was ge
 Invoke-WebRequest -Uri "https://api.github.com/repos/dotnet/fsharp/labels?per_page=100" | ConvertFrom-Json | % { $_.name } | ? { $_.StartsWith("Area-") } | % { Write-Host -NoNewLine ('-label:"' + $_ + '" ') }
 ```
 
-## Less interesting links
-
-[FSharp.Core (Official NuGet Release)](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=72).
-Uploads the final `FSharp.Core` package from the specified build to NuGet.  This should only be run when we know for
-certain which build produced the final offical package.
-
-[FSharp.Core (Preview NuGet Release)](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=92).
-Uploads the preview `FSharp.Core.*-beta.*` package from the specified build to NuGet.  This should be run every time
-a new SDK preview is released.
-
-[FCS (Official NuGet Release)](https://dev.azure.com/dnceng/internal/_release?view=mine&_a=releases&definitionId=99).
-Uploads the final `FSharp.Compiler.Service` package from the specified build to NuGet.  Only builds from the `release/fcs`
-branch can be selected.  This should only be run when we're fairly certain that the package is complete.
-
-[FCS (Preview NuGet Release)](https://dev.azure.com/dnceng/internal/_release?view=mine&_a=releases&definitionId=98).
-Uploads the preview `FSharp.Compiler.Service.*-preview.*` package from the specified build to NuGet.  Only builds from the
-`main` branch can be selected.  This can be run whenever we think we're ready to preview a new FCS build.
-
-[Nightly VSIX (main) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=70).  Uploads
-a package from every build of `main` to the [Nightly VSIX feed](README.md#using-nightly-releases-in-visual-studio).
-
-[Nightly VSIX (preview) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=71).  Uploads
-a package from every build of the branch that corresponds to the current Visual Studio preview to the
-[Preview VSIX feed](README.md#using-nightly-releases-in-visual-studio).
+## Other links
 
 [Internal source mirror](https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp).

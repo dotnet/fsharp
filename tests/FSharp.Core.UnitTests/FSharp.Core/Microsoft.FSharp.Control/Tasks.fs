@@ -1161,6 +1161,22 @@ type Basics() =
         require (result = 8) "something weird happened"
 
     [<Fact>]
+    member _.testAsyncsMixedWithTasks_ShouldNotSwitchContext() =
+        let t = task {
+            let a = Thread.CurrentThread.ManagedThreadId
+            let! b = async {
+                return Thread.CurrentThread.ManagedThreadId
+            }
+            let c = Thread.CurrentThread.ManagedThreadId
+            return $"Before: {a}, in async: {b}, after async: {c}"
+        }
+        let d = Thread.CurrentThread.ManagedThreadId
+        let actual = $"{t.Result}, after task: {d}"
+
+        require (actual = $"Before: {d}, in async: {d}, after async: {d}, after task: {d}") actual
+        
+
+    [<Fact>]
     // no need to call this, we just want to check that it compiles w/o warnings
     member _.testDefaultInferenceForReturnFrom() =
         let t = task { return Some "x" }
@@ -1391,4 +1407,3 @@ module Issue12184f =
             let! result = t
             return result
         }
-

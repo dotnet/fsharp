@@ -2,29 +2,59 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="translated">其他效能遙測 (實驗性)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">一律將 open 陳述式放在最上層</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens">
-        <source>Lens</source>
-        <target state="translated">Lens</target>
+      <trans-unit id="Analyze_full_solution_on_background">
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
+        <target state="translated">將分析整個解決方案以進行診斷保持為低優先順序背景工作 (需要重新開機)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens_Switch">
-        <source>Enable Lens (Experimental)</source>
-        <target state="translated">啟用 Lens (實驗性)</target>
+      <trans-unit id="Background_analysis">
+        <source>Background analysis</source>
+        <target state="translated">背景分析</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">註釋前置詞</target>
+      <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
+        <source>Keep background symbol keys</source>
+        <target state="translated">保留背景符號鍵</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">在註釋中使用色彩</target>
+      <trans-unit id="Enable_Fast_Find_References">
+        <source>Enable fast find references &amp; rename (experimental)</source>
+        <target state="translated">啟用快速尋找參考和重新命名 (實驗性)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="translated">使用即時 (未儲存) 緩衝區進行分析 (需要重新啟動)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">啟用部分型別檢查</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Find_References_Performance">
+        <source>Find References Performance Options</source>
+        <target state="translated">尋找參考效能選項</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">格式化</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Inline_Hints">
+        <source>Inline Hints</source>
+        <target state="translated">內嵌提示</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -42,14 +72,19 @@
         <target state="translated">診斷</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="new">Enable parallel type checking with signature files</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
-        <target state="new">Enable parallel reference resolution</target>
+        <target state="translated">啟用平行參考解析</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Resolutions">
+        <source>Keep all background intermediate resolutions (increases memory usage)</source>
+        <target state="translated">保留所有背景中繼解析度 (增加記憶體使用量)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Symbol_Uses">
+        <source>Keep all background symbol uses (increases memory usage)</source>
+        <target state="translated">保留所有背景符號使用 (增加記憶體使用量)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -67,6 +102,16 @@
         <target state="translated">點線底線(_O)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Language_Service_Settings">
+        <source>Language service settings (advanced)</source>
+        <target state="translated">語言服務設定 (進階)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers</source>
+        <target state="translated">即時緩衝區</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">導覽連結</target>
@@ -74,7 +119,37 @@
       </trans-unit>
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
-        <target state="new">Parallelization (requires restart)</target>
+        <target state="translated">平行處理 (需要重新開機)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">慣用説明寬度 (以字元為單位)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="translated">移除實驗性 (不必要的括弧，可能會影響輸入效能)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="translated">傳送其他效能遙測</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Parameter_Name_Hints">
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="translated">顯示內嵌參數名稱提示 (預覽)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Type_Hints">
+        <source>Display inline type hints (preview)</source>
+        <target state="translated">顯示內嵌類型提示 (預覽)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="translated">顯示傳回類型提示 (預覽)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -102,6 +177,11 @@
         <target state="translated">顯示導覽連結為(_H)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="translated">在快速諮詢中顯示備註</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
         <source>Simplify names (remove unnecessary qualifiers)</source>
         <target state="translated">簡化名稱 (移除不必要的限定詞)</target>
@@ -115,6 +195,46 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">文字暫留</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">透過新增符合 F# 語法規則的分行符號，將簽章格式設定為指定寬度。 </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="new">Transparent Compiler (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="new">Use at your own risk!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor">
+        <source>Transparent Compiler Cache Factor</source>
+        <target state="new">Transparent Compiler Cache Factor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
+        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
+        <target state="new">Higher number means more memory will be used for caching. Changing the value wipes cache.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="new">Create new project snapshots from existing ones</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -200,6 +320,16 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">為未解析的識別碼建議名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="new">Use Transparent Compiler (restart required)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">快取剖析結果 (實驗性)</target>
         <note />
       </trans-unit>
     </body>

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.ErrorMessages
+namespace ErrorMessages
 
 open Xunit
 open FSharp.Test.Compiler
@@ -102,6 +102,74 @@ let test x =
                  "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    string * char    \n")
                 (Error 1, Line 7, Col 7, Line 7, Col 20,
                  "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    int * char    \n")
+            ]
+
+        [<Fact>]
+        let ``Else branch context``() =
+            FSharp """
+let f1(a, b: string, c) =
+    if true then (1, 2) else (a, b, c)
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 3, Col 31, Line 3, Col 38,
+                 "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length 2 of type\n    int * int    \nThis branch returns a tuple of length 3 of type\n    'a * string * 'b    \n")
+            ]
+
+        [<Fact>]
+        let ``Match branch context``() =
+            FSharp """
+let f x =
+    match x with
+    | 0 -> 0, 0, 0
+    | _ -> "a", "a"
+                   """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 5, Col 12, Line 5, Col 20,
+                 "All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length 3 of type\n    int * int * int    \nThis branch returns a tuple of length 2 of type\n    string * string    \n")
+            ]
+
+        [<Fact>]
+        let ``If context`` () =
+            FSharp """
+let y : bool * int * int =
+    if true then "A", "B"
+    else "B", "C"
+                   """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 3, Col 18, Line 3, Col 26,
+                 "The 'if' expression needs to return a tuple of length 3 of type\n    bool * int * int    \nto satisfy context type requirements. It currently returns a tuple of length 2 of type\n    string * string    \n")
+                (Error 1, Line 4, Col 10, Line 4, Col 18,
+                "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length 3 of type\n    bool * int * int    \nThis branch returns a tuple of length 2 of type\n    string * string    \n")
+            ]
+
+        [<Fact>]
+        let ``Array context`` () =
+            FSharp """
+let f x y = [| 1, 2; x, "a", y |]
+                   """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 22, Line 2, Col 31,
+                 "All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length 2 of type\n    int * int    \nThis element is a tuple of length 3 of type\n    'a * string * 'b    \n")
+            ]
+
+        [<Fact>]
+        let ``List context`` () =
+            FSharp """
+let f x y = [ 1, 2; x, "a", y ]
+                   """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 21, Line 2, Col 30,
+                 "All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length 2 of type\n    int * int    \nThis element is a tuple of length 3 of type\n    'a * string * 'b    \n")
             ]
 
     [<Fact>]
@@ -225,3 +293,61 @@ type Derived3() =
                 (Error 856, Line 8,  Col 16, Line 8,  Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
                 (Error 856, Line 12, Col 16, Line 12, Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
                 (Error 1,   Line 16, Col 24, Line 16, Col 34, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")]
+
+    [<Fact>]
+    let ``Interface member with tuple argument should give error message with better solution``() =
+        FSharp """
+type IFoo = 
+  abstract member Bar: (int * int) -> int
+  
+type Foo =
+  interface IFoo with
+    member _.Bar (x, y) = x + y
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3577, Line 7, Col 14, Line 7, Col 17,
+                                 """This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c').""")
+
+    [<Fact>]
+    let ``Elements in computed lists, arrays and sequences``() =
+        FSharp """
+let f1 =
+    [|
+        if true then
+            1
+        "wrong" 
+    |]
+
+let f2: int list =
+    [
+        if true then
+            "a"
+        yield! [ 3; 4 ] 
+    ]
+
+let f3 =
+    [
+        if true then
+            "a"
+            "b"
+        yield! [ 3; 4 ] 
+    ]
+
+let f4 =
+    seq {
+        1L
+        let _ = ()
+        2.5
+        3L
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1,   Line 6,  Col 9,  Line 6,  Col 16, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
+            (Error 1,   Line 12, Col 13, Line 12, Col 16, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
+            (Error 193,   Line 21, Col 9,  Line 21, Col 24, "Type constraint mismatch. The type \n    'int list'    \nis not compatible with type\n    'string seq'    \n")
+            (Error 1,   Line 28, Col 9,  Line 28, Col 12, "This expression was expected to have type\n    'int64'    \nbut here has type\n    'float'    ")
+        ]
+

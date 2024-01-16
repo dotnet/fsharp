@@ -44,10 +44,19 @@ val StopProcessing<'T> : exn
 /// Represents a diagnostic exeption whose text comes via SR.*
 exception DiagnosticWithText of number: int * message: string * range: range
 
+/// A diagnostic that is raised when enabled manually, or by default with a language feature
+exception DiagnosticEnabledWithLanguageFeature of
+    number: int *
+    message: string *
+    range: range *
+    enabledByLangFeature: bool
+
 /// Creates a diagnostic exeption whose text comes via SR.*
 val Error: (int * string) * range -> exn
 
 exception InternalError of message: string * range: range
+
+exception InternalException of exn: Exception * msg: string * range: range
 
 exception UserCompilerMessage of message: string * number: int * range: range
 
@@ -76,6 +85,9 @@ exception DiagnosticWithSuggestions of
 
 /// Creates a DiagnosticWithSuggestions whose text comes via SR.*
 val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
+
+/// Creates a DiagnosticEnabledWithLanguageFeature whose text comes via SR.*
+val ErrorEnabledWithLanguageFeature: (int * string) * range * bool -> exn
 
 val inline protectAssemblyExploration: dflt: 'T -> f: (unit -> 'T) -> 'T
 
@@ -232,9 +244,6 @@ module DiagnosticsLoggerExtensions =
     /// Instruct the exception not to reset itself when thrown again.
     val PreserveStackTrace: exn: 'T -> unit
 
-    /// Reraise an exception if it is one we want to report to Watson.
-    val ReraiseIfWatsonable: exn: exn -> unit
-
     type DiagnosticsLogger with
 
         /// Report a diagnostic as an error and recover
@@ -333,17 +342,19 @@ val CommitOperationResult: res: OperationResult<'T> -> 'T
 
 val RaiseOperationResult: res: OperationResult<unit> -> unit
 
-val ErrorD: err: exn -> OperationResult<'T>
+val inline ErrorD: err: exn -> OperationResult<'T>
 
-val WarnD: err: exn -> OperationResult<unit>
+val inline WarnD: err: exn -> OperationResult<unit>
 
 val CompleteD: OperationResult<unit>
 
-val ResultD: x: 'T -> OperationResult<'T>
+val inline ResultD: x: 'T -> OperationResult<'T>
 
 val CheckNoErrorsAndGetWarnings: res: OperationResult<'T> -> (exn list * 'T) option
 
-val (++): res: OperationResult<'T> -> f: ('T -> OperationResult<'b>) -> OperationResult<'b>
+/// The bind in the monad. Stop on first error. Accumulate warnings and continue.
+/// <remarks>Not meant for direct usage. Used in other inlined functions</remarks>
+val inline bind: f: ('T -> OperationResult<'b>) -> res: OperationResult<'T> -> OperationResult<'b>
 
 /// Stop on first error. Accumulate warnings and continue.
 val IterateD: f: ('T -> OperationResult<unit>) -> xs: 'T list -> OperationResult<unit>
@@ -356,23 +367,23 @@ type TrackErrorsBuilder =
 
     new: unit -> TrackErrorsBuilder
 
-    member Bind: res: OperationResult<'h> * k: ('h -> OperationResult<'i>) -> OperationResult<'i>
+    member inline Bind: res: OperationResult<'h> * k: ('h -> OperationResult<'i>) -> OperationResult<'i>
 
-    member Combine: expr1: OperationResult<'c> * expr2: ('c -> OperationResult<'d>) -> OperationResult<'d>
+    member inline Combine: expr1: OperationResult<'c> * expr2: ('c -> OperationResult<'d>) -> OperationResult<'d>
 
-    member Delay: fn: (unit -> 'b) -> (unit -> 'b)
+    member inline Delay: fn: (unit -> 'b) -> (unit -> 'b)
 
-    member For: seq: 'e list * k: ('e -> OperationResult<unit>) -> OperationResult<unit>
+    member inline For: seq: 'e list * k: ('e -> OperationResult<unit>) -> OperationResult<unit>
 
-    member Return: res: 'g -> OperationResult<'g>
+    member inline Return: res: 'g -> OperationResult<'g>
 
-    member ReturnFrom: res: 'f -> 'f
+    member inline ReturnFrom: res: 'f -> 'f
 
-    member Run: fn: (unit -> 'T) -> 'T
+    member inline Run: fn: (unit -> 'T) -> 'T
 
-    member While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
+    member inline While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
 
-    member Zero: unit -> OperationResult<unit>
+    member inline Zero: unit -> OperationResult<unit>
 
 val trackErrors: TrackErrorsBuilder
 
@@ -414,6 +425,15 @@ val NewlineifyErrorString: message: string -> string
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'),
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 val NormalizeErrorString: text: string -> string
+
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type SuppressLanguageFeatureCheck =
+    | Yes
+    | No
+
+val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 

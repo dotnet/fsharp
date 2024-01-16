@@ -4,6 +4,7 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal FSharp.Compiler.InfoReader
 
+open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open Internal.Utilities.Library
@@ -311,6 +312,9 @@ type FindMemberFlag =
     | IgnoreOverrides 
     /// Get overrides instead of abstract slots when measuring whether a class/interface implements all its required slots. 
     | PreferOverrides
+    /// Similar to "IgnoreOverrides", but filters the items bottom-to-top,
+    /// and discards all when finds first non-virtual member which hides one above it in hirearchy.
+    | DiscardOnFirstNonOverride
 
 /// The input list is sorted from most-derived to least-derived type, so any System.Object methods 
 /// are at the end of the list. Return a filtered list where prior/subsequent members matching by name and 
@@ -487,7 +491,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                     | Some name when name = overridesName -> true
                     | _ -> false
                 if canAccumulate then
-                    match mdefs.TryFindInstanceByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.CallingSignature) with
+                    match mdefs.TryFindInstanceByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.GetCallingSignature()) with
                     | Some mdef ->
                         let overridesILTy = ilMethImpl.Overrides.DeclaringType
                         let overridesTyFullName = overridesILTy.TypeRef.FullName
@@ -561,9 +565,17 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Filter the overrides of methods or properties, either keeping the overrides or keeping the dispatch slots.
     static let FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOverride, isFinal, equivSigs, nmf:'a->string) items = 
         let equivVirts x y = isVirt x && isVirt y && equivSigs x y
+        let filterDefiniteOverrides = List.filter(isDefiniteOverride >> not)
 
-        match findFlag with 
-        | PreferOverrides -> 
+        match findFlag with
+        | DiscardOnFirstNonOverride ->
+            items
+            |> List.map filterDefiniteOverrides
+            |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf (fun newItem priorItem ->
+                equivSigs newItem priorItem &&
+                isVirt newItem && not (isVirt priorItem)
+            ) 
+        | PreferOverrides ->
             items
             // For each F#-declared override, get rid of any equivalent abstract member in the same type
             // This is because F# abstract members with default overrides give rise to two members with the
@@ -583,7 +595,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             items
               // Remove any F#-declared overrides. These may occur in the same type as the abstract member (unlike with .NET metadata)
               // Include any 'newslot' declared methods.
-              |> List.map (List.filter (fun x -> not (isDefiniteOverride x))) 
+              |> List.map filterDefiniteOverrides
 
               // Remove any virtuals that are signature-equivalent to virtuals in subtypes, except for newslots
               // That is, keep if it's 
@@ -1086,14 +1098,14 @@ let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) =
     else
         let ccuFileName = libFileOfEntityRef eref
         let m = eref.Deref
-        if m.XmlDocSig = "" then
+        if String.IsNullOrEmpty(m.XmlDocSig) then
             m.XmlDocSig <- XmlDocSigOfEntity eref
         Some (ccuFileName, m.XmlDocSig)
 
 let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) = 
     let ccuFileName = libFileOfEntityRef tcref
     let v = vref.Deref
-    if v.XmlDocSig = "" && v.HasDeclaringEntity then
+    if String.IsNullOrEmpty(v.XmlDocSig) && v.HasDeclaringEntity then
         let ap = buildAccessPath vref.DeclaringEntity.CompilationPathOpt
         let path =
             if vref.DeclaringEntity.IsModule then
@@ -1107,14 +1119,14 @@ let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) =
 let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) = 
     let tcref = rfref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref 
-    if rfref.RecdField.XmlDocSig = "" then
+    if String.IsNullOrEmpty(rfref.RecdField.XmlDocSig) then
         rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.LogicalName]
     Some (ccuFileName, rfref.RecdField.XmlDocSig)
 
 let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) = 
     let tcref =  ucref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref
-    if  ucref.UnionCase.XmlDocSig = "" then
+    if String.IsNullOrEmpty(ucref.UnionCase.XmlDocSig) then
         ucref.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucref.CaseName]
     Some (ccuFileName, ucref.UnionCase.XmlDocSig)
 
@@ -1160,7 +1172,7 @@ let GetXmlDocSigOfValRef g (vref: ValRef) =
     if not vref.IsLocalRef then
         let ccuFileName = vref.nlr.Ccu.FileName
         let v = vref.Deref
-        if v.XmlDocSig = "" && v.HasDeclaringEntity then
+        if String.IsNullOrEmpty(v.XmlDocSig) && v.HasDeclaringEntity then
             v.XmlDocSig <- XmlDocSigOfVal g false vref.DeclaringEntity.CompiledRepresentationForNamedType.Name v
         Some (ccuFileName, v.XmlDocSig)
     else 

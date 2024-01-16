@@ -923,7 +923,7 @@ type A() =
 
     match parseResults.ParseTree with
     | Members([_; SynMemberDefn.AutoProperty(range = range)]) ->
-        assertRange (3, 4) (7, 20) range
+        assertRange (3, 4) (7, 34) range
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
 
@@ -1334,7 +1334,7 @@ type Point =
     match parseResults.ParseTree with
     | Members([SynMemberDefn.ValField(fieldInfo = SynField(range = fieldRange); range = range)]) ->
         assertRange (4, 8) (8, 20) range
-        assertRange (8, 12) (8, 20) fieldRange
+        assertRange (4, 8) (8, 20) fieldRange
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
 

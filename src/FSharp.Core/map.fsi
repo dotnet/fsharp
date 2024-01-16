@@ -15,7 +15,8 @@ open Microsoft.FSharp.Collections
 /// All members of this class are thread-safe and may be used concurrently from multiple threads.</remarks>
 [<CompiledName("FSharpMap`2")>]
 [<Sealed>]
-type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonConditionalOn>] 'Value when 'Key: comparison> =
+type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonConditionalOn>] 'Value when 'Key: comparison>
+    =
     /// <summary>Returns a new map with the binding added to the given map.
     /// If a binding with the given key already exists in the input map, the existing binding is replaced by the new binding in the result map.</summary>
     /// <param name="key">The key to add.</param>
@@ -210,6 +211,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     interface ICollection<KeyValuePair<'Key, 'Value>>
     interface IEnumerable<KeyValuePair<'Key, 'Value>>
     interface System.IComparable
+    interface System.Collections.IStructuralEquatable
     interface System.Collections.IEnumerable
     interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>>
     interface IReadOnlyDictionary<'Key, 'Value>
@@ -256,8 +258,7 @@ module Map =
     ///     match x with
     ///     | Some s -> Some (s + "z")
     ///     | None -> None
-    /// )
-    /// evaluates to map [(1, "az"); (2, "b")]
+    /// ) // evaluates to map [(1, "az"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("Change")>]

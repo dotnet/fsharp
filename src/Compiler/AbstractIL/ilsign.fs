@@ -28,10 +28,6 @@ let CALG_RSA_SIGN = int (ALG_CLASS_SIGNATURE ||| ALG_TYPE_RSA)
 let ALG_CLASS_HASH = int (4 <<< 13)
 let ALG_TYPE_ANY = int 0
 let CALG_SHA1 = int (ALG_CLASS_HASH ||| ALG_TYPE_ANY ||| 4)
-let CALG_SHA_256 = int (ALG_CLASS_HASH ||| ALG_TYPE_ANY ||| 12)
-let CALG_SHA_384 = int (ALG_CLASS_HASH ||| ALG_TYPE_ANY ||| 13)
-let CALG_SHA_512 = int (ALG_CLASS_HASH ||| ALG_TYPE_ANY ||| 14)
-
 let PUBLICKEYBLOB = int 0x6
 let PRIVATEKEYBLOB = int 0x7
 let BLOBHEADER_CURRENT_BVERSION = int 0x2
@@ -41,14 +37,10 @@ let RSA_PRIV_MAGIC = int 0x32415352
 
 let getResourceString (_, str) = str
 
-let check _action hresult =
-    if uint32 hresult >= 0x80000000ul then
-        Marshal.ThrowExceptionForHR hresult
-
 [<Struct; StructLayout(LayoutKind.Explicit)>]
 type ByteArrayUnion =
     [<FieldOffset(0)>]
-    val UnderlyingArray: byte[]
+    val UnderlyingArray: byte array
 
     [<FieldOffset(0)>]
     val ImmutableArray: ImmutableArray<byte>
@@ -81,7 +73,7 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
         peHeaderOffset + peHeaderSize + int peHeaders.CoffHeader.NumberOfSections * 0x28 // sizeof(IMAGE_SECTION_HEADER)
 
     let allHeaders =
-        let array: byte[] = Array.zeroCreate<byte> allHeadersSize
+        let array = Array.zeroCreate<byte> allHeadersSize
         peReader.GetEntireImage().GetContent().CopyTo(0, array, 0, allHeadersSize)
         array
 
@@ -129,9 +121,9 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
     hashAlgorithm.GetHashAndReset()
 
 type BlobReader =
-    val mutable _blob: byte[]
+    val mutable _blob: byte array
     val mutable _offset: int
-    new(blob: byte[]) = { _blob = blob; _offset = 0 }
+    new(blob: byte array) = { _blob = blob; _offset = 0 }
 
     member x.ReadInt32() : int =
         let offset = x._offset
@@ -142,13 +134,13 @@ type BlobReader =
         ||| (int x._blob[offset + 2] <<< 16)
         ||| (int x._blob[offset + 3] <<< 24)
 
-    member x.ReadBigInteger(length: int) : byte[] =
-        let arr: byte[] = Array.zeroCreate<byte> length
+    member x.ReadBigInteger(length: int) : byte array =
+        let arr = Array.zeroCreate<byte> length
         Array.Copy(x._blob, x._offset, arr, 0, length)
         x._offset <- x._offset + length
         arr |> Array.rev
 
-let RSAParamatersFromBlob (blob: byte[]) keyType =
+let RSAParamatersFromBlob blob keyType =
     let mutable reader = BlobReader blob
 
     if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then
@@ -177,24 +169,24 @@ let RSAParamatersFromBlob (blob: byte[]) keyType =
     key.D <- reader.ReadBigInteger byteLen
     key
 
-let validateRSAField (field: byte[] MaybeNull) expected (name: string) =
+let validateRSAField (field: byte array MaybeNull) expected (name: string) =
     match field with
     | Null -> ()
     | NonNull field ->
         if field.Length <> expected then
             raise (CryptographicException(String.Format(getResourceString (FSComp.SR.ilSignInvalidRSAParams ()), name)))
 
-let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] =
+let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
 
     // The original FCall this helper emulates supports other algId's - however, the only algid we need to support is CALG_RSA_KEYX. We will not port the codepaths dealing with other algid's.
     if algId <> CALG_RSA_KEYX then
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidAlgId ())))
 
     // Validate the RSA structure first.
-    if rsaParameters.Modulus = null then
+    if isNull rsaParameters.Modulus then
         raise (CryptographicException(String.Format(getResourceString (FSComp.SR.ilSignInvalidRSAParams ()), "Modulus")))
 
-    if rsaParameters.Exponent = null || rsaParameters.Exponent.Length > 4 then
+    if isNull rsaParameters.Exponent || rsaParameters.Exponent.Length > 4 then
         raise (CryptographicException(String.Format(getResourceString (FSComp.SR.ilSignInvalidRSAParams ()), "Exponent")))
 
     let modulusLength = rsaParameters.Modulus.Length
@@ -202,7 +194,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] =
 
     // We assume that if P != null, then so are Q, DP, DQ, InverseQ and D and indicate KeyPair RSA Parameters
     let isPrivate =
-        if rsaParameters.P <> null then
+        if not (isNull rsaParameters.P) then
             validateRSAField rsaParameters.P halfModulusLength "P"
             validateRSAField rsaParameters.Q halfModulusLength "Q"
             validateRSAField rsaParameters.DP halfModulusLength "DP"
@@ -221,7 +213,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] =
         bw.Write(int (modulusLength + BLOBHEADER_LENGTH)) // CLRHeader.KeyLength
 
         // Write out the BLOBHEADER
-        bw.Write(byte (if isPrivate = true then PRIVATEKEYBLOB else PUBLICKEYBLOB)) // BLOBHEADER.bType
+        bw.Write(byte (if isPrivate then PRIVATEKEYBLOB else PUBLICKEYBLOB)) // BLOBHEADER.bType
 
         bw.Write(byte BLOBHEADER_CURRENT_BVERSION) // BLOBHEADER.bVersion
         bw.Write(int16 0) // BLOBHEADER.wReserved
@@ -243,7 +235,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] =
         bw.Write expAsDword // RSAPubKey.pubExp
         bw.Write(rsaParameters.Modulus |> Array.rev) // Copy over the modulus for both public and private
 
-        if isPrivate = true then
+        if isPrivate then
             do
                 bw.Write(rsaParameters.P |> Array.rev)
                 bw.Write(rsaParameters.Q |> Array.rev)
@@ -257,7 +249,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] =
 
     key
 
-let createSignature (hash: byte[]) (keyBlob: byte[]) keyType =
+let createSignature hash keyBlob keyType =
     use rsa = RSA.Create()
     rsa.ImportParameters(RSAParamatersFromBlob keyBlob keyType)
 
@@ -266,7 +258,7 @@ let createSignature (hash: byte[]) (keyBlob: byte[]) keyType =
 
     signature |> Array.rev
 
-let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte[]) =
+let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array) =
     let peHeaders = peReader.PEHeaders
     let signatureDirectory = peHeaders.CorHeader.StrongNameSignatureDirectory
 
@@ -297,13 +289,7 @@ let signStream stream keyBlob =
     let signature = createSignature hash keyBlob KeyType.KeyPair
     patchSignature stream peReader signature
 
-let signFile fileName keyBlob =
-    use fs =
-        FileSystem.OpenFileForWriteShim(fileName, FileMode.Open, FileAccess.ReadWrite)
-
-    signStream fs keyBlob
-
-let signatureSize (pk: byte[]) =
+let signatureSize (pk: byte array) =
     if pk.Length < 25 then
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
 
@@ -327,30 +313,15 @@ let getPublicKeyForKeyPair keyBlob =
 
 // Key signing
 type keyContainerName = string
-type keyPair = byte[]
-type pubkey = byte[]
-type pubkeyOptions = byte[] * bool
-
-let signerOpenPublicKeyFile filePath =
-    FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
-
-let signerOpenKeyPairFile filePath =
-    FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
+type keyPair = byte array
+type pubkey = byte array
+type pubkeyOptions = byte array * bool
 
 let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
-let signerGetPublicKeyForKeyContainer (_kcName: keyContainerName) : pubkey =
-    raise (NotImplementedException("signerGetPublicKeyForKeyContainer is not yet implemented"))
-
-let signerCloseKeyContainer (_kc: keyContainerName) : unit =
-    raise (NotImplementedException("signerCloseKeyContainer is not yet implemented"))
-
 let signerSignatureSize (pk: pubkey) : int = signatureSize pk
 
-let signerSignFileWithKeyPair (fileName: string) (kp: keyPair) : unit = signFile fileName kp
-
-let signerSignFileWithKeyContainer (_fileName: string) (_kcName: keyContainerName) : unit =
-    raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
+let signerSignStreamWithKeyPair stream keyBlob = signStream stream keyBlob
 
 let failWithContainerSigningUnsupportedOnThisPlatform () =
     failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform () |> snd)
@@ -364,19 +335,11 @@ type ILStrongNameSigner =
     | KeyPair of keyPair
     | KeyContainer of keyContainerName
 
-    static member OpenPublicKeyOptions s p =
-        PublicKeyOptionsSigner((signerOpenPublicKeyFile s), p)
+    static member OpenPublicKeyOptions kp p = PublicKeyOptionsSigner(kp, p)
 
-    static member OpenPublicKey pubkey = PublicKeySigner pubkey
-    static member OpenKeyPairFile s = KeyPair(signerOpenKeyPairFile s)
+    static member OpenPublicKey bytes = PublicKeySigner bytes
+    static member OpenKeyPairFile bytes = KeyPair(bytes)
     static member OpenKeyContainer s = KeyContainer s
-
-    member s.Close() =
-        match s with
-        | PublicKeySigner _
-        | PublicKeyOptionsSigner _
-        | KeyPair _ -> ()
-        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.IsFullySigned =
         match s with
@@ -412,9 +375,9 @@ type ILStrongNameSigner =
         | KeyPair kp -> pkSignatureSize (signerGetPublicKeyForKeyPair kp)
         | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
-    member s.SignFile file =
+    member s.SignStream stream =
         match s with
         | PublicKeySigner _ -> ()
         | PublicKeyOptionsSigner _ -> ()
-        | KeyPair kp -> signerSignFileWithKeyPair file kp
+        | KeyPair kp -> signerSignStreamWithKeyPair stream kp
         | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()

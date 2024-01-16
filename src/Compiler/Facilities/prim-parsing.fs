@@ -14,13 +14,7 @@ exception Accept of obj
 
 [<Sealed>]
 type internal IParseState
-    (
-        ruleStartPoss: Position[],
-        ruleEndPoss: Position[],
-        lhsPos: Position[],
-        ruleValues: obj[],
-        lexbuf: LexBuffer<char>
-    ) =
+    (ruleStartPoss: Position[], ruleEndPoss: Position[], lhsPos: Position[], ruleValues: obj[], lexbuf: LexBuffer<char>) =
     member _.LexBuffer = lexbuf
 
     member _.InputRange index =
@@ -281,8 +275,8 @@ module internal Implementation =
         let cacheSize = 7919 // the 1000'th prime
         // Use a simpler hash table with faster lookup, but only one
         // hash bucket per key.
-        let actionTableCache = ArrayPool<int>.Shared.Rent (cacheSize * 2)
-        let gotoTableCache = ArrayPool<int>.Shared.Rent (cacheSize * 2)
+        let actionTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
+        let gotoTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
         // Clear the arrays since ArrayPool does not
         Array.Clear(actionTableCache, 0, actionTableCache.Length)
         Array.Clear(gotoTableCache, 0, gotoTableCache.Length)
@@ -332,12 +326,14 @@ module internal Implementation =
 
             let action = actionTable.Read(currState, tables.tagOfErrorTerminal)
 
-            if actionKind action = shiftFlag
-               && (match tokenOpt with
-                   | None -> true
-                   | Some (token) ->
-                       let nextState = actionValue action
-                       actionKind (actionTable.Read(nextState, tables.tagOfToken (token))) = shiftFlag) then
+            if
+                actionKind action = shiftFlag
+                && (match tokenOpt with
+                    | None -> true
+                    | Some(token) ->
+                        let nextState = actionValue action
+                        actionKind (actionTable.Read(nextState, tables.tagOfToken (token))) = shiftFlag)
+            then
 
                 if Flags.debug then
                     Console.WriteLine("shifting error, continuing with error recovery")
@@ -348,7 +344,8 @@ module internal Implementation =
                 valueStack.Push(ValueInfo(box (), lexbuf.StartPos, lexbuf.EndPos))
                 stateStack.Push(nextState)
             else
-                if valueStack.IsEmpty then failwith "parse error"
+                if valueStack.IsEmpty then
+                    failwith "parse error"
 
                 if Flags.debug then
                     Console.WriteLine("popping stack during error recovery")
@@ -370,7 +367,7 @@ module internal Implementation =
                 let action =
                     let immediateAction = int tables.immediateActions[state]
 
-                    if not (immediateAction = anyMarker) then
+                    if immediateAction <> anyMarker then
                         // Action has been pre-determined, no need to lookahead
                         // Expecting it to be a Reduce action on a non-fakeStartNonTerminal ?
                         immediateAction
@@ -410,7 +407,10 @@ module internal Implementation =
                              Console.WriteLine("shifting, reduced errorRecoveryLevel to {0}\n", errorSuppressionCountDown)
 
                      let nextState = actionValue action
-                     if not haveLookahead then failwith "shift on end of input!"
+
+                     if not haveLookahead then
+                         failwith "shift on end of input!"
+
                      let data = tables.dataOfToken lookaheadToken
                      valueStack.Push(ValueInfo(data, lookaheadStartPos, lookaheadEndPos))
                      stateStack.Push(nextState)
@@ -430,7 +430,9 @@ module internal Implementation =
                         Console.Write("reduce popping {0} values/states, lookahead {1}", n, report haveLookahead lookaheadToken)
                     // For every range to reduce merge it
                     for i = 0 to n - 1 do
-                        if valueStack.IsEmpty then failwith "empty symbol stack"
+                        if valueStack.IsEmpty then
+                            failwith "empty symbol stack"
+
                         let topVal = valueStack.Peep() // Grab topVal
                         valueStack.Pop()
                         stateStack.Pop()
@@ -444,8 +446,10 @@ module internal Implementation =
                             // Initial range
                             lhsPos[0] <- topVal.startPos
                             lhsPos[1] <- topVal.endPos
-                        elif topVal.startPos.FileIndex = lhsPos[1].FileIndex
-                             && topVal.startPos.Line <= lhsPos[1].Line then
+                        elif
+                            topVal.startPos.FileIndex = lhsPos[1].FileIndex
+                            && topVal.startPos.Line <= lhsPos[1].Line
+                        then
                             // Reduce range if same file as the initial end point
                             lhsPos[0] <- topVal.startPos
 
@@ -484,7 +488,8 @@ module internal Implementation =
                         // User code raised a Parse_error. Don't report errors again until three tokens have been shifted
                         errorSuppressionCountDown <- 3
                 elif kind = errorFlag then
-                    (if Flags.debug then Console.Write("ErrorFlag... ")
+                    (if Flags.debug then
+                         Console.Write("ErrorFlag... ")
                      // Silently discard inputs and don't report errors
                      // until three tokens in a row have been shifted
                      if Flags.debug then
@@ -520,10 +525,12 @@ module internal Implementation =
                           let shiftableTokens =
                               [
                                   for tag, action in actions do
-                                      if (actionKind action) = shiftFlag then yield tag
+                                      if (actionKind action) = shiftFlag then
+                                          yield tag
                                   if actionKind defaultAction = shiftFlag then
                                       for tag in 0 .. tables.numTerminals - 1 do
-                                          if not (explicit.Contains(tag)) then yield tag
+                                          if not (explicit.Contains(tag)) then
+                                              yield tag
                               ]
 
                           let stateStack = stateStack.Top(12)
@@ -537,10 +544,12 @@ module internal Implementation =
                           let reduceTokens =
                               [
                                   for tag, action in actions do
-                                      if actionKind (action) = reduceFlag then yield tag
+                                      if actionKind (action) = reduceFlag then
+                                          yield tag
                                   if actionKind (defaultAction) = reduceFlag then
                                       for tag in 0 .. tables.numTerminals - 1 do
-                                          if not (explicit.Contains(tag)) then yield tag
+                                          if not (explicit.Contains(tag)) then
+                                              yield tag
                               ]
                           //let activeRules = stateStack |> List.iter (fun state ->
                           let errorContext =
