@@ -122,9 +122,9 @@ let ``Job is restarted if first requestor cancels`` () =
             return key * 2
         }
 
-        let eventLog = ConcurrentBag()
-        let memoize = AsyncMemoize<int, int, int>()
-        memoize.OnEvent(fun (e, (_, k, _version)) -> eventLog.Add (DateTime.Now.Ticks, (e, k)))
+        let eventLog = ConcurrentStack()
+        let memoize = AsyncMemoize<int, int, _>()
+        memoize.OnEvent(fun (e, (_, k, _version)) -> eventLog.Push (e, k))
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -153,7 +153,7 @@ let ``Job is restarted if first requestor cancels`` () =
 
         Assert.Equal(TaskStatus.Canceled, _task1.Status)
 
-        let orderedLog = eventLog |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
+        let orderedLog = eventLog |> Seq.rev |> Seq.toList
         let expected = [ Started, key; Started, key; Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)
@@ -220,9 +220,9 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
             return key * 2
         }
 
-        let eventLog = ConcurrentBag()
-        let memoize = AsyncMemoize<int, int, int>()
-        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Add (DateTime.Now.Ticks, (e, k)))
+        let eventLog = ConcurrentStack()
+        let memoize = AsyncMemoize<int, int, _>()
+        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Push (e, k))
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -249,7 +249,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
         let! result = _task3
         Assert.Equal(2, result)
 
-        let orderedLog = eventLog |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
+        let orderedLog = eventLog |> Seq.rev |> Seq.toList
         let expected = [ Started, key; Started, key; Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)

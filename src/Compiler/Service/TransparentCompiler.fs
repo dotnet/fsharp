@@ -1949,6 +1949,7 @@ type internal TransparentCompiler
             ) : NodeCode<(FSharpParseFileResults * FSharpCheckFileResults) option> =
             node {
                 ignore builder
+
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText)
                     |> NodeCode.AwaitAsync
