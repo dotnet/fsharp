@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">Adicionar anotação de tipo de retorno</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -43,7 +43,7 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">Guias de Estrutura de Bloco;
+        <target state="translated">Guias de Estrutura de Bloco;
 Mostrar diretrizes de estrutura para código F#;
 Estrutura de tópicos;
 Mostrar nós de estrutura de tópicos e recolhíveis para código F#;
@@ -174,17 +174,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">Opções de desempenho de projeto e cache do F#;
- Habilitar referências de projeto cruzado na memória;
- Enable_partial_type_checking;
- Opções de desempenho do IntelliSense;
- Habilitar dados obsoletos para recursos do IntelliSense;
- Tempo até que os resultados obsoletos sejam usados (em milissegundos);
- Paralelização (requer reinicialização);
- Habilitar a verificação de tipo paralelo com arquivos de assinatura;
- Habilitar resolução de referência paralela;
- Habilitar referências de localização rápida e renomear (experimental);
- Resultados da análise de cache (experimental)</target>
+        <target state="translated">Projeto em F# e opções de desempenho em cache;
+_Habilitar referências de projeto cruzado na memória;
+Habilitar verificação parcial de tipo;
+Opções de desempenho do IntelliSense;
+Habilitar dados obsoletos para os recursos do IntelliSense;
+Tempo até que os resultados obsoletos sejam utilizados (em milissegundos);
+Paralelização (requer reinicialização);
+Habilitar a verificação de tipo paralelo com arquivos de assinatura;
+Habilitar a resolução de referência paralela;
+Habilitar referências de localização rápida e renomear (reinicialização necessária);
+Resultados da análise de cache (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -202,19 +202,20 @@ Solid underline;
 Dot underline;
 Dash underline;
 Show remarks in Quick Info</source>
-        <target state="needs-review-translation">Formatação;
-Largura da descrição preferida em caracteres;
-Formate a assinatura para a largura especificada adicionando quebras de linha em conformidade com as regras de sintaxe do F#;
+        <target state="translated">Formatação;
+Largura de descrição preferencial em caracteres;
+Formate a assinatura para a largura fornecida adicionando quebras de linha em conformidade com as regras de sintaxe de F#;
 Links de navegação;
-Mostrar links de navegação como;
+Exibir link de navegação como;
 Sublinhado sólido;
-Ponto sublinhado;
-Traço sublinhado;</target>
+Sublinhado pontilhado;
+Sublinhado tracejado;
+Mostrar os comentários nas Informações Rápidas</target>
         <note />
       </trans-unit>
       <trans-unit id="RemarksHeader">
         <source>Remarks:</source>
-        <target state="new">Remarks:</target>
+        <target state="translated">Comentários:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -229,7 +230,7 @@ Traço sublinhado;</target>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">Remover os parênteses desnecessários</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -254,7 +255,7 @@ Traço sublinhado;</target>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">Retorna:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
