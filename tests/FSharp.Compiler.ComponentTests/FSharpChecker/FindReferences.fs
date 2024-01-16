@@ -5,6 +5,8 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Test.ProjectGeneration
 open FSharp.Test.ProjectGeneration.Helpers
 
+#nowarn "57"
+
 type Occurence = Definition | InType | Use
 
 let deriveOccurence (su:FSharpSymbolUse) =
@@ -344,7 +346,7 @@ and mytype = MyType
 
     let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
 
-    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
     |> Async.RunSynchronously
     |> expectToFind [
         fileName, 2, 5, 11
@@ -430,7 +432,7 @@ match 2 with
 
         let symbolUse = getSymbolUse fileName source "Even" options checker |> Async.RunSynchronously
 
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
         |> Async.RunSynchronously
         |> expectToFind [
             fileName, 2, 6, 10
@@ -463,7 +465,7 @@ module Two =
 
         let symbolUse = getSymbolUse fileName source "Even" options checker |> Async.RunSynchronously
 
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
         |> Async.RunSynchronously
         |> expectToFind [
             fileName, 4, 10, 14
@@ -619,7 +621,7 @@ let y = MyType.Two
 
         let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
 
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
         |> Async.RunSynchronously
         |> expectToFind [
             fileName, 4, 5, 11
@@ -648,7 +650,7 @@ let y = MyType.Three
 
         let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
 
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
         |> Async.RunSynchronously
         |> expectToFind [
             fileName, 4, 7, 13

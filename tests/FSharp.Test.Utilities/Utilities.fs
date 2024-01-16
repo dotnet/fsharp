@@ -15,6 +15,10 @@ open Microsoft.CodeAnalysis.CSharp
 open TestFramework
 open NUnit.Framework
 open System.Collections.Generic
+open FSharp.Compiler.CodeAnalysis
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
+
 
 type TheoryForNETCOREAPPAttribute() =
     inherit Xunit.TheoryAttribute()
@@ -381,3 +385,10 @@ An error occurred getting netcoreapp references: %A{e}
                 | TargetFramework.NetStandard20 -> netStandard20Files.Value |> Seq.toArray
                 | TargetFramework.NetCoreApp31 -> [||]                            //ToDo --- Perhaps NetCoreApp31Files 
                 | TargetFramework.Current -> currentReferences
+
+
+module internal FSharpProjectSnapshotSerialization =
+
+    let serializeSnapshotToJson (snapshot: FSharpProjectSnapshot) =
+
+        JsonConvert.SerializeObject(snapshot, Formatting.Indented, new JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore))
