@@ -4296,7 +4296,7 @@ namespace Microsoft.FSharp.Core
             | _ ->  (# "" value : 'T #)
 #else
         [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NonNull|) (value : 'T when 'T : not struct) = 
+        let inline (|Null|NonNull|) (value : 'T when 'T : null) = 
             match value with 
             | null -> Null () 
             | _ -> NonNull (# "" value : 'T #)
