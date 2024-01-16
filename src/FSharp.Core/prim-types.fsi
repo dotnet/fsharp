@@ -420,6 +420,10 @@ namespace Microsoft.FSharp.Core
         /// <returns>CustomOperationAttribute</returns>
         new: name:string -> CustomOperationAttribute
 
+        /// <summary>Create an instance of attribute with empty name</summary>
+        /// <returns>CustomOperationAttribute</returns>
+        new: unit -> CustomOperationAttribute
+
         /// <summary>Get the name of the custom operation when used in a query or other computation expression</summary>
         member Name: string
 

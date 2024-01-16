@@ -133,19 +133,19 @@ jobs:
 
                     if [[ ${_pr_link_occurences} -eq 1 ]]; then
                         echo "                  Found pull request URL in $release_notes once"
-                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/$release_notes) | |"
+                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | |"
                         RELEASE_NOTES_FOUND+=$'\n'
                     elif [[ ${_pr_link_occurences} -eq 0 ]]; then
                         echo "                  Did not find pull request URL in $release_notes"
                         DESCRIPTION="**No current pull request URL (${PR_URL}) found, please consider adding it**"
-                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/$release_notes) | ${DESCRIPTION} |"
+                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | ${DESCRIPTION} |"
                         RELEASE_NOTES_FOUND+=$'\n'
                         PULL_REQUEST_FOUND=false
                     fi
                 else
                     echo "          Did not find $release_notes in modified files"
                     DESCRIPTION="**No release notes found or release notes format is not correct**"
-                    RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/$release_notes) | ${DESCRIPTION} |"
+                    RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | ${DESCRIPTION} |"
                     RELEASE_NOTES_NOT_FOUND+=$'\n'
                 fi
             else
@@ -161,24 +161,29 @@ jobs:
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!CAUTION]"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No release notes found for the following paths.**"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No release notes found for the changed paths (see table below).**"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$">"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"> Please make sure to add an entry with short succint description of the change as well as link to this pull request."
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> Please make sure to add an entry with an informative description of the change as well as link to this pull request, issue and language suggestion if applicable. Release notes for this repository are based on [Keep A Changelog](https://keepachangelog.com/en/1.1.0/) format."
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$">"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"> Examples: "
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> **The following format is recommended for this repository:**"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"> \\\`- Respect line limit in quick info popup - https://github.com/dotnet/fsharp/pull/16208\\\`"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"> \\\`- More inlines for Result module - https://github.com/dotnet/fsharp/pull/16106\\\`"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"> \\\`- Miscellaneous fixes to parens analysis - https://github.com/dotnet/fsharp/pull/16262\\\`"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> \\\`* <Informative description>. ([PR #XXXXX](https://github.com/dotnet/fsharp/pull/XXXXX))\\\`"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> See examples in the files, listed in the table below or in th full documentation at https://fsharp.github.io/fsharp-compiler-docs/release-notes/About.html."
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$'**If you believe that release notes are not necessary for this PR, please add "NO_RELEASE_NOTES" label to the pull request.**'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'**If you believe that release notes are not necessary for this PR, please add <kbd>NO_RELEASE_NOTES</kbd> label to the pull request.**'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$"**You can open this PR in browser to add release notes: [open in github.dev](https://github.dev/dotnet/fsharp/pull/${PR_NUMBER})**"

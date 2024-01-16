@@ -15,61 +15,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-/// Create a type variable representing the use of a "_" in F# code
-val NewAnonTypar: TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
-
-/// Create an inference type variable
-val NewInferenceType: TcGlobals -> TType
-
-/// Create an inference type variable for the kind of a byref pointer
-val NewByRefKindInferenceType: TcGlobals -> range -> TType
-
-/// Create an inference type variable representing an error condition when checking an expression
-val NewErrorType: unit -> TType
-
-/// Create an inference type variable representing an error condition when checking a measure
-val NewErrorMeasure: unit -> Measure
-
-/// Create a list of inference type variables, one for each element in the input list
-val NewInferenceTypes: TcGlobals -> 'T list -> TType list
-
-/// Given a set of formal type parameters and their constraints, make new inference type variables for
-/// each and ensure that the constraints on the new type variables are adjusted to refer to these.
-///
-/// Returns
-///   1. the new type parameters
-///   2. the instantiation mapping old type parameters to inference variables
-///   3. the inference type variables as a list of types.
-val FreshenAndFixupTypars:
-    g: TcGlobals ->
-    m: range ->
-    rigid: TyparRigidity ->
-    Typars ->
-    TType list ->
-    Typars ->
-        Typars * TyparInstantiation * TType list
-
-/// Given a set of type parameters, make new inference type variables for
-/// each and ensure that the constraints on the new type variables are adjusted.
-///
-/// Returns
-///   1. the new type parameters
-///   2. the instantiation mapping old type parameters to inference variables
-///   3. the inference type variables as a list of types.
-val FreshenTypeInst: g: TcGlobals -> range -> Typars -> Typars * TyparInstantiation * TType list
-
-/// Given a set of type parameters, make new inference type variables for
-/// each and ensure that the constraints on the new type variables are adjusted.
-///
-/// Returns the inference type variables as a list of types.
-val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
-
-/// Given a method, which may be generic, make new inference type variables for
-/// its generic parameters, and ensure that the constraints the new type variables are adjusted.
-///
-/// Returns the inference type variables as a list of types.
-val FreshenMethInfo: range -> MethInfo -> TType list
-
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =

@@ -124,13 +124,13 @@ type CompilerServiceBenchmarks() =
                 |> Some
     
     [<Benchmark>]
-    member _.ParsingTypeCheckerFs() =
+    member _.ParsingCheckExpressionsFs() =
         let config = getConfig()
         let results = config.Checker.ParseFile("CheckExpressions.fs", config.Source |> SourceText.toFSharpSourceText, parsingOptions) |> Async.RunSynchronously
         if results.ParseHadErrors then failwithf $"parse had errors: %A{results.Diagnostics}"
 
-    [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
-    member _.ParsingTypeCheckerFsSetup() =
+    [<IterationCleanup(Target = "ParsingCheckExpressionsFs")>]
+    member _.ParsingCheckExpressionsFsSetup() =
         let checker = getConfig().Checker
         checker.InvalidateAll()
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()

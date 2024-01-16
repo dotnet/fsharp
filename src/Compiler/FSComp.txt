@@ -1742,3 +1742,4 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3862,parsStaticMemberImcompleteSyntax,"Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration."
 3863,parsExpectingField,"Expecting record field"
 3864,tooManyMethodsInDotNetTypeWritingAssembly,"The type '%s' has too many methods. Found: '%d', maximum: '%d'"
+3865,parsOnlySimplePatternsAreAllowedInConstructors,"Only simple patterns are allowed in primary constructors"
