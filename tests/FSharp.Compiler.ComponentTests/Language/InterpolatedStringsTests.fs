@@ -129,3 +129,30 @@ type Foo () =
         """
         |> compile
         |> shouldSucceed
+
+    [<Theory>]
+    // Test different number of interpolated string parts
+    [<InlineData("$\"\"\"abc{\"d\"}e\"\"\"", "abcde")>]
+    [<InlineData("$\"\"\"abc{\"d\"}{\"e\"}\"\"\"", "abcde")>]
+    [<InlineData("$\"\"\"a{\"b\"}c{\"d\"}e\"\"\"", "abcde")>]
+    let ``Interpolated expressions are strings`` (strToPrint: string, expectedOut: string) =
+        Fsx $"""
+let x = {strToPrint}
+printfn "%%s" x
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains expectedOut
+
+    [<Theory>]
+    [<InlineData("$\"\"\"abc{\"d\"}e\"\"\"", "abcde")>]
+    [<InlineData("$\"\"\"abc{\"d\"}{\"e\"}\"\"\"", "abcde")>]
+    [<InlineData("$\"\"\"a{\"b\"}c{\"d\"}e\"\"\"", "abcde")>]
+    let ``In FormattableString, interpolated expressions are strings`` (formattableStr: string, expectedOut: string) =
+        Fsx $"""
+let x = {formattableStr} : System.FormattableString
+printfn "%%s" (System.Globalization.CultureInfo "en-US" |> x.ToString)
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains expectedOut
