@@ -62,13 +62,12 @@ module internal Activity =
                 | NonNull parent -> rootID parent
                 | Null -> act.Id
 
-
             rootID this
 
         member this.Depth =
             let rec depth (act: Activity) acc =
                 match act.Parent with
-                | NonNull parent -> depth parent (acc+1)
+                | NonNull parent -> depth parent (acc + 1)
                 | Null -> acc
 
             depth this 0
@@ -90,10 +89,8 @@ module internal Activity =
 
     let addEvent name =
         match Activity.Current with
-        | NonNull activity when activity.Source = activitySource ->
-            activity.AddEvent(ActivityEvent name) |> ignore
+        | NonNull activity when activity.Source = activitySource -> activity.AddEvent(ActivityEvent name) |> ignore
         | _ -> ()
-
 
     module Profiling =
 

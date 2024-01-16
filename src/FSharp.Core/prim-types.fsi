@@ -3482,7 +3482,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullMatchPattern")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline (|Null|NonNull|) : value: 'T -> Choice<unit, 'T>  when 'T : null
+        val inline (|Null|NonNull|) : value: 'T -> Choice<unit, 'T>  when 'T : null and 'T : not struct 
 #endif
 
         /// <summary>Determines whether the given value is not null.</summary>
