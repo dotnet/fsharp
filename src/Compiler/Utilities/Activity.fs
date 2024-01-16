@@ -202,7 +202,7 @@ module internal Activity =
         let private createCsvRow (a: Activity) =
             let sb = new StringBuilder(128)
 
-            let appendWithLeadingComma (s: string | null) =
+            let appendWithLeadingComma (s: string) =
                 sb.Append(',') |> ignore
                 sb.Append(s) |> ignore
 
