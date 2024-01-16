@@ -7332,6 +7332,40 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             // Type check the expressions filling the holes
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
+            // True iff whole expression and all interpolation expressions are strings
+            let fillExprsAreString =
+                isString &&
+                (argTys, synFillExprs)
+                ||> List.forall2 (fun ttype expr ->
+                    AddCxTypeEqualsTypeUndoIfFailedOrWarnings env.DisplayEnv cenv.css expr.Range ttype g.string_ty)
+
+            // If all fill expressions are strings and there is less then 5 parts of the interpolated string total
+            // then we can use System.String.Concat instead of a sprintf call
+            if fillExprsAreString && parts.Length < 5 then
+                let rec f xs ys acc =
+                    match xs with
+                    | SynInterpolatedStringPart.String(s, m)::xs ->
+                        f xs ys ((mkString g m s)::acc)
+                    | SynInterpolatedStringPart.FillExpr(_, _)::xs ->
+                        match ys with
+                        | y::ys -> f xs ys (y::acc)
+                        | _ -> error(Error((0, "FOOBAR"), m)) // TODO XXX wrong error
+                    | _ -> acc
+
+                let args = f parts fillExprs [] |> List.rev
+                assert (args.Length = parts.Length)
+                if args.Length = 4 then
+                    (mkStaticCall_String_Concat4 g m args[0] args[1] args[2] args[3], tpenv)
+                elif args.Length = 3 then
+                    (mkStaticCall_String_Concat3 g m args[0] args[1] args[2], tpenv)
+                elif args.Length = 2 then
+                    (mkStaticCall_String_Concat2 g m args[0] args[1], tpenv)
+                else
+                    // Throw some error
+                    error(Error((0, "FOOBAR2"), m)) // TODO XXX wrong error
+            else // TODO XXX messed up indentation below
+
+
             let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
             let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
