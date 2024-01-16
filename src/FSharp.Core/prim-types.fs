@@ -4294,6 +4294,12 @@ namespace Microsoft.FSharp.Core
             match value with 
             | null -> raise (new ArgumentNullException(argumentName))        
             | _ ->  (# "" value : 'T #)
+#else
+        [<CompiledName("NullMatchPattern")>]
+        let inline (|Null|NonNull|) (value : 'T when 'T : not struct) = 
+            match value with 
+            | null -> Null () 
+            | _ -> NonNull (# "" value : 'T #)
 #endif
 
         [<CompiledName("Raise")>]
