@@ -625,7 +625,8 @@ let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.Nul
                
                     match nullness.GetFlags(amap.g) with
                     |  [|1uy|] -> TyparConstraint.NotSupportsNull(m)
-                    |  [|2uy|] -> TyparConstraint.SupportsNull(m)
+                    // In F#, 'SupportsNull' has the meaning of "must support null as a value". In C#, Nullable(2) is an allowance, not a requirement.
+                    //|  [|2uy|] -> TyparConstraint.SupportsNull(m)
                     | _ -> ()           
                
                   if gp.CustomAttrs |> TryFindILAttribute amap.g.attrib_IsUnmanagedAttribute then
