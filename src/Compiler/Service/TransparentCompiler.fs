@@ -1762,8 +1762,6 @@ type internal TransparentCompiler
         node {
             //use _ =
             //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
-            let! ct = NodeCode.CancellationToken
-            use _ = Cancellable.UsingToken(ct)
 
             // TODO: might need to deal with exceptions here:
             let tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
