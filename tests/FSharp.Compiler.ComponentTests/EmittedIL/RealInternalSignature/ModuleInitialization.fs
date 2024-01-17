@@ -359,7 +359,7 @@ type MyType =
                     type C() = 
                         static let mutable v = x.Value + 1
                         static do v <- 3
-        
+
                         member x.P = v
                         static member P2 = v+x.Value
 
@@ -464,6 +464,90 @@ module {{recursive}} MyModule =
             "Do end MyNestedModule"
             "Do end MyModule"
         ]
+
+    let withFlavor release compilation =
+        if not release then
+            compilation |> withDebug
+        else
+            compilation
+
+    [<InlineData(true, true)>]          // RealSig, release
+    [<InlineData(false, true)>]         // Regular, release
+    [<InlineData(true, false)>]         // RealSig, debug
+    [<InlineData(false, false)>]        // Regular, debug
+    [<Theory>]
+    let ``recursive types in module`` (realSig, release) =
+        FSharp $$"""
+module rec MyModule =
+    type Node = { Next: Node; Value: int }
+
+    let one = { Next = two; Value = 1 }
+
+    // An intervening type declaration
+    type M() = static member X() = one
+
+    let two = { Next = one; Value = 2 }
+
+    let test t s1 s2 =
+      if s1 <> s2 then
+        stdout.WriteLine ($"test:{t} '{s1}' '{s2}' failed")
+      else
+        stdout.WriteLine ($"test:{t} '{s1}' '{s2}' succeeded")
+
+    [<EntryPoint>]
+    let main args =
+        test "one.Value 1" one.Value 1
+        test "one.Next.Value 2" one.Next.Value 2
+        test "one.Next.Value 2" one.Next.Value 1
+        test "(M.X()).Value 1" (M.X()).Value 1
+        test "(M.X()).Next.Value 2" (M.X()).Next.Value 2
+        test "(M.X()).Next.Next.Value 1" (M.X()).Next.Next.Value 1
+        test "two.Value 2" two.Value 2
+        test "two.Next.Value 1" two.Next.Value 1
+        test "two.Next.Next.Value 2" two.Next.Next.Value 2
+        0
+            """
+        |> withFlavor release
+        |> withLangVersionPreview
+        |> withRealInternalSignature realSig
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContainsAllInOrder [
+            "test:one.Value 1 '1' '1' succeeded"
+            "test:one.Next.Value 2 '2' '2' succeeded"
+            "test:one.Next.Value 2 '2' '1' failed"
+            "test:(M.X()).Value 1 '1' '1' succeeded"
+            "test:(M.X()).Next.Value 2 '2' '2' succeeded"
+            "test:(M.X()).Next.Next.Value 1 '1' '1' succeeded"
+            "test:two.Value 2 '2' '2' succeeded"
+            "test:two.Next.Value 1 '1' '1' succeeded"
+            "test:two.Next.Next.Value 2 '2' '2' succeeded"
+        ]
+
+(*
+module rec Test12384e =
+    type Node =
+        {
+            Next: Node
+            Value: int
+        }
+
+    let one =
+        {
+            Next = two
+            Value = 1
+        }
+
+    // An intervening type declaration
+    type M() =
+        static member X() = one
+        
+    let two =
+        {
+            Next = one
+            Value = 2
+        }
+*)
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular

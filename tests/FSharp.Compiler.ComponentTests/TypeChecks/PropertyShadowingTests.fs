@@ -16,15 +16,39 @@ let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/PropertyShadowing"
         "ShadowStaticProperty.fsx"
         "ShadowWithLastOpenedTypeExtensions.fsx"
     |]
+    , BaselineSuffix = ".realInternalSignatureOff"
 )>]
-let ``can hide property`` compilation =
+let ``can hide property - realInternalSignatureOff`` compilation =
     compilation
     |> asFsx
     |> withOptions ["--langversion:preview"]
+    |> withRealInternalSignatureOff
     |> verifyBaselines
     |> compileAndRun
     |> shouldSucceed
-    
+
+[<Theory;
+  Directory(
+    folder
+    , Includes=[|
+        "ShadowWithExtensionMethod.fsx"
+        "ShadowWithTypeExtension.fsx"
+        "ShadowingAndStillOkWithChainedCalls.fsx"
+        "LinqCount.fsx"
+        "ShadowStaticProperty.fsx"
+        "ShadowWithLastOpenedTypeExtensions.fsx"
+    |]
+    , BaselineSuffix = ".realInternalSignatureOn"
+)>]
+let ``can hide property - realInternalSignatureOn`` compilation =
+    compilation
+    |> asFsx
+    |> withOptions ["--langversion:preview"]
+    |> withRealInternalSignatureOn
+    |> verifyBaselines
+    |> compileAndRun
+    |> shouldSucceed
+
 [<Theory;
   Directory(
       folder
