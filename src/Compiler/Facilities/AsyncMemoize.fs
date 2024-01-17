@@ -308,7 +308,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
         task {
-            do! Task.Delay 0
+            do! Task.Yield()
 
             do!
                 lock.Do(fun () ->
