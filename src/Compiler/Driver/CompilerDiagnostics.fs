@@ -216,7 +216,6 @@ type Exception with
         // DO NOT CHANGE THESE NUMBERS
         | ErrorFromAddingTypeEquation _ -> 1
         | FunctionExpected _ -> 2
-        | NotAFunctionButIndexer _ -> 3217
         | NotAFunction _ -> 3
         | FieldNotMutable _ -> 5
         | Recursion _ -> 6
@@ -320,7 +319,6 @@ type Exception with
         | BadEventTransformation _ -> 91
         | HashLoadedScriptConsideredSource _ -> 92
         | UnresolvedConversionOperator _ -> 93
-        | ArgumentsInSigAndImplMismatch _ -> 3218
         // avoid 94-100 for safety
         | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
@@ -328,6 +326,8 @@ type Exception with
         | TypeProviders.ProvidedTypeResolution _ -> 103
 #endif
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
+        | NotAFunctionButIndexer _ -> 3217
+        | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
