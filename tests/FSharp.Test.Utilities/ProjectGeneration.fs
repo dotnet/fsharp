@@ -25,6 +25,7 @@ open System.Threading.Tasks
 open System.Xml
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 
@@ -41,7 +42,7 @@ let private projectRoot = "test-projects"
 let private defaultFunctionName = "f"
 
 type Reference = {
-    Name: string 
+    Name: string
     Version: string option }
 
 module ReferenceHelpers =
@@ -68,13 +69,13 @@ module ReferenceHelpers =
         }
         |> String.concat "\n"
 
-    let runtimeList = lazy (            
+    let runtimeList = lazy (
         // You can see which versions of the .NET runtime are currently installed with the following command.
         let psi =
             ProcessStartInfo("dotnet", "--list-runtimes", RedirectStandardOutput = true, UseShellExecute = false)
 
         let proc = Process.Start(psi)
-        proc.WaitForExit()
+        proc.WaitForExit(1000) |> ignore
 
         let output =
             seq {
@@ -92,7 +93,8 @@ module ReferenceHelpers =
 
             { Name = matches.Groups.[1].Value
               Version = version
-              Path = DirectoryInfo(Path.Combine(matches.Groups[3].Value, version)) }))
+              Path = DirectoryInfo(Path.Combine(matches.Groups[3].Value, version)) }) 
+        |> Seq.toList)
 
     let getFrameworkReference (reference: Reference) =
 
@@ -540,10 +542,45 @@ module ProjectOperations =
             filePath
             |> project.FindByPath
             |> renderSourceFile project
-        |> SourceText.ofString
+        |> SourceTextNew.ofString
+
+    let internal getFileSnapshot (project: SyntheticProject) _options (path: string) =
+        async {
+            let project, filePath =
+                if path.EndsWith(".fsi") then
+                    let implFilePath = path[..path.Length - 2]
+                    let p, f = project.FindInAllProjectsByPath implFilePath
+                    p, getSignatureFilePath p f
+                else
+                    let p, f = project.FindInAllProjectsByPath path
+                    p, getFilePath p f
+
+            let source = getSourceText project path
+            use md5 = System.Security.Cryptography.MD5.Create()
+            let inputBytes = Encoding.UTF8.GetBytes(source.ToString())
+            let hash = md5.ComputeHash(inputBytes) |> Array.map (fun b -> b.ToString("X2")) |> String.concat ""
+
+            return FSharpFileSnapshot(
+                FileName = filePath,
+                Version = hash,
+                GetSource = fun () -> source |> Task.FromResult
+            )
+        }
+
+    let checkFileWithTransparentCompiler fileId (project: SyntheticProject) (checker: FSharpChecker) =
+        async {
+            let file = project.Find fileId
+            let absFileName = getFilePath project file
+            let options = project.GetProjectOptions checker
+            let! projectSnapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
+            return! checker.ParseAndCheckFileInProject(absFileName, projectSnapshot)
+        }
 
     let checkFile fileId (project: SyntheticProject) (checker: FSharpChecker) =
-        checkFileWithIncrementalBuilder fileId project checker
+        (if checker.UsesTransparentCompiler then
+            checkFileWithTransparentCompiler
+        else
+            checkFileWithIncrementalBuilder) fileId project checker
 
     let getTypeCheckResult (parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileAnswer) =
         Assert.True(not parseResults.ParseHadErrors)
@@ -680,7 +717,7 @@ module ProjectOperations =
 
 module Helpers =
 
-    let getSymbolUse fileName (source: string) (symbolName: string) options (checker: FSharpChecker) =
+    let internal getSymbolUse fileName (source: string) (symbolName: string) snapshot (checker: FSharpChecker) =
         async {
             let lines = source.Split '\n' |> Seq.skip 1 // module definition
             let lineNumber, fullLine, colAtEndOfNames =
@@ -694,8 +731,7 @@ module Helpers =
                 |> Seq.tryPick id
                 |> Option.defaultValue (-1, "", -1)
 
-            let! results = checker.ParseAndCheckFileInProject(
-                fileName, 0, SourceText.ofString source, options)
+            let! results = checker.ParseAndCheckFileInProject(fileName, snapshot)
 
             let typeCheckResults = getTypeCheckResult results
 
@@ -706,18 +742,23 @@ module Helpers =
                 failwith $"No symbol found in {fileName} at {lineNumber}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
         }
 
-    let singleFileChecker source =
+    let internal singleFileChecker source =
 
         let fileName = "test.fs"
 
-        let getSource _ = source |> SourceText.ofString |> Some |> async.Return
+        let getSource _ fileName =
+            FSharpFileSnapshot(
+              FileName = fileName,
+              Version = "1",
+              GetSource = fun () -> source |> SourceTextNew.ofString |> Task.FromResult )
+            |> async.Return
 
         let checker = FSharpChecker.Create(
             keepAllBackgroundSymbolUses = false,
             enableBackgroundItemKeyStoreAndSemanticClassification = true,
             enablePartialTypeChecking = true,
             captureIdentifiersWhenParsing = true,
-            documentSource = DocumentSource.Custom getSource)
+            useTransparentCompiler = true)
 
         let options =
             let baseOptions, _ =
@@ -739,7 +780,9 @@ module Helpers =
                 OriginalLoadReferences = []
                 Stamp = None }
 
-        fileName, options, checker
+        let snapshot = FSharpProjectSnapshot.FromOptions(options, getSource) |> Async.RunSynchronously
+
+        fileName, snapshot, checker
 
 open Helpers
 
@@ -757,8 +800,9 @@ let SaveAndCheckProject project checker =
         do! saveProject project true checker
 
         let options = project.GetProjectOptions checker
+        let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
 
-        let! results = checker.ParseAndCheckProject(options)
+        let! results = checker.ParseAndCheckProject(snapshot)
 
         if not (Array.isEmpty results.Diagnostics || project.SkipInitialCheck) then
             failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
@@ -778,6 +822,8 @@ let SaveAndCheckProject project checker =
               Cursor = None }
     }
 
+type MoveFileDirection = Up | Down 
+
 type ProjectWorkflowBuilder
     (
         initialProject: SyntheticProject,
@@ -791,7 +837,7 @@ type ProjectWorkflowBuilder
         ?autoStart
     ) =
 
-    let useTransparentCompiler = defaultArg useTransparentCompiler false
+    let useTransparentCompiler = defaultArg useTransparentCompiler FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true
@@ -800,7 +846,7 @@ type ProjectWorkflowBuilder
     let mutable activity = None
     let mutable tracerProvider = None
 
-    let getSource f = f |> getSourceText latestProject |> Some |> async.Return
+    let getSource f = f |> getSourceText latestProject :> ISourceText |> Some |> async.Return
 
     let checker =
         defaultArg
@@ -811,7 +857,9 @@ type ProjectWorkflowBuilder
                 enablePartialTypeChecking = true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
-                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false))
+                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false,
+                useTransparentCompiler = useTransparentCompiler
+            ))
 
     let mapProjectAsync f workflow =
         async {
@@ -859,7 +907,9 @@ type ProjectWorkflowBuilder
 
     member this.DeleteProjectDir() =
         if Directory.Exists initialProject.ProjectDir then
-            Directory.Delete(initialProject.ProjectDir, true)
+            try
+                Directory.Delete(initialProject.ProjectDir, true)
+            with _ -> ()
 
     member this.Execute(workflow: Async<WorkflowContext>) =
         try
@@ -1000,6 +1050,30 @@ type ProjectWorkflowBuilder
             return { ctx with Signatures = ctx.Signatures.Add(fileId, newSignature) }
         }
 
+    [<CustomOperation "moveFile">]
+    member this.MoveFile(workflow: Async<WorkflowContext>, fileId: string, count, direction: MoveFileDirection) =
+
+       workflow
+        |> mapProject (fun project ->
+            let index =
+                project.SourceFiles
+                |> List.tryFindIndex (fun f -> f.Id = fileId)
+                |> Option.defaultWith (fun () -> failwith $"File {fileId} not found")
+
+            let dir = if direction = Up then -1 else 1
+            let newIndex = index + count * dir
+
+            if newIndex < 0 || newIndex > project.SourceFiles.Length - 1 then
+                failwith $"Cannot move file {fileId} {count} times {direction} as it would be out of bounds"
+
+            let file = project.SourceFiles.[index]
+            let newFiles =
+                project.SourceFiles
+                |> List.filter (fun f -> f.Id <> fileId)
+                |> List.insertAt newIndex file
+
+            { project with SourceFiles = newFiles })
+
     /// Find a symbol using the provided range, mimicking placing a cursor on it in IDE scenarios
     [<CustomOperation "placeCursor">]
     member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, line, colAtEndOfNames, fullLine, symbolNames) =
@@ -1025,8 +1099,9 @@ type ProjectWorkflowBuilder
             let project, file = ctx.Project.FindInAllProjects fileId
             let fileName = project.ProjectDir ++ file.FileName
             let source = renderSourceFile project file
-            let options= project.GetProjectOptions checker
-            return! getSymbolUse fileName source symbolName options checker
+            let options = project.GetProjectOptions checker
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
+            return! getSymbolUse fileName source symbolName snapshot checker
         }
 
     /// Find a symbol by finding the first occurrence of the symbol name in the file
@@ -1085,7 +1160,10 @@ type ProjectWorkflowBuilder
                 [ for p, f in ctx.Project.GetAllFiles() do
                     let options = p.GetProjectOptions checker
                     for fileName in [getFilePath p f; if f.SignatureFile <> No then getSignatureFilePath p f] do
-                        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true) ]
+                        async {
+                            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
+                            return! checker.FindBackgroundReferencesInFile(fileName, snapshot, symbolUse.Symbol)
+                        } ]
                 |> Async.Parallel
 
             results |> Seq.collect id |> Seq.toList |> processResults
@@ -1210,7 +1288,7 @@ type SyntheticProject with
                   projectDir ++ node.Attributes["Include"].InnerText ]
             |> List.partition (fun path -> path.EndsWith ".fsi")
         let signatureFiles = set signatureFiles
-
+        
         let parseReferences refType =
             [ for node in fsproj.DocumentElement.SelectNodes($"//{refType}") do
                  { Name = node.Attributes["Include"].InnerText

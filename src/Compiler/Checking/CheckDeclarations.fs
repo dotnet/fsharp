@@ -2941,7 +2941,7 @@ module EstablishTypeDefinitionCores =
         | Some (tc, args, m) -> 
             let ad = envinner.AccessRights
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified envinner.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.Yes with
-            | Result (_, tcrefBeforeStaticArguments) when 
+            | Result (_, tcrefBeforeStaticArguments, _) when 
                   tcrefBeforeStaticArguments.IsProvided && 
                   not tcrefBeforeStaticArguments.IsErased -> 
 
@@ -4117,11 +4117,11 @@ module TcDeclarations =
 
           | _ ->
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
-            let _, tcref =
+            let tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
                 | Result res ->
                     // Update resolved type parameters with the names from the source.
-                    let _, tcref = res
+                    let _, tcref, _ = res
                     if tcref.TyparsNoRange.Length = synTypars.Length then
                         (tcref.TyparsNoRange, synTypars)
                         ||> List.zip
@@ -4131,11 +4131,12 @@ module TcDeclarations =
                                 typar.SetIdent(untypedIdent)
                         )
 
-                    res
-                | res when inSig && List.isSingleton longPath ->
-                    errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
-                    ForceRaise res
-                | res -> ForceRaise res
+                    tcref
+
+                | Exception exn ->
+                    if inSig && List.isSingleton longPath then
+                        errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
+                    ForceRaise (Exception exn)
             tcref
 
         let isInterfaceOrDelegateOrEnum = 
@@ -5595,7 +5596,7 @@ let SolveInternalUnknowns g (cenv: cenv) denvAtEnd moduleContents extraAttribs =
         if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
             ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp
 
-let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents =
+let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents fileName qualifiedNameOfFile =
     match rootSigOpt with 
     | None -> 
         // Deep copy the inferred type of the module 
@@ -5603,7 +5604,13 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
 
         (implFileTypePriorToSigCopied, moduleContents)
             
-    | Some sigFileType -> 
+    | Some sigFileType ->
+        use _ =
+            Activity.start "CheckDeclarations.CheckModuleSignature"
+                [|
+                    Activity.Tags.fileName, fileName
+                    Activity.Tags.qualifiedNameOfFile, qualifiedNameOfFile
+                |]
 
         // We want to show imperative type variables in any types in error messages at this late point 
         let denv = { denvAtEnd with showInferenceTyparAnnotations=true }
@@ -5729,7 +5736,7 @@ let CheckOneImplFile
         // Check the module matches the signature 
         let implFileTy, implFileContents =
           conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-            CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents)
+            CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents fileName qualNameOfFile.Text)
 
         do 
           conditionallySuppressErrorReporting (checkForErrors()) (fun () ->

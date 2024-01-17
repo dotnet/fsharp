@@ -43,21 +43,23 @@ let TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: Tc
 /// Ignores an attribute
 let IgnoreAttribute _ = None
 
+[<return: Struct>]
 let (|ExprAsPat|_|) (f: SynExpr) =
     match f with
     | SingleIdent v1
-    | SynExprParen(SingleIdent v1, _, _, _) -> Some(mkSynPatVar None v1)
+    | SynExprParen(SingleIdent v1, _, _, _) -> ValueSome(mkSynPatVar None v1)
     | SynExprParen(SynExpr.Tuple(false, elems, commas, _), _, _, _) ->
         let elems = elems |> List.map (|SingleIdent|_|)
 
         if elems |> List.forall (fun x -> x.IsSome) then
-            Some(SynPat.Tuple(false, (elems |> List.map (fun x -> mkSynPatVar None x.Value)), commas, f.Range))
+            ValueSome(SynPat.Tuple(false, (elems |> List.map (fun x -> mkSynPatVar None x.Value)), commas, f.Range))
         else
-            None
-    | _ -> None
+            ValueNone
+    | _ -> ValueNone
 
 // For join clauses that join on nullable, we syntactically insert the creation of nullable values on the appropriate side of the condition,
 // then pull the syntax apart again
+[<return: Struct>]
 let (|JoinRelation|_|) cenv env (expr: SynExpr) =
     let m = expr.Range
     let ad = env.eAccessRights
@@ -79,27 +81,27 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
            | _ -> false
 
     match expr with
-    | BinOpExpr(opId, a, b) when isOpName opNameEquals cenv.g.equals_operator_vref opId.idText -> Some(a, b)
+    | BinOpExpr(opId, a, b) when isOpName opNameEquals cenv.g.equals_operator_vref opId.idText -> ValueSome(a, b)
 
     | BinOpExpr(opId, a, b) when isOpName opNameEqualsNullable cenv.g.equals_nullable_operator_vref opId.idText ->
 
         let a =
             SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet a.Range [ MangledGlobalName; "System" ] "Nullable", a, a.Range)
 
-        Some(a, b)
+        ValueSome(a, b)
 
     | BinOpExpr(opId, a, b) when isOpName opNameNullableEquals cenv.g.nullable_equals_operator_vref opId.idText ->
 
         let b =
             SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet b.Range [ MangledGlobalName; "System" ] "Nullable", b, b.Range)
 
-        Some(a, b)
+        ValueSome(a, b)
 
     | BinOpExpr(opId, a, b) when isOpName opNameNullableEqualsNullable cenv.g.nullable_equals_nullable_operator_vref opId.idText ->
 
-        Some(a, b)
+        ValueSome(a, b)
 
-    | _ -> None
+    | _ -> ValueNone
 
 let elimFastIntegerForLoop (spFor, spTo, id, start: SynExpr, dir, finish: SynExpr, innerExpr, m: range) =
     let mOp = (unionRanges start.Range finish.Range).MakeSynthetic()
@@ -179,7 +181,7 @@ let YieldFree (cenv: cenv) expr =
 /// Determine if a syntactic expression inside 'seq { ... }' or '[...]' counts as a "simple sequence
 /// of semicolon separated values". For example [1;2;3].
 /// 'acceptDeprecated' is true for the '[ ... ]' case, where we allow the syntax '[ if g then t else e ]' but ask it to be parenthesized
-///
+[<return: Struct>]
 let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
 
     let IsSimpleSemicolonSequenceElement expr =
@@ -207,12 +209,12 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
             if IsSimpleSemicolonSequenceElement e1 then
                 TryGetSimpleSemicolonSequenceOfComprehension e2 (e1 :: acc)
             else
-                None
+                ValueNone
         | _ ->
             if IsSimpleSemicolonSequenceElement expr then
-                Some(List.rev (expr :: acc))
+                ValueSome(List.rev (expr :: acc))
             else
-                None
+                ValueNone
 
     TryGetSimpleSemicolonSequenceOfComprehension cexpr []
 
