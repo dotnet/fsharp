@@ -1790,8 +1790,10 @@ type internal TransparentCompiler
 
     member _.FindReferencesInFile(fileName: string, projectSnapshot: ProjectSnapshot, symbol: FSharpSymbol, userOpName: string) =
         ignore userOpName
-
         node {
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             match! ComputeItemKeyStore(fileName, projectSnapshot) with
             | None -> return Seq.empty
             | Some itemKeyStore -> return itemKeyStore.FindAll symbol.Item
