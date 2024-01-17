@@ -173,10 +173,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let mutable cleared = 0
 
     let mutable cancel_ct_registration_original = 0
-    let mutable cancel_exception_original = 0
     let mutable cancel_original_processed = 0
     let mutable cancel_ct_registration_subsequent = 0
-    let mutable cancel_exception_subsequent = 0
     let mutable cancel_subsequent_processed = 0
 
     let failures = ResizeArray()
@@ -276,14 +274,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                     DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
             with
             | TaskCancelled ex ->
-                // TODO: do we need to do anything else here? Presumably it should be done by the registration on
-                // the cancellation token or before we triggered our own cancellation
-
-                // Let's send this again just in case. It seems sometimes it's not triggered from the registration?
-
-                Interlocked.Increment &cancel_exception_original |> ignore
-
-                post (key, (OriginatorCanceled))
                 return raise ex
             | ex ->
                 post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
@@ -308,12 +298,21 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 finally
                     DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
             with
-            | TaskCancelled _ ->
-                Interlocked.Increment &cancel_exception_subsequent |> ignore
-                post (key, CancelRequest)
-                ()
+            | TaskCancelled _ -> ()
             | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
         }
+
+    and cancel key (cts: CancellationTokenSource) (tcs: TaskCompletionSource<_>) =
+        cancelRegistration key
+        cts.Cancel()
+        tcs.TrySetCanceled() |> ignore
+        // Remember the job in case it completes after cancellation
+        cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
+        requestCounts.Remove key |> ignore
+        log (Canceled, key)
+        Interlocked.Increment &canceled |> ignore
+        use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
+        ()
 
     and processStateUpdate (key: KeyData<_, _>, action: StateUpdate<_>) =
         task {
@@ -331,17 +330,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 decrRequestCount key
 
                 if requestCounts[key] < 1 then
-                    cancelRegistration key
-                    cts.Cancel()
-                    tcs.TrySetCanceled() |> ignore
-                    // Remember the job in case it completes after cancellation
-                    cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
-                    requestCounts.Remove key |> ignore
-                    log (Canceled, key)
-                    Interlocked.Increment &canceled |> ignore
-                    use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
-                    ()
-
+                    cancel key cts tcs
                 else
                     // We need to restart the computation
                     restart key computation cts.Token None |> ignore
@@ -353,16 +342,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 decrRequestCount key
 
                 if requestCounts[key] < 1 then
-                    cancelRegistration key
-                    cts.Cancel()
-                    tcs.TrySetCanceled() |> ignore
-                    // Remember the job in case it completes after cancellation
-                    cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
-                    requestCounts.Remove key |> ignore
-                    log (Canceled, key)
-                    Interlocked.Increment &canceled |> ignore
-                    use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
-                    ()
+                    cancel key cts tcs
 
             // Probably in some cases cancellation can be fired off even after we just unregistered it
             | CancelRequest, None
@@ -517,8 +497,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                     start key computation internalCt (Some callerDiagnosticLogger)
                     |> NodeCode.AwaitTask
 
-            | Existing job -> return! job |> NodeCode.AwaitTask
-
+            | Existing job ->
+                return! job |> NodeCode.AwaitTask
         }
 
     member _.Clear() = cache.Clear()
