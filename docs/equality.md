@@ -101,8 +101,45 @@ Effect of 5112:
 
 * Semantics: User expects field-by-field structural equality with no boxing
 * Compilation today: `GenericEqualityIntrinsic<SomeStructType>`
-* Perf today: always boxes (❌, Problem1)
+* Perf today: always boxes (❌, Problem1b)
 * [sharplab](https://sharplab.io/#v2:DYLgZgzgNALiCWwA+BYAUAbQDwGUYCcBXAYxgD4BddGATwAcBTAAhwHsBbBvI0gCgDcQTeADsYUJoSGiYASiYBedExVNO7AEYN8TAPoA6AGqKm/ZavVadBgKonC6dMAYwmYJrwAeQtp24k5JhoTLxMaWXQgA)
+
+Note: the optimization path is a bit strange here, the reductions are:
+
+```fsharp
+
+(x = y) 
+
+--inline--> 
+
+GenericEquality x y 
+
+--inline--> 
+
+GenericEqualityFast x y 
+
+--inline--> 
+
+GenericEqualityIntrinsic x y
+
+--devirtualize-->
+
+x.Equals(box y, LanguagePrimitives.GenericEqualityComparer);
+```
+
+The struct type has these generated methods:
+```csharp
+    override bool Equals(object y) 
+    override bool Equals(SomeStruct obj)
+    override bool Equals(object obj, IEqualityComparer comp) //withcEqualsVal
+```
+
+These call each other in sequence, boing then bunboxing then boxing. We do NOT generate this method, we probably should:
+```csharp
+    override bool Equals(SomeStruct obj, IEqualityComparer comp) //withcEqualsValUnboxed
+```
+
+If we did, the devirtualizing optimization should reduce to this directly, which would result in no boxing.]
 
 ### F# large ref record/union type
 
@@ -192,5 +229,8 @@ let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
 
 let GenericHashIntrinsic input =
     FSharpEqualityComparer_PER<'T>.EqualityComparer.Hash(input)
+```
+
+
 ```
 
