@@ -273,8 +273,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 finally
                     DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
             with
-            | TaskCancelled ex ->
-                return raise ex
+            | TaskCancelled ex -> return raise ex
             | ex ->
                 post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
                 return raise ex
@@ -497,8 +496,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                     start key computation internalCt (Some callerDiagnosticLogger)
                     |> NodeCode.AwaitTask
 
-            | Existing job ->
-                return! job |> NodeCode.AwaitTask
+            | Existing job -> return! job |> NodeCode.AwaitTask
         }
 
     member _.Clear() = cache.Clear()
