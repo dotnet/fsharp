@@ -21,7 +21,7 @@ type ComputationExpressionBenchmarks() =
              "CEwCO500xnest1.fs",
              "CEwCO100xnest5.fs")>]
     member public this.Source
-        with get () = File.ReadAllText(__SOURCE_DIRECTORY__ ++ sourceFileName)
+        with get () = File.ReadAllText(__SOURCE_DIRECTORY__ ++ "ce" ++ sourceFileName)
         and set f = sourceFileName <- f
 
     member val Benchmark = Unchecked.defaultof<_> with get, set
