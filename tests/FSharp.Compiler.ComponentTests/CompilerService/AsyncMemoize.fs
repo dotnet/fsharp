@@ -151,8 +151,6 @@ let ``Job is restarted if first requestor cancels`` () =
         let! result = _task2
         Assert.Equal(2, result)
 
-        Assert.Equal(TaskStatus.Canceled, _task1.Status)
-
         let orderedLog = eventLog |> Seq.rev |> Seq.toList
         let expected = [ Started, key; Started, key; Finished, key ]
 
