@@ -34,7 +34,6 @@ open Xunit
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
-open FSharp.Compiler
 
 #nowarn "57" // Experimental feature use
 
@@ -924,15 +923,10 @@ type ProjectWorkflowBuilder
                 x.Dispose())
 
     member this.Run(workflow: Async<WorkflowContext>) =
-        async {
-            let! ct = Async.CancellationToken
-            use _ = Cancellable.UsingToken ct
-
-            if autoStart then
-                return this.Execute(workflow)
-            else
-                return! workflow
-        }
+        if autoStart then
+            this.Execute(workflow) |> async.Return
+        else
+            workflow
 
     [<CustomOperation "withProject">]
     member this.WithProject(workflow: Async<WorkflowContext>, f) =
