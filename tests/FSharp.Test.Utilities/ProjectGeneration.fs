@@ -34,6 +34,7 @@ open Xunit
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
+open FSharp.Compiler
 
 #nowarn "57" // Experimental feature use
 
@@ -845,6 +846,7 @@ type ProjectWorkflowBuilder
     let mutable latestProject = initialProject
     let mutable activity = None
     let mutable tracerProvider = None
+    let mutable cancellableToken = None
 
     let getSource f = f |> getSourceText latestProject :> ISourceText |> Some |> async.Return
 
@@ -893,6 +895,8 @@ type ProjectWorkflowBuilder
     member this.Checker = checker
 
     member this.Yield _ = async {
+        let! ct = Async.CancellationToken
+        cancellableToken <- Some (Cancellable.UsingToken ct)
         let! ctx = getInitialContext()
         tracerProvider <-
             Sdk.CreateTracerProviderBuilder()
@@ -921,6 +925,7 @@ type ProjectWorkflowBuilder
             tracerProvider |> Option.iter (fun x ->
                 x.ForceFlush() |> ignore
                 x.Dispose())
+            cancellableToken |> Option.iter (fun x -> x.Dispose())
 
     member this.Run(workflow: Async<WorkflowContext>) =
         if autoStart then
