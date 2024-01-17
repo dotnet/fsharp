@@ -296,10 +296,30 @@ FSharp.Compiler.AbstractIL.IL+ILAttribute: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILAttribute: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILAttributes: ILAttribute[] AsArray()
 FSharp.Compiler.AbstractIL.IL+ILAttributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute] AsList()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given: ILAttributes Item
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given: ILAttributes get_Item()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader: Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]] Item
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader: Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]] get_Item()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags: Int32 Given
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags: Int32 Reader
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean IsGiven
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean IsReader
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean get_IsGiven()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean get_IsReader()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributes GetCustomAttrs(Int32)
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored NewGiven(ILAttributes)
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored NewReader(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]])
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILAttributesStored: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean IsCallconv
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean get_IsCallconv()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention Item2
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention get_Item2()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Instance
@@ -390,10 +410,14 @@ FSharp.Compiler.AbstractIL.IL+ILEventDef: Boolean get_IsRTSpecialName()
 FSharp.Compiler.AbstractIL.IL+ILEventDef: Boolean get_IsSpecialName()
 FSharp.Compiler.AbstractIL.IL+ILEventDef: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILEventDef: ILAttributes get_CustomAttrs()
+FSharp.Compiler.AbstractIL.IL+ILEventDef: ILAttributesStored CustomAttrsStored
+FSharp.Compiler.AbstractIL.IL+ILEventDef: ILAttributesStored get_CustomAttrsStored()
 FSharp.Compiler.AbstractIL.IL+ILEventDef: ILMethodRef AddMethod
 FSharp.Compiler.AbstractIL.IL+ILEventDef: ILMethodRef RemoveMethod
 FSharp.Compiler.AbstractIL.IL+ILEventDef: ILMethodRef get_AddMethod()
 FSharp.Compiler.AbstractIL.IL+ILEventDef: ILMethodRef get_RemoveMethod()
+FSharp.Compiler.AbstractIL.IL+ILEventDef: Int32 MetadataIndex
+FSharp.Compiler.AbstractIL.IL+ILEventDef: Int32 get_MetadataIndex()
 FSharp.Compiler.AbstractIL.IL+ILEventDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodRef] OtherMethods
 FSharp.Compiler.AbstractIL.IL+ILEventDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodRef] get_OtherMethods()
 FSharp.Compiler.AbstractIL.IL+ILEventDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodRef] FireMethod
@@ -445,10 +469,14 @@ FSharp.Compiler.AbstractIL.IL+ILFieldDef: Boolean get_IsStatic()
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: Boolean get_NotSerialized()
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: ILAttributes get_CustomAttrs()
+FSharp.Compiler.AbstractIL.IL+ILFieldDef: ILAttributesStored CustomAttrsStored
+FSharp.Compiler.AbstractIL.IL+ILFieldDef: ILAttributesStored get_CustomAttrsStored()
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: ILMemberAccess Access
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: ILMemberAccess get_Access()
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: ILType FieldType
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: ILType get_FieldType()
+FSharp.Compiler.AbstractIL.IL+ILFieldDef: Int32 MetadataIndex
+FSharp.Compiler.AbstractIL.IL+ILFieldDef: Int32 get_MetadataIndex()
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldInit] LiteralValue
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldInit] get_LiteralValue()
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILNativeType] Marshal
@@ -762,6 +790,8 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_IsVirtual()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_IsZeroInit()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILAttributes get_CustomAttrs()
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILAttributesStored CustomAttrsStored
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILAttributesStored get_CustomAttrsStored()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingConv CallingConv
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingConv get_CallingConv()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingSignature GetCallingSignature()
@@ -774,7 +804,9 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILReturn get_Return()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILSecurityDecls SecurityDecls
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILSecurityDecls get_SecurityDecls()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Int32 MaxStack
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: Int32 MetadataIndex
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Int32 get_MaxStack()
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: Int32 get_MetadataIndex()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: MethodBody Body
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: MethodBody get_Body()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef] GenericParams
@@ -1230,10 +1262,14 @@ FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Boolean get_IsRTSpecialName()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Boolean get_IsSpecialName()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: ILAttributes get_CustomAttrs()
+FSharp.Compiler.AbstractIL.IL+ILPropertyDef: ILAttributesStored CustomAttrsStored
+FSharp.Compiler.AbstractIL.IL+ILPropertyDef: ILAttributesStored get_CustomAttrsStored()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: ILThisConvention CallingConv
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: ILThisConvention get_CallingConv()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: ILType PropertyType
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: ILType get_PropertyType()
+FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Int32 MetadataIndex
+FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Int32 get_MetadataIndex()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType] Args
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType] get_Args()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldInit] Init
@@ -1490,6 +1526,8 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsStruct()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsStructOrEnum()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILAttributes get_CustomAttrs()
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILAttributesStored CustomAttrsStored
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILAttributesStored get_CustomAttrsStored()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILDefaultPInvokeEncoding Encoding
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILDefaultPInvokeEncoding get_Encoding()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILEventDefs Events
@@ -1511,6 +1549,8 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefLayout Layout
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefLayout get_Layout()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefs NestedTypes
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefs get_NestedTypes()
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Int32 MetadataIndex
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Int32 get_MetadataIndex()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef] GenericParams
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef] get_GenericParams()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType] Implements
@@ -4231,6 +4271,8 @@ FSharp.Compiler.EditorServices.ToolTipElementData: Void .ctor(Microsoft.FSharp.C
 FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(FSharp.Compiler.EditorServices.ToolTipText)
 FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.ToolTipText: Boolean IsToolTipText
+FSharp.Compiler.EditorServices.ToolTipText: Boolean get_IsToolTipText()
 FSharp.Compiler.EditorServices.ToolTipText: FSharp.Compiler.EditorServices.ToolTipText NewToolTipText(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.ToolTipElement])
 FSharp.Compiler.EditorServices.ToolTipText: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.ToolTipText: Int32 GetHashCode(System.Collections.IEqualityComparer)
@@ -4274,6 +4316,8 @@ FSharp.Compiler.EditorServices.XmlDocParser: Microsoft.FSharp.Collections.FSharp
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(FSharp.Compiler.EditorServices.XmlDocable)
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.XmlDocable: Boolean IsXmlDocable
+FSharp.Compiler.EditorServices.XmlDocable: Boolean get_IsXmlDocable()
 FSharp.Compiler.EditorServices.XmlDocable: FSharp.Compiler.EditorServices.XmlDocable NewXmlDocable(Int32, Int32, Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.EditorServices.XmlDocable: Int32 CompareTo(FSharp.Compiler.EditorServices.XmlDocable)
 FSharp.Compiler.EditorServices.XmlDocable: Int32 CompareTo(System.Object)
@@ -5298,21 +5342,25 @@ FSharp.Compiler.Symbols.FSharpSymbolPatterns: Microsoft.FSharp.Core.FSharpOption
 FSharp.Compiler.Symbols.FSharpSymbolPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpField,FSharp.Compiler.Symbols.FSharpType]] |Field|_|(FSharp.Compiler.Symbols.FSharpSymbol)
 FSharp.Compiler.Symbols.FSharpSymbolPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.Symbols.FSharpEntity,FSharp.Compiler.Symbols.FSharpEntity,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType]]] |FSharpEntity|_|(FSharp.Compiler.Symbols.FSharpSymbol)
 FSharp.Compiler.Symbols.FSharpType: Boolean Equals(System.Object)
+FSharp.Compiler.Symbols.FSharpType: Boolean HasNullAnnotation
 FSharp.Compiler.Symbols.FSharpType: Boolean HasTypeDefinition
 FSharp.Compiler.Symbols.FSharpType: Boolean IsAbbreviation
 FSharp.Compiler.Symbols.FSharpType: Boolean IsAnonRecordType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsFunctionType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsGenericParameter
 FSharp.Compiler.Symbols.FSharpType: Boolean IsMeasureType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsNullAmbivalent
 FSharp.Compiler.Symbols.FSharpType: Boolean IsStructTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsUnresolved
+FSharp.Compiler.Symbols.FSharpType: Boolean get_HasNullAnnotation()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_HasTypeDefinition()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsAbbreviation()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsAnonRecordType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsFunctionType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsGenericParameter()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsMeasureType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsNullAmbivalent()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsStructTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsUnresolved()
@@ -5508,6 +5556,8 @@ FSharp.Compiler.Syntax.DebugPointAtInOrTo: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtLeafExpr)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean IsYes
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean get_IsYes()
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range Item
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range get_Item()
@@ -5642,6 +5692,8 @@ FSharp.Compiler.Syntax.Ident: System.String ToString()
 FSharp.Compiler.Syntax.Ident: System.String get_idText()
 FSharp.Compiler.Syntax.Ident: System.String idText
 FSharp.Compiler.Syntax.Ident: Void .ctor(System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirective: Boolean IsParsedHashDirective
+FSharp.Compiler.Syntax.ParsedHashDirective: Boolean get_IsParsedHashDirective()
 FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Syntax.ParsedHashDirective NewParsedHashDirective(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirectiveArgument], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Text.Range range
@@ -5680,6 +5732,8 @@ FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Text.Range g
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Int32 Tag
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: System.String ToString()
+FSharp.Compiler.Syntax.ParsedImplFile: Boolean IsParsedImplFile
+FSharp.Compiler.Syntax.ParsedImplFile: Boolean get_IsParsedImplFile()
 FSharp.Compiler.Syntax.ParsedImplFile: FSharp.Compiler.Syntax.ParsedImplFile NewParsedImplFile(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedImplFileFragment])
 FSharp.Compiler.Syntax.ParsedImplFile: Int32 Tag
 FSharp.Compiler.Syntax.ParsedImplFile: Int32 get_Tag()
@@ -5731,9 +5785,11 @@ FSharp.Compiler.Syntax.ParsedImplFileFragment: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedImplFileFragment: System.String ToString()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean IsExe
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean IsLastCompiland
+FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean IsParsedImplFileInput
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean IsScript
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsExe()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsLastCompiland()
+FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsParsedImplFileInput()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_isScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean isScript
@@ -5797,6 +5853,8 @@ FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpSet`1[Sys
 FSharp.Compiler.Syntax.ParsedInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedInput: System.String get_FileName()
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean IsDefinitions
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean get_IsDefinitions()
 FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction NewDefinitions(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Text.Range range
@@ -5805,6 +5863,8 @@ FSharp.Compiler.Syntax.ParsedScriptInteraction: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedScriptInteraction: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] defns
 FSharp.Compiler.Syntax.ParsedScriptInteraction: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] get_defns()
 FSharp.Compiler.Syntax.ParsedScriptInteraction: System.String ToString()
+FSharp.Compiler.Syntax.ParsedSigFile: Boolean IsParsedSigFile
+FSharp.Compiler.Syntax.ParsedSigFile: Boolean get_IsParsedSigFile()
 FSharp.Compiler.Syntax.ParsedSigFile: FSharp.Compiler.Syntax.ParsedSigFile NewParsedSigFile(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedSigFileFragment])
 FSharp.Compiler.Syntax.ParsedSigFile: Int32 Tag
 FSharp.Compiler.Syntax.ParsedSigFile: Int32 get_Tag()
@@ -5854,6 +5914,8 @@ FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFi
 FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 Tag
 FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedSigFileFragment: System.String ToString()
+FSharp.Compiler.Syntax.ParsedSigFileInput: Boolean IsParsedSigFileInput
+FSharp.Compiler.Syntax.ParsedSigFileInput: Boolean get_IsParsedSigFileInput()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.ParsedSigFileInput NewParsedSigFileInput(System.String, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig], FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
@@ -5926,6 +5988,8 @@ FSharp.Compiler.Syntax.PrettyNaming: System.String FormatAndOtherOverloadsString
 FSharp.Compiler.Syntax.PrettyNaming: System.String FsiDynamicModulePrefix
 FSharp.Compiler.Syntax.PrettyNaming: System.String NormalizeIdentifierBackticks(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String get_FsiDynamicModulePrefix()
+FSharp.Compiler.Syntax.QualifiedNameOfFile: Boolean IsQualifiedNameOfFile
+FSharp.Compiler.Syntax.QualifiedNameOfFile: Boolean get_IsQualifiedNameOfFile()
 FSharp.Compiler.Syntax.QualifiedNameOfFile: FSharp.Compiler.Syntax.Ident Id
 FSharp.Compiler.Syntax.QualifiedNameOfFile: FSharp.Compiler.Syntax.Ident Item
 FSharp.Compiler.Syntax.QualifiedNameOfFile: FSharp.Compiler.Syntax.Ident get_Id()
@@ -5941,6 +6005,8 @@ FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String get_Text()
 FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(FSharp.Compiler.Syntax.ScopedPragma)
 FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.ScopedPragma: Boolean IsWarningOff
+FSharp.Compiler.Syntax.ScopedPragma: Boolean get_IsWarningOff()
 FSharp.Compiler.Syntax.ScopedPragma: FSharp.Compiler.Syntax.ScopedPragma NewWarningOff(FSharp.Compiler.Text.Range, Int32)
 FSharp.Compiler.Syntax.ScopedPragma: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ScopedPragma: FSharp.Compiler.Text.Range range
@@ -5954,7 +6020,9 @@ FSharp.Compiler.Syntax.ScopedPragma: System.String ToString()
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(FSharp.Compiler.Syntax.SeqExprOnly)
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.SeqExprOnly: Boolean IsSeqExprOnly
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Item
+FSharp.Compiler.Syntax.SeqExprOnly: Boolean get_IsSeqExprOnly()
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean get_Item()
 FSharp.Compiler.Syntax.SeqExprOnly: FSharp.Compiler.Syntax.SeqExprOnly NewSeqExprOnly(Boolean)
 FSharp.Compiler.Syntax.SeqExprOnly: Int32 CompareTo(FSharp.Compiler.Syntax.SeqExprOnly)
@@ -5997,6 +6065,8 @@ FSharp.Compiler.Syntax.SynAccess: Int32 GetHashCode(System.Collections.IEquality
 FSharp.Compiler.Syntax.SynAccess: Int32 Tag
 FSharp.Compiler.Syntax.SynAccess: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynAccess: System.String ToString()
+FSharp.Compiler.Syntax.SynArgInfo: Boolean IsSynArgInfo
+FSharp.Compiler.Syntax.SynArgInfo: Boolean get_IsSynArgInfo()
 FSharp.Compiler.Syntax.SynArgInfo: Boolean get_optional()
 FSharp.Compiler.Syntax.SynArgInfo: Boolean optional
 FSharp.Compiler.Syntax.SynArgInfo: FSharp.Compiler.Syntax.SynArgInfo NewSynArgInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident])
@@ -6053,6 +6123,8 @@ FSharp.Compiler.Syntax.SynAttributeList: Microsoft.FSharp.Collections.FSharpList
 FSharp.Compiler.Syntax.SynAttributeList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttribute] get_Attributes()
 FSharp.Compiler.Syntax.SynAttributeList: System.String ToString()
 FSharp.Compiler.Syntax.SynAttributeList: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttribute], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynBinding: Boolean IsSynBinding
+FSharp.Compiler.Syntax.SynBinding: Boolean get_IsSynBinding()
 FSharp.Compiler.Syntax.SynBinding: Boolean get_isInline()
 FSharp.Compiler.Syntax.SynBinding: Boolean get_isMutable()
 FSharp.Compiler.Syntax.SynBinding: Boolean isInline
@@ -6116,6 +6188,8 @@ FSharp.Compiler.Syntax.SynBindingKind: Int32 GetHashCode(System.Collections.IEqu
 FSharp.Compiler.Syntax.SynBindingKind: Int32 Tag
 FSharp.Compiler.Syntax.SynBindingKind: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynBindingKind: System.String ToString()
+FSharp.Compiler.Syntax.SynBindingReturnInfo: Boolean IsSynBindingReturnInfo
+FSharp.Compiler.Syntax.SynBindingReturnInfo: Boolean get_IsSynBindingReturnInfo()
 FSharp.Compiler.Syntax.SynBindingReturnInfo: FSharp.Compiler.Syntax.SynBindingReturnInfo NewSynBindingReturnInfo(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.SyntaxTrivia.SynBindingReturnInfoTrivia)
 FSharp.Compiler.Syntax.SynBindingReturnInfo: FSharp.Compiler.Syntax.SynType get_typeName()
 FSharp.Compiler.Syntax.SynBindingReturnInfo: FSharp.Compiler.Syntax.SynType typeName
@@ -6150,6 +6224,8 @@ FSharp.Compiler.Syntax.SynByteStringKind: Int32 GetHashCode(System.Collections.I
 FSharp.Compiler.Syntax.SynByteStringKind: Int32 Tag
 FSharp.Compiler.Syntax.SynByteStringKind: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynByteStringKind: System.String ToString()
+FSharp.Compiler.Syntax.SynComponentInfo: Boolean IsSynComponentInfo
+FSharp.Compiler.Syntax.SynComponentInfo: Boolean get_IsSynComponentInfo()
 FSharp.Compiler.Syntax.SynComponentInfo: Boolean get_preferPostfix()
 FSharp.Compiler.Syntax.SynComponentInfo: Boolean preferPostfix
 FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Syntax.SynComponentInfo NewSynComponentInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Xml.PreXmlDoc, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
@@ -6349,6 +6425,8 @@ FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Text.Range Range(FSharp.Compile
 FSharp.Compiler.Syntax.SynConst: Int32 Tag
 FSharp.Compiler.Syntax.SynConst: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynConst: System.String ToString()
+FSharp.Compiler.Syntax.SynEnumCase: Boolean IsSynEnumCase
+FSharp.Compiler.Syntax.SynEnumCase: Boolean get_IsSynEnumCase()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynEnumCase NewSynEnumCase(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynIdent, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia)
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynExpr get_valueExpr()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynExpr valueExpr
@@ -6367,6 +6445,8 @@ FSharp.Compiler.Syntax.SynEnumCase: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynEnumCase: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] attributes
 FSharp.Compiler.Syntax.SynEnumCase: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_attributes()
 FSharp.Compiler.Syntax.SynEnumCase: System.String ToString()
+FSharp.Compiler.Syntax.SynExceptionDefn: Boolean IsSynExceptionDefn
+FSharp.Compiler.Syntax.SynExceptionDefn: Boolean get_IsSynExceptionDefn()
 FSharp.Compiler.Syntax.SynExceptionDefn: FSharp.Compiler.Syntax.SynExceptionDefn NewSynExceptionDefn(FSharp.Compiler.Syntax.SynExceptionDefnRepr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberDefn], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExceptionDefn: FSharp.Compiler.Syntax.SynExceptionDefnRepr exnRepr
 FSharp.Compiler.Syntax.SynExceptionDefn: FSharp.Compiler.Syntax.SynExceptionDefnRepr get_exnRepr()
@@ -6381,6 +6461,8 @@ FSharp.Compiler.Syntax.SynExceptionDefn: Microsoft.FSharp.Collections.FSharpList
 FSharp.Compiler.Syntax.SynExceptionDefn: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_withKeyword()
 FSharp.Compiler.Syntax.SynExceptionDefn: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] withKeyword
 FSharp.Compiler.Syntax.SynExceptionDefn: System.String ToString()
+FSharp.Compiler.Syntax.SynExceptionDefnRepr: Boolean IsSynExceptionDefnRepr
+FSharp.Compiler.Syntax.SynExceptionDefnRepr: Boolean get_IsSynExceptionDefnRepr()
 FSharp.Compiler.Syntax.SynExceptionDefnRepr: FSharp.Compiler.Syntax.SynExceptionDefnRepr NewSynExceptionDefnRepr(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynUnionCase, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExceptionDefnRepr: FSharp.Compiler.Syntax.SynUnionCase caseName
 FSharp.Compiler.Syntax.SynExceptionDefnRepr: FSharp.Compiler.Syntax.SynUnionCase get_caseName()
@@ -6399,6 +6481,8 @@ FSharp.Compiler.Syntax.SynExceptionDefnRepr: Microsoft.FSharp.Core.FSharpOption`
 FSharp.Compiler.Syntax.SynExceptionDefnRepr: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] get_longId()
 FSharp.Compiler.Syntax.SynExceptionDefnRepr: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] longId
 FSharp.Compiler.Syntax.SynExceptionDefnRepr: System.String ToString()
+FSharp.Compiler.Syntax.SynExceptionSig: Boolean IsSynExceptionSig
+FSharp.Compiler.Syntax.SynExceptionSig: Boolean get_IsSynExceptionSig()
 FSharp.Compiler.Syntax.SynExceptionSig: FSharp.Compiler.Syntax.SynExceptionDefnRepr exnRepr
 FSharp.Compiler.Syntax.SynExceptionSig: FSharp.Compiler.Syntax.SynExceptionDefnRepr get_exnRepr()
 FSharp.Compiler.Syntax.SynExceptionSig: FSharp.Compiler.Syntax.SynExceptionSig NewSynExceptionSig(FSharp.Compiler.Syntax.SynExceptionDefnRepr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig], FSharp.Compiler.Text.Range)
@@ -7333,6 +7417,8 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range get_RangeWithoutAnyEx
 FSharp.Compiler.Syntax.SynExpr: Int32 Tag
 FSharp.Compiler.Syntax.SynExpr: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynExpr: System.String ToString()
+FSharp.Compiler.Syntax.SynExprAndBang: Boolean IsSynExprAndBang
+FSharp.Compiler.Syntax.SynExprAndBang: Boolean get_IsSynExprAndBang()
 FSharp.Compiler.Syntax.SynExprAndBang: Boolean get_isFromSource()
 FSharp.Compiler.Syntax.SynExprAndBang: Boolean get_isUse()
 FSharp.Compiler.Syntax.SynExprAndBang: Boolean isFromSource
@@ -7351,6 +7437,8 @@ FSharp.Compiler.Syntax.SynExprAndBang: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExprAndBang: Int32 Tag
 FSharp.Compiler.Syntax.SynExprAndBang: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynExprAndBang: System.String ToString()
+FSharp.Compiler.Syntax.SynExprRecordField: Boolean IsSynExprRecordField
+FSharp.Compiler.Syntax.SynExprRecordField: Boolean get_IsSynExprRecordField()
 FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Syntax.SynExprRecordField NewSynExprRecordField(System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 Tag
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 get_Tag()
@@ -7363,6 +7451,8 @@ FSharp.Compiler.Syntax.SynExprRecordField: Microsoft.FSharp.Core.FSharpOption`1[
 FSharp.Compiler.Syntax.SynExprRecordField: System.String ToString()
 FSharp.Compiler.Syntax.SynExprRecordField: System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean] fieldName
 FSharp.Compiler.Syntax.SynExprRecordField: System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean] get_fieldName()
+FSharp.Compiler.Syntax.SynField: Boolean IsSynField
+FSharp.Compiler.Syntax.SynField: Boolean get_IsSynField()
 FSharp.Compiler.Syntax.SynField: Boolean get_isMutable()
 FSharp.Compiler.Syntax.SynField: Boolean get_isStatic()
 FSharp.Compiler.Syntax.SynField: Boolean isMutable
@@ -7387,6 +7477,8 @@ FSharp.Compiler.Syntax.SynField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Com
 FSharp.Compiler.Syntax.SynField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] accessibility
 FSharp.Compiler.Syntax.SynField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] get_accessibility()
 FSharp.Compiler.Syntax.SynField: System.String ToString()
+FSharp.Compiler.Syntax.SynIdent: Boolean IsSynIdent
+FSharp.Compiler.Syntax.SynIdent: Boolean get_IsSynIdent()
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.SynIdent NewSynIdent(FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia])
@@ -7395,6 +7487,8 @@ FSharp.Compiler.Syntax.SynIdent: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynIdent: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia] get_trivia()
 FSharp.Compiler.Syntax.SynIdent: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia] trivia
 FSharp.Compiler.Syntax.SynIdent: System.String ToString()
+FSharp.Compiler.Syntax.SynInterfaceImpl: Boolean IsSynInterfaceImpl
+FSharp.Compiler.Syntax.SynInterfaceImpl: Boolean get_IsSynInterfaceImpl()
 FSharp.Compiler.Syntax.SynInterfaceImpl: FSharp.Compiler.Syntax.SynInterfaceImpl NewSynInterfaceImpl(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberDefn], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynInterfaceImpl: FSharp.Compiler.Syntax.SynType get_interfaceTy()
 FSharp.Compiler.Syntax.SynInterfaceImpl: FSharp.Compiler.Syntax.SynType interfaceTy
@@ -7431,7 +7525,9 @@ FSharp.Compiler.Syntax.SynInterpolatedStringPart: FSharp.Compiler.Syntax.SynInte
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: Int32 Tag
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: System.String ToString()
+FSharp.Compiler.Syntax.SynLongIdent: Boolean IsSynLongIdent
 FSharp.Compiler.Syntax.SynLongIdent: Boolean ThereIsAnExtraDotAtTheEnd
+FSharp.Compiler.Syntax.SynLongIdent: Boolean get_IsSynLongIdent()
 FSharp.Compiler.Syntax.SynLongIdent: Boolean get_ThereIsAnExtraDotAtTheEnd()
 FSharp.Compiler.Syntax.SynLongIdent: FSharp.Compiler.Syntax.SynLongIdent NewSynLongIdent(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia]])
 FSharp.Compiler.Syntax.SynLongIdent: FSharp.Compiler.Text.Range Range
@@ -7457,6 +7553,8 @@ FSharp.Compiler.Syntax.SynLongIdent: Microsoft.FSharp.Collections.FSharpList`1[M
 FSharp.Compiler.Syntax.SynLongIdent: System.String ToString()
 FSharp.Compiler.Syntax.SynLongIdentHelpers: FSharp.Compiler.Syntax.SynLongIdent LongIdentWithDots(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.Syntax.SynLongIdentHelpers: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range]] |LongIdentWithDots|(FSharp.Compiler.Syntax.SynLongIdent)
+FSharp.Compiler.Syntax.SynMatchClause: Boolean IsSynMatchClause
+FSharp.Compiler.Syntax.SynMatchClause: Boolean get_IsSynMatchClause()
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.DebugPointAtTarget debugPoint
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.DebugPointAtTarget get_debugPoint()
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynExpr get_resultExpr()
@@ -7954,6 +8052,8 @@ FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynModuleDecl: Int32 Tag
 FSharp.Compiler.Syntax.SynModuleDecl: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynModuleDecl: System.String ToString()
+FSharp.Compiler.Syntax.SynModuleOrNamespace: Boolean IsSynModuleOrNamespace
+FSharp.Compiler.Syntax.SynModuleOrNamespace: Boolean get_IsSynModuleOrNamespace()
 FSharp.Compiler.Syntax.SynModuleOrNamespace: Boolean get_isRecursive()
 FSharp.Compiler.Syntax.SynModuleOrNamespace: Boolean isRecursive
 FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.Syntax.SynModuleOrNamespace NewSynModuleOrNamespace(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia)
@@ -8012,6 +8112,8 @@ FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: Int32 GetHashCode(System.Collec
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: Int32 Tag
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: System.String ToString()
+FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: Boolean IsSynModuleOrNamespaceSig
+FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: Boolean get_IsSynModuleOrNamespaceSig()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: Boolean get_isRecursive()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: Boolean isRecursive
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind get_kind()
@@ -8412,6 +8514,8 @@ FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst
 FSharp.Compiler.Syntax.SynRationalConst: Int32 Tag
 FSharp.Compiler.Syntax.SynRationalConst: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynRationalConst: System.String ToString()
+FSharp.Compiler.Syntax.SynReturnInfo: Boolean IsSynReturnInfo
+FSharp.Compiler.Syntax.SynReturnInfo: Boolean get_IsSynReturnInfo()
 FSharp.Compiler.Syntax.SynReturnInfo: FSharp.Compiler.Syntax.SynReturnInfo NewSynReturnInfo(System.Tuple`2[FSharp.Compiler.Syntax.SynType,FSharp.Compiler.Syntax.SynArgInfo], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynReturnInfo: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynReturnInfo: FSharp.Compiler.Text.Range get_Range()
@@ -8485,6 +8589,8 @@ FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: FSharp.Compiler.Syntax.Syn
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: System.String ToString()
+FSharp.Compiler.Syntax.SynSimplePats: Boolean IsSimplePats
+FSharp.Compiler.Syntax.SynSimplePats: Boolean get_IsSimplePats()
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewSimplePats(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range get_Range()
@@ -8575,6 +8681,8 @@ FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Text.Range get_Range
 FSharp.Compiler.Syntax.SynTupleTypeSegment: Int32 Tag
 FSharp.Compiler.Syntax.SynTupleTypeSegment: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTupleTypeSegment: System.String ToString()
+FSharp.Compiler.Syntax.SynTypar: Boolean IsSynTypar
+FSharp.Compiler.Syntax.SynTypar: Boolean get_IsSynTypar()
 FSharp.Compiler.Syntax.SynTypar: Boolean get_isCompGen()
 FSharp.Compiler.Syntax.SynTypar: Boolean isCompGen
 FSharp.Compiler.Syntax.SynTypar: FSharp.Compiler.Syntax.Ident get_ident()
@@ -8587,6 +8695,8 @@ FSharp.Compiler.Syntax.SynTypar: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynTypar: Int32 Tag
 FSharp.Compiler.Syntax.SynTypar: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTypar: System.String ToString()
+FSharp.Compiler.Syntax.SynTyparDecl: Boolean IsSynTyparDecl
+FSharp.Compiler.Syntax.SynTyparDecl: Boolean get_IsSynTyparDecl()
 FSharp.Compiler.Syntax.SynTyparDecl: FSharp.Compiler.Syntax.SynTypar get_typar()
 FSharp.Compiler.Syntax.SynTyparDecl: FSharp.Compiler.Syntax.SynTypar typar
 FSharp.Compiler.Syntax.SynTyparDecl: FSharp.Compiler.Syntax.SynTyparDecl NewSynTyparDecl(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynTypar, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.SyntaxTrivia.SynTyparDeclTrivia)
@@ -8746,6 +8856,8 @@ FSharp.Compiler.Syntax.SynType+StaticConstantNamed: FSharp.Compiler.Syntax.SynTy
 FSharp.Compiler.Syntax.SynType+StaticConstantNamed: FSharp.Compiler.Syntax.SynType value
 FSharp.Compiler.Syntax.SynType+StaticConstantNamed: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+StaticConstantNamed: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynType+StaticConstantNull: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynType+StaticConstantNull: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType+Tags: Int32 Anon
 FSharp.Compiler.Syntax.SynType+Tags: Int32 AnonRecd
 FSharp.Compiler.Syntax.SynType+Tags: Int32 App
@@ -8763,9 +8875,11 @@ FSharp.Compiler.Syntax.SynType+Tags: Int32 SignatureParameter
 FSharp.Compiler.Syntax.SynType+Tags: Int32 StaticConstant
 FSharp.Compiler.Syntax.SynType+Tags: Int32 StaticConstantExpr
 FSharp.Compiler.Syntax.SynType+Tags: Int32 StaticConstantNamed
+FSharp.Compiler.Syntax.SynType+Tags: Int32 StaticConstantNull
 FSharp.Compiler.Syntax.SynType+Tags: Int32 Tuple
 FSharp.Compiler.Syntax.SynType+Tags: Int32 Var
 FSharp.Compiler.Syntax.SynType+Tags: Int32 WithGlobalConstraints
+FSharp.Compiler.Syntax.SynType+Tags: Int32 WithNull
 FSharp.Compiler.Syntax.SynType+Tuple: Boolean get_isStruct()
 FSharp.Compiler.Syntax.SynType+Tuple: Boolean isStruct
 FSharp.Compiler.Syntax.SynType+Tuple: FSharp.Compiler.Text.Range get_range()
@@ -8782,6 +8896,12 @@ FSharp.Compiler.Syntax.SynType+WithGlobalConstraints: FSharp.Compiler.Text.Range
 FSharp.Compiler.Syntax.SynType+WithGlobalConstraints: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType+WithGlobalConstraints: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] constraints
 FSharp.Compiler.Syntax.SynType+WithGlobalConstraints: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] get_constraints()
+FSharp.Compiler.Syntax.SynType+WithNull: Boolean ambivalent
+FSharp.Compiler.Syntax.SynType+WithNull: Boolean get_ambivalent()
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Syntax.SynType get_innerType()
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Syntax.SynType innerType
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType: Boolean IsAnon
 FSharp.Compiler.Syntax.SynType: Boolean IsAnonRecd
 FSharp.Compiler.Syntax.SynType: Boolean IsApp
@@ -8799,9 +8919,11 @@ FSharp.Compiler.Syntax.SynType: Boolean IsSignatureParameter
 FSharp.Compiler.Syntax.SynType: Boolean IsStaticConstant
 FSharp.Compiler.Syntax.SynType: Boolean IsStaticConstantExpr
 FSharp.Compiler.Syntax.SynType: Boolean IsStaticConstantNamed
+FSharp.Compiler.Syntax.SynType: Boolean IsStaticConstantNull
 FSharp.Compiler.Syntax.SynType: Boolean IsTuple
 FSharp.Compiler.Syntax.SynType: Boolean IsVar
 FSharp.Compiler.Syntax.SynType: Boolean IsWithGlobalConstraints
+FSharp.Compiler.Syntax.SynType: Boolean IsWithNull
 FSharp.Compiler.Syntax.SynType: Boolean get_IsAnon()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsAnonRecd()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsApp()
@@ -8819,9 +8941,11 @@ FSharp.Compiler.Syntax.SynType: Boolean get_IsSignatureParameter()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsStaticConstant()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsStaticConstantExpr()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsStaticConstantNamed()
+FSharp.Compiler.Syntax.SynType: Boolean get_IsStaticConstantNull()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsTuple()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsVar()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsWithGlobalConstraints()
+FSharp.Compiler.Syntax.SynType: Boolean get_IsWithNull()
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewAnon(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewAnonRecd(Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Syntax.Ident,FSharp.Compiler.Syntax.SynType]], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewApp(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Boolean, FSharp.Compiler.Text.Range)
@@ -8839,9 +8963,11 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewSignatureParam
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstant(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantExpr(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantNamed(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantNull(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTupleTypeSegment], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewVar(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithGlobalConstraints(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithNull(FSharp.Compiler.Syntax.SynType, Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Anon
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+AnonRecd
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+App
@@ -8859,10 +8985,12 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+SignatureParamete
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+StaticConstant
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+StaticConstantExpr
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+StaticConstantNamed
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+StaticConstantNull
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Tags
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Tuple
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Var
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+WithGlobalConstraints
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+WithNull
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynType: Int32 Tag
@@ -8877,6 +9005,7 @@ FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsEquatable
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsReferenceType
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsUnmanaged
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsValueType
+FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparNotSupportsNull
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparSubtypeOfType
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparSupportsMember
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparSupportsNull
@@ -8922,6 +9051,10 @@ FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsValueType: FSharp.Compiler.
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsValueType: FSharp.Compiler.Syntax.SynTypar typar
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsValueType: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsValueType: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Syntax.SynTypar genericName
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Syntax.SynTypar get_genericName()
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSubtypeOfType: FSharp.Compiler.Syntax.SynTypar get_typar()
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSubtypeOfType: FSharp.Compiler.Syntax.SynTypar typar
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSubtypeOfType: FSharp.Compiler.Syntax.SynType get_typeName()
@@ -8947,6 +9080,7 @@ FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparIsEquatable
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparIsReferenceType
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparIsUnmanaged
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparIsValueType
+FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparNotSupportsNull
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparSubtypeOfType
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparSupportsMember
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparSupportsNull
@@ -8959,6 +9093,7 @@ FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparIsEquatable()
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparIsReferenceType()
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparIsUnmanaged()
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparIsValueType()
+FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparNotSupportsNull()
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparSubtypeOfType()
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparSupportsMember()
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparSupportsNull()
@@ -8971,6 +9106,7 @@ FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstrai
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparIsReferenceType(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparIsUnmanaged(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparIsValueType(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparNotSupportsNull(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparSubtypeOfType(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparSupportsMember(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynMemberSig, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparSupportsNull(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
@@ -8984,6 +9120,7 @@ FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstrai
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsReferenceType
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsUnmanaged
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsValueType
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSubtypeOfType
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSupportsMember
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSupportsNull
@@ -8992,6 +9129,8 @@ FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynTypeConstraint: Int32 Tag
 FSharp.Compiler.Syntax.SynTypeConstraint: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTypeConstraint: System.String ToString()
+FSharp.Compiler.Syntax.SynTypeDefn: Boolean IsSynTypeDefn
+FSharp.Compiler.Syntax.SynTypeDefn: Boolean get_IsSynTypeDefn()
 FSharp.Compiler.Syntax.SynTypeDefn: FSharp.Compiler.Syntax.SynComponentInfo get_typeInfo()
 FSharp.Compiler.Syntax.SynTypeDefn: FSharp.Compiler.Syntax.SynComponentInfo typeInfo
 FSharp.Compiler.Syntax.SynTypeDefn: FSharp.Compiler.Syntax.SynTypeDefn NewSynTypeDefn(FSharp.Compiler.Syntax.SynComponentInfo, FSharp.Compiler.Syntax.SynTypeDefnRepr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberDefn], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMemberDefn], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeDefnTrivia)
@@ -9108,6 +9247,8 @@ FSharp.Compiler.Syntax.SynTypeDefnRepr: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynTypeDefnRepr: Int32 Tag
 FSharp.Compiler.Syntax.SynTypeDefnRepr: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTypeDefnRepr: System.String ToString()
+FSharp.Compiler.Syntax.SynTypeDefnSig: Boolean IsSynTypeDefnSig
+FSharp.Compiler.Syntax.SynTypeDefnSig: Boolean get_IsSynTypeDefnSig()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynComponentInfo get_typeInfo()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynComponentInfo typeInfo
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSig NewSynTypeDefnSig(FSharp.Compiler.Syntax.SynComponentInfo, FSharp.Compiler.Syntax.SynTypeDefnSigRepr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia)
@@ -9249,6 +9390,8 @@ FSharp.Compiler.Syntax.SynTypeDefnSimpleRepr: FSharp.Compiler.Text.Range get_Ran
 FSharp.Compiler.Syntax.SynTypeDefnSimpleRepr: Int32 Tag
 FSharp.Compiler.Syntax.SynTypeDefnSimpleRepr: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTypeDefnSimpleRepr: System.String ToString()
+FSharp.Compiler.Syntax.SynUnionCase: Boolean IsSynUnionCase
+FSharp.Compiler.Syntax.SynUnionCase: Boolean get_IsSynUnionCase()
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.SynIdent get_ident()
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.SynIdent ident
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.SynUnionCase NewSynUnionCase(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynIdent, FSharp.Compiler.Syntax.SynUnionCaseKind, FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia)
@@ -9289,6 +9432,8 @@ FSharp.Compiler.Syntax.SynUnionCaseKind: FSharp.Compiler.Syntax.SynUnionCaseKind
 FSharp.Compiler.Syntax.SynUnionCaseKind: Int32 Tag
 FSharp.Compiler.Syntax.SynUnionCaseKind: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynUnionCaseKind: System.String ToString()
+FSharp.Compiler.Syntax.SynValData: Boolean IsSynValData
+FSharp.Compiler.Syntax.SynValData: Boolean get_IsSynValData()
 FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValData NewSynValData(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMemberFlags], FSharp.Compiler.Syntax.SynValInfo, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident])
 FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValInfo SynValInfo
 FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValInfo get_SynValInfo()
@@ -9301,6 +9446,8 @@ FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.C
 FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMemberFlags] get_memberFlags()
 FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMemberFlags] memberFlags
 FSharp.Compiler.Syntax.SynValData: System.String ToString()
+FSharp.Compiler.Syntax.SynValInfo: Boolean IsSynValInfo
+FSharp.Compiler.Syntax.SynValInfo: Boolean get_IsSynValInfo()
 FSharp.Compiler.Syntax.SynValInfo: FSharp.Compiler.Syntax.SynArgInfo get_returnInfo()
 FSharp.Compiler.Syntax.SynValInfo: FSharp.Compiler.Syntax.SynArgInfo returnInfo
 FSharp.Compiler.Syntax.SynValInfo: FSharp.Compiler.Syntax.SynValInfo NewSynValInfo(Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynArgInfo]], FSharp.Compiler.Syntax.SynArgInfo)
@@ -9313,6 +9460,8 @@ FSharp.Compiler.Syntax.SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Mic
 FSharp.Compiler.Syntax.SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[System.String] ArgNames
 FSharp.Compiler.Syntax.SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ArgNames()
 FSharp.Compiler.Syntax.SynValInfo: System.String ToString()
+FSharp.Compiler.Syntax.SynValSig: Boolean IsSynValSig
+FSharp.Compiler.Syntax.SynValSig: Boolean get_IsSynValSig()
 FSharp.Compiler.Syntax.SynValSig: Boolean get_isInline()
 FSharp.Compiler.Syntax.SynValSig: Boolean get_isMutable()
 FSharp.Compiler.Syntax.SynValSig: Boolean isInline
@@ -9347,7 +9496,9 @@ FSharp.Compiler.Syntax.SynValSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Co
 FSharp.Compiler.Syntax.SynValSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] get_synExpr()
 FSharp.Compiler.Syntax.SynValSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] synExpr
 FSharp.Compiler.Syntax.SynValSig: System.String ToString()
+FSharp.Compiler.Syntax.SynValTyparDecls: Boolean IsSynValTyparDecls
 FSharp.Compiler.Syntax.SynValTyparDecls: Boolean canInfer
+FSharp.Compiler.Syntax.SynValTyparDecls: Boolean get_IsSynValTyparDecls()
 FSharp.Compiler.Syntax.SynValTyparDecls: Boolean get_canInfer()
 FSharp.Compiler.Syntax.SynValTyparDecls: FSharp.Compiler.Syntax.SynValTyparDecls NewSynValTyparDecls(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls], Boolean)
 FSharp.Compiler.Syntax.SynValTyparDecls: Int32 Tag
@@ -11718,37 +11869,6 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Symbols.FSharpType: Boolean HasNullAnnotation
-FSharp.Compiler.Symbols.FSharpType: Boolean IsNullAmbivalent
-FSharp.Compiler.Symbols.FSharpType: Boolean get_HasNullAnnotation()
-FSharp.Compiler.Symbols.FSharpType: Boolean get_IsNullAmbivalent()
-FSharp.Compiler.Syntax.SynType+StaticConstantNull: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynType+StaticConstantNull: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynType+Tags: Int32 StaticConstantNull
-FSharp.Compiler.Syntax.SynType+Tags: Int32 WithNull
-FSharp.Compiler.Syntax.SynType+WithNull: Boolean ambivalent
-FSharp.Compiler.Syntax.SynType+WithNull: Boolean get_ambivalent()
-FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Syntax.SynType get_innerType()
-FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Syntax.SynType innerType
-FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynType: Boolean IsStaticConstantNull
-FSharp.Compiler.Syntax.SynType: Boolean IsWithNull
-FSharp.Compiler.Syntax.SynType: Boolean get_IsStaticConstantNull()
-FSharp.Compiler.Syntax.SynType: Boolean get_IsWithNull()
-FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantNull(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithNull(FSharp.Compiler.Syntax.SynType, Boolean, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+StaticConstantNull
-FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+WithNull
-FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparNotSupportsNull
-FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Syntax.SynTypar genericName
-FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Syntax.SynTypar get_genericName()
-FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparNotSupportsNull
-FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparNotSupportsNull()
-FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparNotSupportsNull(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()

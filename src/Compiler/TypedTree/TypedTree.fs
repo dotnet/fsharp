@@ -4210,7 +4210,7 @@ type RecdFieldRef =
 
     override x.ToString() = x.FieldName
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoComparison;NoEquality>]
 type Nullness = 
    | Known of NullnessInfo
    | Variable of NullnessVar
@@ -4228,6 +4228,7 @@ type Nullness =
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
 // Note, nullness variables are only created if the nullness checking feature is on
+[<NoComparison;NoEquality>]
 type NullnessVar() = 
     let mutable solution: Nullness option = None
 

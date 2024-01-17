@@ -10731,6 +10731,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         else
                             ILTypeDefKind.Class
                     | TFSharpClass -> ILTypeDefKind.Class
+
                     | TFSharpStruct -> ILTypeDefKind.ValueType
                     | TFSharpInterface -> ILTypeDefKind.Interface
                     | TFSharpEnum -> ILTypeDefKind.Enum
@@ -11414,19 +11415,24 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     // private static field for lists etc.
                     //
                     // Also discard the F#-compiler supplied implementation of the Empty, IsEmpty, Value and None properties.
+
                     let tdefDiscards =
                         Some(
                             (fun (md: ILMethodDef) ->
                                 (cuinfo.HasHelpers = SpecialFSharpListHelpers
                                  && (md.Name = "get_Empty" || md.Name = "Cons" || md.Name = "get_IsEmpty"))
                                 || (cuinfo.HasHelpers = SpecialFSharpOptionHelpers
-                                    && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))),
+                                    && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))
+                                || (cuinfo.HasHelpers = AllHelpers
+                                    && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))),
 
                             (fun (pd: ILPropertyDef) ->
                                 (cuinfo.HasHelpers = SpecialFSharpListHelpers
                                  && (pd.Name = "Empty" || pd.Name = "IsEmpty"))
                                 || (cuinfo.HasHelpers = SpecialFSharpOptionHelpers
-                                    && (pd.Name = "Value" || pd.Name = "None")))
+                                    && (pd.Name = "Value" || pd.Name = "None"))
+                                || (cuinfo.HasHelpers = AllHelpers
+                                    && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty))))
                         )
 
                     tdef2, tdefDiscards
