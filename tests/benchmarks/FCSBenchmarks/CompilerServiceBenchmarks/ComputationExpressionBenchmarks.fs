@@ -12,12 +12,17 @@ let FSharpCategory = "fsharp"
 [<BenchmarkCategory(FSharpCategory)>]
 type ComputationExpressionBenchmarks() =
 
-    let oneHundred_a_nesting_of_1 = File.ReadAllText(__SOURCE_DIRECTORY__ ++ "CE_100x_nesting_of_1.fs")
-    let oneHundred_a_nesting_of_5 = File.ReadAllText(__SOURCE_DIRECTORY__ ++ "CE_100x_nesting_of_5.fs")
-    let twoHundred_a_nesting_of_5 = File.ReadAllText(__SOURCE_DIRECTORY__ ++ "CE_200x_nesting_of_5.fs")
-    let oneHundred_a_nesting_of_10 = File.ReadAllText(__SOURCE_DIRECTORY__ ++ "CE_100x_nesting_of_10.fs")
-    let nesting1WithCustOps = File.ReadAllText(__SOURCE_DIRECTORY__ ++ "CE_with_CustOp_nesting1.fs")
-    let nesting5WithCustOps = File.ReadAllText(__SOURCE_DIRECTORY__ ++ "CE_with_CustOp_nesting5.fs")
+    let mutable sourceFileName = ""
+
+    [<Params("CE100xnest1.fs",
+             "CE100xnest5.fs",
+             // "CE100xnest10.fs", // enable if you have the spare time
+             "CE200xnest5.fs",
+             "CEwCO500xnest1.fs",
+             "CEwCO100xnest5.fs")>]
+    member public this.Source
+        with get () = File.ReadAllText(__SOURCE_DIRECTORY__ ++ sourceFileName)
+        and set f = sourceFileName <- f
 
     member val Benchmark = Unchecked.defaultof<_> with get, set
 
@@ -26,88 +31,23 @@ type ComputationExpressionBenchmarks() =
         this.Benchmark <- ProjectWorkflowBuilder(project, checker = checker).CreateBenchmarkBuilder()
         saveProject project false checker |> Async.RunSynchronously
 
-    member this.SetupWithSource (source) =
+    [<GlobalSetup(Targets = [| "CheckCE"; "CompileCE" |])>]
+    member this.SetupWithSource() =
         this.setup
             { SyntheticProject.Create() with
                 SourceFiles =
                     [
 
                         { sourceFile "File" [] with
-                            ExtraSource = source
+                            ExtraSource = this.Source
                         }
                     ]
                 OtherOptions = []
             }
-    
-    [<GlobalSetup(Target = "Check100xNestingOf1")>]
-    member this.Check100xNestingOf1_Setup() = this.SetupWithSource (oneHundred_a_nesting_of_1)
-    
-    [<GlobalSetup(Target = "Check100xNestingOf5")>]
-    member this.Check100xNestingOf5_Setup() = this.SetupWithSource (oneHundred_a_nesting_of_5)    
-    
-    [<GlobalSetup(Target = "Check200xNestingOf5")>]
-    member this.Check200xNestingOf5_Setup() = this.SetupWithSource (twoHundred_a_nesting_of_5)    
-    
-    // [<GlobalSetup(Target = "Check100xNestingOf10")>]
-    // member this.Check100xNestingOf10_Setup() = this.SetupWithSource (oneHundred_a_nesting_of_10)
-    
-    [<GlobalSetup(Target = "CheckNesting1WithCustOps")>]
-    member this.CheckNesting1WithCustOps_Setup() = this.SetupWithSource (nesting1WithCustOps)
-    
-    [<GlobalSetup(Target = "CheckNesting5WithCustOps")>]
-    member this.CheckNesting5WithCustOps_Setup() = this.SetupWithSource (nesting5WithCustOps)
-
-    [<GlobalSetup(Target = "Compile100xNestingOf1")>]
-    member this.Compile100xNestingOf1_Setup() = this.SetupWithSource (oneHundred_a_nesting_of_1)
-
-    [<GlobalSetup(Target = "Compile100xNestingOf5")>]
-    member this.Compile100xNestingOf5_Setup() = this.SetupWithSource (oneHundred_a_nesting_of_5)
-    
-    [<GlobalSetup(Target = "Compile200xNestingOf5")>]
-    member this.Compile200xNestingOf5_Setup() = this.SetupWithSource (oneHundred_a_nesting_of_5)
-    
-    // [<GlobalSetup(Target = "Compile100xNestingOf10")>]
-    // member this.Compile100xNestingOf10_Setup() = this.SetupWithSource (oneHundred_a_nesting_of_10)
-    
-    [<GlobalSetup(Target = "CompileNesting1WithCustOps")>]
-    member this.CompileNesting1WithCustOps_Setup() = this.SetupWithSource (nesting1WithCustOps)
-
-    [<GlobalSetup(Target = "CompileNesting5WithCustOps")>]
-    member this.CompileNesting5WithCustOps_Setup() = this.SetupWithSource (nesting5WithCustOps)
 
     [<Benchmark>]
-    member this.Check100xNestingOf1() = this.Benchmark { checkFile "File" expectOk }
-    
-    [<Benchmark>]
-    member this.Check100xNestingOf5() = this.Benchmark { checkFile "File" expectOk }
-    
-    [<Benchmark>]
-    member this.Check200xNestingOf5() = this.Benchmark { checkFile "File" expectOk }
-    
-    // [<Benchmark>]
-    // member this.Check100xNestingOf10() = this.Benchmark { checkFile "File" expectOk }
-    
-    [<Benchmark>]
-    member this.CheckNesting1WithCustOps() = this.Benchmark { checkFile "File" expectOk }    
-    
-    [<Benchmark>]
-    member this.CheckNesting5WithCustOps() = this.Benchmark { checkFile "File" expectOk }
-    
-    [<Benchmark>]
-    member this.Compile100xNestingOf1() = this.Benchmark { compileWithFSC }
-    
-    [<Benchmark>]
-    member this.Compile100xNestingOf5() = this.Benchmark { compileWithFSC }
+    member this.CheckCE() =
+        this.Benchmark { checkFile "File" expectOk }
 
     [<Benchmark>]
-    member this.Compile200xNestingOf5() = this.Benchmark { compileWithFSC }
-    
-    // [<Benchmark>] di
-    // member this.Compile100xNestingOf10() = this.Benchmark { compileWithFSC }
-    
-    [<Benchmark>]
-    member this.CompileNesting1WithCustOps() = this.Benchmark { checkFile "File" expectOk }
-    
-    [<Benchmark>]
-    member this.CompileNesting5WithCustOps() = this.Benchmark { checkFile "File" expectOk }
-    
+    member this.CompileCE() = this.Benchmark { compileWithFSC }
