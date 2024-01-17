@@ -846,7 +846,6 @@ type ProjectWorkflowBuilder
     let mutable latestProject = initialProject
     let mutable activity = None
     let mutable tracerProvider = None
-    let mutable cancellableToken = None
 
     let getSource f = f |> getSourceText latestProject :> ISourceText |> Some |> async.Return
 
@@ -895,8 +894,6 @@ type ProjectWorkflowBuilder
     member this.Checker = checker
 
     member this.Yield _ = async {
-        let! ct = Async.CancellationToken
-        cancellableToken <- Some (Cancellable.UsingToken ct)
         let! ctx = getInitialContext()
         tracerProvider <-
             Sdk.CreateTracerProviderBuilder()
@@ -925,13 +922,17 @@ type ProjectWorkflowBuilder
             tracerProvider |> Option.iter (fun x ->
                 x.ForceFlush() |> ignore
                 x.Dispose())
-            cancellableToken |> Option.iter (fun x -> x.Dispose())
 
     member this.Run(workflow: Async<WorkflowContext>) =
-        if autoStart then
-            this.Execute(workflow) |> async.Return
-        else
-            workflow
+        async {
+            let! ct = Async.CancellationToken
+            use _ = Cancellable.UsingToken ct
+
+            if autoStart then
+                return this.Execute(workflow)
+            else
+                return! workflow
+        }
 
     [<CustomOperation "withProject">]
     member this.WithProject(workflow: Async<WorkflowContext>, f) =
