@@ -110,6 +110,13 @@ module ExtendedData =
         member x.SignatureRange = sigArg.idRange
         member x.ImplementationRange = implArg.idRange
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    type TypeUsageErrorExtendedData(ty: TType, symbolEnv: SymbolEnv) =
+
+        interface IFSharpDiagnosticExtendedData
+
+        member x.Type = FSharpType(symbolEnv, ty)
+
 open ExtendedData
 
 type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int, numberPrefix: string, extendedData: IFSharpDiagnosticExtendedData option) =

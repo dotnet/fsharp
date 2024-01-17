@@ -673,6 +673,8 @@ exception internal IndeterminateType of range
 /// Used to report a warning condition for the use of upper-case identifiers in patterns
 exception internal UpperCaseIdentifierInPattern of range
 
+exception internal NoConstructorsAvailableForType of TType * DisplayEnv * range
+
 /// Generate a new reference to a record field with a fresh type instantiation
 val FreshenRecdFieldRef: NameResolver -> range -> RecdFieldRef -> RecdFieldInfo
 
