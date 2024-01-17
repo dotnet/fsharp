@@ -5596,7 +5596,7 @@ let SolveInternalUnknowns g (cenv: cenv) denvAtEnd moduleContents extraAttribs =
         if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
             ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp
 
-let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents =
+let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents fileName qualifiedNameOfFile =
     match rootSigOpt with 
     | None -> 
         // Deep copy the inferred type of the module 
@@ -5604,7 +5604,13 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
 
         (implFileTypePriorToSigCopied, moduleContents)
             
-    | Some sigFileType -> 
+    | Some sigFileType ->
+        use _ =
+            Activity.start "CheckDeclarations.CheckModuleSignature"
+                [|
+                    Activity.Tags.fileName, fileName
+                    Activity.Tags.qualifiedNameOfFile, qualifiedNameOfFile
+                |]
 
         // We want to show imperative type variables in any types in error messages at this late point 
         let denv = { denvAtEnd with showInferenceTyparAnnotations=true }
@@ -5730,7 +5736,7 @@ let CheckOneImplFile
         // Check the module matches the signature 
         let implFileTy, implFileContents =
           conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-            CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents)
+            CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents fileName qualNameOfFile.Text)
 
         do 
           conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
