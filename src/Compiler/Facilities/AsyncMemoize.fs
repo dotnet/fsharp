@@ -514,7 +514,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             with
             | New internalCt ->
                 return!
-                    start key computation internalCt (Some callerDiagnosticLogger) 
+                    start key computation internalCt (Some callerDiagnosticLogger)
                     |> NodeCode.AwaitTask
 
             | Existing job -> return! job |> NodeCode.AwaitTask
