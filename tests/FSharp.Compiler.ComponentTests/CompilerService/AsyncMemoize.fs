@@ -75,10 +75,10 @@ let ``We can cancel a job`` () =
             failwith "Should be canceled before it gets here"
         }
 
-        let eventLog = ResizeArray()
+        let eventLog = ConcurrentQueue()
         let memoize = AsyncMemoize<int, int, _>()
         memoize.OnEvent(fun (e, (_label, k, _version)) -> 
-            eventLog.Add (e, k)
+            eventLog.Enqueue (e, k)
             if e = Canceled then
                 jobCanceled.Set() |> ignore
             )
@@ -153,54 +153,6 @@ let ``Job is restarted if first requestor cancels`` () =
 
         let orderedLog = eventLog |> Seq.rev |> Seq.toList
         let expected = [ Started, key; Started, key; Finished, key ]
-
-        Assert.Equal<_ list>(expected, orderedLog)
-    }
-
-// [<Fact>] - if we decide to enable that
-let ``Job keeps running if the first requestor cancels`` () =
-    task {
-        let jobStarted = new ManualResetEvent(false)
-
-        let computation key = node {
-            jobStarted.Set() |> ignore
-
-            for _ in 1 .. 5 do
-                do! Async.Sleep 100 |> NodeCode.AwaitAsync
-
-            return key * 2
-        }
-
-        let eventLog = ConcurrentBag()
-        let memoize = AsyncMemoize<int, int, int>()
-        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Add (DateTime.Now.Ticks, (e, k)))
-
-        use cts1 = new CancellationTokenSource()
-        use cts2 = new CancellationTokenSource()
-        use cts3 = new CancellationTokenSource()
-
-        let key = 1
-
-        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
-        jobStarted.WaitOne() |> ignore
-
-        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
-        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
-
-        jobStarted.WaitOne() |> ignore
-
-        cts1.Cancel()
-
-        do! Task.Delay 100
-        cts3.Cancel()
-
-        let! result = _task2
-        Assert.Equal(2, result)
-
-        Assert.Equal(TaskStatus.Canceled, _task1.Status)
-
-        let orderedLog = eventLog |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
-        let expected = [ Started, key; Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)
     }
