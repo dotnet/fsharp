@@ -5122,7 +5122,7 @@ let accLocalTyconRepr opts b fvs =
     if Zset.contains b fvs.FreeLocalTyconReprs then fvs
     else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs }
 
-let accFreeExnRef _exnc fvs = fvs // Note: this exnc (TyconRef) should be collected the surround types, e.g. tinst of Expr.Op
+let inline accFreeExnRef _exnc fvs = fvs // Note: this exnc (TyconRef) should be collected the surround types, e.g. tinst of Expr.Op
 
 let rec accBindRhs opts (TBind(_, repr, _)) acc = accFreeInExpr opts repr acc
           
