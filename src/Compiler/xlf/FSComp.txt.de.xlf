@@ -6287,11 +6287,6 @@
         <target state="translated">Ungültiger Ausdruck "{0}".</target>
         <note />
       </trans-unit>
-      <trans-unit id="nrNoConstructorsAvailableForType">
-        <source>No constructors are available for the type '{0}'</source>
-        <target state="translated">Für den Typ "{0}" sind keine Konstruktoren verfügbar.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="nrUnionTypeNeedsQualifiedAccess">
         <source>The union type for union case '{0}' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('{1}') in the name you are using.</source>
         <target state="translated">Der Union-Typ für Union-Fall "{0}" wurde mit RequireQualifiedAccessAttribute definiert. Fügen Sie den Union-Typnamen ("{1}") in den verwendeten Namen ein.</target>

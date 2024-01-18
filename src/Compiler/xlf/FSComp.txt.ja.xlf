@@ -6287,11 +6287,6 @@
         <target state="translated">式 '{0}' は無効です</target>
         <note />
       </trans-unit>
-      <trans-unit id="nrNoConstructorsAvailableForType">
-        <source>No constructors are available for the type '{0}'</source>
-        <target state="translated">型 '{0}' に使用できるコンストラクターがありません</target>
-        <note />
-      </trans-unit>
       <trans-unit id="nrUnionTypeNeedsQualifiedAccess">
         <source>The union type for union case '{0}' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('{1}') in the name you are using.</source>
         <target state="translated">共用体ケース '{0}' の共用体型が RequireQualifiedAccessAttribute によって定義されました。使用中の名前に共用体型 ('{1}') の名前を含めてください。</target>

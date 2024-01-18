@@ -216,7 +216,6 @@ type Exception with
         // DO NOT CHANGE THESE NUMBERS
         | ErrorFromAddingTypeEquation _ -> 1
         | FunctionExpected _ -> 2
-        | NotAFunctionButIndexer _ -> 3217
         | NotAFunction _ -> 3
         | FieldNotMutable _ -> 5
         | Recursion _ -> 6
@@ -320,7 +319,6 @@ type Exception with
         | BadEventTransformation _ -> 91
         | HashLoadedScriptConsideredSource _ -> 92
         | UnresolvedConversionOperator _ -> 93
-        | ArgumentsInSigAndImplMismatch _ -> 3218
         // avoid 94-100 for safety
         | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
@@ -328,6 +326,9 @@ type Exception with
         | TypeProviders.ProvidedTypeResolution _ -> 103
 #endif
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
+        | NoConstructorsAvailableForType _ -> 1133
+        | NotAFunctionButIndexer _ -> 3217
+        | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
@@ -605,6 +606,7 @@ module OldStyleMessages =
     let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
     let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
     let ArgumentsInSigAndImplMismatchE () = Message("ArgumentsInSigAndImplMismatch", "%s%s")
+    let NoConstructorsAvailableForTypeE () = Message("NoConstructorsAvailableForType", "%s")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -1856,6 +1858,9 @@ type Exception with
 
         | ArgumentsInSigAndImplMismatch(sigArg, implArg) ->
             os.AppendString(ArgumentsInSigAndImplMismatchE().Format sigArg.idText implArg.idText)
+
+        | NoConstructorsAvailableForType(ty, denv, _) ->
+            os.AppendString(NoConstructorsAvailableForTypeE().Format(NicePrint.stringOfTy denv ty))
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)

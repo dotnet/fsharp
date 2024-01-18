@@ -6287,11 +6287,6 @@
         <target state="translated">表达式“{0}”无效</target>
         <note />
       </trans-unit>
-      <trans-unit id="nrNoConstructorsAvailableForType">
-        <source>No constructors are available for the type '{0}'</source>
-        <target state="translated">没有对类型“{0}”可用的构造函数</target>
-        <note />
-      </trans-unit>
       <trans-unit id="nrUnionTypeNeedsQualifiedAccess">
         <source>The union type for union case '{0}' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('{1}') in the name you are using.</source>
         <target state="translated">使用 RequireQualifiedAccessAttribute 定义联合用例“{0}”的联合类型。包括所使用的名称中联合类型 ('{1}') 的名称。</target>

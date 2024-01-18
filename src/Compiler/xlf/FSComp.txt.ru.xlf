@@ -6287,11 +6287,6 @@
         <target state="translated">Недопустимое выражение "{0}"</target>
         <note />
       </trans-unit>
-      <trans-unit id="nrNoConstructorsAvailableForType">
-        <source>No constructors are available for the type '{0}'</source>
-        <target state="translated">Недоступны конструкторы для типа "{0}"</target>
-        <note />
-      </trans-unit>
       <trans-unit id="nrUnionTypeNeedsQualifiedAccess">
         <source>The union type for union case '{0}' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('{1}') in the name you are using.</source>
         <target state="translated">Тип объединения для ветви объединения "{0}" определен с RequireQualifiedAccessAttribute. Включите имя типа объединения ("{1}") в используемое имя.</target>

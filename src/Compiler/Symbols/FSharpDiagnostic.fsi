@@ -46,14 +46,15 @@ module public ExtendedData =
 
     /// Contextually-relevant data to each particular diagnostic
     [<Interface; Experimental("This FCS API is experimental and subject to change.")>]
-    type public IFSharpDiagnosticExtendedData =
+    type IFSharpDiagnosticExtendedData =
         interface
         end
 
     /// Additional data for type-mismatch-like (usually with ErrorNumber = 1) diagnostics
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
-    type public TypeMismatchDiagnosticExtendedData =
+    type TypeMismatchDiagnosticExtendedData =
         interface IFSharpDiagnosticExtendedData
+
         /// Represents F# type expected in the current context
         member ExpectedType: FSharpType
         /// Represents F# type type actual in the current context
@@ -65,15 +66,17 @@ module public ExtendedData =
 
     /// Additional data for 'This expression is a function value, i.e. is missing arguments' diagnostic
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
-    type public ExpressionIsAFunctionExtendedData =
+    type ExpressionIsAFunctionExtendedData =
         interface IFSharpDiagnosticExtendedData
+
         /// Represents F# type of the expression
         member ActualType: FSharpType
 
     /// Additional data for diagnostics about a field whose declarations differ in signature and implementation
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
-    type public FieldNotContainedDiagnosticExtendedData =
+    type FieldNotContainedDiagnosticExtendedData =
         interface IFSharpDiagnosticExtendedData
+
         /// Represents F# field in signature file
         member SignatureField: FSharpField
         /// Represents F# field in implementation file
@@ -81,8 +84,9 @@ module public ExtendedData =
 
     /// Additional data for diagnostics about a value whose declarations differ in signature and implementation
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
-    type public ValueNotContainedDiagnosticExtendedData =
+    type ValueNotContainedDiagnosticExtendedData =
         interface IFSharpDiagnosticExtendedData
+
         /// Represents F# value in signature file
         member SignatureValue: FSharpMemberOrFunctionOrValue
         /// Represents F# value in implementation file
@@ -92,6 +96,7 @@ module public ExtendedData =
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
     type ArgumentsInSigAndImplMismatchExtendedData =
         interface IFSharpDiagnosticExtendedData
+
         /// Argument name in signature file
         member SignatureName: string
         /// Argument name in implementation file
@@ -100,6 +105,12 @@ module public ExtendedData =
         member SignatureRange: range
         /// Argument identifier range within implementation file
         member ImplementationRange: range
+
+    [<Class; Experimental("This FCS API is experimental and subject to change.")>]
+    type TypeUsageErrorExtendedData =
+        interface IFSharpDiagnosticExtendedData
+
+        member Type: FSharpType
 
 open ExtendedData
 

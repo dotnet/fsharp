@@ -2550,6 +2550,8 @@ let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified
 // Bind name used in "new Foo.Bar(...)" constructs
 //-------------------------------------------------------------------------
 
+exception NoConstructorsAvailableForType of TType * DisplayEnv * range
+
 let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m ad ty =
     let g = ncenv.g
     let amap = ncenv.amap
@@ -2570,7 +2572,7 @@ let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m a
                     [DefaultStructCtor(g, ty)]
                 else []
             if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g ty) && not (isAnyTupleTy g ty)) then
-                raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv ty), m))
+                raze (NoConstructorsAvailableForType(ty, edenv, m))
             else
                 let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)
                 let metadataTy = convertToTypeWithMetadataIfPossible g ty
