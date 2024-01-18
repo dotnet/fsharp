@@ -1091,7 +1091,8 @@ module SyntaxTraversal =
             (range0, ast) ||> List.fold (fun acc node -> unionRanges acc node.Range)
 
         ast
-        |> List.map (function
+        |> List.map (fun node ->
+            match node with
             | SyntaxNode.SynModuleOrNamespace moduleOrNamespace ->
                 dive moduleOrNamespace moduleOrNamespace.Range (traverseSynModuleOrNamespace [])
             | SyntaxNode.SynModuleOrNamespaceSig moduleOrNamespaceSig ->
@@ -1112,8 +1113,8 @@ module SyntaxTraversal =
 
     let traverseAll (visitor: SyntaxVisitorBase<'T>) (parseTree: ParsedInput) : unit =
         let pick _ _ _ diveResults =
-            let rec loop =
-                function
+            let rec loop diveResults =
+                match diveResults with
                 | [] -> None
                 | (_, project) :: rest ->
                     ignore (project ())
@@ -1143,8 +1144,8 @@ module SyntaxNode =
         let enumCase (SynEnumCase(attributes = attributes)) = attributes
         let typar (SynTyparDecl(attributes = attributes)) = attributes
 
-        let (|SynComponentInfo|) =
-            function
+        let (|SynComponentInfo|) componentInfo =
+            match componentInfo with
             | SynComponentInfo(attributes = attributes; typeParams = Some(SynTyparDecls.PrefixList(decls = All typar attributes')))
             | SynComponentInfo(attributes = attributes; typeParams = Some(SynTyparDecls.PostfixList(decls = All typar attributes')))
             | SynComponentInfo(
@@ -1152,8 +1153,8 @@ module SyntaxNode =
                 attributes @ attributes'
             | SynComponentInfo(attributes = attributes) -> attributes
 
-        let (|SynBinding|) =
-            function
+        let (|SynBinding|) binding =
+            match binding with
             | SynBinding(attributes = attributes; returnInfo = Some(SynBindingReturnInfo(attributes = attributes'))) ->
                 attributes @ attributes'
             | SynBinding(attributes = attributes) -> attributes
@@ -1278,8 +1279,8 @@ module ParsedInput =
             }
 
         let pickAll _ _ _ diveResults =
-            let rec loop =
-                function
+            let rec loop diveResults =
+                match diveResults with
                 | [] -> None
                 | (_, project) :: rest ->
                     ignore (project ())
@@ -1349,8 +1350,8 @@ module ParsedInput =
                         | SynModuleDecl.Types(types, _) ->
                             let path = SyntaxNode.SynModule synModuleDecl :: path
 
-                            let rec loop =
-                                function
+                            let rec loop types =
+                                match types with
                                 | [] -> defaultTraverse synModuleDecl
                                 | ty :: types ->
                                     match folder state path (SyntaxNode.SynTypeDefn ty) with
@@ -1413,8 +1414,8 @@ module ParsedInput =
                         | SynModuleSigDecl.Types(types, _) ->
                             let path = SyntaxNode.SynModuleSigDecl synModuleSigDecl :: path
 
-                            let rec loop =
-                                function
+                            let rec loop types =
+                                match types with
                                 | [] -> defaultTraverse synModuleSigDecl
                                 | ty :: types ->
                                     match folder state path (SyntaxNode.SynTypeDefnSig ty) with
@@ -1473,8 +1474,8 @@ module ParsedInput =
 
     let foldWhile folder state (parsedInput: ParsedInput) =
         let pickAll _ _ _ diveResults =
-            let rec loop =
-                function
+            let rec loop diveResults =
+                match diveResults with
                 | [] -> None
                 | (_, project) :: rest ->
                     ignore (project ())
