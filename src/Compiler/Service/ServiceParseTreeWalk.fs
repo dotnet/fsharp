@@ -49,8 +49,6 @@ type SyntaxNode =
 
 type SyntaxVisitorPath = SyntaxNode list
 
-type Ast = SyntaxNode list
-
 [<AbstractClass>]
 type SyntaxVisitorBase<'T>() =
     abstract VisitExpr:
@@ -229,6 +227,15 @@ type SyntaxVisitorBase<'T>() =
         ignore path
         defaultTraverse valSig
 
+[<AutoOpen>]
+module private ParsedInputExtensions =
+    type ParsedInput with
+
+        member parsedInput.Contents =
+            match parsedInput with
+            | ParsedInput.ImplFile file -> file.Contents |> List.map SyntaxNode.SynModuleOrNamespace
+            | ParsedInput.SigFile file -> file.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
+
 /// A range of utility functions to assist with traversing an AST
 module SyntaxTraversal =
     // treat ranges as though they are half-open: [,)
@@ -322,7 +329,7 @@ module SyntaxTraversal =
         (pick: pos -> range -> obj -> (range * (unit -> 'T option)) list -> 'T option)
         (pos: pos)
         (visitor: SyntaxVisitorBase<'T>)
-        (ast: Ast)
+        (ast: SyntaxNode list)
         : 'T option =
         let pick x = pick pos x
 
@@ -1114,12 +1121,7 @@ module SyntaxTraversal =
 
             loop diveResults
 
-        let contents =
-            match parseTree with
-            | ParsedInput.ImplFile implFile -> implFile.Contents |> List.map SyntaxNode.SynModuleOrNamespace
-            | ParsedInput.SigFile sigFile -> sigFile.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
-
-        ignore<'T option> (traverseUntil pick parseTree.Range.End visitor contents)
+        ignore<'T option> (traverseUntil pick parseTree.Range.End visitor parseTree.Contents)
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
@@ -1178,8 +1180,8 @@ module SyntaxNode =
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Ast =
-    let fold folder state (ast: Ast) =
+module ParsedInput =
+    let fold folder state (parsedInput: ParsedInput) =
         let mutable state = state
 
         let visitor =
@@ -1285,11 +1287,12 @@ module Ast =
 
             loop diveResults
 
+        let ast = parsedInput.Contents
         let m = (range0, ast) ||> List.fold (fun acc node -> unionRanges acc node.Range)
         ignore<unit option> (SyntaxTraversal.traverseUntil pickAll m.End visitor ast)
         state
 
-    let private foldWhileImpl pick pos folder state (ast: Ast) =
+    let private foldWhileImpl pick pos folder state (ast: SyntaxNode list) =
         let mutable state = state
 
         let visitor =
@@ -1468,7 +1471,7 @@ module Ast =
         ignore<unit option> (SyntaxTraversal.traverseUntil pick pos visitor ast)
         state
 
-    let foldWhile folder state (ast: Ast) =
+    let foldWhile folder state (parsedInput: ParsedInput) =
         let pickAll _ _ _ diveResults =
             let rec loop =
                 function
@@ -1479,10 +1482,11 @@ module Ast =
 
             loop diveResults
 
+        let ast = parsedInput.Contents
         let m = (range0, ast) ||> List.fold (fun acc node -> unionRanges acc node.Range)
         foldWhileImpl pickAll m.End folder state ast
 
-    let tryPick position chooser ast =
+    let tryPick chooser position (parsedInput: ParsedInput) =
         let visitor =
             { new SyntaxVisitorBase<'T>() with
                 member _.VisitExpr(path, _, defaultTraverse, expr) =
@@ -1558,34 +1562,25 @@ module Ast =
                     | _ -> None
             }
 
-        SyntaxTraversal.traverseUntil SyntaxTraversal.pick position visitor ast
+        SyntaxTraversal.traverseUntil SyntaxTraversal.pick position visitor parsedInput.Contents
 
-    let tryPickLast position chooser ast =
-        (None, ast)
+    let tryPickLast chooser position (parsedInput: ParsedInput) =
+        (None, parsedInput.Contents)
         ||> foldWhileImpl SyntaxTraversal.pick position (fun prev path node ->
             match chooser path node with
             | Some _ as next -> Some next
             | None -> Some prev)
 
-    let tryNode position ast =
+    let tryNode position (parsedInput: ParsedInput) =
         let Matching = Some
 
-        (None, ast)
+        (None, parsedInput.Contents)
         ||> foldWhileImpl SyntaxTraversal.pick position (fun _prev path node ->
             if rangeContainsPos node.Range position then
                 Some(Matching(node, path))
             else
                 None)
 
-    let exists position predicate ast =
-        tryPick position (fun path node -> if predicate path node then Some() else None) ast
+    let exists predicate position parsedInput =
+        tryPick (fun path node -> if predicate path node then Some() else None) position parsedInput
         |> Option.isSome
-
-[<AutoOpen>]
-module ParsedInputExtensions =
-    type ParsedInput with
-
-        member parsedInput.Contents =
-            match parsedInput with
-            | ParsedInput.ImplFile file -> file.Contents |> List.map SyntaxNode.SynModuleOrNamespace
-            | ParsedInput.SigFile file -> file.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig

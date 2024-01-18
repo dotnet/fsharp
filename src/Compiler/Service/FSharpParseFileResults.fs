@@ -114,8 +114,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             | _ -> Some workingRange
 
-        input.Contents
-        |> Ast.tryPick pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynBinding(SynBinding(valData = SynValData(memberFlags = None); expr = expr) as b) when
                 rangeContainsPos b.RangeOfBindingWithRhs pos
@@ -126,8 +126,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> None)
 
     member _.TryIdentOfPipelineContainingPosAndNumArgsApplied pos =
-        input.Contents
-        |> Ast.tryPick pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.App(
                 funcExpr = SynExpr.App(_, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ ident ])), _, _); argExpr = argExpr)) when
@@ -143,8 +143,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> None)
 
     member _.IsPosContainedInApplication pos =
-        input.Contents
-        |> Ast.exists pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.exists (fun _path node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.ComputationExpr _) | SynExpr.TypeApp(expr = SynExpr.ComputationExpr _)) ->
                 false
@@ -152,8 +152,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> false)
 
     member _.IsTypeName(range: range) =
-        input.Contents
-        |> Ast.exists range.Start (fun _path node ->
+        (range.Start, input)
+        ||> ParsedInput.exists (fun _path node ->
             match node with
             | SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = typeInfo)) -> typeInfo.Range = range
             | _ -> false)
@@ -215,14 +215,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | SynExpr.Paren _ -> Some PossibleBareArg
             | _ -> None
 
-        match input.Contents |> Ast.tryNode pos with
+        match input |> ParsedInput.tryNode pos with
         | Some(FuncIdent range) -> Some range
         | Some _ -> None
         | None ->
             // The cursor is outside any existing node's range,
             // so try to drill down into the nearest one.
-            input.Contents
-            |> Ast.tryPickLast pos (fun path node ->
+            (pos, input)
+            ||> ParsedInput.tryPickLast (fun path node ->
                 match node, path with
                 | FuncIdent range -> Some range
                 | _ -> None)
@@ -245,8 +245,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                           range) -> Some(range, actualParamListExpr, actualLambdaBodyExpr)
             | _ -> None
 
-        input.Contents
-        |> Ast.tryPick opGreaterEqualPos (fun _path node ->
+        (opGreaterEqualPos, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.Paren(expr = InfixAppOfOpEqualsGreater(range, lambdaArgs, lambdaBody)))
             | SyntaxNode.SynBinding(SynBinding(
@@ -255,15 +255,15 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> None)
 
     member _.TryRangeOfStringInterpolationContainingPos pos =
-        input.Contents
-        |> Ast.tryPick pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = range)) when rangeContainsPos range pos -> Some range
             | _ -> None)
 
     member _.TryRangeOfExprInYieldOrReturn pos =
-        input.Contents
-        |> Ast.tryPick pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.YieldOrReturn(expr = expr; range = range) | SynExpr.YieldOrReturnFrom(expr = expr; range = range)) when
                 rangeContainsPos range pos
@@ -272,15 +272,15 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> None)
 
     member _.TryRangeOfRecordExpressionContainingPos pos =
-        input.Contents
-        |> Ast.tryPick pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.Record(range = range)) when rangeContainsPos range pos -> Some range
             | _ -> None)
 
     member _.TryRangeOfRefCellDereferenceContainingPos expressionPos =
-        input.Contents
-        |> Ast.tryPick expressionPos (fun _path node ->
+        (expressionPos, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             let (|Ident|) (ident: Ident) = ident.idText
 
             match node with
@@ -291,8 +291,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> None)
 
     member _.TryRangeOfExpressionBeingDereferencedContainingPos expressionPos =
-        input.Contents
-        |> Ast.tryPick expressionPos (fun _path node ->
+        (expressionPos, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             let (|Ident|) (ident: Ident) = ident.idText
 
             match node with
@@ -306,8 +306,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     member _.TryRangeOfReturnTypeHint(symbolUseStart: pos, ?skipLambdas) =
         let skipLambdas = defaultArg skipLambdas true
 
-        input.Contents
-        |> Ast.tryPick symbolUseStart (fun _path node ->
+        (symbolUseStart, input)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynBinding(SynBinding(expr = SynExpr.Lambda _))
             | SyntaxNode.SynBinding(SynBinding(expr = SynExpr.DotLambda _)) when skipLambdas -> None
@@ -333,8 +333,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     member _.FindParameterLocations pos = ParameterLocations.Find(pos, input)
 
     member _.IsPositionContainedInACurriedParameter pos =
-        input.Contents
-        |> Ast.exists pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.exists (fun _path node ->
             match node with
             | SyntaxNode.SynBinding(SynBinding(valData = valData; range = range)) when rangeContainsPos range pos ->
                 valData.SynValInfo.CurriedArgInfos
@@ -347,8 +347,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> false)
 
     member _.IsTypeAnnotationGivenAtPosition pos =
-        input.Contents
-        |> Ast.exists pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.exists (fun _path node ->
             let rec (|Typed|_|) (pat: SynPat) =
                 if not (rangeContainsPos pat.Range pos) then
                     None
@@ -370,15 +370,15 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | _ -> false)
 
     member _.IsPositionWithinTypeDefinition pos =
-        input.Contents
-        |> Ast.exists pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.exists (fun _path node ->
             match node with
             | SyntaxNode.SynTypeDefn _ -> true
             | _ -> false)
 
     member _.IsBindingALambdaAtPosition pos =
-        input.Contents
-        |> Ast.exists pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.exists (fun _path node ->
             match node with
             | SyntaxNode.SynBinding(SynBinding(expr = SynExpr.Lambda _; range = range))
             | SyntaxNode.SynBinding(SynBinding(expr = SynExpr.DotLambda _; range = range)) -> Position.posEq range.Start pos
@@ -388,8 +388,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let isWithin left right middle =
             Position.posGt right left && Position.posLt middle right
 
-        input.Contents
-        |> Ast.exists pos (fun _path node ->
+        (pos, input)
+        ||> ParsedInput.exists (fun _path node ->
             match node with
             | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record _, range)))
             | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.TypeAbbrev _, range))) when

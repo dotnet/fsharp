@@ -1,4 +1,4 @@
-module Tests.Service.AstModuleTests
+module Tests.Service.ParsedInputModuleTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
@@ -10,12 +10,12 @@ let ``tryPick type test`` () =
     let source = "123 :? int"
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
-    parseTree.Contents
-    |> Ast.tryPick (mkPos 1 11) (fun _path node -> match node with SyntaxNode.SynType _ -> Some() | _ -> None)
+    (mkPos 1 11, parseTree)
+    ||> ParsedInput.tryPick (fun _path node -> match node with SyntaxNode.SynType _ -> Some() | _ -> None)
     |> Option.defaultWith (fun _ -> failwith "Did not visit type")
 
-    parseTree.Contents
-    |> Ast.tryPick (mkPos 1 3) (fun _path node -> match node with SyntaxNode.SynType _ -> Some() | _ -> None)
+    (mkPos 1 3, parseTree)
+    ||> ParsedInput.tryPick (fun _path node -> match node with SyntaxNode.SynType _ -> Some() | _ -> None)
     |> Option.iter (fun _ -> failwith "Should not visit type")
 
 [<Fact>]
@@ -24,8 +24,8 @@ let ``tryPick record definition test`` () =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let fields =
-        parseTree.Contents
-        |> Ast.tryPick pos0 (fun _path node ->
+        (pos0, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFields = fields), _))) -> Some fields
             | _ -> None)
@@ -40,8 +40,8 @@ let ``tryPick union definition test`` () =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let cases =
-        parseTree.Contents
-        |> Ast.tryPick pos0 (fun _path node ->
+        (pos0, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Union(unionCases = cases), _))) -> Some cases
             | _ -> None)
@@ -56,8 +56,8 @@ let ``tryPick enum definition test`` () =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let cases =
-        parseTree.Contents
-        |> Ast.tryPick pos0 (fun _path node ->
+        (pos0, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Enum(cases = cases), _))) -> Some cases
             | _ -> None)
@@ -72,8 +72,8 @@ let ``tryPick recursive let binding`` () =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let bindings =
-        parseTree.Contents
-        |> Ast.tryPick pos0 (fun _path node ->
+        (pos0, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.LetOrUse(isRecursive = false)) -> failwith "isRecursive should be true"
             | SyntaxNode.SynExpr(SynExpr.LetOrUse(isRecursive = true; bindings = bindings)) -> Some bindings
@@ -94,8 +94,8 @@ val y: int -> int
     let parseTree = parseSourceCode ("C:\\test.fsi", source)
 
     let ident =
-        parseTree.Contents
-        |> Ast.tryPick pos0 (fun _path node ->
+        (pos0, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynValSig(SynValSig(ident = SynIdent(ident = ident))) -> Some ident.idText
             | _ -> None)
@@ -116,8 +116,8 @@ module Y =
     let parseTree = parseSourceCode ("C:\\test.fsi", source)
 
     let ident =
-        parseTree.Contents
-        |> Ast.tryPick pos0 (fun _path node ->
+        (pos0, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynValSig(SynValSig(ident = SynIdent(ident = ident))) -> Some ident.idText
             | _ -> None)
@@ -142,8 +142,8 @@ type Y =
     let parseTree = parseSourceCode ("C:\\test.fsi", source)
 
     let ident =
-        parseTree.Contents
-        |> Ast.tryPick pos0 (fun _path node ->
+        (pos0, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynTypeDefnSig(SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFields = fields), _))) ->
                 fields
@@ -170,8 +170,8 @@ type Meh =
     let pos = mkPos 6 4
 
     let ident =
-        parseTree.Contents
-        |> Ast.tryPick pos (fun _path node ->
+        (pos, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynValSig(SynValSig(ident = SynIdent(ident = valIdent))) -> Some valIdent.idText
             | _ -> None)
@@ -193,8 +193,8 @@ module N =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
-        parseTree.Contents
-        |> Ast.tryPick (mkPos 6 28) (fun _path node ->
+        (mkPos 6 28, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
                 Some(longIdent |> List.map (fun ident -> ident.idText))
@@ -215,8 +215,8 @@ module N =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
-        parseTree.Contents
-        |> Ast.tryPick (mkPos 7 30) (fun _path node ->
+        (mkPos 7 30, parseTree)
+        ||> ParsedInput.tryPick (fun _path node ->
             match node with
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
                 Some(longIdent |> List.map (fun ident -> ident.idText))
@@ -237,8 +237,8 @@ module N =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
-        parseTree.Contents
-        |> Ast.tryPickLast (mkPos 6 28) (fun _path node ->
+        (mkPos 6 28, parseTree)
+        ||> ParsedInput.tryPickLast (fun _path node ->
             match node with
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
                 Some(longIdent |> List.map (fun ident -> ident.idText))
@@ -259,8 +259,8 @@ module N =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
-        parseTree.Contents
-        |> Ast.tryPickLast (mkPos 7 30) (fun _path node ->
+        (mkPos 7 30, parseTree)
+        ||> ParsedInput.tryPickLast (fun _path node ->
             match node with
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
                 Some(longIdent |> List.map (fun ident -> ident.idText))
@@ -283,8 +283,8 @@ module N =
     let mutable start = 0, 0
 
     let found =
-        parseTree.Contents
-        |> Ast.exists (mkPos 6 28) (fun _path node ->
+        (mkPos 6 28, parseTree)
+        ||> ParsedInput.exists (fun _path node ->
             match node with
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
                 start <- node.Range.StartLine, node.Range.StartColumn
@@ -309,8 +309,8 @@ module N =
     let mutable start = 0, 0
 
     let found =
-        parseTree.Contents
-        |> Ast.exists (mkPos 7 30) (fun _path node ->
+        (mkPos 7 30, parseTree)
+        ||> ParsedInput.exists (fun _path node ->
             match node with
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
                 start <- node.Range.StartLine, node.Range.StartColumn
@@ -333,8 +333,8 @@ module N =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let ``module`` =
-        parseTree.Contents
-        |> Ast.tryNode (mkPos 6 28)
+        parseTree
+        |> ParsedInput.tryNode (mkPos 6 28)
         |> Option.bind (fun (node, _path) ->
             match node with
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
@@ -355,7 +355,7 @@ module N =
 
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
-    let ``module`` = parseTree.Contents |> Ast.tryNode (mkPos 6 30)
+    let ``module`` = parseTree |> ParsedInput.tryNode (mkPos 6 30)
 
     Assert.Equal(None, ``module``)
 
@@ -376,8 +376,8 @@ module Q =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let modules =
-        ([], parseTree.Contents)
-        ||> Ast.fold (fun acc _path node ->
+        ([], parseTree)
+        ||> ParsedInput.fold (fun acc _path node ->
             match node with
             | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
@@ -405,8 +405,8 @@ module Q =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let modules =
-        ([], parseTree.Contents)
-        ||> Ast.foldWhile (fun acc _path node ->
+        ([], parseTree)
+        ||> ParsedInput.foldWhile (fun acc _path node ->
             match node with
             | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
             | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
@@ -434,8 +434,8 @@ module Q =
     let parseTree = parseSourceCode ("C:\\test.fs", source)
 
     let modules =
-        ([], parseTree.Contents)
-        ||> Ast.foldWhile (fun acc _path node ->
+        ([], parseTree)
+        ||> ParsedInput.foldWhile (fun acc _path node ->
             if posGt node.Range.Start (mkPos 7 0) then None
             else
                 match node with

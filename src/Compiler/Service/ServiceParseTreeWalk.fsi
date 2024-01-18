@@ -30,12 +30,6 @@ type SyntaxNode =
 /// the current node in a traversal of the untyped abstract syntax tree.
 type SyntaxVisitorPath = SyntaxNode list
 
-/// <summary>
-/// Represents a forest of sibling <see cref="T:FSharp.Compiler.SyntaxNode"/>s
-/// in the untyped abstract syntax tree (AST).
-/// </summary>
-type Ast = SyntaxNode list
-
 [<AbstractClass>]
 type SyntaxVisitorBase<'T> =
     new: unit -> SyntaxVisitorBase<'T>
@@ -229,29 +223,31 @@ module SyntaxNode =
 
 /// <summary>
 /// Holds operations for working with the
-/// untyped abstract syntax tree (<see cref="T:FSharp.Compiler.Syntax.Ast"/>).
+/// untyped abstract syntax tree (<see cref="T:FSharp.Compiler.Syntax.ParsedInput"/>).
 /// </summary>
-[<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Ast =
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ParsedInput =
     /// <summary>
     /// Applies the given predicate to each node of the AST and its context (path)
     /// down to a given position, returning true if a matching node is found, otherwise false.
     /// Traversal is short-circuited if no matching node is found through the given position.
     /// </summary>
-    /// <param name="position">The position in the input file down to which to apply the function.</param>
     /// <param name="predicate">The function to match each node against.</param>
-    /// <param name="ast">The AST to search.</param>
+    /// <param name="position">The position in the input file down to which to apply the function.</param>
+    /// <param name="parsedInput">The AST to search.</param>
     /// <returns>True if a matching node is found, or false if no matching node is found.</returns>
     /// <example>
     /// <code lang="fsharp">
     /// let range =
-    ///     parseResults.ParseTree.Contents |> Ast.tryPick pos (fun _path node ->
+    ///     (pos, parseResults.ParseTree) ||> ParsedInput.tryPick (fun _path node ->
     ///       match node with
     ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
     ///       | _ -> None)
     /// </code>
     /// </example>
-    val exists: position: pos -> predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) -> ast: Ast -> bool
+    val exists:
+        predicate: (SyntaxVisitorPath -> SyntaxNode -> bool) -> position: pos -> parsedInput: ParsedInput -> bool
 
     /// <summary>
     /// Applies a function to each node of the AST and its context (path),
@@ -259,12 +255,12 @@ module Ast =
     /// </summary>
     /// <param name="folder">The function to use to update the state given each node and its context.</param>
     /// <param name="state">The initial state.</param>
-    /// <param name="ast">The AST to fold over.</param>
+    /// <param name="parsedInput">The AST to fold over.</param>
     /// <returns>The final state.</returns>
     /// <example>
     /// <code lang="fsharp">
     /// let unnecessaryParentheses =
-    ///    (HashSet Range.comparer, parseResults.ParseTree.Contents) ||> Ast.fold (fun acc path node ->
+    ///    (HashSet Range.comparer, parseResults.ParseTree) ||> ParsedInput.fold (fun acc path node ->
     ///        match node with
     ///        | SyntaxNode.SynExpr (SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range)) when
     ///            not (SynExpr.shouldBeParenthesizedInContext getLineString path inner)
@@ -281,7 +277,11 @@ module Ast =
     ///        | _ -> acc)
     /// </code>
     /// </example>
-    val fold: folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State) -> state: 'State -> ast: Ast -> 'State
+    val fold:
+        folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State) ->
+        state: 'State ->
+        parsedInput: ParsedInput ->
+            'State
 
     /// <summary>
     /// Applies a function to each node of the AST and its context (path)
@@ -289,10 +289,13 @@ module Ast =
     /// </summary>
     /// <param name="folder">The function to use to update the state given each node and its context, or to stop traversal by returning <c>None</c>.</param>
     /// <param name="state">The initial state.</param>
-    /// <param name="ast">The AST to fold over.</param>
+    /// <param name="parsedInput">The AST to fold over.</param>
     /// <returns>The final state.</returns>
     val foldWhile:
-        folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State option) -> state: 'State -> ast: Ast -> 'State
+        folder: ('State -> SyntaxVisitorPath -> SyntaxNode -> 'State option) ->
+        state: 'State ->
+        parsedInput: ParsedInput ->
+            'State
 
     /// <summary>
     /// Dives to the deepest node that contains the given position,
@@ -300,9 +303,9 @@ module Ast =
     /// node contains the position.
     /// </summary>
     /// <param name="position">The position in the input file down to which to dive.</param>
-    /// <param name="ast">The AST to search.</param>
+    /// <param name="parsedInput">The AST to search.</param>
     /// <returns>The deepest node containing the given position, along with the path taken through the tree to find it.</returns>
-    val tryNode: position: pos -> ast: Ast -> (SyntaxNode * SyntaxVisitorPath) option
+    val tryNode: position: pos -> parsedInput: ParsedInput -> (SyntaxNode * SyntaxVisitorPath) option
 
     /// <summary>
     /// Applies the given function to each node of the AST and its context (path)
@@ -310,20 +313,24 @@ module Ast =
     /// for which the function returns <c>Some x</c> for some value <c>x</c>, otherwise <c>None</c>.
     /// Traversal is short-circuited if no matching node is found through the given position.
     /// </summary>
-    /// <param name="position">The position in the input file down to which to apply the function.</param>
     /// <param name="chooser">The function to apply to each node and its context to derive an optional value.</param>
-    /// <param name="ast">The AST to search.</param>
+    /// <param name="position">The position in the input file down to which to apply the function.</param>
+    /// <param name="parsedInput">The AST to search.</param>
     /// <returns>The first value for which the function returns <c>Some</c>, or <c>None</c> if no matching node is found.</returns>
     /// <example>
     /// <code lang="fsharp">
     /// let range =
-    ///     parseResults.ParseTree.Contents |> Ast.tryPick pos (fun _path node ->
+    ///     (pos, parseResults.ParseTree) ||> ParsedInput.tryPick (fun _path node ->
     ///       match node with
     ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
     ///       | _ -> None)
     /// </code>
     /// </example>
-    val tryPick: position: pos -> chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> ast: Ast -> 'T option
+    val tryPick:
+        chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) ->
+        position: pos ->
+        parsedInput: ParsedInput ->
+            'T option
 
     /// <summary>
     /// Applies the given function to each node of the AST and its context (path)
@@ -331,29 +338,21 @@ module Ast =
     /// for which the function returns <c>Some x</c> for some value <c>x</c>, otherwise <c>None</c>.
     /// Traversal is short-circuited if no matching node is found through the given position.
     /// </summary>
-    /// <param name="position">The position in the input file down to which to apply the function.</param>
     /// <param name="chooser">The function to apply to each node and its context to derive an optional value.</param>
-    /// <param name="ast">The AST to search.</param>
+    /// <param name="position">The position in the input file down to which to apply the function.</param>
+    /// <param name="parsedInput">The AST to search.</param>
     /// <returns>The last (deepest) value for which the function returns <c>Some</c>, or <c>None</c> if no matching node is found.</returns>
     /// <example>
     /// <code lang="fsharp">
     /// let range =
-    ///     parseResults.ParseTree.Contents |> Ast.tryPick pos (fun _path node ->
+    ///     (pos, parseResults.ParseTree) ||> ParsedInput.tryPick (fun _path node ->
     ///       match node with
     ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
     ///       | _ -> None)
     /// </code>
     /// </example>
-    val tryPickLast: position: pos -> chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) -> ast: Ast -> 'T option
-
-/// <summary>
-/// Holds extension methods for <see cref="T:FSharp.Compiler.Syntax.ParsedInput"/>.
-/// </summary>
-[<AutoOpen>]
-module ParsedInputExtensions =
-    type ParsedInput with
-
-        /// <summary>
-        /// Gets the parsed file's contents as forest of <see cref="T:FSharp.Compiler.Syntax.SyntaxNode"/>s.
-        /// </summary>
-        member Contents: Ast
+    val tryPickLast:
+        chooser: (SyntaxVisitorPath -> SyntaxNode -> 'T option) ->
+        position: pos ->
+        parsedInput: ParsedInput ->
+            'T option
