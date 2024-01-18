@@ -2062,7 +2062,12 @@ type internal TransparentCompiler
             }
 
         member this.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
-            this.ParseAndCheckFileInProject(fileName, projectSnapshot.ProjectSnapshot, userOpName)
+            node {
+                let! ct = NodeCode.CancellationToken
+                use _ = Cancellable.UsingToken(ct)
+
+                return! this.ParseAndCheckFileInProject(fileName, projectSnapshot.ProjectSnapshot, userOpName)
+            }
 
         member this.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             node {
