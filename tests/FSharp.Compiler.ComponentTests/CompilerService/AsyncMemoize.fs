@@ -84,8 +84,7 @@ let ``We can cancel a job`` () =
             )
 
         use cts1 = new CancellationTokenSource()
-        use cts2 = new CancellationTokenSource()
-        use cts3 = new CancellationTokenSource()
+
 
         let key = 1
 
@@ -94,23 +93,15 @@ let ``We can cancel a job`` () =
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
-        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts2.Token)
-        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts3.Token)
-
         cts1.Cancel()
-        cts2.Cancel()
-
-        waitFor jobStarted
-
-        cts3.Cancel()
 
         waitFor jobCanceled
 
-        Assert.Equal<(JobEvent * int) array>([| Started, key; Started, key; Canceled, key |], eventLog |> Seq.toArray )
+        Assert.Equal<(JobEvent * int) array>([| Started, key; Canceled, key |], eventLog |> Seq.toArray )
     }
 
 [<Fact>]
-let ``Job is restarted if first requestor cancels`` () =
+let ``Job is not cancelled if just one requestor cancels`` () =
     task {
         let jobStarted = new ManualResetEvent(false)
 
@@ -141,9 +132,6 @@ let ``Job is restarted if first requestor cancels`` () =
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
         cts1.Cancel()
-
-        waitFor jobStarted
-
         cts3.Cancel()
 
         jobCanComplete.Set() |> ignore
@@ -152,13 +140,13 @@ let ``Job is restarted if first requestor cancels`` () =
         Assert.Equal(2, result)
 
         let orderedLog = eventLog |> Seq.rev |> Seq.toList
-        let expected = [ Started, key; Started, key; Finished, key ]
+        let expected = [ Started, key; Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)
     }
 
 [<Fact>]
-let ``Job is restarted if first requestor cancels but keeps running if second requestor cancels`` () =
+let ``Job is not cancelled while there are requestors`` () =
     task {
         let jobStarted = new ManualResetEvent(false)
 
@@ -190,8 +178,6 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         cts1.Cancel()
 
-        jobStarted.WaitOne() |> ignore
-
         cts2.Cancel()
 
         jobCanComplete.Set() |> ignore
@@ -200,7 +186,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
         Assert.Equal(2, result)
 
         let orderedLog = eventLog |> Seq.rev |> Seq.toList
-        let expected = [ Started, key; Started, key; Finished, key ]
+        let expected = [ Started, key; Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)
     }

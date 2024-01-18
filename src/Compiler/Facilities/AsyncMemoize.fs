@@ -256,10 +256,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     let rec post msg = processStateUpdate msg |> ignore
 
-    // TODO: Should unify starting and restarting
-    and start key computation ct loggerOpt =
+    and start key computation ct logger =
         task {
-            let cachingLogger = new CachingDiagnosticsLogger(loggerOpt)
+            let cachingLogger = new CachingDiagnosticsLogger(Some logger)
 
             try
                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -277,28 +276,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             | ex ->
                 post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
                 return raise ex
-        }
-
-    and restart key computation ct loggerOpt =
-        task {
-            let cachingLogger = new CachingDiagnosticsLogger(loggerOpt)
-
-            try
-                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
-                log (Started, key)
-
-                Interlocked.Increment &restarted |> ignore
-                System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-
-                try
-                    let! result = compute computation ct
-                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                finally
-                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
-            with
-            | TaskCancelled _ -> ()
-            | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
         }
 
     and cancel key (cts: CancellationTokenSource) (tcs: TaskCompletionSource<_>) =
@@ -322,7 +299,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
             match action, cached with
 
-            | OriginatorCanceled, Some(Running(tcs, cts, computation, _, _)) ->
+            | OriginatorCanceled, Some(Running(tcs, cts, _, _, _)) ->
 
                 Interlocked.Increment &cancel_original_processed |> ignore
 
@@ -330,9 +307,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                 if requestCounts[key] < 1 then
                     cancel key cts tcs
-                else
-                    // We need to restart the computation
-                    restart key computation cts.Token None |> ignore
 
             | CancelRequest, Some(Running(tcs, cts, _c, _, _)) ->
 
@@ -482,21 +456,18 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 Version = key.GetVersion()
             }
 
+        let getOrCompute ct =
+            task {
+                let callerDiagnosticLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+
+                match! processRequest (key, GetOrCompute(computation, ct)) callerDiagnosticLogger with
+                | New internalCt -> return! start key computation internalCt callerDiagnosticLogger
+                | Existing job -> return! job
+            }
+
         node {
             let! ct = NodeCode.CancellationToken
-
-            let callerDiagnosticLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-
-            match!
-                processRequest (key, GetOrCompute(computation, ct)) callerDiagnosticLogger
-                |> NodeCode.AwaitTask
-            with
-            | New internalCt ->
-                return!
-                    start key computation internalCt (Some callerDiagnosticLogger)
-                    |> NodeCode.AwaitTask
-
-            | Existing job -> return! job |> NodeCode.AwaitTask
+            return! getOrCompute ct |> Async.AwaitTask |> NodeCode.AwaitAsync
         }
 
     member _.Clear() = cache.Clear()
