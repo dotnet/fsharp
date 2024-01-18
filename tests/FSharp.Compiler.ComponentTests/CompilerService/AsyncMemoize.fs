@@ -191,6 +191,51 @@ let ``Job is not cancelled while there are requestors`` () =
         Assert.Equal<_ list>(expected, orderedLog)
     }
 
+[<Fact>]
+let ``Job is cancelled when all requestors cancel`` () =
+    task {
+        let jobStarted = new ManualResetEvent(false)
+
+        let jobCanComplete = new ManualResetEvent(false)
+
+        let computation key = node {
+                jobStarted.Set() |> ignore
+                waitFor jobCanComplete
+                return key * 2
+        }
+
+        let eventLog = ConcurrentStack()
+        let memoize = AsyncMemoize<int, int, _>()
+        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Push (e, k))
+
+        use cts1 = new CancellationTokenSource()
+        use cts2 = new CancellationTokenSource()
+        use cts3 = new CancellationTokenSource()
+
+        let key = 1
+
+        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
+
+        jobStarted.WaitOne() |> ignore
+        jobStarted.Reset() |> ignore
+
+        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
+        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
+
+        cts1.Cancel()
+        cts2.Cancel()
+        cts3.Cancel()
+
+        jobCanComplete.Set() |> ignore
+
+        let! _ = Assert.ThrowsAsync<TaskCanceledException>(fun () -> _task3)
+
+        let orderedLog = eventLog |> Seq.rev |> Seq.toList
+        let expected = [ Started, key; Canceled, key ]
+
+        Assert.Equal<_ list>(expected, orderedLog)
+    }
+
 
 type ExpectedException() =
     inherit Exception()
