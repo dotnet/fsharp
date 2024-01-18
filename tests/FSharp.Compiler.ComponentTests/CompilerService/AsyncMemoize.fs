@@ -23,7 +23,9 @@ let rec internal spinFor (duration: TimeSpan) =
     node {
         let sw = Stopwatch.StartNew()
         do! Async.Sleep 10 |> NodeCode.AwaitAsync
-        return! spinFor (duration - sw.Elapsed)
+        let remaining = duration - sw.Elapsed
+        if remaining > TimeSpan.Zero then
+            return! spinFor remaining
     }
 
 
@@ -339,11 +341,21 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
         let mutable started = 0
         let mutable finished = 0
 
-        let work () = node {
+        let job1started = new ManualResetEvent(false)
+        let job1finished = new ManualResetEvent(false)
+
+        let jobCanContinue = new ManualResetEvent(false)
+
+        let job2started = new ManualResetEvent(false)
+        let job2finished = new ManualResetEvent(false)
+
+        let work onStart onFinish = node {
             Interlocked.Increment &started |> ignore
-            for _ in 1..10 do
-                do! Async.Sleep 10 |> NodeCode.AwaitAsync
+            onStart() |> ignore
+            waitFor jobCanContinue
+            do! spinFor (TimeSpan.FromMilliseconds 100)
             Interlocked.Increment &finished |> ignore
+            onFinish() |> ignore
         }
 
         let key1 =
@@ -352,9 +364,9 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                   member _.GetVersion() = 1
                   member _.GetLabel() = "key1" }
 
-        cache.Get(key1, work()) |> Async.AwaitNodeCode |> Async.Start
+        cache.Get(key1, work job1started.Set job1finished.Set) |> Async.AwaitNodeCode |> Async.Start
 
-        do! Task.Delay 50
+        waitFor job1started
 
         let key2 =
             { new ICacheKey<_, _> with
@@ -362,9 +374,16 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                   member _.GetVersion() = key1.GetVersion() + 1
                   member _.GetLabel() = "key2" }
 
-        cache.Get(key2, work()) |> Async.AwaitNodeCode |> Async.Start
+        cache.Get(key2, work job2started.Set job2finished.Set ) |> Async.AwaitNodeCode |> Async.Start
 
-        do! Task.Delay 500
+        waitFor job2started
+
+        jobCanContinue.Set() |> ignore
+
+        waitFor job2finished
+        
+        if not cancelDuplicate then
+            waitFor job1finished
 
         Assert.Equal((2, expectFinished), (started, finished))
     }
