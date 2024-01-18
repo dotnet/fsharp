@@ -800,4 +800,34 @@ printfn "Hello"
 """
                     Set.empty
             ]
+        scenario
+            "parentheses around module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof ((Foo)) -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+            
+        scenario
+            "parentheses around module name in nameof expression"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+let _ = nameof ((Foo))
+"""
+                    (set [| 0 |])
+            ]
     ]
