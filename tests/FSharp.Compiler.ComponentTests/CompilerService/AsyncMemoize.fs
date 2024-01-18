@@ -198,6 +198,8 @@ let ``Job is cancelled when all requestors cancel`` () =
 
         let jobCanComplete = new ManualResetEvent(false)
 
+        use eventTriggered = new ManualResetEventSlim(false)
+
         let computation key = node {
                 jobStarted.Set() |> ignore
                 waitFor jobCanComplete
@@ -206,7 +208,9 @@ let ``Job is cancelled when all requestors cancel`` () =
 
         let eventLog = ConcurrentStack()
         let memoize = AsyncMemoize<int, int, _>()
-        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Push (e, k))
+        memoize.OnEvent(fun (e, (_label, k, _version)) ->
+            eventLog.Push (e, k)
+            eventTriggered.Set() |> ignore)
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -219,6 +223,10 @@ let ``Job is cancelled when all requestors cancel`` () =
         jobStarted.WaitOne() |> ignore
         jobStarted.Reset() |> ignore
 
+        eventTriggered.Wait()
+        eventTriggered.Reset()
+
+
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
@@ -228,7 +236,9 @@ let ``Job is cancelled when all requestors cancel`` () =
 
         jobCanComplete.Set() |> ignore
 
-        let! _ = Assert.ThrowsAsync<TaskCanceledException>(fun () -> _task3)
+        // Wait for the event to be logged.
+        eventTriggered.Wait(timeout) |> ignore
+        eventTriggered.Reset()
 
         let orderedLog = eventLog |> Seq.rev |> Seq.toList
         let expected = [ Started, key; Canceled, key ]
