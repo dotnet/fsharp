@@ -108,8 +108,8 @@ module Utilities =
         let outputLines = StringBuilder()
         let errorLines = StringBuilder()
 
-        do redirector.OutputProduced.Add (fun line -> outputLines.AppendLine line |>ignore)
-        do redirector.ErrorProduced.Add(fun line -> errorLines.AppendLine line |>ignore)
+        do redirector.OutputProduced.Add (fun line -> lock outputLines <| fun () -> outputLines.AppendLine line |> ignore)
+        do redirector.ErrorProduced.Add(fun line -> lock errorLines <| fun () -> errorLines.AppendLine line |> ignore)
 
         member _.Output () = outputLines.ToString()
 
