@@ -17,7 +17,9 @@ F# LSP support design proposal. To be expanded as we learn more / settle on thin
       - [Example sequence diagram](#example-sequence-diagram)
       - [Concurrency and cancellation](#concurrency-and-cancellation)
       - [Request tracking](#request-tracking)
+      - [Configuration updates](#configuration-updates)
       - [Extensibility](#extensibility)
+      - [Release process](#release-process)
     - [NewVsix](#newvsix)
     - [FCS](#fcs)
   - [LSP library](#lsp-library)
@@ -28,6 +30,7 @@ F# LSP support design proposal. To be expanded as we learn more / settle on thin
   - [Performance](#performance)
   - [Analyzers \& Refactoring support](#analyzers--refactoring-support)
   - [Mixed F# / C# solutions](#mixed-f--c-solutions)
+  - [Multiple workspace support](#multiple-workspace-support)
   - [Action plan](#action-plan)
     - [Phase 0](#phase-0)
     - [Phase 1](#phase-1)
@@ -46,7 +49,7 @@ F# LSP support design proposal. To be expanded as we learn more / settle on thin
   - Support for code fixes and refactoring
   - Support for mixed F# / C# solutions (being able to delegate to C# LSP server)
   - Good performance
-  - Support for a single solution/workspace per instance
+  - Support for multiple workspaces
   - Support for LSIF
 - Visual Studio extension that will use the LSP server
 
@@ -97,7 +100,7 @@ style ProjectQuery stroke-dasharray: 2 4
 | Component | Description | Release Process |
 | --- | --- | --- |
 | FCS | F# Compiler Service | Nuget |
-| **FsLSP** | The F# LSP library. This can be used to create an LSP server.  | Nuget? |
+| **FsLSP** | The F# LSP library. This can be used to create an LSP server.  | Nuget |
 | - **FsLSPServer** | The F# LSP server. An executable that can be started and will process LSP calls. Thin wrapper around FsLSP. | with **FsLSP** |
 |  - **Workspace State Management** | A system for keeping a "current snapshot" of projects the user is working with |  |
 |  - **Project Model** | A model for a project system we will use since we can't be tied to any particular one | |
@@ -207,11 +210,23 @@ FsLSP-->>-Client: DocumentDiagnosticReport
 
 This will hopefully be handled by the LSP library. Although we might need to be able to keep track of requests in progress for the purpose of cancellation.
 
+
+#### Configuration updates
+
+We should be able to apply configuration changes that require re-creating the FCS checker. We should be able to keep the caches since the results shouldn't depend on checker settings (rather only the input Project Snapshots).
+
+
 #### Extensibility
 
 The FsLSP library should be extensible by adding custom endpoints or overriding existing ones.
 
 It should also allow to hook into background processes or events to customize behavior.
+
+The code for extending the behavior should look the same as the code for implementing the core functionality. That way it's easy to test out and then potentially contribute it directly to the library.
+
+#### Release process
+
+We should use a similar release process as we have now for FCS. Potentially also provide a pre-release package with the latest version from `main`.
 
 ### NewVsix
 
@@ -290,6 +305,11 @@ We need to figure out how to talk to C# LSP server for:
 - Go to definition
 - Find references / rename
 - (Make sure these work both ways)
+
+
+## Multiple workspace support
+
+We should be able to use a single instance of LSP server even for multiple workspaces. We can keep a separate instance of `WorkspaceStateManagement` for each workspace but send language requests to a single instance of FCS checker. This way it's possible to reuse some results if the workspaces share the same projects (with the same options).
 
 ## Action plan
 
