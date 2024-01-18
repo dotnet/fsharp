@@ -234,11 +234,11 @@ let ``Job is cancelled when all requestors cancel`` () =
         cts2.Cancel()
         cts3.Cancel()
 
-        jobCanComplete.Set() |> ignore
-
         // Wait for the event to be logged.
         eventTriggered.Wait(timeout) |> ignore
         eventTriggered.Reset()
+
+        jobCanComplete.Set() |> ignore
 
         let orderedLog = eventLog |> Seq.rev |> Seq.toList
         let expected = [ Started, key; Canceled, key ]
