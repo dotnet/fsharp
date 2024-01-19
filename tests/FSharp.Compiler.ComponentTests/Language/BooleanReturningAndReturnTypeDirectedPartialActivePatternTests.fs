@@ -13,12 +13,14 @@ let runCode = evalInSharedSession fsiSession
 [<Fact>]
 let ``Partial struct active pattern returns ValueOption`1 without [<return:Struct>]`` () =
     FSharp "let (|P1|_|) x = ValueNone"
+    |> withLangVersionPreview
     |> typecheck
     |> shouldSucceed
 
 [<Fact>]
 let ``Partial struct active pattern returns bool`` () =
     FSharp "let (|P1|_|) x = false"
+    |> withLangVersionPreview
     |> typecheck
     |> shouldSucceed
     
@@ -28,6 +30,7 @@ let ``Single case active pattern returning bool should success`` () =
 let (|IsA|) x = x = "A"
 let (IsA r) = "A"
     """
+    |> withLangVersionPreview
     |> typecheck
     |> shouldSucceed
     
@@ -51,6 +54,7 @@ match "x" with
 | EqualTo "x" -> ()
 | _ -> fail "with argument"
         """
+    |> withLangVersionPreview
     |> runCode
     |> shouldSucceed
 
@@ -85,6 +89,7 @@ match "A" with
 | IsA "to match return value" -> "Matched"
 | _ -> "not Matched"
 """
+    |> withLangVersionPreview
     |> typecheck
     |> shouldSucceed
     |> withDiagnostics [
