@@ -44,6 +44,7 @@ module internal PervasiveAutoOpens =
     /// Returns true if the argument is non-null.
     val inline isNotNull: x: 'T -> bool when 'T: null
 
+#if NO_CHECKNULLS
     /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as
     /// replacement for 'string?' to align with FS-1060.
     type 'T MaybeNull when 'T: null and 'T: not struct = 'T
@@ -59,6 +60,11 @@ module internal PervasiveAutoOpens =
 
     /// Checks the argument is non-null
     val inline nullArgCheck: paramName: string -> x: 'T MaybeNull -> 'T
+#else
+    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
+    /// replacement for 'string?'
+    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
+#endif
 
     val inline (===): x: 'a -> y: 'a -> bool when 'a: not struct
 
@@ -239,6 +245,8 @@ module internal List =
     val isSingleton: xs: 'T list -> bool
 
     val prependIfSome: x: 'a option -> l: 'a list -> 'a list
+
+    val vMapFold<'T,'State,'Result> : mapping:('State -> 'T -> struct('Result * 'State)) -> state:'State -> list:'T list -> struct('Result list * 'State)
 
 module internal ResizeArray =
 

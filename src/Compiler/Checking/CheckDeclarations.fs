@@ -3349,7 +3349,6 @@ module EstablishTypeDefinitionCores =
                     tycon.TypeContents.tcaug_super |> Option.iter (fun ty -> if not (TypeNullIsExtraValue g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
                     tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (fun ty -> if not (TypeNullIsExtraValue g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
                 
-                
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
                 match structLayoutAttr with
@@ -4759,14 +4758,16 @@ module TcDeclarations =
         MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterVals
 
         // Generate the union augmentation values for all tycons.
-        (envMutRec, mutRecDefnsAfterCore) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls ((tyconCore, _, _), tyconOpt, _, _, _) -> 
-            let (MutRecDefnsPhase1DataForTycon (isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = tyconCore
-            match tyconOpt with 
-            | Some tycon when isAtOriginalTyconDefn -> 
-                if tycon.IsUnionTycon && AddAugmentationDeclarations.ShouldAugmentUnion cenv.g tycon then
-                    let vspecs = AddAugmentationDeclarations.AddUnionAugmentationValues cenv envForDecls tycon
-                    ignore vspecs
-            | _ -> ())
+        // TODO nullness :: this is the handling of DU .Is* properties WITHIN signature files.
+        // Watch https://github.com/fsharp/fslang-design/discussions
+        //(envMutRec, mutRecDefnsAfterCore) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls ((tyconCore, _, _), tyconOpt, _, _, _) -> 
+        //    let (MutRecDefnsPhase1DataForTycon (isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = tyconCore
+        //    match tyconOpt with 
+        //    | Some tycon when isAtOriginalTyconDefn -> 
+        //        if tycon.IsUnionTycon && AddAugmentationDeclarations.ShouldAugmentUnion cenv.g tycon then
+        //            let vspecs = AddAugmentationDeclarations.AddUnionAugmentationValues cenv envForDecls tycon
+        //            ignore vspecs
+        //    | _ -> ())
 
         envMutRec
 

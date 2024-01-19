@@ -49,6 +49,41 @@ if foo.IsA then failwith "Should not be A"
         |> compileExeAndRun
         |> shouldSucceed
 
+    // TODO nullness - wait for https://github.com/fsharp/fslang-design/discussions/760
+    // [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Is* DU property roundtrip over pickled metadata and with fsi file`` () = 
+        let libCode =  """module rec TestLib
+
+type X = A | B"""
+        let appCode = """
+let x = TestLib.X.A
+let isA = x.IsA
+printfn "%A" isA """
+        let lib = 
+            Fsi(libCode)
+            |> withAdditionalSourceFile (FsSource libCode)
+            |> withLangVersionPreview
+            |> asLibrary
+            |> withName "fsLib"
+
+        lib
+        |> compile
+        |> verifyIL [""".method public hidebysig specialname 
+instance bool  get_IsA() cil managed """]
+
+        FSharp appCode
+        |> asExe
+        |> withReferences [lib]
+        |> withWarnOn 3186
+        |> withOptions ["--warnaserror+"]
+        |> withName "AppCodeProjectName"
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "does not define the field, constructor or member 'IsA'"
+
+    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties with backticks are visible, proper values are returned`` () =
         Fsx """
@@ -130,7 +165,8 @@ let isFoo = foo.IsFoo
         |> withErrorMessage "The type 'Foo' does not define the field, constructor or member 'IsFoo'. Maybe you want one of the following:
    Foo"
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    // TODO nullness - wait for https://github.com/fsharp/fslang-design/discussions/760
+    //[<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties are unavailable on voption`` () =
         Fsx """
 let x = (ValueSome 1).IsSome
