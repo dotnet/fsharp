@@ -4326,7 +4326,6 @@ FSharp.Compiler.EditorServices.TupledArgumentLocation: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.TupledArgumentLocation: System.String ToString()
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Void .ctor(Boolean, FSharp.Compiler.Text.Range)
-FSharp.Compiler.EditorServices.UnnecessaryParentheses: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] getUnnecessaryParentheses(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(FSharp.Compiler.EditorServices.UnresolvedSymbol)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -7433,6 +7432,7 @@ FSharp.Compiler.Syntax.SynExprAndBang: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExprAndBang: Int32 Tag
 FSharp.Compiler.Syntax.SynExprAndBang: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynExprAndBang: System.String ToString()
+FSharp.Compiler.Syntax.SynExprModule: Boolean shouldBeParenthesizedInContext(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynExpr)
 FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Syntax.SynExprRecordField NewSynExprRecordField(System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 Tag
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 get_Tag()
@@ -8446,6 +8446,7 @@ FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynPat: Int32 Tag
 FSharp.Compiler.Syntax.SynPat: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynPat: System.String ToString()
+FSharp.Compiler.Syntax.SynPatModule: Boolean shouldBeParenthesizedInContext(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynPat)
 FSharp.Compiler.Syntax.SynRationalConst+Integer: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynRationalConst+Integer: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynRationalConst+Integer: Int32 get_value()
