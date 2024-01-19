@@ -79,7 +79,7 @@ open FSharp.Compiler.TypeProviders
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
    
-let compgenId = mkSynId range0 unassignedTyparName
+let compgenId = mkSynId Range.range0 unassignedTyparName
 
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
     Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
@@ -97,28 +97,9 @@ let NewInferenceMeasurePar () =
 
 let NewErrorTypar () =
     NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
-
-let NewErrorMeasureVar () =
-    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
-
-let NewInferenceType (g: TcGlobals) = 
-    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false)
-    let nullness = if g.langFeatureNullness then NewNullnessVar() else KnownAmbivalentToNull
-    TType_var (tp, nullness)
     
 let NewErrorType () =
     mkTyparTy (NewErrorTypar ())
-
-let NewErrorMeasure () =
-    Measure.Var (NewErrorMeasureVar ())
-
-let NewByRefKindInferenceType (g: TcGlobals) m = 
-    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)
-    if g.byrefkind_InOut_tcr.CanDeref then
-        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull), m)]
-    mkTyparTy tp
-
-let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
 
 let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
     let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
@@ -141,13 +122,6 @@ let FreshenTypeInst g m tpsorig =
 
 let FreshMethInst g m fctps tinst tpsorig =
     FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig
-
-let FreshenTypars g m tpsorig =
-    match tpsorig with 
-    | [] -> []
-    | _ -> 
-        let _, _, tpTys = FreshenTypeInst g m tpsorig
-        tpTys
 
 let FreshenMethInfo m (minfo: MethInfo) =
     let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
@@ -1945,7 +1919,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                             FSComp.SR.csFunctionDoesNotSupportType(s, tyString, nm)
                                         | [_], _
                                             -> FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
-                                                | _, _ 
+                                        | _, _ 
                                             -> FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
                                 return! ErrorD(ConstraintSolverError(err, m, m2))
 
