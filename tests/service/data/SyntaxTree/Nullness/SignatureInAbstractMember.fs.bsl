@@ -13,7 +13,7 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], [], (1,17--1,19)), None,
+                        (None, [], Const (Unit, (1,17--1,19)), None,
                          PreXmlDoc ((1,17), FSharp.Compiler.Xml.XmlDocCollector),
                          (1,5--1,17), { AsKeyword = None });
                       AbstractSlot
@@ -49,7 +49,7 @@ ImplFile
                          { GetSetKeywords = None })], (2,3--2,61)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], [], (1,17--1,19)), None,
+                       (None, [], Const (Unit, (1,17--1,19)), None,
                         PreXmlDoc ((1,17), FSharp.Compiler.Xml.XmlDocCollector),
                         (1,5--1,17), { AsKeyword = None })), (1,5--2,61),
                   { LeadingKeyword = Type (1,0--1,4)
