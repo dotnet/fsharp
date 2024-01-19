@@ -247,9 +247,9 @@
         <target state="translated">generazione automatica della proprietà 'Messaggio' per le dichiarazioni 'eccezione'</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureBoolPartialActivePattern">
-        <source>bool representation for partial active patterns</source>
-        <target state="new">bool representation for partial active patterns</target>
+      <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
+        <source>Boolean-returning and return-type-directed partial active patterns</source>
+        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
         <note />
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">

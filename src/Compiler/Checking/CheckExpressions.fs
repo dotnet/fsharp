@@ -10765,9 +10765,9 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             
             match apRetTy with
             | ActivePatternReturnKind.Boolean ->
-                checkLanguageFeatureError g.langVersion LanguageFeature.BoolPartialActivePattern mBinding
+                checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
             | ActivePatternReturnKind.StructTypeWrapper when not isStructRetTy ->
-                checkLanguageFeatureError g.langVersion LanguageFeature.BoolPartialActivePattern mBinding
+                checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
             | ActivePatternReturnKind.StructTypeWrapper ->
                 checkLanguageFeatureError g.langVersion LanguageFeature.StructActivePattern mBinding
             | ActivePatternReturnKind.RefTypeWrapper -> ()

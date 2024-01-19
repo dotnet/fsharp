@@ -60,9 +60,9 @@ match "x" with
 let (|OddVOption|_|) x = if x % 2 = 1 then ValueSome() else ValueNone
             """
             [|(FSharpDiagnosticSeverity.Error, 3350, (1, 5, 1, 20),
-               "Feature 'bool representation for partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+               "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
               (FSharpDiagnosticSeverity.Error, 3350, (2, 5, 2, 23),
-               "Feature 'bool representation for partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")|]
+               "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")|]
 
     [<Test>]
     let ``Can not receive result from bool active pattern`` () =
