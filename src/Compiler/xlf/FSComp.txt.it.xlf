@@ -12,9 +12,14 @@
         <target state="translated">Tutti gli elementi di una matrice devono essere convertibili in modo implicito nel tipo del primo elemento, che qui è una tupla di lunghezza {0} di tipo\n {1}    \nQuesto elemento è una tupla di lunghezza {2} di tipo\n    {3} \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="augInvalidAttrForFSharpObjectModelType">
+        <source>The attribute {0} is only meant for discriminated unions or record types.</source>
+        <target state="new">The attribute {0} is only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="augInvalidAttrsForFSharpObjectModelType">
-        <source>The attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison' aren't meant to be used on adhoc classes, interfaces, structures, enums, delegates but only on discriminated unions or record types.</source>
-        <target state="new">The attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison' aren't meant to be used on adhoc classes, interfaces, structures, enums, delegates but only on discriminated unions or record types.</target>
+        <source>The attributes {0} are only meant for discriminated unions or record types.</source>
+        <target state="new">The attributes {0} are only meant for discriminated unions or record types.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDuplicateFile">

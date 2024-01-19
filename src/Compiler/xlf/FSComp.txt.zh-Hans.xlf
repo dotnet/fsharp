@@ -12,9 +12,14 @@
         <target state="translated">数组的所有元素必须可隐式转换为第一个元素的类型，这是一个长度为 {0} 的类型的元组\n    {1}    \n此元素是长度为 {2} 类型的元组\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="augInvalidAttrForFSharpObjectModelType">
+        <source>The attribute {0} is only meant for discriminated unions or record types.</source>
+        <target state="new">The attribute {0} is only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="augInvalidAttrsForFSharpObjectModelType">
-        <source>The attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison' aren't meant to be used on adhoc classes, interfaces, structures, enums, delegates but only on discriminated unions or record types.</source>
-        <target state="new">The attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison' aren't meant to be used on adhoc classes, interfaces, structures, enums, delegates but only on discriminated unions or record types.</target>
+        <source>The attributes {0} are only meant for discriminated unions or record types.</source>
+        <target state="new">The attributes {0} are only meant for discriminated unions or record types.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDuplicateFile">

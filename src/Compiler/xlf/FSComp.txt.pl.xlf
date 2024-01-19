@@ -12,9 +12,14 @@
         <target state="translated">Wszystkie elementy tablicy muszą być niejawnie konwertowalne na typ pierwszego elementu, który w tym miejscu jest krotką o długości {0} typu\n    {1}    \nTen element jest krotką o długości {2} typu\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="augInvalidAttrForFSharpObjectModelType">
+        <source>The attribute {0} is only meant for discriminated unions or record types.</source>
+        <target state="new">The attribute {0} is only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="augInvalidAttrsForFSharpObjectModelType">
-        <source>The attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison' aren't meant to be used on adhoc classes, interfaces, structures, enums, delegates but only on discriminated unions or record types.</source>
-        <target state="new">The attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison' aren't meant to be used on adhoc classes, interfaces, structures, enums, delegates but only on discriminated unions or record types.</target>
+        <source>The attributes {0} are only meant for discriminated unions or record types.</source>
+        <target state="new">The attributes {0} are only meant for discriminated unions or record types.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDuplicateFile">
