@@ -338,7 +338,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
         | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
-        | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern -> FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
+        | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
+            FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
