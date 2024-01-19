@@ -19,8 +19,8 @@ ImplFile
                                 Target = None
                                 AppliesToGetterAndSetter = false
                                 Range = (3,9--3,10) }]
-                            Range = (3,7--3,12) }],
-                         SimplePats ([], [], (3,13--3,15)), None,
+                            Range = (3,7--3,12) }], Const (Unit, (3,13--3,15)),
+                         None,
                          PreXmlDoc ((3,7), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None })], (4,4--5,7)), [],
                   Some
@@ -32,8 +32,8 @@ ImplFile
                                Target = None
                                AppliesToGetterAndSetter = false
                                Range = (3,9--3,10) }]
-                           Range = (3,7--3,12) }],
-                        SimplePats ([], [], (3,13--3,15)), None,
+                           Range = (3,7--3,12) }], Const (Unit, (3,13--3,15)),
+                        None,
                         PreXmlDoc ((3,7), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--5,7),
                   { LeadingKeyword = Type (3,0--3,4)

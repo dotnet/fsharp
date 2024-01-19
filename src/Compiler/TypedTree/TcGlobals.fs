@@ -1852,11 +1852,11 @@ type TcGlobals(
 
   member _.DebuggerBrowsableNeverAttribute = debuggerBrowsableNeverAttribute
 
-  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled, enableEnC) =
+  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled) =
         let debuggingMode =
+            0x3 (* Default ||| IgnoreSymbolStoreSequencePoints *) |||
             (if jitTracking then 1 else 0) |||
-            (if jitOptimizerDisabled then 256 else 0) |||
-            (if enableEnC then 4 else 0)
+            (if jitOptimizerDisabled then 256 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
         mkILCustomAttribute
           (tref_DebuggableAttribute, [mkILNonGenericValueTy tref_DebuggableAttribute_DebuggingModes],

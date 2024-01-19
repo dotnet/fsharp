@@ -888,9 +888,8 @@ module ParsedInput =
                 | None, Some binding -> walkBinding binding
                 | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
 
-            | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats(pats = simplePats)) ->
-                List.tryPick walkAttribute attrs
-                |> Option.orElseWith (fun () -> List.tryPick walkSimplePat simplePats)
+            | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = pat) ->
+                List.tryPick walkAttribute attrs |> Option.orElseWith (fun _ -> walkPat pat)
 
             | SynMemberDefn.ImplicitInherit(t, e, _, _) -> walkType t |> Option.orElseWith (fun () -> walkExpr e)
 
@@ -1577,25 +1576,36 @@ module ParsedInput =
                     | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                     | _ -> None
 
-                member _.VisitSimplePats(_, pats) =
+                member _.VisitSimplePats(_, pat) =
                     // Lambdas and their patterns are processed above in VisitExpr,
                     // so VisitSimplePats is only called for primary constructors
 
-                    pats
-                    |> List.tryPick (fun pat ->
-                        match pat with
-                        // type C (x| )
-                        | SynSimplePat.Id(range = range) when rangeContainsPos range pos -> Some CompletionContext.Invalid
-                        | SynSimplePat.Typed(pat = SynSimplePat.Id(range = idRange); targetType = synType) ->
-                            // type C (x|: int) ->
-                            if rangeContainsPos idRange pos then
-                                Some CompletionContext.Invalid
-                            // type C (x: int|) ->
-                            elif rangeContainsPos synType.Range pos then
-                                Some CompletionContext.Type
-                            else
-                                None
-                        | _ -> None)
+                    let rec loop (pat: SynPat) =
+                        if not (rangeContainsPos pat.Range pos) then
+                            None
+                        else
+
+                            match pat with
+                            // type C (x{caret} )
+                            | SynPat.Named _
+                            | SynPat.Const(SynConst.Unit, _) -> Some CompletionContext.Invalid
+
+                            | SynPat.Attrib(pat, _, _)
+                            | SynPat.Paren(pat, _) -> loop pat
+
+                            | SynPat.Tuple(_, pats, _, _) -> List.tryPick loop pats
+
+                            | SynPat.Typed(pat, synType, _) ->
+                                // type C (x: int{caret}) ->
+                                if rangeContainsPos synType.Range pos then
+                                    Some CompletionContext.Type
+                                else
+                                    // type C (x{caret}: int) ->
+                                    loop pat
+
+                            | _ -> None
+
+                    loop pat
 
                 member _.VisitPat(_, defaultTraverse, pat) =
                     TryGetCompletionContextInPattern false pat None pos
@@ -2085,9 +2095,9 @@ module ParsedInput =
             | SynMemberDefn.GetSetMember(getBinding, setBinding, _, _) ->
                 Option.iter walkBinding getBinding
                 Option.iter walkBinding setBinding
-            | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats(pats = simplePats)) ->
+            | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = pat) ->
                 List.iter walkAttribute attrs
-                List.iter walkSimplePat simplePats
+                walkPat pat
             | SynMemberDefn.ImplicitInherit(t, e, _, _) ->
                 walkType t
                 walkExpr e

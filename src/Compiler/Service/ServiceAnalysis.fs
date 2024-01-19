@@ -296,12 +296,19 @@ module UnusedOpens =
     /// Async to allow cancellation.
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         async {
-            let! ct = Async.CancellationToken
-            let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
-            let symbolUses = filterSymbolUses getSourceLineStr symbolUses
-            let symbolUses = splitSymbolUses symbolUses
-            let openStatements = getOpenStatements checkFileResults.OpenDeclarations
-            return! filterOpenStatements symbolUses openStatements
+            if checkFileResults.OpenDeclarations.Length = 0 then
+                return []
+            else
+                let! ct = Async.CancellationToken
+                let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+                let symbolUses = filterSymbolUses getSourceLineStr symbolUses
+                let symbolUses = splitSymbolUses symbolUses
+                let openStatements = getOpenStatements checkFileResults.OpenDeclarations
+
+                if openStatements.Length = 0 then
+                    return []
+                else
+                    return! filterOpenStatements symbolUses openStatements
         }
 
 module SimplifyNames =
