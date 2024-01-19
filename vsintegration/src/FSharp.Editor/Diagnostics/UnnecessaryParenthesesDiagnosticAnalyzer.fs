@@ -71,26 +71,21 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
                         let getLineString line =
                             sourceText.Lines[Line.toZ line].ToString()
 
-                        let! unnecessaryParentheses =
-                            async {
-                                return
-                                    (HashSet Range.comparer, parseResults.ParseTree)
-                                    ||> ParsedInput.fold (fun ranges path node ->
-                                        match node with
-                                        | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; rightParenRange = Some _; range = range)) when
-                                            not (SynExpr.shouldBeParenthesizedInContext getLineString path inner)
-                                            ->
-                                            ignore (ranges.Add range)
-                                            ranges
+                        let unnecessaryParentheses =
+                            (HashSet Range.comparer, parseResults.ParseTree)
+                            ||> ParsedInput.fold (fun ranges path node ->
+                                match node with
+                                | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; rightParenRange = Some _; range = range)) when
+                                    not (SynExpr.shouldBeParenthesizedInContext getLineString path inner)
+                                    ->
+                                    ignore (ranges.Add range)
+                                    ranges
 
-                                        | SyntaxNode.SynPat(SynPat.Paren(inner, range)) when
-                                            not (SynPat.shouldBeParenthesizedInContext path inner)
-                                            ->
-                                            ignore (ranges.Add range)
-                                            ranges
+                                | SyntaxNode.SynPat(SynPat.Paren(inner, range)) when not (SynPat.shouldBeParenthesizedInContext path inner) ->
+                                    ignore (ranges.Add range)
+                                    ranges
 
-                                        | _ -> ranges)
-                            }
+                                | _ -> ranges)
 
                         let diagnostics =
                             let builder = ImmutableArray.CreateBuilder unnecessaryParentheses.Count
