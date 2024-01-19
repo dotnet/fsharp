@@ -5095,6 +5095,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                 ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
                 (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy))) ||
                 // `bool` partial AP always be treated as `unit option`
+                // For `val (|P|_|) : _ -> bool`, only allow `match x with | P -> ...`
+                // For `val (|P|_|) : _ -> _ -> bool`, only allow `match x with | P parameter -> ...`
                 (not apinfo.IsTotal && isBoolTy g retTy) then
                 args, SynPat.Const(SynConst.Unit, m)
             else
