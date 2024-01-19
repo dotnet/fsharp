@@ -740,7 +740,7 @@ stages:
             continueOnError: true
             condition: always()
           - script: .\Build.cmd -c $(_BuildConfig)
-          - pwsh: ./SmokeTestAllBenchmarks.ps1
+          - pwsh: ./SmokeTestBenchmarks.ps1
             workingDirectory: $(Build.SourcesDirectory)/tests/benchmarks
             displayName: Smoke test fast benchmarks
 
