@@ -3,8 +3,10 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -25,6 +27,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+
+open Internal.Utilities.Collections
 
 /// Delays the creation of an ILModuleReader
 [<Sealed>]
@@ -443,7 +447,7 @@ type public FSharpCheckFileResults =
         tcConfig: TcConfig *
         tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
-        builder: IncrementalBuilder *
+        builder: IncrementalBuilder option *
         projectOptions: FSharpProjectOptions *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *
@@ -477,7 +481,7 @@ type public FSharpCheckFileResults =
         backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *
         isIncompleteTypeCheckEnvironment: bool *
         projectOptions: FSharpProjectOptions *
-        builder: IncrementalBuilder *
+        builder: IncrementalBuilder option *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *
         parseErrors: FSharpDiagnostic[] *
@@ -537,7 +541,7 @@ type public FSharpCheckProjectResults =
             TcImports *
             CcuThunk *
             ModuleOrNamespaceType *
-            Choice<IncrementalBuilder, TcSymbolUses> *
+            Choice<IncrementalBuilder, Async<TcSymbolUses seq>> *
             TopAttribs option *
             (unit -> IRawFSharpAssemblyData option) *
             ILAssemblyRef *
@@ -568,6 +572,29 @@ module internal ParseAndCheckFile =
         suggestNamesForErrors: bool *
         ct: CancellationToken ->
             (range * range)[]
+
+    /// Diagnostics handler for parsing & type checking while processing a single file
+    type DiagnosticsHandler =
+        new:
+            reportErrors: bool *
+            mainInputFileName: string *
+            diagnosticsOptions: FSharpDiagnosticOptions *
+            sourceText: ISourceText *
+            suggestNamesForErrors: bool *
+            flatErrors: bool ->
+                DiagnosticsHandler
+
+        member DiagnosticsLogger: DiagnosticsLogger
+
+        member ErrorCount: int
+
+        member DiagnosticOptions: FSharpDiagnosticOptions with set
+
+        member AnyErrors: bool
+
+        member CollectedPhasedDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+
+        member CollectedDiagnostics: symbolEnv: SymbolEnv option -> FSharpDiagnostic array
 
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.
