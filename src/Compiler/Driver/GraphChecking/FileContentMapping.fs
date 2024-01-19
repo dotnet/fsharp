@@ -18,6 +18,11 @@ let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
 let synLongIdentToPath (skipLast: bool) (synLongIdent: SynLongIdent) =
     longIdentToPath skipLast synLongIdent.LongIdent
 
+/// In some rare cases we are interested in the name of a single Ident.
+/// For example `nameof ModuleName` in expressions or patterns.
+let visitIdentAsPotentialModuleName (moduleNameIdent: Ident) =
+    FileContentEntry.ModuleName moduleNameIdent.idText
+
 let visitSynLongIdent (lid: SynLongIdent) : FileContentEntry list = visitLongIdent lid.LongIdent
 
 let visitLongIdent (lid: LongIdent) =
@@ -302,6 +307,10 @@ let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
     | SynTypeConstraint.WhereTyparIsEnum(typeArgs = typeArgs) -> List.collect visitSynType typeArgs
     | SynTypeConstraint.WhereTyparIsDelegate(typeArgs = typeArgs) -> List.collect visitSynType typeArgs
 
+[<return: Struct>]
+let inline (|NameofIdent|_|) (ident: Ident) =
+    if ident.idText = "nameof" then ValueSome() else ValueNone
+
 /// Special case of `nameof Module` type of expression
 let (|NameofExpr|_|) (e: SynExpr) =
     let rec stripParen (e: SynExpr) =
@@ -310,13 +319,10 @@ let (|NameofExpr|_|) (e: SynExpr) =
         | _ -> e
 
     match e with
-    | SynExpr.App(flag = ExprAtomicFlag.NonAtomic; isInfix = false; funcExpr = SynExpr.Ident nameofIdent; argExpr = moduleNameExpr) ->
-        if nameofIdent.idText <> "nameof" then
-            None
-        else
-            match stripParen moduleNameExpr with
-            | SynExpr.Ident moduleNameIdent -> Some moduleNameIdent
-            | _ -> None
+    | SynExpr.App(flag = ExprAtomicFlag.NonAtomic; isInfix = false; funcExpr = SynExpr.Ident NameofIdent; argExpr = moduleNameExpr) ->
+        match stripParen moduleNameExpr with
+        | SynExpr.Ident moduleNameIdent -> Some moduleNameIdent
+        | _ -> None
     | _ -> None
 
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
@@ -543,18 +549,15 @@ let (|NameofPat|_|) (pat: SynPat) =
         | _ -> p
 
     match pat with
-    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ nameofIdent ]); typarDecls = None; argPats = SynArgPats.Pats [ moduleNamePat ]) ->
-        if nameofIdent.idText <> "nameof" then
-            None
-        else
-            match stripPats moduleNamePat with
-            | SynPat.LongIdent(
-                longDotId = SynLongIdent.SynLongIdent(id = [ moduleNameIdent ]; dotRanges = []; trivia = [ None ])
-                extraId = None
-                typarDecls = None
-                argPats = SynArgPats.Pats []
-                accessibility = None) -> Some moduleNameIdent
-            | _ -> None
+    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ NameofIdent ]); typarDecls = None; argPats = SynArgPats.Pats [ moduleNamePat ]) ->
+        match stripPats moduleNamePat with
+        | SynPat.LongIdent(
+            longDotId = SynLongIdent.SynLongIdent(id = [ moduleNameIdent ]; dotRanges = []; trivia = [ None ])
+            extraId = None
+            typarDecls = None
+            argPats = SynArgPats.Pats []
+            accessibility = None) -> Some moduleNameIdent
+        | _ -> None
     | _ -> None
 
 let visitPat (p: SynPat) : FileContentEntry list =
