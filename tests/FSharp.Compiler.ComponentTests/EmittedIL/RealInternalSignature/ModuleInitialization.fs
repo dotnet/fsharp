@@ -471,59 +471,6 @@ module {{recursive}} MyModule =
         else
             compilation
 
-//    [<InlineData(true, true)>]          // RealSig, release
-//    [<InlineData(false, true)>]         // Regular, release
-//    [<InlineData(true, false)>]         // RealSig, debug
-//    [<InlineData(false, false)>]        // Regular, debug
-//    [<Theory>]
-//    let ``recursive types in module`` (realSig, release) =
-//        FSharp $$"""
-//module rec MyModule =
-//    type Node = { Next: Node; Value: int }
-
-//    let one = { Next = two; Value = 1 }
-
-//    // An intervening type declaration
-//    type M() = static member X() = one
-
-//    let two = { Next = one; Value = 2 }
-
-//    let test t s1 s2 =
-//      if s1 <> s2 then
-//        stdout.WriteLine ($"test:{t} '{s1}' '{s2}' failed")
-//      else
-//        stdout.WriteLine ($"test:{t} '{s1}' '{s2}' succeeded")
-
-//    [<EntryPoint>]
-//    let main args =
-//        //test "one.Value 1" one.Value 1
-//        test "one.Next.Value 2" one.Next.Value 2
-//        //test "one.Next.Value 2" one.Next.Value 1
-//        //test "(M.X()).Value 1" (M.X()).Value 1
-//        //test "(M.X()).Next.Value 2" (M.X()).Next.Value 2
-//        //test "(M.X()).Next.Next.Value 1" (M.X()).Next.Next.Value 1
-//        //test "two.Value 2" two.Value 2
-//        //test "two.Next.Value 1" two.Next.Value 1
-//        //test "two.Next.Next.Value 2" two.Next.Next.Value 2
-//        0
-//            """
-//        |> withFlavor release
-//        |> withLangVersionPreview
-//        |> withRealInternalSignature realSig
-//        |> compileExeAndRun
-//        |> shouldSucceed
-//        |> withStdOutContainsAllInOrder [
-//            "test:one.Value 1 '1' '1' succeeded"
-//            //"test:one.Next.Value 2 '2' '2' succeeded"
-//            //"test:one.Next.Value 2 '2' '1' failed"
-//            //"test:(M.X()).Value 1 '1' '1' succeeded"
-//            //"test:(M.X()).Next.Value 2 '2' '2' succeeded"
-//            //"test:(M.X()).Next.Next.Value 1 '1' '1' succeeded"
-//            //"test:two.Value 2 '2' '2' succeeded"
-//            //"test:two.Next.Value 1 '1' '1' succeeded"
-//            //"test:two.Next.Next.Value 2 '2' '2' succeeded"
-//        ]
-
     [<InlineData(true, true)>]          // RealSig, release
     [<InlineData(false, true)>]         // Regular, release
     [<InlineData(true, false)>]         // RealSig, debug
@@ -541,7 +488,24 @@ module rec MyModule =
 
     let two = { Next = one; Value = 2 }
 
-    printfn $"test:one.Next.Value 2: '{one.Next.Value}' '{2}'"
+    let test t s1 s2 =
+      if s1 <> s2 then
+        stdout.WriteLine ($"test:{t} '{s1}' '{s2}' failed")
+      else
+        stdout.WriteLine ($"test:{t} '{s1}' '{s2}' succeeded")
+
+    [<EntryPoint>]
+    let main args =
+        test "one.Value 1" one.Value 1
+        test "one.Next.Value 2" one.Next.Value 2
+        test "one.Next.Value 2" one.Next.Value 1
+        test "(M.X()).Value 1" (M.X()).Value 1
+        test "(M.X()).Next.Value 2" (M.X()).Next.Value 2
+        test "(M.X()).Next.Next.Value 1" (M.X()).Next.Next.Value 1
+        test "two.Value 2" two.Value 2
+        test "two.Next.Value 1" two.Next.Value 1
+        test "two.Next.Next.Value 2" two.Next.Next.Value 2
+        0
             """
         |> withFlavor release
         |> withLangVersionPreview
@@ -549,15 +513,51 @@ module rec MyModule =
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
-            "test:one.Next.Value 2: '2' '2'"
-            //"test:one.Next.Value 2 '2' '1' failed"
-            //"test:(M.X()).Value 1 '1' '1' succeeded"
-            //"test:(M.X()).Next.Value 2 '2' '2' succeeded"
-            //"test:(M.X()).Next.Next.Value 1 '1' '1' succeeded"
-            //"test:two.Value 2 '2' '2' succeeded"
-            //"test:two.Next.Value 1 '1' '1' succeeded"
-            //"test:two.Next.Next.Value 2 '2' '2' succeeded"
+            "test:one.Value 1 '1' '1' succeeded"
+            "test:one.Next.Value 2 '2' '2' succeeded"
+            "test:one.Next.Value 2 '2' '1' failed"
+            "test:(M.X()).Value 1 '1' '1' succeeded"
+            "test:(M.X()).Next.Value 2 '2' '2' succeeded"
+            "test:(M.X()).Next.Next.Value 1 '1' '1' succeeded"
+            "test:two.Value 2 '2' '2' succeeded"
+            "test:two.Next.Value 1 '1' '1' succeeded"
+            "test:two.Next.Next.Value 2 '2' '2' succeeded"
         ]
+
+//    [<InlineData(true, true)>]          // RealSig, release
+//    [<InlineData(false, true)>]         // Regular, release
+//    [<InlineData(true, false)>]         // RealSig, debug
+//    [<InlineData(false, false)>]        // Regular, debug
+//    [<Theory>]
+//    let ``recursive types in module`` (realSig, release) =
+//        FSharp $$"""
+//module rec MyModule =
+//    type Node = { Next: Node; Value: int }
+
+//    let one = { Next = two; Value = 1 }
+
+//    // An intervening type declaration
+//    type M() = static member X() = one
+
+//    let two = { Next = one; Value = 2 }
+
+//    printfn $"test:one.Next.Value 2: '{one.Next.Value}' '{2}'"
+//            """
+//        |> withFlavor release
+//        |> withLangVersionPreview
+//        |> withRealInternalSignature realSig
+//        |> compileExeAndRun
+//        |> shouldSucceed
+//        |> withStdOutContainsAllInOrder [
+//            "test:one.Next.Value 2: '2' '2'"
+//            //"test:one.Next.Value 2 '2' '1' failed"
+//            //"test:(M.X()).Value 1 '1' '1' succeeded"
+//            //"test:(M.X()).Next.Value 2 '2' '2' succeeded"
+//            //"test:(M.X()).Next.Next.Value 1 '1' '1' succeeded"
+//            //"test:two.Value 2 '2' '2' succeeded"
+//            //"test:two.Next.Value 1 '1' '1' succeeded"
+//            //"test:two.Next.Next.Value 2 '2' '2' succeeded"
+//        ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
