@@ -429,16 +429,16 @@ module {{recursive}} MyModule =
 
         type internal MyFirstType =
             static let _ =  printfn "Hello, World from MyModule.MyNestedModule.MyFirstType"
-            static let _ =  printfn $"{MyFirstType.DoSomething}"
-            static member DoSomething = "My goodness I'm 'MyFirstType'"
+            static let _ =  printfn $"{MyFirstType.FirstDoSomething}"
+            static member FirstDoSomething = "My goodness I'm 'MyFirstType'"
 
         do  printfn $"between types in MyNestedModule"
 
         type private MySecondType =
             static let x11 = 1100 + System.Random().Next(0)
             static let _ =  printfn "Hello, World from MyModule.MyNestedModule.MySecondType"
-            static let _ =  printfn $"{MySecondType.DoSomething}"
-            static member DoSomething = "My goodness I'm 'MySecondType'"
+            static let _ =  printfn $"{MySecondType.SecondDoSomething}"
+            static member SecondDoSomething = "My goodness I'm 'MySecondType'"
 
         do  printfn $"Do end MyNestedModule"
 

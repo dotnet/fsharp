@@ -8110,23 +8110,11 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
     CG.EmitInstr cgbuf (pop 2) Push0 (mkNormalStfld (mkILFieldSpec (ilField.FieldRef, ilxCloSpec.ILType)))
 
 /// Generate letrec bindings
-and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
+and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (dict: Dictionary<Stamp, ILTypeRef> option) =
 
     // 'let rec' bindings are always considered to be in loops, that is each may have backward branches for the
     // tailcalls back to the entry point. This means we don't rely on zero-init of mutable locals
     let eenv = SetIsInLoop true eenv
-
-    // Fix up recursion for non-toplevel recursive bindings
-    let bindsPossiblyRequiringFixup =
-        allBinds
-        |> List.filter (fun b ->
-            match (StorageForVal m b.Var eenv) with
-            | StaticProperty _
-            | Method _
-            // Note: Recursive data stored in static fields may require fixups e.g. let x = C(x)
-            // | StaticPropertyWithField _
-            | Null -> false
-            | _ -> true)
 
     let computeFixupsForOneRecursiveVar boundv forwardReferenceSet (fixups: _ ref) thisVars access set e =
         match e with
@@ -8182,6 +8170,18 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
 
     let fixups = ref []
 
+    // Fix up recursion for non-toplevel recursive bindings
+    let bindsPossiblyRequiringFixup =
+        allBinds
+        |> List.filter (fun b ->
+            match (StorageForVal m b.Var eenv) with
+            | StaticProperty _
+            | Method _
+            // Note: Recursive data stored in static fields may require fixups e.g. let x = C(x)
+            // | StaticPropertyWithField _
+            | Null -> false
+            | _ -> true)
+
     let recursiveVars =
         Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
 
@@ -8205,16 +8205,67 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             forwardReferenceSet)
 
     // Generate the actual bindings
+    let bindGroups =
+        let dict = Dictionary<Stamp, Binding list>()
+        allBinds
+        |> List.groupBy(fun bind ->
+            let (TBind(v, _, _)) = bind
+            match v.HasDeclaringEntity with
+            | true -> v.DeclaringEntity.Deref.Stamp
+            | false -> 0L)
+        |> Seq.iter(fun (stamp, bindings) -> dict.Add(stamp, bindings))
+        dict
+
+    let skipBinding = HashSet<Stamp>()
     let _ =
         (recursiveVars, allBinds)
         ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
-            GenBinding cenv cgbuf eenv bind false
+            let (TBind(v, _, _)) = bind
+            let nested, skip, stamp  =
+                match dict, v.HasDeclaringEntity with
+                | None, _ | _, false -> None, false, 0L
+                | Some dict, true ->
+                    let stamp = v.DeclaringEntity.Deref.Stamp
+                    match dict.TryGetValue(stamp), skipBinding.Contains(stamp) with
+                    | (false, _), _ -> None, false, stamp
+                    | (_, _), true -> None, true, stamp
+                    | (true, tref), _ ->
+                        let added = skipBinding.Add(stamp)
+                        Some tref, not added, stamp
 
-            // Record the variable as defined
-            let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
+            match nested, skip with
+            | None, _ -> GenBinding cenv cgbuf eenv bind false
+            | Some _, true -> ()
+            | Some tref, false ->
+                let eenv =
+                    { eenv with
+                        cloc =
+                            { eenv.cloc with
+                                Enclosing = tref.Enclosing @ [ tref.Name ]
+                                Namespace = None
+                            }
+                    }
 
-            // Execute and discard any fixups that can now be committed
+                match bindGroups.TryGetValue(stamp) with
+                | true, binds ->
+                    CodeGenInitMethod
+                        cenv
+                        cgbuf
+                        eenv
+                        tref
+                        (fun cgbuf eenv ->
+                            // Generate chunks of non-nested bindings together to allow recursive fixups.
+                            GenLetRecBindings cenv cgbuf eenv (binds, m) dict
+                            CG.EmitInstr cgbuf (pop 0) Push0 I_ret //)
+                        )
+                        m
+                | _ -> ()
+
+            let forwardReferenceSet =
+                // Record the variable as defined
+                Zset.remove bind.Var forwardReferenceSet
             let newFixups =
+                // Execute and discard any fixups that can now be committed
                 fixups.Value
                 |> List.filter (fun (boundv, fv, action) ->
                     if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then
@@ -8222,17 +8273,116 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
                     else
                         action ()
                         false)
-
             fixups.Value <- newFixups
-
             forwardReferenceSet)
-
     ()
+
+(*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
+    match x with
+    | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
+
+        let eenv = AddDebugImportsToEnv cenv eenv opens
+
+        let mutable bindsRemaining = mbinds
+
+        let dict = Dictionary<Stamp, ILTypeRef>()
+
+        for tc in tycons do
+            let optTref =
+                if tc.IsFSharpException then
+                    GenExnDef cenv cgbuf.mgbuf eenv m tc
+                else
+                    GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc
+
+            match optTref with
+            | Some tref -> dict.Add(tc.Stamp, tref)
+            | None -> ()
+
+        while not bindsRemaining.IsEmpty do
+
+            match bindsRemaining with
+            | ModuleOrNamespaceBinding.Binding _bind :: _rest ->
+                let mutable parent: Stamp option = None
+                let mutable take = true
+
+                let theseBinds, rest =
+                    bindsRemaining
+                    |> List.partition (function
+                        | ModuleOrNamespaceBinding.Binding _ when (not eenv.realInternalSignature) && take -> true
+                        | ModuleOrNamespaceBinding.Binding bind when eenv.realInternalSignature && take ->
+                            let (TBind(v, _, _)) = bind
+
+                            match v.HasDeclaringEntity with
+                            | true ->
+                                let declaring = v.DeclaringEntity.Deref.Stamp
+
+                                match parent with
+                                | Some p ->
+                                    take <- p = declaring
+                                    p = declaring
+                                | None ->
+                                    parent <- Some declaring
+                                    true
+                            | false ->
+                                take <- true
+                                true
+                        | _ ->
+                            take <- false
+                            false)
+
+                let recBinds =
+                    theseBinds
+                    |> List.map (function
+                        | ModuleOrNamespaceBinding.Binding bind -> bind
+                        | _ -> failwith "GenModuleOrNamespaceContents - unexpected")
+
+                match parent with
+                | Some p ->
+                    match dict.TryGetValue(p) with
+                    | true, tref ->
+                        let eenv =
+                            { eenv with
+                                cloc =
+                                    { eenv.cloc with
+                                        Enclosing = tref.Enclosing @ [ tref.Name ]
+                                        Namespace = None
+                                    }
+                            }
+
+                        CodeGenInitMethod
+                            cenv
+                            cgbuf
+                            eenv
+                            tref
+                            (fun cgbuf eenv ->
+                                // Generate chunks of non-nested bindings together to allow recursive fixups.
+                                GenLetRecBindings cenv cgbuf eenv (recBinds, m)
+                                CG.EmitInstr cgbuf (pop 0) Push0 I_ret //)
+                            )
+                            m
+                    | _ -> GenLetRecBindings cenv cgbuf eenv (recBinds, m)
+
+                | _ -> GenLetRecBindings cenv cgbuf eenv (recBinds, m)
+
+                bindsRemaining <- rest
+
+            | (ModuleOrNamespaceBinding.Module _ as mbind) :: rest ->
+                GenModuleBinding cenv cgbuf qname lazyInitInfo eenv m mbind
+                bindsRemaining <- rest
+
+            | [] -> failwith "unreachable"
+
+        eenv
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*)
 
 and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
     let _, endMark as scopeMarks = StartLocalScope "letrec" cgbuf
     let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
-    GenLetRecBindings cenv cgbuf eenv (binds, m)
+    GenLetRecBindings cenv cgbuf eenv (binds, m) None
     GenExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark))
 
 //-------------------------------------------------------------------------
@@ -10091,6 +10241,65 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
 and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
     match x with
     | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
+        let eenvinner = AddDebugImportsToEnv cenv eenv opens
+
+        let dict = Some (Dictionary<Stamp, ILTypeRef>())
+        for tc in tycons do
+            let optTref =
+                if tc.IsFSharpException then
+                    GenExnDef cenv cgbuf.mgbuf eenv m tc
+                else
+                    GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc
+
+            match optTref with
+            | Some tref -> dict.Value.Add(tc.Stamp, tref)
+            | None -> ()
+
+        // Generate chunks of non-nested bindings together to allow recursive fixups.
+        let mutable bindsRemaining = mbinds
+
+        while not bindsRemaining.IsEmpty do
+            match bindsRemaining with
+            | ModuleOrNamespaceBinding.Binding _ :: _ ->
+                let theseBinds, otherBinds =
+                    bindsRemaining
+                    |> List.partition (function
+                        | ModuleOrNamespaceBinding.Binding _ -> true
+                        | _ -> false)
+                let recBinds =
+                    theseBinds
+                    |> List.map (function
+                        | ModuleOrNamespaceBinding.Binding recBind -> recBind
+                        | _ -> failwith "GenModuleOrNamespaceContents - unexpected")
+                GenLetRecBindings cenv cgbuf eenv (recBinds, m) dict
+                bindsRemaining <- otherBinds
+            | (ModuleOrNamespaceBinding.Module _ as mbind) :: rest ->
+                GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
+                bindsRemaining <- rest
+            | [] -> failwith "unreachable"
+
+        eenvinner
+
+    | TMDefLet(bind, _) ->
+        GenBindings cenv cgbuf eenv [ bind ] None
+        eenv
+
+    | TMDefOpens openDecls ->
+        let eenvinner = AddDebugImportsToEnv cenv eenv openDecls
+        eenvinner
+
+    | TMDefDo(e, _) ->
+        GenExpr cenv cgbuf eenv e discard
+        eenv
+
+    | TMDefs mdefs ->
+        (eenv, mdefs)
+        ||> List.fold (GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo)
+
+(*
+and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
+    match x with
+    | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
 
         let eenv = AddDebugImportsToEnv cenv eenv opens
 
@@ -10200,11 +10409,12 @@ and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo 
     | TMDefs mdefs ->
         (eenv, mdefs)
         ||> List.fold (GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo)
+*)
 
 // Generate a module binding
 and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) lazyInitInfo eenv m x =
     match x with
-    | ModuleOrNamespaceBinding.Binding bind -> GenLetRecBindings cenv cgbuf eenv ([ bind ], m)
+    | ModuleOrNamespaceBinding.Binding bind -> GenLetRecBindings cenv cgbuf eenv ([ bind ], m) None
 
     | ModuleOrNamespaceBinding.Module(mspec, mdef) when mspec.IsNamespace ->
         // Generate the declarations in the namespace and its initialization code
