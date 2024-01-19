@@ -233,17 +233,18 @@ module ParsedInput =
     /// down to a given position, returning true if a matching node is found, otherwise false.
     /// Traversal is short-circuited if no matching node is found through the given position.
     /// </summary>
-    /// <param name="predicate">The function to match each node against.</param>
+    /// <param name="predicate">The predicate to match each node against.</param>
     /// <param name="position">The position in the input file down to which to apply the function.</param>
     /// <param name="parsedInput">The AST to search.</param>
     /// <returns>True if a matching node is found, or false if no matching node is found.</returns>
     /// <example>
     /// <code lang="fsharp">
-    /// let range =
-    ///     (pos, parseResults.ParseTree) ||> ParsedInput.tryPick (fun _path node ->
-    ///       match node with
-    ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
-    ///       | _ -> None)
+    /// let isInTypeDefn =
+    ///     (pos, parsedInput)
+    ///     ||> ParsedInput.exists (fun _path node ->
+    ///         match node with
+    ///         | SyntaxNode.SynTypeDefn _ -> true
+    ///         | _ -> false)
     /// </code>
     /// </example>
     val exists:
@@ -260,7 +261,7 @@ module ParsedInput =
     /// <example>
     /// <code lang="fsharp">
     /// let unnecessaryParentheses =
-    ///    (HashSet Range.comparer, parseResults.ParseTree) ||> ParsedInput.fold (fun acc path node ->
+    ///    (HashSet Range.comparer, parsedInput) ||> ParsedInput.fold (fun acc path node ->
     ///        match node with
     ///        | SyntaxNode.SynExpr (SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range)) when
     ///            not (SynExpr.shouldBeParenthesizedInContext getLineString path inner)
@@ -304,7 +305,7 @@ module ParsedInput =
     /// </summary>
     /// <param name="position">The position in the input file down to which to dive.</param>
     /// <param name="parsedInput">The AST to search.</param>
-    /// <returns>The deepest node containing the given position, along with the path taken through the tree to find it.</returns>
+    /// <returns>The deepest node containing the given position, along with the path taken through the node's ancestors to find it.</returns>
     val tryNode: position: pos -> parsedInput: ParsedInput -> (SyntaxNode * SyntaxVisitorPath) option
 
     /// <summary>
@@ -320,9 +321,11 @@ module ParsedInput =
     /// <example>
     /// <code lang="fsharp">
     /// let range =
-    ///     (pos, parseResults.ParseTree) ||> ParsedInput.tryPick (fun _path node ->
+    ///     (pos, parsedInput) ||> ParsedInput.tryPick (fun _path node ->
     ///       match node with
-    ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
+    ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when
+    ///           rangeContainsPos range pos
+    ///           -> Some range
     ///       | _ -> None)
     /// </code>
     /// </example>
@@ -345,10 +348,11 @@ module ParsedInput =
     /// <example>
     /// <code lang="fsharp">
     /// let range =
-    ///     (pos, parseResults.ParseTree) ||> ParsedInput.tryPick (fun _path node ->
-    ///       match node with
-    ///       | SyntaxNode.SynExpr (SynExpr.InterpolatedString (range = range)) when rangeContainsPos range pos -> Some range
-    ///       | _ -> None)
+    ///     (pos, parsedInput)
+    ///     ||> ParsedInput.tryPickLast (fun path node ->
+    ///         match node, path with
+    ///         | FuncIdent range -> Some range
+    ///         | _ -> None)
     /// </code>
     /// </example>
     val tryPickLast:
