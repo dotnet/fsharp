@@ -4,7 +4,8 @@ open System
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 
-[<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module SynExpr =
     let (|Last|) = List.last
 
@@ -527,7 +528,6 @@ module SynExpr =
 
             loop ValueNone startLine range.StartColumn
 
-    /// Returns true if the given expression should be parenthesized in the given context, otherwise false.
     let rec shouldBeParenthesizedInContext (getSourceLineStr: int -> string) path expr : bool =
         let shouldBeParenthesizedInContext = shouldBeParenthesizedInContext getSourceLineStr
         let containsSensitiveIndentation = containsSensitiveIndentation getSourceLineStr

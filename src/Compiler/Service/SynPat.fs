@@ -1,6 +1,7 @@
 namespace FSharp.Compiler.Syntax
 
-[<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module SynPat =
     let (|Last|) = List.last
 
@@ -70,7 +71,6 @@ module SynPat =
         | SynPat.QuoteExpr _ -> ValueSome Atomic
         | _ -> ValueNone
 
-    /// Returns true if the given pattern should be parenthesized in the given context, otherwise false.
     let shouldBeParenthesizedInContext path pat : bool =
         match pat, path with
         // Parens are needed in:
