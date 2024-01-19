@@ -1,6 +1,5 @@
-﻿module FSharp.Compiler.EditorServices.Tests.SynExprTests
+﻿module FSharp.Compiler.Syntax.Tests.SynExpr
 
-open System
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -13,34 +12,35 @@ module Parenthesization =
         if shouldParenthesize then Needed
         else Unneeded
 
-let exprs : obj array list =
+let exprs: obj array list =
     [
-        [|Needed; "(1 + 2) * 3"|]
-        [|Unneeded; "1 + (2 * 3)"|]
-        [|Unneeded; "1 * (2 * 3)"|]
-        [|Unneeded; "(1 * 2) * 3"|]
-        [|Needed; "1 / (2 / 3)"|]
-        [|Unneeded; "(1 / 2) / 3"|]
-        [|Unneeded; "(printfn \"Hello, world.\")"|]
-        [|Needed; "let (~-) x = x in id -(<@ 3 @>)"|]
-        [|Unneeded; "let (~-) x = x in id (-(<@ 3 @>))"|]
-        [|Unneeded; "(())"|]
-        [|Unneeded; "(3)"|]
-        [|Needed;
+        [|([] : Parenthesization list); "()"|]
+        [|[Needed]; "(1 + 2) * 3"|]
+        [|[Unneeded]; "1 + (2 * 3)"|]
+        [|[Unneeded]; "1 * (2 * 3)"|]
+        [|[Unneeded]; "(1 * 2) * 3"|]
+        [|[Needed]; "1 / (2 / 3)"|]
+        [|[Unneeded]; "(1 / 2) / 3"|]
+        [|[Unneeded]; "(printfn \"Hello, world.\")"|]
+        [|[Needed]; "let (~-) x = x in id -(<@ 3 @>)"|]
+        [|[Unneeded; Unneeded]; "let (~-) x = x in id (-(<@ 3 @>))"|]
+        [|[Unneeded]; "(())"|]
+        [|[Unneeded]; "(3)"|]
+        [|[Needed];
           "
           let x = (x
                 + y)
           in x
           "
         |]
-        [|Unneeded;
+        [|[Unneeded];
           "
           let x = (x
                  + y)
           in x
           "
         |]
-        [|Needed;
+        [|[Needed];
           "
           async {
               return (
@@ -49,7 +49,7 @@ let exprs : obj array list =
           }
           "
         |]
-        [|Unneeded;
+        [|[Unneeded];
           "
           async {
               return (
@@ -61,34 +61,28 @@ let exprs : obj array list =
     ]
 
 #if !NET6_0_OR_GREATER
+open System
+
 type String with
     // This is not a true polyfill, but it suffices for the .NET Framework target.
     member this.ReplaceLineEndings() = this.Replace("\r", "")
 #endif
 
+// `expected` represents whether each parenthesized expression, from the inside outward, requires its parentheses.
 [<Theory; TestCaseSource(nameof exprs)>]
-let ``SynExpr.shouldBeParenthesizedInContext`` (needsParens: Parenthesization) src =
+let shouldBeParenthesizedInContext (expected: Parenthesization list) src =
     let ast = getParseResults src
 
     let getSourceLineStr =
         let lines = src.ReplaceLineEndings().Split '\n'
         Line.toZ >> Array.get lines
 
-    let exprs =
-        let exprs = ResizeArray()
+    let actual =
+        ([], ast)
+        ||> ParsedInput.fold (fun actual path node ->
+            match node, path with
+            | SyntaxNode.SynExpr expr, SyntaxNode.SynExpr(SynExpr.Paren _) :: path ->
+                Parenthesization.ofBool (SynExpr.shouldBeParenthesizedInContext getSourceLineStr path expr) :: actual
+            | _ -> actual)
 
-        SyntaxTraversal.TraverseAll(
-            ast,
-            { new SyntaxVisitorBase<unit>() with
-                member _.VisitExpr(path, _, defaultTraverse, expr) =
-                    match path with
-                    | SyntaxNode.SynExpr(SynExpr.Paren _) :: path ->
-                        exprs.Add(Parenthesization.ofBool (SynExpr.shouldBeParenthesizedInContext getSourceLineStr path expr))
-                    | _ -> ()
-
-                    defaultTraverse expr
-            })
-
-        List.ofSeq exprs
-
-    CollectionAssert.AreEqual(needsParens |> List.replicate exprs.Length, exprs)
+    CollectionAssert.AreEqual(expected, actual)
