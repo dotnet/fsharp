@@ -3043,6 +3043,8 @@ type Nullness =
 
     member TryEvaluate: unit -> NullnessInfo voption
 
+    member ToFsharpCodeString: unit -> string
+
 [<NoComparison; NoEquality>]
 type NullnessVar =
     new: unit -> NullnessVar
