@@ -73,32 +73,23 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
 
                         let! unnecessaryParentheses =
                             async {
-                                let ranges = HashSet Range.comparer
+                                return
+                                    (HashSet Range.comparer, parseResults.ParseTree)
+                                    ||> ParsedInput.fold (fun ranges path node ->
+                                        match node with
+                                        | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; rightParenRange = Some _; range = range)) when
+                                            not (SynExpr.shouldBeParenthesizedInContext getLineString path inner)
+                                            ->
+                                            ignore (ranges.Add range)
+                                            ranges
 
-                                SyntaxTraversal.TraverseAll(
-                                    parseResults.ParseTree,
-                                    { new SyntaxVisitorBase<unit>() with
-                                        member _.VisitExpr(path, _, defaultTraverse, expr) =
-                                            match expr with
-                                            | SynExpr.Paren(expr = inner; rightParenRange = Some _; range = range) when
-                                                not (SynExpr.shouldBeParenthesizedInContext getLineString path inner)
-                                                ->
-                                                ignore (ranges.Add range)
-                                            | _ -> ()
+                                        | SyntaxNode.SynPat(SynPat.Paren(inner, range)) when
+                                            not (SynPat.shouldBeParenthesizedInContext path inner)
+                                            ->
+                                            ignore (ranges.Add range)
+                                            ranges
 
-                                            defaultTraverse expr
-
-                                        member _.VisitPat(path, defaultTraverse, pat) =
-                                            match pat with
-                                            | SynPat.Paren(inner, range) when not (SynPat.shouldBeParenthesizedInContext path inner) ->
-                                                ignore (ranges.Add range)
-                                            | _ -> ()
-
-                                            defaultTraverse pat
-                                    }
-                                )
-
-                                return ranges
+                                        | _ -> ranges)
                             }
 
                         let diagnostics =
