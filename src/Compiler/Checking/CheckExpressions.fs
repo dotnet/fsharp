@@ -583,11 +583,11 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
     let g = cenv.g
     let tupInfo =
         if isAnyTupleTy g knownTy then
-            let isStruct, ptys = destAnyTupleTy g knownTy
+            let tInfo = destAnyTupleTy g knownTy
             let ptys =
-                if List.length ps = List.length ptys then ptys
+                if List.length ps = List.length tInfo.ArgTypes then tInfo.ArgTypes
                 else NewInferenceTypes g ps
-            TupleInfo(isStruct, ptys)
+            TupleInfo(tInfo.IsStruct, ptys)
         else
             TupleInfo(isExplicitStruct, NewInferenceTypes g ps)
 
@@ -596,7 +596,7 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
         | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
         | _ -> contextInfo
 
-    let ty2 = TType_tuple (isExplicitStruct, tupInfo.ArgTypes)
+    let ty2 = TType_tuple (TupleInfo(isExplicitStruct, tupInfo.ArgTypes))
     AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
     tupInfo
 
@@ -5826,16 +5826,16 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
 
 and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy (args: 'a list) tcArgs =
     if isAnyTupleTy g tupleTy then
-        let isStruct, ptys = destAnyTupleTy g tupleTy
+        let tInfo = destAnyTupleTy g tupleTy
 
-        if args.Length <> ptys.Length then
+        if args.Length <> tInfo.ArgTypes.Length then
             let argTys = NewInferenceTypes g args
             suppressErrorReporting (fun () -> tcArgs argTys)
             let expectedTy = TType_tuple (isStruct, argTys)
 
             // We let error recovery handle this exception
             error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,
-                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, env.eContextInfo, ptys, argTys, m, m)), m))
+                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, env.eContextInfo, tInfo.ArgTypes, argTys, m, m)), m))
 
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
