@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.FSharpChecker.SymbolUse
+﻿module FSharpChecker.SymbolUse
 
 
 open FSharp.Compiler.CodeAnalysis

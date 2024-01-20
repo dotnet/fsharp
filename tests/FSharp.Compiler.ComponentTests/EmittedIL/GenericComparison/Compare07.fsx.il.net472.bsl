@@ -86,11 +86,11 @@
                                    !a item2) cil managed
       {
         .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 43 43 6F 6D 70 61 72 65 30 37   
+                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 3D 43 6F 6D 70 61 72 65 30 37   
                                                                                                                                  2B 43 6F 6D 70 61 72 65 4D 69 63 72 6F 50 65 72   
                                                                                                                                  66 41 6E 64 43 6F 64 65 47 65 6E 65 72 61 74 69   
                                                                                                                                  6F 6E 54 65 73 74 73 2B 47 65 6E 65 72 69 63 4B   
-                                                                                                                                 65 79 60 31 5B 5B 21 30 5D 5D 00 00 )             
+                                                                                                                                 65 79 60 31 00 00 )                               
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         
@@ -667,13 +667,13 @@
 
 } 
 
-.class private auto ansi sealed System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
+.class private auto ansi serializable sealed System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
        extends [runtime]System.Enum
 {
   .custom instance void [runtime]System.FlagsAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .field public specialname rtspecialname int32 value__ = int32(0x00000000)
+  .field public specialname rtspecialname int32 value__
   .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes All = int32(0xFFFFFFFF)
   .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes None = int32(0x00000000)
   .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicParameterlessConstructor = int32(0x00000001)
@@ -695,6 +695,7 @@
 .class private auto ansi beforefieldinit System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute
        extends [runtime]System.Attribute
 {
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .field private valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType@
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 

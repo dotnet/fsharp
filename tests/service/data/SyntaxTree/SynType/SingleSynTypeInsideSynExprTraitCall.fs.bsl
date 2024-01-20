@@ -34,11 +34,14 @@ ImplFile
                                     (Some
                                        (PostfixList
                                           ([SynTyparDecl
-                                              ([], SynTypar (a, HeadType, false));
+                                              ([], SynTypar (a, HeadType, false),
+                                               [], { AmpersandRanges = [] });
                                             SynTyparDecl
-                                              ([], SynTypar (b, HeadType, false));
+                                              ([], SynTypar (b, HeadType, false),
+                                               [], { AmpersandRanges = [] });
                                             SynTyparDecl
-                                              ([], SynTypar (c, HeadType, false))],
+                                              ([], SynTypar (c, HeadType, false),
+                                               [], { AmpersandRanges = [] })],
                                            [WhereTyparSupportsMember
                                               (Var
                                                  (SynTypar (b, HeadType, false),
@@ -120,8 +123,8 @@ ImplFile
                                             Var
                                               (SynTypar (b, HeadType, false),
                                                (3,104--3,106)), (3,101--3,106))],
-                                        (3,94--3,106)), (3,93--3,107))], None,
-                               (3,25--3,107)), None,
+                                        [(3,99--3,100)], (3,94--3,106)),
+                                     (3,93--3,107))], None, (3,25--3,107)), None,
                             Paren
                               (TraitCall
                                  (Var

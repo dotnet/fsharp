@@ -33,6 +33,7 @@ module internal Activity =
         let gc2 = "gc2"
         let outputDllFile = "outputDllFile"
         let buildPhase = "buildPhase"
+        let version = "version"
 
         let AllKnownTags =
             [|
@@ -84,11 +85,11 @@ module internal Activity =
 
             activity.Start()
 
-    let startNoTags (name: string) : IDisposable = activitySource.StartActivity(name)
+    let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
 
     let addEvent name =
-        if Activity.Current <> null && Activity.Current.Source = activitySource then
-            Activity.Current.AddEvent(ActivityEvent(name)) |> ignore
+        if (not (isNull Activity.Current)) && Activity.Current.Source = activitySource then
+            Activity.Current.AddEvent(ActivityEvent name) |> ignore
 
     module Profiling =
 
@@ -214,7 +215,7 @@ module internal Activity =
             appendWithLeadingComma (a.RootId)
 
             Tags.AllKnownTags
-            |> Array.iter (fun t -> a.GetTagItem(t) |> escapeStringForCsv |> appendWithLeadingComma)
+            |> Array.iter (a.GetTagItem >> escapeStringForCsv >> appendWithLeadingComma)
 
             sb.ToString()
 
@@ -231,13 +232,12 @@ module internal Activity =
             let sw = new StreamWriter(path = pathToFile, append = true)
 
             let msgQueue =
-                MailboxProcessor<string>.Start
-                    (fun inbox ->
-                        async {
-                            while true do
-                                let! msg = inbox.Receive()
-                                do! sw.WriteLineAsync(msg) |> Async.AwaitTask
-                        })
+                MailboxProcessor<string>.Start(fun inbox ->
+                    async {
+                        while true do
+                            let! msg = inbox.Receive()
+                            do! sw.WriteLineAsync(msg) |> Async.AwaitTask
+                    })
 
             let l =
                 new ActivityListener(

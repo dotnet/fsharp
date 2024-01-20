@@ -29,11 +29,7 @@ type internal HashCompletion =
         }
 
 type internal HashDirectiveCompletionProvider
-    (
-        workspace: Workspace,
-        projectInfoManager: FSharpProjectOptionsManager,
-        completions: HashCompletion list
-    ) =
+    (workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: HashCompletion list) =
 
     inherit FSharpCommonCompletionProviderBase()
 
@@ -68,21 +64,27 @@ type internal HashDirectiveCompletionProvider
         let documentId = workspace.GetDocumentIdInCurrentContext(text.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
 
-        let defines, langVersion =
+        let defines, langVersion, strictIndentation =
             projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
 
         let textLines = text.Lines
         let triggerLine = textLines.GetLineFromPosition(position)
 
-        Tokenizer.getClassifiedSpans (
+        let classifiedSpans = ResizeArray<_>()
+
+        Tokenizer.classifySpans (
             documentId,
             text,
             triggerLine.Span,
             Some document.FilePath,
             defines,
             Some langVersion,
+            strictIndentation,
+            classifiedSpans,
             CancellationToken.None
         )
+
+        classifiedSpans
 
     let isInStringLiteral (text: SourceText, position: int) : bool =
         getClassifiedSpans (text, position)

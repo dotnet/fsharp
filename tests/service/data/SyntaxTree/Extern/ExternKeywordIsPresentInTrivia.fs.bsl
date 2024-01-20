@@ -14,7 +14,8 @@ ImplFile
                   LongIdent
                     (SynLongIdent ([GetProcessHeap], [], [None]), None,
                      Some (SynValTyparDecls (None, false)),
-                     Pats [Tuple (false, [], (2,26--2,27))], None, (2,12--2,26)),
+                     Pats [Tuple (false, [], [], (2,26--2,27))], None,
+                     (2,12--2,26)),
                   Some
                     (SynBindingReturnInfo
                        (App

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL
 {
     public static class MvidReader
     {

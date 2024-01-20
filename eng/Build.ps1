@@ -61,6 +61,7 @@ param (
     [switch]$testAll,
     [switch]$testAllButIntegration,
     [switch]$testpack,
+    [switch]$testAOT,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
@@ -109,6 +110,7 @@ function Print-Usage() {
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
+    Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -148,6 +150,7 @@ function Process-Arguments() {
         $script:testFSharpQA = $True
         $script:testIntegration = $True
         $script:testVs = $True
+        $script:testAOT = $True
     }
 
     if ($testAllButIntegration) {
@@ -156,6 +159,7 @@ function Process-Arguments() {
         $script:testFSharpQA = $True
         $script:testIntegration = $False
         $script:testVs = $True
+        $script:testAOT = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
@@ -171,6 +175,7 @@ function Process-Arguments() {
         $script:testIntegration = $False
         $script:testVs = $False
         $script:testpack = $False
+        $script:testAOT = $False
         $script:verifypackageshipstatus = $True
     }
 
@@ -202,6 +207,10 @@ function Process-Arguments() {
         $script:verifypackageshipstatus = $True;
     }
 
+    if ($testAOT) {
+        $script:pack = $True;
+    }
+
     foreach ($property in $properties) {
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
@@ -213,11 +222,11 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "net7.0"
+        $script:bootstrapTfm = "net8.0"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "net7.0") {
+    if ($bootstrapTfm -eq "net8.0") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -229,8 +238,9 @@ function Update-Arguments() {
     }
 }
 
-function BuildSolution([string] $solutionName) {
-    Write-Host "${solutionName}:"
+
+function BuildSolution([string] $solutionName, $nopack) {
+        Write-Host "${solutionName}:"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
 
@@ -238,7 +248,7 @@ function BuildSolution([string] $solutionName) {
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "net7.0" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "net8.0" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -246,6 +256,8 @@ function BuildSolution([string] $solutionName) {
     $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
 
     $env:BUILDING_USING_DOTNET="false"
+
+    $pack = if ($nopack -eq $False) {""} else {$pack}
 
     MSBuild $toolsetBuildProj `
         $bl `
@@ -268,7 +280,7 @@ function BuildSolution([string] $solutionName) {
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
-        
+
     $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
 
@@ -328,15 +340,15 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     if ($env:RunningAsPullRequest -ne "true" -and $noTestFilter -eq $false) {
         $args += " --filter TestCategory!=PullRequest"
     }
-    
+
     if ($asBackgroundJob) {
         Write-Host("Starting on the background: $args")
         Write-Host("------------------------------------")
-        $bgJob = Start-Job -ScriptBlock {       
+        $bgJob = Start-Job -ScriptBlock {
             & $using:dotnetExe test $using:testProject -c $using:configuration -f $using:targetFramework -v n --test-adapter-path $using:testadapterpath --logger "nunit;LogFilePath=$using:testLogPath" /bl:$using:testBinLogPath  --blame --results-directory $using:ArtifactsDir\TestResults\$using:configuration
-            if ($LASTEXITCODE -ne 0) { 
-                throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args" 
-            }           
+            if ($LASTEXITCODE -ne 0) {
+                throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args"
+            }
         }
         return $bgJob
     } else{
@@ -502,16 +514,11 @@ try {
     TryDownloadDotnetFrameworkSdk
 
     $nativeTools = InitializeNativeTools
+
     if (-not (Test-Path variable:NativeToolsOnMachine)) {
-        $env:PERL5Path = Join-Path $nativeTools "perl\5.32.1.1\perl\bin\perl.exe"
+        $env:PERL5Path = Join-Path $nativeTools "perl\5.38.0.1\perl\bin\perl.exe"
         write-host "variable:NativeToolsOnMachine = unset or false"
         $nativeTools
-        write-host "Path = $env:PERL5Path"
-    }
-    else {
-        $env:PERL5Path = Join-Path $nativeTools["perl"] "perl\bin\perl.exe"
-        write-host "variable:NativeToolsOnMachine = $variable:NativeToolsOnMachine"
-        $nativeTools.values
         write-host "Path = $env:PERL5Path"
     }
 
@@ -527,17 +534,17 @@ try {
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild) {
         if ($noVisualStudio) {
-            BuildSolution "FSharp.sln"
+            BuildSolution "FSharp.sln" $False
         }
         else {
-            BuildSolution "VisualFSharp.sln"
+            BuildSolution "VisualFSharp.sln" $False
         }
     }
 
     if ($pack) {
         $properties_storage = $properties
         $properties += "/p:GenerateSbom=false"
-        BuildSolution "Microsoft.FSharp.Compiler.sln"
+        BuildSolution "Microsoft.FSharp.Compiler.sln" $True
         $properties = $properties_storage
     }
     if ($build) {
@@ -547,21 +554,21 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "net7.0"
+    $coreclrTargetFramework = "net8.0"
 
     if ($testCoreClr) {
         $bgJob = TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
 
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
-        
+
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob -ErrorAction Stop  
+        Receive-Job $bgJob -ErrorAction Stop
     }
 
     if ($testDesktop) {
@@ -573,7 +580,7 @@ try {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
-        
+
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
         Receive-Job $bgJob -ErrorAction Stop
@@ -593,8 +600,15 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
-        write-host "Exec-Console $env:PERL5Path"
-        Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+
+        if (-not (Test-Path variable:NativeToolsOnMachine)) {
+            Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        }
+        else
+        {
+            Exec-Console "perl.exe" """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        }
+
         write-host "Exec-Console finished"
         Pop-Location
     }
@@ -637,9 +651,15 @@ try {
         TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj"
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests\"
     }
-    
+
     if ($testIntegration) {
         TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.IntegrationTests\"
+    }
+
+    if ($testAOT) {
+        Push-Location "$RepoRoot\tests\AheadOfTime\Trimming"
+        ./check.cmd
+        Pop-Location
     }
 
     # verify nupkgs have access to the source code

@@ -10,15 +10,15 @@ open FSharp.Compiler.Text.Range
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.GoToDefinition
 
-open System.Collections.Immutable
-open System.Threading.Tasks
+open CancellableTasks
 
 [<Export(typeof<IFSharpFindDefinitionService>)>]
 [<Export(typeof<FSharpFindDefinitionService>)>]
 type internal FSharpFindDefinitionService [<ImportingConstructor>] (metadataAsSource: FSharpMetadataAsSourceService) =
     interface IFSharpFindDefinitionService with
         member _.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
-            let navigation = FSharpNavigation(metadataAsSource, document, rangeStartup)
-
-            let definitions = navigation.FindDefinitions(position, cancellationToken)
-            ImmutableArray.CreateRange(definitions) |> Task.FromResult
+            cancellableTask {
+                let navigation = FSharpNavigation(metadataAsSource, document, rangeStartup)
+                return! navigation.FindDefinitionsAsync(position)
+            }
+            |> CancellableTask.start cancellationToken

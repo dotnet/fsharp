@@ -38,6 +38,8 @@ let mkLocalPrivateAttributeWithDefaultConstructor (g: TcGlobals, name: string) =
                 g.AddMethodGeneratedAttributes(mkILNonGenericEmptyCtor (g.ilg.typ_Attribute, None, None))
             ]
 
+    let ilCustomAttrs = mkILCustomAttrsFromArray [| g.CompilerGeneratedAttribute |]
+
     mkILGenericClass (
         name,
         ILTypeDefAccess.Private,
@@ -49,7 +51,7 @@ let mkLocalPrivateAttributeWithDefaultConstructor (g: TcGlobals, name: string) =
         emptyILTypeDefs,
         emptyILProperties,
         emptyILEvents,
-        emptyILCustomAttrs,
+        ilCustomAttrs,
         ILTypeInit.BeforeField
     )
 
@@ -104,6 +106,8 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
             )
         )
 
+    let ilCustomAttrs = mkILCustomAttrsFromArray [| g.CompilerGeneratedAttribute |]
+
     mkILGenericClass (
         name,
         ILTypeDefAccess.Private,
@@ -118,7 +122,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
         emptyILTypeDefs,
         mkILProperties (ilElements |> List.map (fun (_, _, property, _) -> property)),
         emptyILEvents,
-        emptyILCustomAttrs,
+        ilCustomAttrs,
         ILTypeInit.BeforeField
     )
 
@@ -130,7 +134,7 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
         |> Array.map (fun (name, value) -> mkILStaticLiteralField (name, ilType, ILFieldInit.Int32 value, None, ILMemberAccess.Public))
         |> Array.append
             [|
-                (mkILInstanceField ("value__", g.ilg.typ_Int32, Some(ILFieldInit.Int32 0), ILMemberAccess.Public))
+                (mkILInstanceField ("value__", g.ilg.typ_Int32, None, ILMemberAccess.Public))
                     .WithSpecialName(true)
             |]
         |> Array.toList
@@ -155,10 +159,16 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
 // Generate Local embeddable versions of framework types when necessary
 //--------------------------------------------------------------------------
 
-let GetReadOnlyAttribute (g: TcGlobals) =
-    let tref = g.attrib_IsReadOnlyAttribute.TypeRef
+let private getPotentiallyEmbedableAttribute (g: TcGlobals) (info: BuiltinAttribInfo) =
+    let tref = info.TypeRef
     g.TryEmbedILType(tref, (fun () -> mkLocalPrivateAttributeWithDefaultConstructor (g, tref.Name)))
-    mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
+    mkILCustomAttribute (info.TypeRef, [], [], [])
+
+let GetReadOnlyAttribute (g: TcGlobals) =
+    getPotentiallyEmbedableAttribute g g.attrib_IsReadOnlyAttribute
+
+let GetIsUnmanagedAttribute (g: TcGlobals) =
+    getPotentiallyEmbedableAttribute g g.attrib_IsUnmanagedAttribute
 
 let GenReadOnlyAttributeIfNecessary g ty =
     if isInByrefTy g ty then
@@ -194,12 +204,14 @@ let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
                         ("Interfaces", 8192)
                     |]
 
-                mkLocalPrivateInt32Enum (g, tref, values))
+                (mkLocalPrivateInt32Enum (g, tref, values))
+                    .WithSerializable(true)
+                    .WithSealed(true))
         )
 
     ILType.Value(mkILNonGenericTySpec (tref))
 
-let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes ilType =
+let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
     let tref = g.attrib_DynamicDependencyAttribute.TypeRef
 
     g.TryEmbedILType(
@@ -214,7 +226,12 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes ilType =
     let typIlMemberTypes =
         ILType.Value(mkILNonGenericTySpec (g.enum_DynamicallyAccessedMemberTypes.TypeRef))
 
-    mkILCustomAttribute (tref, [ typIlMemberTypes; g.ilg.typ_Type ], [ ILAttribElem.Int32 memberTypes; ILAttribElem.Type(Some ilType) ], [])
+    mkILCustomAttribute (
+        tref,
+        [ typIlMemberTypes; g.ilg.typ_Type ],
+        [ ILAttribElem.Int32 memberTypes; ILAttribElem.TypeRef(Some ilType.TypeRef) ],
+        []
+    )
 
 /// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
 let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =

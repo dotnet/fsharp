@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CompilerOptions
+namespace CompilerOptions.Fsc
 
 open Xunit
 open FSharp.Test
@@ -10,7 +10,7 @@ module cliversion =
 
     //#   SOURCE=E_fsc_cliversion.fs  SCFLAGS="--cliversion:2.0"                              # fsc --cliversion:2.0
     [<Fact>]
-    let ``fsc --cliversion:2.0``() =
+    let ``fsc --cliversion:2_0``() =
         FSharp """
         """
         |> asExe
@@ -18,12 +18,12 @@ module cliversion =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--cliversion'")
+            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--cliversion'. Use '--help' to learn about recognized command line options.")
         ]
 
     //#   SOURCE=E_fsi_cliversion.fs  SCFLAGS="--cliversion:2.0" FSIMODE=EXEC COMPILE_ONLY=1  # fsi --cliversion:2.0
     [<Fact>]
-    let ``fsi --cliversion:2.0``() =
+    let ``fsi --cliversion:2_0``() =
         FSharp """
         """
         |> asFsx
@@ -31,6 +31,6 @@ module cliversion =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--cliversion'")
+            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--cliversion'. Use '--help' to learn about recognized command line options.")
         ]
 

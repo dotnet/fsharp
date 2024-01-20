@@ -672,12 +672,14 @@ Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Contro
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpAsync`1[T] Scan[T](Microsoft.FSharp.Core.FSharpFunc`2[TMsg,Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Control.FSharpAsync`1[T]]], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpHandler`1[System.Exception] Error
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg] Start(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg] StartImmediate(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Core.FSharpOption`1[TReply] TryPostAndReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: TReply PostAndReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Dispose()
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Post(TMsg)
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Start()
+Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void StartImmediate()
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void add_Error(Microsoft.FSharp.Control.FSharpHandler`1[System.Exception])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void remove_Error(Microsoft.FSharp.Control.FSharpHandler`1[System.Exception])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void set_DefaultTimeout(Int32)
@@ -951,6 +953,7 @@ Microsoft.FSharp.Core.CustomOperationAttribute: System.String JoinConditionWord
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String Name
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String get_JoinConditionWord()
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String get_Name()
+Microsoft.FSharp.Core.CustomOperationAttribute: Void .ctor()
 Microsoft.FSharp.Core.CustomOperationAttribute: Void .ctor(System.String)
 Microsoft.FSharp.Core.CustomOperationAttribute: Void set_AllowIntoPattern(Boolean)
 Microsoft.FSharp.Core.CustomOperationAttribute: Void set_IsLikeGroupJoin(Boolean)
@@ -1002,7 +1005,7 @@ Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormatToTextWriter[T](Syste
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormat[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceExpression[T](Microsoft.FSharp.Quotations.FSharpExpr`1[T])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceUntypedExpression[T](Microsoft.FSharp.Quotations.FSharpExpr)
-Microsoft.FSharp.Core.ExtraTopLevelOperators: T[,] CreateArray2D[?,T](System.Collections.Generic.IEnumerable`1[?])
+Microsoft.FSharp.Core.ExtraTopLevelOperators: T[,] CreateArray2D[a,T](System.Collections.Generic.IEnumerable`1[a])
 Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: T1 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: T2 Item
@@ -2043,6 +2046,7 @@ Microsoft.FSharp.Core.StructuralEqualityAttribute: Void .ctor()
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: System.String Value
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: System.String get_Value()
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: Void .ctor(System.String)
+Microsoft.FSharp.Core.TailCallAttribute: Void .ctor()
 Microsoft.FSharp.Core.Unit: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.Unit: Int32 GetHashCode()
 Microsoft.FSharp.Core.UnverifiableAttribute: Void .ctor()

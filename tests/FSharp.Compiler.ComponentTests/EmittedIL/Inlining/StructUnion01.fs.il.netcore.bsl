@@ -51,8 +51,6 @@
                     [runtime]System.IComparable,
                     [runtime]System.Collections.IStructuralComparable
   {
-    .pack 0
-    .size 1
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
                                                                                                          61 79 28 29 2C 6E 71 7D 00 00 )                   
@@ -72,32 +70,18 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
       
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  newobj     instance void assembly/U::.ctor(int32,
-                                                                int32)
-      IL_0007:  ret
-    } 
-
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(int32 item1,
-                                 int32 item2) cil managed
-    {
-      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 0F 53 74 72 75 63 74 55 6E 69   
-                                                                                                                                                     6F 6E 30 31 2B 55 00 00 )                         
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      int32 assembly/U::item1
-      IL_0007:  ldarg.0
-      IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 assembly/U::item2
-      IL_000e:  ret
+      .maxstack  3
+      .locals init (valuetype assembly/U V_0)
+      IL_0000:  ldloca.s   V_0
+      IL_0002:  initobj    assembly/U
+      IL_0008:  ldloca.s   V_0
+      IL_000a:  ldarg.0
+      IL_000b:  stfld      int32 assembly/U::item1
+      IL_0010:  ldloca.s   V_0
+      IL_0012:  ldarg.1
+      IL_0013:  stfld      int32 assembly/U::item2
+      IL_0018:  ldloc.0
+      IL_0019:  ret
     } 
 
     .method public hidebysig instance int32 

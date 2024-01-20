@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 public class MicroPerfCSharp
 {
     //
-    // FSharp will not inline the code so we shouldn't eiter.
+    // FSharp will not inline the code so we shouldn't either.
     //
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static int Cond(int x)

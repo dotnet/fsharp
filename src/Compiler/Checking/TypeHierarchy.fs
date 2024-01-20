@@ -355,8 +355,13 @@ let ImportILTypeFromMetadata amap m scoref tinst minst ilTy =
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
 let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilTy getCattrs =
     let ty = RescopeAndImportILType scoref amap m (tinst@minst) ilTy
-    // If the type is a byref and one of attributes from a return or parameter has IsReadOnly, then it's a inref.
-    if isByrefTy amap.g ty && TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (getCattrs ()) then
+    // If the type is a byref and one of attributes from a return or parameter has
+    // - a `IsReadOnlyAttribute` - it's an inref
+    // - a `RequiresLocationAttribute` (in which case it's a `ref readonly`) which we treat as inref,
+    // latter is an ad-hoc fix for https://github.com/dotnet/runtime/issues/94317.
+    if isByrefTy amap.g ty
+       && (TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (getCattrs ())
+           || TryFindILAttribute amap.g.attrib_RequiresLocationAttribute (getCattrs ())) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
     else
         ty
@@ -428,4 +433,3 @@ let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsori
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
     (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig))
     renaming, tptys
-

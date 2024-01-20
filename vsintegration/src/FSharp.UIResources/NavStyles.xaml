@@ -8,8 +8,8 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <SolidColorBrush x:Key="inherited_brush" Color="{Binding Path=Foreground.Color, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Hyperlink}}"/>
-        <SolidColorBrush x:Key="inherited_semi_brush" Opacity="0.3" Color="{Binding Path=Foreground.Color, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Hyperlink}}"/>
+        <SolidColorBrush x:Key="inherited_brush" Color="{Binding Path=Inlines.FirstInline.Foreground.Color, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Hyperlink}}"/>
+        <SolidColorBrush x:Key="inherited_semi_brush" Opacity="0.3" Color="{Binding Path=Inlines.FirstInline.Foreground.Color, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Hyperlink}}"/>
         <DashStyle x:Key="dash_dashstyle" Dashes="5 5"/>
         <DashStyle x:Key="dot_dashstyle" Dashes="1 5"/>
         <Pen x:Key="dot_pen" DashStyle="{StaticResource dot_dashstyle}" Brush="{StaticResource inherited_brush}"/>
@@ -26,7 +26,7 @@
             <TextDecoration Location="Underline" PenOffset="1" Pen="{StaticResource dot_pen}"/>
         </TextDecorationCollection>
         <TextDecorationCollection x:Key="full_deco">
-            <TextDecoration PenOffset="1" Pen="{StaticResource mouseover_pen}" />
+            <TextDecoration Location="Underline" PenOffset="1" Pen="{StaticResource mouseover_pen}" />
         </TextDecorationCollection>
         <Style x:Key="hyperlink_mouse_over" TargetType="Hyperlink">
             <Style.Triggers>

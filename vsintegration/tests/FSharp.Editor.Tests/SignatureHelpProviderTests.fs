@@ -11,12 +11,13 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis
 open Microsoft.IO
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module SignatureHelpProvider =
     let private DefaultDocumentationProvider =
         { new IDocumentationBuilder with
-            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-            override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
     let checker = FSharpChecker.Create()
@@ -25,6 +26,7 @@ module SignatureHelpProvider =
 
     let GetSignatureHelp (project: FSharpProject) (fileName: string) (caretPosition: int) =
         async {
+            let! ct = Async.CancellationToken
             let triggerChar = None
             let fileContents = File.ReadAllText(fileName)
             let sourceText = SourceText.From(fileContents)
@@ -38,13 +40,11 @@ module SignatureHelpProvider =
 
             let parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
-                |> Async.RunSynchronously
+                |> CancellableTask.runSynchronously ct
 
             let paramInfoLocations =
                 parseResults
-                    .FindParameterLocations(
-                        Position.fromZ caretLinePos.Line caretLineColumn
-                    )
+                    .FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
                     .Value
 
             let triggered =
@@ -56,7 +56,8 @@ module SignatureHelpProvider =
                     DefaultDocumentationProvider,
                     sourceText,
                     caretPosition,
-                    triggerChar
+                    triggerChar,
+                    EditorOptions()
                 )
                 |> Async.RunSynchronously
 
@@ -105,7 +106,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
-            |> Async.RunSynchronously
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let actual =
             let paramInfoLocations =
@@ -123,7 +124,8 @@ module SignatureHelpProvider =
                         DefaultDocumentationProvider,
                         sourceText,
                         caretPosition,
-                        triggerChar
+                        triggerChar,
+                        EditorOptions()
                     )
                     |> Async.RunSynchronously
 
@@ -152,16 +154,21 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
-            |> Async.RunSynchronously
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let adjustedColumnInSource =
-            let rec loop ch pos =
-                if Char.IsWhiteSpace(ch) then
-                    loop sourceText.[pos - 1] (pos - 1)
-                else
+            let rec loop pos =
+                if pos = 0 then
                     pos
+                else
+                    let nextPos = pos - 1
 
-            loop sourceText.[caretPosition - 1] (caretPosition - 1)
+                    if not (Char.IsWhiteSpace sourceText[nextPos]) then
+                        pos
+                    else
+                        loop nextPos
+
+            loop (caretPosition - 1)
 
         let sigHelp =
             FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
@@ -170,11 +177,13 @@ module SignatureHelpProvider =
                 document.Id,
                 [],
                 None,
+                None,
                 DefaultDocumentationProvider,
                 sourceText,
                 caretPosition,
                 adjustedColumnInSource,
-                filePath
+                filePath,
+                EditorOptions()
             )
             |> Async.RunSynchronously
 
@@ -439,8 +448,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 module ``Function argument applications`` =
     let private DefaultDocumentationProvider =
         { new IDocumentationBuilder with
-            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-            override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
     [<Fact>]
@@ -494,7 +503,7 @@ M.f
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
-            |> Async.RunSynchronously
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let adjustedColumnInSource =
             let rec loop ch pos =
@@ -512,11 +521,13 @@ M.f
                 document.Id,
                 [],
                 None,
+                None,
                 DefaultDocumentationProvider,
                 sourceText,
                 caretPosition,
                 adjustedColumnInSource,
-                filePath
+                filePath,
+                EditorOptions()
             )
             |> Async.RunSynchronously
 
@@ -545,6 +556,18 @@ M.f
 
         let marker = "List.map "
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "mapping"
+
+    [<Fact>]
+    let ``function application in middle of pipeline with two additional arguments`` () =
+        let fileContents =
+            """
+[1..10]
+|> List.fold (fun acc _ -> acc) 
+|> List.filter (fun x -> x > 3)
+    """
+
+        let marker = "List.fold (fun acc _ -> acc) "
+        assertSignatureHelpForFunctionApplication fileContents marker 2 1 "state"
 
     [<Fact>]
     let ``function application with function as parameter`` () =

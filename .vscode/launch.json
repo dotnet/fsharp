@@ -6,7 +6,7 @@
             "id": "fscArgsPrompt",
             "description": "Enter arguments for fsc",
             "default": "",
-            "type": "promptString",
+            "type": "promptString"
         },
         {
             "id": "fsiArgsPrompt",
@@ -17,17 +17,17 @@
     ],
     "configurations": [
         {
-            "name": "Launch FSI (Debug, .NET 7.0)",
+            "name": "Launch FSI (Debug)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
-            // "preLaunchTask": "Build (Debug)",
+            "preLaunchTask": "${defaultBuildTask}",
             // If you have changed target frameworks, make sure to update the program p
-            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net7.0/fsi.dll",
+            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net8.0/fsi.dll",
             "args": [
                 "${input:fsiArgsPrompt}"
             ],
-            "cwd": "${workspaceFolder}/src",
+            "cwd": "${workspaceFolder}",
             "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
             "internalConsoleOptions": "neverOpen",
             "suppressJITOptimizations": true,
@@ -44,16 +44,19 @@
                     "enabled": true
                 }
             },
+            "allowFastEvaluate": true
         },
         {
-            "name": "Launch FSC (Debug, .NET 7.0)",
+            "name": "Launch FSC (Debug)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
-            // "preLaunchTask": "Build (Debug)",
+            "preLaunchTask": "${defaultBuildTask}",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net7.0/fsc.dll",
+            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net8.0/fsc.dll",
             "args": [
+                "--targetprofile:netstandard",
+                "--simpleresolution",
                 "${input:fscArgsPrompt}"
             ],
             "cwd": "${workspaceFolder}",
@@ -73,9 +76,10 @@
                     "enabled": true
                 }
             },
+            "allowFastEvaluate": true
         },
         {
-            "name": "Attach to a .NET process",
+            "name": "Attach to a .NET process with debugger",
             "type": "coreclr",
             "request": "attach",
             "processId": "${command:pickProcess}",
@@ -86,7 +90,8 @@
             },
             "justMyCode": true,
             "enableStepFiltering": false,
-            "requireExactSource": false
+            "requireExactSource": false,
+            "allowFastEvaluate": true
         }
     ]
 }

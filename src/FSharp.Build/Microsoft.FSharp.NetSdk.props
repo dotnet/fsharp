@@ -12,7 +12,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-   <PropertyGroup>
+  <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
@@ -35,6 +35,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <PropertyGroup>
+    <Language>F#</Language>                                                                                                                         <!-- It's an F# Language project -->
     <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{F2A71F9B-5D33-465A-A702-920D77279786}</DefaultProjectTypeGuid>         <!-- F# project type -->
     <Prefer32Bit Condition="'$(Prefer32Bit)' == '' ">false</Prefer32Bit>
     <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>

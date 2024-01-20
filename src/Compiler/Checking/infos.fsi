@@ -420,6 +420,9 @@ type MethInfo =
     /// Indicates if this is an IL method.
     member IsILMethod: bool
 
+    /// Indicates if the method is a get_IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Does the method appear to the user as an instance method?
     member IsInstance: bool
 
@@ -516,6 +519,9 @@ type MethInfo =
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> ParamData list list
+
+    /// Get the parameter names of a MethInfo
+    member GetParamNames: unit -> string option list list
 
     /// Get the parameter types of a method info
     member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list list
@@ -818,6 +824,9 @@ type PropInfo =
 
     member ImplementedSlotSignatures: SlotSig list
 
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Indicates if this property is marked 'override' and thus definitely overrides another property.
     member IsDefiniteFSharpOverride: bool
 
@@ -833,6 +842,11 @@ type PropInfo =
     member IsFSharpExplicitInterfaceImplementation: bool
 
     /// Indicates if this property is an indexer property, i.e. a property with arguments.
+    /// <code lang="fsharp">
+    /// member x.Prop with
+    ///     get (indexPiece1:int,indexPiece2: string) = ...
+    ///     and set (indexPiece1:int,indexPiece2: string) value = ...
+    /// </code>
     member IsIndexer: bool
 
     /// Indicates if the property is logically a 'newslot', i.e. hides any previous slots of the same name.
@@ -1086,3 +1100,6 @@ val PropInfosEquivByNameAndSig:
 val SettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
 
 val GettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
+
+[<return: Struct>]
+val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) voption

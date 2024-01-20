@@ -599,12 +599,12 @@ module internal PrintfImpl =
                 let fmt = getFormat prec
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
-                    ValueConverter.Make (fun v -> 
-                        pad fmt spec.Width v)
+                    ValueConverter.Make ( 
+                        pad fmt spec.Width)
                 else
                     // width=X, prec=*
-                    ValueConverter.Make (fun v -> 
-                        basic fmt v)
+                    ValueConverter.Make ( 
+                        basic fmt)
 
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
@@ -617,12 +617,12 @@ module internal PrintfImpl =
             else
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
-                    ValueConverter.Make (fun v -> 
-                        pad spec.Width v)
+                    ValueConverter.Make ( 
+                        pad spec.Width)
                 else
                     // width=X, prec=*
-                    ValueConverter.Make (fun v -> 
-                        basic v)
+                    ValueConverter.Make ( 
+                        basic)
 
         let withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  obj -> string) left right : ValueConverter =
             if not (spec.IsWidthSpecified || spec.IsPrecisionSpecified) then

@@ -8,8 +8,8 @@ ImplFile
              (Lambda
                 (false, false,
                  SimplePats
-                   ([Id (x, None, false, false, false, (2,4--2,5))], (2,4--2,5)),
-                 Ident x,
+                   ([Id (x, None, false, false, false, (2,4--2,5))], [],
+                    (2,4--2,5)), Ident x,
                  Some
                    ([Named (SynIdent (x, None), false, None, (2,4--2,5))],
                     Ident x), (2,0--2,10), { ArrowRange = Some (2,6--2,8) }),

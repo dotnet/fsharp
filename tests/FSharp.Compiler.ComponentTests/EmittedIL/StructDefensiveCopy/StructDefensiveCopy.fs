@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.EmittedIL.StructDefensiveCopy
+﻿module EmittedIL.StructDefensiveCopy
 
 open Xunit
 open System.IO

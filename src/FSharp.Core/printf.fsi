@@ -28,7 +28,7 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result> =
     /// <summary>Construct a format string </summary>
     /// <param name="value">The input string.</param>
     /// <param name="captures">The captured expressions in an interpolated string.</param>
-    /// <param name="captureTys">The types of expressions for %A holes in interpolated string.</param>
+    /// <param name="captureTys">The types of expressions for %A expression gaps in interpolated string.</param>
     /// <returns>The PrintfFormat containing the formatted result.</returns>
     new: value: string * captures: obj[] * captureTys: Type[] -> PrintfFormat<'Printer, 'State, 'Residue, 'Result>
 
@@ -65,7 +65,7 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple> =
     ///
     /// <param name="value">The input string.</param>
     /// <param name="captures">The captured expressions in an interpolated string.</param>
-    /// <param name="captureTys">The types of expressions for %A holes in interpolated string.</param>
+    /// <param name="captureTys">The types of expressions for %A expression gaps in interpolated string.</param>
     ///
     /// <returns>The created format string.</returns>
     new:
@@ -379,9 +379,9 @@ module Printf =
     ///
     /// let file = File.CreateText("out.txt")
     ///
-    /// kfprintf (fun () -> file.Close()) $"Write three = {1+2}"
+    /// kfprintf (fun () -> file.Close()) file $"Write three = {1+2}"
     /// </code>
-    /// Writes <c>"Write five = 5"</c> to <c>out.txt</c>.
+    /// Writes <c>"Write three = 3"</c> to <c>out.txt</c>.
     /// </example>
     [<CompiledName("PrintFormatToTextWriterThen")>]
     val kfprintf:
@@ -402,7 +402,7 @@ module Printf =
     ///
     /// kprintf (fun s -> s + ", done!") $"Write three = {1+2}"
     /// </code>
-    /// Evaluates to <c>"Write five = 5, done!"</c>.
+    /// Evaluates to <c>"Write three = 3, done!"</c>.
     /// </example>
     [<CompiledName("PrintFormatThen")>]
     val kprintf: continuation: (string -> 'Result) -> format: StringFormat<'T, 'Result> -> 'T
@@ -421,7 +421,7 @@ module Printf =
     ///
     /// ksprintf (fun s -> s + ", done!") $"Write three = {1+2}"
     /// </code>
-    /// Evaluates to <c>"Write five = 5, done!"</c>.
+    /// Evaluates to <c>"Write three = 3, done!"</c>.
     /// </example>
     [<CompiledName("PrintFormatToStringThen")>]
     val ksprintf: continuation: (string -> 'Result) -> format: StringFormat<'T, 'Result> -> 'T

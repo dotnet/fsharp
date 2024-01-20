@@ -105,7 +105,9 @@ let reusingLexbufForParsing lexbuf f =
 
     try
         f ()
-    with e ->
+    with
+    | :? OperationCanceledException -> reraise ()
+    | e ->
         raise (
             WrappedError(
                 e,
@@ -204,6 +206,10 @@ type LexerStringFinisher =
                     else SynStringKind.Regular
 
                 STRING(stringBufferAsString buf, synStringKind, cont))
+
+type LexerStringArgs = ByteBuffer * LexerStringFinisher * range * LexerStringKind * LexArgs
+type SingleLineCommentArgs = (range * StringBuilder) option * int * range * range * LexArgs
+type BlockCommentArgs = int * range * LexArgs
 
 let addUnicodeString (buf: ByteBuffer) (x: string) =
     buf.EmitBytes(Encoding.Unicode.GetBytes x)
@@ -386,7 +392,7 @@ module Keywords =
             (*------- for prototyping and explaining offside rule *)
             FSHARP, "__token_OBLOCKSEP", OBLOCKSEP
             FSHARP, "__token_OWITH", OWITH
-            FSHARP, "__token_ODECLEND", ODECLEND
+            FSHARP, "__token_ODECLEND", ODECLEND range0
             FSHARP, "__token_OTHEN", OTHEN
             FSHARP, "__token_OELSE", OELSE
             FSHARP, "__token_OEND", OEND
@@ -480,3 +486,7 @@ module Keywords =
             | "__SOURCE_FILE__" -> KEYWORD_STRING(s, System.IO.Path.GetFileName(FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))
             | "__LINE__" -> KEYWORD_STRING(s, string lexbuf.StartPos.Line)
             | _ -> IdentifierToken args lexbuf s
+
+/// Arbitrary value
+[<Literal>]
+let StringCapacity = 100

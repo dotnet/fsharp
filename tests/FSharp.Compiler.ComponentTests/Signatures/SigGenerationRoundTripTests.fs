@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.SigGenerationRoundTripTests
+﻿module Signatures.SigGenerationRoundTripTests
 
 open Xunit
 open FSharp.Test
@@ -19,16 +19,16 @@ let ``Generate and compile`` implFileName =
 
     let generatedSignature = 
         Fs implContents     
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> withDefines ["TESTS_AS_APP";"COMPILED"]
         |> printSignatures   
 
     Fsi generatedSignature    
     |> withAdditionalSourceFile (FsSource implContents)
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> withDefines ["TESTS_AS_APP";"COMPILED"]
     |> ignoreWarnings
+    |> withOptions [ "--warnaserror:64" ]
     |> asExe
     |> compile
     |> shouldSucceed
-

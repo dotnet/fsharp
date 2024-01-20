@@ -216,10 +216,10 @@ type UsingMSBuild()  =
                 // A0(*ColumnMarker*)1234567890
                 // B01234567890
                 // C01234567890 """,
-            "T(*GotoValDef*)",
-             "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
-            "(*ColumnMarker*)")
+                "T(*GotoValDef*)",
+                "// A0(*ColumnMarker*)1234567890",            
+                PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
+                "(*ColumnMarker*)")
 
         // This test case checks the type with space in between like N.``T T`` for GotoDefinition
         let ``Type.SpaceInTheType``() = 
@@ -228,10 +228,10 @@ type UsingMSBuild()  =
                 // A0(*ColumnMarker*)1234567890
                 // B01234567890
                 // C01234567890 """,
-            "T``",
-            "// A0(*ColumnMarker*)1234567890",
-            PathRelativeToTestAssembly(@"DefinitionLocationAttributeWithSpaceInTheType.dll"),
-            "(*ColumnMarker*)") 
+                "T``",
+                "// A0(*ColumnMarker*)1234567890",
+                PathRelativeToTestAssembly(@"DefinitionLocationAttributeWithSpaceInTheType.dll"),
+                "(*ColumnMarker*)") 
         
         // Basic scenario on a provided Constructor
         let ``Constructor.BasicScenario``() = 
@@ -241,10 +241,10 @@ type UsingMSBuild()  =
                 // A0(*ColumnMarker*)1234567890
                 // B01234567890
                 // C01234567890 """,
-            "T(*GotoValDef*)",
-             "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
-            "(*ColumnMarker*)")
+                "T(*GotoValDef*)",
+                "// A0(*ColumnMarker*)1234567890",            
+                PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
+                "(*ColumnMarker*)")
           
         // Basic scenario on a provided Method
         let ``Method.BasicScenario``() = 
@@ -253,10 +253,10 @@ type UsingMSBuild()  =
                 // A0(*ColumnMarker*)1234567890
                 // B01234567890
                 // C01234567890 """,
-            "M(*GotoValDef*)",
-             "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
-            "(*ColumnMarker*)")
+                "M(*GotoValDef*)",
+                "// A0(*ColumnMarker*)1234567890",            
+                PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
+                "(*ColumnMarker*)")
         
         // Basic scenario on a provided Property
         let ``Property.BasicScenario``() = 
@@ -265,10 +265,10 @@ type UsingMSBuild()  =
                 // A0(*ColumnMarker*)1234567890
                 // B01234567890
                 // C01234567890 """,
-            "StaticProp(*GotoValDef*)",
-             "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
-            "(*ColumnMarker*)")
+                "StaticProp(*GotoValDef*)",
+                "// A0(*ColumnMarker*)1234567890",            
+                PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
+                "(*ColumnMarker*)")
         
         // Basic scenario on a provided Event
         let ``Event.BasicScenario``() = 
@@ -278,10 +278,10 @@ type UsingMSBuild()  =
                 // A0(*ColumnMarker*)1234567890
                 // B01234567890
                 // C01234567890 """,
-            "Event1(*GotoValDef*)",
-             "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
-            "(*ColumnMarker*)")
+                "Event1(*GotoValDef*)",
+                "// A0(*ColumnMarker*)1234567890",            
+                PathRelativeToTestAssembly(@"DefinitionLocationAttribute.dll"),
+                "(*ColumnMarker*)")
         
         // Actually execute all the scenarios...      
         ``Type.BasicScenario``()

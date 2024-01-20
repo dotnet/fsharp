@@ -950,6 +950,7 @@ Microsoft.FSharp.Core.CustomOperationAttribute: System.String JoinConditionWord
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String Name
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String get_JoinConditionWord()
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String get_Name()
+Microsoft.FSharp.Core.CustomOperationAttribute: Void .ctor()
 Microsoft.FSharp.Core.CustomOperationAttribute: Void .ctor(System.String)
 Microsoft.FSharp.Core.CustomOperationAttribute: Void set_AllowIntoPattern(Boolean)
 Microsoft.FSharp.Core.CustomOperationAttribute: Void set_IsLikeGroupJoin(Boolean)
@@ -2042,6 +2043,7 @@ Microsoft.FSharp.Core.StructuralEqualityAttribute: Void .ctor()
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: System.String Value
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: System.String get_Value()
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: Void .ctor(System.String)
+Microsoft.FSharp.Core.TailCallAttribute: Void .ctor()
 Microsoft.FSharp.Core.Unit: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.Unit: Int32 GetHashCode()
 Microsoft.FSharp.Core.UnverifiableAttribute: Void .ctor()

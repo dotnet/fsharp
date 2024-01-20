@@ -11,8 +11,8 @@ ImplFile
                     SimplePats
                       ([Typed
                           (Id (i, None, false, false, false, (3,6--3,7)),
-                           FromParseError (3,8--3,8), (3,6--3,8))], (3,5--3,9)),
-                    Const (Unit, (3,13--3,15)),
+                           FromParseError (3,8--3,8), (3,6--3,8))], [],
+                       (3,5--3,9)), Const (Unit, (3,13--3,15)),
                     Some
                       ([Paren
                           (Typed

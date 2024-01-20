@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL
 
 open Xunit
 open FSharp.Test.Compiler
@@ -41,8 +41,10 @@ let [<Literal>] bytesInKilobyte2 = bytesInMegabyte / 1024L
 let [<Literal>] secondsInDayPlusThree = 3 + (60 * 60 * 24)
 
 let [<Literal>] bitwise = 1us &&& (3us ||| 4us)
+
+let [<Literal>] bitwise2 = 1y ^^^ (3y + ~~~4y)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -51,6 +53,7 @@ let [<Literal>] bitwise = 1us &&& (3us ||| 4us)
             """.field public static literal int64 bytesInKilobyte2 = int64(0x400)"""
             """.field public static literal int32 secondsInDayPlusThree = int32(0x00015183)"""
             """.field public static literal uint16 bitwise = uint16(0x0001)"""
+            """.field public static literal int8 bitwise2 = int8(0xFF)"""
         ]
 
     [<Fact>]
@@ -62,17 +65,23 @@ module LiteralArithmetic
 
 let [<Literal>] bytesInMegabyte = 1024. * 1024. + 0.1
 
+let [<Literal>] bytesInMegabyte' = 1024f ** 2f
+
 let [<Literal>] bytesInKilobyte = bytesInMegabyte / 1024. + 0.1
 
 let [<Literal>] secondsInDayPlusThree = 3.1f + (60f * 60f * 24f)
 
 let [<Literal>] chars = 'a' + 'b' - 'a'
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
             """.field public static literal float64 bytesInMegabyte = float64(1048576.1000000001)"""
+            if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then
+                """.field public static literal float32 'bytesInMegabyte\'' = float32(1048576.)"""
+            else
+                """.field public static literal float32 'bytesInMegabyte\'' = float32(1048576)"""
             """.field public static literal float64 bytesInKilobyte = float64(1024.10009765625)"""
             """.field public static literal float32 secondsInDayPlusThree = float32(86403.102)"""
             """.field public static literal char chars = char(0x0062)"""
@@ -97,7 +106,7 @@ let [<Literal>] complex2 = false || (flag && flippedFlag)
 
 let [<Literal>] complex3 = true || (flag && not flippedFlag)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -121,7 +130,7 @@ type E =
     
 let [<Literal>] x = enum<E> (1 + 1)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -140,7 +149,7 @@ open System.Runtime.CompilerServices
 let x () =
     3
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -154,7 +163,7 @@ module LiteralArithmetic
 
 let [<Literal>] x = System.Int32.MaxValue + 1
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResult {
@@ -173,7 +182,7 @@ module LiteralArithmetic
 
 let [<Literal>] x = 1m + 1m
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -204,7 +213,7 @@ module LiteralArithmetic
 
 let [<Literal>] x = 1 + System.DateTime.Now.Hour
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -251,8 +260,8 @@ type E =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 6, Col 19, Line 6, Col 30, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 9, Col 23, Line 9, Col 37, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 12, Col 12, Line 12, Col 19, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 14, Col 12, Line 14, Col 21, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 6, Col 19, Line 6, Col 30, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 8.0 or greater.")
+            (Error 3350, Line 9, Col 23, Line 9, Col 37, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 8.0 or greater.")
+            (Error 3350, Line 12, Col 12, Line 12, Col 19, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 8.0 or greater.")
+            (Error 3350, Line 14, Col 12, Line 14, Col 21, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 8.0 or greater.")
         ]

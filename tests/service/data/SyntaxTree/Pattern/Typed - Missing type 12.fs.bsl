@@ -31,9 +31,10 @@ ImplFile
                                         (4,11--4,13));
                                      Named
                                        (SynIdent (j, None), false, None,
-                                        (4,15--4,16))], (4,11--4,16)),
-                                 (4,10--4,17))], None, (4,8--4,17)), None,
-                        Const (Int32 1, (4,20--4,21)), (4,8--4,17), NoneAtLet,
+                                        (4,15--4,16))], [(4,13--4,14)],
+                                    (4,11--4,16)), (4,10--4,17))], None,
+                           (4,8--4,17)), None, Const (Int32 1, (4,20--4,21)),
+                        (4,8--4,17), NoneAtLet,
                         { LeadingKeyword = Let (4,4--4,7)
                           InlineKeyword = None
                           EqualsRange = Some (4,18--4,19) })],

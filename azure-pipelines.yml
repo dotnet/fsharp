@@ -86,11 +86,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.6') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.9') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.6
+          MirrorBranch: release/dev17.9
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -107,7 +107,7 @@ stages:
         - job: Full_Signed
           pool:
             name: $(DncEngInternalBuildPool)
-            demands: ImageOverride -equals windows.vs2022.amd64
+            demands: ImageOverride -equals windows.vs2022preview.amd64
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
@@ -142,6 +142,8 @@ stages:
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
                     /p:GenerateSbom=true
+            env:
+                NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
             displayName: End to end build tests
           - task: PublishTestResults@2
@@ -223,7 +225,7 @@ stages:
               regular:
                 _experimental_flag: ''
               experimental_features:
-                _experimental_flag: 1
+                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
@@ -247,7 +249,7 @@ stages:
             continueOnError: true
             condition: not(succeeded())
 
-          # Check code formatting
+          # Check FSComp.txt error code sorting and code formatting
         - job: CheckCodeFormatting
           pool:
             vmImage: $(UbuntuMachineQueueName)
@@ -268,16 +270,22 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Install tools
-          - script: dotnet fantomas . -r --check
+          - script: dotnet fsi src/Compiler/FSCompCheck.fsx
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check code formatting (run 'dotnet fantomas . -r' to fix)
+            displayName: Check error code sorting in src/Compiler/FSComp.txt
+          - script: dotnet fantomas . --check
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Check code formatting (run 'dotnet fantomas .' to fix)
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
-        # NOTE: This CI check should only run on the release branches.
+        # NOTE: The check now runs on all branches (not just release),
+        #       because we want to catch cases when version is desynched and we didn't update it.
+        #       It is also helping the release notes automation to be up to date with packages versions.
         - job: Check_Published_Package_Versions
-          condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), or(startsWith(variables['System.PullRequest.SourceBranch'], 'release/dev'), startsWith(variables['System.PullRequest.TargetBranch'], 'release/dev')))
+          # condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), or(startsWith(variables['System.PullRequest.SourceBranch'], 'release/dev'), startsWith(variables['System.PullRequest.TargetBranch'], 'release/dev')))
           pool:
             vmImage: $(UbuntuMachineQueueName)
           strategy:
@@ -321,6 +329,86 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
 
+        - job: WindowsLangVersionPreview
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
+
+        - job: WindowsStrictIndentation
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
+
+        - job: WindowsNoStrictIndentation
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
+
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
           variables:
@@ -351,7 +439,7 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+              ${{ if eq(variables['Build.Reason'], 'Flaky, disabled, was PullRequest') }}:
                 inttests_release:
                   _configuration: Release
                   _testKind: testIntegration
@@ -365,13 +453,17 @@ stages:
 
           # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            env:
+              NativeToolsOnMachine: true
             displayName: Build / Test
             condition: ne(variables['_testKind'], 'testIntegration')
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            env:
+              NativeToolsOnMachine: true
             displayName: Build / Integration Test
             continueOnError: true
             condition: eq(variables['_testKind'], 'testIntegration')
-            
+
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -513,12 +605,13 @@ stages:
               regular:
                 _experimental_flag: ''
               experimental_features:
-                _experimental_flag: 1
+                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
           - script: .\Build.cmd -c Release -pack
             env:
+              NativeToolsOnMachine: true
               FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             env:
@@ -620,6 +713,33 @@ stages:
             continueOnError: true
             condition: always()
 
+        # Build benchmarks
+        - job: Plain_Build_Benchmarks
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          variables:
+          - name: _BuildConfig
+            value: Debug
+          steps:
+          - checkout: self
+            clean: true
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet build .\FSharp.Benchmarks.sln /bl:\"artifacts/log/$(_BuildConfig)/BenchmarkBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)
+            displayName: Regular rebuild of FSharp.Benchmarks.sln
+            continueOnError: true
+            condition: always()
+
         # Test trimming on Windows
         - job: Build_And_Test_Trimming_Windows
           pool:
@@ -649,20 +769,16 @@ stages:
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
           - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+            env:
+              NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
-          - script:  dotnet publish -c Release -f:net472 -bl:"./artifacts/log/Release/AheadOfTime/SelfContained_Trimming_net472.binlog"
-            displayName: Build and publish a trim test package.
-            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/SelfContained_Trimming_Test
-          - script:  dotnet publish -c Release  -f:net7.0 -bl:"./artifacts/log/Release/AheadOfTime/SelfContained_Trimming_net7.0.binlog"
-            displayName: Build and publish a trim test package.
-            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/SelfContained_Trimming_Test
-          - script: .\check.cmd
-            displayName: Check the state of the trimmed app.
-            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/SelfContained_Trimming_Test
+          - script: $(Build.SourcesDirectory)/tests/AheadOfTime/Trimming/check.cmd
+            displayName: Build, trim, publish and check the state of the trimmed app.
+            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/Trimming
           - task: PublishPipelineArtifact@1
             displayName: Publish Trim Tests Logs
             inputs:
-              targetPath: './artifacts/log/Release/AheadOfTime'
+              targetPath: './artifacts/log/Release/AheadOfTime/Trimming/'
               artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
             continueOnError: true
             condition: always()
@@ -698,6 +814,8 @@ stages:
         enable: true
         params: >-
           -SourceToolsList @("policheck","credscan")
+          -ArtifactToolsList @("binskim")
+          -BinskimAdditionalRunConfigParams @("IgnorePdbLoadError < True","Recurse < True")
           -TsaInstanceURL $(_TsaInstanceURL)
           -TsaProjectName $(_TsaProjectName)
           -TsaNotificationEmail $(_TsaNotificationEmail)
@@ -715,8 +833,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.6
-      insertTargetBranch: rel/d17.6
+      componentBranchName: refs/heads/release/dev17.9
+      insertTargetBranch: rel/d17.9
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

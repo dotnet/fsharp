@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Language
+namespace Language
 
 open Xunit
 open FSharp.Test.Compiler
@@ -124,8 +124,7 @@ if not((getData b) = re2.Data) then
         """
         Fsx source
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
-

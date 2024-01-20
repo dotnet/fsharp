@@ -5,6 +5,11 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
+type UnusedBinding =
+    | Expression of range
+    | SelfId of range
+    | Member
+
 type FSharpParseFileResults with
 
     member this.TryRangeOfBindingWithHeadPatternWithPos pos =
@@ -18,20 +23,45 @@ type FSharpParseFileResults with
 
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
-                    | SynBinding (kind = SynBindingKind.Normal; headPat = pat) as binding ->
+                    | SynBinding(kind = SynBindingKind.Normal; headPat = pat) as binding ->
                         if Position.posEq binding.RangeOfHeadPattern.Start pos then
-                            Some binding.RangeOfBindingWithRhs
+                            Some(Expression binding.RangeOfBindingWithRhs)
                         else
                             // Check if it's an operator
                             match pat with
-                            | SynPat.LongIdent(longDotId = LongIdentWithDots ([ id ], _)) when id.idText.StartsWith("op_") ->
+                            | SynPat.LongIdent(longDotId = LongIdentWithDots([ id ], _)) when id.idText.StartsWith("op_") ->
                                 if Position.posEq id.idRange.Start pos then
-                                    Some binding.RangeOfBindingWithRhs
+                                    Some(Expression binding.RangeOfBindingWithRhs)
                                 else
                                     defaultTraverse binding
                             | _ -> defaultTraverse binding
 
                     | _ -> defaultTraverse binding
+
+                override _.VisitComponentInfo(path, _) =
+                    path
+                    |> List.collect (fun node ->
+                        match node with
+                        | SyntaxNode.SynModule(SynModuleDecl.Types(types, _)) -> types
+                        | _ -> [])
+                    |> Seq.choose (fun node ->
+                        match node with
+                        | SynTypeDefn(implicitConstructor = Some(SynMemberDefn.ImplicitCtor(selfIdentifier = Some ident))) when
+                            ident.idRange.Start = pos
+                            ->
+                            Some(SelfId ident.idRange)
+                        | SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = defs)) ->
+                            defs
+                            |> List.choose (fun node ->
+                                match node with
+                                | SynMemberDefn.Member(SynBinding(headPat = SynPat.LongIdent(longDotId = id)), _) when
+                                    id.Range.Start = pos
+                                    ->
+                                    Some Member
+                                | _ -> None)
+                            |> List.tryExactlyOne
+                        | _ -> None)
+                    |> Seq.tryExactlyOne
             }
         )
 
@@ -42,9 +72,9 @@ type FSharpParseFileResults with
             { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_path, _, defaultTraverse, expr) =
                     match expr with
-                    | SynExpr.DotGet (expr, _, _, range) ->
+                    | SynExpr.DotGet(expr, _, _, range) ->
                         match expr with
-                        | SynExpr.TypeApp (SynExpr.Ident ident, _, typeArgs, _, _, _, _) ->
+                        | SynExpr.TypeApp(SynExpr.Ident ident, _, typeArgs, _, _, _, _) ->
                             let onlyOneTypeArg =
                                 match typeArgs with
                                 | [] -> false

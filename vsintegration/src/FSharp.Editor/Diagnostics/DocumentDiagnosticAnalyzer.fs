@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
@@ -13,10 +12,11 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
-[<RequireQualifiedAccess>]
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
 type internal DiagnosticsType =
     | Syntax
     | Semantic
@@ -52,34 +52,75 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
         }
 
     static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) =
-        async {
-            let! ct = Async.CancellationToken
+        cancellableTask {
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                    "context.diagnostics.type",
+                    match diagnosticType with
+                    | DiagnosticsType.Syntax -> "syntax"
+                    | DiagnosticsType.Semantic -> "semantic"
+                |]
+
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
+
+            let! ct = CancellableTask.getCancellationToken ()
+
+            let! sourceText = document.GetTextAsync(ct)
+            let filePath = document.FilePath
+
+            let errors = HashSet<FSharpDiagnostic>(diagnosticEqualityComparer)
 
             let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
 
-            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-            let filePath = document.FilePath
+            // Old logic, rollback once https://github.com/dotnet/fsharp/issues/15972 is fixed (likely on Roslyn side, since we're returning diagnostics, but they're not getting to VS).
+            (*
+            match diagnosticType with
+            | DiagnosticsType.Syntax ->
+                for diagnostic in parseResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
 
-            let! errors =
-                async {
-                    match diagnosticType with
-                    | DiagnosticsType.Semantic ->
-                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
-                        // In order to eliminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                        let allDiagnostics = HashSet(checkResults.Diagnostics, diagnosticEqualityComparer)
-                        allDiagnostics.ExceptWith(parseResults.Diagnostics)
-                        return Seq.toArray allDiagnostics
-                    | DiagnosticsType.Syntax -> return parseResults.Diagnostics
-                }
+            | DiagnosticsType.Semantic ->
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
 
-            let results =
-                HashSet(errors, diagnosticEqualityComparer)
-                |> Seq.choose (fun diagnostic ->
-                    if diagnostic.StartLine = 0 || diagnostic.EndLine = 0 then
-                        // F# diagnostic line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
-                        None
-                    else
-                        // Roslyn line numbers are zero-based
+                for diagnostic in checkResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+                errors.ExceptWith(parseResults.Diagnostics)
+            *)
+
+            // TODO: see comment above, this is a workaround for issue we have in current VS/Roslyn
+            match diagnosticType with
+            | DiagnosticsType.Syntax ->
+                for diagnostic in parseResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+            // We always add syntactic, and do not exclude them when semantic is requested
+            | DiagnosticsType.Semantic ->
+                for diagnostic in parseResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
+
+                for diagnostic in checkResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+            let! unnecessaryParentheses =
+                match diagnosticType with
+                | DiagnosticsType.Syntax when document.Project.IsFsharpRemoveParensEnabled ->
+                    UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
+                | _ -> CancellableTask.singleton ImmutableArray.Empty
+
+            if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
+                return ImmutableArray.Empty
+            else
+                let iab = ImmutableArray.CreateBuilder(errors.Count + unnecessaryParentheses.Length)
+
+                for diagnostic in errors do
+                    if diagnostic.StartLine <> 0 && diagnostic.EndLine <> 0 then
                         let linePositionSpan =
                             LinePositionSpan(
                                 LinePosition(diagnostic.StartLine - 1, diagnostic.StartColumn),
@@ -98,28 +139,24 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                                 TextSpan.FromBounds(start, sourceText.Length)
 
                         let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
-                        Some(RoslynHelpers.ConvertError(diagnostic, location)))
-                |> Seq.toImmutableArray
+                        iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
 
-            return results
+                iab.AddRange unnecessaryParentheses
+                return iab.ToImmutable()
         }
 
     interface IFSharpDocumentDiagnosticAnalyzer with
 
-        member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
+        member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
             if document.Project.IsFSharpMetadata then
-                Task.FromResult(ImmutableArray.Empty)
+                Task.FromResult ImmutableArray.Empty
             else
                 FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-                |> liftAsync
-                |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-                |> RoslynHelpers.StartAsyncAsTask cancellationToken
+                |> CancellableTask.start cancellationToken
 
-        member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
+        member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
             if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
-                Task.FromResult(ImmutableArray.Empty)
+                Task.FromResult ImmutableArray.Empty
             else
                 FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-                |> liftAsync
-                |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-                |> RoslynHelpers.StartAsyncAsTask cancellationToken
+                |> CancellableTask.start cancellationToken

@@ -12,18 +12,13 @@ open Microsoft.VisualStudio.Shell.Interop
 open FSharp.Compiler.CodeAnalysis
 
 type internal FSharpMiscellaneousFileService
-    (
-        workspace: Workspace,
-        miscFilesWorkspace: Workspace,
-        projectContextFactory: IFSharpWorkspaceProjectContextFactory
-    ) =
+    (workspace: Workspace, miscFilesWorkspace: Workspace, projectContextFactory: IFSharpWorkspaceProjectContextFactory) =
 
     let files =
         ConcurrentDictionary<string, Lazy<IFSharpWorkspaceProjectContext>>(StringComparer.OrdinalIgnoreCase)
 
     let optionsManager =
-        workspace
-            .Services
+        workspace.Services
             .GetRequiredService<IFSharpWorkspaceService>()
             .FSharpProjectOptionsManager
 
@@ -173,11 +168,11 @@ type internal FSharpMiscellaneousFileService
             if project <> null then
                 let documentOpt =
                     project.Documents
-                    |> Seq.tryFind (fun x -> String.Equals(x.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+                    |> Seq.tryFindV (fun x -> String.Equals(x.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
 
                 match documentOpt with
-                | None -> ()
-                | Some (document) ->
+                | ValueNone -> ()
+                | ValueSome(document) ->
                     optionsManager.ClearSingleFileOptionsCache(document.Id)
                     projectContext.Value.Dispose()
 

@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.Lexhelp
 
+open System.Text
 open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Text
@@ -78,6 +79,14 @@ type LexerStringFinisher =
 
     static member Default: LexerStringFinisher
 
+/// Used in lex.fsl to represent the state of a string literal
+type LexerStringArgs = ByteBuffer * LexerStringFinisher * range * LexerStringKind * LexArgs
+
+/// Used in lex.fsl to represent the state of a single line comment
+type SingleLineCommentArgs = (range * StringBuilder) option * int * range * range * LexArgs
+/// Used in lex.fsl to represent the state of a block comment
+type BlockCommentArgs = int * range * LexArgs
+
 val addUnicodeString: ByteBuffer -> string -> unit
 
 val addUnicodeChar: ByteBuffer -> int -> unit
@@ -117,3 +126,7 @@ module Keywords =
     val IdentifierToken: LexArgs -> Lexbuf -> string -> token
 
     val keywordNames: string list
+
+/// Arbitrary value
+[<Literal>]
+val StringCapacity: int = 100

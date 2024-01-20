@@ -22,6 +22,11 @@
         <target state="translated">Ajouter le mot clé 'new'</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Ajouter une annotation de type</target>
@@ -36,18 +41,24 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Guides de structure de bloc ;
+Afficher les directives de structure pour le code F# ;
+Décrire ;
+Afficher les nœuds de plan et réductibles pour le code F# ;
+Conseils en ligne ;
+Afficher les conseils de type en ligne (aperçu) ;
+Afficher les conseils sur le type de retour (aperçu) ;
+Afficher les conseils sur le nom des paramètres en ligne (aperçu) ;
+Tampons en direct ;
+Utilisez des tampons en direct (non enregistrés) pour vérifier</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">Utilisez ':' pour saisir la déclaration de champ</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -162,9 +173,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Options de performances du projet F # et de la mise en cache ;
+        <target state="needs-review-translation">Options de performances du projet F # et de la mise en cache ;
 Activer les références de projets croisés en mémoire ;
 Enable_partial_type_checking ;
 Options de performances IntelliSense ;
@@ -190,8 +201,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Formatage;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Formatage;
 Largeur de description préférée en caractères ;
 Mettre en forme la signature à la largeur donnée en ajoutant des sauts de ligne conformes aux règles de syntaxe F# ;
 Liens de navigation ;
@@ -199,6 +211,11 @@ Afficher les liens de navigation en tant que ;
 Soulignement uni ;
 Soulignement pointé ;
 Soulignement en tirets ;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="new">Remarks:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -209,6 +226,11 @@ Soulignement en tirets ;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Supprimer 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -229,6 +251,11 @@ Soulignement en tirets ;</target>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">Renommer '{0}' en '_'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
@@ -259,6 +286,11 @@ Soulignement en tirets ;</target>
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">Supprimer les déclarations open inutilisées</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">Symbole inattendu '=' dans la déclaration de champ. ':' attendu ou autre jeton.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

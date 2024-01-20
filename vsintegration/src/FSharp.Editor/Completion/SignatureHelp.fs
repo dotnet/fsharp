@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Threading
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -19,6 +20,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
+open CancellableTasks
 
 type SignatureHelpParameterInfo =
     {
@@ -56,7 +58,7 @@ type SignatureHelpData =
 
 [<Shared>]
 [<Export(typeof<IFSharpSignatureHelpProvider>)>]
-type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvider: SVsServiceProvider) =
+type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvider: SVsServiceProvider, editorOptions: EditorOptions) =
 
     let documentationBuilder =
         XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
@@ -77,7 +79,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
             caretPosition: int,
-            triggerIsTypedChar: char option
+            triggerIsTypedChar: char option,
+            editorOptions: EditorOptions
         ) =
         asyncMaybe {
             let textLines = sourceText.Lines
@@ -159,7 +162,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             // should not result in a prompt, whereas this one will:
             //    Console.WriteLine( [(1,2)],
             match triggerIsTypedChar with
-            | Some ('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn)) -> return! None // comma or paren at wrong location = remove help display
+            | Some('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn)) -> return! None // comma or paren at wrong location = remove help display
             | _ ->
 
                 // Compute the argument index by working out where the caret is between the various commas.
@@ -204,7 +207,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                 RoslynHelpers.CollectTaggedText mainDescription,
                                 RoslynHelpers.CollectTaggedText documentation,
                                 method.Description,
-                                false
+                                false,
+                                editorOptions.QuickInfo.ShowRemarks
                             )
 
                             let parameters =
@@ -223,7 +227,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                             documentationBuilder,
                                             RoslynHelpers.CollectTaggedText doc,
                                             method.XmlDoc,
-                                            p.ParameterName
+                                            p.ParameterName,
+                                            editorOptions.QuickInfo.ShowRemarks
                                         )
 
                                         p.Display |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
@@ -285,11 +290,13 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             documentId: DocumentId,
             defines: string list,
             langVersion: string option,
+            strictIndentation: bool option,
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
             caretPosition: int,
             adjustedColumnInSource: int,
-            filePath: string
+            filePath: string,
+            editorOptions: EditorOptions
         ) =
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
@@ -322,6 +329,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                     false,
                     false,
                     langVersion,
+                    strictIndentation,
                     ct
                 )
 
@@ -359,7 +367,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                     let numArgsAlreadyAppliedViaPipeline =
                         match possiblePipelineIdent with
                         | None -> 0
-                        | Some (_, numArgsApplied) -> numArgsApplied
+                        | Some(_, numArgsApplied) -> numArgsApplied
 
                     let definedArgs = mfv.CurriedParameterGroups |> Array.ofSeq
 
@@ -426,7 +434,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         typeParameterMap.Add,
                         usage.Add,
                         exceptions.Add,
-                        tooltip
+                        tooltip,
+                        editorOptions.QuickInfo.ShowRemarks
                     )
 
                     let fsharpDocs =
@@ -598,13 +607,20 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             document: Document,
             defines: string list,
             langVersion: string option,
+            strictIndentation: bool option,
             documentationBuilder: IDocumentationBuilder,
             caretPosition: int,
             triggerTypedChar: char option,
-            possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
+            possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option,
+            editorOptions: EditorOptions
         ) =
         asyncMaybe {
-            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> liftAsync
+
+            let! parseResults, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp")
+                |> CancellableTask.start CancellationToken.None
+                |> Async.AwaitTask
+                |> liftAsync
 
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
 
@@ -613,14 +629,18 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             let caretLineColumn = caretLinePos.Character
 
             let adjustedColumnInSource =
-
-                let rec loop ch pos =
-                    if Char.IsWhiteSpace(ch) then
-                        loop sourceText.[pos - 1] (pos - 1)
-                    else
+                let rec loop pos =
+                    if pos = 0 then
                         pos
+                    else
+                        let nextPos = pos - 1
 
-                loop sourceText.[caretPosition - 1] (caretPosition - 1)
+                        if not (Char.IsWhiteSpace sourceText[nextPos]) then
+                            pos
+                        else
+                            loop nextPos
+
+                loop (caretPosition - 1)
 
             let adjustedColumnChar = sourceText.[adjustedColumnInSource]
 
@@ -640,11 +660,13 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         document.Id,
                         defines,
                         langVersion,
+                        strictIndentation,
                         documentationBuilder,
                         sourceText,
                         caretPosition,
                         adjustedColumnInSource,
-                        document.FilePath
+                        document.FilePath,
+                        editorOptions
                     )
             | _, Some FunctionApplication when
                 adjustedColumnChar <> ','
@@ -658,11 +680,13 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         document.Id,
                         defines,
                         langVersion,
+                        strictIndentation,
                         documentationBuilder,
                         sourceText,
                         caretPosition,
                         adjustedColumnInSource,
-                        document.FilePath
+                        document.FilePath,
+                        editorOptions
                     )
             | _ ->
                 let! paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
@@ -676,7 +700,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         documentationBuilder,
                         sourceText,
                         caretPosition,
-                        triggerTypedChar
+                        triggerTypedChar,
+                        editorOptions
                     )
         }
 
@@ -688,7 +713,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) =
             asyncMaybe {
-                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+                let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
                 let triggerTypedChar =
                     if
@@ -706,10 +731,12 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                 document,
                                 defines,
                                 Some langVersion,
+                                strictIndentation,
                                 documentationBuilder,
                                 position,
                                 triggerTypedChar,
-                                possibleCurrentSignatureHelpSessionKind
+                                possibleCurrentSignatureHelpSessionKind,
+                                editorOptions
                             )
 
                         match signatureHelpDataOpt with
