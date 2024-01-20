@@ -8232,7 +8232,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
 *)
 
 /// Generate letrec bindings
-and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (_dict: Dictionary<Stamp, ILTypeRef> option) =
+and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (dict: Dictionary<Stamp, ILTypeRef> option) =
 
     // 'let rec' bindings are always considered to be in loops, that is each may have backward branches for the
     // tailcalls back to the entry point. This means we don't rely on zero-init of mutable locals
@@ -8327,62 +8327,66 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
             forwardReferenceSet)
 
     // Generate the actual bindings
-    let _bindGroups =
-        let dict = Dictionary<Stamp, Binding list>()
-        allBinds
-        |> List.groupBy(fun bind ->
-            let (TBind(v, _, _)) = bind
-            match v.HasDeclaringEntity with
-            | true -> v.DeclaringEntity.Deref.Stamp
-            | false -> 0L)
-        |> Seq.iter(fun (stamp, bindings) -> dict.Add(stamp, bindings))
-        dict
-
-    let _skipBinding = HashSet<Stamp>()
+    let skipBinding = HashSet<Stamp>()
     let _ =
         (recursiveVars, allBinds)
         ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
-            let (TBind(_v, _, _)) = bind
-            //let nested, skip, stamp  =
-            //    match dict, v.HasDeclaringEntity with
-            //    | None, _ | _, false -> None, false, 0L
-            //    | Some dict, true ->
-            //        let stamp = v.DeclaringEntity.Deref.Stamp
-            //        match dict.TryGetValue(stamp), skipBinding.Contains(stamp) with
-            //        | (false, _), _ -> None, false, stamp
-            //        | (_, _), true -> None, true, stamp
-            //        | (true, tref), _ ->
-            //            let added = skipBinding.Add(stamp)
-            //            Some tref, not added, stamp
+            match cenv.g.realInternalSignature with
+            | false ->
+                GenBinding cenv cgbuf eenv bind false
+            | true ->
+                let (TBind(v, _, _)) = bind
 
-            //match nested, skip with
-            //| None, _ -> GenBinding cenv cgbuf eenv bind false
-            //| Some _, true -> ()
-            //| Some tref, false ->
-            //    let eenv =
-            //        { eenv with
-            //            cloc =
-            //                { eenv.cloc with
-            //                    Enclosing = tref.Enclosing @ [ tref.Name ]
-            //                    Namespace = None
-            //                }
-            //        }
+                let nested, skip, stamp  =
+                    match dict, v.HasDeclaringEntity with
+                    | None, _ | Some _, false ->None, false, 0L
+                    | Some dict, true ->
+                        let stamp = v.DeclaringEntity.Deref.Stamp
+                        match dict.TryGetValue(stamp), skipBinding.Contains(stamp) with
+                        | (false, _), _ -> None, false, stamp
+                        | (_, _), true -> None, true, stamp
+                        | (true, tref), _ ->
+                            let added = skipBinding.Add(stamp)
+                            Some tref, not added, stamp
 
-            //    match bindGroups.TryGetValue(stamp) with
-            //    | true, binds ->
-            //        CodeGenInitMethod
-            //            cenv
-            //            cgbuf
-            //            eenv
-            //            tref
-            //            (fun cgbuf eenv ->
-            //                // Generate chunks of non-nested bindings together to allow recursive fixups.
-            //                GenLetRecBindings cenv cgbuf eenv (binds, m) dict
-            //                CG.EmitInstr cgbuf (pop 0) Push0 I_ret
-            //            )
-            //            m
-            //    | _ -> ()
-            GenBinding cenv cgbuf eenv bind false
+                match nested, skip with
+                | None, _ -> GenBinding cenv cgbuf eenv bind false
+                | Some _, true -> ()
+                | Some tref, false ->
+                    let bindGroups =
+                        let bgs = Dictionary<Stamp, Binding list>()
+                        allBinds
+                        |> List.groupBy(fun bind ->
+                            let (TBind(v, _, _)) = bind
+                            match v.HasDeclaringEntity with
+                            | true -> v.DeclaringEntity.Deref.Stamp
+                            | false -> 0L)
+                        |> Seq.iter(fun (stamp, bindings) -> bgs.Add(stamp, bindings))
+                        bgs
+
+                    let eenv =
+                        { eenv with
+                            cloc =
+                                { eenv.cloc with
+                                    Enclosing = tref.Enclosing @ [ tref.Name ]
+                                    Namespace = None
+                                }
+                        }
+
+                    match bindGroups.TryGetValue(stamp) with
+                    | true, binds ->
+                        CodeGenInitMethod
+                            cenv
+                            cgbuf
+                            eenv
+                            tref
+                            (fun cgbuf eenv ->
+                                // Generate chunks of non-nested bindings together to allow recursive fixups.
+                                GenLetRecBindings cenv cgbuf eenv (binds, m) None
+                                CG.EmitInstr cgbuf (pop 0) Push0 I_ret
+                            )
+                            m
+                    | _ -> ()
 
             // Record the variable as defined
             let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
@@ -8402,6 +8406,184 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
             forwardReferenceSet)
 
     ()
+
+(*
+/// Generate letrec bindings
+and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (dict: Dictionary<Stamp, ILTypeRef> option) =
+
+    // 'let rec' bindings are always considered to be in loops, that is each may have backward branches for the
+    // tailcalls back to the entry point. This means we don't rely on zero-init of mutable locals
+    let eenv = SetIsInLoop true eenv
+
+    // Fix up recursion for non-toplevel recursive bindings
+    let bindsPossiblyRequiringFixup =
+        allBinds
+        |> List.filter (fun b ->
+            match (StorageForVal m b.Var eenv) with
+            | StaticProperty _
+            | Method _
+            // Note: Recursive data stored in static fields may require fixups e.g. let x = C(x)
+            // | StaticPropertyWithField _
+            | Null -> false
+            | _ -> true)
+
+    let computeFixupsForOneRecursiveVar boundv forwardReferenceSet (fixups: _ ref) thisVars access set e =
+        match e with
+        | Expr.Lambda _
+        | Expr.TyLambda _
+        | Expr.Obj _ ->
+            let isLocalTypeFunc =
+                Option.isSome thisVars
+                && (IsNamedLocalTypeFuncVal cenv.g (Option.get thisVars) e)
+
+            let thisVars =
+                (match e with
+                 | Expr.Obj _ -> []
+                 | _ when isLocalTypeFunc -> []
+                 | _ -> Option.map mkLocalValRef thisVars |> Option.toList)
+
+            let canUseStaticField =
+                (match e with
+                 | Expr.Obj _ -> false
+                 | _ -> true)
+
+            let clo, _, eenvclo =
+                GetIlxClosureInfo
+                    cenv
+                    m
+                    ILBoxity.AsObject
+                    isLocalTypeFunc
+                    canUseStaticField
+                    thisVars
+                    { eenv with
+                        letBoundVars = (mkLocalValRef boundv) :: eenv.letBoundVars
+                    }
+                    e
+
+            for fv in clo.cloFreeVars do
+                if Zset.contains fv forwardReferenceSet then
+                    match StorageForVal m fv eenvclo with
+                    | Env(_, ilField, _) ->
+                        let fixup =
+                            (boundv, fv, (fun () -> GenLetRecFixup cenv cgbuf eenv (clo.cloSpec, access, ilField, exprForVal m fv, m)))
+
+                        fixups.Value <- fixup :: fixups.Value
+                    | _ -> error (InternalError("GenLetRec: " + fv.LogicalName + " was not in the environment", m))
+
+        | Expr.Val(vref, _, _) ->
+            let fv = vref.Deref
+            let needsFixup = Zset.contains fv forwardReferenceSet
+
+            if needsFixup then
+                let fixup = (boundv, fv, (fun () -> GenExpr cenv cgbuf eenv (set e) discard))
+                fixups.Value <- fixup :: fixups.Value
+        | _ -> failwith "compute real fixup vars"
+
+    let fixups = ref []
+
+    let recursiveVars =
+        Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
+
+    let _ =
+        (recursiveVars, bindsPossiblyRequiringFixup)
+        ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
+            // Compute fixups
+            bind.Expr
+            |> IterateRecursiveFixups
+                cenv.g
+                (Some bind.Var)
+                (computeFixupsForOneRecursiveVar bind.Var forwardReferenceSet fixups)
+                (exprForVal m bind.Var,
+                 (fun _ ->
+                     failwith (
+                         "internal error: should never need to set non-delayed recursive val: "
+                         + bind.Var.LogicalName
+                     )))
+            // Record the variable as defined
+            let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
+            forwardReferenceSet)
+
+    // Generate the actual bindings
+    let skipBinding = HashSet<Stamp>()
+    let _ =
+        (recursiveVars, allBinds)
+        ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
+            match skipBinding.Contains(0xffffffff)(*cenv.g.realInternalSignature*) with
+            | false ->
+                GenBinding cenv cgbuf eenv bind false
+            | true ->
+                let (TBind(v, _, _)) = bind
+
+                let bindGroups =
+                    let dict = Dictionary<Stamp, Binding list>()
+                    allBinds
+                    |> List.groupBy(fun bind ->
+                        let (TBind(v, _, _)) = bind
+                        match v.HasDeclaringEntity with
+                        | true -> v.DeclaringEntity.Deref.Stamp
+                        | false -> 0L)
+                    |> Seq.iter(fun (stamp, bindings) -> dict.Add(stamp, bindings))
+                    dict
+
+                let nested, skip, stamp  =
+                    match dict, v.HasDeclaringEntity with
+                    | None, _ | _, false -> None, false, 0L
+                    | Some dict, true ->
+                        let stamp = v.DeclaringEntity.Deref.Stamp
+                        match dict.TryGetValue(stamp), skipBinding.Contains(stamp) with
+                        | (false, _), _ -> None, false, stamp
+                        | (_, _), true -> None, true, stamp
+                        | (true, tref), _ ->
+                            let added = skipBinding.Add(stamp)
+                            Some tref, not added, stamp
+
+                match nested, skip with
+                | None, _ -> GenBinding cenv cgbuf eenv bind false
+                | Some _, true -> ()
+                | Some tref, false ->
+                    let eenv =
+                        { eenv with
+                            cloc =
+                                { eenv.cloc with
+                                    Enclosing = tref.Enclosing @ [ tref.Name ]
+                                    Namespace = None
+                                }
+                        }
+
+                    match bindGroups.TryGetValue(stamp) with
+                    | true, binds ->
+                        CodeGenInitMethod
+                            cenv
+                            cgbuf
+                            eenv
+                            tref
+                            (fun cgbuf eenv ->
+                                // Generate chunks of non-nested bindings together to allow recursive fixups.
+                                GenLetRecBindings cenv cgbuf eenv (binds, m) dict
+                                CG.EmitInstr cgbuf (pop 0) Push0 I_ret
+                            )
+                            m
+                    | _ -> ()
+
+            // Record the variable as defined
+            let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
+
+            // Execute and discard any fixups that can now be committed
+            let newFixups =
+                fixups.Value
+                |> List.filter (fun (boundv, fv, action) ->
+                    if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then
+                        true
+                    else
+                        action ()
+                        false)
+
+            fixups.Value <- newFixups
+
+            forwardReferenceSet)
+
+    ()
+*)
 
 and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
     let _, endMark as scopeMarks = StartLocalScope "letrec" cgbuf
