@@ -515,7 +515,6 @@ module rec MyModule =
         |> withStdOutContainsAllInOrder [
             "test:one.Value 1 '1' '1' succeeded"
             "test:one.Next.Value 2 '2' '2' succeeded"
-            "test:one.Next.Value 2 '2' '1' failed"
             "test:(M.X()).Value 1 '1' '1' succeeded"
             "test:(M.X()).Next.Value 2 '2' '2' succeeded"
             "test:(M.X()).Next.Next.Value 1 '1' '1' succeeded"
