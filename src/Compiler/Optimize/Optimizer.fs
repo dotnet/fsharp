@@ -230,23 +230,23 @@ type Summary<'Info> =
 // Note, this is a different notion of "size" to the one used for inlining heuristics
 //------------------------------------------------------------------------- 
 
-let SizeOfValueInfo x =    
-    let rec SizeOfValueInfosHelper (arr:_[]) acc =
-        if arr.Length = 0 then acc else SizeOfValueInfoHelper arr[0] acc
-
-    and SizeOfValueInfoHelper x acc =
-        match x with
-        | SizeValue (vdepth, _v) -> max 0 (acc + vdepth) // terminate recursion at CACHED size nodes
-        | ConstValue (_x, _) -> acc + 1
-        | UnknownValue ->  acc + 1
-        | ValValue (_vr, vinfo) -> SizeOfValueInfoHelper vinfo (acc + 1)
+let SizeOfValueInfo valueInfo =
+    let rec loop acc valueInfo =
+        match valueInfo with
+        | SizeValue (vdepth, _v) -> assert (vdepth >= 0); acc + vdepth // terminate recursion at CACHED size nodes
+        | CurriedLambdaValue _
+        | ConstExprValue _
+        | ConstValue _
+        | UnknownValue -> acc + 1
         | TupleValue vinfos
         | RecdValue (_, vinfos)
-        | UnionCaseValue (_, vinfos) -> SizeOfValueInfosHelper vinfos (acc + 1)
-        | CurriedLambdaValue _ -> acc + 1
-        | ConstExprValue (_size, _) -> acc + 1
+        | UnionCaseValue (_, vinfos) when vinfos.Length = 0 -> acc + 1
+        | TupleValue vinfos
+        | RecdValue (_, vinfos)
+        | UnionCaseValue (_, vinfos) -> loop (acc + 1) vinfos[0]
+        | ValValue (_vr, vinfo) -> loop (acc + 1) vinfo
 
-    SizeOfValueInfoHelper x 0
+    loop 0 valueInfo
 
 let [<Literal>] minDepthForASizeNode = 5  // for small vinfos do not record size info, save space
 
