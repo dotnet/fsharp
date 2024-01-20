@@ -198,7 +198,7 @@ let ``Job is cancelled when all requestors cancel`` () =
 
         let jobCanComplete = new ManualResetEvent(false)
 
-        use eventTriggered = new ManualResetEventSlim(false)
+        use eventTriggered = new ManualResetEvent(false)
 
         let computation key = node {
                 jobStarted.Set() |> ignore
@@ -223,20 +223,24 @@ let ``Job is cancelled when all requestors cancel`` () =
         jobStarted.WaitOne() |> ignore
         jobStarted.Reset() |> ignore
 
-        eventTriggered.Wait()
-        eventTriggered.Reset()
+        eventTriggered.WaitOne() |> ignore
+        eventTriggered.Reset() |> ignore
 
 
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
+        // Give the other tasks a chance to actually start.
+        do! Task.Yield()
+
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
+        do! Task.Yield()
 
         cts1.Cancel()
         cts2.Cancel()
         cts3.Cancel()
 
         // Wait for the event to be logged.
-        eventTriggered.Wait(timeout) |> ignore
-        eventTriggered.Reset()
+        eventTriggered.WaitOne(timeout) |> ignore
+        eventTriggered.Reset() |> ignore
 
         jobCanComplete.Set() |> ignore
 
