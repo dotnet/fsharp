@@ -157,13 +157,18 @@ module SignatureHelpProvider =
             |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let adjustedColumnInSource =
-            let rec loop ch pos =
-                if Char.IsWhiteSpace(ch) then
-                    loop sourceText.[pos - 1] (pos - 1)
-                else
+            let rec loop pos =
+                if pos = 0 then
                     pos
+                else
+                    let nextPos = pos - 1
 
-            loop sourceText.[caretPosition - 1] (caretPosition - 1)
+                    if not (Char.IsWhiteSpace sourceText[nextPos]) then
+                        pos
+                    else
+                        loop nextPos
+
+            loop (caretPosition - 1)
 
         let sigHelp =
             FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
@@ -551,6 +556,18 @@ M.f
 
         let marker = "List.map "
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "mapping"
+
+    [<Fact>]
+    let ``function application in middle of pipeline with two additional arguments`` () =
+        let fileContents =
+            """
+[1..10]
+|> List.fold (fun acc _ -> acc) 
+|> List.filter (fun x -> x > 3)
+    """
+
+        let marker = "List.fold (fun acc _ -> acc) "
+        assertSignatureHelpForFunctionApplication fileContents marker 2 1 "state"
 
     [<Fact>]
     let ``function application with function as parameter`` () =
