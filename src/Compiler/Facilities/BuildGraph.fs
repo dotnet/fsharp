@@ -151,24 +151,7 @@ type NodeCode private () =
         NodeCode.RunImmediate(computation, CancellationToken.None)
 
     static member StartAsTask_ForTesting(computation: NodeCode<'T>, ?ct: CancellationToken) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
-        let ct2 = Cancellable.Token
-
-        try
-            let work =
-                async {
-                    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                    DiagnosticsThreadStatics.BuildPhase <- phase
-                    Cancellable.Token <- ct2
-                    return! computation |> Async.AwaitNodeCode
-                }
-
-            Async.StartAsTask(work, cancellationToken = defaultArg ct CancellationToken.None)
-        finally
-            DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-            DiagnosticsThreadStatics.BuildPhase <- phase
-            Cancellable.Token <- ct2
+        Async.StartAsTask(computation |> Async.AwaitNodeCode, ?cancellationToken = ct)
 
     static member CancellationToken = cancellationToken
 
