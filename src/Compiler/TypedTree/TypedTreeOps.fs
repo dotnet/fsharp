@@ -662,22 +662,27 @@ let rec mkCompiledTupleTy g isStruct tupElemTys =
         let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
         TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB], g.knownWithoutNull)
 
+[<Struct>]
+type TupleInfo(isStruct: bool, argTypes: TType list) =
+    member _.IsStruct = isStruct
+    member _.ArgTypes = argTypes
+
 /// Convert from F# tuple types to .NET tuple types, but only the outermost level
-let mkOuterCompiledTupleTy g isStruct tupElemTys = 
-    let n = List.length tupElemTys 
+let mkOuterCompiledTupleTy g (tInfo: TupleInfo) = 
+    let n = List.length tInfo.ArgTypes
     if n < maxTuple then 
-        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, g.knownWithoutNull)
+        TType_app (mkCompiledTupleTyconRef g tInfo.IsStruct n, tInfo.ArgTypes, g.knownWithoutNull)
     else 
-        let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
-        let tcref = (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
+        let tysA, tysB = List.splitAfter goodTupleFields tInfo.ArgTypes
+        let tcref = (if tInfo.IsStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
         // In the case of an 8-tuple we add the Tuple<_> marker. For other sizes we keep the type 
         // as a regular F# tuple type.
         match tysB with 
         | [ tyB ] -> 
-            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB], g.knownWithoutNull)
+            let marker = TType_app (mkCompiledTupleTyconRef g tInfo.IsStruct 1, [tyB], g.knownWithoutNull)
             TType_app (tcref, tysA@[marker], g.knownWithoutNull)
         | _ ->
-            TType_app (tcref, tysA@[TType_tuple (isStruct, tysB)], g.knownWithoutNull)
+            TType_app (tcref, tysA@[TType_tuple (tInfo.IsStruct, tysB)], g.knownWithoutNull)
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -784,7 +789,7 @@ let primDestForallTy g ty = ty |> stripTyEqns g |> (function TType_forall (tyvs,
 
 let destFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (domainTy, rangeTy, _) -> (domainTy, rangeTy) | _ -> failwith "destFunTy: not a function type")
 
-let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) -> isStruct, l | _ -> failwith "destAnyTupleTy: not a tuple type")
+let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) -> TupleInfo(isStruct, l) | _ -> failwith "destAnyTupleTy: not a tuple type")
 
 let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) when not isStruct -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
 
@@ -886,8 +891,8 @@ let rangeOfFunTy g ty = snd (destFunTy g ty)
 
 let convertToTypeWithMetadataIfPossible g ty = 
     if isAnyTupleTy g ty then 
-        let isStruct, tupElemTys = destAnyTupleTy g ty
-        mkOuterCompiledTupleTy g isStruct tupElemTys
+        let tInfo = destAnyTupleTy g ty
+        mkOuterCompiledTupleTy g tInfo
     elif isFunTy g ty then 
         let a,b = destFunTy g ty
         mkAppTy g.fastFunc_tcr [a; b]
@@ -1673,7 +1678,7 @@ let rec stripFunTyN g n ty =
     else [], ty
         
 let tryDestAnyTupleTy g ty = 
-    if isAnyTupleTy g ty then destAnyTupleTy g ty else false, [ty]
+    if isAnyTupleTy g ty then destAnyTupleTy g ty else TupleInfo(false, [ty])
 
 let tryDestRefTupleTy g ty = 
     if isRefTupleTy g ty then destRefTupleTy g ty else [ty]
@@ -2371,7 +2376,7 @@ and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp: Typar) =
 
 and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty = 
     match (if thruFlag then stripTyEqns g ty else stripTyparEqns ty) with 
-    | TType_anon (anonInfo, anonTys) ->
+    | TType_anon (_anonInfo, anonTys) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc anonTys 
 
     | TType_tuple (_isStruct, tupTys) ->
@@ -8898,8 +8903,8 @@ let rec TypeHasDefaultValue g m ty =
 /// a set of residual types that must also satisfy the constraint
 let (|SpecialComparableHeadType|_|) g ty =           
     if isAnyTupleTy g ty then 
-        let _tupInfo, elemTys = destAnyTupleTy g ty
-        Some elemTys 
+        let tInfo = destAnyTupleTy g ty
+        Some tInfo.ArgTypes 
     elif isAnonRecdTy g ty then 
         match tryDestAnonRecdTy g ty with
         | ValueNone -> Some []

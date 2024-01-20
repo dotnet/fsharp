@@ -905,7 +905,7 @@ module PrintTypes =
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->
             let core = sepListL (rightL (tagPunctuation ";")) (List.map2 (fun nm ty -> wordL (tagField nm) ^^ rightL (tagPunctuation ":") ^^ layoutTypeWithInfoAndPrec denv env prec ty) (Array.toList anonInfo.SortedNames) tys)
-            if evalAnonInfoIsStruct anonInfo then 
+            if anonInfo.IsStruct then 
                 WordL.keywordStruct --- braceBarL core
             else 
                 braceBarL core

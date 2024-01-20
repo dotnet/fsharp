@@ -658,7 +658,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         let tref = anonInfo.ILTypeRef
 
         let boxity =
-            if evalAnonInfoIsStruct anonInfo then
+            if anonInfo.IsStruct then
                 ILBoxity.AsValue
             else
                 ILBoxity.AsObject
@@ -2202,11 +2202,10 @@ type AnonTypeGenerationTable() =
         (ilCtorRef, ilMethodRefs, ilTy)
 
     member this.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo: AnonRecdTypeInfo) =
-        let isStruct = evalAnonInfoIsStruct anonInfo
         let key = anonInfo.Stamp
 
         let at =
-            dict.GetOrAdd(key, lazy (generateAnonType cenv mgbuf genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)))
+            dict.GetOrAdd(key, lazy (generateAnonType cenv mgbuf genToStringMethod (anonInfo.IsStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)))
 
         at.Force() |> ignore
 

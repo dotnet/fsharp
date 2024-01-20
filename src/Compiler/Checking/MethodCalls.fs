@@ -1866,8 +1866,8 @@ module ProvidedMethodCalls =
                 let exprTy =
                     let t = tyOfExpr g inpR
                     stripTyEqnsWrtErasure EraseMeasures g t
-                let tupInfo, tysT = tryDestAnyTupleTy g exprTy
-                let exprR = mkTupleFieldGet g (tupInfo, inpR, tysT, n.PUntaint(id, m), m)
+                let tInfo = tryDestAnyTupleTy g exprTy
+                let exprR = mkTupleFieldGet g (tInfo.IsStruct, inpR, tInfo.ArgTypes, n.PUntaint(id, m), m)
                 None, (exprR, tyOfExpr g exprR)
             | ProvidedLambdaExpr (v, b) ->
                 let v, b = exprType.PApply2((fun _ -> (v, b)), m)

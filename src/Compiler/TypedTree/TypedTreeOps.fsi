@@ -370,9 +370,6 @@ val mkCompiledTuple: TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * T
 /// Make a TAST expression representing getting an item fromm a tuple
 val mkGetTupleItemN: TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
-/// Evaluate the AnonRecdTypeInfo to work out if it is a struct or a ref.
-val evalAnonInfoIsStruct: AnonRecdTypeInfo -> bool
-
 /// If it is a tuple type, ensure it's outermost type is a .NET tuple type, otherwise leave unchanged
 val convertToTypeWithMetadataIfPossible: TcGlobals -> TType -> TType
 
@@ -617,7 +614,13 @@ val destForallTy: TcGlobals -> TType -> Typars * TType
 
 val destFunTy: TcGlobals -> TType -> TType * TType
 
-val destAnyTupleTy: TcGlobals -> TType -> bool * TTypes
+[<Struct; NoEquality; NoComparison>]
+type TupleInfo =
+    new: isStruct: bool * argTypes: TType list -> TupleInfo
+    member IsStruct: bool
+    member ArgTypes: TType list
+
+val destAnyTupleTy: TcGlobals -> TType -> TupleInfo
 
 val destRefTupleTy: TcGlobals -> TType -> TTypes
 
@@ -708,7 +711,7 @@ val stripFunTyN: TcGlobals -> int -> TType -> TType list * TType
 
 val applyForallTy: TcGlobals -> TType -> TypeInst -> TType
 
-val tryDestAnyTupleTy: TcGlobals -> TType -> bool * TType list
+val tryDestAnyTupleTy: TcGlobals -> TType -> TupleInfo
 
 val tryDestRefTupleTy: TcGlobals -> TType -> TType list
 

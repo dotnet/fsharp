@@ -426,8 +426,8 @@ and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
         CheckTupleIsCorrectLength g env m ty args (fun argTys -> TcPatterns warnOnUpper cenv env vFlags patEnv argTys args |> ignore)
 
         let tupInfo = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
-        let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv tupInfo.argTypes args
-        let phase2 values = TPat_tuple(tupInfo.isStruct, List.map (fun f -> f values) argsR, tupInfo.argTypes, m)
+        let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv tupInfo.ArgTypes args
+        let phase2 values = TPat_tuple(tupInfo.IsStruct, List.map (fun f -> f values) argsR, tupInfo.ArgTypes, m)
         phase2, acc
     with e ->
         errorRecovery e m
