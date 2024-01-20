@@ -69,8 +69,8 @@ let (|OddVOption|_|) x = if x % 2 = 1 then ValueSome() else ValueNone
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3350, Line 1, Col 4, Line 1, Col 19, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-        (Warning 3350, Line 2, Col 4, Line 2, Col 22, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 1, Col 5, Line 1, Col 20, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 2, Col 5, Line 2, Col 23, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
     ]
 
 [<Fact>]
@@ -93,23 +93,23 @@ match "A" with
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 1, Line 4, Col 2, Line 4, Col 12,
+        (Error 1, Line 4, Col 3, Line 4, Col 13,
          "This expression was expected to have type
     'string -> bool'    
 but here has type
     'bool'    ")
-        (Error 39, Line 4, Col 6, Line 4, Col 12,
+        (Error 39, Line 4, Col 7, Line 4, Col 13,
          "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result")
-        (Error 1, Line 8, Col 2, Line 8, Col 12,
+        (Error 1, Line 8, Col 3, Line 8, Col 13,
          "This expression was expected to have type
     'string -> bool'    
 but here has type
     'bool'    ")
-        (Error 39, Line 8, Col 6, Line 8, Col 12,
+        (Error 39, Line 8, Col 7, Line 8, Col 13,
          "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result")
-        (Error 1, Line 12, Col 2, Line 12, Col 29,
+        (Error 1, Line 12, Col 3, Line 12, Col 30,
          "This expression was expected to have type
     'string -> bool'    
 but here has type
