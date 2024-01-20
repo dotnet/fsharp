@@ -366,16 +366,6 @@ let ``test int32-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/int32" FSC_OPT
 [<Fact>]
 let ``test int32-FSI`` () = singleTestBuildAndRun "core/int32" FSI
 
-// This test stays in FsharpSuite for desktop framework for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
-[<FactForNETCOREAPP>]
-let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
-
-[<FactForNETCOREAPP>]
-let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
-
-[<FactForNETCOREAPP>]
-let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
-
 [<Fact>]
 let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG
 
