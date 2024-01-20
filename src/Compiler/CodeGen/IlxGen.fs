@@ -8207,20 +8207,22 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     // @@@@@@@@@@@@ This needs big style simplification
     // Generate the actual bindings
     let skipBinding = HashSet<Stamp>()
+
     let _ =
         (recursiveVars, allBinds)
         ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
             match cenv.g.realInternalSignature with
-            | false ->
-                GenBinding cenv cgbuf eenv bind false
+            | false -> GenBinding cenv cgbuf eenv bind false
             | true ->
                 let (TBind(v, _, _)) = bind
 
-                let nested, skip, stamp  =
+                let nested, skip, stamp =
                     match dict, v.HasDeclaringEntity with
-                    | None, _ | Some _, false ->None, false, 0L
+                    | None, _
+                    | Some _, false -> None, false, 0L
                     | Some dict, true ->
                         let stamp = v.DeclaringEntity.Deref.Stamp
+
                         match dict.TryGetValue(stamp), skipBinding.Contains(stamp) with
                         | (false, _), _ -> None, false, stamp
                         | (_, _), true -> None, true, stamp
@@ -8234,13 +8236,16 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
                 | Some tref, false ->
                     let bindGroups =
                         let bgs = Dictionary<Stamp, Binding list>()
+
                         allBinds
-                        |> List.groupBy(fun bind ->
+                        |> List.groupBy (fun bind ->
                             let (TBind(v, _, _)) = bind
+
                             match v.HasDeclaringEntity with
                             | true -> v.DeclaringEntity.Deref.Stamp
                             | false -> 0L)
-                        |> Seq.iter(fun (stamp, bindings) -> bgs.Add(stamp, bindings))
+                        |> Seq.iter (fun (stamp, bindings) -> bgs.Add(stamp, bindings))
+
                         bgs
 
                     let eenv =
@@ -8262,8 +8267,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
                             (fun cgbuf eenv ->
                                 // Generate chunks of non-nested bindings together to allow recursive fixups.
                                 GenLetRecBindings cenv cgbuf eenv (binds, m) None
-                                CG.EmitInstr cgbuf (pop 0) Push0 I_ret
-                            )
+                                CG.EmitInstr cgbuf (pop 0) Push0 I_ret)
                             m
                     | _ -> ()
 
@@ -8282,8 +8286,8 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
 
             fixups.Value <- newFixups
             forwardReferenceSet)
-    ()
 
+    ()
 
 and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
     let _, endMark as scopeMarks = StartLocalScope "letrec" cgbuf
@@ -10149,7 +10153,8 @@ and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo 
     | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
         let eenvinner = AddDebugImportsToEnv cenv eenv opens
 
-        let dict = Some (Dictionary<Stamp, ILTypeRef>())
+        let dict = Some(Dictionary<Stamp, ILTypeRef>())
+
         for tc in tycons do
             let optTref =
                 if tc.IsFSharpException then
@@ -10182,7 +10187,6 @@ and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo 
                     |> List.skipWhile (function
                         | ModuleOrNamespaceBinding.Binding _ -> true
                         | _ -> false)
-
 
                 GenLetRecBindings cenv cgbuf eenv (recBinds, m) dict
                 bindsRemaining <- otherBinds
