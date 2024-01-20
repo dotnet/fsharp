@@ -617,7 +617,7 @@ val destForallTy: TcGlobals -> TType -> Typars * TType
 
 val destFunTy: TcGlobals -> TType -> TType * TType
 
-val destAnyTupleTy: TcGlobals -> TType -> TupleInfo
+val destAnyTupleTy: TcGlobals -> TType -> bool * TTypes
 
 val destRefTupleTy: TcGlobals -> TType -> TTypes
 
@@ -708,7 +708,7 @@ val stripFunTyN: TcGlobals -> int -> TType -> TType list * TType
 
 val applyForallTy: TcGlobals -> TType -> TypeInst -> TType
 
-val tryDestAnyTupleTy: TcGlobals -> TType -> TupleInfo
+val tryDestAnyTupleTy: TcGlobals -> TType -> bool * TType list
 
 val tryDestRefTupleTy: TcGlobals -> TType -> TType list
 

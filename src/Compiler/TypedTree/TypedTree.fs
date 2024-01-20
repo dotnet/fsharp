@@ -4189,8 +4189,8 @@ type TType =
     /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
 
-    /// Indicates the type is a tuple type.
-    | TType_tuple of tupInfo: TupleInfo
+    /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
+    | TType_tuple of isStruct: bool * elementTypes: TTypes
 
     /// Indicates the type is a function type.
     ///
@@ -4232,8 +4232,8 @@ type TType =
         match x with 
         | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
         | TType_app (tcref, tinst, _) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_tuple tInfo -> 
-            if tInfo.IsStruct then "struct " else "" + "(" + String.concat "," (List.map string tInfo.ElementTypes) + ")"
+        | TType_tuple (isStruct, tinst) -> 
+            if isStruct then "struct " else "" + "(" + String.concat "," (List.map string tinst) + ")"
         | TType_anon (anonInfo, tinst) -> 
             (if anonInfo.IsStruct then "struct " else "")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + "|}"
@@ -4303,11 +4303,6 @@ type AnonRecdTypeInfo =
     member x.DisplayNameCoreByIdx idx = x.SortedNames[idx]
 
     member x.DisplayNameByIdx idx = x.SortedNames[idx] |> ConvertLogicalNameToDisplayName
-
-[<Struct>]
-type TupleInfo(isStruct: bool, argTypes: TType list) =
-    member _.IsStruct = isStruct
-    member _.ArgTypes = argTypes
 
 /// Represents a unit of measure in the typed AST
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
