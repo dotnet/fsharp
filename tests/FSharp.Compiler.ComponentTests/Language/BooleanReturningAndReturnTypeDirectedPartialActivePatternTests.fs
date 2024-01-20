@@ -67,7 +67,7 @@ let (|OddVOption|_|) x = if x % 2 = 1 then ValueSome() else ValueNone
         """
     |> withLangVersion80
     |> typecheck
-    |> shouldSucceed
+    |> shouldFail
     |> withDiagnostics [
         (Warning 3350, Line 1, Col 4, Line 1, Col 19, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
         (Warning 3350, Line 2, Col 4, Line 2, Col 22, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
@@ -91,7 +91,7 @@ match "A" with
 """
     |> withLangVersionPreview
     |> typecheck
-    |> shouldSucceed
+    |> shouldFail
     |> withDiagnostics [
         (Error 1, Line 4, Col 2, Line 4, Col 12,
          "This expression was expected to have type
