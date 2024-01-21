@@ -133,7 +133,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types</category>
     type uint = uint32
 
-    /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
+    /// <summary>Single dimensional, zero-based arrays, written <c>int array</c>, <c>string array</c> etc.</summary>
     ///
     /// <remarks>Use the values in the <c>Array</c> module to manipulate values 
     /// of this type, or the notation <c>arr.[x]</c> to get/set array
@@ -396,7 +396,7 @@ namespace Microsoft.FSharp.Core
     type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
         (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
-    /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
+    /// <summary>Single dimensional, zero-based arrays, written <c>int array</c>, <c>string array</c> etc.</summary>
     /// 
     /// <remarks>Use the values in the <see cref="T:Microsoft.FSharp.Collections.ArrayModule" /> module to manipulate values 
     /// of this type, or the notation <c>arr.[x]</c> to get/set array
