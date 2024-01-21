@@ -1460,7 +1460,11 @@ module FSharpReflectionExtensions =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.GetRecordFields(record, bindingFlags)
 
-        static member PreComputeRecordReader(recordType: Type, ?allowAccessToPrivateRepresentation) : (obj -> obj array) =
+        static member PreComputeRecordReader
+            (
+                recordType: Type,
+                ?allowAccessToPrivateRepresentation
+            ) : (obj -> obj array) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeRecordReader(recordType, bindingFlags)
 

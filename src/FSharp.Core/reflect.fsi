@@ -397,7 +397,8 @@ type FSharpValue =
     /// <returns>A function for constructing values of the given union case.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeUnionConstructor: unionCase: UnionCaseInfo * ?bindingFlags: BindingFlags -> (obj array -> obj)
+    static member PreComputeUnionConstructor:
+        unionCase: UnionCaseInfo * ?bindingFlags: BindingFlags -> (obj array -> obj)
 
     /// <summary>A method that constructs objects of the given case</summary>
     ///

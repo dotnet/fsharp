@@ -1282,7 +1282,11 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     static member Deserialize40:
-        qualifyingType: Type * referencedTypes: Type array * spliceTypes: Type array * spliceExprs: Expr array * bytes: byte array ->
+        qualifyingType: Type *
+        referencedTypes: Type array *
+        spliceTypes: Type array *
+        spliceExprs: Expr array *
+        bytes: byte array ->
             Expr
 
     /// <summary>Permits interactive environments such as F# Interactive
@@ -1293,7 +1297,8 @@ type Expr =
     /// <param name="resource">The unique name for the resources being added.</param>
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
     ///
-    static member RegisterReflectedDefinitions: assembly: Assembly * resource: string * serializedValue: byte array -> unit
+    static member RegisterReflectedDefinitions:
+        assembly: Assembly * resource: string * serializedValue: byte array -> unit
 
     /// <summary>Permits interactive environments such as F# Interactive
     /// to explicitly register new pickled resources that represent persisted

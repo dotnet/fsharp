@@ -30,7 +30,9 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result> =
     /// <param name="captures">The captured expressions in an interpolated string.</param>
     /// <param name="captureTys">The types of expressions for %A expression gaps in interpolated string.</param>
     /// <returns>The PrintfFormat containing the formatted result.</returns>
-    new: value: string * captures: obj array * captureTys: Type array -> PrintfFormat<'Printer, 'State, 'Residue, 'Result>
+    new:
+        value: string * captures: obj array * captureTys: Type array ->
+            PrintfFormat<'Printer, 'State, 'Residue, 'Result>
 
     /// <summary>The raw text of the format string.</summary>
     member Value: string

@@ -62,7 +62,8 @@ module Array =
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
-        let array: 'T array = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+        let array: 'T array =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
         for i = 0 to Operators.Checked.(-) array.Length 1 do // use checked arithmetic here to satisfy FxCop
             array.[i] <- value
@@ -142,7 +143,9 @@ module Array =
     let collect (mapping: 'T -> 'U array) (array: 'T array) : 'U array =
         checkNonNull "array" array
         let len = array.Length
-        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<'U array> len
+
+        let result =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<'U array> len
 
         for i = 0 to result.Length - 1 do
             result.[i] <- mapping array.[i]
