@@ -68,6 +68,7 @@ param (
     [switch]$sourceBuild,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
+    [switch]$realInternalSignature,
     [switch]$verifypackageshipstatus = $false,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
@@ -127,7 +128,8 @@ function Print-Usage() {
     Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host "  -skipbuild                    Skip building product"
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
-    Write-Host "  -verifypackageshipstatus     Verify whether the packages we are building have already shipped to nuget"
+    Write-Host "  -realInternalSignature        Build product with realInternalSignature"
+    Write-Host "  -verifypackageshipstatus      Verify whether the packages we are building have already shipped to nuget"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -204,6 +206,10 @@ function Process-Arguments() {
 
     if ($compressAllMetadata) {
         $script:compressAllMetadata = $True;
+    }
+
+    if ($realInternalSignature) {
+        $script:realInternalSignature = $True;
     }
 
     if ($verifypackageshipstatus) {
@@ -284,6 +290,7 @@ function BuildSolution([string] $solutionName, $nopack) {
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
         /p:CompressAllMetadata=$CompressAllMetadata `
+        /p:realInternalSignature=$realInternalSignature `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties

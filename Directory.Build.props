@@ -4,7 +4,11 @@
     <LangVersion Condition="'$(FSharpLangVersion)' != ''">$(FSharpLangVersion)</LangVersion>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
-    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realInternalSignature-</OtherFlags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(RealInternalSignature)' == 'true'">
+    <DefineConstants>$(DefineConstants);REALINTERNALSIGNATURE</DefineConstants>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realInternalSignature+</OtherFlags>
   </PropertyGroup>
 
   <!--
