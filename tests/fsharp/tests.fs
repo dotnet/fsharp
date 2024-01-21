@@ -784,6 +784,7 @@ module CoreTests =
 
 #endif
 
+#if !NETCOREAPP
     [<Test; Category("parsing")>]
     let parsing () =
         let cfg = testConfig "core/parsing"
