@@ -107,8 +107,7 @@ let ``We can cancel a job`` () =
 [<Fact>]
 let ``Job is not cancelled if just one requestor cancels`` () =
     task {
-        let jobStarted = new AutoResetEvent(false)
-
+        let jobStarted = new ManualResetEvent(false)
         let jobCanComplete = new ManualResetEvent(false)
 
         let computation key = node {
@@ -128,11 +127,10 @@ let ``Job is not cancelled if just one requestor cancels`` () =
         let key = 1
 
         let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
-
-        do! waitFor jobStarted
-
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
+
+        do! waitFor jobStarted
 
         cts1.Cancel()
         cts3.Cancel()
