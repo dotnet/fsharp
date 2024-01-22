@@ -388,8 +388,7 @@ module ResumableCode =
                 if __stack_fin then
                     match savedExn with
                     | None -> ()
-                    | Some exn ->
-                        ExceptionDispatchInfo.Capture(exn).Throw()
+                    | Some exn -> ExceptionDispatchInfo.Capture(exn).Throw()
 
                 __stack_fin
             //-- RESUMABLE CODE END
