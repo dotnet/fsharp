@@ -3585,8 +3585,6 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
 
     member _.ParseAndCheckInteraction(sourceText: ISourceText, ?userOpName: string) =
         cancellable {
-            let! ct = Cancellable.token ()
-            use _ = Cancellable.UsingToken(ct)
 
             let userOpName = defaultArg userOpName "Unknown"
             let fileName = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")

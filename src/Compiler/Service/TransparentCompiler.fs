@@ -1762,8 +1762,6 @@ type internal TransparentCompiler
         node {
             //use _ =
             //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
-            let! ct = NodeCode.CancellationToken
-            use _ = Cancellable.UsingToken(ct)
 
             // TODO: might need to deal with exceptions here:
             let tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
@@ -1792,6 +1790,7 @@ type internal TransparentCompiler
         ignore userOpName
 
         node {
+
             match! ComputeItemKeyStore(fileName, projectSnapshot) with
             | None -> return Seq.empty
             | Some itemKeyStore -> return itemKeyStore.FindAll symbol.Item
@@ -1818,8 +1817,6 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpCheckFileAnswer> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
@@ -1842,8 +1839,6 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpCheckFileAnswer option> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
@@ -1897,8 +1892,6 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<seq<range>> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 ignore canInvalidateProject
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
@@ -1914,8 +1907,6 @@ type internal TransparentCompiler
 
         member this.GetAssemblyData(options: FSharpProjectOptions, fileName, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! this.GetAssemblyData(snapshot.ProjectSnapshot, fileName, userOpName)
@@ -1936,8 +1927,6 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileResults> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
 
@@ -1953,8 +1942,6 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpParseFileResults> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! this.ParseFile(fileName, snapshot.ProjectSnapshot, userOpName)
@@ -1969,8 +1956,6 @@ type internal TransparentCompiler
             ) : NodeCode<(FSharpParseFileResults * FSharpCheckFileResults) option> =
             node {
                 ignore builder
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText)
@@ -2023,8 +2008,6 @@ type internal TransparentCompiler
             ) : NodeCode<EditorServices.SemanticClassificationView option> =
             node {
                 ignore userOpName
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
                 return! ComputeSemanticClassification(fileName, snapshot.ProjectSnapshot)
@@ -2048,8 +2031,6 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 let! snapshot =
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
@@ -2063,8 +2044,6 @@ type internal TransparentCompiler
 
         member this.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 ignore userOpName
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
@@ -2073,8 +2052,6 @@ type internal TransparentCompiler
 
         member this.ParseAndCheckProject(projectSnapshot: FSharpProjectSnapshot, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             node {
-                let! ct = NodeCode.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
 
                 ignore userOpName
                 return! ComputeParseAndCheckProject projectSnapshot.ProjectSnapshot
