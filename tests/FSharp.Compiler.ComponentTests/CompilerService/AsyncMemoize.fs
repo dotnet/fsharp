@@ -14,10 +14,14 @@ open FSharp.Compiler.BuildGraph
 
 let timeout = TimeSpan.FromSeconds 10
 
-let waitFor (mre: ManualResetEvent) = 
-    if not <| mre.WaitOne timeout then 
-        failwith "waitFor timed out"
+let waitForA (mre: EventWaitHandle) =
+    async {
+        let! waitResult = Async.AwaitWaitHandle(mre, int timeout.TotalMilliseconds)
+        if not waitResult then failwith "waitFor timed out"
+    }
 
+let waitFor h = h |> waitForA |> Async.StartImmediateAsTask
+let internal waitForN h = h |> waitForA |> NodeCode.AwaitAsync
 
 let rec internal spinFor (duration: TimeSpan) =
     node {
@@ -90,12 +94,12 @@ let ``We can cancel a job`` () =
 
         let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation jobStarted.Set), ct = cts1.Token)
 
-        waitFor jobStarted
+        do! waitFor jobStarted
         jobStarted.Reset() |> ignore
 
         cts1.Cancel()
 
-        waitFor jobCanceled
+        do! waitFor jobCanceled
 
         Assert.Equal<(JobEvent * int) array>([| Started, key; Canceled, key |], eventLog |> Seq.toArray )
     }
@@ -103,13 +107,13 @@ let ``We can cancel a job`` () =
 [<Fact>]
 let ``Job is not cancelled if just one requestor cancels`` () =
     task {
-        let jobStarted = new ManualResetEvent(false)
+        let jobStarted = new AutoResetEvent(false)
 
         let jobCanComplete = new ManualResetEvent(false)
 
         let computation key = node {
             jobStarted.Set() |> ignore
-            waitFor jobCanComplete
+            do! waitForN jobCanComplete
             return key * 2
         }
 
@@ -125,8 +129,7 @@ let ``Job is not cancelled if just one requestor cancels`` () =
 
         let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
 
-        waitFor jobStarted
-        jobStarted.Reset() |> ignore
+        do! waitFor jobStarted
 
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
@@ -148,14 +151,11 @@ let ``Job is not cancelled if just one requestor cancels`` () =
 [<Fact>]
 let ``Job is not cancelled while there are requestors`` () =
     task {
-        let jobStarted = new ManualResetEvent(false)
-
         let jobCanComplete = new ManualResetEvent(false)
 
         let computation key = node {
-            jobStarted.Set() |> ignore
-            waitFor jobCanComplete
-            return key * 2
+                do! waitForN jobCanComplete
+                return key * 2
         }
 
         let eventLog = ConcurrentStack()
@@ -168,11 +168,7 @@ let ``Job is not cancelled while there are requestors`` () =
 
         let key = 1
 
-        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
-
-        jobStarted.WaitOne() |> ignore
-        jobStarted.Reset() |> ignore
-
+        let _task1 = NodeCode.StartAsTask_ForTesting(memoize.Get'(key, computation key), ct = cts1.Token)
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
@@ -198,11 +194,11 @@ let ``Job is cancelled when all requestors cancel`` () =
 
         let jobCanComplete = new ManualResetEvent(false)
 
-        use eventTriggered = new ManualResetEvent(false)
+        use eventTriggered = new AutoResetEvent(false)
 
         let computation key = node {
                 jobStarted.Set() |> ignore
-                waitFor jobCanComplete
+                do! waitForN jobCanComplete
                 return key * 2
         }
 
@@ -220,12 +216,9 @@ let ``Job is cancelled when all requestors cancel`` () =
 
         let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
 
-        jobStarted.WaitOne() |> ignore
-        jobStarted.Reset() |> ignore
+        do! waitFor jobStarted
 
-        eventTriggered.WaitOne() |> ignore
-        eventTriggered.Reset() |> ignore
-
+        do! waitFor eventTriggered
 
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         // Give the other tasks a chance to actually start.
@@ -239,8 +232,7 @@ let ``Job is cancelled when all requestors cancel`` () =
         cts3.Cancel()
 
         // Wait for the event to be logged.
-        eventTriggered.WaitOne(timeout) |> ignore
-        eventTriggered.Reset() |> ignore
+        do! waitFor eventTriggered
 
         jobCanComplete.Set() |> ignore
 
@@ -381,14 +373,21 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
     task {
         let cache = AsyncMemoize(cancelDuplicateRunningJobs=cancelDuplicate)
 
+        use jobCompleted = new AutoResetEvent(false)
+        use jobStarted = new AutoResetEvent(false)
+
         let mutable started = 0
         let mutable finished = 0
 
         let work () = node {
-            Interlocked.Increment &started |> ignore
-            for _ in 1..10 do
-                do! Async.Sleep 10 |> NodeCode.AwaitAsync
-            Interlocked.Increment &finished |> ignore
+            jobStarted.Set() |> ignore
+            try 
+                Interlocked.Increment &started |> ignore
+                for _ in 1..10 do
+                    do! Async.Sleep 10 |> NodeCode.AwaitAsync
+                Interlocked.Increment &finished |> ignore
+            finally
+                jobCompleted.Set() |> ignore
         }
 
         let key1 =
@@ -399,7 +398,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
 
         cache.Get(key1, work()) |> Async.AwaitNodeCode |> Async.Start
 
-        do! Task.Delay 50
+        do! waitFor jobStarted
 
         let key2 =
             { new ICacheKey<_, _> with
@@ -409,7 +408,10 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
 
         cache.Get(key2, work()) |> Async.AwaitNodeCode |> Async.Start
 
-        do! Task.Delay 500
+        do! waitFor jobStarted
+
+        do! waitFor jobCompleted
+        do! waitFor jobCompleted
 
         Assert.Equal((2, expectFinished), (started, finished))
     }
