@@ -128,13 +128,6 @@ let isPosInTypeDefn' = // Still true.
 *)
 
 (*** hide ***)
-
-module SynExpr =
-    let shouldBeParenthesizedInContext (getLineStr: int -> string) (path: SyntaxVisitorPath) (expr: SynExpr) : bool = failwith "Nope."
-
-module SynPat =
-    let shouldBeParenthesizedInContext (path: SyntaxVisitorPath) (pat: SynPat) : bool = failwith "Nope."
-
 let getLineStr (line: int) : string = failwith "Nope."
 
 (**
