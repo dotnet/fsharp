@@ -1,7 +1,6 @@
 ﻿module internal FSharp.Compiler.GraphChecking.DependencyResolution
 
 open FSharp.Compiler.Syntax
-open Internal.Utilities.Library
 
 /// <summary>Find a path from a starting TrieNode and return the end node or None</summary>
 let queryTriePartial (trie: TrieNode) (path: LongIdentifier) : TrieNode option =
@@ -117,6 +116,20 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
         { state with
             FoundDependencies = foundDependencies
         }
+
+    | ModuleName name ->
+        // We need to check if the module name is a hit in the Trie.
+        let state' =
+            let queryResult = queryTrie trie [ name ]
+            processIdentifier queryResult state
+
+        match state.OwnNamespace with
+        | None -> state'
+        | Some ns ->
+            // If there we currently have our own namespace,
+            // the combination of that namespace + module name should be checked as well.
+            let queryResult = queryTrieDual trie ns [ name ]
+            processIdentifier queryResult state'
 
 /// <summary>
 /// For a given file's content, collect all missing ("ghost") file dependencies that the core resolution algorithm didn't return,
