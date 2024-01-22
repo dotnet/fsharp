@@ -215,7 +215,7 @@ module ExtraTopLevelOperators =
 
     let getArray (vals: seq<'T>) =
         match vals with
-        | :? ('T[]) as arr -> arr
+        | :? ('T array) as arr -> arr
         | _ -> Seq.toArray vals
 
     [<CompiledName("CreateArray2D")>]
@@ -415,7 +415,7 @@ type TypeProviderConfig
     (systemRuntimeContainsType: string -> bool, getReferencedAssembliesOption: (unit -> string array) option) =
     let mutable resolutionFolder: string = null
     let mutable runtimeAssembly: string = null
-    let mutable referencedAssemblies: string[] = null
+    let mutable referencedAssemblies: string array = null
     let mutable temporaryFolder: string = null
     let mutable isInvalidationSupported: bool = false
     let mutable useResolutionFolderAtRuntime: bool = false
@@ -468,31 +468,31 @@ type IProvidedNamespace =
 
     abstract NamespaceName: string
 
-    abstract GetNestedNamespaces: unit -> IProvidedNamespace[]
+    abstract GetNestedNamespaces: unit -> IProvidedNamespace array
 
-    abstract GetTypes: unit -> Type[]
+    abstract GetTypes: unit -> Type array
 
     abstract ResolveTypeName: typeName: string -> Type
 
 type ITypeProvider =
     inherit System.IDisposable
 
-    abstract GetNamespaces: unit -> IProvidedNamespace[]
+    abstract GetNamespaces: unit -> IProvidedNamespace array
 
-    abstract GetStaticParameters: typeWithoutArguments: Type -> ParameterInfo[]
+    abstract GetStaticParameters: typeWithoutArguments: Type -> ParameterInfo array
 
     abstract ApplyStaticArguments:
-        typeWithoutArguments: Type * typePathWithArguments: string[] * staticArguments: obj[] -> Type
+        typeWithoutArguments: Type * typePathWithArguments: string array * staticArguments: obj array -> Type
 
-    abstract GetInvokerExpression: syntheticMethodBase: MethodBase * parameters: Expr[] -> Expr
+    abstract GetInvokerExpression: syntheticMethodBase: MethodBase * parameters: Expr array -> Expr
 
     [<CLIEvent>]
     abstract Invalidate: IEvent<System.EventHandler, System.EventArgs>
 
-    abstract GetGeneratedAssemblyContents: assembly: System.Reflection.Assembly -> byte[]
+    abstract GetGeneratedAssemblyContents: assembly: System.Reflection.Assembly -> byte array
 
 type ITypeProvider2 =
-    abstract GetStaticParametersForMethod: methodWithoutArguments: MethodBase -> ParameterInfo[]
+    abstract GetStaticParametersForMethod: methodWithoutArguments: MethodBase -> ParameterInfo array
 
     abstract ApplyStaticArgumentsForMethod:
-        methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: obj[] -> MethodBase
+        methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: obj array -> MethodBase

@@ -873,7 +873,7 @@ module Seq =
         checkNonNull "source" source
 
         match source with
-        | :? ('T[]) as a -> a.Length = 0
+        | :? ('T array) as a -> a.Length = 0
         | :? ('T list) as a -> a.IsEmpty
         | :? ICollection<'T> as a -> a.Count = 0
         | _ ->
@@ -890,7 +890,7 @@ module Seq =
         checkNonNull "source" source
 
         match source with
-        | :? ('T[]) as a -> a.Length
+        | :? ('T array) as a -> a.Length
         | :? ('T list) as a -> a.Length
         | :? ICollection<'T> as a -> a.Count
         | _ ->
@@ -1014,7 +1014,7 @@ module Seq =
         checkNonNull "source" source
 
         match source with
-        | :? ('T[]) as res -> (res.Clone() :?> 'T[])
+        | :? ('T array) as res -> (res.Clone() :?> 'T array)
         | :? ('T list) as res -> List.toArray res
         | :? ICollection<'T> as res ->
             // Directly create an array and copy ourselves.
@@ -1037,7 +1037,7 @@ module Seq =
             else
                 [||]
 
-    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T[]) start fin acc =
+    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T array) start fin acc =
         let mutable state = acc
 
         for i = fin downto start do
@@ -1181,7 +1181,7 @@ module Seq =
         checkNonNull "source" source
         source |> toArray |> Array.findIndexBack predicate
 
-    // windowed : int -> seq<'T> -> seq<'T[]>
+    // windowed : int -> seq<'T> -> seq<'T array>
     [<CompiledName("Windowed")>]
     let windowed windowSize (source: seq<_>) =
         checkNonNull "source" source
