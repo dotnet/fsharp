@@ -1779,7 +1779,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
                   when 'T : decimal = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
-8
+
             /// Fill in the implementation of CountLimitedHasherPER
             type CountLimitedHasherPER with
                 
