@@ -346,7 +346,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                                             try
                                                 // TODO: Should unify starting and restarting
-                                                use _ = Cancellable.UsingToken(cts.Token)
                                                 log (Started, key)
                                                 Interlocked.Increment &restarted |> ignore
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
@@ -498,7 +497,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 // TODO: Should unify starting and restarting
                                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
                                 DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
-                                use _ = Cancellable.UsingToken(internalCt)
+
                                 log (Started, key)
 
                                 try
