@@ -1454,11 +1454,11 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
           | UnknownValue -> ivalue
           | SizeValue (_vdepth, vinfo) -> MakeSizedValueInfo (abstractExprInfo vinfo)
 
-      and abstractValInfo v = 
+      let abstractValInfo v = 
           { ValExprInfo=abstractExprInfo v.ValExprInfo 
             ValMakesNoCriticalTailcalls=v.ValMakesNoCriticalTailcalls }
 
-      and abstractModulInfo ss =
+      let rec abstractModulInfo ss =
          { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
            ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
                check vref (abstractValInfo e) ) }
