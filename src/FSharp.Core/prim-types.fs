@@ -887,6 +887,123 @@ namespace Microsoft.FSharp.Core
         module HashCompare = 
         
             //-------------------------------------------------------------------------
+            // LanguagePrimitives.HashCompare: HASHING.  
+            //------------------------------------------------------------------------- 
+
+            let defaultHashNodes = 18 
+
+            /// The implementation of IEqualityComparer, using depth-limited for hashing and PER semantics for NaN equality.
+            type CountLimitedHasherPER(sz:int) =
+                [<DefaultValue>]
+                val mutable nodeCount : int
+                
+                member x.Fresh() = 
+                    if (System.Threading.Interlocked.CompareExchange(&(x.nodeCount), sz, 0) = 0) then 
+                        x
+                    else
+                        new CountLimitedHasherPER(sz)
+                
+                interface IEqualityComparer 
+
+            /// The implementation of IEqualityComparer, using unlimited depth for hashing and ER semantics for NaN equality.
+            type UnlimitedHasherER() =
+                interface IEqualityComparer 
+                
+            /// The implementation of IEqualityComparer, using unlimited depth for hashing and PER semantics for NaN equality.
+            type UnlimitedHasherPER() =
+                interface IEqualityComparer
+                    
+
+            /// The unique object for unlimited depth for hashing and ER semantics for equality.
+            let fsEqualityComparerUnlimitedHashingER = UnlimitedHasherER()
+
+            /// The unique object for unlimited depth for hashing and PER semantics for equality.
+            let fsEqualityComparerUnlimitedHashingPER = UnlimitedHasherPER()
+             
+            let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
+
+            let GenericHashObjArray (iec : IEqualityComparer) (x: obj array) : int =
+                  let len = x.Length 
+                  let mutable i = len - 1 
+                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
+                  let mutable acc = 0   
+                  while (i >= 0) do 
+                      // NOTE: GenericHash* call decreases nr 
+                      acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
+                      i <- i - 1
+                  acc
+
+            // optimized case - byte arrays 
+            let GenericHashByteArray (x: byte array) : int =
+                  let len = length x 
+                  let mutable i = len - 1 
+                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
+                  let mutable acc = 0   
+                  while (i >= 0) do 
+                      acc <- HashCombine i acc (intOfByte (get x i));
+                      i <- i - 1
+                  acc
+
+            // optimized case - int arrays 
+            let GenericHashInt32Array (x: int array) : int =
+                  let len = length x 
+                  let mutable i = len - 1 
+                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
+                  let mutable acc = 0   
+                  while (i >= 0) do 
+                      acc <- HashCombine i acc (get x i);
+                      i <- i - 1
+                  acc
+
+            // optimized case - int arrays 
+            let GenericHashInt64Array (x: int64 array) : int =
+                  let len = length x 
+                  let mutable i = len - 1 
+                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
+                  let mutable acc = 0   
+                  while (i >= 0) do 
+                      acc <- HashCombine i acc (int32 (get x i));
+                      i <- i - 1
+                  acc
+
+            // special case - arrays do not by default have a decent structural hashing function
+            let GenericHashArbArray (iec : IEqualityComparer) (x: System.Array) : int =
+                  match x.Rank  with 
+                  | 1 -> 
+                    let b = x.GetLowerBound(0) 
+                    let len = x.Length 
+                    let mutable i = b + len - 1 
+                    if i > b + defaultHashNodes  then i <- b + defaultHashNodes  // limit the hash
+                    let mutable acc = 0                  
+                    while (i >= b) do 
+                        // NOTE: GenericHash* call decreases nr 
+                        acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
+                        i <- i - 1
+                    acc
+                  | _ -> 
+                     HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
+
+            // Core implementation of structural hashing, corresponds to pseudo-code in the 
+            // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
+            // Arrays are structurally hashed through a separate technique.
+            //
+            // "iec" is either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or a CountLimitedHasherPER.
+            let rec GenericHashParamObj (iec : IEqualityComparer) (x: obj) : int =
+                  match x with 
+                  | null -> 0 
+                  | (:? System.Array as a) -> 
+                      match a with 
+                      | :? (obj array) as oa -> GenericHashObjArray iec oa 
+                      | :? (byte array) as ba -> GenericHashByteArray ba 
+                      | :? (int array) as ba -> GenericHashInt32Array ba 
+                      | :? (int64 array) as ba -> GenericHashInt64Array ba 
+                      | _ -> GenericHashArbArray iec a 
+                  | :? IStructuralEquatable as a ->    
+                      a.GetHashCode(iec)
+                  | _ -> 
+                      x.GetHashCode()
+
+            //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: Physical Equality
             //------------------------------------------------------------------------- 
 
@@ -1662,127 +1779,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
                   when 'T : decimal = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
-
-            //-------------------------------------------------------------------------
-            // LanguagePrimitives.HashCompare: HASHING.  
-            //------------------------------------------------------------------------- 
-
-
-
-            let defaultHashNodes = 18 
-
-            /// The implementation of IEqualityComparer, using depth-limited for hashing and PER semantics for NaN equality.
-            type CountLimitedHasherPER(sz:int) =
-                [<DefaultValue>]
-                val mutable nodeCount : int
-                
-                member x.Fresh() = 
-                    if (System.Threading.Interlocked.CompareExchange(&(x.nodeCount), sz, 0) = 0) then 
-                        x
-                    else
-                        new CountLimitedHasherPER(sz)
-                
-                interface IEqualityComparer 
-
-            /// The implementation of IEqualityComparer, using unlimited depth for hashing and ER semantics for NaN equality.
-            type UnlimitedHasherER() =
-                interface IEqualityComparer 
-                
-            /// The implementation of IEqualityComparer, using unlimited depth for hashing and PER semantics for NaN equality.
-            type UnlimitedHasherPER() =
-                interface IEqualityComparer
-                    
-
-            /// The unique object for unlimited depth for hashing and ER semantics for equality.
-            let fsEqualityComparerUnlimitedHashingER = UnlimitedHasherER()
-
-            /// The unique object for unlimited depth for hashing and PER semantics for equality.
-            let fsEqualityComparerUnlimitedHashingPER = UnlimitedHasherPER()
-             
-            let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
-
-            let GenericHashObjArray (iec : IEqualityComparer) (x: obj array) : int =
-                  let len = x.Length 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      // NOTE: GenericHash* call decreases nr 
-                      acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
-                      i <- i - 1
-                  acc
-
-            // optimized case - byte arrays 
-            let GenericHashByteArray (x: byte array) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (intOfByte (get x i));
-                      i <- i - 1
-                  acc
-
-            // optimized case - int arrays 
-            let GenericHashInt32Array (x: int array) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (get x i);
-                      i <- i - 1
-                  acc
-
-            // optimized case - int arrays 
-            let GenericHashInt64Array (x: int64 array) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (int32 (get x i));
-                      i <- i - 1
-                  acc
-
-            // special case - arrays do not by default have a decent structural hashing function
-            let GenericHashArbArray (iec : IEqualityComparer) (x: System.Array) : int =
-                  match x.Rank  with 
-                  | 1 -> 
-                    let b = x.GetLowerBound(0) 
-                    let len = x.Length 
-                    let mutable i = b + len - 1 
-                    if i > b + defaultHashNodes  then i <- b + defaultHashNodes  // limit the hash
-                    let mutable acc = 0                  
-                    while (i >= b) do 
-                        // NOTE: GenericHash* call decreases nr 
-                        acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
-                        i <- i - 1
-                    acc
-                  | _ -> 
-                     HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
-
-            // Core implementation of structural hashing, corresponds to pseudo-code in the 
-            // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
-            // Arrays are structurally hashed through a separate technique.
-            //
-            // "iec" is either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or a CountLimitedHasherPER.
-            let rec GenericHashParamObj (iec : IEqualityComparer) (x: obj) : int =
-                  match x with 
-                  | null -> 0 
-                  | (:? System.Array as a) -> 
-                      match a with 
-                      | :? (obj array) as oa -> GenericHashObjArray iec oa 
-                      | :? (byte array) as ba -> GenericHashByteArray ba 
-                      | :? (int array) as ba -> GenericHashInt32Array ba 
-                      | :? (int64 array) as ba -> GenericHashInt64Array ba 
-                      | _ -> GenericHashArbArray iec a 
-                  | :? IStructuralEquatable as a ->    
-                      a.GetHashCode(iec)
-                  | _ -> 
-                      x.GetHashCode()
-
-
+8
             /// Fill in the implementation of CountLimitedHasherPER
             type CountLimitedHasherPER with
                 
