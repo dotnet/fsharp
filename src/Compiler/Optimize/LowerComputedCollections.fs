@@ -279,7 +279,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
 
         // [1..5] → [1; 2; 3; 4; 5] ≡ 1 :: 2 :: 3 :: 4 :: 5 :: []
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), _) when
-            finish - start + 1 < constListSizeThreshold
+            finish - start < constListSizeThreshold
             ->
             let rec conses acc n =
                 if n < start then acc
@@ -309,7 +309,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
 
         // [|1..5|] → [|1; 2; 3; 4; 5|]
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
-            finish - start + 1 < constArraySizeThreshold
+            finish - start < constArraySizeThreshold
             ->
             Some (mkArray (g.int32_ty, [for n in start..finish -> Expr.Const(Const.Int32 n, Text.Range.range0, g.int32_ty)], m))
 
