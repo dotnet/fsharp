@@ -213,8 +213,12 @@ type ExpectedException() =
 
 [<Fact>]
 let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
+    let random =
+        let rng = Random()
+        fun n -> rng.Next n
+
     let job _ = node {
-        do! Random.Shared.Next 10 |> Async.Sleep |> NodeCode.AwaitAsync
+        do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
     }
 
     let work (phase: BuildPhase) =
@@ -238,7 +242,7 @@ let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
         BuildPhase.Interactive
     |]
 
-    let pickRandomPhase _ = phases[Random.Shared.Next phases.Length]
+    let pickRandomPhase _ = phases[random phases.Length]
     Seq.init 100 pickRandomPhase
     |> Seq.map (work >> Async.AwaitNodeCode)
     |> Async.Parallel
