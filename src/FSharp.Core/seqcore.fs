@@ -553,7 +553,7 @@ type ListCollector<'T> =
     member this.AddMany (values: seq<'T>) =
         // cook a faster iterator for lists and arrays
         match values with 
-        | :? ('T[]) as valuesAsArray -> 
+        | :? ('T array) as valuesAsArray -> 
             for v in valuesAsArray do
                this.Add v
         | :? ('T list) as valuesAsList -> 
@@ -631,7 +631,7 @@ type ArrayCollector<'T> =
         else
             // cook a faster iterator for lists and arrays
             match values with 
-            | :? ('T[]) as valuesAsArray -> 
+            | :? ('T array) as valuesAsArray -> 
                 for v in valuesAsArray do
                    this.Add v
             | :? ('T list) as valuesAsList -> 

@@ -484,6 +484,10 @@
     <Compile Include="Service\ServiceLexing.fs" />
     <Compile Include="Service\ServiceParseTreeWalk.fsi" />
     <Compile Include="Service\ServiceParseTreeWalk.fs" />
+    <Compile Include="Service\SynExpr.fsi" />
+    <Compile Include="Service\SynExpr.fs" />
+    <Compile Include="Service\SynPat.fsi" />
+    <Compile Include="Service\SynPat.fs" />
     <Compile Include="Service\ServiceNavigation.fsi" />
     <Compile Include="Service\ServiceNavigation.fs" />
     <Compile Include="Service\ServiceParamInfoLocations.fsi" />

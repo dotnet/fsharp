@@ -108,12 +108,12 @@ module Utilities =
         let outputLines = StringBuilder()
         let errorLines = StringBuilder()
 
-        do redirector.OutputProduced.Add (fun line -> outputLines.AppendLine line |>ignore)
-        do redirector.ErrorProduced.Add(fun line -> errorLines.AppendLine line |>ignore)
+        do redirector.OutputProduced.Add (fun line -> lock outputLines <| fun () -> outputLines.AppendLine line |>ignore)
+        do redirector.ErrorProduced.Add(fun line -> lock errorLines <| fun () -> errorLines.AppendLine line |>ignore)
 
-        member _.Output () = outputLines.ToString()
+        member _.Output () = lock outputLines outputLines.ToString
 
-        member _.ErrorOutput () = errorLines.ToString()
+        member _.ErrorOutput () = lock errorLines errorLines.ToString
 
         interface IDisposable with
             member _.Dispose() = (redirector :> IDisposable).Dispose()
