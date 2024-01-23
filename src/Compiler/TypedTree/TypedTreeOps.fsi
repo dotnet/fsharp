@@ -2015,6 +2015,8 @@ val mkCallCreateEvent: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> E
 
 val mkCallArrayLength: TcGlobals -> range -> TType -> Expr -> Expr
 
+val mkCallArrayInit: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+
 val mkCallArrayGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallArray2DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -2030,6 +2032,8 @@ val mkCallArray2DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Exp
 val mkCallArray3DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray4DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+
+val mkCallListInit: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallHash: TcGlobals -> range -> TType -> Expr -> Expr
 

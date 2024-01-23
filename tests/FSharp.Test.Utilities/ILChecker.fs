@@ -129,9 +129,19 @@ module ILChecker =
                         errorMsgOpt <- Some(msg + "\nExpected:\n" + ilCode + "\n")
                     else
                         for i = 0 to expectedLines.Length - 1 do
+                            let ignorePrivateImplDeets (s: string) =
+                                // .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T3169_40Bytes@ field3170@ at I_000028A7
+                                let s = match s.IndexOf "PrivateImplementationDetails" with -1 -> s | i -> s[..i]
+                                // .class explicit ansi sealed nested assembly beforefieldinit T3169_40Bytes@
+                                let s = match s.IndexOf ".class explicit ansi sealed nested assembly beforefieldinit" with -1 -> s | i -> s[..i]
+                                // .data cil I_000028A7 = bytearray (
+                                let s = match s.IndexOf ".data cil" with -1 -> s | i -> s[..i]
+                                s
+
                             let expected = expectedLines[i].Trim()
                             let actual = actualLines[i].Trim()
-                            if expected <> actual then
+
+                            if ignorePrivateImplDeets expected <> ignorePrivateImplDeets actual then
                                 errors.Add $"\n==\nName: '%s{actualLines[0]}'\n\nExpected:\t %s{expected}\nActual:\t\t %s{actual}\n=="
 
                         if errors.Count > 0 then

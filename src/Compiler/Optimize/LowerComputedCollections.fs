@@ -252,15 +252,77 @@ let (|SeqToArray|_|) g expr =
     | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> Some (seqExpr, m)
     | _ -> None
 
+[<return: Struct>]
+let (|ConstInt32Range|_|) g expr =
+    match expr with
+    | ValApp g g.range_int32_op_vref ([], [Expr.Const (value = Const.Int32 start); Expr.Const (value = Const.Int32 1); Expr.Const (value = Const.Int32 finish)], _), _ -> ValueSome (start, finish)
+    | _ -> ValueNone
+
+[<return: Struct>]
+let (|Int32Range|_|) g expr =
+    match expr with
+    | ValApp g g.range_int32_op_vref ([], [start; Expr.Const (value = Const.Int32 1); finish], _), _ -> ValueSome (start, finish)
+    | _ -> ValueNone
+
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
     if g.ListCollector_tcr.CanDeref then
+        let constListSizeThreshold = 100
+        let constArraySizeThreshold = int System.UInt16.MaxValue
 
         match overallExpr with
+        // [5..1] → []
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
+            start > finish
+            ->
+            Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
+
+        // [1..5] → [1; 2; 3; 4; 5] ≡ 1 :: 2 :: 3 :: 4 :: 5 :: []
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), _) when
+            finish - start + 1 < constListSizeThreshold
+            ->
+            let rec conses acc n =
+                if n < start then acc
+                else conses (mkCons g g.int32_ty (Expr.Const (Const.Int32 n, Text.Range.range0, g.int32_ty)) acc) (n - 1)
+
+            Some (conses (mkNil g Text.Range.range0 g.int32_ty) finish)
+
+        // [start..finish] → List.init (finish - start + 1) ((+) start)
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
+            let diff = mkAsmExpr ([AbstractIL.IL.AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
+            let range = mkAsmExpr ([AbstractIL.IL.AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
+            let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
+            let body = mkAsmExpr ([AbstractIL.IL.AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
+            let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
+            let init = mkCallListInit g m g.int32_ty range initializer
+            Some init
+
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ListCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
         
+        // [|5..1|] → [||]
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
+            start > finish
+            ->
+            Some (mkArray (g.int32_ty, [], m))
+
+        // [|1..5|] → [|1; 2; 3; 4; 5|]
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
+            finish - start + 1 < constArraySizeThreshold
+            ->
+            Some (mkArray (g.int32_ty, [for n in start..finish -> Expr.Const(Const.Int32 n, Text.Range.range0, g.int32_ty)], m))
+
+        // [|start..finish|] → Array.init (finish - start + 1) ((+) start)
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
+            let diff = mkAsmExpr ([AbstractIL.IL.AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
+            let range = mkAsmExpr ([AbstractIL.IL.AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
+            let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
+            let body = mkAsmExpr ([AbstractIL.IL.AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
+            let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
+            let init = mkCallArrayInit g m g.int32_ty range initializer
+            Some init
+
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ArrayCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
