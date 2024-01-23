@@ -514,56 +514,68 @@ type TokenTupPool() =
 // Utilities for the tokenizer that are needed in other places
 //--------------------------------------------------------------------------*)
 
+[<return: Struct>]
+let (|Equals|_|) (s: string) (span: ReadOnlySpan<char>) =
+    if span.SequenceEqual(s.AsSpan()) then ValueSome Equals
+    else ValueNone
+
+[<return: Struct>]
+let (|StartsWith|_|) (s: string) (span: ReadOnlySpan<char>) =
+    if span.StartsWith(s.AsSpan()) then ValueSome StartsWith
+    else ValueNone
+
 // Strip a bunch of leading '>' of a token, at the end of a typar application
 // Note: this is used in the 'service.fs' to do limited postprocessing
 [<return: Struct>]
 let (|TyparsCloseOp|_|) (txt: string) =
-    let angles = txt |> Seq.takeWhile (fun c -> c = '>') |> Seq.toList
-    let afterAngles = txt |> Seq.skipWhile (fun c -> c = '>') |> Seq.toList
-    if List.isEmpty angles then ValueNone else
+    if not (txt.StartsWith ">") then
+        ValueNone
+    else
+        match txt.AsSpan().IndexOfAnyExcept '>' with
+        | -1 -> ValueSome(Array.init txt.Length (fun _ -> GREATER), ValueNone)
+        | angles ->
+            let afterAngles = txt.AsSpan angles
 
-    let afterOp =
-        match (System.String(Array.ofSeq afterAngles)) with
-         | "." -> ValueSome DOT
-         | "]" -> ValueSome RBRACK
-         | "-" -> ValueSome MINUS
-         | ".." -> ValueSome DOT_DOT
-         | "?" -> ValueSome QMARK
-         | "??" -> ValueSome QMARK_QMARK
-         | ":=" -> ValueSome COLON_EQUALS
-         | "::" -> ValueSome COLON_COLON
-         | "*" -> ValueSome STAR
-         | "&" -> ValueSome AMP
-         | "->" -> ValueSome RARROW
-         | "<-" -> ValueSome LARROW
-         | "=" -> ValueSome EQUALS
-         | "<" -> ValueSome (LESS false)
-         | "$" -> ValueSome DOLLAR
-         | "%" -> ValueSome (PERCENT_OP("%") )
-         | "%%" -> ValueSome (PERCENT_OP("%%"))
-         | s when String.IsNullOrEmpty(s) -> ValueNone
-         | s ->
-             match List.ofSeq afterAngles with
-              | '=' :: _
-              | '!' :: '=' :: _
-              | '<' :: _
-              | '>' :: _
-              | '$' :: _ -> ValueSome (INFIX_COMPARE_OP s)
-              | '&' :: _ -> ValueSome (INFIX_AMP_OP s)
-              | '|' :: _ -> ValueSome (INFIX_BAR_OP s)
-              | '!' :: _
-              | '?' :: _
-              | '~' :: _ -> ValueSome (PREFIX_OP s)
-              | '@' :: _
-              | '^' :: _ -> ValueSome (INFIX_AT_HAT_OP s)
-              | '+' :: _
-              | '-' :: _ -> ValueSome (PLUS_MINUS_OP s)
-              | '*' :: '*' :: _ -> ValueSome (INFIX_STAR_STAR_OP s)
-              | '*' :: _
-              | '/' :: _
-              | '%' :: _ -> ValueSome (INFIX_STAR_DIV_MOD_OP s)
-              | _ -> ValueNone
-    ValueSome([| for _c in angles do yield GREATER |], afterOp)
+            let afterOp =
+                match afterAngles with
+                | Equals "." -> ValueSome DOT
+                | Equals "]" -> ValueSome RBRACK
+                | Equals "-" -> ValueSome MINUS
+                | Equals ".." -> ValueSome DOT_DOT
+                | Equals "?" -> ValueSome QMARK
+                | Equals "??" -> ValueSome QMARK_QMARK
+                | Equals ":=" -> ValueSome COLON_EQUALS
+                | Equals "::" -> ValueSome COLON_COLON
+                | Equals "*" -> ValueSome STAR
+                | Equals "&" -> ValueSome AMP
+                | Equals "->" -> ValueSome RARROW
+                | Equals "<-" -> ValueSome LARROW
+                | Equals "=" -> ValueSome EQUALS
+                | Equals "<" -> ValueSome (LESS false)
+                | Equals "$" -> ValueSome DOLLAR
+                | Equals "%" -> ValueSome (PERCENT_OP "%")
+                | Equals "%%" -> ValueSome (PERCENT_OP "%%")
+                | StartsWith "="
+                | StartsWith "!="
+                | StartsWith "<"
+                | StartsWith ">"
+                | StartsWith "$" -> ValueSome (INFIX_COMPARE_OP (afterAngles.ToString()))
+                | StartsWith "&" -> ValueSome (INFIX_AMP_OP (afterAngles.ToString()))
+                | StartsWith "|" -> ValueSome (INFIX_BAR_OP (afterAngles.ToString()))
+                | StartsWith "!"
+                | StartsWith "?"
+                | StartsWith "~"  -> ValueSome (PREFIX_OP (afterAngles.ToString()))
+                | StartsWith "@"
+                | StartsWith "^" -> ValueSome (INFIX_AT_HAT_OP (afterAngles.ToString()))
+                | StartsWith "+"
+                | StartsWith "-" -> ValueSome (PLUS_MINUS_OP (afterAngles.ToString()))
+                | StartsWith "**" -> ValueSome (INFIX_STAR_STAR_OP (afterAngles.ToString()))
+                | StartsWith "*"
+                | StartsWith "/"
+                | StartsWith "%" -> ValueSome (INFIX_STAR_DIV_MOD_OP (afterAngles.ToString()))
+                | _ -> ValueNone
+        
+            ValueSome(Array.init angles (fun _ -> GREATER), afterOp)
 
 [<Struct>]
 type PositionWithColumn =
