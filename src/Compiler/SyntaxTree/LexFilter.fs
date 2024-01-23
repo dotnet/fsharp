@@ -532,7 +532,7 @@ let (|TyparsCloseOp|_|) (txt: string) =
         ValueNone
     else
         match txt.AsSpan().IndexOfAnyExcept '>' with
-        | -1 -> ValueSome(Array.init txt.Length (fun _ -> GREATER), ValueNone)
+        | -1 -> ValueSome(struct (Array.init txt.Length (fun _ -> GREATER), ValueNone))
         | angles ->
             let afterAngles = txt.AsSpan angles
 
@@ -575,7 +575,7 @@ let (|TyparsCloseOp|_|) (txt: string) =
                 | StartsWith "%" -> ValueSome (INFIX_STAR_DIV_MOD_OP (afterAngles.ToString()))
                 | _ -> ValueNone
         
-            ValueSome(Array.init angles (fun _ -> GREATER), afterOp)
+            ValueSome(struct (Array.init angles (fun _ -> GREATER), afterOp))
 
 [<Struct>]
 type PositionWithColumn =

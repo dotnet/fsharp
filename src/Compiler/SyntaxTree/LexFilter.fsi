@@ -11,7 +11,7 @@ open FSharp.Compiler.Parser
 /// Match the close of '>' of a set of type parameters.
 /// This is done for tokens such as '>>' by smashing the token
 [<Struct>]
-val (|TyparsCloseOp|_|): txt: string -> ((bool -> token)[] * token voption) voption
+val (|TyparsCloseOp|_|): txt: string -> struct ((bool -> token)[] * token voption) voption
 
 /// A stateful filter over the token stream that adjusts it for indentation-aware syntax rules
 /// Process the token stream prior to parsing. Implements the offside rule and other lexical transformations.
