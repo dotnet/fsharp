@@ -866,7 +866,8 @@ module AddAugmentationDeclarations =
 
     let ShouldAugmentUnion (g: TcGlobals) (tycon: Tycon) =
         g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible &&
-        HasDefaultAugmentationAttribute g (mkLocalTyconRef tycon)
+        HasDefaultAugmentationAttribute g (mkLocalTyconRef tycon) &&
+        tycon.UnionCasesArray.Length > 1
 
     let AddUnionAugmentationValues (cenv: cenv) (env: TcEnv) tycon =
         let tcref = mkLocalTyconRef tycon
