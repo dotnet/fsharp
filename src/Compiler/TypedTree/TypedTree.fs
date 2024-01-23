@@ -4239,6 +4239,8 @@ type Nullness =
 
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
+   member n.ToFsharpCodeString() = match n.Evaluate() with NullnessInfo.WithNull -> " | null "  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> ""
+
 // Note, nullness variables are only created if the nullness checking feature is on
 [<NoComparison;NoEquality>]
 type NullnessVar() = 

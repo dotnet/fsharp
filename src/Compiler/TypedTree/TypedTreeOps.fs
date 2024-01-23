@@ -8777,26 +8777,26 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         let ety = destNativePtrTy g ty
         typeEnc g (gtpsType, gtpsMethod) ety + "*"
 
-    | _ when isArrayTy g ty -> 
-        let tcref, tinst = destAppTy g ty
+    | TType_app (_, _, nullness) when isArrayTy g ty -> 
+        let tcref, tinst = destAppTy g ty        
         let rank = rankOfArrayTyconRef g tcref
         let arraySuffix = "[" + String.concat ", " (List.replicate (rank-1) "0:") + "]"
-        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
+        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix + nullness.ToFsharpCodeString()
 
     | TType_ucase (_, tinst)   
     | TType_app (_, tinst, _) -> 
-        let tyName = 
+        let tyName,nullness = 
             let ty = stripTyEqnsAndMeasureEqns g ty
             match ty with
-            | TType_app (tcref, _tinst, _) -> 
+            | TType_app (tcref, _tinst, nullness) -> 
                 // Generic type names are (name + "`" + digits) where name does not contain "`".
                 // In XML doc, when used in type instances, these do not use the ticks.
                 let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
-                textOfPath (List.map DemangleGenericTypeName path)
+                textOfPath (List.map DemangleGenericTypeName path),nullness
             | _ ->
                 assert false
                 failwith "impossible"
-        tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
+        tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst + nullness.ToFsharpCodeString()
 
     | TType_anon (anonInfo, tinst) -> 
         sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)
@@ -8807,11 +8807,11 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         else 
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
 
-    | TType_fun (domainTy, rangeTy, _) -> 
-        "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [domainTy; rangeTy]
+    | TType_fun (domainTy, rangeTy, nullness) -> 
+        "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [domainTy; rangeTy] + nullness.ToFsharpCodeString()
 
-    | TType_var (typar, _) -> 
-        typarEnc g (gtpsType, gtpsMethod) typar
+    | TType_var (typar, nullness) -> 
+        typarEnc g (gtpsType, gtpsMethod) typar + nullness.ToFsharpCodeString()
 
     | TType_measure _ -> "?"
 
@@ -8823,7 +8823,7 @@ and tyargsEnc g (gtpsType, gtpsMethod) args =
 
 let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTys =
     if isNil argTys then "" 
-    else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
+    else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"    
 
 let buildAccessPath (cp: CompilationPath option) =
     match cp with
