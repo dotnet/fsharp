@@ -172,8 +172,7 @@
     <Compile Include="EmittedIL\Platform\Platform.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\RealInternalSignatureOff\QueryExpressionStepping.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\RealInternalSignatureOn\QueryExpressionStepping.fs" />
-    <Compile Include="EmittedIL\SerializableAttribute\RealInternalSignatureOff\SerializableAttribute.fs" />
-    <Compile Include="EmittedIL\SerializableAttribute\RealInternalSignatureOn\SerializableAttribute.fs" />
+    <Compile Include="EmittedIL\SerializableAttribute\SerializableAttribute.fs" />
     <Compile Include="EmittedIL\SeqExpressionStepping\RealInternalSignatureOff\SeqExpressionStepping.fs" />
     <Compile Include="EmittedIL\SeqExpressionStepping\RealInternalSignatureOn\SeqExpressionStepping.fs" />
     <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
