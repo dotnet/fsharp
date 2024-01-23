@@ -147,8 +147,7 @@
     <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\ArgumentNames.fs" />
     <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
-    <Compile Include="EmittedIL\AsyncExpressionStepping\RealInternalSignatureOff\AsyncExpressionStepping.fs" />
-    <Compile Include="EmittedIL\AsyncExpressionStepping\RealInternalSignatureOn\AsyncExpressionStepping.fs" />
+    <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\RealInternalSignatureOff\AttributeTargets.fs" />
     <Compile Include="EmittedIL\AttributeTargets\RealInternalSignatureOn\AttributeTargets.fs" />
     <Compile Include="EmittedIL\CCtorDUWithMember\RealInternalSignatureOff\CCtorDUWithMember.fs" />
