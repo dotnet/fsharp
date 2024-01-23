@@ -1111,28 +1111,10 @@ module SyntaxTraversal =
             | SyntaxNode.SynMemberSig memberSig -> dive memberSig memberSig.Range (traverseSynMemberSig []))
         |> pick fileRange ast
 
-    let traverseAll (visitor: SyntaxVisitorBase<'T>) (parseTree: ParsedInput) : unit =
-        let pick _ _ _ diveResults =
-            let rec loop diveResults =
-                match diveResults with
-                | [] -> None
-                | (_, project) :: rest ->
-                    ignore (project ())
-                    loop rest
-
-            loop diveResults
-
-        ignore<'T option> (traverseUntil pick parseTree.Range.End visitor parseTree.Contents)
-
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
-    let Traverse (pos: pos, parseTree, visitor: SyntaxVisitorBase<'T>) =
-        let contents =
-            match parseTree with
-            | ParsedInput.ImplFile implFile -> implFile.Contents |> List.map SyntaxNode.SynModuleOrNamespace
-            | ParsedInput.SigFile sigFile -> sigFile.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
-
-        traverseUntil pick pos visitor contents
+    let Traverse (pos: pos, parseTree: ParsedInput, visitor: SyntaxVisitorBase<'T>) =
+        traverseUntil pick pos visitor parseTree.Contents
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

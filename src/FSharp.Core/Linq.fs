@@ -59,11 +59,11 @@ module LeafExpressionConverter =
        |> System.Reflection.MethodInfo.GetMethodFromHandle
        :?> MethodInfo
 
-    let SubstHelperRaw (q:Expr, x:Var[], y:obj[]) : Expr =
+    let SubstHelperRaw (q:Expr, x:Var array, y:obj array) : Expr =
         let d = Map.ofArray (Array.zip x y)
         q.Substitute(fun v -> v |> d.TryFind |> Option.map (fun x -> Expr.Value (x, v.Type)))
 
-    let SubstHelper<'T> (q:Expr, x:Var[], y:obj[]) : Expr<'T> =
+    let SubstHelper<'T> (q:Expr, x:Var array, y:obj array) : Expr<'T> =
         SubstHelperRaw(q, x, y) |> Expr.Cast
 
     let showAll =
@@ -390,15 +390,15 @@ module LeafExpressionConverter =
     let (|NewAnonymousObjectHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (NewAnonymousObjectHelper))
     let (|ArrayLookupQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> LanguagePrimitives.IntrinsicFunctions.GetArray x y))
 
-    //let (|ArrayAssignQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun -> LanguagePrimitives.IntrinsicFunctions.SetArray : int[] -> int -> int -> unit))
+    //let (|ArrayAssignQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun -> LanguagePrimitives.IntrinsicFunctions.SetArray : int array -> int -> int -> unit))
     //let (|ArrayTypeQ|_|) (ty:System.Type) = if ty.IsArray && ty.GetArrayRank() = 1 then Some (ty.GetElementType()) else None
     let substHelperMeth =
-        methodhandleof (fun (x:Expr, y:Var[], z:obj[]) -> SubstHelper<obj> (x, y, z))
+        methodhandleof (fun (x:Expr, y:Var array, z:obj array) -> SubstHelper<obj> (x, y, z))
         |> System.Reflection.MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     let substHelperRawMeth =
-        methodhandleof (fun (x:Expr, y:Var[], z:obj[]) -> SubstHelperRaw (x, y, z))
+        methodhandleof (fun (x:Expr, y:Var array, z:obj array) -> SubstHelperRaw (x, y, z))
         |> System.Reflection.MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -737,7 +737,7 @@ module LeafExpressionConverter =
                 else
                     Reflection.FSharpType.MakeTupleType(argTypes)
              let argsP = ConvExprsToLinq env args
-             let rec build ty (argsP: Expression[]) =
+             let rec build ty (argsP: Expression array) =
                  match Reflection.FSharpValue.PreComputeTupleConstructorInfo ty with
                  | ctorInfo, None -> Expression.New(ctorInfo, argsP) |> asExpr
                  | ctorInfo, Some (nestedTy) ->
@@ -879,7 +879,7 @@ module LeafExpressionConverter =
         | None ->
             null
 
-    and ConvExprsToLinq env es : Expression[] =
+    and ConvExprsToLinq env es : Expression array =
         es |> List.map (ConvExprToLinqInContext env) |> Array.ofList
 
     and ConvVarToLinq (v: Var) =

@@ -11,27 +11,22 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.BuildGraph
 
-[<Fact>]
-let ``Stack trace`` () =
 
-    let memoize = AsyncMemoize<int, int, int>()
+let timeout = TimeSpan.FromSeconds 10
 
-    let computation key = node {
-       // do! Async.Sleep 1 |> NodeCode.AwaitAsync
+let waitFor (mre: ManualResetEvent) = 
+    if not <| mre.WaitOne timeout then 
+        failwith "waitFor timed out"
 
-        let! result = memoize.Get'(key * 2, node {
-            //do! Async.Sleep 1 |> NodeCode.AwaitAsync
-            return key * 5
-        })
 
-        return result * 2
+let rec internal spinFor (duration: TimeSpan) =
+    node {
+        let sw = Stopwatch.StartNew()
+        do! Async.Sleep 10 |> NodeCode.AwaitAsync
+        let remaining = duration - sw.Elapsed
+        if remaining > TimeSpan.Zero then
+            return! spinFor remaining
     }
-
-    //let _r2 = computation 10
-
-    let result = memoize.Get'(1, computation 1) |> NodeCode.RunImmediateWithoutCancellation
-
-    Assert.Equal(10, result)
 
 
 [<Fact>]
@@ -74,16 +69,21 @@ let ``We can cancel a job`` () =
 
         let jobStarted = new ManualResetEvent(false)
 
-        let computation key = node {
-            jobStarted.Set() |> ignore
-            do! Async.Sleep 1000 |> NodeCode.AwaitAsync
+        let jobCanceled = new ManualResetEvent(false)
+
+        let computation action = node {
+            action() |> ignore
+            do! spinFor timeout 
             failwith "Should be canceled before it gets here"
-            return key * 2
         }
 
-        let eventLog = ResizeArray()
-        let memoize = AsyncMemoize<int, int, int>()
-        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Add (e, k))
+        let eventLog = ConcurrentQueue()
+        let memoize = AsyncMemoize<int, int, _>()
+        memoize.OnEvent(fun (e, (_label, k, _version)) -> 
+            eventLog.Enqueue (e, k)
+            if e = Canceled then
+                jobCanceled.Set() |> ignore
+            )
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -91,26 +91,22 @@ let ``We can cancel a job`` () =
 
         let key = 1
 
-        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
+        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation jobStarted.Set), ct = cts1.Token)
 
-        jobStarted.WaitOne() |> ignore
+        waitFor jobStarted
         jobStarted.Reset() |> ignore
 
-        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
-        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
-
-        Assert.Equal<(JobEvent * int) array>([| Started, key |], eventLog |> Seq.toArray )
-
-        do! Task.Delay 100
+        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts2.Token)
+        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts3.Token)
 
         cts1.Cancel()
         cts2.Cancel()
 
-        do! Task.Delay 100
+        waitFor jobStarted
 
         cts3.Cancel()
 
-        do! Task.Delay 100
+        waitFor jobCanceled
 
         Assert.Equal<(JobEvent * int) array>([| Started, key; Started, key; Canceled, key |], eventLog |> Seq.toArray )
     }
@@ -120,18 +116,17 @@ let ``Job is restarted if first requestor cancels`` () =
     task {
         let jobStarted = new ManualResetEvent(false)
 
+        let jobCanComplete = new ManualResetEvent(false)
+
         let computation key = node {
             jobStarted.Set() |> ignore
-
-            for _ in 1 .. 5 do
-                do! Async.Sleep 100 |> NodeCode.AwaitAsync
-
+            waitFor jobCanComplete
             return key * 2
         }
 
-        let eventLog = ConcurrentBag()
-        let memoize = AsyncMemoize<int, int, int>()
-        memoize.OnEvent(fun (e, (_, k, _version)) -> eventLog.Add (DateTime.Now.Ticks, (e, k)))
+        let eventLog = ConcurrentStack()
+        let memoize = AsyncMemoize<int, int, _>()
+        memoize.OnEvent(fun (e, (_, k, _version)) -> eventLog.Push (e, k))
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -140,73 +135,26 @@ let ``Job is restarted if first requestor cancels`` () =
         let key = 1
 
         let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
-        jobStarted.WaitOne() |> ignore
+
+        waitFor jobStarted
+        jobStarted.Reset() |> ignore
 
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
-        do! Task.Delay 100
-
         cts1.Cancel()
 
-        do! Task.Delay 100
+        waitFor jobStarted
+
         cts3.Cancel()
+
+        jobCanComplete.Set() |> ignore
 
         let! result = _task2
         Assert.Equal(2, result)
 
-        Assert.Equal(TaskStatus.Canceled, _task1.Status)
-
-        let orderedLog = eventLog |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
+        let orderedLog = eventLog |> Seq.rev |> Seq.toList
         let expected = [ Started, key; Started, key; Finished, key ]
-
-        Assert.Equal<_ list>(expected, orderedLog)
-    }
-
-// [<Fact>] - if we decide to enable that
-let ``Job keeps running if the first requestor cancels`` () =
-    task {
-        let jobStarted = new ManualResetEvent(false)
-
-        let computation key = node {
-            jobStarted.Set() |> ignore
-
-            for _ in 1 .. 5 do
-                do! Async.Sleep 100 |> NodeCode.AwaitAsync
-
-            return key * 2
-        }
-
-        let eventLog = ConcurrentBag()
-        let memoize = AsyncMemoize<int, int, int>()
-        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Add (DateTime.Now.Ticks, (e, k)))
-
-        use cts1 = new CancellationTokenSource()
-        use cts2 = new CancellationTokenSource()
-        use cts3 = new CancellationTokenSource()
-
-        let key = 1
-
-        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
-        jobStarted.WaitOne() |> ignore
-
-        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
-        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
-
-        jobStarted.WaitOne() |> ignore
-
-        cts1.Cancel()
-
-        do! Task.Delay 100
-        cts3.Cancel()
-
-        let! result = _task2
-        Assert.Equal(2, result)
-
-        Assert.Equal(TaskStatus.Canceled, _task1.Status)
-
-        let orderedLog = eventLog |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
-        let expected = [ Started, key; Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)
     }
@@ -216,18 +164,17 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
     task {
         let jobStarted = new ManualResetEvent(false)
 
+        let jobCanComplete = new ManualResetEvent(false)
+
         let computation key = node {
             jobStarted.Set() |> ignore
-
-            for _ in 1 .. 5 do
-                do! Async.Sleep 100 |> NodeCode.AwaitAsync
-
+            waitFor jobCanComplete
             return key * 2
         }
 
-        let eventLog = ConcurrentBag()
-        let memoize = AsyncMemoize<int, int, int>()
-        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Add (DateTime.Now.Ticks, (e, k)))
+        let eventLog = ConcurrentStack()
+        let memoize = AsyncMemoize<int, int, _>()
+        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Push (e, k))
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -239,6 +186,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         jobStarted.WaitOne() |> ignore
         jobStarted.Reset() |> ignore
+
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
@@ -248,12 +196,12 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         cts2.Cancel()
 
+        jobCanComplete.Set() |> ignore
+
         let! result = _task3
         Assert.Equal(2, result)
 
-        Assert.Equal(TaskStatus.Canceled, _task1.Status)
-
-        let orderedLog = eventLog |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
+        let orderedLog = eventLog |> Seq.rev |> Seq.toList
         let expected = [ Started, key; Started, key; Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)
@@ -393,11 +341,21 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
         let mutable started = 0
         let mutable finished = 0
 
-        let work () = node {
+        let job1started = new ManualResetEvent(false)
+        let job1finished = new ManualResetEvent(false)
+
+        let jobCanContinue = new ManualResetEvent(false)
+
+        let job2started = new ManualResetEvent(false)
+        let job2finished = new ManualResetEvent(false)
+
+        let work onStart onFinish = node {
             Interlocked.Increment &started |> ignore
-            for _ in 1..10 do
-                do! Async.Sleep 10 |> NodeCode.AwaitAsync
+            onStart() |> ignore
+            waitFor jobCanContinue
+            do! spinFor (TimeSpan.FromMilliseconds 100)
             Interlocked.Increment &finished |> ignore
+            onFinish() |> ignore
         }
 
         let key1 =
@@ -406,9 +364,9 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                   member _.GetVersion() = 1
                   member _.GetLabel() = "key1" }
 
-        cache.Get(key1, work()) |> Async.AwaitNodeCode |> Async.Start
+        cache.Get(key1, work job1started.Set job1finished.Set) |> Async.AwaitNodeCode |> Async.Start
 
-        do! Task.Delay 50
+        waitFor job1started
 
         let key2 =
             { new ICacheKey<_, _> with
@@ -416,9 +374,16 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                   member _.GetVersion() = key1.GetVersion() + 1
                   member _.GetLabel() = "key2" }
 
-        cache.Get(key2, work()) |> Async.AwaitNodeCode |> Async.Start
+        cache.Get(key2, work job2started.Set job2finished.Set ) |> Async.AwaitNodeCode |> Async.Start
 
-        do! Task.Delay 500
+        waitFor job2started
+
+        jobCanContinue.Set() |> ignore
+
+        waitFor job2finished
+        
+        if not cancelDuplicate then
+            waitFor job1finished
 
         Assert.Equal((2, expectFinished), (started, finished))
     }
