@@ -252,12 +252,14 @@ let (|SeqToArray|_|) g expr =
     | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> Some (seqExpr, m)
     | _ -> None
 
+/// 1..10
 [<return: Struct>]
 let (|ConstInt32Range|_|) g expr =
     match expr with
     | ValApp g g.range_int32_op_vref ([], [Expr.Const (value = Const.Int32 start); Expr.Const (value = Const.Int32 1); Expr.Const (value = Const.Int32 finish)], _), _ -> ValueSome (start, finish)
     | _ -> ValueNone
 
+/// start..finish
 [<return: Struct>]
 let (|Int32Range|_|) g expr =
     match expr with
@@ -281,6 +283,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), _) when
             finish - start < constListSizeThreshold
             ->
+            // … :: … :: …
             let rec conses acc n =
                 if n < start then acc
                 else conses (mkCons g g.int32_ty (Expr.Const (Const.Int32 n, Text.Range.range0, g.int32_ty)) acc) (n - 1)
