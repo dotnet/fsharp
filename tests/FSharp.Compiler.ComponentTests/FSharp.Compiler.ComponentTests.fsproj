@@ -149,8 +149,7 @@
     <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
     <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
-    <Compile Include="EmittedIL\CCtorDUWithMember\RealInternalSignatureOff\CCtorDUWithMember.fs" />
-    <Compile Include="EmittedIL\CCtorDUWithMember\RealInternalSignatureOn\CCtorDUWithMember.fs" />
+    <Compile Include="EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs" />
     <Compile Include="EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs" />
     <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
@@ -160,8 +159,7 @@
     <Compile Include="EmittedIL\GenericComparison\GenericComparison.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
-    <Compile Include="EmittedIL\ListExpressionStepping\RealInternalSignatureOff\ListExpressionStepping.fs" />
-    <Compile Include="EmittedIL\ListExpressionStepping\RealInternalSignatureOn\ListExpressionStepping.fs" />
+    <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
     <Compile Include="EmittedIL\ByRefTests.fs" />
     <Compile Include="EmittedIL\Misc\Misc.fs" />
