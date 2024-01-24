@@ -13,7 +13,4 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitRunnerVersion)" />
     <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
   </ItemGroup>
- <ItemGroup>
-    <PackageReference Condition="'$(BUILDING_USING_DOTNET)' == 'true'" Include="Microsoft.DotNet.XliffTasks" Version="$(MicrosoftDotNetXliffTasksVersion)" PrivateAssets="all" />  
- </ItemGroup>
 </Project>
