@@ -12,7 +12,9 @@ module internal Utils =
     val (|TaskCancelled|_|): ex: exn -> TaskCanceledException option
 
 type internal JobEvent =
+    | Requested
     | Started
+    | Restarted
     | Finished
     | Canceled
     | Evicted
