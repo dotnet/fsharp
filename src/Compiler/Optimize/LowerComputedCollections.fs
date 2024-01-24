@@ -300,13 +300,13 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
             let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
             let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
-            let init = mkAsmExpr ([I_ret], [], [mkCallListInit g m g.int32_ty range initializer], [], Text.Range.range0)
+            let init = mkAsmExpr ([I_ret], [], [mkCallListInit g Text.Range.range0 g.int32_ty range initializer], [], Text.Range.range0)
 
             let emptyLabel = generateCodeLabel ()
             let empty = mkLabelled Text.Range.range0 emptyLabel (mkNil g Text.Range.range0 g.int32_ty)
             let breakToEmptyIfStartGtFinish = mkAsmExpr ([I_brcmp (BI_bgt, emptyLabel)], [], [start; finish], [g.int32_ty], Text.Range.range0)
 
-            Some (mkAsmExpr ([], [], [breakToEmptyIfStartGtFinish; init; empty], [], Text.Range.range0))
+            Some (mkAsmExpr ([], [], [breakToEmptyIfStartGtFinish; init; empty], [], m))
 
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ListCollector_ty overallElemTy
@@ -331,13 +331,13 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
             let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
             let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
-            let init = mkAsmExpr ([I_ret], [], [mkCallArrayInit g m g.int32_ty range initializer], [], Text.Range.range0)
+            let init = mkAsmExpr ([I_ret], [], [mkCallArrayInit g Text.Range.range0 g.int32_ty range initializer], [], Text.Range.range0)
 
             let emptyLabel = generateCodeLabel ()
-            let empty = mkLabelled Text.Range.range0 emptyLabel (mkArray (g.int32_ty, [], m))
+            let empty = mkLabelled Text.Range.range0 emptyLabel (mkArray (g.int32_ty, [], Text.Range.range0))
             let breakToEmptyIfStartGtFinish = mkAsmExpr ([I_brcmp (BI_bgt, emptyLabel)], [], [start; finish], [g.int32_ty], Text.Range.range0)
 
-            Some (mkAsmExpr ([], [], [breakToEmptyIfStartGtFinish; init; empty], [], Text.Range.range0))
+            Some (mkAsmExpr ([], [], [breakToEmptyIfStartGtFinish; init; empty], [], m))
 
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ArrayCollector_ty overallElemTy
