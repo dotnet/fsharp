@@ -364,7 +364,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -realInternalSignature -testCoreclr -configuration Release /p:FSharpLangVersion=preview
+          - script: eng\CIBuild.cmd -compressallmetadata -realInternalSignature -testCoreclr -configuration Release
             env:
               NativeToolsOnMachine: true
             displayName: Build
@@ -392,7 +392,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -realInternalSignature -testDesktop -configuration Release /p:FSharpLangVersion=preview
+          - script: eng\CIBuild.cmd -compressallmetadata -realInternalSignature -testDesktop -configuration Release
             env:
               NativeToolsOnMachine: true
             displayName: Build
