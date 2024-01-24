@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.LowerComputedCollectionExpressions
 
-open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
@@ -290,15 +290,20 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
 
             Some (conses (mkNil g Text.Range.range0 g.int32_ty) finish)
 
-        // [start..finish] → List.init (finish - start + 1) ((+) start)
+        // [start..finish] → if start <= finish then List.init (finish - start + 1) ((+) start) else []
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
-            let diff = mkAsmExpr ([AbstractIL.IL.AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
-            let range = mkAsmExpr ([AbstractIL.IL.AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
+            let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
+            let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
             let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
-            let body = mkAsmExpr ([AbstractIL.IL.AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
+            let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
             let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
-            let init = mkCallListInit g m g.int32_ty range initializer
-            Some init
+            let init = mkAsmExpr ([I_ret], [], [mkCallListInit g m g.int32_ty range initializer], [], Text.Range.range0)
+
+            let emptyLabel = generateCodeLabel ()
+            let empty = mkLabelled Text.Range.range0 emptyLabel (mkNil g Text.Range.range0 g.int32_ty)
+            let breakToEmptyIfStartGtFinish = mkAsmExpr ([I_brcmp (BI_bgt, emptyLabel)], [], [start; finish], [g.int32_ty], Text.Range.range0)
+
+            Some (mkAsmExpr ([], [], [breakToEmptyIfStartGtFinish; init; empty], [], Text.Range.range0))
 
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ListCollector_ty overallElemTy
@@ -314,17 +319,22 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
             (finish - start) * sizeof<int32> < constArrayBytesThreshold
             ->
-            Some (mkArray (g.int32_ty, [for n in start..finish -> Expr.Const(Const.Int32 n, Text.Range.range0, g.int32_ty)], m))
+            Some (mkArray (g.int32_ty, [for n in start..finish -> Expr.Const (Const.Int32 n, Text.Range.range0, g.int32_ty)], m))
 
-        // [|start..finish|] → Array.init (finish - start + 1) ((+) start)
+        // [|start..finish|] → if start <= finish then Array.init (finish - start + 1) ((+) start) else [||]
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
-            let diff = mkAsmExpr ([AbstractIL.IL.AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
-            let range = mkAsmExpr ([AbstractIL.IL.AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
+            let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
+            let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
             let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
-            let body = mkAsmExpr ([AbstractIL.IL.AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
+            let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
             let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
-            let init = mkCallArrayInit g m g.int32_ty range initializer
-            Some init
+            let init = mkAsmExpr ([I_ret], [], [mkCallArrayInit g m g.int32_ty range initializer], [], Text.Range.range0)
+
+            let emptyLabel = generateCodeLabel ()
+            let empty = mkLabelled Text.Range.range0 emptyLabel (mkArray (g.int32_ty, [], m))
+            let breakToEmptyIfStartGtFinish = mkAsmExpr ([I_brcmp (BI_bgt, emptyLabel)], [], [start; finish], [g.int32_ty], Text.Range.range0)
+
+            Some (mkAsmExpr ([], [], [breakToEmptyIfStartGtFinish; init; empty], [], Text.Range.range0))
 
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ArrayCollector_ty overallElemTy

@@ -9,7 +9,7 @@ open FSharp.Test
 module ComputedCollectionLoweringTests =
     module Array =
         [<Test>]
-        let ``Lone RangeInt32 with const args when start > finish lowers to empty array``() =
+        let ``Lone RangeInt32 with const args when start > finish lowers to empty array`` () =
             CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
                 """
                 module Test
@@ -72,7 +72,7 @@ module ComputedCollectionLoweringTests =
                 ]))
 
         [<Test>]
-        let ``Lone RangeInt32 with const args lowers to blob``() =
+        let ``Lone RangeInt32 with const args ≤ 1024 bytes lowers to blob`` () =
             CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
                 """
                 module Test
@@ -162,7 +162,125 @@ module ComputedCollectionLoweringTests =
                 ]))
 
         [<Test>]
-        let ``Lone RangeInt32 with dynamic args lowers to call to init``() =
+        let ``Lone RangeInt32 with const args > 1024 bytes lowers to call to init`` () =
+            CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                """
+                module Test
+
+                let test () = [|1..257|]
+                """,
+                (fun verifier -> verifier.VerifyIL [
+                """
+                .assembly extern runtime { }
+                .assembly extern FSharp.Core { }
+                .assembly assembly
+                {
+                  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
+                                                                                                                      int32,
+                                                                                                                      int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
+                  .hash algorithm 0x00008004
+                  .ver 0:0:0:0
+                }
+                .mresource public FSharpSignatureData.assembly
+                {
+                  
+                  
+                }
+                .mresource public FSharpOptimizationData.assembly
+                {
+                  
+                  
+                }
+                .module assembly.dll
+                
+                .imagebase {value}
+                .file alignment 0x00000200
+                .stackreserve 0x00100000
+                .subsystem 0x0003       
+                .corflags 0x00000001    
+                
+                
+                
+                
+                
+                .class public abstract auto ansi sealed Test
+                       extends [runtime]System.Object
+                {
+                  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+                  .class auto ansi serializable sealed nested assembly beforefieldinit test@1
+                         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
+                  {
+                    .field static assembly initonly class Test/test@1 @_instance
+                    .method assembly specialname rtspecialname 
+                            instance void  .ctor() cil managed
+                    {
+                      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+                      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+                      
+                      .maxstack  8
+                      IL_0000:  ldarg.0
+                      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
+                      IL_0006:  ret
+                    } 
+                
+                    .method public strict virtual instance int32 
+                            Invoke(int32 i) cil managed
+                    {
+                      
+                      .maxstack  8
+                      IL_0000:  ldc.i4.1
+                      IL_0001:  ldarg.1
+                      IL_0002:  add
+                      IL_0003:  ret
+                    } 
+                
+                    .method private specialname rtspecialname static 
+                            void  .cctor() cil managed
+                    {
+                      
+                      .maxstack  10
+                      IL_0000:  newobj     instance void Test/test@1::.ctor()
+                      IL_0005:  stsfld     class Test/test@1 Test/test@1::@_instance
+                      IL_000a:  ret
+                    } 
+                
+                  } 
+                
+                  .method public static int32[]  test() cil managed
+                  {
+                    
+                    .maxstack  8
+                    IL_0000:  ldc.i4.1
+                    IL_0001:  ldc.i4     0x101
+                    IL_0006:  bgt.s      IL_001d
+                
+                    IL_0008:  ldc.i4     0x101
+                    IL_000d:  ldc.i4.1
+                    IL_000e:  sub
+                    IL_000f:  ldc.i4.1
+                    IL_0010:  add
+                    IL_0011:  ldsfld     class Test/test@1 Test/test@1::@_instance
+                    IL_0016:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
+                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
+                    IL_001b:  ret
+                
+                    IL_001c:  ldnull
+                    IL_001d:  call       !!0[] [runtime]System.Array::Empty<int32>()
+                    IL_0022:  ldnull
+                    IL_0023:  ret
+                  } 
+                
+                } 
+                
+                .class private abstract auto ansi sealed '<StartupCode$assembly>'.$Test
+                       extends [runtime]System.Object
+                {
+                }
+                """
+                ]))
+
+        [<Test>]
+        let ``Lone RangeInt32 with dynamic args lowers to call to init`` () =
             CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
                 """
                 module Test
@@ -246,17 +364,25 @@ module ComputedCollectionLoweringTests =
                     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
                     
                     .maxstack  8
-                    IL_0000:  ldarg.1
-                    IL_0001:  ldarg.0
-                    IL_0002:  sub
-                    IL_0003:  ldc.i4.1
-                    IL_0004:  add
+                    IL_0000:  ldarg.0
+                    IL_0001:  ldarg.1
+                    IL_0002:  bgt.s      IL_0016
+                
+                    IL_0004:  ldarg.1
                     IL_0005:  ldarg.0
-                    IL_0006:  newobj     instance void Test/test@1::.ctor(int32)
-                    IL_000b:  tail.
-                    IL_000d:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
+                    IL_0006:  sub
+                    IL_0007:  ldc.i4.1
+                    IL_0008:  add
+                    IL_0009:  ldarg.0
+                    IL_000a:  newobj     instance void Test/test@1::.ctor(int32)
+                    IL_000f:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
-                    IL_0012:  ret
+                    IL_0014:  ret
+                
+                    IL_0015:  ldnull
+                    IL_0016:  call       !!0[] [runtime]System.Array::Empty<int32>()
+                    IL_001b:  ldnull
+                    IL_001c:  ret
                   } 
                 
                 } 
@@ -270,7 +396,7 @@ module ComputedCollectionLoweringTests =
 
     module List =
         [<Test>]
-        let ``Lone RangeInt32 with const args when start > finish lowers to empty list``() =
+        let ``Lone RangeInt32 with const args when start > finish lowers to empty list`` () =
             CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
                 """
                 module Test
@@ -334,7 +460,7 @@ module ComputedCollectionLoweringTests =
                 ]))
 
         [<Test>]
-        let ``Lone small RangeInt32 with const args lowers to conses``() =
+        let ``Lone small RangeInt32 with const args ≤ 100 lowers to conses`` () =
             CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
                 """
                 module Test
@@ -428,12 +554,12 @@ module ComputedCollectionLoweringTests =
                 ]))
 
         [<Test>]
-        let ``Lone bigger RangeInt32 with const args lowers to call to init``() =
+        let ``Lone RangeInt32 with const args > 100 lowers to call to init`` () =
             CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
                 """
                 module Test
 
-                let test () = [1..10_000]
+                let test () = [1..101]
                 """,
                 (fun verifier -> verifier.VerifyIL [
                 """
@@ -517,16 +643,24 @@ module ComputedCollectionLoweringTests =
                   {
                     
                     .maxstack  8
-                    IL_0000:  ldc.i4     0x2710
-                    IL_0005:  ldc.i4.1
-                    IL_0006:  sub
+                    IL_0000:  ldc.i4.1
+                    IL_0001:  ldc.i4.s   101
+                    IL_0003:  bgt.s      IL_0017
+                
+                    IL_0005:  ldc.i4.s   101
                     IL_0007:  ldc.i4.1
-                    IL_0008:  add
-                    IL_0009:  ldsfld     class Test/test@1 Test/test@1::@_instance
-                    IL_000e:  tail.
+                    IL_0008:  sub
+                    IL_0009:  ldc.i4.1
+                    IL_000a:  add
+                    IL_000b:  ldsfld     class Test/test@1 Test/test@1::@_instance
                     IL_0010:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Initialize<int32>(int32,
                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
                     IL_0015:  ret
+                
+                    IL_0016:  ldnull
+                    IL_0017:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+                    IL_001c:  ldnull
+                    IL_001d:  ret
                   } 
                 
                 } 
@@ -624,17 +758,25 @@ module ComputedCollectionLoweringTests =
                     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
                     
                     .maxstack  8
-                    IL_0000:  ldarg.1
-                    IL_0001:  ldarg.0
-                    IL_0002:  sub
-                    IL_0003:  ldc.i4.1
-                    IL_0004:  add
+                    IL_0000:  ldarg.0
+                    IL_0001:  ldarg.1
+                    IL_0002:  bgt.s      IL_0016
+                
+                    IL_0004:  ldarg.1
                     IL_0005:  ldarg.0
-                    IL_0006:  newobj     instance void Test/test@1::.ctor(int32)
-                    IL_000b:  tail.
-                    IL_000d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Initialize<int32>(int32,
+                    IL_0006:  sub
+                    IL_0007:  ldc.i4.1
+                    IL_0008:  add
+                    IL_0009:  ldarg.0
+                    IL_000a:  newobj     instance void Test/test@1::.ctor(int32)
+                    IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Initialize<int32>(int32,
                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
-                    IL_0012:  ret
+                    IL_0014:  ret
+                
+                    IL_0015:  ldnull
+                    IL_0016:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+                    IL_001b:  ldnull
+                    IL_001c:  ret
                   } 
                 
                 } 
