@@ -74,7 +74,9 @@ type internal Job<'TValue> =
         | Failed(_, ex) -> $"Failed {ex}"
 
 type internal JobEvent =
+    | Requested
     | Started
+    | Restarted
     | Finished
     | Canceled
     | Evicted
@@ -245,7 +247,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                 let cached, otherVersions = cache.GetAll(key.Key, key.Version)
 
-                return
+                let result =
                     match msg, cached with
                     | GetOrCompute _, Some(Completed(result, diags)) ->
                         Interlocked.Increment &hits |> ignore
@@ -298,6 +300,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cts.Cancel())
 
                         New cts.Token
+
+                log (Requested, key)
+                return result
             })
 
     let internalError key message =
@@ -346,7 +351,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                                             try
                                                 // TODO: Should unify starting and restarting
-                                                log (Started, key)
+                                                log (Restarted, key)
                                                 Interlocked.Increment &restarted |> ignore
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
                                                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger

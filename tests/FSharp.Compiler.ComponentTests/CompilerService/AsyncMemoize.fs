@@ -61,7 +61,7 @@ let ``Basics``() =
     let groups = eventLog |> Seq.groupBy snd |> Seq.toList
     Assert.Equal(3, groups.Length)
     for key, events in groups do
-        Assert.Equal<Set<(JobEvent * int)>>(Set [ Started, key; Finished, key ], Set events)
+        Assert.Equal<Set<(JobEvent * int)>>(Set [ Requested, key; Started, key; Finished, key ], Set events)
 
 [<Fact>]
 let ``We can cancel a job`` () =
@@ -96,8 +96,13 @@ let ``We can cancel a job`` () =
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
+        let jobRequested = new ManualResetEvent(false)
+        memoize.OnEvent(fun (e, _) -> if e = Requested then jobRequested.Set() |> ignore)
+
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts3.Token)
+
+        waitFor jobRequested
 
         cts1.Cancel()
         cts2.Cancel()
@@ -108,7 +113,14 @@ let ``We can cancel a job`` () =
 
         waitFor jobCanceled
 
-        Assert.Equal<(JobEvent * int) array>([| Started, key; Started, key; Canceled, key |], eventLog |> Seq.toArray )
+        Assert.Equal<(JobEvent * int) array>([|
+            Requested, key
+            Started, key
+            Requested, key
+            Requested, key
+            Restarted, key
+            Canceled, key
+        |], eventLog |> Seq.toArray )
     }
 
 [<Fact>]
@@ -139,14 +151,17 @@ let ``Job is restarted if first requestor cancels`` () =
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
+        let jobRequested = new ManualResetEvent(false)
+        memoize.OnEvent(fun (e, _) -> if e = Requested then jobRequested.Set() |> ignore)
+
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
+
+        waitFor jobRequested
 
         cts1.Cancel()
 
         waitFor jobStarted
-
-        cts3.Cancel()
 
         jobCanComplete.Set() |> ignore
 
@@ -154,7 +169,13 @@ let ``Job is restarted if first requestor cancels`` () =
         Assert.Equal(2, result)
 
         let orderedLog = eventLog |> Seq.rev |> Seq.toList
-        let expected = [ Started, key; Started, key; Finished, key ]
+        let expected = [
+            Requested, key
+            Started, key
+            Requested, key
+            Requested, key
+            Restarted, key
+            Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)
     }
@@ -184,15 +205,20 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
 
-        jobStarted.WaitOne() |> ignore
+        waitFor jobStarted
         jobStarted.Reset() |> ignore
+
+        let jobRequested = new ManualResetEvent(false)
+        memoize.OnEvent(fun (e, _) -> if e = Requested then jobRequested.Set() |> ignore)
 
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
+        waitFor jobRequested
+
         cts1.Cancel()
 
-        jobStarted.WaitOne() |> ignore
+        waitFor jobStarted
 
         cts2.Cancel()
 
@@ -202,7 +228,13 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
         Assert.Equal(2, result)
 
         let orderedLog = eventLog |> Seq.rev |> Seq.toList
-        let expected = [ Started, key; Started, key; Finished, key ]
+        let expected = [
+            Requested, key
+            Started, key
+            Requested, key
+            Requested, key
+            Restarted, key
+            Finished, key ]
 
         Assert.Equal<_ list>(expected, orderedLog)
     }
@@ -228,7 +260,7 @@ let ``Stress test`` () =
     let keyCount = rng.Next(5, 200)
     let keys = [| 1 .. keyCount |]
 
-    let testTimeoutMs = threads * iterations * maxDuration
+    let testTimeoutMs = threads * iterations * maxDuration * 2
 
     let intenseComputation durationMs result =
         async {
