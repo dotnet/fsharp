@@ -812,13 +812,11 @@ module SynExpr =
                 ->
                 true
 
-            | SynExpr.InterpolatedString(contents = contents), (SynExpr.Tuple(isStruct = false) | Dangling.Problematic _) when
+            | SynExpr.InterpolatedString(contents = contents), (SynExpr.Tuple(isStruct = false) | Dangling.Problematic _) ->
                 contents
                 |> List.exists (function
                     | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true
                     | _ -> false)
-                ->
-                true
 
             | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _
             | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _ -> true
