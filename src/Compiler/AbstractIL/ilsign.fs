@@ -64,7 +64,8 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
     let checkSumOffset = peHeaderOffset + 0x40 // offsetof(IMAGE_OPTIONAL_HEADER, CheckSum)
 
     let securityDirectoryEntryOffset, peHeaderSize =
-        match peHeaders.PEHeader.Magic with
+        let header = peHeaders.PEHeader
+        match header ^_.Magic with
         | PEMagic.PE32 -> peHeaderOffset + 0x80, 0xE0 // offsetof(IMAGE_OPTIONAL_HEADER32, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER32)
         | PEMagic.PE32Plus -> peHeaderOffset + 0x90, 0xF0 // offsetof(IMAGE_OPTIONAL_HEADER64, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER64)
         | _ -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignInvalidMagicValue ())))
@@ -87,7 +88,9 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
     hashAlgorithm.AppendData(allHeaders, 0, allHeadersSize)
 
     // Hash content of all sections
-    let signatureDirectory = peHeaders.CorHeader.StrongNameSignatureDirectory
+    let signatureDirectory = 
+        let corHeader = peHeaders.CorHeader
+        corHeader^_.StrongNameSignatureDirectory
 
     let signatureStart =
         match peHeaders.TryGetDirectoryOffset signatureDirectory with
@@ -260,7 +263,8 @@ let createSignature hash keyBlob keyType =
 
 let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array) =
     let peHeaders = peReader.PEHeaders
-    let signatureDirectory = peHeaders.CorHeader.StrongNameSignatureDirectory
+    let corHeader = peHeaders.CorHeader
+    let signatureDirectory = corHeader^_.StrongNameSignatureDirectory
 
     let signatureOffset =
         if signatureDirectory.Size > signature.Length then
@@ -275,7 +279,7 @@ let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array)
 
     let corHeaderFlagsOffset = int64 (peHeaders.CorHeaderStartOffset + 16) // offsetof(IMAGE_COR20_HEADER, Flags)
     stream.Seek(corHeaderFlagsOffset, SeekOrigin.Begin) |> ignore
-    stream.WriteByte(byte (peHeaders.CorHeader.Flags ||| CorFlags.StrongNameSigned))
+    stream.WriteByte(byte (corHeader^_.Flags ||| CorFlags.StrongNameSigned))
     ()
 
 let signStream stream keyBlob =

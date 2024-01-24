@@ -7,6 +7,15 @@ open System.Diagnostics
 open System.IO
 open System.Text
 
+module HelpersUntilNullnessIsAvailable = 
+    #if NO_CHECKNULLS
+        type 'T MaybeNull when 'T: null and 'T: not struct = 'T
+    #else
+        type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
+    #endif
+
+
+
 module ActivityNames =
     [<Literal>]
     let FscSourceName = "fsc"
@@ -203,7 +212,7 @@ module internal Activity =
         let private createCsvRow (a: Activity) =
             let sb = new StringBuilder(128)
 
-            let appendWithLeadingComma (s: string) =
+            let appendWithLeadingComma (s: string HelpersUntilNullnessIsAvailable.MaybeNull) =
                 sb.Append(',') |> ignore
                 sb.Append(s) |> ignore
 

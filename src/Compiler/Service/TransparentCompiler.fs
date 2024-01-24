@@ -952,8 +952,9 @@ type internal TransparentCompiler
 
             //Trace.TraceInformation("\n" + debugGraph)
 
-            if Activity.Current <> null then
-                Activity.Current.AddTag("graph", debugGraph) |> ignore
+            match Activity.Current with
+            | Null -> ()
+            | NonNull a -> a.AddTag("graph", debugGraph) |> ignore
 
             return nodeGraph, graph
         }

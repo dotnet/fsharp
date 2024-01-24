@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 
+open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
 [<RequireQualifiedAccess>]
@@ -35,7 +36,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
     let strongList = LinkedList<'TKey * 'TVersion * string * ValueLink<'TValue>>()
     let weakList = LinkedList<'TKey * 'TVersion * string * ValueLink<'TValue>>()
 
-    let rec removeCollected (node: LinkedListNode<_>) =
+    let rec removeCollected (node: LinkedListNode<_> MaybeNull) =
         if node <> null then
             let key, version, label, value = node.Value
 

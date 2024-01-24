@@ -320,7 +320,7 @@ type ILGenerator with
 
         ilG.BeginFinallyBlock()
 
-    member ilG.BeginCatchBlockAndLog ty =
+    member ilG.BeginCatchBlockAndLog (ty: Type MaybeNull) =
         if logRefEmitCalls then
             printfn "ilg%d.BeginCatchBlock(%A)" (abs <| hash ilG) ty
 
@@ -1017,7 +1017,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
                     cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic,
                     null,
                     argTs,
-                    (null: ParameterModifier[] MaybeNull)
+                    null
                 )
             // This can fail if there is an ambiguity w.r.t. return type
             with _ ->
