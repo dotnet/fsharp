@@ -800,6 +800,7 @@ in x
             "$\"{(id 3)}\"", "$\"{id 3}\""
             "$\"{(x)}\"", "$\"{x}\""
 
+            "$\"{(if true then 1 else 0)}\"", "$\"{if true then 1 else 0}\""
             "$\"{(if true then 1 else 0):N0}\"", "$\"{(if true then 1 else 0):N0}\""
             "$\"{(if true then 1 else 0),-3}\"", "$\"{(if true then 1 else 0),-3}\""
             "$\"{(match () with () -> 1):N0}\"", "$\"{(match () with () -> 1):N0}\""
