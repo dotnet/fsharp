@@ -714,11 +714,11 @@ let ``Test project2 all symbols in signature`` () =
              "DUWithNormalFields"; "member get_IsD"; "member get_IsDU1"; "member get_IsDU2";
              "property IsD"; "property IsDU1"; "property IsDU2"; "DU1"; "field Item1";
              "field Item2"; "DU2"; "field Item1"; "field Item2"; "D"; "field Item1";
-             "field Item2"; "DUWithNamedFields"; "member get_IsDU"; "property IsDU"; "DU";
+             "field Item2"; "DUWithNamedFields"; "DU";
              "field x"; "field y"; "GenericClass`1"; "generic parameter T"; "member .ctor";
              "member GenericMethod"; "generic parameter U"] |> List.sort
 
-    shouldEqual e r
+    shouldPairwiseEqual e r
 
 [<Test>]
 let ``Test project2 all uses of all signature symbols`` () =
@@ -736,12 +736,10 @@ let ``Test project2 all uses of all signature symbols`` () =
                ("generic parameter T",
                 [("file1", ((22, 23), (22, 25))); ("file1", ((22, 30), (22, 32)));
                  ("file1", ((22, 45), (22, 47))); ("file1", ((22, 50), (22, 52)))]);
-               ("member get_IsD", []);
-               ("member get_IsDU", []);
+               ("member get_IsD", []);             
                ("member get_IsDU1", []);
                ("member get_IsDU2", []);
-               ("property IsD", []);
-               ("property IsDU", []);
+               ("property IsD", []);            
                ("property IsDU1", []);
                ("property IsDU2", []);
                ("DUWithNormalFields", [("file1", ((3, 5), (3, 23)))]);
