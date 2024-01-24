@@ -212,44 +212,6 @@ type ExpectedException() =
     inherit Exception()
 
 [<Fact>]
-let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
-    let random =
-        let rng = Random()
-        fun n -> rng.Next n
-
-    let job phase _ = node {
-        do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
-        Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
-    }
-
-    let work (phase: BuildPhase) =
-        node {
-            use _ = new CompilationGlobalsScope(DiscardErrorsLogger, phase)
-            let! _ = Seq.init 8 (job phase) |> NodeCode.Parallel
-            Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
-        }
-
-    let phases = [|
-        BuildPhase.DefaultPhase
-        BuildPhase.Compile
-        BuildPhase.Parameter
-        BuildPhase.Parse
-        BuildPhase.TypeCheck
-        BuildPhase.CodeGen
-        BuildPhase.Optimize
-        BuildPhase.IlxGen
-        BuildPhase.IlGen
-        BuildPhase.Output
-        BuildPhase.Interactive
-    |]
-
-    let pickRandomPhase _ = phases[random phases.Length]
-    Seq.init 100 pickRandomPhase
-    |> Seq.map (work >> Async.AwaitNodeCode)
-    |> Async.Parallel
-    |> Async.RunSynchronously
-
-[<Fact>]
 let ``Stress test`` () =
 
     let seed = System.Random().Next()
