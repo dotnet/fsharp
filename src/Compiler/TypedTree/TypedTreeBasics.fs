@@ -252,20 +252,31 @@ let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) =
         | NullnessInfo.AmbivalentToNull -> nullnessNew
         | NullnessInfo.WithNull -> nullnessOrig
 
+let nullnessEquiv (nullnessOrig: Nullness) (nullnessNew: Nullness) = LanguagePrimitives.PhysicalEquality nullnessOrig nullnessNew
+
 let tryAddNullnessToTy nullnessNew (ty:TType) = 
     match ty with
     | TType_var (tp, nullnessOrig) -> 
-        // TODO NULLNESS: make this avoid allocation if no change
-        Some (TType_var (tp, combineNullness nullnessOrig nullnessNew))
+        let nullnessAfter = combineNullness nullnessOrig nullnessNew
+        if nullnessEquiv nullnessAfter nullnessOrig then
+            Some ty
+        else 
+            Some (TType_var (tp, nullnessAfter))
     | TType_app (tcr, tinst, nullnessOrig) -> 
-        // TODO NULLNESS: make this avoid allocation if no change
-        Some (TType_app (tcr, tinst, combineNullness nullnessOrig nullnessNew))
+        let nullnessAfter = combineNullness nullnessOrig nullnessNew
+        if nullnessEquiv nullnessAfter nullnessOrig then
+            Some ty
+        else 
+            Some (TType_app (tcr, tinst, nullnessAfter))
     | TType_ucase _ -> None // TODO NULLNESS
     | TType_tuple _ -> None // TODO NULLNESS
     | TType_anon _ -> None // TODO NULLNESS
     | TType_fun (d, r, nullnessOrig) ->
-        // TODO NULLNESS: make this avoid allocation if no change
-        Some (TType_fun (d, r, combineNullness nullnessOrig nullnessNew))
+        let nullnessAfter = combineNullness nullnessOrig nullnessNew
+        if nullnessEquiv nullnessAfter nullnessOrig then
+            Some ty
+        else 
+            Some (TType_fun (d, r, nullnessAfter))
     | TType_forall _ -> None
     | TType_measure _ -> None
 

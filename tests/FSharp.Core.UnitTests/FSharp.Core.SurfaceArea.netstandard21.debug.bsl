@@ -672,12 +672,14 @@ Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Contro
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpAsync`1[T] Scan[T](Microsoft.FSharp.Core.FSharpFunc`2[TMsg,Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Control.FSharpAsync`1[T]]], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpHandler`1[System.Exception] Error
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg] Start(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg] StartImmediate(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Core.FSharpOption`1[TReply] TryPostAndReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: TReply PostAndReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Dispose()
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Post(TMsg)
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Start()
+Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void StartImmediate()
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void add_Error(Microsoft.FSharp.Control.FSharpHandler`1[System.Exception])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void remove_Error(Microsoft.FSharp.Control.FSharpHandler`1[System.Exception])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void set_DefaultTimeout(Int32)
@@ -951,6 +953,7 @@ Microsoft.FSharp.Core.CustomOperationAttribute: System.String JoinConditionWord
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String Name
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String get_JoinConditionWord()
 Microsoft.FSharp.Core.CustomOperationAttribute: System.String get_Name()
+Microsoft.FSharp.Core.CustomOperationAttribute: Void .ctor()
 Microsoft.FSharp.Core.CustomOperationAttribute: Void .ctor(System.String)
 Microsoft.FSharp.Core.CustomOperationAttribute: Void set_AllowIntoPattern(Boolean)
 Microsoft.FSharp.Core.CustomOperationAttribute: Void set_IsLikeGroupJoin(Boolean)

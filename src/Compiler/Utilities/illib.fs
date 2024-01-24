@@ -129,6 +129,15 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
+        member inline x.IndexOfOrdinal value =
+            x.IndexOf(value, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex) =
+            x.IndexOf(value, startIndex, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex, count) =
+            x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
+
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with
@@ -422,6 +431,9 @@ module Option =
         with _ ->
             None
 
+module internal ValueTuple = 
+    let inline map1Of2 ([<InlineIfLambda>]f) struct(a1, a2) = struct(f a1, a2)
+
 module List =
 
     let sortWithOrder (c: IComparer<'T>) elements =
@@ -648,6 +660,22 @@ module List =
         | Some x -> x :: l
         | _ -> l
 
+    
+    [<TailCall>]
+    let rec private vMapFoldWithAcc<'T, 'State, 'Result> (mapping: 'State -> 'T -> struct('Result * 'State)) state list acc : struct('Result list * 'State) =
+        match list with
+        | [] -> acc, state
+        | [h] ->
+            mapping state h
+            |> ValueTuple.map1Of2 (fun x -> x::acc)
+        | h :: t ->
+            let struct(mappedHead, stateHead) = mapping state h
+            vMapFoldWithAcc mapping stateHead t (mappedHead :: acc)
+
+    let vMapFold<'T, 'State, 'Result> (mapping: 'State -> 'T -> struct('Result * 'State)) state list : struct('Result list * 'State) =
+        vMapFoldWithAcc mapping state list []
+        |> ValueTuple.map1Of2 List.rev
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
@@ -787,7 +815,7 @@ module String =
 
         String digits
         |> function
-            | "" -> str, None
+            | x when String.IsNullOrEmpty(x) -> str, None
             | index -> str.Substring(0, str.Length - index.Length), Some(int index)
 
     /// Splits a string into substrings based on the strings in the array separators

@@ -302,6 +302,75 @@ type E = Ns1.Ns2.T
             | _ -> Assert.Fail (sprintf "Couldn't get entity: %s" symbolName))
 
     [<Test>]
+    let ``Interface 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+open System
+
+IDisposable
+"""
+        findSymbolUseByName "IDisposable" checkResults |> ignore
+
+    [<Test>]
+    let ``Interface 02`` () =
+        let _, checkResults = getParseAndCheckResults """
+System.IDisposable
+"""
+        findSymbolUseByName "IDisposable" checkResults |> ignore
+
+    [<Test>]
+    let ``Interface 03`` () =
+        let _, checkResults = getParseAndCheckResults """
+open System
+
+{ new IDisposable with }
+"""
+        findSymbolUseByName "IDisposable" checkResults |> ignore
+
+    
+    [<Test; Explicit>]
+    let ``Interface 04 - Type arg`` () =
+        let _, checkResults = getParseAndCheckResults """
+open System.Collections.Generic
+
+IList<int>
+"""
+        let symbolUse = findSymbolUseByName "IList`1" checkResults
+        let _, typeArg = symbolUse.GenericArguments[0]
+        typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
+
+    [<Test>]
+    let ``Interface 05 - Type arg`` () =
+        let _, checkResults = getParseAndCheckResults """
+type I<'T> =
+    abstract M: 'T -> unit
+
+{ new I<_> with
+      member this.M(i: int) = () }
+"""
+        let symbolUse =
+            getSymbolUses checkResults
+            |> Seq.findBack (fun symbolUse -> symbolUse.Symbol.DisplayName = "I")
+
+        let _, typeArg = symbolUse.GenericArguments[0]
+        typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
+
+    [<Test>]
+    let ``Interface 06 - Type arg`` () =
+        let _, checkResults = getParseAndCheckResults """
+type I<'T> =
+    abstract M: 'T -> unit
+
+{ new I<int> with
+      member this.M _ = () }
+"""
+        let symbolUse =
+            getSymbolUses checkResults
+            |> Seq.findBack (fun symbolUse -> symbolUse.Symbol.DisplayName = "I")
+
+        let _, typeArg = symbolUse.GenericArguments[0]
+        typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
+
+    [<Test>]
     let ``FSharpType.Format can use prefix representations`` () =
             let _, checkResults = getParseAndCheckResults """
 type 't folks =
@@ -1123,3 +1192,14 @@ let z = builder
                     if symbolUse.Symbol.DisplayName = "builder" then
                         (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
             ]
+
+module Member =
+    [<Test>]
+    let ``Inherit 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+type T() =
+    inherit Foo()
+
+    let i = 1
+"""
+        assertHasSymbolUsages ["i"] checkResults

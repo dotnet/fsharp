@@ -899,12 +899,12 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy tycr tyargs)
                 E.UnionCaseTag(ConvExpr cenv env arg1, typR) 
 
-            | TOp.TraitCall (TTrait(tys, nm, memFlags, argTys, _retTy, _solution)), _, _                    -> 
-                let tysR = ConvTypes cenv tys
+            | TOp.TraitCall traitInfo, _, _ ->
+                let tysR = ConvTypes cenv traitInfo.SupportTypes
                 let tyargsR = ConvTypes cenv tyargs
-                let argTysR = ConvTypes cenv argTys
+                let argTysR = ConvTypes cenv traitInfo.CompiledObjectAndArgumentTypes
                 let argsR = ConvExprs cenv env args
-                E.TraitCall(tysR, nm, memFlags, argTysR, tyargsR, argsR) 
+                E.TraitCall(tysR, traitInfo.MemberLogicalName, traitInfo.MemberFlags, argTysR, tyargsR, argsR) 
 
             | TOp.RefAddrGet readonly, [ty], [e]  -> 
                 let replExpr = mkRecdFieldGetAddrViaExprAddr(readonly, e, mkRefCellContentsRef g, [ty], m)
@@ -1149,9 +1149,12 @@ module FSharpExprConvert =
                 // TODO: this will not work for curried methods in F# classes.
                 // This is difficult to solve as the information in the ILMethodRef
                 // is not sufficient to resolve to a symbol unambiguously in these cases.
-                let argTys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadata cenv.amap m scoref tinst1 tinst2) ]
+
+                                                              // If this was an ILTycon with potential nullness, try1 is Some(..) and this branch not hit
+                let argTys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadataSkipNullness cenv.amap m scoref tinst1 tinst2) ]
                 let retTy = 
-                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType (fun _ -> emptyILCustomAttrs) scoref tinst1 tinst2 with 
+                    let nullableAttributes = Import.Nullness.NullableAttributesSource.Empty
+                    match ImportReturnTypeFromMetadata cenv.amap m nullableAttributes ilMethRef.ReturnType scoref tinst1 tinst2 with 
                     | None -> if isCtor then enclosingTy else g.unit_ty
                     | Some ty -> ty
 

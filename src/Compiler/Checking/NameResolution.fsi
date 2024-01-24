@@ -94,9 +94,6 @@ type Item =
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list
 
-    /// Represents the resolution of a name to the fake constructor simulated for an interface type.
-    | FakeInterfaceCtor of TType
-
     /// Represents the resolution of a name to a delegate
     | DelegateCtor of TType
 
@@ -385,6 +382,7 @@ type internal ItemOccurence =
     | Implemented
     | RelatedText
     | Open
+    | InvalidUse
 
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual: TcGlobals -> Item -> Item -> bool
@@ -678,6 +676,67 @@ exception internal UpperCaseIdentifierInPattern of range
 /// Generate a new reference to a record field with a fresh type instantiation
 val FreshenRecdFieldRef: NameResolver -> range -> RecdFieldRef -> RecdFieldInfo
 
+/// Create a type variable representing the use of a "_" in F# code
+val NewAnonTypar: TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
+
+val NewNamedInferenceMeasureVar: range * TyparRigidity * TyparStaticReq * Ident -> Typar
+
+val NewNamedInferenceMeasureVar: range * TyparRigidity * TyparStaticReq * Ident -> Typar
+
+val NewInferenceMeasurePar: unit -> Typar
+
+/// Create an inference type variable
+val NewInferenceType: TcGlobals -> TType
+
+/// Create an inference type variable for the kind of a byref pointer
+val NewByRefKindInferenceType: TcGlobals -> range -> TType
+
+/// Create an inference type variable representing an error condition when checking an expression
+val NewErrorType: unit -> TType
+
+/// Create an inference type variable representing an error condition when checking a measure
+val NewErrorMeasure: unit -> Measure
+
+/// Create a list of inference type variables, one for each element in the input list
+val NewInferenceTypes: TcGlobals -> 'T list -> TType list
+
+/// Given a set of type parameters, make new inference type variables for
+/// each and ensure that the constraints on the new type variables are adjusted.
+///
+/// Returns the inference type variables as a list of types.
+val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
+
+/// Given a method, which may be generic, make new inference type variables for
+/// its generic parameters, and ensure that the constraints the new type variables are adjusted.
+///
+/// Returns the inference type variables as a list of types.
+val FreshenMethInfo: range -> MethInfo -> TType list
+
+/// Given a set of formal type parameters and their constraints, make new inference type variables for
+/// each and ensure that the constraints on the new type variables are adjusted to refer to these.
+///
+/// Returns
+///   1. the new type parameters
+///   2. the instantiation mapping old type parameters to inference variables
+///   3. the inference type variables as a list of types.
+val FreshenAndFixupTypars:
+    g: TcGlobals ->
+    m: range ->
+    rigid: TyparRigidity ->
+    fctps: Typars ->
+    tinst: TType list ->
+    tpsorig: Typar list ->
+        Typar list * TyparInstantiation * TTypes
+
+/// Given a set of type parameters, make new inference type variables for
+/// each and ensure that the constraints on the new type variables are adjusted.
+///
+/// Returns
+///   1. the new type parameters
+///   2. the instantiation mapping old type parameters to inference variables
+///   3. the inference type variables as a list of types.
+val FreshenTypeInst: g: TcGlobals -> m: range -> tpsorig: Typar list -> Typar list * TyparInstantiation * TTypes
+
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:
     sink: TcResultsSink ->
@@ -735,7 +794,7 @@ val internal ResolveTypeLongIdentInTyconRef:
     m: range ->
     tcref: TyconRef ->
     lid: Ident list ->
-        TyconRef
+        TyconRef * TypeInst
 
 /// Resolve a long identifier to a type definition
 val internal ResolveTypeLongIdent:
@@ -748,7 +807,7 @@ val internal ResolveTypeLongIdent:
     lid: Ident list ->
     staticResInfo: TypeNameResolutionStaticArgsInfo ->
     genOk: PermitDirectReferenceToGeneratedType ->
-        ResultOrException<EnclosingTypeInst * TyconRef>
+        ResultOrException<EnclosingTypeInst * TyconRef * TypeInst>
 
 /// Resolve a long identifier to a field
 val internal ResolveField:

@@ -27,6 +27,7 @@ open TestFramework
 
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+open FSharp.Compiler.CodeAnalysis
 
 
 module rec Compiler =
@@ -475,6 +476,9 @@ module rec Compiler =
         | FS fs -> FS { fs with OutputDirectory = path }
         | _ -> failwith "withOutputDirectory is only supported on F#"
 
+    let withCheckNulls (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper ["--checknulls+"] "checknulls is only supported in F#" cUnit
+
     let withBufferWidth (width: int)(cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--bufferwidth:{width}" ] "withBufferWidth is only supported on F#" cUnit
 
@@ -917,7 +921,7 @@ module rec Compiler =
             CompilerAssert.TypeCheck(options, fileName, source)
         | _ -> failwith "Typecheck only supports F#"
 
-    let typecheckProject enablePartialTypeChecking (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults =
+    let typecheckProject enablePartialTypeChecking useTransparentCompiler (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults =
         match cUnit with
         | FS fsSource ->
             let options = fsSource.Options |> Array.ofList
@@ -935,7 +939,8 @@ module rec Compiler =
                     |> async.Return
 
             let sourceFiles = Array.map fst sourceFiles
-            CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText, enablePartialTypeChecking)
+
+            CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText, enablePartialTypeChecking, useTransparentCompiler)
         | _ -> failwith "Typecheck only supports F#"
 
     let run (result: CompilationResult) : CompilationResult =

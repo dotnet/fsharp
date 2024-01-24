@@ -85,6 +85,12 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinalIgnoreCase: value: string -> bool
 
+        member inline IndexOfOrdinal: value: string -> int
+
+        member inline IndexOfOrdinal: value: string * startIndex: int -> int
+
+        member inline IndexOfOrdinal: value: string * startIndex: int * count: int -> int
+
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
@@ -239,6 +245,8 @@ module internal List =
     val isSingleton: xs: 'T list -> bool
 
     val prependIfSome: x: 'a option -> l: 'a list -> 'a list
+
+    val vMapFold<'T,'State,'Result> : mapping:('State -> 'T -> struct('Result * 'State)) -> state:'State -> list:'T list -> struct('Result list * 'State)
 
 module internal ResizeArray =
 

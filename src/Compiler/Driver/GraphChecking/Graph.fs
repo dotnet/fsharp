@@ -27,25 +27,42 @@ module internal Graph =
         |> Array.map (fun (KeyValue(k, v)) -> k, v)
         |> readOnlyDict
 
+    let nodes (graph: Graph<'Node>) : Set<'Node> =
+        graph.Values |> Seq.collect id |> Seq.append graph.Keys |> Set
+
+    /// Find transitive dependencies of a single node.
+    let transitiveDeps (node: 'Node) (graph: Graph<'Node>) =
+        let visited = HashSet<'Node>()
+
+        let rec dfs (node: 'Node) =
+            graph[node]
+            // Add direct dependencies.
+            // Use HashSet.Add return value semantics to filter out those that were added previously.
+            |> Array.filter visited.Add
+            |> Array.iter dfs
+
+        dfs node
+        visited |> Seq.toArray
+
     let transitive<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
-        /// Find transitive dependencies of a single node.
-        let transitiveDeps (node: 'Node) =
-            let visited = HashSet<'Node>()
-
-            let rec dfs (node: 'Node) =
-                graph[node]
-                // Add direct dependencies.
-                // Use HashSet.Add return value semantics to filter out those that were added previously.
-                |> Array.filter visited.Add
-                |> Array.iter dfs
-
-            dfs node
-            visited |> Seq.toArray
-
         graph.Keys
         |> Seq.toArray
-        |> Array.Parallel.map (fun node -> node, transitiveDeps node)
+        |> Array.Parallel.map (fun node -> node, graph |> transitiveDeps node)
         |> readOnlyDict
+
+    // TODO: optimize
+    /// Get subgraph of the given graph that contains only nodes that are reachable from the given node.
+    let subGraphFor node graph =
+        let allDeps = graph |> transitiveDeps node
+        let relevant n = n = node || allDeps |> Array.contains n
+
+        graph
+        |> Seq.choose (fun (KeyValue(src, deps)) ->
+            if relevant src then
+                Some(src, deps |> Array.filter relevant)
+            else
+                None)
+        |> make
 
     /// Create a reverse of the graph
     let reverse (originalGraph: Graph<'Node>) : Graph<'Node> =
@@ -69,7 +86,7 @@ module internal Graph =
     let print (graph: Graph<'Node>) : unit =
         printCustom graph (fun node -> node.ToString())
 
-    let serialiseToMermaid path (graph: Graph<FileIndex * string>) =
+    let serialiseToMermaid (graph: Graph<FileIndex * string>) =
         let sb = StringBuilder()
         let appendLine (line: string) = sb.AppendLine(line) |> ignore
 
@@ -84,8 +101,10 @@ module internal Graph =
                 appendLine $"    %i{idx} --> %i{depIdx}"
 
         appendLine "```"
+        sb.ToString()
 
+    let writeMermaidToFile path (graph: Graph<FileIndex * string>) =
         use out =
             FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
 
-        out.WriteAllText(sb.ToString())
+        graph |> serialiseToMermaid |> out.WriteAllText

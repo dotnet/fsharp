@@ -1468,6 +1468,8 @@ type TcGlobals(
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
   member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+  member val attrib_NullableAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.NullableAttribute"
+  member val attrib_NullableContextAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.NullableContextAttribute"
   member val attrib_NullableAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableAttribute"
   member val attrib_NullableContextAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableContextAttribute"
   member val attrib_MemberNotNullWhenAttribute  = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute"
@@ -1557,7 +1559,6 @@ type TcGlobals(
   member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
   member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
   member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
-  member val attrib_TailCallAttribute                      = mk_MFCore_attrib "TailCallAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1878,11 +1879,11 @@ type TcGlobals(
 
   member _.DebuggerBrowsableNeverAttribute = debuggerBrowsableNeverAttribute
 
-  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled, enableEnC) =
+  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled) =
         let debuggingMode =
+            0x3 (* Default ||| IgnoreSymbolStoreSequencePoints *) |||
             (if jitTracking then 1 else 0) |||
-            (if jitOptimizerDisabled then 256 else 0) |||
-            (if enableEnC then 4 else 0)
+            (if jitOptimizerDisabled then 256 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
         mkILCustomAttribute
           (tref_DebuggableAttribute, [mkILNonGenericValueTy tref_DebuggableAttribute_DebuggingModes],
@@ -1895,6 +1896,10 @@ type TcGlobals(
 
   member _.DebuggerNonUserCodeAttribute = debuggerNonUserCodeAttribute
 
+  member _.HasTailCallAttrib (attribs: Attribs) =
+    attribs
+    |> List.exists (fun a -> a.TyconRef.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.TailCallAttribute")
+  
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
@@ -1904,7 +1909,7 @@ type TcGlobals(
       let memberName =
           let nm = t.MemberLogicalName
           let coreName =
-              if nm.StartsWith "op_" then nm[3..]
+              if nm.StartsWithOrdinal "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm

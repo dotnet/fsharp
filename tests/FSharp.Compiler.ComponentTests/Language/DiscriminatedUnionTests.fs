@@ -18,6 +18,20 @@ if foo.IsBar then failwith "Should not be Bar"
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Simple Is* discriminated union properties are not visible for a single case union`` () =
+        Fsx """
+type Foo = Bar of string
+let foo = Foo.Bar "hi"
+if not foo.IsBar then failwith "Should be Bar"
+
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics  [Error 39, Line 4, Col 12, Line 4, Col 17, "The type 'Foo' does not define the field, constructor or member 'IsBar'. Maybe you want one of the following:
+   Bar"]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Simple Is* discriminated union property satisfies SRTP constraint`` () =
         Fsx """
 type X =
@@ -48,6 +62,41 @@ if foo.IsA then failwith "Should not be A"
         |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
+
+    // TODO nullness - wait for https://github.com/fsharp/fslang-design/discussions/760
+    // [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Is* DU property roundtrip over pickled metadata and with fsi file`` () = 
+        let libCode =  """module rec TestLib
+
+type X = A | B"""
+        let appCode = """
+let x = TestLib.X.A
+let isA = x.IsA
+printfn "%A" isA """
+        let lib = 
+            Fsi(libCode)
+            |> withAdditionalSourceFile (FsSource libCode)
+            |> withLangVersionPreview
+            |> asLibrary
+            |> withName "fsLib"
+
+        lib
+        |> compile
+        |> verifyIL [""".method public hidebysig specialname 
+instance bool  get_IsA() cil managed """]
+
+        FSharp appCode
+        |> asExe
+        |> withReferences [lib]
+        |> withWarnOn 3186
+        |> withOptions ["--warnaserror+"]
+        |> withName "AppCodeProjectName"
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "does not define the field, constructor or member 'IsA'"
+
+    
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties with backticks are visible, proper values are returned`` () =
@@ -130,7 +179,8 @@ let isFoo = foo.IsFoo
         |> withErrorMessage "The type 'Foo' does not define the field, constructor or member 'IsFoo'. Maybe you want one of the following:
    Foo"
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    // TODO nullness - wait for https://github.com/fsharp/fslang-design/discussions/760
+    //[<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties are unavailable on voption`` () =
         Fsx """
 let x = (ValueSome 1).IsSome
