@@ -270,7 +270,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
     if g.ListCollector_tcr.CanDeref then
         let constListSizeThreshold = 100
-        let constArraySizeThreshold = int System.UInt16.MaxValue
+        let constArrayBytesThreshold = 1024
 
         match overallExpr with
         // [5..1] → []
@@ -312,7 +312,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
 
         // [|1..5|] → [|1; 2; 3; 4; 5|]
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
-            finish - start < constArraySizeThreshold
+            (finish - start) * sizeof<int32> < constArrayBytesThreshold
             ->
             Some (mkArray (g.int32_ty, [for n in start..finish -> Expr.Const(Const.Int32 n, Text.Range.range0, g.int32_ty)], m))
 
