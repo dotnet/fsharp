@@ -1,4 +1,4 @@
-namespace EmittedIL.RealInternalSignature
+namespace EmittedIL
 
 open Xunit
 open System.IO
