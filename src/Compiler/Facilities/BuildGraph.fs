@@ -193,7 +193,19 @@ type NodeCode private () =
         }
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        computations |> Seq.map (fun (Node x) -> x) |> Async.Parallel |> wrapThreadStaticInfo |> Node
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        let phase = DiagnosticsThreadStatics.BuildPhase
+
+        computations
+        |> Seq.map (fun (Node x) ->
+            async {
+                DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                DiagnosticsThreadStatics.BuildPhase <- phase
+                return! x
+            })
+        |> Async.Parallel
+        |> wrapThreadStaticInfo
+        |> Node
 
 [<RequireQualifiedAccess>]
 module GraphNode =
