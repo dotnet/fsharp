@@ -92,7 +92,7 @@ let ChooseParamNames fieldNamesAndTypes =
         ilParamName, ilFieldName, ilPropType)
 
 /// Approximation for purposes of optimization and giving a warning when compiling definition-only files as EXEs
-let rec CheckCodeDoesSomething (code: ILCode) =
+let CheckCodeDoesSomething (code: ILCode) =
     code.Instrs
     |> Array.exists (function
         | AI_ldnull
@@ -476,7 +476,7 @@ let CompLocForPrivateImplementationDetails cloc =
     }
 
 /// Compute an ILTypeRef for a CompilationLocation
-let rec TypeRefForCompLoc cloc =
+let TypeRefForCompLoc cloc =
     match cloc.Enclosing with
     | [] -> mkILTyRef (cloc.Scope, TypeNameForPrivateImplementationDetails cloc)
     | [ h ] ->

@@ -121,3 +121,18 @@ module B = C
     match content with
     | [ TopLevelNamespace "" [ PrefixedIdentifier "C" ] ] -> Assert.Pass()
     | content -> Assert.Fail($"Unexpected content: {content}")
+
+[<Test>]
+let ``Invalid nested module should just be ignored`` () =
+    let content =
+        getContent
+            false
+            """
+module A
+
+module B.C
+"""
+
+    match content with
+    | [ TopLevelNamespace "" [] ] -> Assert.Pass()
+    | content -> Assert.Fail($"Unexpected content: {content}")
