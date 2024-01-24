@@ -12,6 +12,10 @@ Top-level project for the Visual F# IDE tools.  This project contains the follow
 
 In general, if something is implemented here and the logic becomes rather lengthy, it may be a good idea to push that logic down into the F# Compiler Service so that other editors can benefit.
 
+# src/FSharp.VS.FSI
+
+F# Interactive implementation.
+
 # src/FSharp.UIResources
 
 GUI controls and resources for Visual F# tooling.

@@ -1193,7 +1193,7 @@ type SynTypeDefnSimpleRepr =
         fields: SynField list *
         isConcrete: bool *
         isIncrClass: bool *
-        implicitCtorSynPats: SynSimplePats option *
+        implicitCtorSynPats: SynPat option *
         range: range
 
     | LibraryOnlyILAssembly of
@@ -1442,7 +1442,7 @@ type SynMemberDefn =
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
-        ctorArgs: SynSimplePats *
+        ctorArgs: SynPat *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
         range: range *

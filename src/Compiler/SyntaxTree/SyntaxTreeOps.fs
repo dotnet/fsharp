@@ -409,7 +409,10 @@ let opNameQMark = CompileOpName qmark
 
 let mkSynOperator (opm: range) (oper: string) =
     let trivia =
-        if oper.StartsWith("~") && ((opm.EndColumn - opm.StartColumn) = (oper.Length - 1)) then
+        if
+            oper.StartsWithOrdinal("~")
+            && ((opm.EndColumn - opm.StartColumn) = (oper.Length - 1))
+        then
             // PREFIX_OP token where the ~ was actually absent
             IdentTrivia.OriginalNotation(string (oper.[1..]))
         else

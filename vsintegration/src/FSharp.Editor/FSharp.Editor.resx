@@ -180,7 +180,8 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</value>
+Dash underline;
+Show remarks in Quick Info</value>
   </data>
   <data name="AddAssemblyReference" xml:space="preserve">
     <value>Add an assembly reference to '{0}'</value>
@@ -226,6 +227,7 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</value>
   </data>
@@ -352,7 +354,16 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ConvertCSharpUsingToFSharpOpen" xml:space="preserve">
     <value>Convert C# 'using' to F# 'open'</value>
   </data>
+  <data name="AddReturnTypeAnnotation" xml:space="preserve">
+    <value>Add return type annotation</value>
+  </data>
   <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
     <value>Remove unnecessary parentheses</value>
+  </data>
+  <data name="RemarksHeader" xml:space="preserve">
+    <value>Remarks:</value>
+  </data>
+  <data name="ReturnsHeader" xml:space="preserve">
+    <value>Returns:</value>
   </data>
 </root>

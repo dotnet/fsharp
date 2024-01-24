@@ -92,7 +92,7 @@ module Helpers =
         | null -> nullArg argName
         | _ -> ()
 
-    let getTypesFromParamInfos (infos: ParameterInfo[]) =
+    let getTypesFromParamInfos (infos: ParameterInfo array) =
         infos |> Array.map (fun pi -> pi.ParameterType)
 
 open Helpers
@@ -456,7 +456,7 @@ module Patterns =
     /// as a computation.
     type Instantiable<'T> = (int -> Type) -> 'T
 
-    type ByteStream(bytes: byte[], initial: int, len: int) =
+    type ByteStream(bytes: byte array, initial: int, len: int) =
 
         let mutable pos = initial
         let lim = initial + len
@@ -970,7 +970,7 @@ module Patterns =
         if (not (assignableFrom expectedType receivedType)) then
             invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
-    let checkArgs (paramInfos: ParameterInfo[]) (args: Expr list) =
+    let checkArgs (paramInfos: ParameterInfo array) (args: Expr list) =
         if (paramInfos.Length <> args.Length) then
             invalidArg "args" (SR.GetString(SR.QincorrectNumArgs))
 
@@ -1381,7 +1381,7 @@ module Patterns =
     let typesEqual (tys1: Type list) (tys2: Type list) =
         (tys1.Length = tys2.Length) && List.forall2 typeEquals tys1 tys2
 
-    let instFormal (typarEnv: Type[]) (ty: Instantiable<'T>) =
+    let instFormal (typarEnv: Type array) (ty: Instantiable<'T>) =
         ty (fun i -> typarEnv.[i])
 
     let getGenericArguments (genericType: Type) =
@@ -1672,9 +1672,9 @@ module Patterns =
         type InputState =
             {
                 is: ByteStream
-                istrings: string[]
+                istrings: string array
                 localAssembly: System.Reflection.Assembly
-                referencedTypeDefs: Type[]
+                referencedTypeDefs: Type array
             }
 
         let u_byte_as_int st =
@@ -1935,7 +1935,7 @@ module Patterns =
             varn = env.varn + 1
         }
 
-    let mkTyparSubst (tyargs: Type[]) =
+    let mkTyparSubst (tyargs: Type array) =
         let n = tyargs.Length
 
         fun idx ->
@@ -1944,7 +1944,7 @@ module Patterns =
             else
                 invalidOp (SR.GetString(SR.QtypeArgumentOutOfRange))
 
-    let envClosed (spliceTypes: Type[]) =
+    let envClosed (spliceTypes: Type array) =
         {
             vars = Map.empty
             varn = 0
@@ -2256,7 +2256,7 @@ module Patterns =
     //--------------------------------------------------------------------------
 
     /// Fill the holes in an Expr
-    let rec fillHolesInRawExpr (l: Expr[]) (E t as e) =
+    let rec fillHolesInRawExpr (l: Expr array) (E t as e) =
         match t with
         | VarTerm _ -> e
         | LambdaTerm(v, b) -> EA(LambdaTerm(v, fillHolesInRawExpr l b), e.CustomAttributes)
@@ -2363,7 +2363,7 @@ module Patterns =
         resourceName.StartsWith(ReflectedDefinitionsResourceNameBase, StringComparison.Ordinal)
 
     /// Get the reflected definition at the given (always generic) instantiation
-    let tryGetReflectedDefinition (methodBase: MethodBase, tyargs: Type[]) =
+    let tryGetReflectedDefinition (methodBase: MethodBase, tyargs: Type array) =
         checkNonNull "methodBase" methodBase
 
         let data =
@@ -2692,12 +2692,12 @@ type Expr with
     static member Cast(source: Expr) =
         cast source
 
-    static member Deserialize(qualifyingType: Type, spliceTypes, spliceExprs, bytes: byte[]) =
+    static member Deserialize(qualifyingType: Type, spliceTypes, spliceExprs, bytes: byte array) =
         checkNonNull "qualifyingType" qualifyingType
         checkNonNull "bytes" bytes
         deserialize (qualifyingType, [||], Array.ofList spliceTypes, Array.ofList spliceExprs, bytes)
 
-    static member Deserialize40(qualifyingType: Type, referencedTypes, spliceTypes, spliceExprs, bytes: byte[]) =
+    static member Deserialize40(qualifyingType: Type, referencedTypes, spliceTypes, spliceExprs, bytes: byte array) =
         checkNonNull "spliceExprs" spliceExprs
         checkNonNull "spliceTypes" spliceTypes
         checkNonNull "referencedTypeDefs" referencedTypes

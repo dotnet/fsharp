@@ -75,7 +75,7 @@ module TcResolutionsExtensions =
         && protectAssemblyExplorationNoReraise false false (fun () ->
             ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
 
-    let isDiscard (str: string) = str.StartsWith("_")
+    let isDiscard (str: string) = str.StartsWithOrdinal("_")
 
     let isValRefDisposable g amap (vref: ValRef) =
         not (isDiscard vref.DisplayName)
@@ -286,8 +286,6 @@ module TcResolutionsExtensions =
                                     add m SemanticClassificationType.ConstructorForReferenceType
 
                         | Item.DelegateCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
-
-                        | Item.FakeInterfaceCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
 
                         | Item.MethodGroup(_, minfos, _), _, m ->
                             match minfos with

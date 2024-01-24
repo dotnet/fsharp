@@ -440,5 +440,6 @@ let typedSeq =
     |> typecheck
     |> shouldFail
     |> withErrorCode 30
-    |> withDiagnosticMessageMatches "Value restriction. The value 'typedSeq' has been inferred to have generic type"
+    |> withDiagnosticMessageMatches "Value restriction: The value 'typedSeq' has an inferred generic type"
+    |> withDiagnosticMessageMatches "val typedSeq: '_a seq"
  

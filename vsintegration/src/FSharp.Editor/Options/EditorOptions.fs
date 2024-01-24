@@ -46,6 +46,7 @@ type QuickInfoOptions =
         DisplayLinks: bool
         UnderlineStyle: QuickInfoUnderlineStyle
         DescriptionWidth: int option
+        ShowRemarks: bool
     }
 
     static member Default =
@@ -53,6 +54,7 @@ type QuickInfoOptions =
             DisplayLinks = true
             UnderlineStyle = QuickInfoUnderlineStyle.Solid
             DescriptionWidth = None
+            ShowRemarks = true
         }
 
 [<CLIMutable>]
@@ -81,6 +83,7 @@ type CodeFixesOptions =
 type LanguageServicePerformanceOptions =
     {
         EnableInMemoryCrossProjectReferences: bool
+        TransparentCompilerCacheFactor: int
         AllowStaleCompletionResults: bool
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
@@ -95,6 +98,7 @@ type LanguageServicePerformanceOptions =
     static member Default =
         {
             EnableInMemoryCrossProjectReferences = true
+            TransparentCompilerCacheFactor = 100
             AllowStaleCompletionResults = true
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
@@ -115,6 +119,8 @@ type AdvancedOptions =
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
         IsUseLiveBuffersEnabled: bool
+        UseTransparentCompiler: bool
+        TransparentCompilerSnapshotReuse: bool
         SendAdditionalTelemetry: bool
         SolutionBackgroundAnalysis: bool
     }
@@ -126,6 +132,8 @@ type AdvancedOptions =
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
+            UseTransparentCompiler = false
+            TransparentCompilerSnapshotReuse = false
             IsUseLiveBuffersEnabled = true
             SendAdditionalTelemetry = true
             SolutionBackgroundAnalysis = false
@@ -199,6 +207,7 @@ module internal OptionsUI =
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks (nameof QuickInfoOptions.Default.DisplayLinks)
             bindDescriptionWidthTextBox view.descriptionWidth (nameof QuickInfoOptions.Default.DescriptionWidth)
+            bindCheckBox view.showRemarks (nameof QuickInfoOptions.Default.ShowRemarks)
             upcast view
 
     [<Guid(Guids.codeFixesOptionPageIdString)>]
@@ -262,3 +271,11 @@ module EditorOptionsExtensions =
 
         member this.IsFastFindReferencesEnabled =
             this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
+
+        member this.UseTransparentCompiler = this.EditorOptions.Advanced.UseTransparentCompiler
+
+        member this.IsTransparentCompilerSnapshotReuseEnabled =
+            this.EditorOptions.Advanced.TransparentCompilerSnapshotReuse
+
+        member this.TransparentCompilerCacheFactor =
+            this.EditorOptions.LanguageServicePerformance.TransparentCompilerCacheFactor

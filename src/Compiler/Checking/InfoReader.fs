@@ -4,6 +4,7 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal FSharp.Compiler.InfoReader
 
+open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open Internal.Utilities.Library
@@ -1097,14 +1098,14 @@ let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) =
     else
         let ccuFileName = libFileOfEntityRef eref
         let m = eref.Deref
-        if m.XmlDocSig = "" then
+        if String.IsNullOrEmpty(m.XmlDocSig) then
             m.XmlDocSig <- XmlDocSigOfEntity eref
         Some (ccuFileName, m.XmlDocSig)
 
 let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) = 
     let ccuFileName = libFileOfEntityRef tcref
     let v = vref.Deref
-    if v.XmlDocSig = "" && v.HasDeclaringEntity then
+    if String.IsNullOrEmpty(v.XmlDocSig) && v.HasDeclaringEntity then
         let ap = buildAccessPath vref.DeclaringEntity.CompilationPathOpt
         let path =
             if vref.DeclaringEntity.IsModule then
@@ -1118,14 +1119,14 @@ let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) =
 let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) = 
     let tcref = rfref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref 
-    if rfref.RecdField.XmlDocSig = "" then
+    if String.IsNullOrEmpty(rfref.RecdField.XmlDocSig) then
         rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.LogicalName]
     Some (ccuFileName, rfref.RecdField.XmlDocSig)
 
 let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) = 
     let tcref =  ucref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref
-    if  ucref.UnionCase.XmlDocSig = "" then
+    if String.IsNullOrEmpty(ucref.UnionCase.XmlDocSig) then
         ucref.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucref.CaseName]
     Some (ccuFileName, ucref.UnionCase.XmlDocSig)
 
@@ -1171,7 +1172,7 @@ let GetXmlDocSigOfValRef g (vref: ValRef) =
     if not vref.IsLocalRef then
         let ccuFileName = vref.nlr.Ccu.FileName
         let v = vref.Deref
-        if v.XmlDocSig = "" && v.HasDeclaringEntity then
+        if String.IsNullOrEmpty(v.XmlDocSig) && v.HasDeclaringEntity then
             v.XmlDocSig <- XmlDocSigOfVal g false vref.DeclaringEntity.CompiledRepresentationForNamedType.Name v
         Some (ccuFileName, v.XmlDocSig)
     else 

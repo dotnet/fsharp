@@ -933,12 +933,12 @@ type DiagnosticsLogger with
 
 /// Get the directory name from a string, with some defaults if it doesn't have one
 let internal directoryName (s: string) =
-    if s = "" then
+    if String.IsNullOrEmpty(s) then
         "."
     else
         match Path.GetDirectoryName s with
         | null -> if FileSystem.IsPathRootedShim s then s else "."
-        | res -> if res = "" then "." else res
+        | res -> if String.IsNullOrEmpty(res) then "." else res
 
 //----------------------------------------------------------------------------
 // cmd line - state for options
@@ -1526,7 +1526,7 @@ let ConvReflectionTypeToILTypeRef (reflectionTy: Type) =
     let scoref = ILScopeRef.Assembly aref
 
     let fullName = reflectionTy.FullName
-    let index = fullName.IndexOf("[")
+    let index = fullName.IndexOfOrdinal("[")
 
     let fullName =
         if index = -1 then
@@ -4089,7 +4089,6 @@ type FsiInteractionProcessor
             ?cancellationToken: CancellationToken
         ) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        use _ = Cancellable.UsingToken(cancellationToken)
 
         if tokenizer.LexBuffer.IsPastEndOfStream then
             let stepStatus =
@@ -4218,7 +4217,6 @@ type FsiInteractionProcessor
 
     member _.EvalInteraction(ctok, sourceText, scriptFileName, diagnosticsLogger, ?cancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        use _ = Cancellable.UsingToken(cancellationToken)
         use _ = UseBuildPhase BuildPhase.Interactive
         use _ = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
@@ -4895,7 +4893,6 @@ type FsiEvaluationSession
             SpawnInteractiveServer(fsi, fsiOptions, fsiConsoleOutput)
 
         use _ = UseBuildPhase BuildPhase.Interactive
-        use _ = Cancellable.UsingToken(CancellationToken.None)
 
         if fsiOptions.Interact then
             // page in the type check env

@@ -432,14 +432,14 @@
   } 
 
   .method public static class TestModule/MyNullableOption`1<!!b> 
-          mapPossiblyNullable<class a,b>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!b> f,
-                                         class TestModule/MyNullableOption`1<!!a> myOpt) cil managed
+          mapPossiblyNullable<class a,class b>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!b> f,
+                                               class TestModule/MyNullableOption`1<!!a> myOpt) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     .param type a 
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .param type b 
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  4
     .locals init (class TestModule/MyNullableOption`1<!!a> V_0,

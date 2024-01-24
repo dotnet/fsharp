@@ -6,6 +6,7 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Reflection
@@ -53,6 +54,9 @@ open FSharp.Compiler.TypedTreeOps
 open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Internal.Utilities.Hashing
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
@@ -483,6 +487,8 @@ type internal TypeCheckInfo
         //
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
+        | CNR(_, ItemOccurence.InvalidUse, _, _, _, _) :: _, _ -> NameResResult.Empty
+
         | CNR(Item.Types(_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
                 ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
@@ -891,7 +897,6 @@ type internal TypeCheckInfo
     let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
         let kind =
             match item.Item with
-            | Item.FakeInterfaceCtor _
             | Item.DelegateCtor _
             | Item.CtorGroup _ -> CompletionItemKind.Method false
             | Item.MethodGroup(_, minfos, _) ->
@@ -1802,7 +1807,6 @@ type internal TypeCheckInfo
                                 match d.Item with
                                 | Item.Types(_, AbbrevOrAppTy tcref :: _) -> 1 + tcref.TyparsNoRange.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                                | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref)
                                 | Item.DelegateCtor(AbbrevOrAppTy tcref) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                                 | Item.CtorGroup(_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
@@ -1822,7 +1826,6 @@ type internal TypeCheckInfo
                             | Item.Types(_, AbbrevOrAppTy tcref :: _)
                             | Item.ExnCase tcref -> tcref.LogicalName
                             | Item.UnqualifiedType(tcref :: _)
-                            | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref)
                             | Item.DelegateCtor(AbbrevOrAppTy tcref) -> tcref.CompiledName
                             | Item.CtorGroup(_, cinfo :: _) -> cinfo.ApparentEnclosingTyconRef.CompiledName
                             | _ -> d.Item.DisplayName)
@@ -1909,7 +1912,7 @@ type internal TypeCheckInfo
                 | Some(_, lines) ->
                     let lines =
                         lines
-                        |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
+                        |> List.filter (fun line -> not (line.StartsWithOrdinal("//")) && not (String.IsNullOrEmpty line))
 
                     ToolTipText.ToolTipText
                         [
@@ -2252,7 +2255,7 @@ type internal TypeCheckInfo
                         | Some itemRange ->
                             let projectDir =
                                 FileSystem.GetDirectoryNameShim(
-                                    if projectFileName = "" then
+                                    if String.IsNullOrEmpty(projectFileName) then
                                         mainInputFileName
                                     else
                                         projectFileName
@@ -2515,6 +2518,11 @@ module internal ParseAndCheckFile =
             with set opts = options <- opts
 
         member _.AnyErrors = errorCount > 0
+
+        member _.CollectedPhasedDiagnostics =
+            [|
+                for struct (diagnostic, severity) in diagnosticsCollector -> diagnostic, severity
+            |]
 
         member _.CollectedDiagnostics(symbolEnv: SymbolEnv option) =
             [|
@@ -3271,7 +3279,7 @@ type FSharpCheckFileResults
             tcConfig,
             tcGlobals,
             isIncompleteTypeCheckEnvironment: bool,
-            builder: IncrementalBuilder,
+            builder: IncrementalBuilder option,
             projectOptions,
             dependencyFiles,
             creationErrors: FSharpDiagnostic[],
@@ -3312,7 +3320,7 @@ type FSharpCheckFileResults
         let errors =
             FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
 
-        FSharpCheckFileResults(mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
+        FSharpCheckFileResults(mainInputFileName, errors, Some tcFileInfo, dependencyFiles, builder, keepAssemblyContents)
 
     static member CheckOneFile
         (
@@ -3329,7 +3337,7 @@ type FSharpCheckFileResults
             backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],
             isIncompleteTypeCheckEnvironment: bool,
             projectOptions: FSharpProjectOptions,
-            builder: IncrementalBuilder,
+            builder: IncrementalBuilder option,
             dependencyFiles: string[],
             creationErrors: FSharpDiagnostic[],
             parseErrors: FSharpDiagnostic[],
@@ -3358,7 +3366,7 @@ type FSharpCheckFileResults
                 FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
 
             let results =
-                FSharpCheckFileResults(mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
+                FSharpCheckFileResults(mainInputFileName, errors, Some tcFileInfo, dependencyFiles, builder, keepAssemblyContents)
 
             return results
         }
@@ -3376,7 +3384,7 @@ type FSharpCheckProjectResults
             TcImports *
             CcuThunk *
             ModuleOrNamespaceType *
-            Choice<IncrementalBuilder, TcSymbolUses> *
+            Choice<IncrementalBuilder, Async<TcSymbolUses seq>> *
             TopAttribs option *
             (unit -> IRawFSharpAssemblyData option) *
             ILAssemblyRef *
@@ -3414,6 +3422,7 @@ type FSharpCheckProjectResults
 
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
+    // TODO: Looks like we don't need this
     member _.TypedImplementationFiles =
         if not keepAssemblyContents then
             invalidOp
@@ -3474,6 +3483,7 @@ type FSharpCheckProjectResults
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
+    // TODO: this should be async
     member _.GetUsesOfSymbol(symbol: FSharpSymbol, ?cancellationToken: CancellationToken) =
         let _, _, _, _, builderOrSymbolUses, _, _, _, _, _, _, _ = getDetails ()
 
@@ -3489,7 +3499,20 @@ type FSharpCheckProjectResults
                         | Some(_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
                         | _ -> [||]
                     | _ -> [||])
-            | Choice2Of2 tcSymbolUses -> tcSymbolUses.GetUsesOfSymbol symbol.Item
+                |> Array.toSeq
+            | Choice2Of2 task ->
+                Async.RunSynchronously(
+                    async {
+                        let! tcSymbolUses = task
+
+                        return
+                            seq {
+                                for symbolUses in tcSymbolUses do
+                                    yield! symbolUses.GetUsesOfSymbol symbol.Item
+                            }
+                    },
+                    ?cancellationToken = cancellationToken
+                )
 
         results
         |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText)
@@ -3501,6 +3524,7 @@ type FSharpCheckProjectResults
         |> Seq.toArray
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
+    // TODO: this should be async
     member _.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) =
         let tcGlobals, tcImports, thisCcu, ccuSig, builderOrSymbolUses, _, _, _, _, _, _, _ =
             getDetails ()
@@ -3519,7 +3543,8 @@ type FSharpCheckProjectResults
                         | Some(_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses
                         | _ -> TcSymbolUses.Empty
                     | _ -> TcSymbolUses.Empty)
-            | Choice2Of2 tcSymbolUses -> [| tcSymbolUses |]
+                |> Array.toSeq
+            | Choice2Of2 tcSymbolUses -> Async.RunSynchronously(tcSymbolUses, ?cancellationToken = cancellationToken)
 
         [|
             for r in tcSymbolUses do
@@ -3560,9 +3585,6 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
 
     member _.ParseAndCheckInteraction(sourceText: ISourceText, ?userOpName: string) =
         cancellable {
-            let! ct = Cancellable.token ()
-            use _ = Cancellable.UsingToken(ct)
-
             let userOpName = defaultArg userOpName "Unknown"
             let fileName = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             let suggestNamesForErrors = true // Will always be true, this is just for readability
@@ -3658,7 +3680,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                  tcImports,
                  tcFileInfo.ThisCcu,
                  tcFileInfo.CcuSigForFile,
-                 Choice2Of2 tcFileInfo.ScopeSymbolUses,
+                 Choice2Of2(tcFileInfo.ScopeSymbolUses |> Seq.singleton |> async.Return),
                  None,
                  (fun () -> None),
                  mkSimpleAssemblyRef "stdin",

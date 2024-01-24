@@ -28,8 +28,7 @@ module internal FSharpEnvironment =
     let FSharpCoreLibRunningVersion =
         try
             match versionOf<Unit> with
-            | null -> None
-            | "" -> None
+            | s when String.IsNullOrEmpty(s) -> None
             | s -> Some(s)
         with _ ->
             None
@@ -184,7 +183,7 @@ module internal FSharpEnvironment =
                 | None -> ()
                 | Some(p: string) ->
                     match Path.GetDirectoryName(p) with
-                    | s when s = "" || isNull s || Path.GetFileName(p) = "packages" || s = p -> ()
+                    | s when String.IsNullOrEmpty(s) || Path.GetFileName(p) = "packages" || s = p -> ()
                     | parentDir -> yield! searchParentDirChain (Some parentDir) assemblyName
 
                 for p in searchToolPaths path compilerToolPaths do
