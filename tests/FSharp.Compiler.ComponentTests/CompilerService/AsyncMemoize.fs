@@ -217,14 +217,15 @@ let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
         let rng = Random()
         fun n -> rng.Next n
 
-    let job _ = node {
+    let job phase _ = node {
         do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
+        Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
     }
 
     let work (phase: BuildPhase) =
         node {
             use _ = new CompilationGlobalsScope(DiscardErrorsLogger, phase)
-            let! _ = Seq.init 8 job |> NodeCode.Parallel
+            let! _ = Seq.init 8 (job phase) |> NodeCode.Parallel
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
         }
 
