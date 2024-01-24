@@ -4364,7 +4364,6 @@ FSharp.Compiler.EditorServices.TupledArgumentLocation: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.TupledArgumentLocation: System.String ToString()
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Void .ctor(Boolean, FSharp.Compiler.Text.Range)
-FSharp.Compiler.EditorServices.UnnecessaryParentheses: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] getUnnecessaryParentheses(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(FSharp.Compiler.EditorServices.UnresolvedSymbol)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -5915,6 +5914,12 @@ FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpSet`1[Sys
 FSharp.Compiler.Syntax.ParsedInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedInput: System.String get_FileName()
+FSharp.Compiler.Syntax.ParsedInputModule: Boolean exists(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode],Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SyntaxNode,System.Boolean]], FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.Syntax.ParsedInputModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SyntaxNode,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode]]] tryNode(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.Syntax.ParsedInputModule: Microsoft.FSharp.Core.FSharpOption`1[T] tryPickLast[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode],Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SyntaxNode,Microsoft.FSharp.Core.FSharpOption`1[T]]], FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.Syntax.ParsedInputModule: Microsoft.FSharp.Core.FSharpOption`1[T] tryPick[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode],Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SyntaxNode,Microsoft.FSharp.Core.FSharpOption`1[T]]], FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.Syntax.ParsedInputModule: State foldWhile[State](Microsoft.FSharp.Core.FSharpFunc`2[State,Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode],Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SyntaxNode,Microsoft.FSharp.Core.FSharpOption`1[State]]]], State, FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.Syntax.ParsedInputModule: State fold[State](Microsoft.FSharp.Core.FSharpFunc`2[State,Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode],Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SyntaxNode,State]]], State, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction NewDefinitions(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Text.Range range
@@ -7469,6 +7474,7 @@ FSharp.Compiler.Syntax.SynExprAndBang: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExprAndBang: Int32 Tag
 FSharp.Compiler.Syntax.SynExprAndBang: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynExprAndBang: System.String ToString()
+FSharp.Compiler.Syntax.SynExprModule: Boolean shouldBeParenthesizedInContext(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynExpr)
 FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Syntax.SynExprRecordField NewSynExprRecordField(System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 Tag
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 get_Tag()
@@ -8482,6 +8488,7 @@ FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynPat: Int32 Tag
 FSharp.Compiler.Syntax.SynPat: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynPat: System.String ToString()
+FSharp.Compiler.Syntax.SynPatModule: Boolean shouldBeParenthesizedInContext(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynPat)
 FSharp.Compiler.Syntax.SynRationalConst+Integer: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynRationalConst+Integer: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynRationalConst+Integer: Int32 get_value()
@@ -9599,9 +9606,12 @@ FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynTypeDefn
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynTypeDefnSig
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynValSig
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+Tags
+FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SyntaxNode: Int32 Tag
 FSharp.Compiler.Syntax.SyntaxNode: Int32 get_Tag()
 FSharp.Compiler.Syntax.SyntaxNode: System.String ToString()
+FSharp.Compiler.Syntax.SyntaxNodeModule: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] |Attributes|(FSharp.Compiler.Syntax.SyntaxNode)
 FSharp.Compiler.Syntax.SyntaxTraversal: Microsoft.FSharp.Core.FSharpOption`1[T] Traverse[T](FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput, FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T])
 FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] VisitAttributeApplication(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynAttributeList)
 FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] VisitBinding(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynBinding,Microsoft.FSharp.Core.FSharpOption`1[T]], FSharp.Compiler.Syntax.SynBinding)
