@@ -1457,11 +1457,11 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
           | UnknownValue -> ivalue
           | SizeValue (_vdepth, vinfo) -> MakeSizedValueInfo (abstractExprInfo vinfo)
 
-      and abstractValInfo v = 
+      let abstractValInfo v = 
           { ValExprInfo=abstractExprInfo v.ValExprInfo 
             ValMakesNoCriticalTailcalls=v.ValMakesNoCriticalTailcalls }
 
-      and abstractModulInfo ss =
+      let rec abstractModulInfo ss =
          { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
            ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
                check vref (abstractValInfo e) ) }
@@ -1592,7 +1592,7 @@ let ValueIsUsedOrHasEffect cenv fvs (b: Binding, binfo) =
     // No discarding for things that are used
     Zset.contains v (fvs())
 
-let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 
+let SplitValuesByIsUsedOrHasEffect cenv fvs x = 
     x |> List.filter (ValueIsUsedOrHasEffect cenv fvs) |> List.unzip
 
 let IlAssemblyCodeInstrHasEffect i = 
@@ -2016,7 +2016,7 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
         mkLetsBind m binds rhsAndTupleBinding |> Some
     | _ -> None
 
-let rec ExpandStructuralBinding cenv expr =
+let ExpandStructuralBinding cenv expr =
     let g = cenv.g
 
     assert cenv.settings.ExpandStructuralValues()
