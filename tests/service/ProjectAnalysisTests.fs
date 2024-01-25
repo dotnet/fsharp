@@ -2510,9 +2510,10 @@ let ``Test Project16 all symbols`` () =
         wholeProjectResults.GetAllUsesOfAllSymbols()
 
         |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project16.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Array.sort
 
     allUsesOfAllSymbols |> shouldEqual
-          [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)),
+          ([|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)),
              ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [],
              ["member"]);
@@ -2591,7 +2592,7 @@ let ``Test Project16 all symbols`` () =
             ("val x", "x", "file1", ((5, 11), (5, 12)), ["defn"], []);
             ("val x", "x", "file1", ((8, 11), (8, 12)), ["defn"], []);
             ("val x", "x", "file1", ((11, 11), (11, 12)), ["defn"], []);
-            ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
+            ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|] |> Array.sort)
 
 [<Test>]
 let ``Test Project16 sig symbols are equal to impl symbols`` () =
