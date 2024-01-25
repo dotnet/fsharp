@@ -233,7 +233,7 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
         let raiseExn (item, ex: exn) =
             try
                 localCts.Cancel()
-            with :? ObjectDisposedException -> 
+            with :? ObjectDisposedException ->
                 // If it's disposed already, it means that the processing has already finished, most likely due to cancellation or failure in another node.
                 ()
 
