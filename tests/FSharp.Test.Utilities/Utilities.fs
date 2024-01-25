@@ -15,6 +15,10 @@ open Microsoft.CodeAnalysis.CSharp
 open TestFramework
 open NUnit.Framework
 open System.Collections.Generic
+open FSharp.Compiler.CodeAnalysis
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
+
 
 type TheoryForNETCOREAPPAttribute() =
     inherit Xunit.TheoryAttribute()
@@ -104,12 +108,12 @@ module Utilities =
         let outputLines = StringBuilder()
         let errorLines = StringBuilder()
 
-        do redirector.OutputProduced.Add (fun line -> outputLines.AppendLine line |>ignore)
-        do redirector.ErrorProduced.Add(fun line -> errorLines.AppendLine line |>ignore)
+        do redirector.OutputProduced.Add (fun line -> lock outputLines <| fun () -> outputLines.AppendLine line |>ignore)
+        do redirector.ErrorProduced.Add(fun line -> lock errorLines <| fun () -> errorLines.AppendLine line |>ignore)
 
-        member _.Output () = outputLines.ToString()
+        member _.Output () = lock outputLines outputLines.ToString
 
-        member _.ErrorOutput () = errorLines.ToString()
+        member _.ErrorOutput () = lock errorLines errorLines.ToString
 
         interface IDisposable with
             member _.Dispose() = (redirector :> IDisposable).Dispose()
@@ -381,3 +385,10 @@ An error occurred getting netcoreapp references: %A{e}
                 | TargetFramework.NetStandard20 -> netStandard20Files.Value |> Seq.toArray
                 | TargetFramework.NetCoreApp31 -> [||]                            //ToDo --- Perhaps NetCoreApp31Files 
                 | TargetFramework.Current -> currentReferences
+
+
+module internal FSharpProjectSnapshotSerialization =
+
+    let serializeSnapshotToJson (snapshot: FSharpProjectSnapshot) =
+
+        JsonConvert.SerializeObject(snapshot, Formatting.Indented, new JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore))

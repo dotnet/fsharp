@@ -839,7 +839,7 @@ add2 1 2
         | Some range ->
             range
             |> tups
-            |> shouldEqual ((3, 18), (3, 18))
+            |> shouldEqual ((3, 17), (3, 18))
 
     [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE``() =

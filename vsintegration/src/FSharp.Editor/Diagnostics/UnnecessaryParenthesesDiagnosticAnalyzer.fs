@@ -3,11 +3,12 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Collections.Generic
 open System.Collections.Immutable
 open System.Runtime.Caching
 open System.Threading
 open System.Threading.Tasks
-open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
@@ -70,13 +71,31 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
                         let getLineString line =
                             sourceText.Lines[Line.toZ line].ToString()
 
-                        let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses getLineString parseResults.ParseTree
+                        let unnecessaryParentheses =
+                            (HashSet Range.comparer, parseResults.ParseTree)
+                            ||> ParsedInput.fold (fun ranges path node ->
+                                match node with
+                                | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; rightParenRange = Some _; range = range)) when
+                                    not (SynExpr.shouldBeParenthesizedInContext getLineString path inner)
+                                    ->
+                                    ignore (ranges.Add range)
+                                    ranges
+
+                                | SyntaxNode.SynPat(SynPat.Paren(inner, range)) when not (SynPat.shouldBeParenthesizedInContext path inner) ->
+                                    ignore (ranges.Add range)
+                                    ranges
+
+                                | _ -> ranges)
 
                         let diagnostics =
-                            unnecessaryParentheses
-                            |> Seq.map (fun range ->
-                                Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
-                            |> Seq.toImmutableArray
+                            let builder = ImmutableArray.CreateBuilder unnecessaryParentheses.Count
+
+                            for range in unnecessaryParentheses do
+                                builder.Add(
+                                    Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath))
+                                )
+
+                            builder.MoveToImmutable()
 
                         ignore (cache.Remove key)
 

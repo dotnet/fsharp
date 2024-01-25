@@ -9,7 +9,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Text
 
 /// Detect a 'seq<int>' type
-val (|SeqElemTy|_|): TcGlobals -> ImportMap -> range -> TType -> TType option
+[<return: Struct>]
+val (|SeqElemTy|_|): TcGlobals -> ImportMap -> range -> TType -> TType voption
 
 val callNonOverloadedILMethod:
     g: TcGlobals -> amap: ImportMap -> m: range -> methName: string -> ty: TType -> args: Exprs -> Expr
