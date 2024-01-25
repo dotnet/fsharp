@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
@@ -42,6 +42,34 @@ module MyModule =
             "Hello, World from MyLibrary.MySecondType"
             "Hello from main method"
         ]
+
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Simple types in implicit main`` (realSig) =
+
+        FSharp """
+type MyFirstType =
+    static let x1 = 1100 + System.Random().Next(0)
+    static let _ = printfn "Hello, World from MyProgram.MyFirstType"
+
+type MySecondType =
+    static let x2 = 2100 + System.Random().Next(0)
+    static let _ = printfn "Hello, World from MyProgram.MySecondType"
+
+printfn "Hello from implicit main method"
+        """
+        |> withLangVersionPreview
+        |> withRealInternalSignature realSig
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContainsAllInOrder [
+            "Hello, World from MyProgram.MyFirstType"
+            "Hello, World from MyProgram.MySecondType"
+            "Hello from implicit main method"
+        ]
+
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular

@@ -489,26 +489,21 @@ let TypeRefForCompLoc cloc =
 let mkILTyForCompLoc cloc =
     mkILNonGenericBoxedTy (TypeRefForCompLoc cloc)
 
+/// Compute visibility for type members
+/// based on hidden and acessibility from the source code
+/// when hidden and realInternalSignature is specified then
+///     as typed in source code, I.e internal or public
+/// when hidden and not realInternalSignature is specified then
+///     then they are internal, old behaviour (anything not public is internal)
+/// otherwise it is public, by definition
 let ComputeMemberAccess hidden (accessibility: Accessibility) realInternalSignature =
 
-    // @@@@@@@@@@@ combine with below
-    let accessibility =
-        match hidden, accessibility.IsPublic with
-        | true, true -> None
-        | _ -> Some accessibility
-
-    if hidden then
-        match accessibility with
-        | Some access when realInternalSignature ->
-            // public let bindings on types are not public.
-            match access.AsILMemberAccess() with
-            | ILMemberAccess.Public -> ILMemberAccess.Public
-            | nonPublicScope -> nonPublicScope
-        | _ -> ILMemberAccess.Assembly
+    if (not accessibility.IsPublic) && realInternalSignature then
+            accessibility.AsILMemberAccess()
+    elif hidden then
+        ILMemberAccess.Assembly
     else
-        match accessibility with
-        | Some access when realInternalSignature -> access.AsILMemberAccess()
-        | _ -> ILMemberAccess.Public
+        ILMemberAccess.Public
 
 let ComputeTypeAccess (tref: ILTypeRef) hidden (accessibility: Accessibility) realInternalSignature =
 
@@ -10100,7 +10095,7 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
     let _, body =
         CodeGenMethod cenv cgbuf.mgbuf ([], eenv.staticInitializationName, eenv, 0, None, codeGenInitFunc, m)
 
-    if checkCodeDoesSomething body.Code then
+    if CheckCodeDoesSomething body.Code then
         // We are here because the module we just grabbed has an interesting static initializer
         let feefee, seqpt =
             if body.Code.Instrs.Length > 0 then
@@ -10384,7 +10379,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
     //   Library file (mainInfoOpt = None) : optional .cctor if topCode has initialization effect
     //   Final file, explicit entry point (mainInfoOpt = Some _, GetExplicitEntryPointInfo() = Some) : main + optional .cctor if topCode has initialization effect
     //   Final file, implicit entry point (mainInfoOpt = Some _, GetExplicitEntryPointInfo() = None) : main + initialize + optional .cctor calling initialize
-    let doesSomething = checkCodeDoesSomething topCode.Code
+    let doesSomething = CheckCodeDoesSomething topCode.Code
 
     // Make a FEEFEE instruction to mark hidden code regions
     // We expect the first instruction to be a debug point when generating debug symbols

@@ -474,37 +474,6 @@ let combineAccess access1 access2 =
         else (a1@a2)
     TAccess combined
 
-//@@@@@@@@@@@@@@@@@@@
-//let getSyntaxAccessForCompPath = function CompPath(_, syntaxAccess, _) -> syntaxAccess
-
-//let newcombineAccess access1 access2 =
-//    let syntaxAccess1 = getSyntaxAccessForCompPath access1
-//    let syntaxAccess2 = getSyntaxAccessForCompPath access2
-//    if access1 = taccessPublic then
-
-//    elif access1 = taccessInternal then
-
-//    else
-
-//    match syntaxAccess1 with
-//    | TypedTree.SyntaxAccess.Public ->
-//        let (TAccess a1) = access1
-//        let (TAccess a2) = access2
-//        TAccess(a1@a2)
-//    | TypedTree.SyntaxAccess.Internal ->
-//    | TypedTree.SyntaxAccess.Private ->
-//    | TypedTree.SyntaxAccess.Unknown ->
-
-
-    //let (TAccess a1) = access1
-    //let (TAccess a2) = access2
-
-    //let syntaxAccess1 = getSyntaxAccessForCompPath a1
-    //let syntaxAccess2 = getSyntaxAccessForCompPath a2
-    //TAccess(a1@a2)
-
-//@@@@@@@@@@@@@@@@@@@
-
 exception Duplicate of string * string * range
 exception NameClash of string * string * string * range * string * string * range
 
