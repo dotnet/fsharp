@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\..\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="..\..\FSharp.Benchmarks.Common\FSharp.Benchmarks.Common.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
