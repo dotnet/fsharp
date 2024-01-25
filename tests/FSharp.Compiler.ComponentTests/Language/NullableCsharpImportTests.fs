@@ -1,8 +1,53 @@
 ﻿module Language.NullableCSharpImport
 
-open FSharp.Test
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
+
+let typeCheckWithStrictNullness cu =
+    cu
+    |> withLangVersionPreview
+    |> withCheckNulls
+    |> withWarnOn 3261
+    |> withOptions ["--warnaserror+"]
+    |> compile
+
+[<Fact>]
+let ``Passing null to IlGenerator BeginCatchBlock is fine`` () = 
+    FSharp """module MyLibrary
+open System.Reflection.Emit
+open System
+
+let passValueToIt (ilg: ILGenerator) =
+    let maybeType : Type | null = null
+    ilg.BeginCatchBlock(maybeType)"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Consumption of netstandard2 BCL api which is not annotated`` () = 
+    FSharp """module MyLibrary
+open System.Reflection
+
+[<StructuralEquality; StructuralComparison>]
+type PublicKey =
+    | PublicKey of byte[]
+    | PublicKeyToken of byte[]
+
+let FromAssemblyName (aname: AssemblyName) =
+    match aname.GetPublicKey() with
+    | Null
+    | NonNull [||] ->
+        match aname.GetPublicKeyToken() with
+        | Null
+        | NonNull [||] -> None
+        | NonNull bytes -> Some(PublicKeyToken bytes)
+    | NonNull bytes -> Some(PublicKey bytes)"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 
 [<FactForNETCOREAPP>]
 let ``Consumption of nullable C# - no generics, just strings in methods and fields`` () =
@@ -67,12 +112,8 @@ let ``Consumption of nullable C# - no generics, just strings in methods and fiel
 
     """
     |> asLibrary
-    |> withLangVersionPreview
     |> withReferences [csharpLib]
-    |> withCheckNulls
-    |> withWarnOn 3261
-    |> withOptions ["--warnaserror+"]
-    |> compile
+    |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
             Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."

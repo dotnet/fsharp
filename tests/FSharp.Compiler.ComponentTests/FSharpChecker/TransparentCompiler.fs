@@ -237,8 +237,8 @@ let ``File is not checked twice`` () =
         |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
         |> Map
 
-    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
-    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileThird.fs"])
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileThird.fs"])
 
 [<Fact>]
 let ``If a file is checked as a dependency it's not re-checked later`` () =
@@ -261,7 +261,7 @@ let ``If a file is checked as a dependency it's not re-checked later`` () =
         |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
         |> Map
 
-    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileThird.fs"])
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Requested], intermediateTypeChecks["FileThird.fs"])
 
 
 // [<Fact>] TODO: differentiate complete and minimal checking requests

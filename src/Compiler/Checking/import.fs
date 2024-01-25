@@ -316,10 +316,10 @@ let rec ImportILTypeWithNullness (env: ImportMap) m tinst (nf:Nullness.NullableF
     | ILType.Void -> 
         env.g.unit_ty,nf
 
-    | ILType.Array(bounds, ty) -> 
+    | ILType.Array(bounds, innerTy) -> 
         let n = bounds.Rank
         let (arrayNullness,nf) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
-        let struct(elemTy,nf) = ImportILTypeWithNullness env m tinst nf ty
+        let struct(elemTy,nf) = ImportILTypeWithNullness env m tinst nf innerTy
         mkArrayTy env.g n arrayNullness elemTy m, nf
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
