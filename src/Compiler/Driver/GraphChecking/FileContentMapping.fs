@@ -56,7 +56,7 @@ let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
         | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ]; attributes = attributes); decls = decls) ->
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleDecl decls)
-        | SynModuleDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
+        | SynModuleDecl.NestedModule _ -> () // A nested module cannot have multiple identifiers. This will already be a parse error, but we could be working with recovered syntax tree
         | SynModuleDecl.Let(bindings = bindings) -> yield! List.collect visitBinding bindings
         | SynModuleDecl.Types(typeDefns = typeDefns) -> yield! List.collect visitSynTypeDefn typeDefns
         | SynModuleDecl.HashDirective _ -> ()
@@ -80,7 +80,7 @@ let visitSynModuleSigDecl (md: SynModuleSigDecl) =
         | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ]; attributes = attributes); moduleDecls = decls) ->
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleSigDecl decls)
-        | SynModuleSigDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
+        | SynModuleSigDecl.NestedModule _ -> () // A nested module cannot have multiple identifiers. This will already be a parse error, but we could be working with recovered syntax tree
         | SynModuleSigDecl.ModuleAbbrev(longId = longId) -> yield! visitLongIdentForModuleAbbrev longId
         | SynModuleSigDecl.Val(valSig, _) -> yield! visitSynValSig valSig
         | SynModuleSigDecl.Types(types = types) -> yield! List.collect visitSynTypeDefnSig types
