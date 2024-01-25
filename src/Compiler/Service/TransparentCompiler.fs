@@ -762,20 +762,23 @@ type internal TransparentCompiler
                 |> List.map (fun (m, fileName) -> m, FSharpFileSnapshot.CreateFromFileSystem(fileName))
 
             return
-                Some
-                    {
-                        Id = bootstrapId
-                        AssemblyName = assemblyName
-                        OutFile = outFile
-                        TcConfig = tcConfig
-                        TcImports = tcImports
-                        TcGlobals = tcGlobals
-                        InitialTcInfo = initialTcInfo
-                        LoadedSources = loadedSources
-                        LoadClosure = loadClosureOpt
-                        LastFileName = sourceFiles |> List.last
-                    //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
-                    }
+                match sourceFiles with
+                | [] -> None
+                | _ ->
+                    Some
+                        {
+                            Id = bootstrapId
+                            AssemblyName = assemblyName
+                            OutFile = outFile
+                            TcConfig = tcConfig
+                            TcImports = tcImports
+                            TcGlobals = tcGlobals
+                            InitialTcInfo = initialTcInfo
+                            LoadedSources = loadedSources
+                            LoadClosure = loadClosureOpt
+                            LastFileName = sourceFiles |> List.tryLast |> Option.defaultValue ""
+                        //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
+                        }
         }
 
     let ComputeBootstrapInfo (projectSnapshot: ProjectSnapshot) =
