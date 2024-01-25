@@ -10,7 +10,7 @@ let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.c
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
     match skipLast, longId with
-    | true, _::_ -> List.take (longId.Length - 1) longId
+    | true, _ :: _ -> List.take (longId.Length - 1) longId
     | _ -> longId
     |> List.map (fun ident -> ident.idText)
 
