@@ -184,8 +184,8 @@ module internal PervasiveAutoOpens =
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
     let syncObj = obj ()
 
-    let mutable arrayStore = null
-    let mutable dictStore = null
+    let mutable arrayStore : _ array MaybeNull = null
+    let mutable dictStore : _ MaybeNull = null
 
     let mutable func = f
 
@@ -199,11 +199,11 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                 match arrayStore with
                 | NonNull value -> value
                 | _ ->
-
-                    arrayStore <- func ()
+                    let freshArray = func ()
+                    arrayStore <- freshArray
 
                     func <- Unchecked.defaultof<_>
-                    arrayStore
+                    freshArray
             finally
                 Monitor.Exit(syncObj)
 
