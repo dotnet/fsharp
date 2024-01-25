@@ -14,13 +14,13 @@ module ExistingPositive
 
 module Extractions0a =
     
-    val x: 'a | null
+    val x: 'a when 'a: null
     
     val result: bool
 
 module Extractions0b =
     
-    val x: 'a | null
+    val x: 'a when 'a: null
     
     val f: x: 'T * y: 'T -> unit
     
@@ -28,7 +28,7 @@ module Extractions0b =
 
 module Extractions0d =
     
-    val x: 'a | null
+    val x: 'a when 'a: null
     
     val f: x: 'T * y: 'T -> unit when 'T: null
     
@@ -42,7 +42,7 @@ module Basics =
 
 module Basics2 =
     
-    val f1: unit -> 'a | null
+    val f1: unit -> 'a when 'a: null
     
     val f8: unit -> System.String
 
@@ -148,7 +148,7 @@ module MemberBasics =
 
 module Basics2 =
     
-    val f1: unit -> 'a | null
+    val f1: unit -> 'a when 'a: null
     
     val f2: unit -> System.String | null
     
@@ -170,7 +170,7 @@ val f: x: 'T | null * y: 'T | null -> unit when 'T: not null
 
 module Extractions0c =
     
-    val x: 'a | null
+    val x: 'a when 'a: null
     
     val f: x: 'T | null * y: 'T | null -> unit when 'T: not null
     
@@ -180,7 +180,7 @@ module Extractions0c =
 
 module Extractions0e =
     
-    val x: 'a | null
+    val x: 'a when 'a: null
     
     val f: x: 'T | null * y: 'T | null -> unit when 'T: not null
     
