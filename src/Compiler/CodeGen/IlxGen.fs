@@ -499,7 +499,7 @@ let mkILTyForCompLoc cloc =
 let ComputeMemberAccess hidden (accessibility: Accessibility) realInternalSignature =
 
     if (not accessibility.IsPublic) && realInternalSignature then
-            accessibility.AsILMemberAccess()
+        accessibility.AsILMemberAccess()
     elif hidden then
         ILMemberAccess.Assembly
     else
