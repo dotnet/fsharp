@@ -2156,6 +2156,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             layout = layout,
             nestedTypes = nested,
             implements = impls,
+            implementsCustomAttrs = None, //TODO tomas reading from IL
             extends = super,
             methods = mdefs,
             securityDeclsStored = ctxt.securityDeclsReader_TypeDef,

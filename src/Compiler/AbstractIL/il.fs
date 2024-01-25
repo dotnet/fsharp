@@ -2612,6 +2612,7 @@ type ILTypeDef
         attributes: TypeAttributes,
         layout: ILTypeDefLayout,
         implements: ILTypes,
+        implementsCustomAttrs: ILAttributes list option,
         genericParams: ILGenericParameterDefs,
         extends: ILType option,
         methods: ILMethodDefs,
@@ -2632,6 +2633,7 @@ type ILTypeDef
         attributes,
         layout,
         implements,
+        implementsCustomAttrs,
         genericParams,
         extends,
         methods,
@@ -2648,6 +2650,7 @@ type ILTypeDef
             attributes,
             layout,
             implements,
+            implementsCustomAttrs,
             genericParams,
             extends,
             methods,
@@ -2673,6 +2676,8 @@ type ILTypeDef
     member _.NestedTypes = nestedTypes
 
     member _.Implements = implements
+
+    member _.ImplementsCustomAttrs = implementsCustomAttrs
 
     member _.Extends = extends
 
@@ -2710,7 +2715,8 @@ type ILTypeDef
             ?properties,
             ?isKnownToBeAttribute,
             ?customAttrs,
-            ?securityDecls
+            ?securityDecls,
+            ?implementsCustomAttrs
         ) =
         ILTypeDef(
             name = defaultArg name x.Name,
@@ -2719,6 +2725,7 @@ type ILTypeDef
             genericParams = defaultArg genericParams x.GenericParams,
             nestedTypes = defaultArg nestedTypes x.NestedTypes,
             implements = defaultArg implements x.Implements,
+            implementsCustomAttrs = defaultArg implementsCustomAttrs x.ImplementsCustomAttrs,
             extends = defaultArg extends x.Extends,
             methods = defaultArg methods x.Methods,
             securityDecls = defaultArg securityDecls x.SecurityDecls,
@@ -4192,6 +4199,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         attributes = attributes,
         genericParams = genparams,
         implements = impl,
+        implementsCustomAttrs = None,
         layout = ILTypeDefLayout.Auto,
         extends = Some extends,
         methods = methods,
@@ -4216,6 +4224,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
              ||| TypeAttributes.BeforeFieldInit
              ||| TypeAttributes.AnsiClass),
         implements = [],
+        implementsCustomAttrs = None,
         extends = Some iltyp_ValueType,
         layout = ILTypeDefLayout.Explicit { Size = Some size; Pack = Some pack },
         methods = emptyILMethods,
