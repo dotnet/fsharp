@@ -218,8 +218,8 @@
       IL_002a:  stloc.s    V_6
       IL_002c:  ldloc.s    V_4
       IL_002e:  ldloc.s    V_5
-      IL_0030:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
-                                                                     valuetype [netstandard]System.DateTime)
+      IL_0030:  call       bool [netstandard]System.DateTime::op_Equality(valuetype [netstandard]System.DateTime,
+                                                                          valuetype [netstandard]System.DateTime)
       IL_0035:  ret
 
       IL_0036:  ldc.i4.0

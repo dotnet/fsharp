@@ -191,8 +191,8 @@
       IL_001a:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
       IL_001f:  ldloc.2
       IL_0020:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_0025:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
-                                                                     valuetype [netstandard]System.DateTime)
+      IL_0025:  call       bool [netstandard]System.DateTime::op_Equality(valuetype [netstandard]System.DateTime,
+                                                                          valuetype [netstandard]System.DateTime)
       IL_002a:  ret
 
       IL_002b:  ldc.i4.0
@@ -247,8 +247,8 @@
       IL_0004:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
       IL_0009:  ldloc.0
       IL_000a:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_000f:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
-                                                                     valuetype [netstandard]System.DateTime)
+      IL_000f:  call       bool [netstandard]System.DateTime::op_Equality(valuetype [netstandard]System.DateTime,
+                                                                          valuetype [netstandard]System.DateTime)
       IL_0014:  ret
     } 
 
