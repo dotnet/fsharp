@@ -1725,7 +1725,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
-                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
+                  when 'T : DateTime = DateTime.op_Equality((# "" x : DateTime #), (# "" y : DateTime #))
                                
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -1749,7 +1749,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
-                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
+                  when 'T : DateTime = DateTime.op_Equality((# "" x : DateTime #), (# "" y : DateTime #))
 
 
             /// A compiler intrinsic generated during optimization of calls to GenericEqualityIntrinsic on tuple values.
@@ -1778,7 +1778,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
                   when 'T : decimal = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
-                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
+                  when 'T : DateTime = DateTime.op_Equality((# "" x : DateTime #), (# "" y : DateTime #))
 
             /// Fill in the implementation of CountLimitedHasherPER
             type CountLimitedHasherPER with
