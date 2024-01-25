@@ -9,10 +9,9 @@ type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileCo
 let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.collect mapping (Option.toList t)
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
-    if skipLast then
-        List.take (longId.Length - 1) longId
-    else
-        longId
+    match skipLast, longId with
+    | true, _::_ -> List.take (longId.Length - 1) longId
+    | _ -> longId
     |> List.map (fun ident -> ident.idText)
 
 let synLongIdentToPath (skipLast: bool) (synLongIdent: SynLongIdent) =

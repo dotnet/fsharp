@@ -122,17 +122,36 @@ module B = C
     | [ TopLevelNamespace "" [ PrefixedIdentifier "C" ] ] -> Assert.Pass()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
-[<Test>]
-let ``Invalid nested module should just be ignored`` () =
-    let content =
-        getContent
-            false
-            """
-module A
 
-module B.C
-"""
+module We_Shouldnt_Crash_With_Invalid_Syntax =
 
-    match content with
-    | [ TopLevelNamespace "" [] ] -> Assert.Pass()
-    | content -> Assert.Fail($"Unexpected content: {content}")
+    [<Test>]
+    let ``Nested module`` () =
+        let content =
+            getContent
+                false
+                """
+    module A
+
+    module B.C
+    """
+
+        match content with
+        | [ TopLevelNamespace "" [] ] -> Assert.Pass()
+        | content -> Assert.Fail($"Unexpected content: {content}")
+
+
+    [<Test>]
+    let ``Module above namespace`` () =
+        let content =
+            getContent
+                false
+                """
+    module
+
+    namespace A.B.C
+    """
+
+        match content with
+        | [ TopLevelNamespace "" [] ] -> Assert.Pass()
+        | content -> Assert.Fail($"Unexpected content: {content}")
