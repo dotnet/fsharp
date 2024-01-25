@@ -252,7 +252,7 @@ module ComputedCollectionLoweringTests =
                     .maxstack  8
                     IL_0000:  ldc.i4.1
                     IL_0001:  ldc.i4     0x101
-                    IL_0006:  bgt.s      IL_001d
+                    IL_0006:  bgt.s      IL_001c
                 
                     IL_0008:  ldc.i4     0x101
                     IL_000d:  ldc.i4.1
@@ -264,10 +264,8 @@ module ComputedCollectionLoweringTests =
                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
                     IL_001b:  ret
                 
-                    IL_001c:  ldnull
-                    IL_001d:  call       !!0[] [runtime]System.Array::Empty<int32>()
-                    IL_0022:  ldnull
-                    IL_0023:  ret
+                    IL_001c:  call       !!0[] [runtime]System.Array::Empty<int32>()
+                    IL_0021:  ret
                   } 
                 
                 } 
@@ -366,7 +364,7 @@ module ComputedCollectionLoweringTests =
                     .maxstack  8
                     IL_0000:  ldarg.0
                     IL_0001:  ldarg.1
-                    IL_0002:  bgt.s      IL_0016
+                    IL_0002:  bgt.s      IL_0015
                 
                     IL_0004:  ldarg.1
                     IL_0005:  ldarg.0
@@ -379,10 +377,8 @@ module ComputedCollectionLoweringTests =
                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
                     IL_0014:  ret
                 
-                    IL_0015:  ldnull
-                    IL_0016:  call       !!0[] [runtime]System.Array::Empty<int32>()
-                    IL_001b:  ldnull
-                    IL_001c:  ret
+                    IL_0015:  call       !!0[] [runtime]System.Array::Empty<int32>()
+                    IL_001a:  ret
                   } 
                 
                 } 
@@ -645,7 +641,7 @@ module ComputedCollectionLoweringTests =
                     .maxstack  8
                     IL_0000:  ldc.i4.1
                     IL_0001:  ldc.i4.s   101
-                    IL_0003:  bgt.s      IL_0017
+                    IL_0003:  bgt.s      IL_0016
                 
                     IL_0005:  ldc.i4.s   101
                     IL_0007:  ldc.i4.1
@@ -657,10 +653,8 @@ module ComputedCollectionLoweringTests =
                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
                     IL_0015:  ret
                 
-                    IL_0016:  ldnull
-                    IL_0017:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-                    IL_001c:  ldnull
-                    IL_001d:  ret
+                    IL_0016:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+                    IL_001b:  ret
                   } 
                 
                 } 
@@ -760,7 +754,7 @@ module ComputedCollectionLoweringTests =
                     .maxstack  8
                     IL_0000:  ldarg.0
                     IL_0001:  ldarg.1
-                    IL_0002:  bgt.s      IL_0016
+                    IL_0002:  bgt.s      IL_0015
                 
                     IL_0004:  ldarg.1
                     IL_0005:  ldarg.0
@@ -773,10 +767,8 @@ module ComputedCollectionLoweringTests =
                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
                     IL_0014:  ret
                 
-                    IL_0015:  ldnull
-                    IL_0016:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-                    IL_001b:  ldnull
-                    IL_001c:  ret
+                    IL_0015:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+                    IL_001a:  ret
                   } 
                 
                 } 

@@ -2867,8 +2867,12 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 None
 
         match lowering with
-        | Some altExpr ->
-            GenExpr cenv cgbuf eenv altExpr sequel
+        | Some(LowerComputedCollectionExpressions.ComputedCollectionExprLowering.Expr initExpr) ->
+            GenExpr cenv cgbuf eenv initExpr sequel
+            true
+        | Some(LowerComputedCollectionExpressions.ComputedCollectionExprLowering.Either(branch1, branch2)) ->
+            GenExpr cenv cgbuf eenv branch1 (sequelIgnoreEndScopes sequel)
+            GenExpr cenv cgbuf eenv branch2 sequel
             true
         | None ->
 
