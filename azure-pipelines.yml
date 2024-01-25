@@ -713,14 +713,14 @@ stages:
             continueOnError: true
             condition: always()
 
-        # Build benchmarks
-        - job: Plain_Build_Benchmarks
+        # Build and run fast benchmarks
+        - job: Benchmarks
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           variables:
           - name: _BuildConfig
-            value: Debug
+            value: Release
           steps:
           - checkout: self
             clean: true
@@ -734,11 +734,15 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build .\FSharp.Benchmarks.sln /bl:\"artifacts/log/$(_BuildConfig)/BenchmarkBuild.binlog\"
+          - script: dotnet build -c $(_BuildConfig) .\FSharp.Benchmarks.sln /bl:\"artifacts/log/$(_BuildConfig)/BenchmarkBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Benchmarks.sln
+            displayName: Plain build of FSharp.Benchmarks.sln
             continueOnError: true
             condition: always()
+          - script: .\Build.cmd -c $(_BuildConfig)
+          - pwsh: ./SmokeTestBenchmarks.ps1
+            workingDirectory: $(Build.SourcesDirectory)/tests/benchmarks
+            displayName: Smoke test fast benchmarks
 
         # Test trimming on Windows
         - job: Build_And_Test_Trimming_Windows

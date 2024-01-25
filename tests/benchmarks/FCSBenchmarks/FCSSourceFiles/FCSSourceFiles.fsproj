@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\FSharp.Benchmarks.Common\FSharp.Benchmarks.Common.fsproj" />
   </ItemGroup>
 
 </Project>
