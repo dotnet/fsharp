@@ -1455,7 +1455,12 @@ let seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
     let tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
     let intfIdx = seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
-    struct {|TypeIdx = tidx; IntfIdx = intfIdx; IntImplIdx = idx|}
+
+    struct {|
+        TypeIdx = tidx
+        IntfIdx = intfIdx
+        IntImplIdx = idx
+    |}
 
 /// Read Table MemberRef.
 let seekReadMemberRefRow (ctxt: ILMetadataReader) mdv idx =
@@ -2145,7 +2150,10 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
         let nested = seekReadNestedTypeDefs ctxt idx
-        let impls,intImplsAttrs = seekReadInterfaceImpls ctxt mdv numTypars idx |> List.unzip
+
+        let impls, intImplsAttrs =
+            seekReadInterfaceImpls ctxt mdv numTypars idx |> List.unzip
+
         let mimpls = seekReadMethodImpls ctxt numTypars idx
         let props = seekReadProperties ctxt numTypars idx
         let events = seekReadEvents ctxt numTypars idx
@@ -2197,7 +2205,7 @@ and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
         (fun x -> x.TypeIdx),
         simpleIndexCompare tidx,
         isSorted ctxt TableNames.InterfaceImpl,
-        (fun x -> (seekReadTypeDefOrRef ctxt numTypars AsObject [] x.IntfIdx), (ctxt.customAttrsReader_InterfaceImpl,x.IntImplIdx))
+        (fun x -> (seekReadTypeDefOrRef ctxt numTypars AsObject [] x.IntfIdx), (ctxt.customAttrsReader_InterfaceImpl, x.IntImplIdx))
     )
 
 and seekReadGenericParams ctxt numTypars (a, b) : ILGenericParameterDefs =

@@ -2612,7 +2612,7 @@ type ILTypeDef
         attributes: TypeAttributes,
         layout: ILTypeDefLayout,
         implements: ILTypes,
-        implementsCustomAttrs: ILAttributes list option,
+        implementsCustomAttrs: (ILAttributesStored * int) list option,
         genericParams: ILGenericParameterDefs,
         extends: ILType option,
         methods: ILMethodDefs,
