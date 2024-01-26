@@ -559,7 +559,6 @@ let mkValInfo info (v: Val) = { ValExprInfo=info.Info; ValMakesNoCriticalTailcal
 
 (* Bind a value *)
 let BindInternalLocalVal cenv (v: Val) vval env =
-
     let vval = if v.IsMutable then UnknownValInfo else vval
 
     match vval.ValExprInfo with 

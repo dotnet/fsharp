@@ -91,8 +91,8 @@
 --deterministic[+|-]                     Produce a deterministic assembly
                                          (including module version GUID and
                                          timestamp)
---realInternalSignature[+|-]             Generate assembly with dotnet
-                                         visibility that matches source
+--realInternalSignature[+|-]             Generate assembly with IL visibility
+                                         that matches the source code
                                          visibility
 --pathmap:<path=sourcePath;...>          Maps physical paths to source path
                                          names output by the compiler

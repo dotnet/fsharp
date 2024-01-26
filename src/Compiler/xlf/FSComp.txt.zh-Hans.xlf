@@ -818,8 +818,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsRealInternalSignature">
-        <source>Generate assembly with dotnet visibility that matches source visibility</source>
-        <target state="new">Generate assembly with dotnet visibility that matches source visibility</target>
+        <source>Generate assembly with IL visibility that matches the source code visibility</source>
+        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">

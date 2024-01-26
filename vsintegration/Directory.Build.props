@@ -7,6 +7,7 @@
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
     <SetupProductArch>Neutral</SetupProductArch>
     <BypassVsixValidation>true</BypassVsixValidation>
+    <OtherFlags>$(OtherFlags) --realInternalSignature+</OtherFlags>
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />

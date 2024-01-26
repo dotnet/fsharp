@@ -5,6 +5,7 @@
   <PropertyGroup>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
     <DebugType>portable</DebugType>
+    <OtherFlags>$(OtherFlags) --realInternalSignature+</OtherFlags>
   </PropertyGroup>
 
     <!-- Do it the same way .NET Interactive does it, when skipping arcade, we should include test SDK explicitly -->

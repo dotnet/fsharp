@@ -6,8 +6,7 @@
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(RealInternalSignature)' == 'true'">
-    <DefineConstants>$(DefineConstants);REALINTERNALSIGNATURE</DefineConstants>
+  <PropertyGroup Condition="'$(TestingRealSig)' == 'true'">
     <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realInternalSignature+</OtherFlags>
   </PropertyGroup>
 

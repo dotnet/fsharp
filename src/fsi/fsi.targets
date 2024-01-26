@@ -9,6 +9,8 @@
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>$(MSBuildThisFileDirectory)fsi.res</Win32Resource>
     <NGenBinary>true</NGenBinary>
+    <!-- .Always use realsig for shipping compiler binaries -->
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realInternalSignature+</OtherFlags>
     <UseAppHost>true</UseAppHost>
     <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
