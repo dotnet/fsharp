@@ -8203,7 +8203,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     // Generate the actual bindings
     let skipBinding = HashSet<Stamp>()
 
-    let groupBinds =
+    let _groupBinds =
         let getStampForVal (v: Val) =
             match v.HasDeclaringEntity with
             | false -> 0L
