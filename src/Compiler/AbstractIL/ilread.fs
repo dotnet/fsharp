@@ -1451,7 +1451,7 @@ let seekReadParamRow (ctxt: ILMetadataReader) mdv idx =
     (flags, seq, nameIdx)
 
 /// Read Table InterfaceImpl.
-let seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
+let private seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
     let tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
     let intfIdx = seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
