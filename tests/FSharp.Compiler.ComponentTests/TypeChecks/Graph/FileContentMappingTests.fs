@@ -123,7 +123,7 @@ module B = C
     | content -> Assert.Fail($"Unexpected content: {content}")
 
 
-module We_Shouldnt_Crash_With_Invalid_Syntax =
+module InvalidSyntax =
 
     [<Test>]
     let ``Nested module`` () =
