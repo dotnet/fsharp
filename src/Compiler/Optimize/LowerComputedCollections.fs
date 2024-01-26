@@ -272,9 +272,6 @@ let (|Int32Range|_|) g expr =
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
     if g.ListCollector_tcr.CanDeref then
-        //let constListSizeThreshold = 10
-        //let constArrayBytesThreshold = 40
-
         match overallExpr with
         // [5..1] → []
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
@@ -282,18 +279,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             ->
             Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
 
-        //// [1..5] → [1; 2; 3; 4; 5] ≡ 1 :: 2 :: 3 :: 4 :: 5 :: []
-        //| SeqToList g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), _) when
-        //    finish - start < constListSizeThreshold
-        //    ->
-        //    // … :: … :: …
-        //    let rec conses acc n =
-        //        if n < start then acc
-        //        else conses (mkCons g g.int32_ty (Expr.Const (Const.Int32 n, Text.Range.range0, g.int32_ty)) acc) (n - 1)
-
-        //    Some (conses (mkNil g Text.Range.range0 g.int32_ty) finish)
-
-        // [start..finish] → if start <= finish then List.init (finish - start + 1) ((+) start) else []
+        // [start..finish] → let range = finish - start + 1 in List.init (max range 0) ((+) start)
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
             let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
             let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
@@ -318,13 +304,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             ->
             Some (mkArray (g.int32_ty, [], m))
 
-        //// [|1..5|] → [|1; 2; 3; 4; 5|]
-        //| SeqToArray g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
-        //    (finish - start) * sizeof<int32> < constArrayBytesThreshold
-        //    ->
-        //    Some (mkArray (g.int32_ty, [for n in start..finish -> Expr.Const (Const.Int32 n, Text.Range.range0, g.int32_ty)], m))
-
-        // [|start..finish|] → if start <= finish then Array.init (finish - start + 1) ((+) start) else [||]
+        // [|start..finish|] → let range = finish - start + 1 in Array.init (max range 0) ((+) start)
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
             let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
             let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
