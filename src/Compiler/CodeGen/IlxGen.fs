@@ -8232,29 +8232,39 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
         | true -> v.DeclaringEntity.Deref.Stamp
 
     let groupBinds =
-        let mutable bindings : Binding list list = [[]]
+        let mutable bindings: Binding list list = [ [] ]
+
         let rec loopAllBinds remainder =
             match remainder with
             | [] -> bindings |> List.rev
             | _ ->
                 let stamp = remainder |> List.head |> (fun (TBind(v, _, _)) -> getStampForVal v)
-                let taken = remainder |> List.takeWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
-                let remainder = remainder |> List.skipWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
-                bindings <- bindings |> List.append [taken]
+
+                let taken =
+                    remainder |> List.takeWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
+
+                let remainder =
+                    remainder |> List.skipWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
+
+                bindings <- bindings |> List.append [ taken ]
                 loopAllBinds remainder
+
         loopAllBinds allBinds
 
     let _ =
         (recursiveVars, groupBinds)
-        ||> List.fold(fun forwardReferenceSet (binds: Binding list) ->
+        ||> List.fold (fun forwardReferenceSet (binds: Binding list) ->
             match dict, cenv.g.realInternalSignature, binds with
-            | _, false, _ | None, _, _ | _, _, [] ->
+            | _, false, _
+            | None, _, _
+            | _, _, [] ->
                 (forwardReferenceSet, binds)
                 ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
                     GenBinding cenv cgbuf eenv bind false
                     updateFixups bind forwardReferenceSet)
             | Some dict, true, _ ->
                 let (TBind(v, _, _)) = binds |> List.head
+
                 match dict.TryGetValue(getStampForVal v) with
                 | false, _ ->
                     (forwardReferenceSet, binds)
@@ -8272,10 +8282,10 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
                             GenLetRecBindings cenv cgbuf eenv (binds, m) None
                             CG.EmitInstr cgbuf (pop 0) Push0 I_ret)
                         m
+
                     (forwardReferenceSet, binds)
-                    ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
-                        updateFixups bind forwardReferenceSet)
-                        )
+                    ||> List.fold (fun forwardReferenceSet (bind: Binding) -> updateFixups bind forwardReferenceSet))
+
     ()
 (*
     let _ =
