@@ -1246,6 +1246,15 @@ let EnvForTycon tps eenv =
         tyenv = eenv.tyenv.ForTycon tps
     }
 
+let EnvWithEnclosingToEnv eenv enclosing name ns =
+    { eenv with
+        cloc =
+            { eenv.cloc with
+                Enclosing = enclosing @ [ name ]
+                Namespace = ns
+            }
+    }
+
 let AddTyparsToEnv typars (eenv: IlxGenEnv) =
     { eenv with
         tyenv = eenv.tyenv.Add typars
@@ -8177,6 +8186,23 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
 
     let fixups = ref []
 
+    let updateFixups (bind: Binding) (forwardReferenceSet: Zset<Val>) =
+        // Record the variable as defined
+        let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
+
+        // Execute and discard any fixups that can now be committed
+        let newFixups =
+            fixups.Value
+            |> List.filter (fun (boundv, fv, action) ->
+                if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then
+                    true
+                else
+                    action ()
+                    false)
+
+        fixups.Value <- newFixups
+        forwardReferenceSet
+
     let recursiveVars =
         Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
 
@@ -8195,65 +8221,63 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
                          "internal error: should never need to set non-delayed recursive val: "
                          + bind.Var.LogicalName
                      )))
+
             // Record the variable as defined
             let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
             forwardReferenceSet)
 
-    // @@@@@@@@@@@@ This needs big style simplification
-    // Generate the actual bindings
-    let skipBinding = HashSet<Stamp>()
+    let getStampForVal (v: Val) =
+        match v.HasDeclaringEntity with
+        | false -> 0L
+        | true -> v.DeclaringEntity.Deref.Stamp
 
-    let _groupBinds =
-        let getStampForVal (v: Val) =
-            match v.HasDeclaringEntity with
-            | false -> 0L
-            | true -> v.DeclaringEntity.Deref.Stamp
-
-        let result = List<Binding list>()
+    let groupBinds =
+        let mutable bindings : Binding list list = [[]]
         let rec loopAllBinds remainder =
             match remainder with
-            | [] -> result
+            | [] -> bindings |> List.rev
             | _ ->
                 let stamp = remainder |> List.head |> (fun (TBind(v, _, _)) -> getStampForVal v)
                 let taken = remainder |> List.takeWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
                 let remainder = remainder |> List.skipWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
-                result.Add taken
+                bindings <- bindings |> List.append [taken]
                 loopAllBinds remainder
         loopAllBinds allBinds
 
-    //let _ =
-    //    (recursiveVars, groupBinds)
-    //    ||> List.fold (fun forwardReferenceSet (bindGroup: Binding list) ->
-
-    //            bindGroup
-
-
-
-
-
-    //            // Record the variable as defined
-    //            let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
-
-    //            // Execute and discard any fixups that can now be committed
-    //            let newFixups =
-    //                fixups.Value
-    //                |> List.filter (fun (boundv, fv, action) ->
-    //                    if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then
-    //                        true
-    //                    else
-    //                        action ()
-    //                        false)
-
-    //            fixups.Value <- newFixups
-    //            forwardReferenceSet)
-
-
-
-
-
-
-
-//    do System.Diagnostics.Debugger.Break()
+    let _ =
+        (recursiveVars, groupBinds)
+        ||> List.fold(fun forwardReferenceSet (binds: Binding list) ->
+            match dict, cenv.g.realInternalSignature, binds with
+            | _, false, _ | None, _, _ | _, _, [] ->
+                (forwardReferenceSet, binds)
+                ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
+                    GenBinding cenv cgbuf eenv bind false
+                    updateFixups bind forwardReferenceSet)
+            | Some dict, true, _ ->
+                let (TBind(v, _, _)) = binds |> List.head
+                match dict.TryGetValue(getStampForVal v) with
+                | false, _ ->
+                    (forwardReferenceSet, binds)
+                    ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
+                        GenBinding cenv cgbuf eenv bind false
+                        updateFixups bind forwardReferenceSet)
+                | true, tref ->
+                    CodeGenInitMethod
+                        cenv
+                        cgbuf
+                        (EnvWithEnclosingToEnv eenv tref.Enclosing tref.Name None)
+                        tref
+                        (fun cgbuf eenv ->
+                            // Generate chunks of non-nested bindings together to allow recursive fixups.
+                            GenLetRecBindings cenv cgbuf eenv (binds, m) None
+                            CG.EmitInstr cgbuf (pop 0) Push0 I_ret)
+                        m
+                    (forwardReferenceSet, binds)
+                    ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
+                        updateFixups bind forwardReferenceSet)
+                        )
+    ()
+(*
     let _ =
         (recursiveVars, allBinds)
         ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
@@ -8291,24 +8315,14 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
                             | true -> v.DeclaringEntity.Deref.Stamp
                             | false -> 0L)
                         |> Seq.iter (fun (stamp, bindings) -> bgs.Add(stamp, bindings))
-
                         bgs
-
-                    let eenv =
-                        { eenv with
-                            cloc =
-                                { eenv.cloc with
-                                    Enclosing = tref.Enclosing @ [ tref.Name ]
-                                    Namespace = None
-                                }
-                        }
 
                     match bindGroups.TryGetValue(stamp) with
                     | true, binds ->
                         CodeGenInitMethod
                             cenv
                             cgbuf
-                            eenv
+                            (EnvWithEnclosingToEnv eenv tref.Enclosing tref.Name None)
                             tref
                             (fun cgbuf eenv ->
                                 // Generate chunks of non-nested bindings together to allow recursive fixups.
@@ -8317,23 +8331,8 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
                             m
                     | _ -> ()
 
-            // Record the variable as defined
-            let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
-
-            // Execute and discard any fixups that can now be committed
-            let newFixups =
-                fixups.Value
-                |> List.filter (fun (boundv, fv, action) ->
-                    if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then
-                        true
-                    else
-                        action ()
-                        false)
-
-            fixups.Value <- newFixups
-            forwardReferenceSet)
-
-    ()
+            updateFixups bind forwardReferenceSet)
+*)
 
 and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
     let _, endMark as scopeMarks = StartLocalScope "letrec" cgbuf
