@@ -2867,8 +2867,8 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 None
 
         match lowering with
-        | Some initExpr ->
-            GenExpr cenv cgbuf eenv initExpr sequel
+        | Some altExpr ->
+            GenExpr cenv cgbuf eenv altExpr sequel
             true
         | None ->
 
