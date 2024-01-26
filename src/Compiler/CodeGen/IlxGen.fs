@@ -8203,6 +8203,57 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     // Generate the actual bindings
     let skipBinding = HashSet<Stamp>()
 
+    let groupBinds =
+        let getStampForVal (v: Val) =
+            match v.HasDeclaringEntity with
+            | false -> 0L
+            | true -> v.DeclaringEntity.Deref.Stamp
+
+        let result = List<Binding list>()
+        let rec loopAllBinds remainder =
+            match remainder with
+            | [] -> result
+            | _ ->
+                let stamp = remainder |> List.head |> (fun (TBind(v, _, _)) -> getStampForVal v)
+                let taken = remainder |> List.takeWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
+                let remainder = remainder |> List.skipWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
+                result.Add taken
+                loopAllBinds remainder
+        loopAllBinds allBinds
+
+    //let _ =
+    //    (recursiveVars, groupBinds)
+    //    ||> List.fold (fun forwardReferenceSet (bindGroup: Binding list) ->
+
+    //            bindGroup
+
+
+
+
+
+    //            // Record the variable as defined
+    //            let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
+
+    //            // Execute and discard any fixups that can now be committed
+    //            let newFixups =
+    //                fixups.Value
+    //                |> List.filter (fun (boundv, fv, action) ->
+    //                    if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then
+    //                        true
+    //                    else
+    //                        action ()
+    //                        false)
+
+    //            fixups.Value <- newFixups
+    //            forwardReferenceSet)
+
+
+
+
+
+
+
+//    do System.Diagnostics.Debugger.Break()
     let _ =
         (recursiveVars, allBinds)
         ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
