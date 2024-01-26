@@ -279,20 +279,24 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             ->
             Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
 
-        // [start..finish] → List.init (max (finish - start + 1) 0) ((+) start)
+        // [start..finish] → if finish < start then [] else List.init (finish - start + 1) ((+) start)
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
             let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
             let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
-            let zero = mkZero g Text.Range.range0
-            let negRangeLtZero = mkAsmExpr ([AI_neg], [], [mkAsmExpr ([AI_clt], [], [range; zero], [g.int32_ty], Text.Range.range0)], [g.int32_ty], Text.Range.range0) 
-            let anded = mkAsmExpr ([AI_and], [], [range; negRangeLtZero], [g.int32_ty], Text.Range.range0) 
-            // range ^ (range & -(range < 0))
-            // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-            let range = mkAsmExpr ([AI_xor], [], [range; anded], [g.int32_ty], Text.Range.range0) 
             let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
             let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
             let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
-            Some (mkCallListInit g m g.int32_ty range initializer)
+
+            let expr =
+                mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    (mkListTy g g.int32_ty)
+                    (mkILAsmClt g Text.Range.range0 finish start)
+                    (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], Text.Range.range0))
+                    (mkCallListInit g Text.Range.range0 g.int32_ty range initializer)
+
+            Some expr
 
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ListCollector_ty overallElemTy
@@ -304,20 +308,24 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             ->
             Some (mkArray (g.int32_ty, [], m))
 
-        // [|start..finish|] → Array.init (max (finish - start + 1) 0) ((+) start)
+        // [|start..finish|] → if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
             let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
             let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
-            let zero = mkZero g Text.Range.range0
-            let negRangeLtZero = mkAsmExpr ([AI_neg], [], [mkAsmExpr ([AI_clt], [], [range; zero], [g.int32_ty], Text.Range.range0)], [g.int32_ty], Text.Range.range0) 
-            let anded = mkAsmExpr ([AI_and], [], [range; negRangeLtZero], [g.int32_ty], Text.Range.range0) 
-            // range ^ (range & -(range < 0))
-            // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-            let range = mkAsmExpr ([AI_xor], [], [range; anded], [g.int32_ty], Text.Range.range0) 
             let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
             let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
             let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
-            Some (mkCallArrayInit g m g.int32_ty range initializer)
+
+            let expr =
+                mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    (mkArrayType g g.int32_ty)
+                    (mkILAsmClt g Text.Range.range0 finish start)
+                    (mkArray (g.int32_ty, [], Text.Range.range0))
+                    (mkCallArrayInit g Text.Range.range0 g.int32_ty range initializer)
+
+            Some expr
 
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ArrayCollector_ty overallElemTy
