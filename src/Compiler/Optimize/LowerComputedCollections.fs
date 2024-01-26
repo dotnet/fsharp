@@ -279,7 +279,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             ->
             Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
 
-        // [start..finish] → let range = finish - start + 1 in List.init (max range 0) ((+) start)
+        // [start..finish] → List.init (max (finish - start + 1) 0) ((+) start)
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
             let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
             let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
@@ -304,7 +304,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             ->
             Some (mkArray (g.int32_ty, [], m))
 
-        // [|start..finish|] → let range = finish - start + 1 in Array.init (max range 0) ((+) start)
+        // [|start..finish|] → Array.init (max (finish - start + 1) 0) ((+) start)
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
             let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
             let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
