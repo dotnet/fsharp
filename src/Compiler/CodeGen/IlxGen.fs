@@ -10574,7 +10574,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
             let ilIntCustomAttrs = 
                 if g.langFeatureNullness && g.checkNullness && not (isNil ilIntfTys) then
                     tycon.ImmediateInterfaceTypesOfFSharpTycon
-                    |> List.map (GenAdditionalAttributesForTy g >> mkILCustomAttrs)
+                    |> List.map (GenAdditionalAttributesForTy g >> mkILCustomAttrs >> ILAttributesStored.Given >> (fun x -> x,0))
                     |> Some
                 else
                     None

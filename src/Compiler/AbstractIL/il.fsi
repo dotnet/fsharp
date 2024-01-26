@@ -1507,7 +1507,7 @@ type ILTypeDef =
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
         implements: ILTypes *
-        implementsCustomAttrs: ILAttributes list option *
+        implementsCustomAttrs: (ILAttributesStored * int) list option *
         genericParams: ILGenericParameterDefs *
         extends: ILType option *
         methods: ILMethodDefs *
@@ -1528,7 +1528,7 @@ type ILTypeDef =
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
         implements: ILTypes *
-        implementsCustomAttrs: ILAttributes list option *
+        implementsCustomAttrs: (ILAttributesStored * int) list option *
         genericParams: ILGenericParameterDefs *
         extends: ILType option *
         methods: ILMethodDefs *
@@ -1548,7 +1548,7 @@ type ILTypeDef =
     member Layout: ILTypeDefLayout
     member NestedTypes: ILTypeDefs
     member Implements: ILTypes
-    member ImplementsCustomAttrs: ILAttributes list option
+    member ImplementsCustomAttrs: (ILAttributesStored * int) list option
     member Extends: ILType option
     member Methods: ILMethodDefs
     member SecurityDecls: ILSecurityDecls
@@ -1608,7 +1608,7 @@ type ILTypeDef =
         ?isKnownToBeAttribute: bool *
         ?customAttrs: ILAttributes *
         ?securityDecls: ILSecurityDecls *
-        ?implementsCustomAttrs: ILAttributes list option ->
+        ?implementsCustomAttrs: (ILAttributesStored * int) list option ->
             ILTypeDef
 
 /// Represents a prefix of information for ILTypeDef.

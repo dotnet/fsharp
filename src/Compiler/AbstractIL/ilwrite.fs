@@ -2875,7 +2875,7 @@ let rec GenTypeDefPass3 enc cenv (tdef: ILTypeDef) =
         | Some attrList ->
             attrList
             |> List.zip cenv.implementsIdxs[tidx]
-            |> List.iter (fun (impIdx,attrs) -> GenCustomAttrsPass3Or4 cenv (hca_InterfaceImpl,impIdx) attrs)
+            |> List.iter (fun (impIdx,(attrs,metadataIdx)) -> GenCustomAttrsPass3Or4 cenv (hca_InterfaceImpl,impIdx) (attrs.GetCustomAttrs metadataIdx))
 
         tdef.Properties.AsList() |> List.iter (GenPropertyPass3 cenv env)
         tdef.Events.AsList() |> List.iter (GenEventPass3 cenv env)
