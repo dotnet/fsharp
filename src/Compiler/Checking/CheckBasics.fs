@@ -309,7 +309,7 @@ type TcFileState =
       conditionalDefines: string list option
 
       /// retain visibilities for internal/private members
-      realInternalSignature: bool
+      realsig: bool
 
       namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
 
@@ -337,7 +337,7 @@ type TcFileState =
 
     /// Create a new compilation environment
     static member Create
-         (g, isScript, amap, thisCcu, isSig, haveSig, realInternalSignature, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring, diagnosticOptions,
+         (g, isScript, amap, thisCcu, isSig, haveSig, realsig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring, diagnosticOptions,
           tcPat,
           tcSimplePats,
           tcSequenceExpressionEntry,
@@ -366,7 +366,7 @@ type TcFileState =
           namedDebugPointsForInlinedCode = Dictionary()
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFSharpCore
           conditionalDefines = conditionalDefines
-          realInternalSignature = realInternalSignature
+          realsig = realsig
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           diagnosticOptions = diagnosticOptions
           argInfoCache = ConcurrentDictionary()

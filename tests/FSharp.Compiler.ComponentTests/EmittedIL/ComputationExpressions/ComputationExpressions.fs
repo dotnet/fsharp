@@ -9,11 +9,11 @@ module ComputationExpressions =
 
     let withRealInternalSignature compilation =
         compilation
-        |> withOptions ["--realInternalSignature-"]
+        |> withOptions ["--realsig-"]
 
     let withoutRealInternalSignature compilation =
         compilation
-        |> withOptions ["--realInternalSignature-"]
+        |> withOptions ["--realsig-"]
 
     let computationExprLibrary =
         FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "ComputationExprLibrary.fs"))

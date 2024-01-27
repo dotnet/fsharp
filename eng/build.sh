@@ -34,6 +34,7 @@ usage()
   echo "  --skipBuild                    Do not run the build"
   echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
   echo "  --sourceBuild                  Simulate building for source-build"
+  echo "  --norealsig                    Build product with realsig- (default use realsig+)"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -67,6 +68,7 @@ skip_analyzers=false
 skip_build=false
 prepare_machine=false
 source_build=false
+realsig=true
 properties=""
 
 docker=false
@@ -148,6 +150,9 @@ while [[ $# > 0 ]]; do
       ;;
     --sourcebuild)
       source_build=true
+      ;;
+    --norealsig)
+      realsig=false
       ;;
     /p:*)
       properties="$properties $1"
@@ -301,6 +306,7 @@ function BuildSolution {
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
       /p:ArcadeBuildFromSource=$source_build \
+      /p:TestingLegacyInternalSignature=$realsig \
       $properties
   fi
 }

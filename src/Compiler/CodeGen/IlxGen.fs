@@ -491,21 +491,21 @@ let mkILTyForCompLoc cloc =
 
 /// Compute visibility for type members
 /// based on hidden and acessibility from the source code
-/// when hidden and realInternalSignature is specified then
+/// when hidden and realsig is specified then
 ///     as typed in source code, I.e internal or public
-/// when hidden and not realInternalSignature is specified then
+/// when hidden and not realsig is specified then
 ///     then they are internal, old behaviour (anything not public is internal)
 /// otherwise it is public, by definition
-let ComputeMemberAccess hidden (accessibility: Accessibility) realInternalSignature =
+let ComputeMemberAccess hidden (accessibility: Accessibility) realsig =
 
-    if (not accessibility.IsPublic) && realInternalSignature then
+    if (not accessibility.IsPublic) && realsig then
         accessibility.AsILMemberAccess()
     elif hidden then
         ILMemberAccess.Assembly
     else
         ILMemberAccess.Public
 
-let ComputeTypeAccess (tref: ILTypeRef) hidden (accessibility: Accessibility) realInternalSignature =
+let ComputeTypeAccess (tref: ILTypeRef) hidden (accessibility: Accessibility) realsig =
 
     match tref.Enclosing with
     | [] ->
@@ -513,7 +513,7 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden (accessibility: Accessibility) re
             ILTypeDefAccess.Private
         else
             ILTypeDefAccess.Public
-    | _ -> ILTypeDefAccess.Nested(ComputeMemberAccess hidden accessibility realInternalSignature)
+    | _ -> ILTypeDefAccess.Nested(ComputeMemberAccess hidden accessibility realsig)
 
 //--------------------------------------------------------------------------
 // TypeReprEnv
@@ -829,7 +829,7 @@ let GenFieldSpecForStaticField (isInteractive, (g: TcGlobals), ilContainerTy, vs
         mkILFieldSpecInTy (ilContainerTy, fieldName, ilTy)
     elif isInteractive then
         mkILFieldSpecInTy (ilContainerTy, CompilerGeneratedName fieldName, ilTy)
-    elif g.realInternalSignature then
+    elif g.realsig then
         assert (g.CompilerGlobalState |> Option.isSome)
 
         mkILFieldSpecInTy (
@@ -1222,7 +1222,7 @@ and IlxGenEnv =
         /// Other information from the emit of this assembly
         intraAssemblyInfo: IlxGenIntraAssemblyInfo
 
-        realInternalSignature: bool
+        realsig: bool
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -2301,7 +2301,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                 let vtspec = mkILTySpec (vtref, [])
 
                 let vtdef =
-                    vtdef.WithAccess(ComputeTypeAccess vtref true taccessInternal cenv.g.realInternalSignature)
+                    vtdef.WithAccess(ComputeTypeAccess vtref true taccessInternal cenv.g.realsig)
 
                 mgbuf.AddTypeDef(vtref, vtdef, false, true, None)
                 vtspec),
@@ -6155,7 +6155,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 ) do
                 // Suppress the "ResumptionDynamicInfo" from generated state machines
                 if templateFld.LogicalName <> "ResumptionDynamicInfo" then
-                    let access = ComputeMemberAccess false taccessPublic cenv.g.realInternalSignature
+                    let access = ComputeMemberAccess false taccessPublic cenv.g.realsig
                     let fty = GenType cenv m eenvinner.tyenv templateFld.FieldType
 
                     let fdef =
@@ -6176,7 +6176,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
             // Fields for captured variables
             for ilCloFreeVar in ilCloFreeVars do
-                let access = ComputeMemberAccess false taccessPublic cenv.g.realInternalSignature
+                let access = ComputeMemberAccess false taccessPublic cenv.g.realsig
 
                 let fdef =
                     ILFieldDef(
@@ -6221,7 +6221,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         )
             .WithSealed(true)
             .WithSpecialName(true)
-            .WithAccess(ComputeTypeAccess ilCloTypeRef true taccessInternal cenv.g.realInternalSignature)
+            .WithAccess(ComputeTypeAccess ilCloTypeRef true taccessInternal cenv.g.realsig)
             .WithLayout(ILTypeDefLayout.Auto)
             .WithEncoding(ILDefaultPInvokeEncoding.Auto)
             .WithInitSemantics(ILTypeInit.BeforeField)
@@ -6650,7 +6650,7 @@ and GenClosureTypeDefs
             .WithSealed(true)
             .WithSerializable(true)
             .WithSpecialName(true)
-            .WithAccess(ComputeTypeAccess tref true taccessInternal cenv.g.realInternalSignature)
+            .WithAccess(ComputeTypeAccess tref true taccessInternal cenv.g.realsig)
             .WithLayout(ILTypeDefLayout.Auto)
             .WithEncoding(ILDefaultPInvokeEncoding.Auto)
             .WithInitSemantics(ILTypeInit.BeforeField)
@@ -8254,7 +8254,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     let _ =
         (recursiveVars, groupBinds)
         ||> List.fold (fun forwardReferenceSet (binds: Binding list) ->
-            match dict, cenv.g.realInternalSignature, binds with
+            match dict, cenv.g.realsig, binds with
             | _, false, _
             | None, _, _
             | _, _, [] ->
@@ -8308,7 +8308,7 @@ and GenBinding cenv cgbuf eenv (bind: Binding) (isStateVar: bool) =
 
 and ComputeMethodAccessRestrictedBySig eenv vspec =
     let vspec =
-        if eenv.realInternalSignature then
+        if eenv.realsig then
             DoRemapVal eenv.sigToImplRemapInfo vspec
         else
             vspec
@@ -8322,7 +8322,7 @@ and ComputeMethodAccessRestrictedBySig eenv vspec =
         // Compiler generated members for class function 'let' bindings get assembly visibility
         || vspec.IsIncrClassGeneratedMember
 
-    ComputeMemberAccess isHidden vspec.Accessibility eenv.realInternalSignature
+    ComputeMemberAccess isHidden vspec.Accessibility eenv.realsig
 
 and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
     let g = cenv.g
@@ -8511,7 +8511,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
             let hidden = not hasLiteralAttr || IsHiddenVal eenv.sigToImplRemapInfo vspec
 
             let access =
-                ComputeMemberAccess hidden vspec.Accessibility cenv.g.realInternalSignature
+                ComputeMemberAccess hidden vspec.Accessibility cenv.g.realsig
 
             let ilFieldDef = mkILStaticField (fspec.Name, fty, None, None, access)
 
@@ -9828,7 +9828,7 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
         && not v.IsCompilerGenerated
         && not v.IsMutable
         // Don't use shadow locals for things like functions which are not compiled as static values/properties
-        && (not eenv.realInternalSignature)
+        && (not eenv.realsig)
         && IsCompiledAsStaticProperty cenv.g v
 
     let optShadowLocal, eenv =
@@ -10049,7 +10049,7 @@ and GenTypeDefForCompLoc
         mkILSimpleClass
             g.ilg
             (tref.Name,
-             ComputeTypeAccess tref hidden accessibility cenv.g.realInternalSignature,
+             ComputeTypeAccess tref hidden accessibility cenv.g.realsig,
              emptyILMethods,
              emptyILFields,
              emptyILTypeDefs,
@@ -10126,7 +10126,7 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
         | None -> ()
 
         // Add code to invoke envinner's class static initializer
-        let access = ComputeMemberAccess true taccessInternal eenv.realInternalSignature
+        let access = ComputeMemberAccess true taccessInternal eenv.realsig
 
         let ilBody = MethodBody.IL(InterruptibleLazy.FromValue body)
         let ilReturn = mkILReturn ILType.Void
@@ -10261,7 +10261,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
         let tref = TypeRefForCompLoc eenvinner.cloc
 
-        if eenv.realInternalSignature then
+        if eenv.realsig then
             CodeGenInitMethod
                 cenv
                 cgbuf
@@ -10319,7 +10319,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
                     cenv.g.ilg.typ_Int32,
                     None,
                     None,
-                    ComputeMemberAccess true taccessInternal cenv.g.realInternalSignature
+                    ComputeMemberAccess true taccessInternal cenv.g.realsig
                 )
                 |> cenv.g.AddFieldNeverAttributes
                 |> cenv.g.AddFieldGeneratedAttributes
@@ -10754,12 +10754,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let tyconAccess =
                 let tycon =
-                    if eenv.realInternalSignature then
+                    if eenv.realsig then
                         DoRemapTycon eenv.sigToImplRemapInfo tycon
                     else
                         tycon
 
-                ComputeTypeAccess tref hidden tycon.Accessibility cenv.g.realInternalSignature
+                ComputeTypeAccess tref hidden tycon.Accessibility cenv.g.realsig
 
             // The implicit augmentation doesn't actually create CompareTo(object) or Object.Equals
             // So we do it here.
@@ -10862,7 +10862,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             let tyconRepr = tycon.TypeReprInfo
 
             let reprAccess =
-                ComputeMemberAccess hiddenRepr taccessPublic cenv.g.realInternalSignature
+                ComputeMemberAccess hiddenRepr taccessPublic cenv.g.realsig
 
             // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
             let debugDisplayAttrs, normalAttrs =
@@ -11029,7 +11029,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             | _ -> [] // don't hide fields in classes in debug display
 
                         let access =
-                            ComputeMemberAccess isFieldHidden taccessPublic cenv.g.realInternalSignature
+                            ComputeMemberAccess isFieldHidden taccessPublic cenv.g.realsig
 
                         let literalValue = Option.map (GenFieldInit m) fspec.LiteralValue
 
@@ -11101,7 +11101,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             let ilMethName = "get_" + ilPropName
 
                             let access =
-                                ComputeMemberAccess isPropHidden taccessPublic cenv.g.realInternalSignature
+                                ComputeMemberAccess isPropHidden taccessPublic cenv.g.realsig
 
                             let isStruct = isStructTyconRef tcref
 
@@ -11127,7 +11127,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             let ilReturn = mkILReturn ILType.Void
 
                             let iLAccess =
-                                ComputeMemberAccess isPropHidden taccessPublic cenv.g.realInternalSignature
+                                ComputeMemberAccess isPropHidden taccessPublic cenv.g.realsig
 
                             let ilMethodDef =
                                 if isStatic then
@@ -11634,7 +11634,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             // In this case, the .cctor for this type must force the .cctor of the backing static class for the file.
             if
                 tycon.TyparsNoRange.IsEmpty
-                && not (eenv.realInternalSignature)
+                && not (eenv.realsig)
                 && tycon.MembersOfFSharpTyconSorted
                    |> List.exists (fun vref -> vref.Deref.IsClassConstructor)
             then
@@ -11658,15 +11658,15 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
 
         let access =
             let tycon =
-                if eenv.realInternalSignature then
+                if eenv.realsig then
                     DoRemapTycon eenv.sigToImplRemapInfo exnc
                 else
                     exnc
 
-            ComputeTypeAccess tref isHidden tycon.Accessibility cenv.g.realInternalSignature
+            ComputeTypeAccess tref isHidden tycon.Accessibility cenv.g.realsig
 
         let reprAccess =
-            ComputeMemberAccess isHidden taccessPublic cenv.g.realInternalSignature
+            ComputeMemberAccess isHidden taccessPublic cenv.g.realsig
 
         let fspecs = exnc.TrueInstanceFieldsAsList
 
@@ -11875,7 +11875,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         delayCodeGen = true
         delayedFileGenReverse = []
         intraAssemblyInfo = IlxGenIntraAssemblyInfo.Create()
-        realInternalSignature = g.realInternalSignature
+        realsig = g.realsig
         initClassFieldSpec = None
     }
 

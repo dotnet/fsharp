@@ -86,7 +86,7 @@ type env =
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list
 
       /// preserve internal/private signature information
-      realInternalSignature: bool
+      realsig: bool
 
       /// Are we in a quotation?
       quote : bool
@@ -2605,7 +2605,7 @@ let CheckImplFileContents cenv env implFileTy implFileContents  =
     UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
 
-let CheckImplFile (g, amap, realInternalSignature, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
+let CheckImplFile (g, amap, realsig, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
     let cenv =
         { g = g
           reportErrors = reportErrors
@@ -2638,7 +2638,7 @@ let CheckImplFile (g, amap, realInternalSignature, reportErrors, infoReader, int
 
     let env =
         { sigToImplRemapInfo=[]
-          realInternalSignature = realInternalSignature
+          realsig = realsig
           quote=false
           boundTyparNames=[]
           argVals = ValMap.Empty

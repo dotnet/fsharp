@@ -2524,7 +2524,7 @@ and [<Sealed>] TcImports
                     tcConfig.noDebugAttributes,
                     tcConfig.pathMap,
                     tcConfig.langVersion,
-                    tcConfig.realInternalSignature
+                    tcConfig.realsig
                 )
 
 #if DEBUG

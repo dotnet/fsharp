@@ -9,7 +9,7 @@ module ClassTypeVisibilityModuleRootWithFsi =
 
     let withRealInternalSignature realSig compilation =
         compilation
-        |> withOptions [if realSig then "--realInternalSignature+" else "--realInternalSignature-" ]
+        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular

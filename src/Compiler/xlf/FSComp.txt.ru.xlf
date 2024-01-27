@@ -817,7 +817,7 @@
         <target state="translated">Имя выходного файла pdb не может совпадать с именем выходного файла сборки. Используйте --pdb:filename.pdb</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsRealInternalSignature">
+      <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
         <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
         <note />

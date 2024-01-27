@@ -207,7 +207,7 @@ module rec Compiler =
         | Arm = 5
         | Arm64 = 6
 
-    let public defaultOptions : string list = ["--realInternalSignature+"]
+    let public defaultOptions : string list = ["--realsig+"]
 
     let normalizePathSeparator (text:string) = text.Replace(@"\", "/")
 
@@ -586,12 +586,12 @@ module rec Compiler =
 
     let withRealInternalSignatureOff (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with Options = fs.Options @ ["--realInternalSignature-"] }
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realsig-"] }
         | _ -> failwith "withRealInternalSignatureOff only supported by f#"
 
     let withRealInternalSignatureOn (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with Options = fs.Options @ ["--realInternalSignature+"] }
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realsig+"] }
         | _ -> failwith "withRealInternalSignatureOn only supported by f#"
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =

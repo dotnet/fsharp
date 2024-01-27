@@ -8,8 +8,6 @@
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <Configurations>Debug;Release;ReleaseCompressed</Configurations>
-    <!-- .Always use realsig for shipping compiler binaries -->
-    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realInternalSignature+</OtherFlags>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->

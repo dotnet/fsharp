@@ -194,7 +194,7 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion,
-    realInternalSignature: bool) =
+    realsig: bool) =
 
   // empty flags
   let v_knownWithoutNull = 0uy
@@ -1105,7 +1105,7 @@ type TcGlobals(
 
   member _.langVersion = langVersion
 
-  member _.realInternalSignature = realInternalSignature
+  member _.realsig = realsig
 
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
 

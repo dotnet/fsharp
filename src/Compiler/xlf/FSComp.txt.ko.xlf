@@ -817,7 +817,7 @@
         <target state="translated">pdb 출력 파일 이름은 빌드 출력 파일 이름 사용 --pdb:filename.pdb와 일치할 수 없습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsRealInternalSignature">
+      <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
         <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
         <note />

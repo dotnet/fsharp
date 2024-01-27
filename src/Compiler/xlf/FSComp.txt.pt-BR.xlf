@@ -817,7 +817,7 @@
         <target state="translated">O nome do arquivo de saída pdb não pode corresponder ao nome do arquivo de saída do build. Use --pdb:filename.pdb</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsRealInternalSignature">
+      <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
         <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
         <note />

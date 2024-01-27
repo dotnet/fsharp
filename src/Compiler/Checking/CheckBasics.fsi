@@ -259,7 +259,7 @@ type TcFileState =
         conditionalDefines: string list option
 
         // Retain internal/private visibility
-        realInternalSignature: bool
+        realsig: bool
 
         namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
 
@@ -320,7 +320,7 @@ type TcFileState =
         thisCcu: CcuThunk *
         isSig: bool *
         haveSig: bool *
-        realInternalSignature: bool *
+        realsig: bool *
         conditionalDefines: string list option *
         tcSink: TcResultsSink *
         tcVal: TcValF *

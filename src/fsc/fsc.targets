@@ -8,8 +8,6 @@
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <NGenBinary>true</NGenBinary>
-    <!-- .Always use realsig for shipping compiler binaries -->
-    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realInternalSignature+</OtherFlags>
     <UseAppHost>true</UseAppHost>
     <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>

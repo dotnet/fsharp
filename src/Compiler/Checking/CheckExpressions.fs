@@ -1152,7 +1152,7 @@ let ComputeAccessAndCompPath (g:TcGlobals) env (declKindOpt: DeclKind option) m 
     let vis =
         match declKindOpt, overrideVis, vis with
         | _, Some v, _ -> v
-        | Some (DeclKind.ClassLetBinding _), _, None when g.realInternalSignature -> taccessPrivate accessPath  // a type binding defaults to "private"
+        | Some (DeclKind.ClassLetBinding _), _, None when g.realsig -> taccessPrivate accessPath  // a type binding defaults to "private"
         | _, _, None ->  taccessPublic                                                  // a module or member binding defaults to "public"
         | _, _, Some (SynAccess.Public _) -> taccessPublic
         | _, _, Some (SynAccess.Private _) -> taccessPrivate accessPath

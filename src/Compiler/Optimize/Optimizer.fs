@@ -435,7 +435,7 @@ type cenv =
 
       stackGuard: StackGuard
 
-      realInternalSignature: bool
+      realsig: bool
     }
 
     override x.ToString() = "<cenv>"
@@ -4363,7 +4363,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           emitTailcalls=emitTailcalls
           casApplied=Dictionary<Stamp, bool>() 
           stackGuard = StackGuard(OptimizerStackGuardDepth, "OptimizerStackGuardDepth")
-          realInternalSignature = tcGlobals.realInternalSignature
+          realsig = tcGlobals.realsig
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  

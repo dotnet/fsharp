@@ -6,8 +6,15 @@
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TestingRealSig)' == 'true'">
-    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realInternalSignature+</OtherFlags>
+  <PropertyGroup>
+    <!--
+         When shipping Build fsharp.compiler.service dll using realsig visibility
+         When testing we have a test pass built using old style visibility to improve
+         testing coverage
+     -->
+    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' != 'true'">$(OtherFlags) --realsig-</OtherFlags>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig+</OtherFlags>
+
   </PropertyGroup>
 
   <!--
