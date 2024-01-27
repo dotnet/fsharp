@@ -310,6 +310,11 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
                 ->
                 Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
 
+            // [1..5] → List.init 5 ((+) 5)
+            | Int32Range g (start & Expr.Const (value = Const.Int32 startVal), Expr.Const (value = Const.Int32 finishVal))
+                ->
+                Some (mkCallListInit g Text.Range.range0 g.int32_ty (Expr.Const (Const.Int32 (finishVal - startVal + 1), Text.Range.range0, g.int32_ty)) (mkInitializer start))
+
             // [start..finish] → if finish < start then [] else List.init (finish - start + 1) ((+) start)
             | Int32Range g (start & (Expr.Const _ | Expr.Val _), finish & (Expr.Const _ | Expr.Val _)) ->
                 Some (mkListInit m start finish)
@@ -359,6 +364,11 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
                 finish < start
                 ->
                 Some (mkArray (g.int32_ty, [], m))
+
+            // [|1..5|] → Array.init 5 ((+) 5)
+            | Int32Range g (start & Expr.Const (value = Const.Int32 startVal), Expr.Const (value = Const.Int32 finishVal))
+                ->
+                Some (mkCallArrayInit g Text.Range.range0 g.int32_ty (Expr.Const (Const.Int32 (finishVal - startVal + 1), Text.Range.range0, g.int32_ty)) (mkInitializer start))
 
             // [|start..finish|] → if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
             | Int32Range g (start & (Expr.Const _ | Expr.Val _), finish & (Expr.Const _ | Expr.Val _)) ->
