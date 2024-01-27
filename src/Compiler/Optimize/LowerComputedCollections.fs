@@ -280,7 +280,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
 
         /// Make an expression that initializes a list
         /// with the values from start through finish.
-        let mkListInit m start finish = 
+        let mkListInit m start finish =
             mkCond
                 DebugPointAtBinding.NoneAtInvisible
                 m
