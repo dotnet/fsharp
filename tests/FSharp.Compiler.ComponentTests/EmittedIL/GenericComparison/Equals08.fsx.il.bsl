@@ -135,99 +135,35 @@
                int32 V_3)
       IL_0000:  ldc.i4.0
       IL_0001:  stloc.0
-      IL_0002:  nop
-      IL_0003:  ldc.i4.s   100
-      IL_0005:  ldc.i4.0
-      IL_0006:  bge.s      IL_0010
-
-      IL_0008:  call       !!0[] [runtime]System.Array::Empty<int32>()
-      IL_000d:  nop
-      IL_000e:  br.s       IL_0021
-
-      IL_0010:  ldc.i4.s   100
-      IL_0012:  ldc.i4.0
-      IL_0013:  sub
-      IL_0014:  ldc.i4.1
-      IL_0015:  add
-      IL_0016:  ldsfld     class assembly/EqualsMicroPerfAndCodeGenerationTests/t1@1 assembly/EqualsMicroPerfAndCodeGenerationTests/t1@1::@_instance
-      IL_001b:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
+      IL_0002:  ldc.i4.s   101
+      IL_0004:  ldsfld     class assembly/EqualsMicroPerfAndCodeGenerationTests/t1@1 assembly/EqualsMicroPerfAndCodeGenerationTests/t1@1::@_instance
+      IL_0009:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
-      IL_0020:  nop
-      IL_0021:  stloc.1
-      IL_0022:  nop
-      IL_0023:  ldc.i4.s   100
-      IL_0025:  ldc.i4.0
-      IL_0026:  bge.s      IL_0030
-
-      IL_0028:  call       !!0[] [runtime]System.Array::Empty<int32>()
-      IL_002d:  nop
-      IL_002e:  br.s       IL_0041
-
-      IL_0030:  ldc.i4.s   100
-      IL_0032:  ldc.i4.0
-      IL_0033:  sub
-      IL_0034:  ldc.i4.1
-      IL_0035:  add
-      IL_0036:  ldsfld     class assembly/EqualsMicroPerfAndCodeGenerationTests/t2@1 assembly/EqualsMicroPerfAndCodeGenerationTests/t2@1::@_instance
-      IL_003b:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
+      IL_000e:  stloc.1
+      IL_000f:  ldc.i4.s   101
+      IL_0011:  ldsfld     class assembly/EqualsMicroPerfAndCodeGenerationTests/t2@1 assembly/EqualsMicroPerfAndCodeGenerationTests/t2@1::@_instance
+      IL_0016:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
-      IL_0040:  nop
-      IL_0041:  stloc.2
-      IL_0042:  ldc.i4.0
-      IL_0043:  stloc.3
-      IL_0044:  br.s       IL_0052
+      IL_001b:  stloc.2
+      IL_001c:  ldc.i4.0
+      IL_001d:  stloc.3
+      IL_001e:  br.s       IL_002c
 
-      IL_0046:  ldloc.1
-      IL_0047:  ldloc.2
-      IL_0048:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<int32[]>(!!0,
+      IL_0020:  ldloc.1
+      IL_0021:  ldloc.2
+      IL_0022:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<int32[]>(!!0,
                                                                                                                                      !!0)
-      IL_004d:  stloc.0
-      IL_004e:  ldloc.3
-      IL_004f:  ldc.i4.1
-      IL_0050:  add
-      IL_0051:  stloc.3
-      IL_0052:  ldloc.3
-      IL_0053:  ldc.i4     0x989681
-      IL_0058:  blt.s      IL_0046
+      IL_0027:  stloc.0
+      IL_0028:  ldloc.3
+      IL_0029:  ldc.i4.1
+      IL_002a:  add
+      IL_002b:  stloc.3
+      IL_002c:  ldloc.3
+      IL_002d:  ldc.i4     0x989681
+      IL_0032:  blt.s      IL_0020
 
-      IL_005a:  ldloc.0
-      IL_005b:  ret
-    } 
-
-  } 
-
-} 
-
-.class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly$fsx
-       extends [runtime]System.Object
-{
-  .method public static void  main@() cil managed
-  {
-    .entrypoint
-    
-    .maxstack  8
-    IL_0000:  ret
-  } 
-
-} 
-
-
-
-
-
-
-               !!0)
-      IL_005d:  stloc.0
-      IL_005e:  ldloc.2
-      IL_005f:  ldc.i4.1
-      IL_0060:  add
-      IL_0061:  stloc.2
-      IL_0062:  ldloc.2
-      IL_0063:  ldc.i4     0x989681
-      IL_0068:  blt.s      IL_0056
-
-      IL_006a:  ldloc.0
-      IL_006b:  ret
+      IL_0034:  ldloc.0
+      IL_0035:  ret
     } 
 
   } 

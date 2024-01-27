@@ -67,14 +67,11 @@
             Invoke(int32 i) cil managed
     {
       
-      .maxstack  6
-      .locals init (int32 V_0)
+      .maxstack  8
       IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloc.0
-      IL_0003:  ldarg.1
-      IL_0004:  add
-      IL_0005:  ret
+      IL_0001:  ldarg.1
+      IL_0002:  add
+      IL_0003:  ret
     } 
 
     .method private specialname rtspecialname static 
@@ -212,11 +209,7 @@
     {
       
       .maxstack  9
-      .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> V_0,
-               int32 V_1,
-               int32 V_2,
-               int32 V_3,
-               int32 V_4)
+      .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> V_0)
       IL_0000:  ldc.i4.1
       IL_0001:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
       IL_0006:  stloc.0
@@ -224,50 +217,29 @@
       IL_0008:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res7@9::builder@
       IL_000d:  ldarg.0
       IL_000e:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res7@9::builder@
-      IL_0013:  ldc.i4.3
-      IL_0014:  stloc.1
-      IL_0015:  ldloc.1
-      IL_0016:  ldc.i4.0
-      IL_0017:  stloc.2
-      IL_0018:  ldloc.2
-      IL_0019:  bge.s      IL_0023
-
-      IL_001b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-      IL_0020:  nop
-      IL_0021:  br.s       IL_0039
-
-      IL_0023:  ldc.i4.3
-      IL_0024:  stloc.3
-      IL_0025:  ldloc.3
-      IL_0026:  ldc.i4.0
-      IL_0027:  stloc.s    V_4
-      IL_0029:  ldloc.s    V_4
-      IL_002b:  sub
-      IL_002c:  ldc.i4.1
-      IL_002d:  add
-      IL_002e:  ldsfld     class Program/'res7@1-1' Program/'res7@1-1'::@_instance
-      IL_0033:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Initialize<int32>(int32,
+      IL_0013:  ldc.i4.4
+      IL_0014:  ldsfld     class Program/'res7@1-1' Program/'res7@1-1'::@_instance
+      IL_0019:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Initialize<int32>(int32,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
-      IL_0038:  nop
-      IL_0039:  ldarg.0
-      IL_003a:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res7@9::builder@
-      IL_003f:  ldloc.0
-      IL_0040:  newobj     instance void Program/'res7@10-2'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder,
+      IL_001e:  ldarg.0
+      IL_001f:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res7@9::builder@
+      IL_0024:  ldloc.0
+      IL_0025:  newobj     instance void Program/'res7@10-2'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder,
                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
-      IL_0045:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> [ComputationExprLibrary]Library.EventuallyBuilder::For<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>,
+      IL_002a:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> [ComputationExprLibrary]Library.EventuallyBuilder::For<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>)
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res7@9::builder@
-      IL_0050:  ldarg.0
-      IL_0051:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res7@9::builder@
-      IL_0056:  ldloc.0
-      IL_0057:  newobj     instance void Program/'res7@12-3'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder,
+      IL_002f:  ldarg.0
+      IL_0030:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res7@9::builder@
+      IL_0035:  ldarg.0
+      IL_0036:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res7@9::builder@
+      IL_003b:  ldloc.0
+      IL_003c:  newobj     instance void Program/'res7@12-3'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder,
                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
-      IL_005c:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<!!0>>)
-      IL_0061:  tail.
-      IL_0063:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Combine<int32>(class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,
+      IL_0041:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<!!0>>)
+      IL_0046:  tail.
+      IL_0048:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Combine<int32>(class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,
                                                                                                                                                               class [ComputationExprLibrary]Library.Eventually`1<!!0>)
-      IL_0068:  ret
+      IL_004d:  ret
     } 
 
   } 
