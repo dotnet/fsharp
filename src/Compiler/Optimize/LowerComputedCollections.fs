@@ -306,7 +306,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             match overallSeqExpr with
             // [5..1] → []
             | Int32Range g (Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 finish)) when
-                start > finish
+                finish < start
                 ->
                 Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
 
@@ -356,7 +356,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             match overallSeqExpr with
             // [|5..1|] → [||]
             | Int32Range g (Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 finish)) when
-                start > finish
+                finish < start
                 ->
                 Some (mkArray (g.int32_ty, [], m))
 
