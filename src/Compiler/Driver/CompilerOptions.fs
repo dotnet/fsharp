@@ -1029,13 +1029,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 Some(FSComp.SR.optsDeterministic ())
             )
 
-            CompilerOption(
-                "realsig",
-                tagNone,
-                OptionSwitch(SetRealsig tcConfigB),
-                None,
-                Some(FSComp.SR.optsRealsig ())
-            )
+            CompilerOption("realsig", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsRealsig ()))
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))
 

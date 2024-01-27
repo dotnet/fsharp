@@ -351,7 +351,7 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
-        - job: WindowsRealsig_testCoreclr
+        - job: WindowsNoRealsig_testCoreclr
           pool:
             # The PR build definition sets this variable:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
@@ -364,7 +364,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -realsig -testCoreclr -configuration Release
+          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testCoreclr -configuration Release
             env:
               NativeToolsOnMachine: true
             displayName: Build
@@ -379,7 +379,7 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
-        - job: WindowsRealsig_testDesktop
+        - job: WindowsNoRealsig_testDesktop
           pool:
             # The PR build definition sets this variable:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
@@ -392,7 +392,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -realsig -testDesktop -configuration Release
+          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testDesktop -configuration Release
             env:
               NativeToolsOnMachine: true
             displayName: Build

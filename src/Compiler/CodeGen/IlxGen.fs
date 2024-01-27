@@ -8510,8 +8510,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         let ilFieldDefs =
             let hidden = not hasLiteralAttr || IsHiddenVal eenv.sigToImplRemapInfo vspec
 
-            let access =
-                ComputeMemberAccess hidden vspec.Accessibility cenv.g.realsig
+            let access = ComputeMemberAccess hidden vspec.Accessibility cenv.g.realsig
 
             let ilFieldDef = mkILStaticField (fspec.Name, fty, None, None, access)
 
@@ -10861,8 +10860,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let tyconRepr = tycon.TypeReprInfo
 
-            let reprAccess =
-                ComputeMemberAccess hiddenRepr taccessPublic cenv.g.realsig
+            let reprAccess = ComputeMemberAccess hiddenRepr taccessPublic cenv.g.realsig
 
             // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
             let debugDisplayAttrs, normalAttrs =
@@ -11028,8 +11026,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 [ g.CompilerGeneratedAttribute; g.DebuggerBrowsableNeverAttribute ]
                             | _ -> [] // don't hide fields in classes in debug display
 
-                        let access =
-                            ComputeMemberAccess isFieldHidden taccessPublic cenv.g.realsig
+                        let access = ComputeMemberAccess isFieldHidden taccessPublic cenv.g.realsig
 
                         let literalValue = Option.map (GenFieldInit m) fspec.LiteralValue
 
@@ -11100,8 +11097,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             let ilPropName = fspec.LogicalName
                             let ilMethName = "get_" + ilPropName
 
-                            let access =
-                                ComputeMemberAccess isPropHidden taccessPublic cenv.g.realsig
+                            let access = ComputeMemberAccess isPropHidden taccessPublic cenv.g.realsig
 
                             let isStruct = isStructTyconRef tcref
 
@@ -11126,8 +11122,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             let ilParams = [ mkILParamNamed ("value", ilPropType) ]
                             let ilReturn = mkILReturn ILType.Void
 
-                            let iLAccess =
-                                ComputeMemberAccess isPropHidden taccessPublic cenv.g.realsig
+                            let iLAccess = ComputeMemberAccess isPropHidden taccessPublic cenv.g.realsig
 
                             let ilMethodDef =
                                 if isStatic then
@@ -11665,8 +11660,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
 
             ComputeTypeAccess tref isHidden tycon.Accessibility cenv.g.realsig
 
-        let reprAccess =
-            ComputeMemberAccess isHidden taccessPublic cenv.g.realsig
+        let reprAccess = ComputeMemberAccess isHidden taccessPublic cenv.g.realsig
 
         let fspecs = exnc.TrueInstanceFieldsAsList
 
