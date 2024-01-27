@@ -724,7 +724,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) -testBenchmarks
+          - script: eng\CIBuild.cmd --configuration $(_BuildConfig) -testBenchmarks
             displayName: Smoke test fast benchmarks
 
         # Test trimming on Windows
