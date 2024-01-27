@@ -257,7 +257,7 @@ let (|SeqToArray|_|) g expr =
 
 /// start..finish
 [<return: Struct>]
-let (|Int32Range|_|) g (expr, _ty) =
+let (|Int32Range|_|) g expr =
     match expr with
     | ValApp g g.range_int32_op_vref ([], [start; Expr.Const (value = Const.Int32 1); finish], _) -> ValueSome (start, finish)
     | _ -> ValueNone
@@ -301,99 +301,105 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
                 (mkCallArrayInit g Text.Range.range0 g.int32_ty (mkCount start finish) (mkInitializer start))
 
         match overallExpr with
-        // [5..1] → []
-        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 finish)))), m) when
-            start > finish
-            ->
-            Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
-
-        // [start..finish] → if finish < start then [] else List.init (finish - start + 1) ((+) start)
-        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start & (Expr.Const _ | Expr.Val _), finish & (Expr.Const _ | Expr.Val _)))), m) ->
-            Some (mkListInit m start finish)
-
-        // [start..finishExpr] →
-        //     let finish = finishExpr
-        //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
-        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start & (Expr.Const _ | Expr.Val _), finish))), m) ->
-            let expr =
-                mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
-                    mkListInit m start finish)
-
-            Some expr
-
-        // [startExpr..finish] →
-        //     let start = startExpr
-        //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
-        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish & (Expr.Const _ | Expr.Val _)))), m) ->
-            let expr =
-                mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
-                    mkListInit m start finish)
-
-            Some expr
-
-        // [startExpr..finishExpr] →
-        //     let start = startExpr
-        //     let finish = finishExpr
-        //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
-        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
-            let expr =
-                mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
-                    mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
-                        mkListInit m start finish))
-
-            Some expr
-
-        // [(* Anything more complex. *)]
+        // […]
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
-            let collectorTy = g.mk_ListCollector_ty overallElemTy
-            LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
-        
-        // [|5..1|] → [||]
-        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 finish)))), m) when
-            start > finish
-            ->
-            Some (mkArray (g.int32_ty, [], m))
+            match overallSeqExpr with
+            // [5..1] → []
+            | Int32Range g (Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 finish)) when
+                start > finish
+                ->
+                Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
 
-        // [|start..finish|] → if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
-        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start & (Expr.Const _ | Expr.Val _), finish & (Expr.Const _ | Expr.Val _)))), m) ->
-            Some (mkArrayInit m start finish)
+            // [start..finish] → if finish < start then [] else List.init (finish - start + 1) ((+) start)
+            | Int32Range g (start & (Expr.Const _ | Expr.Val _), finish & (Expr.Const _ | Expr.Val _)) ->
+                Some (mkListInit m start finish)
 
-        // [|start..finishExpr|] →
-        //     let finish = finishExpr
-        //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
-        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start & (Expr.Const _ | Expr.Val _), finish))), m) ->
-            let expr =
-                mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
-                    mkArrayInit m start finish)
-
-            Some expr
-
-        // [|startExpr..finish|] →
-        //     let start = startExpr
-        //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
-        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish & (Expr.Const _ | Expr.Val _)))), m) ->
-            let expr =
-                mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
-                    mkArrayInit m start finish)
-
-            Some expr
-
-        // [|startExpr..finishExpr|] →
-        //     let start = startExpr
-        //     let finish = finishExpr
-        //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
-        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
-            let expr =
-                mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+            // [start..finishExpr] →
+            //     let finish = finishExpr
+            //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
+            | Int32Range g (start & (Expr.Const _ | Expr.Val _), finish) ->
+                let expr =
                     mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
-                        mkArrayInit m start finish))
+                        mkListInit m start finish)
 
-            Some expr
+                Some expr
 
-        // [|(* Anything more complex. *)|]
+            // [startExpr..finish] →
+            //     let start = startExpr
+            //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
+            | Int32Range g (start, finish & (Expr.Const _ | Expr.Val _)) ->
+                let expr =
+                    mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+                        mkListInit m start finish)
+
+                Some expr
+
+            // [startExpr..finishExpr] →
+            //     let start = startExpr
+            //     let finish = finishExpr
+            //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
+            | Int32Range g (start, finish) ->
+                let expr =
+                    mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+                        mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
+                            mkListInit m start finish))
+
+                Some expr
+
+            // [(* Anything more complex. *)]
+            | _ ->
+                let collectorTy = g.mk_ListCollector_ty overallElemTy
+                LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
+        
+        // [|…|]
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
-            let collectorTy = g.mk_ArrayCollector_ty overallElemTy
-            LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
+            match overallSeqExpr with
+            // [|5..1|] → [||]
+            | Int32Range g (Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 finish)) when
+                start > finish
+                ->
+                Some (mkArray (g.int32_ty, [], m))
+
+            // [|start..finish|] → if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
+            | Int32Range g (start & (Expr.Const _ | Expr.Val _), finish & (Expr.Const _ | Expr.Val _)) ->
+                Some (mkArrayInit m start finish)
+
+            // [|start..finishExpr|] →
+            //     let finish = finishExpr
+            //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
+            | Int32Range g (start & (Expr.Const _ | Expr.Val _), finish) ->
+                let expr =
+                    mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
+                        mkArrayInit m start finish)
+
+                Some expr
+
+            // [|startExpr..finish|] →
+            //     let start = startExpr
+            //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
+            | Int32Range g (start, finish & (Expr.Const _ | Expr.Val _)) ->
+                let expr =
+                    mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+                        mkArrayInit m start finish)
+
+                Some expr
+
+            // [|startExpr..finishExpr|] →
+            //     let start = startExpr
+            //     let finish = finishExpr
+            //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
+            | Int32Range g (start, finish) ->
+                let expr =
+                    mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+                        mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
+                            mkArrayInit m start finish))
+
+                Some expr
+
+            // [|(* Anything more complex. *)|]
+            | _ ->
+                let collectorTy = g.mk_ArrayCollector_ty overallElemTy
+                LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
 
         | _ -> None
     else
