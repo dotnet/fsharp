@@ -318,23 +318,3 @@
 
 
 
-.s   IL_00e3
-
-    IL_00df:  ldc.i4.0
-    IL_00e0:  nop
-    IL_00e1:  br.s       IL_00e5
-
-    IL_00e3:  ldc.i4.1
-    IL_00e4:  nop
-    IL_00e5:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_00ea:  pop
-    IL_00eb:  ret
-  } 
-
-} 
-
-
-
-
-
-

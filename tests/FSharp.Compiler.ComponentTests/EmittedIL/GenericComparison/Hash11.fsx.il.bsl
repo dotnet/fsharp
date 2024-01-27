@@ -89,51 +89,71 @@
     .method public static void  f8() cil managed
     {
       
-      .maxstack  6
+      .maxstack  4
       .locals init (int32[] V_0,
                int32 V_1,
                int32 V_2)
       IL_0000:  nop
-      IL_0001:  ldc.i4.s   100
-      IL_0003:  ldc.i4.0
-      IL_0004:  sub
-      IL_0005:  ldc.i4.1
-      IL_0006:  add
-      IL_0007:  ldc.i4.s   100
-      IL_0009:  ldc.i4.0
-      IL_000a:  sub
-      IL_000b:  ldc.i4.1
-      IL_000c:  add
-      IL_000d:  ldc.i4.s   100
-      IL_000f:  ldc.i4.0
-      IL_0010:  sub
-      IL_0011:  ldc.i4.1
-      IL_0012:  add
-      IL_0013:  ldc.i4.0
-      IL_0014:  clt
-      IL_0016:  neg
-      IL_0017:  and
-      IL_0018:  xor
-      IL_0019:  ldsfld     class assembly/HashMicroPerfAndCodeGenerationTests/arr@1 assembly/HashMicroPerfAndCodeGenerationTests/arr@1::@_instance
-      IL_001e:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
+      IL_0001:  nop
+      IL_0002:  ldc.i4.s   100
+      IL_0004:  ldc.i4.0
+      IL_0005:  bge.s      IL_000f
+
+      IL_0007:  call       !!0[] [runtime]System.Array::Empty<int32>()
+      IL_000c:  nop
+      IL_000d:  br.s       IL_0020
+
+      IL_000f:  ldc.i4.s   100
+      IL_0011:  ldc.i4.0
+      IL_0012:  sub
+      IL_0013:  ldc.i4.1
+      IL_0014:  add
+      IL_0015:  ldsfld     class assembly/HashMicroPerfAndCodeGenerationTests/arr@1 assembly/HashMicroPerfAndCodeGenerationTests/arr@1::@_instance
+      IL_001a:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Initialize<int32>(int32,
                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
-      IL_0023:  stloc.0
-      IL_0024:  ldc.i4.0
-      IL_0025:  stloc.1
-      IL_0026:  br.s       IL_0033
+      IL_001f:  nop
+      IL_0020:  stloc.0
+      IL_0021:  ldc.i4.0
+      IL_0022:  stloc.1
+      IL_0023:  br.s       IL_0030
 
-      IL_0028:  ldloc.0
-      IL_0029:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashIntrinsic<int32[]>(!!0)
-      IL_002e:  stloc.2
-      IL_002f:  ldloc.1
-      IL_0030:  ldc.i4.1
-      IL_0031:  add
-      IL_0032:  stloc.1
-      IL_0033:  ldloc.1
-      IL_0034:  ldc.i4     0x989681
-      IL_0039:  blt.s      IL_0028
+      IL_0025:  ldloc.0
+      IL_0026:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashIntrinsic<int32[]>(!!0)
+      IL_002b:  stloc.2
+      IL_002c:  ldloc.1
+      IL_002d:  ldc.i4.1
+      IL_002e:  add
+      IL_002f:  stloc.1
+      IL_0030:  ldloc.1
+      IL_0031:  ldc.i4     0x989681
+      IL_0036:  blt.s      IL_0025
 
-      IL_003b:  ret
+      IL_0038:  ret
+    } 
+
+  } 
+
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly$fsx
+       extends [runtime]System.Object
+{
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    
+    .maxstack  8
+    IL_0000:  ret
+  } 
+
+} 
+
+
+
+
+
+
+
     } 
 
   } 

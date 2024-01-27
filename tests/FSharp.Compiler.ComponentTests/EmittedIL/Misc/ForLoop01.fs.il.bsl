@@ -63,11 +63,14 @@
             Invoke(int32 i) cil managed
     {
       
-      .maxstack  8
+      .maxstack  6
+      .locals init (int32 V_0)
       IL_0000:  ldc.i4.1
-      IL_0001:  ldarg.1
-      IL_0002:  add
-      IL_0003:  ret
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  ldarg.1
+      IL_0004:  add
+      IL_0005:  ret
     } 
 
     .method private specialname rtspecialname static 
@@ -97,50 +100,62 @@
     
     .maxstack  4
     .locals init (class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
-             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
-             int32 V_2)
+             int32 V_1,
+             int32 V_2,
+             int32 V_3,
+             int32 V_4,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_5,
+             int32 V_6)
     IL_0000:  nop
     IL_0001:  ldc.i4.3
-    IL_0002:  ldc.i4.1
-    IL_0003:  bge.s      IL_000d
+    IL_0002:  stloc.1
+    IL_0003:  ldloc.1
+    IL_0004:  ldc.i4.1
+    IL_0005:  stloc.2
+    IL_0006:  ldloc.2
+    IL_0007:  bge.s      IL_0011
 
-    IL_0005:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-    IL_000a:  nop
-    IL_000b:  br.s       IL_001d
+    IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    IL_000e:  nop
+    IL_000f:  br.s       IL_0027
 
-    IL_000d:  ldc.i4.3
-    IL_000e:  ldc.i4.1
-    IL_000f:  sub
-    IL_0010:  ldc.i4.1
-    IL_0011:  add
-    IL_0012:  ldsfld     class assembly/clo@1 assembly/clo@1::@_instance
-    IL_0017:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Initialize<int32>(int32,
+    IL_0011:  ldc.i4.3
+    IL_0012:  stloc.3
+    IL_0013:  ldloc.3
+    IL_0014:  ldc.i4.1
+    IL_0015:  stloc.s    V_4
+    IL_0017:  ldloc.s    V_4
+    IL_0019:  sub
+    IL_001a:  ldc.i4.1
+    IL_001b:  add
+    IL_001c:  ldsfld     class assembly/clo@1 assembly/clo@1::@_instance
+    IL_0021:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Initialize<int32>(int32,
                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>)
-    IL_001c:  nop
-    IL_001d:  stloc.0
-    IL_001e:  ldloc.0
-    IL_001f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0024:  stloc.1
-    IL_0025:  br.s       IL_004d
+    IL_0026:  nop
+    IL_0027:  stloc.0
+    IL_0028:  ldloc.0
+    IL_0029:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_002e:  stloc.s    V_5
+    IL_0030:  br.s       IL_005c
 
-    IL_0027:  ldloc.0
-    IL_0028:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_002d:  stloc.2
-    IL_002e:  ldstr      "%A"
-    IL_0033:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
-    IL_0038:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_003d:  ldloc.2
-    IL_003e:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_0043:  pop
-    IL_0044:  ldloc.1
-    IL_0045:  stloc.0
-    IL_0046:  ldloc.0
-    IL_0047:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_004c:  stloc.1
-    IL_004d:  ldloc.1
-    IL_004e:  brtrue.s   IL_0027
+    IL_0032:  ldloc.0
+    IL_0033:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0038:  stloc.s    V_6
+    IL_003a:  ldstr      "%A"
+    IL_003f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
+    IL_0044:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0049:  ldloc.s    V_6
+    IL_004b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0050:  pop
+    IL_0051:  ldloc.s    V_5
+    IL_0053:  stloc.0
+    IL_0054:  ldloc.0
+    IL_0055:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_005a:  stloc.s    V_5
+    IL_005c:  ldloc.s    V_5
+    IL_005e:  brtrue.s   IL_0032
 
-    IL_0050:  ret
+    IL_0060:  ret
   } 
 
 } 
