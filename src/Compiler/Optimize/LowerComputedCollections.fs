@@ -255,78 +255,142 @@ let (|SeqToArray|_|) g expr =
     | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> ValueSome (seqExpr, m)
     | _ -> ValueNone
 
-/// 1..10
-[<return: Struct>]
-let (|ConstInt32Range|_|) g expr =
-    match expr with
-    | ValApp g g.range_int32_op_vref ([], [Expr.Const (value = Const.Int32 start); Expr.Const (value = Const.Int32 1); Expr.Const (value = Const.Int32 finish)], _), _ -> ValueSome (start, finish)
-    | _ -> ValueNone
-
 /// start..finish
 [<return: Struct>]
-let (|Int32Range|_|) g expr =
+let (|Int32Range|_|) g (expr, _ty) =
     match expr with
-    | ValApp g g.range_int32_op_vref ([], [start; Expr.Const (value = Const.Int32 1); finish], _), _ -> ValueSome (start, finish)
+    | ValApp g g.range_int32_op_vref ([], [start; Expr.Const (value = Const.Int32 1); finish], _) -> ValueSome (start, finish)
     | _ -> ValueNone
 
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
     if g.ListCollector_tcr.CanDeref then
+        /// Make an expression holding the count/length
+        /// to initialize the collection with.
+        let mkCount start finish =
+            let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
+            mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
+
+        /// Make a lambda expression to pass into
+        /// the Array.init/List.init call.
+        let mkInitializer start =
+            let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
+            let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
+            mkLambda Text.Range.range0 v (body, g.int32_ty)
+
+        /// Make an expression that initializes a list
+        /// with the values from start through finish.
+        let mkListInit m start finish = 
+            mkCond
+                DebugPointAtBinding.NoneAtInvisible
+                m
+                (mkListTy g g.int32_ty)
+                (mkILAsmClt g Text.Range.range0 finish start)
+                (mkNil g Text.Range.range0 g.int32_ty)
+                (mkCallListInit g Text.Range.range0 g.int32_ty (mkCount start finish) (mkInitializer start))
+
+        /// Make an expression that initializes an array
+        /// with the values from start through finish.
+        let mkArrayInit m start finish =
+            mkCond
+                DebugPointAtBinding.NoneAtInvisible
+                m
+                (mkArrayType g g.int32_ty)
+                (mkILAsmClt g Text.Range.range0 finish start)
+                (mkArray (g.int32_ty, [], Text.Range.range0))
+                (mkCallArrayInit g Text.Range.range0 g.int32_ty (mkCount start finish) (mkInitializer start))
+
         match overallExpr with
         // [5..1] → []
-        | SeqToList g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 finish)))), m) when
             start > finish
             ->
             Some (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], m))
 
         // [start..finish] → if finish < start then [] else List.init (finish - start + 1) ((+) start)
-        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
-            let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
-            let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
-            let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
-            let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
-            let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start & (Expr.Const _ | Expr.Val _), finish & (Expr.Const _ | Expr.Val _)))), m) ->
+            Some (mkListInit m start finish)
 
+        // [start..finishExpr] →
+        //     let finish = finishExpr
+        //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start & (Expr.Const _ | Expr.Val _), finish))), m) ->
             let expr =
-                mkCond
-                    DebugPointAtBinding.NoneAtInvisible
-                    m
-                    (mkListTy g g.int32_ty)
-                    (mkILAsmClt g Text.Range.range0 finish start)
-                    (mkUnionCaseExpr (g.nil_ucref, [g.int32_ty], [], Text.Range.range0))
-                    (mkCallListInit g Text.Range.range0 g.int32_ty range initializer)
+                mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
+                    mkListInit m start finish)
 
             Some expr
 
+        // [startExpr..finish] →
+        //     let start = startExpr
+        //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish & (Expr.Const _ | Expr.Val _)))), m) ->
+            let expr =
+                mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+                    mkListInit m start finish)
+
+            Some expr
+
+        // [startExpr..finishExpr] →
+        //     let start = startExpr
+        //     let finish = finishExpr
+        //     if finish < start then [] else List.init (finish - start + 1) ((+) start)
+        | SeqToList g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
+            let expr =
+                mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+                    mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
+                        mkListInit m start finish))
+
+            Some expr
+
+        // [(* Anything more complex. *)]
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ListCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
         
         // [|5..1|] → [||]
-        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (ConstInt32Range g (start, finish))), m) when
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 finish)))), m) when
             start > finish
             ->
             Some (mkArray (g.int32_ty, [], m))
 
         // [|start..finish|] → if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
-        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
-            let diff = mkAsmExpr ([AI_sub], [], [finish; start], [g.int32_ty], Text.Range.range0)
-            let range = mkAsmExpr ([AI_add], [], [diff; mkOne g Text.Range.range0], [g.int32_ty], Text.Range.range0)
-            let v, e = mkCompGenLocal Text.Range.range0 "i" g.int32_ty
-            let body = mkAsmExpr ([AI_add], [], [start; e], [g.int32_ty], Text.Range.range0)
-            let initializer = mkLambda Text.Range.range0 v (body, g.int32_ty)
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start & (Expr.Const _ | Expr.Val _), finish & (Expr.Const _ | Expr.Val _)))), m) ->
+            Some (mkArrayInit m start finish)
 
+        // [|start..finishExpr|] →
+        //     let finish = finishExpr
+        //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start & (Expr.Const _ | Expr.Val _), finish))), m) ->
             let expr =
-                mkCond
-                    DebugPointAtBinding.NoneAtInvisible
-                    m
-                    (mkArrayType g g.int32_ty)
-                    (mkILAsmClt g Text.Range.range0 finish start)
-                    (mkArray (g.int32_ty, [], Text.Range.range0))
-                    (mkCallArrayInit g Text.Range.range0 g.int32_ty range initializer)
+                mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
+                    mkArrayInit m start finish)
 
             Some expr
 
+        // [|startExpr..finish|] →
+        //     let start = startExpr
+        //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish & (Expr.Const _ | Expr.Val _)))), m) ->
+            let expr =
+                mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+                    mkArrayInit m start finish)
+
+            Some expr
+
+        // [|startExpr..finishExpr|] →
+        //     let start = startExpr
+        //     let finish = finishExpr
+        //     if finish < start then [||] else Array.init (finish - start + 1) ((+) start)
+        | SeqToArray g (OptionalCoerce (OptionalSeq g amap (Int32Range g (start, finish))), m) ->
+            let expr =
+                mkCompGenLetIn Text.Range.range0 (nameof start) g.int32_ty start (fun (_, start) ->
+                    mkCompGenLetIn Text.Range.range0 (nameof finish) g.int32_ty finish (fun (_, finish) ->
+                        mkArrayInit m start finish))
+
+            Some expr
+
+        // [|(* Anything more complex. *)|]
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ArrayCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
