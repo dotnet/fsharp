@@ -4,6 +4,7 @@ open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open BenchmarkDotNet.Attributes
+open FSharp.Benchmarks.Common.Categories
 
 type private SingleFileCompilerConfig =
     {
@@ -12,6 +13,7 @@ type private SingleFileCompilerConfig =
     }
 
 [<MemoryDiagnoser>]
+[<BenchmarkCategory(ShortCategory)>]
 type DecentlySizedStandAloneFileBenchmark() =
 
     let mutable configOpt : SingleFileCompilerConfig option = None

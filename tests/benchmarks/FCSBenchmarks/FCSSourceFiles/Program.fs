@@ -5,6 +5,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
+open FSharp.Benchmarks.Common.Categories
 
 module Project =
     let nugetCache =
@@ -874,6 +875,7 @@ module Project =
           Stamp = None }
 
 [<MemoryDiagnoser>]
+[<BenchmarkCategory(ShortCategory)>]
 type CompilerService() =
     let mutable checkerOpt = None
     let mutable sourceOpt : (string * ISourceText) array option = None
