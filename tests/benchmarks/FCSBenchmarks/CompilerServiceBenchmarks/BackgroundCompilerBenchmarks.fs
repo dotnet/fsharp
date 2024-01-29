@@ -225,7 +225,7 @@ type TestProjectType =
 [<MemoryDiagnoser>]
 [<ThreadingDiagnoser>]
 [<SimpleJob(warmupCount=1,iterationCount=4)>]
-[<BenchmarkCategory(ShortCategory)>]
+[<BenchmarkCategory(LongCategory)>]
 type TransparentCompilerBenchmark() =
 
     let size = 30
