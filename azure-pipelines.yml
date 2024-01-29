@@ -718,10 +718,8 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: eng\CIBuild.cmd -testBenchmarks
+          - script: eng\CIBuild.cmd -configuration $(_BuildConfig) -testBenchmarks
             displayName: Smoke test fast benchmarks
-            continueOnError: true
-            condition: always()
 
         # Test trimming on Windows
         - job: Build_And_Test_Trimming_Windows
