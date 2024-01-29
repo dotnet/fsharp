@@ -1652,7 +1652,7 @@ type internal TransparentCompiler
                         | ProjectAssemblyDataResult.Available data -> Some data
                         | _ -> None
 
-                    let symbolUses = tcInfo.sink |> Seq.map (fun sink -> sink.GetSymbolUses())
+                    let symbolUses = tcInfo.sink |> Seq.rev |> Seq.map (fun sink -> sink.GetSymbolUses())
 
                     let details =
                         (bootstrapInfo.TcGlobals,
