@@ -549,7 +549,10 @@ try {
     }
 
     if ($testBenchmarks) {
+        $properties_storage = $properties
+        $properties += "/p:RuntimeIdentifier=win-x64"
         BuildSolution "FSharp.Benchmarks.sln" $False
+        $properties = $properties_storage
     }
 
     if ($pack) {
