@@ -346,7 +346,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
 
     if ($env:RunningAsPullRequest -ne "true" -and $noTestFilter -eq $false) {
         $args += " --filter TestCategory!=PullRequest"
-    }`
+    }
 
     if ($asBackgroundJob) {
         Write-Host("Starting on the background: $args")
@@ -549,11 +549,7 @@ try {
     }
 
     if ($testBenchmarks) {
-        $properties_storage = $properties
-        $properties += "/p:RuntimeIdentifier=win-x64"
-        $properties += "/p:Configuration=Release" # Always run in release.
         BuildSolution "FSharp.Benchmarks.sln" $False
-        $properties = $properties_storage
     }
 
     if ($pack) {
