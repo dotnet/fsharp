@@ -1159,7 +1159,7 @@ let mkSynField
 
             let mType, mStart =
                 idOpt
-                |> Option.map _.idRange
+                |> Option.map (fun x -> x.idRange)
                 |> Option.orElseWith (fun _ -> vis |> Option.map (fun v -> v.Range))
                 |> Option.orElse isMutable
                 |> Option.orElseWith (fun _ -> leadingKeyword |> Option.map (fun k -> k.Range))

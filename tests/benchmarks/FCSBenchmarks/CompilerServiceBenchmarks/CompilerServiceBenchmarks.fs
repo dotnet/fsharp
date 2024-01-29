@@ -12,6 +12,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.Benchmarks
 open Microsoft.CodeAnalysis.Text
+open FSharp.Benchmarks.Common.Categories
 
 type private Config =
     {
@@ -66,6 +67,7 @@ let function%s{moduleName} (x: %s{moduleName}) =
 
 
 [<MemoryDiagnoser>]
+[<BenchmarkCategory(ShortCategory)>]
 type CompilerServiceBenchmarks() =
     let mutable configOpt : Config option = None
     let sourcePath = Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs")
@@ -124,13 +126,13 @@ type CompilerServiceBenchmarks() =
                 |> Some
     
     [<Benchmark>]
-    member _.ParsingTypeCheckerFs() =
+    member _.ParsingCheckExpressionsFs() =
         let config = getConfig()
         let results = config.Checker.ParseFile("CheckExpressions.fs", config.Source |> SourceText.toFSharpSourceText, parsingOptions) |> Async.RunSynchronously
         if results.ParseHadErrors then failwithf $"parse had errors: %A{results.Diagnostics}"
 
-    [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
-    member _.ParsingTypeCheckerFsSetup() =
+    [<IterationCleanup(Target = "ParsingCheckExpressionsFs")>]
+    member _.ParsingCheckExpressionsFsSetup() =
         let checker = getConfig().Checker
         checker.InvalidateAll()
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
