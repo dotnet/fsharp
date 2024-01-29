@@ -16,6 +16,7 @@ open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Support
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
@@ -1028,6 +1029,11 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
 //     adding the text " (shadowed)" to the names of those with name conflicts.
 let unshadowScopes rootScope =
     // Avoid stack overflow when writing linearly nested scopes
-    let stackGuard = StackGuard(100, "ILPdbWriter.unshadowScopes")
+    let UnshadowScopesStackGuardDepth =
+        GetEnvInteger "FSHARP_ILPdb_UnshadowScopes_StackGuardDepth" 100
+
+    let stackGuard =
+        StackGuard(UnshadowScopesStackGuardDepth, "ILPdbWriter.unshadowScopes")
+
     let result, _ = pushShadowedLocals stackGuard [||] rootScope
     result
