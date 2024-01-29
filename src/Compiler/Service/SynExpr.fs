@@ -423,7 +423,9 @@ module SynExpr =
                 | SynExpr.MatchLambda(matchClauses = Last(SynMatchClause(resultExpr = expr)))
                 | SynExpr.MatchBang(clauses = Last(SynMatchClause(resultExpr = expr)))
                 | SynExpr.TryWith(withCases = Last(SynMatchClause(resultExpr = expr)))
-                | SynExpr.TryFinally(finallyExpr = expr) -> loop expr
+                | SynExpr.TryFinally(finallyExpr = expr)
+                | SynExpr.Do(expr = expr)
+                | SynExpr.DoBang(expr = expr) -> loop expr
                 | _ -> ValueNone
 
             loop
@@ -809,6 +811,12 @@ module SynExpr =
                 problematic inner.Range expr2.Range
                 ->
                 true
+
+            | SynExpr.InterpolatedString(contents = contents), (SynExpr.Tuple(isStruct = false) | Dangling.Problematic _) ->
+                contents
+                |> List.exists (function
+                    | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true
+                    | _ -> false)
 
             | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _
             | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _ -> true
