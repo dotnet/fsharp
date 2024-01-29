@@ -551,6 +551,7 @@ try {
     if ($testBenchmarks) {
         $properties_storage = $properties
         $properties += "/p:RuntimeIdentifier=win-x64"
+        $properties += "/p:Configuration=Release" # Always run in release.
         BuildSolution "FSharp.Benchmarks.sln" $False
         $properties = $properties_storage
     }
