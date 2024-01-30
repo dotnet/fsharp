@@ -1565,6 +1565,7 @@ let mkClassUnionDef
                     attributes = enum 0,
                     layout = ILTypeDefLayout.Auto,
                     implements = [],
+                    implementsCustomAttrs = None,
                     extends = Some g.ilg.typ_Object,
                     methods = emptyILMethods,
                     securityDecls = emptyILSecurityDecls,

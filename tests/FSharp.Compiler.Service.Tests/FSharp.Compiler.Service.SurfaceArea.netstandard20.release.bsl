@@ -7,6 +7,22 @@
 ! AssemblyReference: System.Reflection.Emit.ILGeneration
 ! AssemblyReference: System.Reflection.Metadata
 ! AssemblyReference: netstandard
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <IntImplIdx>j__TPar IntImplIdx
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <IntImplIdx>j__TPar get_IntImplIdx()
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <IntfIdx>j__TPar IntfIdx
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <IntfIdx>j__TPar get_IntfIdx()
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <TypeIdx>j__TPar TypeIdx
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <TypeIdx>j__TPar get_TypeIdx()
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar])
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(System.Object)
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 CompareTo(<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar])
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 CompareTo(System.Object)
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 CompareTo(System.Object, System.Collections.IComparer)
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 GetHashCode()
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: System.String ToString()
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Void .ctor(<IntImplIdx>j__TPar, <IntfIdx>j__TPar, <TypeIdx>j__TPar)
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 CDecl
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 Default
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 FastCall
@@ -1540,7 +1556,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILPropertyDefs Properties
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILPropertyDefs get_Properties()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILSecurityDecls SecurityDecls
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILSecurityDecls get_SecurityDecls()
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDef With(Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.TypeAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILEventDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDefs], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILSecurityDecls])
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDef With(Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.TypeAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILEventDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDefs], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILSecurityDecls], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAttributesStored,System.Int32]]]])
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAccess Access
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAccess get_Access()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefLayout Layout
@@ -1555,12 +1571,14 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Collections.FSharpList
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType] get_Implements()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType] Extends
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType] get_Extends()
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAttributesStored,System.Int32]]] ImplementsCustomAttrs
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAttributesStored,System.Int32]]] get_ImplementsCustomAttrs()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.Reflection.TypeAttributes Attributes
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.Reflection.TypeAttributes get_Attributes()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String get_Name()
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: Void .ctor(System.String, System.Reflection.TypeAttributes, ILTypeDefLayout, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType], ILMethodDefs, ILTypeDefs, ILFieldDefs, ILMethodImplDefs, ILEventDefs, ILPropertyDefs, Boolean, ILSecurityDecls, ILAttributes)
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Void .ctor(System.String, System.Reflection.TypeAttributes, ILTypeDefLayout, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAttributesStored,System.Int32]]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType], ILMethodDefs, ILTypeDefs, ILFieldDefs, ILMethodImplDefs, ILEventDefs, ILPropertyDefs, Boolean, ILSecurityDecls, ILAttributes)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Nested: ILMemberAccess Item
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Nested: ILMemberAccess get_Item()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Tags: Int32 Nested
