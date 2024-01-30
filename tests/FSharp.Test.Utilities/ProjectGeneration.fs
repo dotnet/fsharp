@@ -195,7 +195,9 @@ type SyntheticSourceFile =
         EntryPoint: bool
     }
 
-    member this.FileName = $"File{this.Id}.fs"
+    member this.FileName =
+        if File.Exists this.Id then this.Id else $"File%s{this.Id}.fs"
+
     member this.SignatureFileName = $"{this.FileName}i"
     member this.TypeName = $"T{this.Id}V_{this.PublicVersion}"
     member this.ModuleName = $"Module{this.Id}"
@@ -792,12 +794,14 @@ type WorkflowContext =
       Signatures: Map<string, string>
       Cursor: FSharpSymbolUse option }
 
-let SaveAndCheckProject project checker =
+let SaveAndCheckProject project checker isExistingProject =
     async {
         use _ =
             Activity.start "SaveAndCheckProject" [ Activity.Tags.project, project.Name ]
 
-        do! saveProject project true checker
+        // Don't save the project if it is a real world project that exists on disk.
+        if not isExistingProject then
+            do! saveProject project true checker
 
         let options = project.GetProjectOptions checker
         let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
@@ -834,13 +838,15 @@ type ProjectWorkflowBuilder
         ?useSyntaxTreeCache,
         ?useTransparentCompiler,
         ?runTimeout,
-        ?autoStart
+        ?autoStart,
+        ?isExistingProject
     ) =
 
     let useTransparentCompiler = defaultArg useTransparentCompiler FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true
+    let isExistingProject = defaultArg isExistingProject false
 
     let mutable latestProject = initialProject
     let mutable activity = None
@@ -874,7 +880,7 @@ type ProjectWorkflowBuilder
     let getInitialContext() =
         match initialContext with
         | Some ctx -> async.Return ctx
-        | None -> SaveAndCheckProject initialProject checker
+        | None -> SaveAndCheckProject initialProject checker isExistingProject
 
     /// Creates a ProjectWorkflowBuilder which will already have the project
     /// saved and checked so time won't be spent on that.
@@ -915,7 +921,7 @@ type ProjectWorkflowBuilder
         try
             Async.RunSynchronously(workflow, timeout = defaultArg runTimeout 600_000)
         finally
-            if initialContext.IsNone then
+            if initialContext.IsNone && not isExistingProject then
                 this.DeleteProjectDir()
             activity |> Option.iter (fun x -> x.Dispose())
             tracerProvider |> Option.iter (fun x ->
@@ -1021,10 +1027,13 @@ type ProjectWorkflowBuilder
         async {
             let! ctx = workflow
 
-            use _ =
+            use activity =
                 Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
 
-            let! results = checkFile fileId ctx.Project checker
+            let! results =
+                checkFile fileId ctx.Project checker
+
+            activity.Dispose()
 
             let oldSignature = ctx.Signatures[fileId]
             let newSignature = getSignature results
