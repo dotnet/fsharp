@@ -74,6 +74,11 @@ let ``Generic struct DU`` compilation =
     compilation
     |> verifyCompilation DoNotOptimize
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullableInheritance.fs"|])>]
+let ``Nullable inheritance`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+
 
 module Interop  =
     open System.IO

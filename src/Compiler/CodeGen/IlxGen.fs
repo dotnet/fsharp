@@ -6186,6 +6186,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
             implements = ilInterfaceTys,
+            implementsCustomAttrs = None,
             extends = Some super,
             isKnownToBeAttribute = false,
             securityDecls = emptyILSecurityDecls
@@ -6614,6 +6615,7 @@ and GenClosureTypeDefs
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
             implements = ilIntfTys,
+            implementsCustomAttrs = None,
             extends = Some ext,
             isKnownToBeAttribute = false,
             securityDecls = emptyILSecurityDecls
@@ -10569,6 +10571,19 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                 tycon.ImmediateInterfaceTypesOfFSharpTycon
                 |> List.map (GenType cenv m eenvinner.tyenv)
 
+            let ilIntCustomAttrs =
+                if g.langFeatureNullness && g.checkNullness && not (isNil ilIntfTys) then
+                    tycon.ImmediateInterfaceTypesOfFSharpTycon
+                    |> List.map (
+                        GenAdditionalAttributesForTy g
+                        >> mkILCustomAttrs
+                        >> ILAttributesStored.Given
+                        >> (fun x -> x, 0)
+                    )
+                    |> Some
+                else
+                    None
+
             let ilTypeName = tref.Name
 
             let hidden = IsHiddenTycon eenv.sigToImplRemapInfo tycon
@@ -11171,16 +11186,20 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     let ilAttrs =
                         ilCustomAttrs
                         @ [
-                            mkCompilationMappingAttr
-                                g
-                                (int (
-                                    if isObjectType then
-                                        SourceConstructFlags.ObjectType
-                                    elif hiddenRepr then
-                                        SourceConstructFlags.RecordType ||| SourceConstructFlags.NonPublicRepresentation
-                                    else
-                                        SourceConstructFlags.RecordType
-                                ))
+                            yield
+                                mkCompilationMappingAttr
+                                    g
+                                    (int (
+                                        if isObjectType then
+                                            SourceConstructFlags.ObjectType
+                                        elif hiddenRepr then
+                                            SourceConstructFlags.RecordType ||| SourceConstructFlags.NonPublicRepresentation
+                                        else
+                                            SourceConstructFlags.RecordType
+                                    ))
+
+                            if not (ilBaseTy.GenericArgs.IsEmpty) then
+                                yield! GenAdditionalAttributesForTy g super
                         ]
 
                     let isKnownToBeAttribute =
@@ -11211,7 +11230,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             .WithSerializable(isSerializable)
                             .WithAbstract(isAbstract)
                             .WithImport(isComInteropTy g thisTy)
-                            .With(methodImpls = mkILMethodImpls methodImpls, isKnownToBeAttribute = isKnownToBeAttribute)
+                            .With(
+                                methodImpls = mkILMethodImpls methodImpls,
+                                isKnownToBeAttribute = isKnownToBeAttribute,
+                                implementsCustomAttrs = ilIntCustomAttrs
+                            )
 
                     let tdLayout, tdEncoding =
                         match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -11374,6 +11397,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             methodImpls = mkILMethodImpls methodImpls,
                             nestedTypes = emptyILTypeDefs,
                             implements = ilIntfTys,
+                            implementsCustomAttrs = None,
                             extends =
                                 Some(
                                     if tycon.IsStructOrEnumTycon then
