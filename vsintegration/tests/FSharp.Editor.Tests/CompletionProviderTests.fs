@@ -423,7 +423,7 @@ xVal**y
             Assert.True(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
     [<Fact>]
-    let ShouldTriggerCompletionAtStartOfFileWithInsertion =
+    let ShouldTriggerCompletionAtStartOfFileWithInsertion () =
         let fileContents =
             """
 l"""
@@ -888,7 +888,7 @@ type T() =
         VerifyNoCompletionList(fileContents, "member this.M(p")
 
     [<Fact>]
-    let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` =
+    let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` () =
         let fileContents =
             """
 type Interface =
