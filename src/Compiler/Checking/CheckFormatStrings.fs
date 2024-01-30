@@ -317,13 +317,10 @@ let parseFormatStringInternal
             |> Seq.takeWhile (fun c -> c = '%')
             |> Seq.length
         if delimLen <= 1 && fmt[i..(i+1)] = "%%" then
-            match context with
-            | Some _ ->
-                specifierLocations.Add(
-                    (Range.mkFileIndexRange m.FileIndex
-                        (Position.mkPos fragLine fragCol)
-                        (Position.mkPos fragLine (fragCol+2))), 0)
-            | None -> ()
+            specifierLocations.Add(
+                (Range.mkFileIndexRange m.FileIndex
+                    (Position.mkPos fragLine fragCol)
+                    (Position.mkPos fragLine (fragCol+2))), 0)
             appendToDotnetFormatString "%"
             parseLoop acc (i+2, fragLine, fragCol+2) fragments
         elif delimLen > 1 && nPercentSigns < delimLen then
@@ -384,15 +381,12 @@ let parseFormatStringInternal
                     failwith (FSComp.SR.forFormatInvalidForInterpolated3())
 
             let collectSpecifierLocation fragLine fragCol numStdArgs =
-                match context with
-                | Some _ ->
-                    let numArgsForSpecifier =
-                        numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
-                    specifierLocations.Add(
-                        (Range.mkFileIndexRange m.FileIndex
-                            (Position.mkPos fragLine startFragCol)
-                            (Position.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
-                | None -> ()
+                let numArgsForSpecifier =
+                    numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
+                specifierLocations.Add(
+                    (Range.mkFileIndexRange m.FileIndex
+                        (Position.mkPos fragLine startFragCol)
+                        (Position.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
 
             let ch = fmt[i]
             match ch with

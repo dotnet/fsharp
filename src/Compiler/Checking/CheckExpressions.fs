@@ -7189,6 +7189,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
 and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: SynInterpolatedStringPart list) =
     let g = cenv.g
 
+    let mutable allSimpleFormats = true
     let synFillExprs =
         parts
         |> List.choose (function
@@ -7196,7 +7197,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             | SynInterpolatedStringPart.FillExpr (fillExpr, _)  ->
                 match fillExpr with
                 // Detect "x" part of "...{x,3}..."
-                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
+                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) ->
+                    allSimpleFormats <- false
+                    Some e
                 | e -> Some e)
 
     let stringFragmentRanges =
@@ -7302,11 +7305,13 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             ()
     | _ -> ()
 
-    let argTys, _printerTy, printerTupleTyRequired, percentATys, _specifierLocations, dotnetFormatString =
+    let argTys, _printerTy, printerTupleTyRequired, percentATys, specifierLocations, dotnetFormatString =
         try
             CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString None printfFormatString printerArgTy printerResidueTy printerResultTy
         with Failure errString ->
             error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
+
+    allSimpleFormats <- allSimpleFormats && specifierLocations.IsEmpty
 
     // Check the expressions filling the holes
     if argTys.Length <> synFillExprs.Length then
@@ -7338,7 +7343,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
             // If all fill expressions are strings and there is less then 5 parts of the interpolated string total
             // then we can use System.String.Concat instead of a sprintf call
-            if isString && (parts.Length < 5) && (argTys |> List.forall (isStringTy g)) then
+            if allSimpleFormats && isString && (parts.Length < 5) && (argTys |> List.forall (isStringTy g)) then
                 let rec f xs ys acc =
                     match xs with
                     | SynInterpolatedStringPart.String(s, m)::xs ->
