@@ -193,14 +193,12 @@ type SyntheticSourceFile =
         Source: string
         ExtraSource: string
         EntryPoint: bool
-        /// The absolute path of an existing F# file.
-        PhysicalFileName: string option
+        /// Indicates whether this is an existing F# file on disk.
+        IsPhysicalFile: bool
     }
 
     member this.FileName =
-        match this.PhysicalFileName with
-        | Some f -> f
-        | None -> $"File%s{this.Id}.fs"
+        if this.IsPhysicalFile then $"%s{this.Id}.fs" else $"File%s{this.Id}.fs"
 
     member this.SignatureFileName = $"{this.FileName}i"
     member this.TypeName = $"T{this.Id}V_{this.PublicVersion}"
@@ -223,7 +221,7 @@ let sourceFile fileId deps =
       Source = ""
       ExtraSource = ""
       EntryPoint = false
-      PhysicalFileName = None }
+      IsPhysicalFile = false }
 
 
 let OptionsCache = ConcurrentDictionary()
@@ -530,7 +528,7 @@ let mkSyntheticProjectForResponseFile (responseFile: FileInfo) : SyntheticProjec
                   Source = File.ReadAllText implPath
                   ExtraSource = ""
                   EntryPoint = false
-                  PhysicalFileName = Some implPath 
+                  IsPhysicalFile = true 
             }
         )
     
