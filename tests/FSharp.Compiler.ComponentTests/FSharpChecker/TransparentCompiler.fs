@@ -802,88 +802,6 @@ module Stuff =
 
         ()
 
-let mkWorkflowBuilderForResponseFile
-    (useTransparentCompiler:bool)
-    (responseFile: FileInfo)
-    : SyntheticProject * ProjectWorkflowBuilder
-    =
-    if not responseFile.Exists then
-        failwith $"%s{responseFile.FullName} does not exist"
-    
-    let compilerArgs = File.ReadAllLines responseFile.FullName
-
-    let fsharpFileExtensions = set [| ".fs" ; ".fsi" ; ".fsx" |]
-
-    let isFSharpFile (file : string) =
-        Set.exists (fun (ext : string) -> file.EndsWith (ext, StringComparison.Ordinal)) fsharpFileExtensions
-          
-    let fsharpFiles =
-        compilerArgs
-        |> Array.choose (fun (line : string) ->
-            if not (isFSharpFile line) then
-                None
-            else
-
-            let fullPath = Path.Combine (responseFile.DirectoryName, line)
-            if not (File.Exists fullPath) then
-                None
-            else
-                Some fullPath
-        )
-        |> Array.toList
-
-    let signatureFiles, implementationFiles =
-        fsharpFiles |> List.partition (fun path -> path.EndsWith ".fsi")
-
-    let signatureFiles = set signatureFiles
-
-    let sourceFiles =
-        implementationFiles
-        |> List.map (fun implPath ->
-            {
-                  Id = implPath
-                  PublicVersion = 1
-                  InternalVersion = 1
-                  DependsOn = []
-                  FunctionName = "f"
-                  SignatureFile =
-                      let sigPath = $"%s{implPath}i" in
-                      if signatureFiles.Contains sigPath then Custom(File.ReadAllText sigPath) else No
-                  HasErrors = false
-                  Source = File.ReadAllText implPath
-                  ExtraSource = ""
-                  EntryPoint = false
-            }
-        )
-    
-    let otherOptions =
-        compilerArgs
-        |> Array.filter (fun line -> not (isFSharpFile line))
-        |> Array.toList
-  
-    let syntheticProject: SyntheticProject =
-        {
-            Name = Path.GetFileNameWithoutExtension responseFile.Name
-            ProjectDir = responseFile.DirectoryName
-            SourceFiles = sourceFiles
-            DependsOn = List.empty
-            RecursiveNamespace = false
-            OtherOptions = otherOptions
-            AutoAddModules = false
-            NugetReferences = List.empty
-            FrameworkReferences = List.empty
-            SkipInitialCheck = false
-        }
-
-    let builder =
-        ProjectWorkflowBuilder(
-            syntheticProject,
-            isExistingProject = true,
-            useTransparentCompiler = useTransparentCompiler
-        )
-
-    syntheticProject, builder
-
 /// Update these paths to a local response file with compiler arguments of existing F# projects.
 /// References projects are expected to have been built.
 let localResponseFiles =
@@ -900,12 +818,19 @@ let localResponseFiles =
 // Uncomment this attribute if you want run this test against local response files.
 // [<Theory>]
 [<MemberData(nameof(localResponseFiles))>]
-let ``TypeCheck last file in project with transparent compiler`` useTransparent responseFile =
+let ``TypeCheck last file in project with transparent compiler`` useTransparentCompiler responseFile =
     let responseFile = FileInfo responseFile
-    let project, workflow = mkWorkflowBuilderForResponseFile useTransparent responseFile
+    let syntheticProject = mkSyntheticProjectForResponseFile responseFile
+
+    let workflow =     
+        ProjectWorkflowBuilder(
+            syntheticProject,
+            isExistingProject = true,
+            useTransparentCompiler = useTransparentCompiler
+        )
 
     let lastFile =
-        project.SourceFiles
+        syntheticProject.SourceFiles
         |> List.last
         |> fun sf -> sf.Id
 

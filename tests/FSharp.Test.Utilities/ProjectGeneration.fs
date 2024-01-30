@@ -470,6 +470,74 @@ let private writeFile (p: SyntheticProject) (f: SyntheticSourceFile) =
     let content = renderSourceFile p f
     writeFileIfChanged fileName content
 
+/// Creates a SyntheticProject from the compiler arguments found in the response file.
+let mkSyntheticProjectForResponseFile (responseFile: FileInfo) : SyntheticProject =
+    if not responseFile.Exists then
+        failwith $"%s{responseFile.FullName} does not exist"
+    
+    let compilerArgs = File.ReadAllLines responseFile.FullName
+
+    let fsharpFileExtensions = set [| ".fs" ; ".fsi" ; ".fsx" |]
+
+    let isFSharpFile (file : string) =
+        Set.exists (fun (ext : string) -> file.EndsWith (ext, StringComparison.Ordinal)) fsharpFileExtensions
+          
+    let fsharpFiles =
+        compilerArgs
+        |> Array.choose (fun (line : string) ->
+            if not (isFSharpFile line) then
+                None
+            else
+
+            let fullPath = Path.Combine (responseFile.DirectoryName, line)
+            if not (File.Exists fullPath) then
+                None
+            else
+                Some fullPath
+        )
+        |> Array.toList
+
+    let signatureFiles, implementationFiles =
+        fsharpFiles |> List.partition (fun path -> path.EndsWith ".fsi")
+
+    let signatureFiles = set signatureFiles
+
+    let sourceFiles =
+        implementationFiles
+        |> List.map (fun implPath ->
+            {
+                  Id = implPath
+                  PublicVersion = 1
+                  InternalVersion = 1
+                  DependsOn = []
+                  FunctionName = "f"
+                  SignatureFile =
+                      let sigPath = $"%s{implPath}i" in
+                      if signatureFiles.Contains sigPath then Custom(File.ReadAllText sigPath) else No
+                  HasErrors = false
+                  Source = File.ReadAllText implPath
+                  ExtraSource = ""
+                  EntryPoint = false
+            }
+        )
+    
+    let otherOptions =
+        compilerArgs
+        |> Array.filter (fun line -> not (isFSharpFile line))
+        |> Array.toList
+ 
+    {
+        Name = Path.GetFileNameWithoutExtension responseFile.Name
+        ProjectDir = responseFile.DirectoryName
+        SourceFiles = sourceFiles
+        DependsOn = List.empty
+        RecursiveNamespace = false
+        OtherOptions = otherOptions
+        AutoAddModules = false
+        NugetReferences = List.empty
+        FrameworkReferences = List.empty
+        SkipInitialCheck = false
+    }
 
 [<AutoOpen>]
 module ProjectOperations =
