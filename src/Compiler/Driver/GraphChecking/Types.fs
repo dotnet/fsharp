@@ -1,6 +1,6 @@
 ﻿namespace FSharp.Compiler.GraphChecking
 
-open System.Collections.Generic
+open System.Collections.Immutable
 open FSharp.Compiler.Syntax
 
 /// The index of a file inside a project.
@@ -30,23 +30,34 @@ type internal FileInProject =
 /// Only when the namespace exposes types that could later be inferred.
 /// Children of a namespace don't automatically depend on each other for that reason
 type internal TrieNodeInfo =
-    | Root of files: HashSet<FileIndex>
+    | Root of files: ImmutableHashSet<FileIndex>
     | Module of name: Identifier * file: FileIndex
-    | Namespace of name: Identifier * filesThatExposeTypes: HashSet<FileIndex> * filesDefiningNamespaceWithoutTypes: HashSet<FileIndex>
+    | Namespace of
+        name: Identifier *
+        filesThatExposeTypes: ImmutableHashSet<FileIndex> *
+        filesDefiningNamespaceWithoutTypes: ImmutableHashSet<FileIndex>
 
     member x.Files: Set<FileIndex> =
         match x with
         | Root files -> set files
-        | Module (file = file) -> Set.singleton file
-        | Namespace (filesThatExposeTypes = files) -> set files
+        | Module(file = file) -> Set.singleton file
+        | Namespace(filesThatExposeTypes = files) -> set files
 
 type internal TrieNode =
     {
         Current: TrieNodeInfo
-        Children: Dictionary<Identifier, TrieNode>
+        Children: ImmutableDictionary<Identifier, TrieNode>
     }
 
     member x.Files = x.Current.Files
+
+    static member Empty =
+        let rootFiles = ImmutableHashSet.Empty
+
+        {
+            Current = TrieNodeInfo.Root rootFiles
+            Children = ImmutableDictionary.Empty
+        }
 
 /// A significant construct found in the syntax tree of a file.
 /// This construct needs to be processed in order to deduce potential links to other files in the project.
@@ -62,6 +73,9 @@ type internal FileContentEntry =
     /// Being explicit about nested modules allows for easier reasoning what namespaces (paths) are open.
     /// We can scope an `OpenStatement` to the everything that is happening inside the nested module.
     | NestedModule of name: string * nestedContent: FileContentEntry list
+    /// A single identifier that could be the name of a module.
+    /// Example use-case: `let x = nameof Foo` where `Foo` is a module.
+    | ModuleName of name: Identifier
 
 type internal FileContent =
     {
@@ -75,25 +89,20 @@ type internal FileContentQueryState =
         OwnNamespace: LongIdentifier option
         OpenedNamespaces: Set<LongIdentifier>
         FoundDependencies: Set<FileIndex>
-        CurrentFile: FileIndex
-        KnownFiles: Set<FileIndex>
     }
 
-    static member Create (fileIndex: FileIndex) (knownFiles: Set<FileIndex>) (filesAtRoot: Set<FileIndex>) =
+    static member Create(filesAtRoot: Set<FileIndex>) =
         {
             OwnNamespace = None
             OpenedNamespaces = Set.empty
             FoundDependencies = filesAtRoot
-            CurrentFile = fileIndex
-            KnownFiles = knownFiles
         }
 
     member x.AddOwnNamespace(ns: LongIdentifier, ?files: Set<FileIndex>) =
         match files with
         | None -> { x with OwnNamespace = Some ns }
         | Some files ->
-            let foundDependencies =
-                Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
+            let foundDependencies = files |> Set.union x.FoundDependencies
 
             { x with
                 OwnNamespace = Some ns
@@ -101,7 +110,7 @@ type internal FileContentQueryState =
             }
 
     member x.AddDependencies(files: Set<FileIndex>) : FileContentQueryState =
-        let files = Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
+        let files = files |> Set.union x.FoundDependencies
         { x with FoundDependencies = files }
 
     member x.AddOpenNamespace(path: LongIdentifier, ?files: Set<FileIndex>) =
@@ -111,8 +120,7 @@ type internal FileContentQueryState =
                 OpenedNamespaces = Set.add path x.OpenedNamespaces
             }
         | Some files ->
-            let foundDependencies =
-                Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
+            let foundDependencies = files |> Set.union x.FoundDependencies
 
             { x with
                 FoundDependencies = foundDependencies

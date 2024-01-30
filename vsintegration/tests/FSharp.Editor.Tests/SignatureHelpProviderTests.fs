@@ -16,8 +16,8 @@ open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 module SignatureHelpProvider =
     let private DefaultDocumentationProvider =
         { new IDocumentationBuilder with
-            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-            override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
     let checker = FSharpChecker.Create()
@@ -44,9 +44,7 @@ module SignatureHelpProvider =
 
             let paramInfoLocations =
                 parseResults
-                    .FindParameterLocations(
-                        Position.fromZ caretLinePos.Line caretLineColumn
-                    )
+                    .FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
                     .Value
 
             let triggered =
@@ -58,7 +56,8 @@ module SignatureHelpProvider =
                     DefaultDocumentationProvider,
                     sourceText,
                     caretPosition,
-                    triggerChar
+                    triggerChar,
+                    EditorOptions()
                 )
                 |> Async.RunSynchronously
 
@@ -125,7 +124,8 @@ module SignatureHelpProvider =
                         DefaultDocumentationProvider,
                         sourceText,
                         caretPosition,
-                        triggerChar
+                        triggerChar,
+                        EditorOptions()
                     )
                     |> Async.RunSynchronously
 
@@ -157,13 +157,18 @@ module SignatureHelpProvider =
             |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let adjustedColumnInSource =
-            let rec loop ch pos =
-                if Char.IsWhiteSpace(ch) then
-                    loop sourceText.[pos - 1] (pos - 1)
-                else
+            let rec loop pos =
+                if pos = 0 then
                     pos
+                else
+                    let nextPos = pos - 1
 
-            loop sourceText.[caretPosition - 1] (caretPosition - 1)
+                    if not (Char.IsWhiteSpace sourceText[nextPos]) then
+                        pos
+                    else
+                        loop nextPos
+
+            loop (caretPosition - 1)
 
         let sigHelp =
             FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
@@ -177,7 +182,8 @@ module SignatureHelpProvider =
                 sourceText,
                 caretPosition,
                 adjustedColumnInSource,
-                filePath
+                filePath,
+                EditorOptions()
             )
             |> Async.RunSynchronously
 
@@ -442,8 +448,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 module ``Function argument applications`` =
     let private DefaultDocumentationProvider =
         { new IDocumentationBuilder with
-            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-            override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
     [<Fact>]
@@ -520,7 +526,8 @@ M.f
                 sourceText,
                 caretPosition,
                 adjustedColumnInSource,
-                filePath
+                filePath,
+                EditorOptions()
             )
             |> Async.RunSynchronously
 
@@ -549,6 +556,18 @@ M.f
 
         let marker = "List.map "
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "mapping"
+
+    [<Fact>]
+    let ``function application in middle of pipeline with two additional arguments`` () =
+        let fileContents =
+            """
+[1..10]
+|> List.fold (fun acc _ -> acc) 
+|> List.filter (fun x -> x > 3)
+    """
+
+        let marker = "List.fold (fun acc _ -> acc) "
+        assertSignatureHelpForFunctionApplication fileContents marker 2 1 "state"
 
     [<Fact>]
     let ``function application with function as parameter`` () =

@@ -616,16 +616,16 @@ type DefaultFileSystem() as this =
 
     default _.IsInvalidPathShim(path: string) =
         let isInvalidPath (p: string MaybeNull) =
-            match p with
-            | Null
-            | "" -> true
-            | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+            if String.IsNullOrEmpty(p) then
+                true
+            else
+                p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
         let isInvalidFilename (p: string MaybeNull) =
-            match p with
-            | Null
-            | "" -> true
-            | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+            if String.IsNullOrEmpty(p) then
+                true
+            else
+                p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
         let isInvalidDirectory (d: string MaybeNull) =
             match d with
@@ -645,7 +645,7 @@ type DefaultFileSystem() as this =
     default _.GetDirectoryNameShim(path: string) =
         FileSystemUtils.checkPathForIllegalChars path
 
-        if path = "" then
+        if String.IsNullOrEmpty(path) then
             "."
         else
             match Path.GetDirectoryName(path) with
@@ -654,7 +654,7 @@ type DefaultFileSystem() as this =
                     path
                 else
                     "."
-            | res -> if res = "" then "." else res
+            | res -> if String.IsNullOrEmpty(res) then "." else res
 
     abstract GetLastWriteTimeShim: fileName: string -> DateTime
     default _.GetLastWriteTimeShim(fileName: string) = File.GetLastWriteTimeUtc fileName
@@ -968,7 +968,7 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 1
         buf.Ensure newSize
-        buf.bbArray[ buf.bbCurrent ] <- byte i
+        buf.bbArray[buf.bbCurrent] <- byte i
         buf.bbCurrent <- newSize
 
     member buf.EmitByte(b: byte) =
@@ -990,10 +990,10 @@ type internal ByteBuffer =
 
     member bb.FixupInt32 pos value =
         bb.CheckDisposed()
-        bb.bbArray[ pos ] <- (Bytes.b0 value |> byte)
-        bb.bbArray[ pos + 1 ] <- (Bytes.b1 value |> byte)
-        bb.bbArray[ pos + 2 ] <- (Bytes.b2 value |> byte)
-        bb.bbArray[ pos + 3 ] <- (Bytes.b3 value |> byte)
+        bb.bbArray[pos] <- (Bytes.b0 value |> byte)
+        bb.bbArray[pos + 1] <- (Bytes.b1 value |> byte)
+        bb.bbArray[pos + 2] <- (Bytes.b2 value |> byte)
+        bb.bbArray[pos + 3] <- (Bytes.b3 value |> byte)
 
     member buf.EmitInt32 n =
         buf.CheckDisposed()
@@ -1030,8 +1030,8 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 2
         buf.Ensure newSize
-        buf.bbArray[ buf.bbCurrent ] <- (Bytes.b0 n |> byte)
-        buf.bbArray[ buf.bbCurrent + 1 ] <- (Bytes.b1 n |> byte)
+        buf.bbArray[buf.bbCurrent] <- (Bytes.b0 n |> byte)
+        buf.bbArray[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
         buf.bbCurrent <- newSize
 
     member buf.EmitBoolAsByte(b: bool) =

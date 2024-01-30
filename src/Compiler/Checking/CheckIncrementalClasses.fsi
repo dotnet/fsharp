@@ -130,7 +130,7 @@ val TcImplicitCtorInfo_Phase2A:
     tcref: TyconRef *
     vis: SynAccess option *
     attrs: SynAttribute list *
-    spats: SynSimplePat list *
+    pat: SynPat *
     thisIdOpt: Ident option *
     baseValOpt: Val option *
     safeInitInfo: SafeInitData *

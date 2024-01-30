@@ -188,10 +188,13 @@ type ListCollector<'T> =
 type ArrayCollector<'T> =
     [<DefaultValue(false)>]
     val mutable internal ResizeArray: ResizeArray<'T>
+
     [<DefaultValue(false)>]
     val mutable internal First: 'T
+
     [<DefaultValue(false)>]
     val mutable internal Second: 'T
+
     [<DefaultValue(false)>]
     val mutable internal Count: int
 
@@ -202,7 +205,7 @@ type ArrayCollector<'T> =
     member AddMany: values: seq<'T> -> unit
 
     /// Add multiple elements to the collector and return the resulting array
-    member AddManyAndClose: values: seq<'T> -> 'T[]
+    member AddManyAndClose: values: seq<'T> -> 'T array
 
     /// Return the resulting list
-    member Close: unit -> 'T[]
+    member Close: unit -> 'T array

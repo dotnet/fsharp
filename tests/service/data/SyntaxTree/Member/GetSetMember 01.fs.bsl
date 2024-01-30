@@ -12,7 +12,7 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], [], (3,8--3,10)), None,
+                        (None, [], Const (Unit, (3,8--3,10)), None,
                          PreXmlDoc ((3,8), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,8), { AsKeyword = None });
                       GetSetMember
@@ -33,7 +33,7 @@ ImplFile
                                     ([[SynArgInfo ([], false, None)];
                                       [SynArgInfo ([], false, Some key1);
                                        SynArgInfo ([], false, Some key2)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
                                     ([f; X], [(4,12--4,13)], [None; None]),
@@ -74,7 +74,7 @@ ImplFile
                                       [SynArgInfo ([], false, Some key1);
                                        SynArgInfo ([], false, Some key2);
                                        SynArgInfo ([], false, Some value)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
                                     ([f; X], [(4,12--4,13)], [None; None]),
@@ -121,7 +121,7 @@ ImplFile
                                     ([[SynArgInfo ([], false, None)];
                                       [SynArgInfo ([], false, Some key1);
                                        SynArgInfo ([], false, Some key2)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
                                     ([f; Y], [(5,21--5,22)], [None; None]),
@@ -162,7 +162,7 @@ ImplFile
                                       [SynArgInfo ([], false, Some key1);
                                        SynArgInfo ([], false, Some key2);
                                        SynArgInfo ([], false, Some value)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
                                     ([f; Y], [(5,21--5,22)], [None; None]),
@@ -194,7 +194,7 @@ ImplFile
                      (4,4--5,92)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], [], (3,8--3,10)), None,
+                       (None, [], Const (Unit, (3,8--3,10)), None,
                         PreXmlDoc ((3,8), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,8), { AsKeyword = None })), (3,5--5,92),
                   { LeadingKeyword = Type (3,0--3,4)

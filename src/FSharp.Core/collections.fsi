@@ -70,7 +70,7 @@ module HashIdentity =
     /// <code>
     /// open System.Collections.Generic
     ///
-    /// let dict = new Dictionary&lt;int[],int&gt;(HashIdentity.Structural)
+    /// let dict = new Dictionary&lt;int array,int&gt;(HashIdentity.Structural)
     ///
     /// let arr1 = [| 1;2;3 |]
     /// let arr2 = [| 1;2;3 |]
@@ -134,7 +134,7 @@ module HashIdentity =
     /// <code>
     /// open System.Collections.Generic
     ///
-    /// let dict = new Dictionary&lt;int[],int&gt;(HashIdentity.Structural)
+    /// let dict = new Dictionary&lt;int array,int&gt;(HashIdentity.Structural)
     ///
     /// let arr1 = [| 1;2;3 |]
     /// let arr2 = [| 1;2;3 |]

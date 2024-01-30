@@ -71,7 +71,7 @@ module FindReferences =
 
         let document =
             solution.TryGetDocumentFromPath documentPath
-            |> Option.defaultWith (fun _ -> failwith "Document not found")
+            |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
 
         findUsagesService
             .FindReferencesAsync(document, getPositionOf "funcParam" documentPath, context)
@@ -94,7 +94,7 @@ module FindReferences =
 
         let document =
             solution.TryGetDocumentFromPath documentPath
-            |> Option.defaultWith (fun _ -> failwith "Document not found")
+            |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
 
         findUsagesService
             .FindReferencesAsync(document, getPositionOf "funcParam" documentPath, context)
@@ -116,7 +116,7 @@ module FindReferences =
 
         let document =
             solution.TryGetDocumentFromPath documentPath
-            |> Option.defaultWith (fun _ -> failwith "Document not found")
+            |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
 
         findUsagesService
             .FindReferencesAsync(document, getPositionOf "sharedFunc" documentPath, context)
@@ -157,7 +157,7 @@ module FindReferences =
 
         let document =
             solution2.TryGetDocumentFromPath documentPath
-            |> Option.defaultWith (fun _ -> failwith "Document not found")
+            |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
 
         findUsagesService
             .FindReferencesAsync(document, getPositionOf operator documentPath, context)

@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Collections.Concurrent
+open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading.Tasks
 
@@ -80,9 +81,19 @@ module internal SymbolHelpers =
                 // TODO: this needs to be a single event with a duration
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
+                let snapshotAccumulator = Dictionary()
+
+                let! projects =
+                    projects
+                    |> Seq.map (fun project ->
+                        project.GetFSharpProjectSnapshot(snapshotAccumulator)
+                        |> CancellableTask.map (fun s -> project, s))
+                    |> CancellableTask.sequential
+
                 do!
                     projects
-                    |> Seq.map (fun project -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects"))
+                    |> Seq.map (fun (project, snapshot) ->
+                        project.FindFSharpReferencesAsync(symbol, snapshot, onFound, "getSymbolUsesInProjects"))
                     |> CancellableTask.whenAll
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
@@ -110,12 +121,12 @@ module internal SymbolHelpers =
 
                 let! otherFileCheckResults =
                     match currentDocument.Project.Solution.TryGetDocumentFromPath otherFile with
-                    | Some doc ->
+                    | ValueSome doc ->
                         cancellableTask {
                             let! _, checkFileResults = doc.GetFSharpParseAndCheckResultsAsync("findReferencedSymbolsAsync")
                             return [ checkFileResults, doc ]
                         }
-                    | None -> CancellableTask.singleton []
+                    | ValueNone -> CancellableTask.singleton []
 
                 let symbolUses =
                     (checkFileResults, currentDocument) :: otherFileCheckResults
@@ -128,14 +139,14 @@ module internal SymbolHelpers =
             | scope ->
                 let projectsToCheck =
                     match scope with
-                    | Some (SymbolScope.Projects (scopeProjects, false)) ->
+                    | Some(SymbolScope.Projects(scopeProjects, false)) ->
                         [
                             for scopeProject in scopeProjects do
                                 yield scopeProject
                                 yield! scopeProject.GetDependentProjects()
                         ]
                         |> List.distinct
-                    | Some (SymbolScope.Projects (scopeProjects, true)) -> scopeProjects
+                    | Some(SymbolScope.Projects(scopeProjects, true)) -> scopeProjects
                     // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
                     // In order to find all its usages we have to check all F# projects.
                     | _ -> Seq.toList currentDocument.Project.Solution.Projects

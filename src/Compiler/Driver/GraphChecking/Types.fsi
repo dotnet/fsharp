@@ -1,6 +1,6 @@
 namespace FSharp.Compiler.GraphChecking
 
-open System.Collections.Generic
+open System.Collections.Immutable
 open FSharp.Compiler.Syntax
 
 /// The index of a file inside a project.
@@ -28,14 +28,14 @@ type internal FileInProject =
 /// Only when the namespace exposes types that could later be inferred.
 /// Children of a namespace don't automatically depend on each other for that reason
 type internal TrieNodeInfo =
-    | Root of files: HashSet<FileIndex>
+    | Root of files: ImmutableHashSet<FileIndex>
     | Module of name: Identifier * file: FileIndex
     | Namespace of
         name: Identifier *
         /// Files that expose types that are part of this namespace.
-        filesThatExposeTypes: HashSet<FileIndex> *
+        filesThatExposeTypes: ImmutableHashSet<FileIndex> *
         /// Files that use this namespace but don't contain any types.
-        filesDefiningNamespaceWithoutTypes: HashSet<FileIndex>
+        filesDefiningNamespaceWithoutTypes: ImmutableHashSet<FileIndex>
 
     member Files: Set<FileIndex>
 
@@ -45,11 +45,13 @@ type internal TrieNode =
         /// Information about this node.
         Current: TrieNodeInfo
         /// Child nodes
-        Children: Dictionary<Identifier, TrieNode>
+        Children: ImmutableDictionary<Identifier, TrieNode>
     }
 
     /// Zero or more files that define the LongIdentifier represented by this node.
     member Files: Set<FileIndex>
+
+    static member Empty: TrieNode
 
 /// A significant construct found in the syntax tree of a file.
 /// This construct needs to be processed in order to deduce potential links to other files in the project.
@@ -65,6 +67,9 @@ type internal FileContentEntry =
     /// Being explicit about nested modules allows for easier reasoning what namespaces (paths) are open.
     /// For example we can limit the scope of an `OpenStatement` to symbols defined inside the nested module.
     | NestedModule of name: string * nestedContent: FileContentEntry list
+    /// A single identifier that could be the name of a module.
+    /// Example use-case: `let x = nameof Foo` where `Foo` is a module.
+    | ModuleName of name: Identifier
 
 /// File identifiers and its content extract for dependency resolution
 type internal FileContent =
@@ -75,12 +80,9 @@ type internal FileContent =
 type internal FileContentQueryState =
     { OwnNamespace: LongIdentifier option
       OpenedNamespaces: Set<LongIdentifier>
-      FoundDependencies: Set<FileIndex>
-      CurrentFile: FileIndex
-      KnownFiles: Set<FileIndex> }
+      FoundDependencies: Set<FileIndex> }
 
-    static member Create:
-        fileIndex: FileIndex -> knownFiles: Set<FileIndex> -> filesAtRoot: Set<FileIndex> -> FileContentQueryState
+    static member Create: filesAtRoot: Set<FileIndex> -> FileContentQueryState
     member AddOwnNamespace: ns: LongIdentifier * ?files: Set<FileIndex> -> FileContentQueryState
     member AddDependencies: files: Set<FileIndex> -> FileContentQueryState
     member AddOpenNamespace: path: LongIdentifier * ?files: Set<FileIndex> -> FileContentQueryState

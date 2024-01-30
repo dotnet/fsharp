@@ -14,7 +14,7 @@ ImplFile
                      SynValInfo
                        ([[SynArgInfo ([], false, Some i);
                           SynArgInfo ([], false, None)]],
-                        SynArgInfo ([], false, None)), None, None),
+                        SynArgInfo ([], false, None)), None),
                   Named (SynIdent (x, None), false, None, (3,4--3,5)), None,
                   Lambda
                     (false, false,
@@ -52,7 +52,7 @@ ImplFile
                        ([[SynArgInfo ([], false, Some a);
                           SynArgInfo ([], false, Some b);
                           SynArgInfo ([], false, None)]],
-                        SynArgInfo ([], false, None)), None, None),
+                        SynArgInfo ([], false, None)), None),
                   Named (SynIdent (y, None), false, None, (4,4--4,5)), None,
                   Lambda
                     (false, false,
@@ -102,7 +102,7 @@ ImplFile
                                     Range = (5,28--5,31) }]
                                 Range = (5,26--5,33) }], false, Some v);
                           SynArgInfo ([], false, None)]],
-                        SynArgInfo ([], false, None)), None, None),
+                        SynArgInfo ([], false, None)), None),
                   Named (SynIdent (z, None), false, None, (5,4--5,5)), None,
                   Lambda
                     (false, false,
@@ -179,7 +179,7 @@ ImplFile
                      SynValInfo
                        ([[SynArgInfo ([], false, None);
                           SynArgInfo ([], false, None)]],
-                        SynArgInfo ([], false, None)), None, None),
+                        SynArgInfo ([], false, None)), None),
                   Named (SynIdent (ignore, None), false, None, (6,4--6,10)),
                   None,
                   Lambda

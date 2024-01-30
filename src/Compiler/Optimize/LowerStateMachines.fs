@@ -39,7 +39,7 @@ type StateMachineConversionFirstPhaseResult =
    }
 
 #if DEBUG
-let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMachineVerbose") <> null with _ -> false
+let sm_verbose = try not (isNull(System.Environment.GetEnvironmentVariable "FSharp_StateMachineVerbose")) with _ -> false
 #else
 let sm_verbose = false
 #endif
@@ -114,7 +114,7 @@ let isExpandVar g (v: Val) =
 let isStateMachineBindingVar g (v: Val) = 
     isExpandVar g v  ||
     (let nm = v.LogicalName
-     (nm.StartsWith "builder@" || v.IsMemberThisVal) &&
+     (nm.StartsWithOrdinal("builder@") || v.IsMemberThisVal) &&
      not v.IsCompiledAsTopLevel)
 
 type env = 
@@ -377,6 +377,7 @@ type LowerStateMachine(g: TcGlobals) =
         | None -> env2, expr2
 
     // Detect a state machine with a single method override
+    [<return: Struct>]
     let (|ExpandedStateMachineInContext|_|) inputExpr = 
         // All expanded resumable code state machines e.g. 'task { .. }' begin with a bind of @builder or 'defn'
         let env, expr = BindResumableCodeDefinitions env.Empty inputExpr 
@@ -405,9 +406,9 @@ type LowerStateMachine(g: TcGlobals) =
                         (moveNextThisVar, moveNextExprR), 
                         (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBodyR), 
                         (afterCodeThisVar, afterCodeBodyR))
-            Some (env, remake2, moveNextBody)
+            ValueSome (env, remake2, moveNextBody)
         | _ -> 
-            None
+            ValueNone
 
     // A utility to add a jump table an expression
     let addPcJumpTable m (pcs: int list)  (pc2lab: Map<int, ILCodeLabel>) pcExpr expr =
@@ -833,7 +834,7 @@ type LowerStateMachine(g: TcGlobals) =
                 |> Result.Ok
             elif bind.Var.IsCompiledAsTopLevel || 
                 not (resBody.resumableVars.FreeLocals.Contains(bind.Var)) || 
-                bind.Var.LogicalName.StartsWith stackVarPrefix then
+                bind.Var.LogicalName.StartsWithOrdinal(stackVarPrefix) then
                 if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
                 RepresentBindingAsTopLevelOrLocal bind resBody m
                 |> Result.Ok

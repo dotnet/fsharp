@@ -501,7 +501,7 @@ let private p_lazy_impl p v st =
     st.os.FixupInt32 fixupPos7 ovalsIdx2
 
 let p_lazy p x st =
-    p_lazy_impl p (Lazy.force x) st
+    p_lazy_impl p (InterruptibleLazy.force x) st
 
 let p_maybe_lazy p (x: MaybeLazy<_>) st =
     p_lazy_impl p x.Value st
@@ -560,7 +560,7 @@ let u_list_revi f st =
          yield f st (n-1-i) ]
 
 
-let u_wrap (f: 'U -> 'T) (u : 'U unpickler) : 'T unpickler = (fun st -> f (u st))
+let u_wrap (f: 'U -> 'T) (u : 'U unpickler) : 'T unpickler = (u >> f)
 
 let u_option f st =
     let tag = u_byte st
@@ -604,7 +604,7 @@ let u_lazy u st =
     res
 #else
     ignore (len, otyconsIdx1, otyconsIdx2, otyparsIdx1, otyparsIdx2, ovalsIdx1, ovalsIdx2)
-    Lazy.CreateFromValue(u st)
+    InterruptibleLazy.FromValue(u st)
 #endif
 
 
@@ -950,7 +950,7 @@ let u_ILHasThis st =
 
 let u_ILCallConv st = let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st in Callconv(a, b)
 let u_ILTypeRef st = let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st in ILTypeRef.Create(a, b, c)
-let u_ILArrayShape = u_wrap (fun x -> ILArrayShape x) (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
+let u_ILArrayShape = u_wrap (ILArrayShape) (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
 
 
 let rec u_ILType st =
@@ -1155,30 +1155,30 @@ let decoders =
      itag_call, u_ILMethodSpec                      >> (fun a -> I_call (Normalcall, a, None))
      itag_callvirt, u_ILMethodSpec                      >> (fun a -> I_callvirt (Normalcall, a, None))
      itag_ldvirtftn, u_ILMethodSpec                      >> I_ldvirtftn
-     itag_conv, u_ILBasicType                       >> (fun a -> (AI_conv a))
-     itag_conv_ovf, u_ILBasicType                       >> (fun a -> (AI_conv_ovf a))
-     itag_conv_ovf_un, u_ILBasicType                       >> (fun a -> (AI_conv_ovf_un a))
+     itag_conv, u_ILBasicType                       >> AI_conv
+     itag_conv_ovf, u_ILBasicType                       >> AI_conv_ovf
+     itag_conv_ovf_un, u_ILBasicType                       >> AI_conv_ovf_un
      itag_ldfld, u_tup2 u_ILVolatility u_ILFieldSpec >> (fun (b, c) -> I_ldfld (Aligned, b, c))
      itag_ldflda, u_ILFieldSpec                       >> I_ldflda
-     itag_ldsfld, u_tup2 u_ILVolatility u_ILFieldSpec >> (fun (a, b) -> I_ldsfld (a, b))
+     itag_ldsfld, u_tup2 u_ILVolatility u_ILFieldSpec >> I_ldsfld
      itag_ldsflda, u_ILFieldSpec                       >> I_ldsflda
      itag_stfld, u_tup2 u_ILVolatility u_ILFieldSpec >> (fun (b, c) -> I_stfld (Aligned, b, c))
-     itag_stsfld, u_tup2 u_ILVolatility u_ILFieldSpec >> (fun (a, b) -> I_stsfld (a, b))
-     itag_ldtoken, u_ILType                            >> (fun a -> I_ldtoken (ILToken.ILType a))
+     itag_stsfld, u_tup2 u_ILVolatility u_ILFieldSpec >> I_stsfld
+     itag_ldtoken, u_ILType                            >> (ILToken.ILType >> I_ldtoken)
      itag_ldstr, u_string                            >> I_ldstr
      itag_box, u_ILType                            >> I_box
      itag_unbox, u_ILType                            >> I_unbox
      itag_unbox_any, u_ILType                            >> I_unbox_any
-     itag_newarr, u_tup2 u_ILArrayShape u_ILType      >> (fun (a, b) -> I_newarr(a, b))
-     itag_stelem_any, u_tup2 u_ILArrayShape u_ILType      >> (fun (a, b) -> I_stelem_any(a, b))
-     itag_ldelem_any, u_tup2 u_ILArrayShape u_ILType      >> (fun (a, b) -> I_ldelem_any(a, b))
+     itag_newarr, u_tup2 u_ILArrayShape u_ILType      >> I_newarr
+     itag_stelem_any, u_tup2 u_ILArrayShape u_ILType      >> I_stelem_any
+     itag_ldelem_any, u_tup2 u_ILArrayShape u_ILType      >> I_ldelem_any
      itag_ldelema, u_tup3 u_ILReadonly u_ILArrayShape u_ILType >> (fun (a, b, c) -> I_ldelema(a, false, b, c))
      itag_castclass, u_ILType                            >> I_castclass
      itag_isinst, u_ILType                            >> I_isinst
      itag_ldobj, u_ILType                            >> (fun c -> I_ldobj (Aligned, Nonvolatile, c))
      itag_stobj, u_ILType                            >> (fun c -> I_stobj (Aligned, Nonvolatile, c))
      itag_sizeof, u_ILType                            >> I_sizeof
-     itag_ldlen_multi, u_tup2 u_int32 u_int32              >> (fun (a, b) -> EI_ldlen_multi (a, b))
+     itag_ldlen_multi, u_tup2 u_int32 u_int32              >> EI_ldlen_multi
      itag_ilzero, u_ILType                            >> EI_ilzero
      itag_ilzero, u_ILType                            >> EI_ilzero
      itag_initobj, u_ILType                            >> I_initobj
@@ -1356,8 +1356,8 @@ let u_nonlocal_val_ref st : NonLocalValOrMemberRef =
 let u_vref st =
     let tag = u_byte st
     match tag with
-    | 0 -> u_local_item_ref st.ivals st |> (fun x -> VRefLocal x)
-    | 1 -> u_nonlocal_val_ref st |> (fun x -> VRefNonLocal x)
+    | 0 -> u_local_item_ref st.ivals st |> VRefLocal
+    | 1 -> u_nonlocal_val_ref st |> VRefNonLocal
     | _ -> ufailwith st "u_item_ref"
 
 let u_vrefs = u_list u_vref
@@ -1437,7 +1437,7 @@ let p_trait_sln sln st =
          p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
 
-let p_trait (TTrait(a, b, c, d, e, f)) st  =
+let p_trait (TTrait(a, b, c, d, e, _, f)) st  =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
@@ -1477,7 +1477,7 @@ let u_trait_sln st =
 
 let u_trait st =
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
-    TTrait (a, b, c, d, e, ref f)
+    TTrait (a, b, c, d, e, ref None, ref f)
 
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
@@ -2425,7 +2425,7 @@ and u_const st =
     | 14 -> u_string st        |> Const.String
     | 15 -> Const.Unit
     | 16 -> Const.Zero
-    | 17 -> u_array u_int32 st |> (fun bits -> Const.Decimal (System.Decimal bits))
+    | 17 -> u_array u_int32 st |> (System.Decimal >> Const.Decimal)
     | _ -> ufailwith st "u_const"
 
 

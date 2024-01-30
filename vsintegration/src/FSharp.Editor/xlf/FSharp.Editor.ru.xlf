@@ -22,6 +22,11 @@
         <target state="translated">Добавить ключевое слово "new"</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Добавить заметку типа</target>
@@ -36,9 +41,10 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">Руководства по блочной структуре;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Руководства по блочной структуре;
 Показать рекомендации по структуре кода F#;
 Структурирование;
 Показать структурные и сворачиваемые узлы кода F#;
@@ -167,9 +173,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Параметры производительности проекта F# и кэширования;
+        <target state="needs-review-translation">Параметры производительности проекта F# и кэширования;
 Включить перекрестные ссылки проекта в памяти;
 Enable_partial_type_checking;
 Параметры производительности IntelliSense;
@@ -195,8 +201,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Форматирование;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Форматирование;
 Предпочитаемая ширина описания в символах;
 Форматирование подписи до заданной ширины путем добавления разрывов строк в соответствии с правилами синтаксиса F#;
 Ссылки навигации;
@@ -204,6 +211,11 @@ Dash underline;</source>
 Сплошное подчеркивание;
 Пунктирное подчеркивание;
 Штриховое подчеркивание;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="new">Remarks:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -214,6 +226,11 @@ Dash underline;</source>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Удалить "return!"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -234,6 +251,11 @@ Dash underline;</source>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">Переименовать "{0}" в "_"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">

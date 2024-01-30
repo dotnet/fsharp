@@ -609,3 +609,79 @@ type Bar =
             |> withReferences [ fsharp ]
         
         csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Abbreviated CSharp type with extensions`` () =
+        let csharp =
+            CSharp """
+namespace CSharpLib {
+
+    public interface I
+    {
+        public int P { get; }
+    }
+
+    public static class Ext
+    {
+        public static void M(this I i)
+        {
+        }
+    }
+}
+    """
+            |> withName "CSLib"
+        
+        let fsharp =
+            FSharp """
+module Module
+
+open CSharpLib
+
+module M =
+    type Ext2 = CSharpLib.Ext
+ 
+    let f (i: I) =
+        i.M()
+"""
+           |> withLangVersion80
+           |> withName "FSLib"
+           |> withReferences [ csharp ]
+        
+        fsharp |> compile |> shouldSucceed
+        
+    [<Fact>]
+    let ``F# CSharpStyleExtensionMethod consumed in F#`` () =
+        let producer =
+            FSharp
+                """
+namespace Producer
+
+open System.Runtime.CompilerServices
+
+type WidgetBuilder<'msg, 'marker>() = class end
+
+type IMarkerOne = interface end
+
+// Commenting out [<Extension>] breaks
+//[<Extension>]
+type WidgetBuilderExtensions =
+    [<Extension>]
+    static member inline one(this: WidgetBuilder<'msg, #IMarkerOne>) = this
+"""
+            |> withLangVersion80
+            |> withName "FSLibProducer"
+
+        let fsharp2 =
+            FSharp
+                """
+namespace Consumer
+
+open Producer
+
+module FSLibConsumer =   
+    let x = WidgetBuilder<int, IMarkerOne>().one()
+"""
+            |> withName "FSLibConsumer"
+            |> withReferences [ producer ]
+
+        fsharp2 |> compile |> shouldSucceed

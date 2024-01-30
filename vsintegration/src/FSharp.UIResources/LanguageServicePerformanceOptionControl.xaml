@@ -23,6 +23,28 @@
                                   IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
                                   Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"
                                   ToolTip="{x:Static local:Strings.Tooltip_in_memory_cross_project_references}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="70" />
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0"
+                               x:Name="transparentCompilerCacheFactor"
+                               Content="{x:Static local:Strings.Transparent_Compiler_Cache_Factor}"
+                               Margin="15 0 0 0"/>
+                               <TextBox Grid.Column="1"
+                                 ToolTip="{x:Static local:Strings.Transparent_Compiler_Cache_Factor_Tooltip}"
+                                 HorizontalContentAlignment="Right"
+                                 VerticalContentAlignment="Center">
+                                <TextBox.Text>
+                                    <Binding UpdateSourceTrigger="PropertyChanged" Path="TransparentCompilerCacheFactor">
+                                        <Binding.ValidationRules>
+                                            <local:IntegerRangeValidationRule Min="1" Max="10000"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+                        </Grid>
                         <CheckBox x:Name="enablePartialTypeChecking"
                                   IsChecked="{Binding EnablePartialTypeChecking}"
                                   Content="{x:Static local:Strings.Enable_partial_type_checking}" />
@@ -46,7 +68,7 @@
                                    Content="{x:Static local:Strings.Time_until_stale_completion}"
                                    Margin="15 0 0 0"/>
                                 <TextBox Grid.Column="1"
-                                     HorizontalContentAlignment="Right" 
+                                     HorizontalContentAlignment="Right"
                                      VerticalContentAlignment="Center">
                                     <TextBox.Text>
                                         <Binding UpdateSourceTrigger="PropertyChanged" Path="TimeUntilStaleCompletion">
@@ -85,9 +107,6 @@
                         <CheckBox x:Name="enableBackgroundItemKeyStoreAndSemanticClassification"
                                   IsChecked="{Binding EnableBackgroundItemKeyStoreAndSemanticClassification}"
                                   Content="{x:Static local:Strings.Enable_Background_ItemKeyStore_And_Semantic_Classification}"/>
-                        <CheckBox x:Name="captureIdentifiersWhenParsing"
-                                  IsChecked="{Binding CaptureIdentifiersWhenParsing}"
-                                  Content="{x:Static local:Strings.Capture_Identifiers_When_Parsing}"/>                        
                     </StackPanel>
                 </GroupBox>
 

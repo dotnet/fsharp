@@ -538,7 +538,7 @@ type CalledMeth<'T>
     // Detect the special case where an indexer setter using param aray takes 'value' argument after ParamArray arguments
     let isIndexerSetter =
         match pinfoOpt with
-        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWith "set_"  && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
+        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWithOrdinal("set_") && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
         | _ -> false
 
     let argSetInfos = 
@@ -841,7 +841,7 @@ let InferLambdaArgsForLambdaPropagation origRhsExpr =
         match e with 
         | SynExpr.Lambda (body = rest) -> 1 + loop rest
         | SynExpr.MatchLambda _ -> 1
-        | SynExpr.DotLambda _ -> 1
+        | SynExpr.DotLambda (expr = body) -> 1 + loop body
         | _ -> 0
     loop origRhsExpr
 
