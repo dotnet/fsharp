@@ -1,4 +1,4 @@
-# CI and PR triggers
+# CI and PR triggers 
 trigger:
   branches:
     include:
@@ -718,25 +718,10 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build -c $(_BuildConfig) .\FSharp.Benchmarks.sln /bl:\"artifacts/log/$(_BuildConfig)/BenchmarkBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)
-            displayName: Plain build of FSharp.Benchmarks.sln
+          - script: eng\CIBuild.cmd -configuration $(_BuildConfig) -testBenchmarks
+            displayName: Smoke test fast benchmarks
             continueOnError: true
             condition: always()
-          - script: .\Build.cmd -c $(_BuildConfig)
-          - pwsh: ./SmokeTestBenchmarks.ps1
-            workingDirectory: $(Build.SourcesDirectory)/tests/benchmarks
-            displayName: Smoke test fast benchmarks
 
         # Test trimming on Windows
         - job: Build_And_Test_Trimming_Windows
