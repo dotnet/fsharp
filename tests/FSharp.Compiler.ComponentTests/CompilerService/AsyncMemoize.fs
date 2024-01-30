@@ -19,11 +19,13 @@ let waitFor (mre: ManualResetEvent) =
         failwith "waitFor timed out"
 
 let waitUntil condition value =
-    let sw = Stopwatch.StartNew()
-    while not <| condition value do
-        if sw.Elapsed > timeout then
-            failwith "waitUntil timed out"
-        Thread.Sleep 10
+    task {
+        let sw = Stopwatch.StartNew()
+        while not <| condition value do
+            if sw.Elapsed > timeout then
+                failwith "waitUntil timed out"
+            do! Task.Delay 10
+    }
 
 let rec internal spinFor (duration: TimeSpan) =
     node {
@@ -116,7 +118,7 @@ let ``We can cancel a job`` () =
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts3.Token)
 
-        waitUntil (events.CountOf Requested) 3
+        do! waitUntil (events.CountOf Requested) 3
 
         cts1.Cancel()
         cts2.Cancel()
@@ -125,7 +127,7 @@ let ``We can cancel a job`` () =
 
         cts3.Cancel()
 
-        waitUntil events.Received Canceled
+        do! waitUntil events.Received Canceled
 
         events.ShouldBe [
             Requested, key
@@ -168,7 +170,7 @@ let ``Job is restarted if first requestor cancels`` () =
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
-        waitUntil (events.CountOf Requested) 3
+        do! waitUntil (events.CountOf Requested) 3
 
         cts1.Cancel()
 
@@ -219,7 +221,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
-        waitUntil (events.CountOf Requested) 3
+        do! waitUntil (events.CountOf Requested) 3
 
         cts1.Cancel()
 
