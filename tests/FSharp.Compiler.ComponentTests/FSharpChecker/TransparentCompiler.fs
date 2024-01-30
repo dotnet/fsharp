@@ -831,8 +831,12 @@ let ``TypeCheck last file in project with transparent compiler`` useTransparentC
 
     let lastFile =
         syntheticProject.SourceFiles
-        |> List.last
-        |> fun sf -> sf.Id
+        |> List.tryLast
+        |> Option.map (fun sf -> sf.Id)
+
+    match lastFile with
+    | None -> failwithf "Last file of project could not be found"
+    | Some lastFile ->
 
     workflow {
         clearCache 

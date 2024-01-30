@@ -193,10 +193,14 @@ type SyntheticSourceFile =
         Source: string
         ExtraSource: string
         EntryPoint: bool
+        /// The absolute path of an existing F# file.
+        PhysicalFileName: string option
     }
 
     member this.FileName =
-        if File.Exists this.Id then this.Id else $"File%s{this.Id}.fs"
+        match this.PhysicalFileName with
+        | Some f -> f
+        | None -> $"File%s{this.Id}.fs"
 
     member this.SignatureFileName = $"{this.FileName}i"
     member this.TypeName = $"T{this.Id}V_{this.PublicVersion}"
@@ -218,7 +222,8 @@ let sourceFile fileId deps =
       HasErrors = false
       Source = ""
       ExtraSource = ""
-      EntryPoint = false }
+      EntryPoint = false
+      PhysicalFileName = None }
 
 
 let OptionsCache = ConcurrentDictionary()
@@ -505,8 +510,15 @@ let mkSyntheticProjectForResponseFile (responseFile: FileInfo) : SyntheticProjec
     let sourceFiles =
         implementationFiles
         |> List.map (fun implPath ->
+            let id =
+                let fileNameWithoutExtension = Path.GetFileNameWithoutExtension implPath 
+                let directoryOfFile = FileInfo(implPath).DirectoryName
+                let relativeUri = Uri(responseFile.FullName).MakeRelativeUri(Uri(directoryOfFile))
+                let relativeFolderPath = Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', Path.DirectorySeparatorChar)
+                Path.Combine(relativeFolderPath, fileNameWithoutExtension)
+
             {
-                  Id = implPath
+                  Id = id
                   PublicVersion = 1
                   InternalVersion = 1
                   DependsOn = []
@@ -518,6 +530,7 @@ let mkSyntheticProjectForResponseFile (responseFile: FileInfo) : SyntheticProjec
                   Source = File.ReadAllText implPath
                   ExtraSource = ""
                   EntryPoint = false
+                  PhysicalFileName = Some implPath 
             }
         )
     
