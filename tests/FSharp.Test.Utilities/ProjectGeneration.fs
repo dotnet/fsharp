@@ -536,18 +536,12 @@ let mkSyntheticProjectForResponseFile (responseFile: FileInfo) : SyntheticProjec
         compilerArgs
         |> Array.filter (fun line -> not (isFSharpFile line))
         |> Array.toList
- 
-    {
-        Name = Path.GetFileNameWithoutExtension responseFile.Name
+
+    { SyntheticProject.Create(Path.GetFileNameWithoutExtension responseFile.Name) with
         ProjectDir = responseFile.DirectoryName
         SourceFiles = sourceFiles
-        DependsOn = List.empty
-        RecursiveNamespace = false
         OtherOptions = otherOptions
         AutoAddModules = false
-        NugetReferences = List.empty
-        FrameworkReferences = List.empty
-        SkipInitialCheck = false
     }
 
 [<AutoOpen>]
