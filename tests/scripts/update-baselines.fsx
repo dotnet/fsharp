@@ -1,13 +1,13 @@
 open System
 open System.IO
 
-// this script is usefull for tests using a .bsl file (baseline) containing expected compiler output
+// this script is useful for tests using a .bsl file (baseline) containing expected compiler output
 // which is matched against .vserr or .err file aside once the test has run
 // the script replaces all the .bsl/.bslpp with either .err or .vserr
 
 let diff path1 path2 =
     let result = System.Text.StringBuilder()
-    let append s = result.AppendLine s |> ignore
+    let append (s: string) = result.AppendLine s |> ignore
 
     if not <| File.Exists(path1) then failwithf "Invalid path %s" path1
     if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
