@@ -1115,7 +1115,7 @@ type internal TransparentCompiler
                 ApplyMetaCommandsFromInputToTcConfig(tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider)
                 |> ignore
 
-                let sink = TcResultsSinkImpl(tcGlobals)
+                let sink = TcResultsSinkImpl(tcGlobals, file.SourceText)
 
                 let hadParseErrors = not (Array.isEmpty file.ParseErrors)
 
@@ -1652,7 +1652,8 @@ type internal TransparentCompiler
                         | ProjectAssemblyDataResult.Available data -> Some data
                         | _ -> None
 
-                    let symbolUses = tcInfo.sink |> Seq.rev |> Seq.map (fun sink -> sink.GetSymbolUses())
+                    let symbolUses =
+                        tcInfo.sink |> Seq.rev |> Seq.map (fun sink -> sink.GetSymbolUses())
 
                     let details =
                         (bootstrapInfo.TcGlobals,
