@@ -281,8 +281,14 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`. The folder con
 
 To exercise the benchmarking infrastructure locally, run:
 
+(Windows)
 ```cmd
-build.cmd -configuration $(_BuildConfig) -testBenchmarks
+build.cmd -configuration Release -testBenchmarks
+```
+
+(Linux/Mac)
+```shell
+./build.sh -configuration Release -testBenchmarks
 ```
 
 This is executed in CI as well. It does the following:
