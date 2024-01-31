@@ -288,7 +288,7 @@ build.cmd -configuration Release -testBenchmarks
 
 (Linux/Mac)
 ```shell
-./build.sh -configuration Release -testBenchmarks
+./build.sh --configuration Release --testBenchmarks
 ```
 
 This is executed in CI as well. It does the following:
@@ -301,6 +301,7 @@ This is executed in CI as well. It does the following:
 
 * Always build both versions of compiler/FCS from source and not use pre-built binaries from SDK (SDK binaries are crossgen'd, which can affect performance).
 * To run `Release` build of compiler/FCS.
+
 ## Additional resources
 
 The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](https://github.com/dotnet/fsharp/blob/main/docs/index.md). Please read and contribute to that guide.
