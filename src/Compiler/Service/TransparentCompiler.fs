@@ -1144,16 +1144,13 @@ type internal TransparentCompiler
 
                     //fileChecked.Trigger fileName
 
-                    let newErrors =
-                        Array.append file.ParseErrors (errHandler.CollectedPhasedDiagnostics)
-
                     fileChecked.Trigger(fileName, Unchecked.defaultof<_>)
 
                     return
                         {
                             finisher = finisher
                             moduleNamesDict = moduleNamesDict
-                            tcDiagnosticsRev = [ newErrors ]
+                            tcDiagnosticsRev = [ errHandler.CollectedPhasedDiagnostics ]
                             tcDependencyFiles = [ fileName ]
                             sink = sink
                         }
