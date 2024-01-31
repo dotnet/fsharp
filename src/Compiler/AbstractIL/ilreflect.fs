@@ -320,7 +320,7 @@ type ILGenerator with
 
         ilG.BeginFinallyBlock()
 
-    member ilG.BeginCatchBlockAndLog(ty: Type MaybeNull) =
+    member ilG.BeginCatchBlockAndLog(ty: Type) =
         if logRefEmitCalls then
             printfn "ilg%d.BeginCatchBlock(%A)" (abs <| hash ilG) ty
 
@@ -1618,7 +1618,7 @@ let emitCode cenv modB emEnv (ilG: ILGenerator) (code: ILCode) =
 
         | ILExceptionClause.FilterCatch((startFilter, _), (startHandler, endHandler)) ->
             add startFilter ilG.BeginExceptFilterBlockAndLog
-            add startHandler (fun () -> ilG.BeginCatchBlockAndLog null)
+            add startHandler (fun () -> ilG.BeginCatchBlockAndLog Unchecked.defaultof<_>)
             add endHandler ilG.EndExceptionBlockAndLog
 
         | ILExceptionClause.TypeCatch(ty, (startHandler, endHandler)) ->
