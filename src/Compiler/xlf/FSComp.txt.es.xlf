@@ -914,7 +914,7 @@
       </trans-unit>
       <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
         <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
-        <target state="translated"> _. la sintaxis abreviada para las funciones lambda solo se puede usar con expresiones atómicas. Esto significa expresiones sin espacios en blanco a menos que se incluyan entre paréntesis.</target>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -5024,7 +5024,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="translated">Para F#7 y versiones anteriores, las definiciones de valores estáticos solo se pueden usar en tipos con un constructor principal ('type X(args) = ...'). Para habilitarlos en todos los demás tipos, use la versión de idioma "preview".</target>
+        <target state="new">For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8429,7 +8429,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">No se puede llamar al método de extensión de byref "{0}". El primer parámetro requiere que el valor sea mutable o un tipo de byref que no sea de solo lectura.</target>
+        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8519,7 +8519,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="translated">La clave del administrador de paquetes "{0}" no se registró en {1}. Registrado actualmente: {2}. Para obtener más información sobre las extensiones, visite https://aka.ms/dotnetdepmanager</target>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="Capture_Identifiers_When_Parsing">
         <source>Capture identifiers while parsing</source>
-        <target state="translated">Acquisisci identificatori durante l'analisi</target>
+        <target state="new">Capture identifiers while parsing</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">Usa buffer in tempo reale (non salvati) per il controllo (riavvio necessario)</target>
+        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -114,7 +114,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers (experimental)</source>
-        <target state="translated">Buffer in tempo reale (sperimentale)</target>
+        <target state="new">Live Buffers (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
