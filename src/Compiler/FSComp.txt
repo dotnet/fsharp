@@ -1522,6 +1522,15 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3250,expressionHasNoName,"Expression does not have a name."
 3251,chkNoFirstClassNameOf,"Using the 'nameof' operator as a first-class function value is not permitted."
 3252,tcIllegalByrefsInOpenTypeDeclaration,"Byref types are not allowed in an open type declaration."
+3260,tcTypeDoesNotHaveAnyNull,"The type '%s' does not support a nullness qualitification."
+#3261 reserved for ConstraintSolverNullnessWarningEquivWithTypes
+#3261 reserved for ConstraintSolverNullnessWarningWithTypes
+#3261 reserved for ConstraintSolverNullnessWarningWithType
+#3261 reserved for ConstraintSolverNullnessWarning
+3268,csNullNotNullConstraintInconsistent,"The constraints 'null' and 'not null' are inconsistent"
+3271,tcNullnessCheckingNotEnabled,"The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored."
+csTypeHasNullAsTrueValue,"The type '%s' uses 'null' as a representation value but a non-null type is expected"
+csTypeHasNullAsExtraValue,"The type '%s' supports 'null' but a non-null type is expected"
 3300,chkInvalidFunctionParameterType,"The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL."
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
 3302,packageManagementRequiresVFive,"The 'package management' feature requires language version 5.0 or above"
@@ -1536,6 +1545,8 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3352,typrelInterfaceMemberNoMostSpecificImplementation,"Interface member '%s' does not have a most specific implementation."
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
+optsCheckNulls,"Enable nullness declarations and checks"
+fSharpBannerVersion,"%s for F# %s"
 optsGetLangVersions,"Display the allowed values for language version."
 optsSetLangVersion,"Specify language version such as 'latest' or 'preview'."
 optsSupportedLangVersions,"Supported language versions:"
@@ -1554,6 +1565,7 @@ featurePackageManagement,"package management"
 featureFromEndSlicing,"from-end slicing"
 featureFixedIndexSlice3d4d,"fixed-index slice 3d/4d"
 featureAndBang,"applicative computation expressions"
+featureNullnessChecking,"nullness checking"
 featureResumableStateMachines,"resumable state machines"
 featureNullableOptionalInterop,"nullable optional interop"
 featureDefaultInterfaceMemberConsumption,"default interface member consumption"
