@@ -128,7 +128,7 @@ while [[ $# > 0 ]]; do
     --testcompilercomponenttests)
       test_compilercomponent_tests=true
       ;;
-      --testBenchmarks)
+      --testbenchmarks)
       test_benchmarks=true
       ;;
     --ci)
