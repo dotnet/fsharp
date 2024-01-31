@@ -678,11 +678,21 @@ module ProjectOperations =
         |> Option.map (fun s -> s.ToString())
         |> Option.defaultValue ""
 
+    let filterErrors (diagnostics: FSharpDiagnostic array) =
+        diagnostics
+        |> Array.filter (fun diag ->
+            match diag.Severity with
+            | FSharpDiagnosticSeverity.Hidden
+            | FSharpDiagnosticSeverity.Info
+            | FSharpDiagnosticSeverity.Warning -> false
+            | FSharpDiagnosticSeverity.Error -> true)
+
     let expectOk parseAndCheckResults _ =
         let checkResult = getTypeCheckResult parseAndCheckResults
+        let errors = filterErrors checkResult.Diagnostics
 
-        if checkResult.Diagnostics.Length > 0 then
-            failwith $"Expected no errors, but there were some: \n%A{checkResult.Diagnostics}"
+        if errors.Length > 0 then
+            failwith $"Expected no errors, but there were some: \n%A{errors}"
 
     let expectSingleWarningAndNoErrors (warningSubString:string) parseAndCheckResults _  =
         let checkResult = getTypeCheckResult parseAndCheckResults
@@ -880,14 +890,7 @@ let SaveAndCheckProject project checker isExistingProject =
         let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
 
         let! results = checker.ParseAndCheckProject(snapshot)
-        let errors =
-            results.Diagnostics
-            |> Array.filter (fun diag ->
-                match diag.Severity with
-                | FSharpDiagnosticSeverity.Hidden
-                | FSharpDiagnosticSeverity.Info
-                | FSharpDiagnosticSeverity.Warning -> false
-                | FSharpDiagnosticSeverity.Error -> true)
+        let errors = filterErrors results.Diagnostics
 
         if not (Array.isEmpty errors || project.SkipInitialCheck) then
             failwith $"Project {project.Name} failed initial check: \n%A{errors}"
