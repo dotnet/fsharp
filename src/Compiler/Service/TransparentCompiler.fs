@@ -346,6 +346,14 @@ type internal TransparentCompiler
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
 
+    /// Information about the derived script closure.
+    let scriptClosureCache =
+        MruCache<AnyCallerThreadToken, FSharpProjectOptions, LoadClosure>(
+            projectCacheSize,
+            areSame = FSharpProjectOptions.AreSameForChecking,
+            areSimilar = FSharpProjectOptions.UseSameProject
+        )
+
     // use this to process not-yet-implemented tasks
     let backgroundCompiler =
         BackgroundCompiler(
@@ -551,8 +559,8 @@ type internal TransparentCompiler
         let projectReferences =
             getProjectReferences projectSnapshot "ComputeTcConfigBuilder"
 
-        // TODO: script support
-        let loadClosureOpt: LoadClosure option = None
+        let loadClosureOpt: LoadClosure option =
+            scriptClosureCache.TryGet(AnyCallerThread, projectSnapshot.ToOptions())
 
         let getSwitchValue (switchString: string) =
             match commandLineArgs |> List.tryFindIndex (fun s -> s.StartsWithOrdinal switchString) with
@@ -1408,7 +1416,8 @@ type internal TransparentCompiler
                     let tcDiagnostics =
                         [| yield! creationDiags; yield! extraDiagnostics; yield! tcDiagnostics |]
 
-                    let loadClosure = None // TODO: script support
+                    let loadClosure =
+                        scriptClosureCache.TryGet(AnyCallerThread, projectSnapshot.ToOptions())
 
                     let typedResults =
                         FSharpCheckFileResults.Make(
