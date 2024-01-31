@@ -232,8 +232,6 @@ type DiagnosticsThreadStatics =
 
     static member BuildPhase: BuildPhase with get, set
 
-    static member BuildPhaseUnchecked: BuildPhase
-
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
 [<AutoOpen>]

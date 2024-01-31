@@ -2238,6 +2238,7 @@ and [<Sealed>] TcImports
                 | ParallelReferenceResolution.On -> NodeCode.Parallel
                 | ParallelReferenceResolution.Off -> NodeCode.Sequential
 
+            let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
             let! results =
                 nms
                 |> List.map (fun nm ->
@@ -2245,6 +2246,7 @@ and [<Sealed>] TcImports
                         try
                             return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
                         with e ->
+                            use _ = UseDiagnosticsLogger diagnosticsLogger
                             errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
                             return None
                     })
