@@ -399,7 +399,7 @@ module RuntimeHelpers =
             | None -> originalSource.Value.Current
 
         let disposeOriginal() =
-            if shouldDisposeOriginalAtTheEnd = true then
+            if shouldDisposeOriginalAtTheEnd then
                 shouldDisposeOriginalAtTheEnd <- false
                 originalSource.Value.Dispose() 
 

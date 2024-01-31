@@ -271,3 +271,36 @@ module LetBindings_Basic =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/15559
+    let private sourceWarnIfFunctionShadowsUnionCase =
+        """
+type T = Case1 of int
+let t = Case1 42
+let Case1 x = t            // first warning
+let Some x = 42            // second warning
+[<RequireQualifiedAccess>] type U = U1 of int
+let u = U.U1 42
+let U1 x = t               // no warning
+type C() =
+    member _.Some x = 1    // no warning
+"""
+
+    [<Fact>]
+    let ``No default warning if function shadows union case`` () =
+        sourceWarnIfFunctionShadowsUnionCase
+        |> FSharp
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Info if function shadows union case`` () =
+        sourceWarnIfFunctionShadowsUnionCase
+        |> FSharp
+        |> withOptions ["--warnon:FS3582"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3582, Line 4, Col 5, Line 4, Col 12, "This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.")
+            (Warning 3582, Line 5, Col 5, Line 5, Col 11, "This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.")
+        ]

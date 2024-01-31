@@ -297,7 +297,8 @@ SigFile
                                          (31,22--31,25)), false,
                                       PreXmlDoc ((31,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (31,22--31,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((31,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (30,6--31,25),
                                 { BarRange = Some (31,6--31,7) });
@@ -311,7 +312,8 @@ SigFile
                                          (33,22--33,25)), false,
                                       PreXmlDoc ((33,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (33,22--33,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((33,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (32,6--33,25),
                                 { BarRange = Some (33,6--33,7) });
@@ -325,7 +327,8 @@ SigFile
                                          (35,22--35,25)), false,
                                       PreXmlDoc ((35,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (35,22--35,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((35,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (34,6--35,25),
                                 { BarRange = Some (35,6--35,7) });
@@ -339,7 +342,8 @@ SigFile
                                          (37,22--37,25)), false,
                                       PreXmlDoc ((37,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (37,22--37,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((37,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (36,6--37,25),
                                 { BarRange = Some (37,6--37,7) });
@@ -353,7 +357,8 @@ SigFile
                                          (39,22--39,25)), false,
                                       PreXmlDoc ((39,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (39,22--39,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((39,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (38,6--39,25),
                                 { BarRange = Some (39,6--39,7) });
@@ -367,7 +372,8 @@ SigFile
                                          (41,22--41,25)), false,
                                       PreXmlDoc ((41,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (41,22--41,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((41,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (40,6--41,25),
                                 { BarRange = Some (41,6--41,7) })],

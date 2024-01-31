@@ -86,11 +86,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.8') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.9') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.8
+          MirrorBranch: release/dev17.9
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -274,16 +274,18 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check error code sorting in src/Compiler/FSComp.txt
-          - script: dotnet fantomas . -r --check
+          - script: dotnet fantomas . --check
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check code formatting (run 'dotnet fantomas . -r' to fix)
+            displayName: Check code formatting (run 'dotnet fantomas .' to fix)
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
-        # NOTE: This CI check should only run on the release branches.
+        # NOTE: The check now runs on all branches (not just release),
+        #       because we want to catch cases when version is desynched and we didn't update it.
+        #       It is also helping the release notes automation to be up to date with packages versions.
         - job: Check_Published_Package_Versions
-          condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), or(startsWith(variables['System.PullRequest.SourceBranch'], 'release/dev'), startsWith(variables['System.PullRequest.TargetBranch'], 'release/dev')))
+          # condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), or(startsWith(variables['System.PullRequest.SourceBranch'], 'release/dev'), startsWith(variables['System.PullRequest.TargetBranch'], 'release/dev')))
           pool:
             vmImage: $(UbuntuMachineQueueName)
           strategy:
@@ -437,7 +439,7 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+              ${{ if eq(variables['Build.Reason'], 'Flaky, disabled, was PullRequest') }}:
                 inttests_release:
                   _configuration: Release
                   _testKind: testIntegration
@@ -804,8 +806,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.8
-      insertTargetBranch: rel/d17.8
+      componentBranchName: refs/heads/release/dev17.9
+      insertTargetBranch: rel/d17.9
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

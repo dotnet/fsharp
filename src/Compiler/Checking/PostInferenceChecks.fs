@@ -346,7 +346,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
     | TType_var (tp, _) when tp.Solution.IsSome ->
         for cx in tp.Constraints do
             match cx with
-            | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, soln), _) ->
+            | TyparConstraint.MayResolveMember(TTrait(solution=soln), _) ->
                  match visitTraitSolutionOpt, soln.Value with
                  | Some visitTraitSolution, Some sln -> visitTraitSolution sln
                  | _ -> ()
@@ -432,11 +432,11 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.IsReferenceType _
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
-and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env (TTrait(tys, _, _, argTys, retTy, soln))  =
-    CheckTypesDeep cenv f g env tys
-    CheckTypesDeep cenv f g env argTys
-    Option.iter (CheckTypeDeep cenv f g env true ) retTy
-    match visitTraitSolutionOpt, soln.Value with
+and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env traitInfo =
+    CheckTypesDeep cenv f g env traitInfo.SupportTypes
+    CheckTypesDeep cenv f g env traitInfo.CompiledObjectAndArgumentTypes
+    Option.iter (CheckTypeDeep cenv f g env true ) traitInfo.CompiledReturnType
+    match visitTraitSolutionOpt, traitInfo.Solution with
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
 
@@ -2178,8 +2178,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                 // Default augmentation contains the nasty 'Is<UnionCase>' etc.
                 let prefix = "Is"
-                if nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
-                    match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with
+                if not v.IsImplied && nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
+                    match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with 
                     | Some uc -> error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.chkUnionCaseDefaultAugmentation(), uc.DisplayName, uc.Range))
                     | None -> ()
 
@@ -2212,7 +2212,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             match TryChopPropertyName v.DisplayName with
             | Some res -> check true res
             | None -> ()
-        with e -> errorRecovery e v.Range
+        with RecoverableException e -> errorRecovery e v.Range
     end
 
     CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
@@ -2414,11 +2414,14 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             // Check to see if the signatures of the both getter and the setter imply the same property type
 
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer then
+            if pinfo.HasGetter && pinfo.HasSetter then
                 let ty1 = pinfo.DropSetter().GetPropertyType(cenv.amap, m)
                 let ty2 = pinfo.DropGetter().GetPropertyType(cenv.amap, m)
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
-                    errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
+                    if g.langVersion.SupportsFeature(LanguageFeature.WarningIndexedPropertiesGetSetSameType) && pinfo.IsIndexer then
+                        warning(Error(FSComp.SR.chkIndexedGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
+                    if not pinfo.IsIndexer then
+                        errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 
             hashOfImmediateProps[nm] <- pinfo :: others
 

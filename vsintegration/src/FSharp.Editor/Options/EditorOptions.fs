@@ -46,6 +46,7 @@ type QuickInfoOptions =
         DisplayLinks: bool
         UnderlineStyle: QuickInfoUnderlineStyle
         DescriptionWidth: int option
+        ShowRemarks: bool
     }
 
     static member Default =
@@ -53,6 +54,7 @@ type QuickInfoOptions =
             DisplayLinks = true
             UnderlineStyle = QuickInfoUnderlineStyle.Solid
             DescriptionWidth = None
+            ShowRemarks = true
         }
 
 [<CLIMutable>]
@@ -63,6 +65,7 @@ type CodeFixesOptions =
         UnusedOpens: bool
         UnusedDeclarations: bool
         SuggestNamesForErrors: bool
+        RemoveParens: bool
     }
 
     static member Default =
@@ -73,6 +76,7 @@ type CodeFixesOptions =
             UnusedOpens = true
             UnusedDeclarations = true
             SuggestNamesForErrors = true
+            RemoveParens = false
         }
 
 [<CLIMutable>]
@@ -88,7 +92,6 @@ type LanguageServicePerformanceOptions =
         KeepAllBackgroundResolutions: bool
         KeepAllBackgroundSymbolUses: bool
         EnableBackgroundItemKeyStoreAndSemanticClassification: bool
-        CaptureIdentifiersWhenParsing: bool
     }
 
     static member Default =
@@ -103,7 +106,6 @@ type LanguageServicePerformanceOptions =
             KeepAllBackgroundResolutions = false
             KeepAllBackgroundSymbolUses = false
             EnableBackgroundItemKeyStoreAndSemanticClassification = true
-            CaptureIdentifiersWhenParsing = true
         }
 
 [<CLIMutable>]
@@ -114,7 +116,7 @@ type AdvancedOptions =
         IsInlineTypeHintsEnabled: bool
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
-        IsLiveBuffersEnabled: bool
+        IsUseLiveBuffersEnabled: bool
         SendAdditionalTelemetry: bool
         SolutionBackgroundAnalysis: bool
     }
@@ -126,7 +128,7 @@ type AdvancedOptions =
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
-            IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
+            IsUseLiveBuffersEnabled = true
             SendAdditionalTelemetry = true
             SolutionBackgroundAnalysis = false
         }
@@ -199,6 +201,7 @@ module internal OptionsUI =
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks (nameof QuickInfoOptions.Default.DisplayLinks)
             bindDescriptionWidthTextBox view.descriptionWidth (nameof QuickInfoOptions.Default.DescriptionWidth)
+            bindCheckBox view.showRemarks (nameof QuickInfoOptions.Default.ShowRemarks)
             upcast view
 
     [<Guid(Guids.codeFixesOptionPageIdString)>]
@@ -251,6 +254,8 @@ module EditorOptionsExtensions =
 
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
+
+        member this.IsFsharpRemoveParensEnabled = this.EditorOptions.CodeFixes.RemoveParens
 
         member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
             this.EditorOptions.CodeFixes.SuggestNamesForErrors

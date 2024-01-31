@@ -151,7 +151,7 @@ type SynTypeDefnLeadingKeyword =
         match this with
         | SynTypeDefnLeadingKeyword.Type range
         | SynTypeDefnLeadingKeyword.And range -> range
-        | SynTypeDefnLeadingKeyword.StaticType (staticRange, typeRange) -> Range.unionRanges staticRange typeRange
+        | SynTypeDefnLeadingKeyword.StaticType(staticRange, typeRange) -> Range.unionRanges staticRange typeRange
         | SynTypeDefnLeadingKeyword.Synthetic -> failwith "Getting range from synthetic keyword"
 
 [<NoEquality; NoComparison>]
@@ -228,20 +228,20 @@ type SynLeadingKeyword =
         | New m
         | Do m
         | Static m -> m
-        | LetRec (m1, m2)
-        | UseRec (m1, m2)
-        | AbstractMember (m1, m2)
-        | StaticMember (m1, m2)
-        | StaticAbstract (m1, m2)
-        | StaticAbstractMember (m1, _, m2)
-        | StaticVal (m1, m2)
-        | StaticLet (m1, m2)
-        | StaticLetRec (m1, _, m2)
-        | StaticDo (m1, m2)
-        | DefaultVal (m1, m2)
-        | MemberVal (m1, m2)
-        | OverrideVal (m1, m2)
-        | StaticMemberVal (m1, _, m2) -> Range.unionRanges m1 m2
+        | LetRec(m1, m2)
+        | UseRec(m1, m2)
+        | AbstractMember(m1, m2)
+        | StaticMember(m1, m2)
+        | StaticAbstract(m1, m2)
+        | StaticAbstractMember(m1, _, m2)
+        | StaticVal(m1, m2)
+        | StaticLet(m1, m2)
+        | StaticLetRec(m1, _, m2)
+        | StaticDo(m1, m2)
+        | DefaultVal(m1, m2)
+        | MemberVal(m1, m2)
+        | OverrideVal(m1, m2)
+        | StaticMemberVal(m1, _, m2) -> Range.unionRanges m1 m2
         | Synthetic -> Range.Zero
 
 [<NoEquality; NoComparison>]
@@ -356,7 +356,7 @@ type GetSetKeywords =
         match x with
         | Get m
         | Set m -> m
-        | GetSet (mG, mS) ->
+        | GetSet(mG, mS) ->
             if Range.rangeBeforePos mG mS.Start then
                 Range.unionRanges mG mS
             else
@@ -383,9 +383,14 @@ type SynMemberDefnAbstractSlotTrivia =
 type SynFieldTrivia =
     {
         LeadingKeyword: SynLeadingKeyword option
+        MutableKeyword: range option
     }
 
-    static member Zero: SynFieldTrivia = { LeadingKeyword = None }
+    static member Zero: SynFieldTrivia =
+        {
+            LeadingKeyword = None
+            MutableKeyword = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynTypeOrTrivia = { OrKeyword: range }
