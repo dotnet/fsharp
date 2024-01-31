@@ -173,6 +173,8 @@ type internal IBackgroundCompiler =
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
 
+    abstract member ScriptClosureCache: MruCache<AnyCallerThreadToken, FSharpProjectOptions, LoadClosure>
+
 type internal ParseCacheLockToken() =
     interface LockToken
 
@@ -1678,3 +1680,5 @@ type internal BackgroundCompiler
                 userOpName: string
             ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
             self.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
+
+        member _.ScriptClosureCache = scriptClosureCache
