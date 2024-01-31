@@ -230,8 +230,12 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
 
         let processedCount = IncrementableInt(0)
 
-        let raiseExn (item, ex: exn) =
-            localCts.Cancel()
+        let handleExn (item, ex: exn) =
+            try
+                localCts.Cancel()
+            with :? ObjectDisposedException ->
+                // If it's disposed already, it means that the processing has already finished, most likely due to cancellation or failure in another node.
+                ()
 
             match ex with
             | :? OperationCanceledException -> completionSignal.TrySetCanceled()
@@ -252,7 +256,7 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
 
                     match res with
                     | Choice1Of2() -> ()
-                    | Choice2Of2 ex -> raiseExn (node.Info.Item, ex)
+                    | Choice2Of2 ex -> handleExn (node.Info.Item, ex)
                 },
                 cts.Token
             )
