@@ -880,9 +880,17 @@ let SaveAndCheckProject project checker isExistingProject =
         let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
 
         let! results = checker.ParseAndCheckProject(snapshot)
+        let errors =
+            results.Diagnostics
+            |> Array.filter (fun diag ->
+                match diag.Severity with
+                | FSharpDiagnosticSeverity.Hidden
+                | FSharpDiagnosticSeverity.Info
+                | FSharpDiagnosticSeverity.Warning -> false
+                | FSharpDiagnosticSeverity.Error -> true)
 
-        if not (Array.isEmpty results.Diagnostics || project.SkipInitialCheck) then
-            failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
+        if not (Array.isEmpty errors || project.SkipInitialCheck) then
+            failwith $"Project {project.Name} failed initial check: \n%A{errors}"
 
         let! signatures =
             Async.Sequential
