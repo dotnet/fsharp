@@ -38,16 +38,16 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="translated">Blok Yapısı Kılavuzları;
-F# kodu için yapı yönergelerini göster;
-Anahat oluşturma;
-F# kodu için ana hattı ve daraltılabilir düğümleri göster;
-Satır içi ipuçları;
-Satır içi tür ipuçlarını görüntüle (önizleme);
-Dönüş türü ipuçlarını görüntüle (önizleme);
-Satır içi parametre adı ipuçlarını görüntüle (önizleme);
-Canlı Arabellekler;
-Denetim için canlı (kaydedilmemiş) arabellekler kullan</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -169,17 +169,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="translated">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
-Bellek içi çapraz proje başvurularını etkinleştir;
+        <target state="new">F# Project and Caching Performance Options;
+Enable in-memory cross project references;
 Enable_partial_type_checking;
-IntelliSense Performans Seçenekleri;
-IntelliSense özellikleri için eski verileri etkinleştir;
-Eski sonuçlar kullanılana kadar geçen süre (milisaniye olarak);
-Paralelleştirme (yeniden başlatma gerektirir);
-İmza dosyalarıyla paralel tür denetlemeyi etkinleştir;
-Paralel başvuru çözümlemeyi etkinleştir;
-Başvuruları hızlı bulma ve yeniden adlandırmayı etkinleştir (deneysel)
-Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (experimental);
+Cache parsing results (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -196,14 +196,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="translated">Biçimlendirme; 
-Karakter olarak tercih edilen açıklama genişliği;
-F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı verilen genişliğe biçimlendir;
-Gezinti bağlantıları;
-Gezinti bağlantılarını şöyle göster;
-Düz alt çizgi;
-Nokta alt çizgi;
-Tire alt çizgisi;</target>
+        <target state="new">Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

@@ -38,16 +38,16 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="translated">Przewodniki po strukturze bloku;
-Pokaż przewodniki po strukturze dla kodu języka F#;
-Tworzenie konspektu;
-Pokaż konspekt i węzły z możliwością zwijania dla kodu języka F#;
-Wskazówki w tekście;
-Wyświetl wskazówki w tekście dla typów (wersja zapoznawcza);
-Wyświetlaj wskazówki dotyczące typu zwrotu (wersja zapoznawcza);
-Wyświetl wskazówki w tekście dotyczące nazw parametrów (wersja zapoznawcza);
-Bufory bieżące;
-Do sprawdzania używaj buforów bieżących (niezapisanych)</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -169,17 +169,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="translated">Opcje wydajności projektów i buforowania języka F#;
-Włącz odwołania między projektami w pamięci;
+        <target state="new">F# Project and Caching Performance Options;
+Enable in-memory cross project references;
 Enable_partial_type_checking;
-Opcje wydajności funkcji IntelliSense;
-Włącz nieaktualne dane dla funkcji IntelliSense;
-Czas do użycia nieaktualnych wyników (w milisekundach);
-Równoległość (wymaga ponownego uruchomienia);
-Włącz kontrolę typów równoległych za pomocą plików podpisu;
-Włącz rozpoznawanie odwołań równoległych;
-Włącz szybkie znajdowanie odwołań i zmianę nazwy (eksperymentalne);
-Wyniki analizowania pamięci podręcznej (eksperymentalne)</target>
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (experimental);
+Cache parsing results (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -196,14 +196,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="translated">Formatowanie;
-Preferowana szerokość opisu w znakach;
-Sformatuj sygnaturę na daną szerokość, dodając podziały wierszy zgodne z regułami składni języka F#;
-Linki nawigacji;
-Pokaż linki nawigacji jako;
-Pełne podkreślenie;
-Podkreślenie kropką;
-Podkreślenie kreską;</target>
+        <target state="new">Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
