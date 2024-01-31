@@ -13,6 +13,7 @@ open System.Reflection
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open System.Threading
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -375,28 +376,25 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
 /// Type holds thread-static globals for use by the compiler.
-type internal DiagnosticsThreadStatics =
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private buildPhase: BuildPhase
+type DiagnosticsThreadStatics =
+    static let buildPhase = new AsyncLocal<BuildPhase>()
+    static let diagnosticsLogger = new AsyncLocal<DiagnosticsLogger>()
 
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private diagnosticsLogger: DiagnosticsLogger
-
-    static member BuildPhaseUnchecked = DiagnosticsThreadStatics.buildPhase
+    static let EnsureCreated (h: AsyncLocal<_>) d =
+        if box h.Value |> isNull then
+            h.Value <- d
 
     static member BuildPhase
         with get () =
-            match box DiagnosticsThreadStatics.buildPhase with
-            | Null -> BuildPhase.DefaultPhase
-            | _ -> DiagnosticsThreadStatics.buildPhase
-        and set v = DiagnosticsThreadStatics.buildPhase <- v
+            EnsureCreated buildPhase BuildPhase.DefaultPhase
+            buildPhase.Value
+        and set v = buildPhase.Value <- v
 
     static member DiagnosticsLogger
         with get () =
-            match box DiagnosticsThreadStatics.diagnosticsLogger with
-            | Null -> AssertFalseDiagnosticsLogger
-            | _ -> DiagnosticsThreadStatics.diagnosticsLogger
-        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
+            EnsureCreated diagnosticsLogger AssertFalseDiagnosticsLogger
+            diagnosticsLogger.Value
+        and set v = diagnosticsLogger.Value <- v
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
@@ -498,7 +496,7 @@ module DiagnosticsLoggerExtensions =
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseBuildPhase (phase: BuildPhase) =
-    let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
+    let oldBuildPhase = DiagnosticsThreadStatics.BuildPhase
     DiagnosticsThreadStatics.BuildPhase <- phase
 
     { new IDisposable with

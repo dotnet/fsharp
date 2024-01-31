@@ -7,7 +7,7 @@ open System.Threading
 open System.Threading.Tasks
 open System.Diagnostics
 open System.Globalization
-open FSharp.Compiler.DiagnosticsLogger
+//open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 
 [<NoEquality; NoComparison>]
@@ -15,14 +15,15 @@ type NodeCode<'T> = Node of Async<'T>
 
 let wrapThreadStaticInfo computation =
     async {
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
+        //let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        //let phase = DiagnosticsThreadStatics.BuildPhase
 
         try
             return! computation
         finally
-            DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-            DiagnosticsThreadStatics.BuildPhase <- phase
+            //DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+            //DiagnosticsThreadStatics.BuildPhase <- phase
+            ()
     }
 
 type Async<'T> with
@@ -92,19 +93,19 @@ type NodeCodeBuilder() =
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
-        Node(
-            async {
-                DiagnosticsThreadStatics.DiagnosticsLogger <- value.DiagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhase <- value.BuildPhase
+    //[<DebuggerHidden; DebuggerStepThrough>]
+    //member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
+    //    Node(
+    //        async {
+    //            DiagnosticsThreadStatics.DiagnosticsLogger <- value.DiagnosticsLogger
+    //            DiagnosticsThreadStatics.BuildPhase <- value.BuildPhase
 
-                try
-                    return! binder value |> Async.AwaitNodeCode
-                finally
-                    (value :> IDisposable).Dispose()
-            }
-        )
+    //            try
+    //                return! binder value |> Async.AwaitNodeCode
+    //            finally
+    //                (value :> IDisposable).Dispose()
+    //        }
+    //    )
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Using(value: IDisposable, binder: IDisposable -> NodeCode<'U>) =
@@ -123,22 +124,23 @@ type NodeCode private () =
     static let cancellationToken = Node(wrapThreadStaticInfo Async.CancellationToken)
 
     static member RunImmediate(computation: NodeCode<'T>, ct: CancellationToken) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
+        //let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        //let phase = DiagnosticsThreadStatics.BuildPhase
 
         try
             try
                 let work =
                     async {
-                        DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                        DiagnosticsThreadStatics.BuildPhase <- phase
+                        //DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                        //DiagnosticsThreadStatics.BuildPhase <- phase
                         return! computation |> Async.AwaitNodeCode
                     }
 
                 Async.StartImmediateAsTask(work, cancellationToken = ct).Result
             finally
-                DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhase <- phase
+                //DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                //DiagnosticsThreadStatics.BuildPhase <- phase
+                ()
         with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
             raise (ex.InnerExceptions[0])
 
@@ -146,21 +148,22 @@ type NodeCode private () =
         NodeCode.RunImmediate(computation, CancellationToken.None)
 
     static member StartAsTask_ForTesting(computation: NodeCode<'T>, ?ct: CancellationToken) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
+        //let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        //let phase = DiagnosticsThreadStatics.BuildPhase
 
         try
             let work =
                 async {
-                    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                    DiagnosticsThreadStatics.BuildPhase <- phase
+                    //DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                    //DiagnosticsThreadStatics.BuildPhase <- phase
                     return! computation |> Async.AwaitNodeCode
                 }
 
             Async.StartAsTask(work, cancellationToken = defaultArg ct CancellationToken.None)
         finally
-            DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-            DiagnosticsThreadStatics.BuildPhase <- phase
+            //DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+            //DiagnosticsThreadStatics.BuildPhase <- phase
+            ()
 
     static member CancellationToken = cancellationToken
 
@@ -193,14 +196,14 @@ type NodeCode private () =
         }
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
+        //let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        //let phase = DiagnosticsThreadStatics.BuildPhase
 
         computations
         |> Seq.map (fun (Node x) ->
             async {
-                DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhase <- phase
+                //DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                //DiagnosticsThreadStatics.BuildPhase <- phase
                 return! x
             })
         |> Async.Parallel
