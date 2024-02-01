@@ -529,9 +529,7 @@ let DoesIdentifierNeedBackticks (name: string) : bool =
 
 /// A utility to help determine if an identifier needs to be quoted
 let AddBackticksToIdentifierIfNeeded (name: string) : string =
-    if
-        DoesIdentifierNeedBackticks name
-    then
+    if DoesIdentifierNeedBackticks name then
         "``" + name + "``"
     else
         name
