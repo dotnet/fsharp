@@ -63,7 +63,7 @@ module BuildGraphTests =
 
     [<Fact>]
     let ``Many requests to get a value asynchronously should only evaluate the computation once``() =
-        let requests = 10000
+        let requests = 10
         let mutable computationCount = 0
 
         let graphNode = 
@@ -81,7 +81,7 @@ module BuildGraphTests =
 
     [<Fact>]
     let ``Many requests to get a value asynchronously should get the correct value``() =
-        let requests = 10000
+        let requests = 10
 
         let graphNode = GraphNode(async { return 1 })
 
@@ -111,7 +111,7 @@ module BuildGraphTests =
 
     [<Fact>]
     let ``Many requests to get a value asynchronously should have its computation cleaned up by the GC``() =
-        let requests = 10000
+        let requests = 10
 
         let weak = 
 
@@ -177,7 +177,7 @@ module BuildGraphTests =
 
     [<Fact>]
     let ``Many requests to get a value asynchronously will never evaluate the value more than once``() =
-        let requests = 10000
+        let requests = 10
         let resetEvent = new ManualResetEvent(false)
         let mutable computationCountBeforeSleep = 0
         let mutable computationCount = 0

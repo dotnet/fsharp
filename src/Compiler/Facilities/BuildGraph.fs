@@ -65,22 +65,25 @@ type GraphNode<'T> private (compute: unit -> unit, tcs: TaskCompletionSource<'T>
                 (tcs.SetException),
                 (ignore >> tcs.SetCanceled),
                 // This is not a requestor's CancellationToken.
-                cts.Token)
+                cts.Token
+            )
 
         GraphNode(compute, tcs, cts)
 
     member _.GetOrComputeValue() =
 
         // Lock for the sake of `started` flag.
-        let startNew = lock gate <| fun () ->
-            Interlocked.Increment &requestCount = 1 && not started
-        
-        // The cancellation of the computation is not governed by the requestor's CancellationToken. 
+        let startNew =
+            lock gate <| fun () -> Interlocked.Increment &requestCount = 1 && not started
+
+        // The cancellation of the computation is not governed by the requestor's CancellationToken.
         // It will continue to run as long as there are requests.
-        if startNew then started <- true; compute()
+        if startNew then
+            started <- true
+            compute ()
 
         async {
-            try 
+            try
                 return! tcs.Task |> Async.AwaitTask
             finally
                 if Interlocked.Decrement &requestCount = 0 then
@@ -88,8 +91,11 @@ type GraphNode<'T> private (compute: unit -> unit, tcs: TaskCompletionSource<'T>
                     cts.Cancel()
         }
 
-
-    member _.TryPeekValue() = if tcs.Task.IsCompleted then ValueSome tcs.Task.Result else ValueNone
+    member _.TryPeekValue() =
+        if tcs.Task.IsCompleted then
+            ValueSome tcs.Task.Result
+        else
+            ValueNone
 
     member _.HasValue = tcs.Task.IsCompleted
 
@@ -99,4 +105,3 @@ type GraphNode<'T> private (compute: unit -> unit, tcs: TaskCompletionSource<'T>
         let tcs = TaskCompletionSource()
         tcs.SetResult result
         GraphNode(ignore, tcs, new CancellationTokenSource())
-      
