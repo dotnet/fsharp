@@ -539,6 +539,41 @@ type internal TransparentCompiler
 
                             member x.FileName = nm
                         }
+                | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
+                    { new IProjectReference with
+                        member x.EvaluateRawContents() =
+                            node {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
+
+                                match ilReaderOpt with
+                                | Some ilReader ->
+                                    let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                    let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
+                                    return ProjectAssemblyDataResult.Available data
+                                | _ ->
+                                    // Note 'false' - if a PEReference doesn't find an ILModuleReader then we don't
+                                    // continue to try to use an on-disk DLL
+                                    return ProjectAssemblyDataResult.Unavailable false
+                            }
+
+                        member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
+                        member x.FileName = delayedReader.OutputFile
+                    }
+
+                | FSharpReferencedProjectSnapshot.ILModuleReference(nm, getStamp, getReader) ->
+                    { new IProjectReference with
+                        member x.EvaluateRawContents() =
+                            cancellable {
+                                let ilReader = getReader ()
+                                let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
+                                return ProjectAssemblyDataResult.Available data
+                            }
+                            |> NodeCode.FromCancellable
+
+                        member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
+                        member x.FileName = nm
+                    }
         ]
 
     let ComputeTcConfigBuilder (projectSnapshot: ProjectSnapshotBase<_>) =
