@@ -1,0 +1,7 @@
+--nowarn:FS3370,FS0075
+--warn:4
+--warnaserror
+--warnaserror:3239
+--warnaserror-:44
+-a
+Foo.fs

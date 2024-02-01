@@ -310,13 +310,33 @@ type SyntheticProject =
                     }
                     |> String.concat "\n"
 
-                let baseOptions, _ =
-                    checker.GetProjectOptionsFromScript(
-                        "file.fsx",
-                        SourceText.ofString referenceScript,
-                        assumeDotNetFramework = false
-                    )
-                    |> Async.RunSynchronously
+                let isRealProject = this.SourceFiles |> List.forall (fun sf -> sf.IsPhysicalFile)
+
+                let otherOptions =
+                    if isRealProject then
+                        List.toArray this.OtherOptions                    
+                    else
+
+                    let baseOptions =
+                        if isRealProject then
+                            Unchecked.defaultof<FSharpProjectOptions>
+                        else
+
+                        checker.GetProjectOptionsFromScript(
+                            "file.fsx",
+                            SourceText.ofString referenceScript,
+                            assumeDotNetFramework = false
+                        )
+                        |> Async.RunSynchronously
+                        |> fst
+
+                    Set [
+                       yield! baseOptions.OtherOptions
+                       "--optimize+"
+                       for p in this.DependsOn do
+                           $"-r:{p.OutputFilename}"
+                       yield! this.OtherOptions ]
+                   |> Set.toArray
 
                 {
                     ProjectFileName = this.ProjectFileName
@@ -327,14 +347,7 @@ type SyntheticProject =
                                    this.ProjectDir ++ f.SignatureFileName
 
                                this.ProjectDir ++ f.FileName |]
-                    OtherOptions =
-                        Set [
-                           yield! baseOptions.OtherOptions
-                           "--optimize+"
-                           for p in this.DependsOn do
-                               $"-r:{p.OutputFilename}"
-                           yield! this.OtherOptions ]
-                           |> Set.toArray
+                    OtherOptions = otherOptions
                     ReferencedProjects =
                         [| for p in this.DependsOn do
                                FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
@@ -343,7 +356,8 @@ type SyntheticProject =
                     LoadTime = DateTime()
                     UnresolvedReferences = None
                     OriginalLoadReferences = []
-                    Stamp = None }
+                    Stamp = None
+                }
 
         OptionsCache[cacheKey]
 

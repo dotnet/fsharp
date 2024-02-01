@@ -806,7 +806,8 @@ module Stuff =
 /// References projects are expected to have been built.
 let localResponseFiles =
     [|
-        @"C:\Projects\fantomas\src\Fantomas.Core.Tests\Fantomas.Core.Tests.rsp"
+        // @"C:\Projects\fantomas\src\Fantomas.Core.Tests\Fantomas.Core.Tests.rsp"
+        Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", "Foo.rsp")
     |]
     |> Array.collect (fun f ->
         [|
@@ -816,7 +817,7 @@ let localResponseFiles =
     )
 
 // Uncomment this attribute if you want run this test against local response files.
-// [<Theory>]
+[<Theory>]
 [<MemberData(nameof(localResponseFiles))>]
 let ``TypeCheck last file in project with transparent compiler`` useTransparentCompiler responseFile =
     let responseFile = FileInfo responseFile
