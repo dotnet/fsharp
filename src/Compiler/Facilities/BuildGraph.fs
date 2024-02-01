@@ -37,86 +37,66 @@ module GraphNode =
         | None -> ()
 
 [<Sealed>]
-type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T>, cachedResultNode: Async<'T>) =
+type GraphNode<'T> private (compute: unit -> unit, tcs: TaskCompletionSource<'T>, cts: CancellationTokenSource) =
 
-    let mutable computation = computation
     let mutable requestCount = 0
+    let mutable started = false
 
-    let mutable cachedResult = cachedResult
-    let mutable cachedResultNode: Async<'T> = cachedResultNode
+    // Any locking we do is for very short synchronous state updates.
+    let gate = obj
 
-    let isCachedResultNodeNotNull () =
-        not (obj.ReferenceEquals(cachedResultNode, null))
+    new(computation) =
+        // Apparently a trick to force GC of the original computation:
+        let mutable computation = computation
 
-    let semaphore = new SemaphoreSlim(1, 1)
+        let tcs = TaskCompletionSource<'T>()
+        let cts = new CancellationTokenSource()
+
+        let compute () =
+            Async.StartWithContinuations(
+                async {
+                    Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
+                    return! computation
+                },
+                (fun result ->
+                    tcs.SetResult result
+                    // Allow GC of the original computation.
+                    computation <- Unchecked.defaultof<_>),
+                (tcs.SetException),
+                (ignore >> tcs.SetCanceled),
+                // This is not a requestor's CancellationToken.
+                cts.Token)
+
+        GraphNode(compute, tcs, cts)
 
     member _.GetOrComputeValue() =
-        // fast path
-        if isCachedResultNodeNotNull () then
-            cachedResultNode
-        else
-            async {
-                Interlocked.Increment(&requestCount) |> ignore
 
-                try
-                    let! ct = Async.CancellationToken
+        // Lock for the sake of `started` flag.
+        let startNew = lock gate <| fun () ->
+            Interlocked.Increment &requestCount = 1 && not started
+        
+        // The cancellation of the computation is not governed by the requestor's CancellationToken. 
+        // It will continue to run as long as there are requests.
+        if startNew then started <- true; compute()
 
-                    // We must set 'taken' before any implicit cancellation checks
-                    // occur, making sure we are under the protection of the 'try'.
-                    // For example, NodeCode's 'try/finally' (TryFinally) uses async.TryFinally which does
-                    // implicit cancellation checks even before the try is entered, as do the
-                    // de-sugaring of 'do!' and other NodeCode constructs.
-                    let mutable taken = false
+        async {
+            try 
+                return! tcs.Task |> Async.AwaitTask
+            finally
+                if Interlocked.Decrement &requestCount = 0 then
+                    // All requestors either finished or cancelled, so it is safe to cancel either way.
+                    cts.Cancel()
+        }
 
-                    try
-                        do!
-                            semaphore
-                                .WaitAsync(ct)
-                                .ContinueWith(
-                                    (fun _ -> taken <- true),
-                                    (TaskContinuationOptions.NotOnCanceled
-                                     ||| TaskContinuationOptions.NotOnFaulted
-                                     ||| TaskContinuationOptions.ExecuteSynchronously)
-                                )
-                            |> Async.AwaitTask
 
-                        match cachedResult with
-                        | ValueSome value -> return value
-                        | _ ->
-                            let tcs = TaskCompletionSource<'T>()
-                            let p = computation
+    member _.TryPeekValue() = if tcs.Task.IsCompleted then ValueSome tcs.Task.Result else ValueNone
 
-                            Async.StartWithContinuations(
-                                async {
-                                    Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! p
-                                },
-                                (fun res ->
-                                    cachedResult <- ValueSome res
-                                    cachedResultNode <- async.Return res
-                                    computation <- Unchecked.defaultof<_>
-                                    tcs.SetResult(res)),
-                                (fun ex -> tcs.SetException(ex)),
-                                (fun _ -> tcs.SetCanceled()),
-                                ct
-                            )
-
-                            return! tcs.Task |> Async.AwaitTask
-                    finally
-                        if taken then
-                            semaphore.Release() |> ignore
-                finally
-                    Interlocked.Decrement(&requestCount) |> ignore
-            }
-
-    member _.TryPeekValue() = cachedResult
-
-    member _.HasValue = cachedResult.IsSome
+    member _.HasValue = tcs.Task.IsCompleted
 
     member _.IsComputing = requestCount > 0
 
     static member FromResult(result: 'T) =
-        let nodeResult = async.Return result
-        GraphNode(nodeResult, ValueSome result, nodeResult)
-
-    new(computation) = GraphNode(computation, ValueNone, Unchecked.defaultof<_>)
+        let tcs = TaskCompletionSource()
+        tcs.SetResult result
+        GraphNode(ignore, tcs, new CancellationTokenSource())
+      

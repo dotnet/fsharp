@@ -113,16 +113,22 @@ module BuildGraphTests =
     let ``Many requests to get a value asynchronously should have its computation cleaned up by the GC``() =
         let requests = 10000
 
-        let graphNode, weak = createNode ()
+        let weak = 
 
-        GC.Collect(2, GCCollectionMode.Forced, true)
+            let graphNode, weak = createNode ()
+
+            GC.Collect(2, GCCollectionMode.Forced, true)
         
-        Assert.shouldBeTrue weak.IsAlive
+            Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
-        |> ignore
+            Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
+            |> ignore
 
-        GC.Collect(2, GCCollectionMode.Forced, true)
+            weak
+
+        GC.Collect()
+
+        //GC.Collect(2, GCCollectionMode.Forced, true)
 
         Assert.shouldBeFalse weak.IsAlive
 
@@ -170,7 +176,7 @@ module BuildGraphTests =
         if task.Wait(1000) |> not then raise (TimeoutException())
 
     [<Fact>]
-    let ``Many requests to get a value asynchronously might evaluate the computation more than once even when some requests get canceled``() =
+    let ``Many requests to get a value asynchronously will never evaluate the value more than once``() =
         let requests = 10000
         let resetEvent = new ManualResetEvent(false)
         let mutable computationCountBeforeSleep = 0
@@ -208,8 +214,8 @@ module BuildGraphTests =
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
-        Assert.shouldBeTrue(computationCountBeforeSleep > 0)
-        Assert.shouldBeTrue(computationCount >= 0)
+        Assert.shouldBeTrue(computationCountBeforeSleep = 1)
+        Assert.shouldBeTrue(computationCount = 1)
 
         tasks
         |> Seq.iter (fun x -> 
