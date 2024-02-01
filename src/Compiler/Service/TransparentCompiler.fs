@@ -1388,7 +1388,7 @@ type internal TransparentCompiler
                     let! snapshotWithSources = LoadSources bootstrapInfo priorSnapshot
                     let file = snapshotWithSources.SourceFiles |> List.last
 
-                    let! parseResults = getParseResult projectSnapshot creationDiags file bootstrapInfo.TcConfig
+                    let! parseResults = getParseResult projectSnapshot Seq.empty file bootstrapInfo.TcConfig
 
                     let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
@@ -1441,7 +1441,7 @@ type internal TransparentCompiler
                         )
 
                     let tcDiagnostics =
-                        [| yield! creationDiags; yield! extraDiagnostics; yield! tcDiagnostics |]
+                        [| yield! extraDiagnostics; yield! tcDiagnostics |]
 
                     let loadClosure = None // TODO: script support
 
