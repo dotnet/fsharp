@@ -1440,8 +1440,7 @@ type internal TransparentCompiler
                             Some symbolEnv
                         )
 
-                    let tcDiagnostics =
-                        [| yield! extraDiagnostics; yield! tcDiagnostics |]
+                    let tcDiagnostics = [| yield! extraDiagnostics; yield! tcDiagnostics |]
 
                     let loadClosure = None // TODO: script support
 
