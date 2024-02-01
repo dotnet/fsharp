@@ -1,6 +1,5 @@
 namespace FSharp.Compiler.CodeAnalysis
 
-open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Text
 open FSharp.Compiler.BuildGraph
 
@@ -8,8 +7,6 @@ open System.Reflection
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
-open Internal.Utilities.Collections
-open Internal.Utilities.Library
 
 type SourceTextHash = int64
 
@@ -165,8 +162,6 @@ type internal IBackgroundCompiler =
     abstract FrameworkImportsCache: FrameworkImportsCache
 
     abstract ProjectChecked: IEvent<FSharpProjectOptions>
-
-    abstract ScriptClosureCache: MruCache<AnyCallerThreadToken, FSharpProjectOptions, LoadClosure>
 
 [<AutoOpen>]
 module internal EnvMisc =
