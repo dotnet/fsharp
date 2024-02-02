@@ -386,8 +386,7 @@ type internal TransparentCompiler
                 let useFsiAuxLib = defaultArg useFsiAuxLib true
                 let useSdkRefs = defaultArg useSdkRefs true
                 let reduceMemoryUsage = ReduceMemoryFlag.Yes
-                // Do we assume .NET Framework references for scripts?
-                let assumeDotNetFramework = defaultArg assumeDotNetFramework true
+                let assumeDotNetFramework = defaultArg assumeDotNetFramework false
 
                 let applyCompilerOptions tcConfig =
                     let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
