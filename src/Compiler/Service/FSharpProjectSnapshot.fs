@@ -432,8 +432,28 @@ and internal ProjectCore
     member _.CacheKey = cacheKey.Value
 
 and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental and subject to change.")>] FSharpReferencedProjectSnapshot =
-    | FSharpReference of projectOutputFile: string * options: FSharpProjectSnapshot
+    /// <summary>
+    /// A reference to an F# project. The physical data for it is stored/cached inside of the compiler service.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="snapshot">Snapshot of the referenced F# project</param>
+    | FSharpReference of projectOutputFile: string * snapshot: FSharpProjectSnapshot
+    /// <summary>
+    /// A reference to any portable executable, including F#. The stream is owned by this reference.
+    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
+    /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
+    /// If the stream evaluation throws an exception, it will be automatically handled.
+    /// </summary>
+    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    /// <param name="delayedReader">A function that opens a Portable Executable data stream for reading.</param>
     | PEReference of getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+
+    /// <summary>
+    /// A reference to an ILModuleReader.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    /// <param name="getReader">A function that creates an ILModuleReader for reading module data.</param>
     | ILModuleReference of
         projectOutputFile: string *
         getStamp: (unit -> DateTime) *
