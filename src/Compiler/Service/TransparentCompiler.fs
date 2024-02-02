@@ -588,6 +588,41 @@ type internal TransparentCompiler
 
                             member x.FileName = nm
                         }
+                | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
+                    { new IProjectReference with
+                        member x.EvaluateRawContents() =
+                            node {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
+
+                                match ilReaderOpt with
+                                | Some ilReader ->
+                                    let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                    let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
+                                    return ProjectAssemblyDataResult.Available data
+                                | _ ->
+                                    // Note 'false' - if a PEReference doesn't find an ILModuleReader then we don't
+                                    // continue to try to use an on-disk DLL
+                                    return ProjectAssemblyDataResult.Unavailable false
+                            }
+
+                        member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
+                        member x.FileName = delayedReader.OutputFile
+                    }
+
+                | FSharpReferencedProjectSnapshot.ILModuleReference(nm, getStamp, getReader) ->
+                    { new IProjectReference with
+                        member x.EvaluateRawContents() =
+                            cancellable {
+                                let ilReader = getReader ()
+                                let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
+                                return ProjectAssemblyDataResult.Available data
+                            }
+                            |> NodeCode.FromCancellable
+
+                        member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
+                        member x.FileName = nm
+                    }
         ]
 
     let ComputeTcConfigBuilder (projectSnapshot: ProjectSnapshot) =
@@ -834,20 +869,23 @@ type internal TransparentCompiler
                 |> List.map (fun (m, fileName) -> m, FSharpFileSnapshot.CreateFromFileSystem(fileName))
 
             return
-                Some
-                    {
-                        Id = bootstrapId
-                        AssemblyName = assemblyName
-                        OutFile = outFile
-                        TcConfig = tcConfig
-                        TcImports = tcImports
-                        TcGlobals = tcGlobals
-                        InitialTcInfo = initialTcInfo
-                        LoadedSources = loadedSources
-                        LoadClosure = loadClosureOpt
-                        LastFileName = sourceFiles |> List.last
-                    //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
-                    }
+                match sourceFiles with
+                | [] -> None
+                | _ ->
+                    Some
+                        {
+                            Id = bootstrapId
+                            AssemblyName = assemblyName
+                            OutFile = outFile
+                            TcConfig = tcConfig
+                            TcImports = tcImports
+                            TcGlobals = tcGlobals
+                            InitialTcInfo = initialTcInfo
+                            LoadedSources = loadedSources
+                            LoadClosure = loadClosureOpt
+                            LastFileName = sourceFiles |> List.tryLast |> Option.defaultValue ""
+                        //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
+                        }
         }
 
     let ComputeBootstrapInfo (projectSnapshot: ProjectSnapshot) =
@@ -1184,7 +1222,7 @@ type internal TransparentCompiler
                 ApplyMetaCommandsFromInputToTcConfig(tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider)
                 |> ignore
 
-                let sink = TcResultsSinkImpl(tcGlobals)
+                let sink = TcResultsSinkImpl(tcGlobals, file.SourceText)
 
                 let hadParseErrors = not (Array.isEmpty file.ParseErrors)
 
@@ -1213,16 +1251,13 @@ type internal TransparentCompiler
 
                     //fileChecked.Trigger fileName
 
-                    let newErrors =
-                        Array.append file.ParseErrors (errHandler.CollectedPhasedDiagnostics)
-
                     fileChecked.Trigger(fileName, Unchecked.defaultof<_>)
 
                     return
                         {
                             finisher = finisher
                             moduleNamesDict = moduleNamesDict
-                            tcDiagnosticsRev = [ newErrors ]
+                            tcDiagnosticsRev = [ errHandler.CollectedPhasedDiagnostics ]
                             tcDependencyFiles = [ fileName ]
                             sink = sink
                         }
@@ -1425,7 +1460,7 @@ type internal TransparentCompiler
                     let! snapshotWithSources = LoadSources bootstrapInfo priorSnapshot
                     let file = snapshotWithSources.SourceFiles |> List.last
 
-                    let! parseResults = getParseResult projectSnapshot creationDiags file bootstrapInfo.TcConfig
+                    let! parseResults = getParseResult projectSnapshot Seq.empty file bootstrapInfo.TcConfig
 
                     let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
@@ -1477,8 +1512,7 @@ type internal TransparentCompiler
                             Some symbolEnv
                         )
 
-                    let tcDiagnostics =
-                        [| yield! creationDiags; yield! extraDiagnostics; yield! tcDiagnostics |]
+                    let tcDiagnostics = [| yield! extraDiagnostics; yield! tcDiagnostics |]
 
                     let! loadClosure =
                         ComputeScriptClosure
@@ -1731,7 +1765,8 @@ type internal TransparentCompiler
                         | ProjectAssemblyDataResult.Available data -> Some data
                         | _ -> None
 
-                    let symbolUses = tcInfo.sink |> Seq.map (fun sink -> sink.GetSymbolUses())
+                    let symbolUses =
+                        tcInfo.sink |> Seq.rev |> Seq.map (fun sink -> sink.GetSymbolUses())
 
                     let details =
                         (bootstrapInfo.TcGlobals,
