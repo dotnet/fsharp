@@ -3672,6 +3672,13 @@ let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty], g
 
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty], g.knownWithoutNull)
 
+let isBoolTy (g: TcGlobals) ty = 
+    match tryTcrefOfAppTy g ty with 
+    | ValueNone -> false
+    | ValueSome tcref -> 
+        tyconRefEq g g.system_Bool_tcref tcref ||
+        tyconRefEq g g.bool_tcr tcref
+
 let isValueOptionTy (g: TcGlobals) ty = 
     match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
@@ -9228,14 +9235,17 @@ type ActivePatternInfo with
 
     member x.DisplayNameByIdx idx = x.ActiveTags[idx] |> ConvertLogicalNameToDisplayName
 
-    member apinfo.ResultType g m retTys isStruct = 
+    member apinfo.ResultType g m retTys retKind = 
         let choicety = mkChoiceTy g m retTys
         if apinfo.IsTotal then choicety 
-        elif isStruct then mkValueOptionTy g choicety
-        else mkOptionTy g choicety
+        else
+            match retKind with
+            | ActivePatternReturnKind.RefTypeWrapper -> mkOptionTy g choicety
+            | ActivePatternReturnKind.StructTypeWrapper -> mkValueOptionTy g choicety
+            | ActivePatternReturnKind.Boolean -> g.bool_ty
     
-    member apinfo.OverallType g m argTy retTys isStruct = 
-        mkFunTy g argTy (apinfo.ResultType g m retTys isStruct)
+    member apinfo.OverallType g m argTy retTys retKind = 
+        mkFunTy g argTy (apinfo.ResultType g m retTys retKind)
 
 //---------------------------------------------------------------------------
 // Active pattern validation

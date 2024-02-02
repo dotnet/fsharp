@@ -1593,6 +1593,7 @@ featurePreferExtensionMethodOverPlainProperty,"prefer extension method over plai
 featureWarningIndexedPropertiesGetSetSameType,"Indexed properties getter and setter must have the same type"
 featureChkTailCallAttrOnNonRec,"Raises warnings if the 'TailCall' attribute is used on non-recursive functions."
 featureUnionIsPropertiesVisible,"Union case test properties"
+featureBooleanReturningAndReturnTypeDirectedPartialActivePattern,"Boolean-returning and return-type-directed partial active patterns"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3355,tcNotAnIndexerNamedIndexingNotYetEnabled,"The value '%s' is not a function and does not support index notation."
