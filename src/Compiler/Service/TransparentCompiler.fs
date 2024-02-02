@@ -291,6 +291,8 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val ItemKeyStore = AsyncMemoize(sf, 2 * sf, name = "ItemKeyStore")
 
+    member val ScriptClosure = AsyncMemoize(sf, 2 * sf, name = "ScriptClosure")
+
     member this.Clear(projects: Set<ProjectIdentifier>) =
         let shouldClear project = projects |> Set.contains project
 
@@ -303,6 +305,7 @@ type internal CompilerCaches(sizeFactor: int) =
         this.AssemblyData.Clear(shouldClear)
         this.SemanticClassification.Clear(snd >> shouldClear)
         this.ItemKeyStore.Clear(snd >> shouldClear)
+        this.ScriptClosure.Clear(snd >> shouldClear) // Todo check if correct predicate
 
 type internal TransparentCompiler
     (
@@ -346,14 +349,6 @@ type internal TransparentCompiler
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
 
-    /// Information about the derived script closure.
-    let scriptClosureCache =
-        MruCache<AnyCallerThreadToken, FSharpProjectOptions, LoadClosure>(
-            projectCacheSize,
-            areSame = FSharpProjectOptions.AreSameForChecking,
-            areSimilar = FSharpProjectOptions.UseSameProject
-        )
-
     // use this to process not-yet-implemented tasks
     let backgroundCompiler =
         BackgroundCompiler(
@@ -373,6 +368,53 @@ type internal TransparentCompiler
             useSyntaxTreeCache
         )
         :> IBackgroundCompiler
+
+    let ComputeScriptClosure
+        (fileName: string)
+        (source: ISourceText)
+        (defaultFSharpBinariesDir: string)
+        (useSimpleResolution: bool)
+        (useFsiAuxLib: bool option)
+        (useSdkRefs: bool option)
+        (sdkDirOverride: string option)
+        (assumeDotNetFramework: bool option)
+        (projectSnapshot: ProjectSnapshot)
+        =
+        caches.ScriptClosure.Get(
+            projectSnapshot.FileKey fileName,
+            node {
+                let useFsiAuxLib = defaultArg useFsiAuxLib true
+                let useSdkRefs = defaultArg useSdkRefs true
+                let reduceMemoryUsage = ReduceMemoryFlag.Yes
+                // Do we assume .NET Framework references for scripts?
+                let assumeDotNetFramework = defaultArg assumeDotNetFramework true
+
+                let applyCompilerOptions tcConfig =
+                    let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
+                    ParseCompilerOptions(ignore, fsiCompilerOptions, projectSnapshot.OtherOptions)
+
+                let closure =
+                    LoadClosure.ComputeClosureOfScriptText(
+                        legacyReferenceResolver,
+                        defaultFSharpBinariesDir,
+                        fileName,
+                        source,
+                        CodeContext.Editing,
+                        useSimpleResolution,
+                        useFsiAuxLib,
+                        useSdkRefs,
+                        sdkDirOverride,
+                        Lexhelp.LexResourceManager(),
+                        applyCompilerOptions,
+                        assumeDotNetFramework,
+                        tryGetMetadataSnapshot,
+                        reduceMemoryUsage,
+                        dependencyProviderForScripts
+                    )
+
+                return closure
+            }
+        )
 
     let ComputeFrameworkImports (tcConfig: TcConfig) frameworkDLLs nonFrameworkResolutions =
         let frameworkDLLsKey =
@@ -559,8 +601,7 @@ type internal TransparentCompiler
         let projectReferences =
             getProjectReferences projectSnapshot "ComputeTcConfigBuilder"
 
-        let loadClosureOpt: LoadClosure option =
-            scriptClosureCache.TryGet(AnyCallerThread, projectSnapshot.ToOptions())
+        let loadClosureOpt: LoadClosure option = None // ToDo
 
         let getSwitchValue (switchString: string) =
             match commandLineArgs |> List.tryFindIndex (fun s -> s.StartsWithOrdinal switchString) with
@@ -716,47 +757,68 @@ type internal TransparentCompiler
             }
         )
 
-    let computeBootstrapInfoInner (projectSnapshot: ProjectSnapshot) =
+    let computeBootstrapInfoInner (fileName: string option) (projectSnapshot: ProjectSnapshot) =
         node {
 
-            let tcConfigB, sourceFiles, loadClosureOpt = ComputeTcConfigBuilder projectSnapshot
+            let tcConfigB, sourceFiles, _ = ComputeTcConfigBuilder projectSnapshot
 
             // If this is a builder for a script, re-apply the settings inferred from the
             // script and its load closure to the configuration.
             //
             // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
             let setupConfigFromLoadClosure () =
-                match loadClosureOpt with
-                | Some loadClosure ->
-                    let dllReferences =
-                        [
-                            for reference in tcConfigB.referencedDLLs do
-                                // If there's (one or more) resolutions of closure references then yield them all
-                                match
-                                    loadClosure.References
-                                    |> List.tryFind (fun (resolved, _) -> resolved = reference.Text)
-                                with
-                                | Some(resolved, closureReferences) ->
-                                    for closureReference in closureReferences do
-                                        yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
-                                | None -> yield reference
-                        ]
+                match fileName, projectSnapshot.UseScriptResolutionRules with
+                | Some fileName, true ->
+                    node {
+                        let sourceFile =
+                            projectSnapshot.SourceFiles |> List.find (fun x -> x.FileName = fileName)
 
-                    tcConfigB.referencedDLLs <- []
+                        let! source = sourceFile.GetSource() |> NodeCode.AwaitTask
 
-                    tcConfigB.primaryAssembly <-
-                        (if loadClosure.UseDesktopFramework then
-                             PrimaryAssembly.Mscorlib
-                         else
-                             PrimaryAssembly.System_Runtime)
-                    // Add one by one to remove duplicates
-                    dllReferences
-                    |> List.iter (fun dllReference -> tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
+                        let! loadClosure =
+                            ComputeScriptClosure
+                                fileName
+                                source
+                                tcConfigB.defaultFSharpBinariesDir
+                                tcConfigB.useSimpleResolution
+                                (Some tcConfigB.useFsiAuxLib)
+                                (Some tcConfigB.useSdkRefs)
+                                tcConfigB.sdkDirOverride
+                                None
+                                projectSnapshot
 
-                    tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
-                | None -> ()
+                        let dllReferences =
+                            [
+                                for reference in tcConfigB.referencedDLLs do
+                                    // If there's (one or more) resolutions of closure references then yield them all
+                                    match
+                                        loadClosure.References
+                                        |> List.tryFind (fun (resolved, _) -> resolved = reference.Text)
+                                    with
+                                    | Some(resolved, closureReferences) ->
+                                        for closureReference in closureReferences do
+                                            yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
+                                    | None -> yield reference
+                            ]
 
-            setupConfigFromLoadClosure ()
+                        tcConfigB.referencedDLLs <- []
+
+                        tcConfigB.primaryAssembly <-
+                            (if loadClosure.UseDesktopFramework then
+                                 PrimaryAssembly.Mscorlib
+                             else
+                                 PrimaryAssembly.System_Runtime)
+                        // Add one by one to remove duplicates
+                        dllReferences
+                        |> List.iter (fun dllReference -> tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
+
+                        tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
+
+                        return Some loadClosure
+                    }
+                | _ -> node { return None }
+
+            let! loadClosureOpt = setupConfigFromLoadClosure ()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate = true)
             let outFile, _, assemblyName = tcConfigB.DecideNames sourceFiles
@@ -786,7 +848,7 @@ type internal TransparentCompiler
                     }
         }
 
-    let ComputeBootstrapInfo (projectSnapshot: ProjectSnapshot) =
+    let ComputeBootstrapInfo (fileName: string option) (projectSnapshot: ProjectSnapshot) =
 
         caches.BootstrapInfo.Get(
             projectSnapshot.NoFileVersionsKey,
@@ -801,7 +863,7 @@ type internal TransparentCompiler
                 let! bootstrapInfoOpt =
                     node {
                         try
-                            return! computeBootstrapInfoInner projectSnapshot
+                            return! computeBootstrapInfoInner fileName projectSnapshot
                         with exn ->
                             errorRecoveryNoRange exn
                             return None
@@ -1352,7 +1414,7 @@ type internal TransparentCompiler
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
-                match! ComputeBootstrapInfo projectSnapshot with
+                match! ComputeBootstrapInfo (Some fileName) projectSnapshot with
                 | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
 
                 | Some bootstrapInfo, creationDiags ->
@@ -1416,8 +1478,17 @@ type internal TransparentCompiler
                     let tcDiagnostics =
                         [| yield! creationDiags; yield! extraDiagnostics; yield! tcDiagnostics |]
 
-                    let loadClosure =
-                        scriptClosureCache.TryGet(AnyCallerThread, projectSnapshot.ToOptions())
+                    let! loadClosure =
+                        ComputeScriptClosure
+                            fileName
+                            file.Source
+                            tcConfig.fsharpBinariesDir
+                            tcConfig.useSimpleResolution
+                            (Some tcConfig.useFsiAuxLib)
+                            (Some tcConfig.useSdkRefs)
+                            tcConfig.sdkDirOverride
+                            (Some tcConfig.assumeDotNetFramework)
+                            projectSnapshot
 
                     let typedResults =
                         FSharpCheckFileResults.Make(
@@ -1440,7 +1511,7 @@ type internal TransparentCompiler
                             tcResolutions,
                             tcSymbolUses,
                             tcEnv.NameEnv,
-                            loadClosure,
+                            Some loadClosure,
                             checkedImplFileOpt,
                             tcOpenDeclarations
                         )
@@ -1593,7 +1664,7 @@ type internal TransparentCompiler
                         Trace.TraceInformation($"Using assembly on disk: {name}")
                         return ProjectAssemblyDataResult.Unavailable true
                     else
-                        match! ComputeBootstrapInfo projectSnapshot with
+                        match! ComputeBootstrapInfo (Some fileName) projectSnapshot with
                         | None, _ ->
                             Trace.TraceInformation($"Using assembly on disk (unintentionally): {name}")
                             return ProjectAssemblyDataResult.Unavailable true
@@ -1618,7 +1689,7 @@ type internal TransparentCompiler
             projectSnapshot.FullKey,
             node {
 
-                match! ComputeBootstrapInfo projectSnapshot with
+                match! ComputeBootstrapInfo None projectSnapshot with
                 | None, creationDiags ->
                     return FSharpCheckProjectResults(projectSnapshot.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
                 | Some bootstrapInfo, creationDiags ->
@@ -1689,7 +1760,7 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: ProjectSnapshot) =
         node {
-            match! ComputeBootstrapInfo projectSnapshot with
+            match! ComputeBootstrapInfo (Some fileName) projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
 
