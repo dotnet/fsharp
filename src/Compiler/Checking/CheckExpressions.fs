@@ -140,6 +140,27 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
+// In other parts of the codebase, when we crack open strings, we do
+// manual sort of parsing. I feel like this is actually more readable,
+// and it should be enough since we are only interested in format specifiers
+// TODO XXX
+module private ParseString =
+    // Regex pattern for something like: %[flags][width][.precision][type]
+    // but match only if % is not escaped by another %
+    let formatSpecifier =
+        let sb = System.Text.StringBuilder(64)
+        sb.Append(@"(^|[^%])")                |> ignore // Start with beginning of string or any char other than '%'
+        sb.Append(@"(%%)*%")                  |> ignore // followed by an odd number of '%' chars
+        sb.Append(@"[+-0 ]?")                 |> ignore // optionally followed by flags
+        sb.Append(@"(\d+)?")                  |> ignore // optionally followed by width
+        sb.Append(@"(\.\d+)?")                |> ignore // optionally followed by .precision
+        sb.Append(@"[bscdiuxXoBeEfFgGMOAat]") |> ignore // and then a char that determines specifier's type
+        let pattern = sb.ToString()
+        System.Text.RegularExpressions.Regex(
+            pattern,
+            System.Text.RegularExpressions.RegexOptions.Compiled)
+    let HasFormatSpecifier = formatSpecifier.IsMatch
+
 /// Compute the available access rights from a particular location in code
 let ComputeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType =
     AccessibleFrom (eAccessPath :: eInternalsVisibleCompPaths, eFamilyType)
@@ -7189,7 +7210,6 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
 and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: SynInterpolatedStringPart list) =
     let g = cenv.g
 
-    let mutable allSimpleFormats = true
     let synFillExprs =
         parts
         |> List.choose (function
@@ -7197,9 +7217,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             | SynInterpolatedStringPart.FillExpr (fillExpr, _)  ->
                 match fillExpr with
                 // Detect "x" part of "...{x,3}..."
-                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) ->
-                    allSimpleFormats <- false
-                    Some e
+                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
                 | e -> Some e)
 
     let stringFragmentRanges =
@@ -7305,13 +7323,11 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             ()
     | _ -> ()
 
-    let argTys, _printerTy, printerTupleTyRequired, percentATys, specifierLocations, dotnetFormatString =
+    let argTys, _printerTy, printerTupleTyRequired, percentATys, _specifierLocations, dotnetFormatString =
         try
             CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString None printfFormatString printerArgTy printerResidueTy printerResultTy
         with Failure errString ->
             error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
-
-    allSimpleFormats <- allSimpleFormats && specifierLocations.IsEmpty
 
     // Check the expressions filling the holes
     if argTys.Length <> synFillExprs.Length then
@@ -7348,9 +7364,24 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
                     | SynInterpolatedStringPart.String(s, _) -> not <| System.String.IsNullOrEmpty s
                     | SynInterpolatedStringPart.FillExpr(_, _) -> true)
 
+            // TODO XXX If there is a format specifer that only specifies type
+            // of the interpolated expression (e.g. $"%s{x}"), we can just
+            // erase if from the string and carry on?
+            let noSpecifiers =
+                nonEmptyParts
+                |> List.forall (fun x ->
+                    match x with
+                    | SynInterpolatedStringPart.FillExpr(expr, _) ->
+                        match expr with
+                        // Detect "x" part of "...{x,3}..."
+                        // TODO XXX should also detect {x:Y} probably
+                        | SynExpr.Tuple (false, [_; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> false
+                        | _ -> true
+                    | SynInterpolatedStringPart.String(s, _) -> not <| ParseString.HasFormatSpecifier s)
+
             // If all fill expressions are strings and there is less then 5 parts of the interpolated string total
             // then we can use System.String.Concat instead of a sprintf call
-            if allSimpleFormats && isString && (nonEmptyParts.Length < 5) && (argTys |> List.forall (isStringTy g)) then
+            if noSpecifiers && isString && (nonEmptyParts.Length < 5) && (argTys |> List.forall (isStringTy g)) then
                 let rec f xs ys acc =
                     match xs with
                     | SynInterpolatedStringPart.String(s, m)::xs ->
