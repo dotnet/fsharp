@@ -7341,9 +7341,16 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             // Type check the expressions filling the holes
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
+            let nonEmptyParts =
+                parts
+                |> List.filter (fun x ->
+                    match x with
+                    | SynInterpolatedStringPart.String(s, _) -> not <| System.String.IsNullOrEmpty s
+                    | SynInterpolatedStringPart.FillExpr(_, _) -> true)
+
             // If all fill expressions are strings and there is less then 5 parts of the interpolated string total
             // then we can use System.String.Concat instead of a sprintf call
-            if allSimpleFormats && isString && (parts.Length < 5) && (argTys |> List.forall (isStringTy g)) then
+            if allSimpleFormats && isString && (nonEmptyParts.Length < 5) && (argTys |> List.forall (isStringTy g)) then
                 let rec f xs ys acc =
                     match xs with
                     | SynInterpolatedStringPart.String(s, m)::xs ->
@@ -7355,14 +7362,16 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
                         | _ -> error(Error((0, "FOOBAR"), m)) // TODO XXX wrong error
                     | _ -> acc
 
-                let args = f parts fillExprs [] |> List.rev
-                assert (args.Length = parts.Length)
+                let args = f nonEmptyParts fillExprs [] |> List.rev
+                assert (args.Length = nonEmptyParts.Length)
                 if args.Length = 4 then
                     (mkStaticCall_String_Concat4 g m args[0] args[1] args[2] args[3], tpenv)
                 elif args.Length = 3 then
                     (mkStaticCall_String_Concat3 g m args[0] args[1] args[2], tpenv)
                 elif args.Length = 2 then
                     (mkStaticCall_String_Concat2 g m args[0] args[1], tpenv)
+                elif args.Length = 1 then
+                    args[0], tpenv
                 else
                     // Throw some error
                     error(Error((0, "FOOBAR2"), m)) // TODO XXX wrong error
