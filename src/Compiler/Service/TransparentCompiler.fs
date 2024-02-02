@@ -590,89 +590,113 @@ type internal TransparentCompiler
                         }
         ]
 
-    let ComputeTcConfigBuilder (projectSnapshot: ProjectSnapshotBase<_>) =
+    let ComputeTcConfigBuilder (projectSnapshot: ProjectSnapshot) =
+        node {
+            let useSimpleResolutionSwitch = "--simpleresolution"
+            let commandLineArgs = projectSnapshot.CommandLineOptions
+            let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
+            let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
 
-        let useSimpleResolutionSwitch = "--simpleresolution"
-        let commandLineArgs = projectSnapshot.CommandLineOptions
-        let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
-        let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
+            let projectReferences =
+                getProjectReferences projectSnapshot "ComputeTcConfigBuilder"
 
-        let projectReferences =
-            getProjectReferences projectSnapshot "ComputeTcConfigBuilder"
+            let getSwitchValue (switchString: string) =
+                match commandLineArgs |> List.tryFindIndex (fun s -> s.StartsWithOrdinal switchString) with
+                | Some idx -> Some(commandLineArgs[idx].Substring(switchString.Length))
+                | _ -> None
 
-        let loadClosureOpt: LoadClosure option = None // ToDo
+            let useSimpleResolution =
+                (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 
-        let getSwitchValue (switchString: string) =
-            match commandLineArgs |> List.tryFindIndex (fun s -> s.StartsWithOrdinal switchString) with
-            | Some idx -> Some(commandLineArgs[idx].Substring(switchString.Length))
-            | _ -> None
+            let! (loadClosureOpt: LoadClosure option) =
+                match projectSnapshot.SourceFiles, projectSnapshot.UseScriptResolutionRules with
+                | [ fsxFile ], true -> // assuming UseScriptResolutionRules and a single source file means we are doing this for a script
+                    node {
+                        let! source = fsxFile.GetSource() |> NodeCode.AwaitTask
 
-        let sdkDirOverride =
-            match loadClosureOpt with
-            | None -> None
-            | Some loadClosure -> loadClosure.SdkDirOverride
+                        let! closure =
+                            ComputeScriptClosure
+                                fsxFile.FileName
+                                source
+                                defaultFSharpBinariesDir
+                                useSimpleResolution
+                                None
+                                None
+                                None
+                                None
+                                projectSnapshot
 
-        // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
-        let tcConfigB =
-            TcConfigBuilder.CreateNew(
-                legacyReferenceResolver,
-                defaultFSharpBinariesDir,
-                implicitIncludeDir = projectSnapshot.ProjectDirectory,
-                reduceMemoryUsage = ReduceMemoryFlag.Yes,
-                isInteractive = useScriptResolutionRules,
-                isInvalidationSupported = true,
-                defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
-                tryGetMetadataSnapshot = tryGetMetadataSnapshot,
-                sdkDirOverride = sdkDirOverride,
-                rangeForErrors = range0
-            )
+                        return (Some closure)
+                    }
+                | _ -> node { return None }
 
-        tcConfigB.primaryAssembly <-
-            match loadClosureOpt with
-            | None -> PrimaryAssembly.Mscorlib
-            | Some loadClosure ->
-                if loadClosure.UseDesktopFramework then
-                    PrimaryAssembly.Mscorlib
-                else
-                    PrimaryAssembly.System_Runtime
+            let sdkDirOverride =
+                match loadClosureOpt with
+                | None -> None
+                | Some loadClosure -> loadClosure.SdkDirOverride
 
-        tcConfigB.resolutionEnvironment <- (LegacyResolutionEnvironment.EditingOrCompilation true)
+            // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
+            let tcConfigB =
+                TcConfigBuilder.CreateNew(
+                    legacyReferenceResolver,
+                    defaultFSharpBinariesDir,
+                    implicitIncludeDir = projectSnapshot.ProjectDirectory,
+                    reduceMemoryUsage = ReduceMemoryFlag.Yes,
+                    isInteractive = useScriptResolutionRules,
+                    isInvalidationSupported = true,
+                    defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
+                    tryGetMetadataSnapshot = tryGetMetadataSnapshot,
+                    sdkDirOverride = sdkDirOverride,
+                    rangeForErrors = range0
+                )
 
-        tcConfigB.conditionalDefines <-
-            let define =
-                if useScriptResolutionRules then
-                    "INTERACTIVE"
-                else
-                    "COMPILED"
+            tcConfigB.primaryAssembly <-
+                match loadClosureOpt with
+                | None -> PrimaryAssembly.Mscorlib
+                | Some loadClosure ->
+                    if loadClosure.UseDesktopFramework then
+                        PrimaryAssembly.Mscorlib
+                    else
+                        PrimaryAssembly.System_Runtime
 
-            define :: tcConfigB.conditionalDefines
+            tcConfigB.resolutionEnvironment <- (LegacyResolutionEnvironment.EditingOrCompilation true)
 
-        tcConfigB.projectReferences <- projectReferences
+            tcConfigB.conditionalDefines <-
+                let define =
+                    if useScriptResolutionRules then
+                        "INTERACTIVE"
+                    else
+                        "COMPILED"
 
-        tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
+                define :: tcConfigB.conditionalDefines
 
-        // Apply command-line arguments and collect more source files if they are in the arguments
-        let sourceFilesNew =
-            ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
+            tcConfigB.projectReferences <- projectReferences
 
-        // Never open PDB files for the language service, even if --standalone is specified
-        tcConfigB.openDebugInformationForLaterStaticLinking <- false
+            tcConfigB.useSimpleResolution <- useSimpleResolution
 
-        tcConfigB.xmlDocInfoLoader <-
-            { new IXmlDocumentationInfoLoader with
-                /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
-                member _.TryLoad(assemblyFileName) =
-                    let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
+            // Apply command-line arguments and collect more source files if they are in the arguments
+            let sourceFilesNew =
+                ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
 
-                    // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
-                    XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
-            }
-            |> Some
+            // Never open PDB files for the language service, even if --standalone is specified
+            tcConfigB.openDebugInformationForLaterStaticLinking <- false
 
-        tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
-        tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
+            tcConfigB.xmlDocInfoLoader <-
+                { new IXmlDocumentationInfoLoader with
+                    /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
+                    member _.TryLoad(assemblyFileName) =
+                        let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
 
-        tcConfigB, sourceFilesNew, loadClosureOpt
+                        // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
+                        XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
+                }
+                |> Some
+
+            tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+            tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
+
+            return tcConfigB, sourceFilesNew, loadClosureOpt
+        }
 
     let mutable BootstrapInfoIdCounter = 0
 
@@ -756,68 +780,47 @@ type internal TransparentCompiler
             }
         )
 
-    let computeBootstrapInfoInner (fileName: string option) (projectSnapshot: ProjectSnapshot) =
+    let computeBootstrapInfoInner (projectSnapshot: ProjectSnapshot) =
         node {
 
-            let tcConfigB, sourceFiles, _ = ComputeTcConfigBuilder projectSnapshot
+            let! tcConfigB, sourceFiles, loadClosureOpt = ComputeTcConfigBuilder projectSnapshot
 
             // If this is a builder for a script, re-apply the settings inferred from the
             // script and its load closure to the configuration.
             //
             // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
             let setupConfigFromLoadClosure () =
-                match fileName, projectSnapshot.UseScriptResolutionRules with
-                | Some fileName, true ->
-                    node {
-                        let sourceFile =
-                            projectSnapshot.SourceFiles |> List.find (fun x -> x.FileName = fileName)
+                match loadClosureOpt with
+                | Some loadClosure ->
+                    let dllReferences =
+                        [
+                            for reference in tcConfigB.referencedDLLs do
+                                // If there's (one or more) resolutions of closure references then yield them all
+                                match
+                                    loadClosure.References
+                                    |> List.tryFind (fun (resolved, _) -> resolved = reference.Text)
+                                with
+                                | Some(resolved, closureReferences) ->
+                                    for closureReference in closureReferences do
+                                        yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
+                                | None -> yield reference
+                        ]
 
-                        let! source = sourceFile.GetSource() |> NodeCode.AwaitTask
+                    tcConfigB.referencedDLLs <- []
 
-                        let! loadClosure =
-                            ComputeScriptClosure
-                                fileName
-                                source
-                                tcConfigB.defaultFSharpBinariesDir
-                                tcConfigB.useSimpleResolution
-                                (Some tcConfigB.useFsiAuxLib)
-                                (Some tcConfigB.useSdkRefs)
-                                tcConfigB.sdkDirOverride
-                                None
-                                projectSnapshot
+                    tcConfigB.primaryAssembly <-
+                        (if loadClosure.UseDesktopFramework then
+                             PrimaryAssembly.Mscorlib
+                         else
+                             PrimaryAssembly.System_Runtime)
+                    // Add one by one to remove duplicates
+                    dllReferences
+                    |> List.iter (fun dllReference -> tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
 
-                        let dllReferences =
-                            [
-                                for reference in tcConfigB.referencedDLLs do
-                                    // If there's (one or more) resolutions of closure references then yield them all
-                                    match
-                                        loadClosure.References
-                                        |> List.tryFind (fun (resolved, _) -> resolved = reference.Text)
-                                    with
-                                    | Some(resolved, closureReferences) ->
-                                        for closureReference in closureReferences do
-                                            yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
-                                    | None -> yield reference
-                            ]
+                    tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
+                | None -> ()
 
-                        tcConfigB.referencedDLLs <- []
-
-                        tcConfigB.primaryAssembly <-
-                            (if loadClosure.UseDesktopFramework then
-                                 PrimaryAssembly.Mscorlib
-                             else
-                                 PrimaryAssembly.System_Runtime)
-                        // Add one by one to remove duplicates
-                        dllReferences
-                        |> List.iter (fun dllReference -> tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
-
-                        tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
-
-                        return Some loadClosure
-                    }
-                | _ -> node { return None }
-
-            let! loadClosureOpt = setupConfigFromLoadClosure ()
+            setupConfigFromLoadClosure ()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate = true)
             let outFile, _, assemblyName = tcConfigB.DecideNames sourceFiles
@@ -847,7 +850,7 @@ type internal TransparentCompiler
                     }
         }
 
-    let ComputeBootstrapInfo (fileName: string option) (projectSnapshot: ProjectSnapshot) =
+    let ComputeBootstrapInfo (projectSnapshot: ProjectSnapshot) =
 
         caches.BootstrapInfo.Get(
             projectSnapshot.NoFileVersionsKey,
@@ -862,7 +865,7 @@ type internal TransparentCompiler
                 let! bootstrapInfoOpt =
                     node {
                         try
-                            return! computeBootstrapInfoInner fileName projectSnapshot
+                            return! computeBootstrapInfoInner projectSnapshot
                         with exn ->
                             errorRecoveryNoRange exn
                             return None
@@ -1413,7 +1416,7 @@ type internal TransparentCompiler
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
-                match! ComputeBootstrapInfo (Some fileName) projectSnapshot with
+                match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
 
                 | Some bootstrapInfo, creationDiags ->
@@ -1663,7 +1666,7 @@ type internal TransparentCompiler
                         Trace.TraceInformation($"Using assembly on disk: {name}")
                         return ProjectAssemblyDataResult.Unavailable true
                     else
-                        match! ComputeBootstrapInfo (Some fileName) projectSnapshot with
+                        match! ComputeBootstrapInfo projectSnapshot with
                         | None, _ ->
                             Trace.TraceInformation($"Using assembly on disk (unintentionally): {name}")
                             return ProjectAssemblyDataResult.Unavailable true
@@ -1688,7 +1691,7 @@ type internal TransparentCompiler
             projectSnapshot.FullKey,
             node {
 
-                match! ComputeBootstrapInfo None projectSnapshot with
+                match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags ->
                     return FSharpCheckProjectResults(projectSnapshot.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
                 | Some bootstrapInfo, creationDiags ->
@@ -1759,7 +1762,7 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: ProjectSnapshot) =
         node {
-            match! ComputeBootstrapInfo (Some fileName) projectSnapshot with
+            match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
 
@@ -1843,7 +1846,7 @@ type internal TransparentCompiler
             //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
             // TODO: might need to deal with exceptions here:
-            let tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
+            let! tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
 
             let tcConfig = TcConfig.Create(tcConfigB, validate = true)
 
