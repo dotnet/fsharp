@@ -375,6 +375,31 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
+type ConcurrentCapturingDiagnosticsLogger(nm, ?eagerFormat) =
+    inherit DiagnosticsLogger(nm)
+    let mutable errorCount = 0
+    let diagnostics = System.Collections.Concurrent.ConcurrentQueue()
+
+    override _.DiagnosticSink(diagnostic, severity) =
+        let diagnostic =
+            match eagerFormat with
+            | None -> diagnostic
+            | Some f -> f diagnostic
+
+        if severity = FSharpDiagnosticSeverity.Error then
+            Interlocked.Increment &errorCount |> ignore
+
+        diagnostics.Enqueue(diagnostic, severity)
+
+    override _.ErrorCount = errorCount
+
+    member _.Diagnostics = diagnostics |> Seq.toList
+
+    member _.CommitDelayedDiagnostics(diagnosticsLogger: DiagnosticsLogger) =
+        // Eagerly grab all the errors and warnings from the mutable collection
+        let errors = diagnostics.ToArray()
+        errors |> Array.iter diagnosticsLogger.DiagnosticSink
+
 /// Type holds thread-static globals for use by the compiler.
 type DiagnosticsThreadStatics =
     static let buildPhase = new AsyncLocal<BuildPhase>()
@@ -516,6 +541,17 @@ let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #Diagnost
 
 let UseDiagnosticsLogger newLogger =
     UseTransformedDiagnosticsLogger(fun _ -> newLogger)
+
+let CaptureDiagnosticsConcurrently () =
+    let newLogger = ConcurrentCapturingDiagnosticsLogger("CaptureDiagnosticsConcurrently")
+    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    DiagnosticsThreadStatics.DiagnosticsLogger <- newLogger
+
+    { new IDisposable with
+        member _.Dispose() =
+            newLogger.CommitDelayedDiagnostics oldLogger
+            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
+    }
 
 let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
@@ -855,14 +891,11 @@ type StackGuard(maxDepth: int, name: string) =
 
         try
             if depth % maxDepth = 0 then
-                let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                let buildPhase = DiagnosticsThreadStatics.BuildPhase
                 let ct = Cancellable.Token
 
                 async {
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
-                    use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
                     use _token = Cancellable.UsingToken ct
                     return f ()
                 }
