@@ -28,9 +28,9 @@ let waitUntil condition value =
     }
 
 let rec internal spinFor (duration: TimeSpan) =
-    node {
+    async {
         let sw = Stopwatch.StartNew()
-        do! Async.Sleep 10 |> NodeCode.AwaitAsync
+        do! Async.Sleep 10
         let remaining = duration - sw.Elapsed
         if remaining > TimeSpan.Zero then
             return! spinFor remaining
@@ -58,8 +58,8 @@ type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality>(mem
 [<Fact>]
 let ``Basics``() =
 
-    let computation key = node {
-        do! Async.Sleep 1 |> NodeCode.AwaitAsync
+    let computation key = async {
+        do! Async.Sleep 1
         return key * 2
     }
 
@@ -77,8 +77,8 @@ let ``Basics``() =
             memoize.Get'(3, computation 3)
             memoize.Get'(2, computation 2)
         }
-        |> NodeCode.Parallel
-        |> NodeCode.RunImmediateWithoutCancellation
+        |> Async.Parallel
+        |> Async.RunImmediateWithoutCancellation
 
     let expected = [| 10; 10; 4; 10; 6; 4|]
 
@@ -95,7 +95,7 @@ let ``We can cancel a job`` () =
 
         let jobStarted = new ManualResetEvent(false)
 
-        let computation action = node {
+        let computation action = async {
             action() |> ignore
             do! spinFor timeout 
             failwith "Should be canceled before it gets here"
@@ -110,13 +110,13 @@ let ``We can cancel a job`` () =
 
         let key = 1
 
-        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation jobStarted.Set), ct = cts1.Token)
+        let _task1 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation jobStarted.Set), ct = cts1.Token)
 
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
-        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts2.Token)
-        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts3.Token)
+        let _task2 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts2.Token)
+        let _task3 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts3.Token)
 
         do! waitUntil (events.CountOf Requested) 3
 
@@ -146,7 +146,7 @@ let ``Job is restarted if first requestor cancels`` () =
 
         let jobCanComplete = new ManualResetEvent(false)
 
-        let computation key = node {
+        let computation key = async {
             jobStarted.Set() |> ignore
             waitFor jobCanComplete
             return key * 2
@@ -162,13 +162,13 @@ let ``Job is restarted if first requestor cancels`` () =
 
         let key = 1
 
-        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
+        let _task1 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
 
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
-        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
-        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
+        let _task2 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
+        let _task3 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
         do! waitUntil (events.CountOf Requested) 3
 
@@ -197,7 +197,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         let jobCanComplete = new ManualResetEvent(false)
 
-        let computation key = node {
+        let computation key = async {
             jobStarted.Set() |> ignore
             waitFor jobCanComplete
             return key * 2
@@ -213,13 +213,13 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         let key = 1
 
-        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
+        let _task1 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
 
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
-        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
-        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
+        let _task2 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
+        let _task3 = Async.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
         do! waitUntil (events.CountOf Requested) 3
 
@@ -275,21 +275,21 @@ let ``Stress test`` () =
             while (int s.ElapsedMilliseconds) < durationMs do
                 number <- number + 1 % 12345
             return [result]
-        } |> NodeCode.AwaitAsync
+        }
 
     let rec sleepyComputation durationMs result =
-        node {
+        async {
             if rng.NextDouble() < (exceptionProbability / (float durationMs / float stepMs)) then
                 raise (ExpectedException())
             if durationMs > 0 then
-                do! Async.Sleep (min stepMs durationMs) |> NodeCode.AwaitAsync
+                do! Async.Sleep (min stepMs durationMs)
                 return! sleepyComputation (durationMs - stepMs) result
             else
                 return [result]
         }
 
     let rec mixedComputation durationMs result =
-        node {
+        async {
             if durationMs > 0 then
                 if rng.NextDouble() < 0.5 then
                     let! _ = intenseComputation (min stepMs durationMs) ()
@@ -331,7 +331,7 @@ let ``Stress test`` () =
                         let result = key * 2
                         let job = cache.Get'(key, computation durationMs result)
                         let cts = new CancellationTokenSource()
-                        let runningJob = NodeCode.StartAsTask_ForTesting(job, ct = cts.Token)
+                        let runningJob = Async.StartAsTask_ForTesting(job, ct = cts.Token)
                         cts.CancelAfter timeoutMs
                         Interlocked.Increment &started |> ignore
                         try
@@ -385,7 +385,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
         let job2started = new ManualResetEvent(false)
         let job2finished = new ManualResetEvent(false)
 
-        let work onStart onFinish = node {
+        let work onStart onFinish = async {
             Interlocked.Increment &started |> ignore
             onStart() |> ignore
             waitFor jobCanContinue
@@ -400,7 +400,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                   member _.GetVersion() = 1
                   member _.GetLabel() = "key1" }
 
-        cache.Get(key1, work job1started.Set job1finished.Set) |> Async.AwaitNodeCode |> Async.Start
+        cache.Get(key1, work job1started.Set job1finished.Set) |> Async.Start
 
         waitFor job1started
 
@@ -410,7 +410,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                   member _.GetVersion() = key1.GetVersion() + 1
                   member _.GetLabel() = "key2" }
 
-        cache.Get(key2, work job2started.Set job2finished.Set ) |> Async.AwaitNodeCode |> Async.Start
+        cache.Get(key2, work job2started.Set job2finished.Set ) |> Async.Start
 
         waitFor job2started
 
@@ -438,18 +438,18 @@ let ``Preserve thread static diagnostics`` () =
     let job1Cache = AsyncMemoize()
     let job2Cache = AsyncMemoize()
 
-    let job1 (input: string) = node {
-        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
+    let job1 (input: string) = async {
+        let! _ = Async.Sleep (rng.Next(1, 30))
         let ex = DummyException("job1 error")
         DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
         return Ok input
     }
 
-    let job2 (input: int) = node {
+    let job2 (input: int) = async {
         
         DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 1"))
 
-        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
+        let! _ = Async.Sleep (rng.Next(1, 30))
 
         let key = { new ICacheKey<_, _> with
                         member _.GetKey() = "job1"
@@ -481,7 +481,7 @@ let ``Preserve thread static diagnostics`` () =
                                 member _.GetVersion() = rng.Next(1, 10)
                                 member _.GetLabel() = "job2" }
 
-                let! result = job2Cache.Get(key, job2 (i % 10)) |> Async.AwaitNodeCode
+                let! result = job2Cache.Get(key, job2 (i % 10))
 
                 let diagnostics = diagnosticsLogger.GetDiagnostics()
 
@@ -512,7 +512,7 @@ let ``Preserve thread static diagnostics already completed job`` () =
                     member _.GetVersion() = 1
                     member _.GetLabel() = "job1" }
 
-    let job (input: string) = node {
+    let job (input: string) = async {
         let ex = DummyException($"job {input} error")
         DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
         return Ok input
@@ -524,8 +524,8 @@ let ``Preserve thread static diagnostics already completed job`` () =
 
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
 
-        let! _ = cache.Get(key, job "1" ) |> Async.AwaitNodeCode
-        let! _ = cache.Get(key, job "2" ) |> Async.AwaitNodeCode
+        let! _ = cache.Get(key, job "1" )
+        let! _ = cache.Get(key, job "2" )
 
         let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
 
@@ -545,9 +545,9 @@ let ``We get diagnostics from the job that failed`` () =
                     member _.GetVersion() = 1
                     member _.GetLabel() = "job1" }
 
-    let job (input: int) = node {
+    let job (input: int) = async {
         let ex = DummyException($"job {input} error")
-        do! Async.Sleep 100 |> NodeCode.AwaitAsync
+        do! Async.Sleep 100
         DiagnosticsThreadStatics.DiagnosticsLogger.Error(ex)
         return 5
     }
@@ -560,7 +560,7 @@ let ``We get diagnostics from the job that failed`` () =
 
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
             try
-                let! _ = cache.Get(key, job i ) |> Async.AwaitNodeCode
+                let! _ = cache.Get(key, job i )
                 ()
             with _ ->
                 ()

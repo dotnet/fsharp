@@ -542,8 +542,8 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            node {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
+                            async {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.toAsync
 
                                 match ilReaderOpt with
                                 | Some ilReader ->
@@ -569,7 +569,7 @@ type internal TransparentCompiler
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
-                            |> NodeCode.FromCancellable
+                            |> Async.FromCancellable
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm

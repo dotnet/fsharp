@@ -543,7 +543,9 @@ let UseDiagnosticsLogger newLogger =
     UseTransformedDiagnosticsLogger(fun _ -> newLogger)
 
 let CaptureDiagnosticsConcurrently () =
-    let newLogger = ConcurrentCapturingDiagnosticsLogger("CaptureDiagnosticsConcurrently")
+    let newLogger =
+        ConcurrentCapturingDiagnosticsLogger("CaptureDiagnosticsConcurrently")
+
     let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
     DiagnosticsThreadStatics.DiagnosticsLogger <- newLogger
 

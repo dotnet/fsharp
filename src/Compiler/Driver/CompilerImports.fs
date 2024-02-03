@@ -2236,7 +2236,7 @@ and [<Sealed>] TcImports
             let runMethod =
                 match tcConfig.parallelReferenceResolution with
                 | ParallelReferenceResolution.On -> Async.Parallel
-                | ParallelReferenceResolution.Off -> Async.Sequential
+                | ParallelReferenceResolution.Off -> Async.SequentialFailFast
 
             let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
             let! results =

@@ -11,12 +11,31 @@ open Internal.Utilities.Library
 [<AbstractClass; Sealed>]
 type Async =
     static member RunImmediateWithoutCancellation(computation) =
-        Async.RunImmediate(computation, CancellationToken.None)
+        try
+            let work = async { return! computation }
+
+            Async
+                .StartImmediateAsTask(work, cancellationToken = CancellationToken.None)
+                .Result
+
+        with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+            raise (ex.InnerExceptions[0])
 
     static member FromCancellable(computation: Cancellable<'T>) = Cancellable.toAsync computation
 
     static member StartAsTask_ForTesting(computation: Async<'T>, ?ct: CancellationToken) =
         Async.StartAsTask(computation, cancellationToken = defaultArg ct CancellationToken.None)
+
+    static member SequentialFailFast(computations: Async<'T> seq) =
+        async {
+            let results = ResizeArray()
+
+            for computation in computations do
+                let! result = computation
+                results.Add result
+
+            return results.ToArray()
+        }
 
 [<RequireQualifiedAccess>]
 module GraphNode =
