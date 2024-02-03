@@ -58,6 +58,7 @@ module internal FSharpProjectSnapshotSerialization =
         | FSharpReference(projectOutputFile, snapshot) ->
             output.Add("projectOutputFile", projectOutputFile)
             output.Add("snapshot", serializeSnapshot snapshot)
+        | _ -> ()
 
         output
 
