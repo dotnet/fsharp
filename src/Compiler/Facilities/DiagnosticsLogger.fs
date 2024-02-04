@@ -375,31 +375,6 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
-type ConcurrentCapturingDiagnosticsLogger(nm, ?eagerFormat) =
-    inherit DiagnosticsLogger(nm)
-    let mutable errorCount = 0
-    let diagnostics = System.Collections.Concurrent.ConcurrentQueue()
-
-    override _.DiagnosticSink(diagnostic, severity) =
-        let diagnostic =
-            match eagerFormat with
-            | None -> diagnostic
-            | Some f -> f diagnostic
-
-        if severity = FSharpDiagnosticSeverity.Error then
-            Interlocked.Increment &errorCount |> ignore
-
-        diagnostics.Enqueue(diagnostic, severity)
-
-    override _.ErrorCount = errorCount
-
-    member _.Diagnostics = diagnostics |> Seq.toList
-
-    member _.CommitDelayedDiagnostics(diagnosticsLogger: DiagnosticsLogger) =
-        // Eagerly grab all the errors and warnings from the mutable collection
-        let errors = diagnostics.ToArray()
-        errors |> Array.iter diagnosticsLogger.DiagnosticSink
-
 /// Type holds thread-static globals for use by the compiler.
 type DiagnosticsAsyncState =
     static let buildPhase = new AsyncLocal<BuildPhase voption>()

@@ -226,21 +226,6 @@ type CapturingDiagnosticsLogger =
 
     override ErrorCount: int
 
-/// Represents a DiagnosticsLogger that captures all diagnostics, optionally formatting them
-/// eagerly.
-type ConcurrentCapturingDiagnosticsLogger =
-    inherit DiagnosticsLogger
-
-    new: nm: string * ?eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) -> ConcurrentCapturingDiagnosticsLogger
-
-    member CommitDelayedDiagnostics: diagnosticsLogger: DiagnosticsLogger -> unit
-
-    override DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
-
-    member Diagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
-
-    override ErrorCount: int
-
 /// Thread statics for the installed diagnostic logger
 [<Class>]
 type DiagnosticsAsyncState =
