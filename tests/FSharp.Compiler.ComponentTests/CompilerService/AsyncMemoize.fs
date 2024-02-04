@@ -441,13 +441,13 @@ let ``Preserve thread static diagnostics`` () =
     let job1 (input: string) = async {
         let! _ = Async.Sleep (rng.Next(1, 30))
         let ex = DummyException("job1 error")
-        DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
+        DiagnosticsAsyncState.DiagnosticsLogger.ErrorR(ex)
         return Ok input
     }
 
     let job2 (input: int) = async {
         
-        DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 1"))
+        DiagnosticsAsyncState.DiagnosticsLogger.Warning(DummyException("job2 error 1"))
 
         let! _ = Async.Sleep (rng.Next(1, 30))
 
@@ -458,7 +458,7 @@ let ``Preserve thread static diagnostics`` () =
 
         let! result = job1Cache.Get(key, job1 "${input}" )
 
-        DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 2"))
+        DiagnosticsAsyncState.DiagnosticsLogger.Warning(DummyException("job2 error 2"))
 
         return input, result
 
@@ -473,7 +473,7 @@ let ``Preserve thread static diagnostics`` () =
 
                 use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
 
-                DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("task error"))
+                DiagnosticsAsyncState.DiagnosticsLogger.Warning(DummyException("task error"))
 
 
                 let key = { new ICacheKey<_, _> with
@@ -514,7 +514,7 @@ let ``Preserve thread static diagnostics already completed job`` () =
 
     let job (input: string) = async {
         let ex = DummyException($"job {input} error")
-        DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
+        DiagnosticsAsyncState.DiagnosticsLogger.ErrorR(ex)
         return Ok input
     }
 
@@ -548,7 +548,7 @@ let ``We get diagnostics from the job that failed`` () =
     let job (input: int) = async {
         let ex = DummyException($"job {input} error")
         do! Async.Sleep 100
-        DiagnosticsThreadStatics.DiagnosticsLogger.Error(ex)
+        DiagnosticsAsyncState.DiagnosticsLogger.Error(ex)
         return 5
     }
 

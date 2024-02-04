@@ -1735,7 +1735,7 @@ and [<Sealed>] TcImports
             m
         ) =
 
-        let startingErrorCount = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount
+        let startingErrorCount = DiagnosticsAsyncState.DiagnosticsLogger.ErrorCount
 
         // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
@@ -1936,7 +1936,7 @@ and [<Sealed>] TcImports
                     with RecoverableException e ->
                         errorRecovery e m
 
-                if startingErrorCount < DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount then
+                if startingErrorCount < DiagnosticsAsyncState.DiagnosticsLogger.ErrorCount then
                     error (Error(FSComp.SR.etOneOrMoreErrorsSeenDuringExtensionTypeSetting (), m))
 
             providers
@@ -2238,7 +2238,8 @@ and [<Sealed>] TcImports
                 | ParallelReferenceResolution.On -> Async.Parallel
                 | ParallelReferenceResolution.Off -> Async.SequentialFailFast
 
-            let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+            use captureTasks = new CaptureDiagnosticsConcurrently(DiagnosticsAsyncState.DiagnosticsLogger)
+
             let! results =
                 nms
                 |> List.map (fun nm ->
@@ -2246,7 +2247,8 @@ and [<Sealed>] TcImports
                         try
                             return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
                         with e ->
-                            use _ = UseDiagnosticsLogger diagnosticsLogger
+                            use _ = UseDiagnosticsLogger captureTasks.LoggerForTask
+
                             errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
                             return None
                     })

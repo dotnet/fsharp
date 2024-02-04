@@ -354,15 +354,15 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                                 log (Restarted, key)
                                                 Interlocked.Increment &restarted |> ignore
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+                                                let currentLogger = DiagnosticsAsyncState.DiagnosticsLogger
+                                                DiagnosticsAsyncState.DiagnosticsLogger <- cachingLogger
 
                                                 try
                                                     let! result = computation
                                                     post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
                                                     return ()
                                                 finally
-                                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
+                                                    DiagnosticsAsyncState.DiagnosticsLogger <- currentLogger
                                             with
                                             | TaskCancelled _ ->
                                                 Interlocked.Increment &cancel_exception_subsequent |> ignore
@@ -484,7 +484,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         async {
             let! ct = Async.CancellationToken
 
-            let callerDiagnosticLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+            let callerDiagnosticLogger = DiagnosticsAsyncState.DiagnosticsLogger
 
             match!
                 processRequest post (key, GetOrCompute(computation, ct)) callerDiagnosticLogger
@@ -500,8 +500,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         Async.StartAsTask(
                             async {
                                 // TODO: Should unify starting and restarting
-                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+                                let currentLogger = DiagnosticsAsyncState.DiagnosticsLogger
+                                DiagnosticsAsyncState.DiagnosticsLogger <- cachingLogger
 
                                 log (Started, key)
 
@@ -510,7 +510,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                     post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
                                     return result
                                 finally
-                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
+                                    DiagnosticsAsyncState.DiagnosticsLogger <- currentLogger
                             },
                             cancellationToken = linkedCtSource.Token
                         )

@@ -243,7 +243,7 @@ type ConcurrentCapturingDiagnosticsLogger =
 
 /// Thread statics for the installed diagnostic logger
 [<Class>]
-type DiagnosticsThreadStatics =
+type DiagnosticsAsyncState =
 
     static member BuildPhase: BuildPhase with get, set
 
@@ -295,11 +295,16 @@ val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> #Diagnos
 
 val UseDiagnosticsLogger: newLogger: DiagnosticsLogger -> IDisposable
 
-val CaptureDiagnosticsConcurrently: unit -> IDisposable
-
 val SetThreadBuildPhaseNoUnwind: phase: BuildPhase -> unit
 
 val SetThreadDiagnosticsLoggerNoUnwind: diagnosticsLogger: DiagnosticsLogger -> unit
+
+type CaptureDiagnosticsConcurrently =
+    new: target: DiagnosticsLogger -> CaptureDiagnosticsConcurrently
+
+    member LoggerForTask: DiagnosticsLogger
+
+    interface IDisposable
 
 /// Reports an error diagnostic and continues
 val errorR: exn: exn -> unit

@@ -231,14 +231,14 @@ module BuildGraphTests =
     
         let job phase _ = async {
             do! random 10 |> Async.Sleep 
-            Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+            Assert.Equal(phase, DiagnosticsAsyncState.BuildPhase)
         }
     
         let work (phase: BuildPhase) =
             async {
                 use _ = new CompilationGlobalsScope(DiscardErrorsLogger, phase)
                 let! _ = Seq.init 8 (job phase) |> Async.Parallel
-                Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+                Assert.Equal(phase, DiagnosticsAsyncState.BuildPhase)
             }
     
         let phases = [|

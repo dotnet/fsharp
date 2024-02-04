@@ -64,7 +64,7 @@ type public HashIfExpression() =
         let startPos = Position.Empty
         let args = mkLexargs (defines, indentationSyntaxStatus, resourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
 
-        DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+        DiagnosticsAsyncState.DiagnosticsLogger <- diagnosticsLogger
 
         let parser (s : string) =
             let lexbuf = LexBuffer<char>.FromChars (true, LanguageVersion.Default, None, s.ToCharArray ())
@@ -77,11 +77,11 @@ type public HashIfExpression() =
         errors, warnings, parser
 
     do // Setup
-        DiagnosticsThreadStatics.BuildPhase <- BuildPhase.Compile
+        DiagnosticsAsyncState.BuildPhase <- BuildPhase.Compile
     interface IDisposable with // Teardown
         member _.Dispose() =
-            DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
-            DiagnosticsThreadStatics.DiagnosticsLogger <- DiagnosticsThreadStatics.DiagnosticsLogger
+            DiagnosticsAsyncState.BuildPhase <- BuildPhase.DefaultPhase
+            DiagnosticsAsyncState.DiagnosticsLogger <- DiagnosticsAsyncState.DiagnosticsLogger
 
     [<Fact>]
     member _.PositiveParserTestCases()=
