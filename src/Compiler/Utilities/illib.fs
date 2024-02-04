@@ -160,15 +160,11 @@ module internal PervasiveAutoOpens =
 
         static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-#if DEBUG
             let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
 
             Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
 
-            let task = ts.Task
-#else
-            let task = Async.StartAsTask(computation, cancellationToken = cancellationToken)
-#endif
             task.Result
 
 [<AbstractClass>]
