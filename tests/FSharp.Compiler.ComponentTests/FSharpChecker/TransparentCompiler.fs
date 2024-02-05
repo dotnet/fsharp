@@ -479,12 +479,12 @@ type SignatureFiles = Yes = 1 | No = 2 | Some = 3
 let fuzzingTest seed (project: SyntheticProject) = task {
     let rng = System.Random seed
 
-    let checkingThreads = 3
-    let maxModificationDelayMs = 10
+    let checkingThreads = 10
+    let maxModificationDelayMs = 50
     let maxCheckingDelayMs = 20
     //let runTimeMs = 30000
     let signatureFileModificationProbability = 0.25
-    let modificationLoopIterations = 10
+    let modificationLoopIterations = 50
     let checkingLoopIterations = 5
 
     let minCheckingTimeoutMs = 0
@@ -622,7 +622,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
             }
 
         try
-            let! _x = threads |> Seq.skip 1 |> Task.WhenAll
+            let! _x = threads |> Task.WhenAll
             ()
         with
             | e ->
