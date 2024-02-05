@@ -218,6 +218,10 @@ val mkCompGenLet: range -> Val -> Expr -> Expr -> Expr
 /// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
 val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
+/// Make a mutable let-expression that locally binds a compiler-generated value to an expression, where the expression
+/// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
+val mkCompGenLetMutableIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
+
 /// Make a let-expression that locally binds a value to an expression in an "invisible" way.
 /// Invisible bindings are not given a sequence point and should not have side effects.
 val mkInvisibleLet: range -> Val -> Expr -> Expr -> Expr
@@ -2539,6 +2543,32 @@ val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list option
 val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list option
 
 val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
+
+/// Matches if the given expression is an application
+/// of an integral range operator and returns the
+/// type, start, step, and finish if so.
+///
+/// start..finish
+///
+/// start..step..finish
+[<return: Struct>]
+val (|IntegralRange|_|): g:TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
+
+/// Matches if the given start, step, and finish represent
+/// a range that is known to be empty at compile-time.
+[<return: Struct>]
+val (|EmptyRange|_|): start:Expr * step: Expr * finish: Expr -> unit voption
+
+/// Makes an optimized while-loop for the given
+/// integral start, stop, and finish.
+val mkOptimizedRangeLoop:
+    g: TcGlobals ->
+    mBody: range * mFor: range * mIn: range * spInWhile: DebugPointAtWhile ->
+    rangeTy: TType * rangeExpr: Expr ->
+    start: Expr * step: Expr * finish: Expr ->
+    loopVarVal: Val * loopVar: Expr ->
+    body: Expr ->
+        Expr
 
 type OptimizeForExpressionOptions =
     | OptimizeIntRangesOnly
