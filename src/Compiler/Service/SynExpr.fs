@@ -812,6 +812,8 @@ module SynExpr =
                 ->
                 true
 
+            | SynExpr.InterpolatedString _, SynExpr.Sequential _ -> true
+
             | SynExpr.InterpolatedString(contents = contents), (SynExpr.Tuple(isStruct = false) | Dangling.Problematic _) ->
                 contents
                 |> List.exists (function
