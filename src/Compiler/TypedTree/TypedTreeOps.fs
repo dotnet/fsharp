@@ -10269,7 +10269,7 @@ let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, 
         else
             mkAsmExpr ([AI_clt_un], [], [e1; e2], [g.bool_ty], m)
 
-    /// while start <= finish do …
+    /// while start <= finish && originalStart <= start do …
     let mkUp (startVal, start) originalStart step finish =
         let origStartLtEqStart =
             mkCond
@@ -10302,7 +10302,7 @@ let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, 
                 mBody
             )
 
-    /// while finish <= start do …
+    /// while finish <= start && start <= originalStart do …
     let mkDown (startVal, start) originalStart step finish =
         let startLtEqOrigStart =
             mkCond
@@ -10475,6 +10475,7 @@ let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, 
     // for … in 5..-1..1 do …
     | ConstRange FSharpForLoopDown -> mkNecessaryLetBindingsFor mkDown
 
+    // for … in start..finish do …
     // for … in start..step..finish do …
     | _, _, _ -> mkNecessaryLetBindingsFor mkIntegralWhileLoop
 
