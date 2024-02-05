@@ -343,7 +343,7 @@ let DiscardErrorsLogger =
         member _.ErrorCount = 0
     }
 
-let UninitialzedDiagnosticsLogger =
+let UninitializedDiagnosticsLogger =
     { new DiagnosticsLogger("UninitialzedDiagnosticsLogger") with
         member _.DiagnosticSink(diagnostic, severity) =
             failwith "DiagnosticsAsyncState.DiagnosticsLogger not set."
@@ -392,7 +392,7 @@ type DiagnosticsAsyncState =
         and set v = buildPhase.Value <- ValueSome v
 
     static member DiagnosticsLogger
-        with get () = getOrCreate diagnosticsLogger UninitialzedDiagnosticsLogger
+        with get () = getOrCreate diagnosticsLogger UninitializedDiagnosticsLogger
         and set v = diagnosticsLogger.Value <- ValueSome v
 
 [<AutoOpen>]

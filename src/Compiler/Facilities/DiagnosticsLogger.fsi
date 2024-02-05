@@ -209,7 +209,7 @@ type DiagnosticsLogger =
 val DiscardErrorsLogger: DiagnosticsLogger
 
 /// Represents a DiagnosticsLogger that ignores diagnostics and asserts
-val UninitialzedDiagnosticsLogger: DiagnosticsLogger
+val UninitializedDiagnosticsLogger: DiagnosticsLogger
 
 /// Represents a DiagnosticsLogger that captures all diagnostics, optionally formatting them
 /// eagerly.
