@@ -2560,7 +2560,7 @@ val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * E
 val (|EmptyRange|_|): start: Expr * step: Expr * finish: Expr -> unit voption
 
 /// Makes an optimized while-loop for the given
-/// integral start, stop, and finish.
+/// integral start, step, and finish.
 val mkOptimizedRangeLoop:
     g: TcGlobals ->
     mBody: range * mFor: range * mIn: range * spInWhile: DebugPointAtWhile ->
