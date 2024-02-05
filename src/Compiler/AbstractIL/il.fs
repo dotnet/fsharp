@@ -817,7 +817,7 @@ type ILTypeRef =
     member x.DebugText = x.ToString()
 
     /// For debugging
-    override x.ToString() = x.FullName
+    override x.ToString() : string = x.FullName
 
 and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>] ILTypeSpec =
     {

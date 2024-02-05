@@ -236,6 +236,8 @@ type ILTypeRef =
 
     member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
 
+    override ToString: unit -> string
+
     interface System.IComparable
 
 /// Type specs and types.

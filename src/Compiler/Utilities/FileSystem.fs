@@ -693,12 +693,14 @@ type DefaultFileSystem() as this =
 
     default _.IsStableFileHeuristic(fileName: string) =
         let directory = Path.GetDirectoryName fileName
-
-        directory.Contains("Reference Assemblies/")
-        || directory.Contains("Reference Assemblies\\")
-        || directory.Contains("packages/")
-        || directory.Contains("packages\\")
-        || directory.Contains("lib/mono/")
+        match directory with
+        | Null -> false
+        | NonNull directory ->
+            directory.Contains("Reference Assemblies/")
+            || directory.Contains("Reference Assemblies\\")
+            || directory.Contains("packages/")
+            || directory.Contains("packages\\")
+            || directory.Contains("lib/mono/")
 
     abstract ChangeExtensionShim: path: string * extension: string -> string
 
@@ -817,7 +819,7 @@ module public StreamExtensions =
             let encoding = defaultArg encoding Encoding.UTF8
 
             seq {
-                use sr = new StreamReader(s, encoding, true)
+                use sr = new StreamReader(s, encoding, true)                
 
                 while not <| sr.EndOfStream do
                     yield sr.ReadLine()

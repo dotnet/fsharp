@@ -937,8 +937,8 @@ let internal directoryName (s: string) =
         "."
     else
         match Path.GetDirectoryName s with
-        | null -> if FileSystem.IsPathRootedShim s then s else "."
-        | res -> if String.IsNullOrEmpty(res) then "." else res
+        | Null -> if FileSystem.IsPathRootedShim s then s else "."
+        | NonNull res -> if String.IsNullOrEmpty(res) then "." else res
 
 //----------------------------------------------------------------------------
 // cmd line - state for options
@@ -975,10 +975,11 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let executableFileNameWithoutExtension =
         lazy
             let getFsiCommandLine () =
-                let fileNameWithoutExtension path = Path.GetFileNameWithoutExtension(path)
+                let fileNameWithoutExtension (path:string MaybeNull) = Path.GetFileNameWithoutExtension(path)
 
                 let currentProcess = Process.GetCurrentProcess()
-                let processFileName = fileNameWithoutExtension currentProcess.MainModule.FileName
+                let mainModule = currentProcess.MainModule
+                let processFileName = fileNameWithoutExtension (mainModule ^_.FileName)
 
                 let commandLineExecutableFileName =
                     try
