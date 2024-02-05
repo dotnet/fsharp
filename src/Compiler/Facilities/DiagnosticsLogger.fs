@@ -343,11 +343,12 @@ let DiscardErrorsLogger =
         member _.ErrorCount = 0
     }
 
-let AssertFalseDiagnosticsLogger =
-    { new DiagnosticsLogger("AssertFalseDiagnosticsLogger") with
-        // TODO: reenable these asserts in the compiler service
-        member _.DiagnosticSink(diagnostic, severity) = (* assert false; *) ()
-        member _.ErrorCount = (* assert false; *) 0
+let UninitialzedDiagnosticsLogger =
+    { new DiagnosticsLogger("UninitialzedDiagnosticsLogger") with
+        member _.DiagnosticSink(diagnostic, severity) =
+            failwith "DiagnosticsAsyncState.DiagnosticsLogger not set."
+
+        member _.ErrorCount = failwith "DiagnosticsAsyncState.DiagnosticsLogger not set."
     }
 
 type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
@@ -391,7 +392,7 @@ type DiagnosticsAsyncState =
         and set v = buildPhase.Value <- ValueSome v
 
     static member DiagnosticsLogger
-        with get () = getOrCreate diagnosticsLogger AssertFalseDiagnosticsLogger
+        with get () = getOrCreate diagnosticsLogger UninitialzedDiagnosticsLogger
         and set v = diagnosticsLogger.Value <- ValueSome v
 
 [<AutoOpen>]
