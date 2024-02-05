@@ -1767,10 +1767,11 @@ type TraitConstraintSln =
     /// ILFieldSln(tinst, ilfref, isSet)
     ///
     /// Indicates a trait is solved by a .NET field.
+    ///   ty     -- field type
     ///   tinst  -- the instantiation of the declaring type
     ///   ilfref -- the reference to the field
     ///  isSet   -- indicates if this is a set of a field
-    | ILFieldSln of tinst: TypeInst * ilfref: ILFieldRef * isSet: bool
+    | ILFieldSln of ty: TType * tinst: TypeInst * ilfref: ILFieldRef * isSet: bool
 
     /// ClosedExprSln expr
     ///

@@ -2140,8 +2140,8 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             | ClosedExprSln expr ->
                 Choice4Of6 expr
 
-            | ILFieldSln _ -> Choice5Of6 ()
-
+            | ILFieldSln (ty, tinst, ilfref, isSet) ->
+                Choice5Of6 (ty, tinst, ilfref, isSet)
             | BuiltInSln ->
                 Choice6Of6 ()
 
@@ -2225,26 +2225,41 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         let tupInfo = anonInfo.TupInfo
         if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs[0]) then 
             Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
-        else 
+        else
             Some (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))
 
-    | Choice4Of6 expr -> 
+    | Choice4Of6 expr -> // Closed expression solution
         Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
 
-    | Choice5Of6 _ -> // IL Field
-        failwith "6of6"
+    | Choice5Of6 (ty, tinst, ilfref, isSet) -> // IL Field
+        let isStatic = false // TODO: need to know whether field is static or instance
+        let boxity = ilfref.Type.Boxity
+        let ilTy = mkILNamedTy boxity ilfref.DeclaringTypeRef []
+        let fieldSpec = mkILFieldSpec (ilfref, ilTy)
+
+        match isStatic, isSet with
+        | false, false -> // Instance getter
+            let expr =
+                Expr.Op (TOp.ILAsm ([mkNormalLdfld fieldSpec], [ty]), tinst, argExprs, m)
+            Some (expr)
+        | false, true -> // Instance setter
+            failwith "5of6 - instance setter"
+        | true, false -> // Static getter
+            failwith "5of6 - static getter"
+        | true, true -> // Static setter
+            failwith "5of6 - static setter"
     | Choice6Of6 () -> // Default branch, sort of
         match traitInfo.Solution with 
         | None -> None // the trait has been generalized
         | Some _-> 
-        // For these operators, the witness is just a call to the coresponding FSharp.Core operator
-        match g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
-        | Some (info, tyargs, actualArgExprs) -> 
-            tryMkCallCoreFunctionAsBuiltInWitness g info tyargs actualArgExprs m
-        | None -> 
-            // For all other built-in operators, the witness is a call to the coresponding BuiltInWitnesses operator
-            // These are called as F# methods not F# functions
-            tryMkCallBuiltInWitness g traitInfo argExprs m
+            // For these operators, the witness is just a call to the coresponding FSharp.Core operator
+            match g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
+            | Some (info, tyargs, actualArgExprs) -> 
+                tryMkCallCoreFunctionAsBuiltInWitness g info tyargs actualArgExprs m
+            | None -> 
+                // For all other built-in operators, the witness is a call to the coresponding BuiltInWitnesses operator
+                // These are called as F# methods not F# functions
+                tryMkCallBuiltInWitness g traitInfo argExprs m
         
 /// Generate a lambda expression for the given solved trait.
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =

@@ -278,8 +278,8 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, source, slnCell)
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
                 | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
                      FSAnonRecdFieldSln(anonInfo, remapTypesAux tyenv tinst, n)
-                | ILFieldSln(tinst, ilfref, isSet) ->
-                     ILFieldSln(remapTypesAux tyenv tinst, ilfref, isSet)
+                | ILFieldSln(ty, tinst, ilfref, isSet) ->
+                     ILFieldSln(remapTypeAux tyenv ty, remapTypesAux tyenv tinst, ilfref, isSet)
                 | BuiltInSln -> 
                      BuiltInSln
                 | ClosedExprSln e -> 
@@ -2314,8 +2314,9 @@ and accFreeInTraitSln opts sln acc =
          accFreeInTypes opts tinst acc
     | FSRecdFieldSln(tinst, _rfref, _isSet) ->
          accFreeInTypes opts tinst acc
-    | ILFieldSln (tinst, _ilfref, _isSet) ->
-        accFreeInTypes opts tinst acc
+    | ILFieldSln (ty, tinst, _ilfref, _isSet) ->
+        (accFreeInType opts) ty
+            (accFreeInTypes opts tinst acc)
     | BuiltInSln -> acc
     | ClosedExprSln _ -> acc // nothing to accumulate because it's a closed expression referring only to erasure of provided method calls
 

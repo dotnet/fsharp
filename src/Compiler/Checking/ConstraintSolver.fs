@@ -442,7 +442,7 @@ type TraitConstraintSolution =
     | TTraitSolved of minfo: MethInfo * minst: TypeInst * staticTyOpt: TType option
     | TTraitSolvedRecdProp of fieldInfo: RecdFieldInfo * isSetProp: bool
     | TTraitSolvedAnonRecdProp of anonRecdTypeInfo: AnonRecdTypeInfo * typeInst: TypeInst * index: int
-    | TTraitSolvedField of fieldInfo: ILFieldInfo * isSetField: bool
+    | TTraitSolvedField of ty: TType * fieldInfo: ILFieldInfo * isSetField: bool
 
 let BakedInTraitConstraintNames =
     [ "op_Division" ; "op_Multiply"; "op_Addition" 
@@ -1856,12 +1856,12 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   else 
                       do! CheckMethInfoAttributes g m None minfo
                       return TTraitSolved (minfo, calledMeth.CalledTyArgs, calledMeth.OptionalStaticType)
-              | None, None, None, Some (ilfinfo, isSet) -> 
+              | None, None, None, Some (ilfinfo, isSet) ->
                   // OK, the constraint is solved by a field. Assert that types match.
                   let ty2 = ilfinfo.FieldType(amap, m)
                   do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy ty2
-                  return TTraitSolvedField(ilfinfo, isSet)
-              | _ -> 
+                  return TTraitSolvedField(ty2, ilfinfo, isSet)
+              | _ ->
                   do! AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignoreUnresolvedOverload traitInfo errors
                   return TTraitUnsolved
      }
@@ -1929,8 +1929,8 @@ and RecordMemberConstraintSolution css m trace traitInfo traitConstraintSln =
         let sln = FSAnonRecdFieldSln(anonInfo, tinst, i)
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
-    | TTraitSolvedField (ilfinfo, isSet) ->
-        let sln = ILFieldSln(ilfinfo.TypeInst, ilfinfo.ILFieldRef, isSet)
+    | TTraitSolvedField (ty, ilfinfo, isSet) ->
+        let sln = ILFieldSln(ty, ilfinfo.TypeInst, ilfinfo.ILFieldRef, isSet)
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
