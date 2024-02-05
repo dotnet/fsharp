@@ -2552,23 +2552,23 @@ val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
 ///
 /// start..step..finish
 [<return: Struct>]
-val (|IntegralRange|_|): g:TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
+val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
 
 /// Matches if the given start, step, and finish represent
 /// a range that is known to be empty at compile-time.
 [<return: Struct>]
-val (|EmptyRange|_|): start:Expr * step: Expr * finish: Expr -> unit voption
+val (|EmptyRange|_|): start: Expr * step: Expr * finish: Expr -> unit voption
 
 /// Makes an optimized while-loop for the given
 /// integral start, stop, and finish.
 val mkOptimizedRangeLoop:
     g: TcGlobals ->
     mBody: range * mFor: range * mIn: range * spInWhile: DebugPointAtWhile ->
-    rangeTy: TType * rangeExpr: Expr ->
-    start: Expr * step: Expr * finish: Expr ->
-    loopVarVal: Val * loopVar: Expr ->
-    body: Expr ->
-        Expr
+        rangeTy: TType * rangeExpr: Expr ->
+            start: Expr * step: Expr * finish: Expr ->
+                loopVarVal: Val * loopVar: Expr ->
+                    body: Expr ->
+                        Expr
 
 type OptimizeForExpressionOptions =
     | OptimizeIntRangesOnly
