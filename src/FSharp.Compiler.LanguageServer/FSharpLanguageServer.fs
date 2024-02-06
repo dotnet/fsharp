@@ -36,25 +36,24 @@ type ContextHolder(intialWorkspace, lspServices: ILspServices) =
         context <- FSharpRequestContext(lspServices, logger, f context.Workspace)
 
 type FShapRequestContextFactory(lspServices: ILspServices) =
-    inherit AbstractRequestContextFactory<FSharpRequestContext>()
 
-    override _.CreateRequestContextAsync<'TRequestParam>
-        (
-            queueItem: IQueueItem<FSharpRequestContext>,
-            methodHandler: IMethodHandler,
-            requestParam: 'TRequestParam,
-            cancellationToken: CancellationToken
-        ) =
-        lspServices.GetRequiredService<ContextHolder>()
-        |> _.GetContext()
-        |> Task.FromResult
+    interface IRequestContextFactory<FSharpRequestContext> with 
+                
+        member _.CreateRequestContextAsync<'TRequestParam>(
+                queueItem: IQueueItem<FSharpRequestContext>,
+                requestParam: 'TRequestParam,
+                cancellationToken: CancellationToken
+            ) =
+            lspServices.GetRequiredService<ContextHolder>()
+            |> _.GetContext()
+            |> Task.FromResult
 
 type DocumentStateHandler() =
     interface IMethodHandler with
         member _.MutatesSolutionState = true
 
     interface IRequestHandler<DidOpenTextDocumentParams, SemanticTokensDeltaPartialResult, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentDidOpenName, LanguageServerConstants.DefaultLanguageName)>]
+        [<LanguageServerEndpoint(Methods.TextDocumentDidOpenName)>]
         member _.HandleRequestAsync
             (
                 request: DidOpenTextDocumentParams,
@@ -71,7 +70,7 @@ type DocumentStateHandler() =
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
     interface IRequestHandler<DidChangeTextDocumentParams, SemanticTokensDeltaPartialResult, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentDidChangeName, LanguageServerConstants.DefaultLanguageName)>]
+        [<LanguageServerEndpoint(Methods.TextDocumentDidChangeName)>]
         member _.HandleRequestAsync
             (
                 request: DidChangeTextDocumentParams,
@@ -88,7 +87,7 @@ type DocumentStateHandler() =
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
     interface INotificationHandler<DidCloseTextDocumentParams, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentDidCloseName, LanguageServerConstants.DefaultLanguageName)>]
+        [<LanguageServerEndpoint(Methods.TextDocumentDidCloseName)>]
         member _.HandleNotificationAsync
             (
                 request: DidCloseTextDocumentParams,
@@ -110,7 +109,7 @@ type LanguageFeaturesHandler() =
 
     // TODO: this is not getting called
     interface IRequestHandler<DocumentDiagnosticParams, SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentDiagnosticName, LanguageServerConstants.DefaultLanguageName)>]
+        [<LanguageServerEndpoint(Methods.TextDocumentDiagnosticName)>]
         member _.HandleRequestAsync
             (
                 request: DocumentDiagnosticParams,
@@ -192,7 +191,7 @@ type FSharpLanguageServer
         // This spins up the queue and ensure the LSP is ready to start receiving requests
         base.Initialize()
 
-    member private this.GetBaseHandlerProvider() = base.HandlerProvider
+    member private this.GetBaseHandlerProvider() = base.GetHandlerProvider()
 
     override this.ConstructLspServices() =
         let serviceCollection = new ServiceCollection()
@@ -206,8 +205,8 @@ type FSharpLanguageServer
                 .AddSingleton<IMethodHandler, DocumentStateHandler>()
                 .AddSingleton<IMethodHandler, LanguageFeaturesHandler>()
                 .AddSingleton<ILspLogger>(logger)
-                .AddSingleton<AbstractRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
-                .AddSingleton<AbstractHandlerProvider>(fun _ -> this.GetBaseHandlerProvider())
+                .AddSingleton<IRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
+                .AddSingleton<IHandlerProvider>(fun _ -> this.GetBaseHandlerProvider())
                 .AddSingleton<IInitializeManager<InitializeParams, InitializeResult>, CapabilitiesManager>()
                 .AddSingleton(this)
                 .AddSingleton<ILifeCycleManager>(new LspServiceLifeCycleManager())

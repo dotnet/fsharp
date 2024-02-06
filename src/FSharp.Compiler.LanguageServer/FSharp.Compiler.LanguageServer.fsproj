@@ -7,9 +7,9 @@
 
 	<ItemGroup Label="Package References">
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="Microsoft.CommonLanguageServerProtocol.Framework" Version="4.10.0-1.24067.1" />
+		<PackageReference Include="Microsoft.CommonLanguageServerProtocol.Framework" Version="4.10.0-2.24105.6" />
 		<!--<PackageReference Include="Microsoft.CodeAnalysis.LanguageServer.Protocol" Version="4.10.0-1.24067.1" />-->
-		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.10.8-preview" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.10.13-preview" />
 		<PackageReference Include="StreamJsonRpc" Version="2.17.13" />
 	</ItemGroup>
 
@@ -34,6 +34,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <!--<ProjectReference Include="..\..\..\roslyn\src\Features\LanguageServer\Microsoft.CommonLanguageServerProtocol.Framework\Microsoft.CommonLanguageServerProtocol.Framework.csproj" />-->
 	  <ProjectReference Include="..\Compiler\FSharp.Compiler.Service.fsproj" />
 	</ItemGroup>
 
