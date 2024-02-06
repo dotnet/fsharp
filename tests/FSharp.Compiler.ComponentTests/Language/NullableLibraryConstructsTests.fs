@@ -40,3 +40,20 @@ let readAllLines (reader:System.IO.StreamReader) : seq<string> =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+[<Fact>]
+let ``Can concat two maybe null strings`` () =
+    FSharp """module MyLibrary
+
+let addStrings (x:string | null) (y:string) : string  =
+
+    let s2 = x + x
+    let s3 = y + y
+    let s4 = y + x
+    let s4string : string = s4
+
+    s4
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
