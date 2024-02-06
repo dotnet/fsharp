@@ -5093,7 +5093,11 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
 
             if dtys.Length = args.Length + 1 &&
                 ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
-                (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy))) then
+                (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy))) ||
+                // `bool` partial AP always be treated as `unit option`
+                // For `val (|P|_|) : _ -> bool`, only allow `match x with | P -> ...`
+                // For `val (|P|_|) : _ -> _ -> bool`, only allow `match x with | P parameter -> ...`
+                (not apinfo.IsTotal && isBoolTy g retTy) then
                 args, SynPat.Const(SynConst.Unit, m)
             else
                 List.frontAndBack args
@@ -10752,14 +10756,25 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         | Some (apinfo, apOverallTy, _) ->
             let activePatResTys = NewInferenceTypes g apinfo.ActiveTags
             let _, apReturnTy = stripFunTy g apOverallTy
-
-            if isStructRetTy && apinfo.IsTotal then
-                errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
-
-            if isStructRetTy then
+            let apRetTy =
+                if apinfo.IsTotal then 
+                    if isStructRetTy then errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
+                    ActivePatternReturnKind.RefTypeWrapper
+                else
+                    if isStructRetTy || isValueOptionTy cenv.g apReturnTy then ActivePatternReturnKind.StructTypeWrapper
+                    elif isBoolTy cenv.g apReturnTy then ActivePatternReturnKind.Boolean
+                    else ActivePatternReturnKind.RefTypeWrapper
+            
+            match apRetTy with
+            | ActivePatternReturnKind.Boolean ->
+                checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
+            | ActivePatternReturnKind.StructTypeWrapper when not isStructRetTy ->
+                checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
+            | ActivePatternReturnKind.StructTypeWrapper ->
                 checkLanguageFeatureError g.langVersion LanguageFeature.StructActivePattern mBinding
+            | ActivePatternReturnKind.RefTypeWrapper -> ()
 
-            UnifyTypes cenv env mBinding (apinfo.ResultType g rhsExpr.Range activePatResTys isStructRetTy) apReturnTy
+            UnifyTypes cenv env mBinding (apinfo.ResultType g rhsExpr.Range activePatResTys apRetTy) apReturnTy
 
         | None ->
             if isStructRetTy then

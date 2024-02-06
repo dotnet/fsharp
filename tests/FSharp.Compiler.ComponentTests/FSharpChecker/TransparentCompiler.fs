@@ -479,12 +479,12 @@ type SignatureFiles = Yes = 1 | No = 2 | Some = 3
 let fuzzingTest seed (project: SyntheticProject) = task {
     let rng = System.Random seed
 
-    let checkingThreads = 3
-    let maxModificationDelayMs = 10
+    let checkingThreads = 10
+    let maxModificationDelayMs = 50
     let maxCheckingDelayMs = 20
     //let runTimeMs = 30000
     let signatureFileModificationProbability = 0.25
-    let modificationLoopIterations = 10
+    let modificationLoopIterations = 50
     let checkingLoopIterations = 5
 
     let minCheckingTimeoutMs = 0
@@ -494,7 +494,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
     let checker = builder.Checker
         
     // Force creation and caching of options
-    do! SaveAndCheckProject project checker |> Async.Ignore
+    do! SaveAndCheckProject project checker false |> Async.Ignore
 
     let projectAgent = MailboxProcessor.Start(fun (inbox: MailboxProcessor<ProjectRequest>) ->
         let rec loop project =
@@ -622,7 +622,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
             }
 
         try
-            let! _x = threads |> Seq.skip 1 |> Task.WhenAll
+            let! _x = threads |> Task.WhenAll
             ()
         with
             | e ->
@@ -801,3 +801,44 @@ module Stuff =
         //Assert.Equal<string>(hash, hash2)
 
         ()
+
+/// Update these paths to a local response file with compiler arguments of existing F# projects.
+/// References projects are expected to have been built.
+let localResponseFiles =
+    [|
+        @"C:\Projects\fantomas\src\Fantomas.Core.Tests\Fantomas.Core.Tests.rsp"
+    |]
+    |> Array.collect (fun f ->
+        [|
+            [| true :> obj; f:> obj |]
+            [| false :> obj; f :> obj|]
+        |]
+    )
+
+// Uncomment this attribute if you want run this test against local response files.
+// [<Theory>]
+[<MemberData(nameof(localResponseFiles))>]
+let ``TypeCheck last file in project with transparent compiler`` useTransparentCompiler responseFile =
+    let responseFile = FileInfo responseFile
+    let syntheticProject = mkSyntheticProjectForResponseFile responseFile
+
+    let workflow =     
+        ProjectWorkflowBuilder(
+            syntheticProject,
+            isExistingProject = true,
+            useTransparentCompiler = useTransparentCompiler
+        )
+
+    let lastFile =
+        syntheticProject.SourceFiles
+        |> List.tryLast
+        |> Option.map (fun sf -> sf.Id)
+
+    match lastFile with
+    | None -> failwithf "Last file of project could not be found"
+    | Some lastFile ->
+
+    workflow {
+        clearCache 
+        checkFile lastFile expectOk
+    }
