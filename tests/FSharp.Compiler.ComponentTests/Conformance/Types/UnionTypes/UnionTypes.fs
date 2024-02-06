@@ -610,27 +610,29 @@ module UnionTypes =
             (Warning 42, Line 11, Col 12, Line 11, Col 24, "This construct is deprecated: it is only for use in the F# library")
         ]
 
-    [<Fact>]
-    let ``UnionCaseIsTester inlined and SignatureData`` () =
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``UnionCaseIsTester inlined and SignatureData`` userec =
 
+        let kwrec = if userec then "rec" else ""
         let myLibraryFsi =
             SourceCodeFileKind.Create(
                 "myLibrary.fsi",
-                """
-module rec MyLibrary
+                $"""
+module {kwrec} MyLibrary
 
     [<RequireQualifiedAccess>]
     type PrimaryAssembly =
         | Mscorlib
         | System_Runtime
-        | NetStandard
-                """)
+        | NetStandard""")
 
         let myLibraryFs =
             SourceCodeFileKind.Create(
                 "myLibrary.fs",
-                """
-module MyLibrary
+                $"""
+module {kwrec} MyLibrary
 
     [<RequireQualifiedAccess>]
     type PrimaryAssembly =
@@ -642,8 +644,8 @@ module MyLibrary
         let myFileFs =
             SourceCodeFileKind.Create(
                 "myFile.fs",
-                """
-module FileName
+                $"""
+module {kwrec} FileName
 
     open MyLibrary
     let inline getAssemblyType () = PrimaryAssembly.NetStandard
@@ -658,9 +660,9 @@ module FileName
             |> withName "MyLibrary"
 
         Fs """
-let x = MyLibrary.getAssemblyType().IsNetStandard
-let y = MyLibrary.getAssemblyType()
-let z = MyLibrary.isNetStandard()
+let x = FileName.getAssemblyType().IsNetStandard
+let y = FileName.getAssemblyType()
+let z = FileName.isNetStandard()
 printfn "%b %A %b" x y z
            """
             |> asExe
