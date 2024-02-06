@@ -70,8 +70,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             }
         }
 
-
-        var ((clientStream, serverStream), _server, _trace) = FSharpLanguageServer.Create();
+        var ((clientStream, serverStream), _server) = FSharpLanguageServer.Create();
 
         return new DuplexPipe(
             PipeReader.Create(clientStream),

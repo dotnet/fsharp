@@ -234,9 +234,7 @@ type FSharpLanguageServer
 
         let jsonRpc = new JsonRpc(messageHandler)
 
-        let rpcTrace = new StringWriter()
-
-        let listener = new TextWriterTraceListener(rpcTrace)
+        let listener = new TextWriterTraceListener(Console.Out)
 
         jsonRpc.TraceSource.Listeners.Add(listener) |> ignore
 
@@ -246,4 +244,4 @@ type FSharpLanguageServer
 
         jsonRpc.StartListening()
 
-        (clientStream, clientStream), server, rpcTrace
+        (clientStream, clientStream), server
