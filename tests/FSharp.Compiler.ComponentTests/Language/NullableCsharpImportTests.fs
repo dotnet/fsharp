@@ -18,9 +18,18 @@ let ``Passing null to IlGenerator BeginCatchBlock is fine`` () =
 open System.Reflection.Emit
 open System
 
-let passValueToIt (ilg: ILGenerator) =
-    let maybeType : Type | null = null
-    ilg.BeginCatchBlock(maybeType)"""
+let mutable logRefEmitCalls = true
+
+type ILGenerator with
+    member ilG.BeginCatchBlockAndLog (ty: Type | null) =
+        if logRefEmitCalls then
+            printfn "ilg%d.BeginCatchBlock(%A)" (abs <| hash ilG) ty
+
+        ilG.BeginCatchBlock ty
+
+let doSomethingAboutIt (ilg:ILGenerator) =
+    ilg.BeginCatchBlockAndLog(null)
+"""
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
