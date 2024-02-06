@@ -16,7 +16,10 @@ type Async =
 
     /// Execute the cancellable computation synchronously using the ambient cancellation token of
     /// the NodeCode.
-    static member FromCancellable: computation: Cancellable<'T> -> Async<'T>
+    static member FromCancellableWithScope: computation: Cancellable<'T> -> Async<'T>
+
+    /// Wrap the computation with CompilationGlobalsScope to restore current DiagnosticsAsyncState after it returns.
+    static member CompilationScope: computation: Async<'T> -> Async<'T>
 
     /// Only used for testing, do not use
     static member StartAsTask_ForTesting: computation: Async<'T> * ?ct: CancellationToken -> Task<'T>

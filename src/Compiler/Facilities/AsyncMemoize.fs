@@ -354,15 +354,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                                 log (Restarted, key)
                                                 Interlocked.Increment &restarted |> ignore
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                                let currentLogger = DiagnosticsAsyncState.DiagnosticsLogger
-                                                DiagnosticsAsyncState.DiagnosticsLogger <- cachingLogger
+                                                use _ = UseDiagnosticsLogger cachingLogger
 
-                                                try
-                                                    let! result = computation
-                                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                                    return ()
-                                                finally
-                                                    DiagnosticsAsyncState.DiagnosticsLogger <- currentLogger
+                                                let! result = computation
+                                                post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                                return ()
+
                                             with
                                             | TaskCancelled _ ->
                                                 Interlocked.Increment &cancel_exception_subsequent |> ignore
@@ -481,10 +478,18 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 Version = key.GetVersion()
             }
 
+        let callerDiagnosticLogger =
+            if DiagnosticsAsyncState.DiagnosticsLogger = UninitializedDiagnosticsLogger then
+                // TODO: Telemetry?
+                DiagnosticsAsyncState.DiagnosticsLogger <- DiscardErrorsLogger
+
+            DiagnosticsAsyncState.DiagnosticsLogger
+
+        // Preserve outer diagnostics scope in case the computation doesn't.
+        let computation = computation |> Async.CompilationScope
+
         async {
             let! ct = Async.CancellationToken
-
-            let callerDiagnosticLogger = DiagnosticsAsyncState.DiagnosticsLogger
 
             match!
                 processRequest post (key, GetOrCompute(computation, ct)) callerDiagnosticLogger
@@ -500,17 +505,13 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         Async.StartAsTask(
                             async {
                                 // TODO: Should unify starting and restarting
-                                let currentLogger = DiagnosticsAsyncState.DiagnosticsLogger
-                                DiagnosticsAsyncState.DiagnosticsLogger <- cachingLogger
+                                use _ = UseDiagnosticsLogger cachingLogger
 
                                 log (Started, key)
 
-                                try
-                                    let! result = computation
-                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                    return result
-                                finally
-                                    DiagnosticsAsyncState.DiagnosticsLogger <- currentLogger
+                                let! result = computation
+                                post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                return result
                             },
                             cancellationToken = linkedCtSource.Token
                         )

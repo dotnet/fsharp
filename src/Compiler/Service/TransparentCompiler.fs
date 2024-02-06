@@ -543,7 +543,7 @@ type internal TransparentCompiler
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
                             async {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.toAsync
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Async.FromCancellableWithScope
 
                                 match ilReaderOpt with
                                 | Some ilReader ->
@@ -569,7 +569,7 @@ type internal TransparentCompiler
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
-                            |> Async.FromCancellable
+                            |> Async.FromCancellableWithScope
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm
@@ -1174,7 +1174,7 @@ type internal TransparentCompiler
                              prevTcInfo.tcState,
                              input,
                              true)
-                        |> Cancellable.toAsync
+                        |> Async.FromCancellableWithScope
 
                     //fileChecked.Trigger fileName
 

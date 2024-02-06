@@ -323,6 +323,7 @@ module private CheckerExtensions =
                 return!
                     createProjectSnapshot snapshotAccumulatorOpt project options ct
                     |> Async.AwaitTask
+                    |> Async.CompilationScope
             }
         )
 

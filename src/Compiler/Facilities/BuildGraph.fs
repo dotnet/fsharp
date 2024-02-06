@@ -7,24 +7,32 @@ open System.Threading
 open System.Threading.Tasks
 open System.Globalization
 open Internal.Utilities.Library
+open FSharp.Compiler.DiagnosticsLogger
 
 [<AbstractClass; Sealed>]
 type Async =
+    static member CompilationScope(computation: Async<'T>) =
+        async {
+            use _ =
+                new CompilationGlobalsScope(DiagnosticsAsyncState.DiagnosticsLogger, DiagnosticsAsyncState.BuildPhase)
+
+            return! computation
+        }
+
     static member RunImmediateWithoutCancellation(computation) =
         try
-            let work = async { return! computation }
-
             Async
-                .StartImmediateAsTask(work, cancellationToken = CancellationToken.None)
+                .StartImmediateAsTask(computation |> Async.CompilationScope, cancellationToken = CancellationToken.None)
                 .Result
 
         with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
             raise (ex.InnerExceptions[0])
 
-    static member FromCancellable(computation: Cancellable<'T>) = Cancellable.toAsync computation
+    static member FromCancellableWithScope(computation: Cancellable<'T>) =
+        computation |> Cancellable.toAsync |> Async.CompilationScope
 
     static member StartAsTask_ForTesting(computation: Async<'T>, ?ct: CancellationToken) =
-        Async.StartAsTask(computation, cancellationToken = defaultArg ct CancellationToken.None)
+        Async.StartAsTask(computation |> Async.CompilationScope, cancellationToken = defaultArg ct CancellationToken.None)
 
     static member SequentialFailFast(computations: Async<'T> seq) =
         async {
@@ -108,7 +116,7 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                             Async.StartWithContinuations(
                                 async {
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! p
+                                    return! p |> Async.CompilationScope
                                 },
                                 (fun res ->
                                     cachedResult <- ValueSome res

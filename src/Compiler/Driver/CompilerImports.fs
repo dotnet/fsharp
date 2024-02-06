@@ -2238,21 +2238,22 @@ and [<Sealed>] TcImports
                 | ParallelReferenceResolution.On -> Async.Parallel
                 | ParallelReferenceResolution.Off -> Async.SequentialFailFast
 
-            use captureTasks = new CaptureDiagnosticsConcurrently(DiagnosticsAsyncState.DiagnosticsLogger)
-
-            let! results =
-                nms
-                |> List.map (fun nm ->
-                    async {
-                        try
-                            return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
-                        with e ->
+            let! results = async {
+                    use captureTasks = new CaptureDiagnosticsConcurrently(DiagnosticsAsyncState.DiagnosticsLogger)
+                    return! nms |> List.map (fun nm ->
+                        async {
                             use _ = UseDiagnosticsLogger captureTasks.LoggerForTask
+                            try
+                                // Async.CompilationScope because this task tends to replace ambient DiagnosticsLogger.
+                                // TODO: Investigate why this acts defferent now then previously with NodeCode.
+                                return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm) |> Async.CompilationScope
+                            with e ->
 
-                            errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
-                            return None
-                    })
-                |> runMethod
+                                errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
+                                return None
+                        })
+                        |> runMethod
+                }
 
             let _dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
             fixupOrphanCcus ()

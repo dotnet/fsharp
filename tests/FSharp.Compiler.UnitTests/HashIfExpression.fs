@@ -76,12 +76,11 @@ type public HashIfExpression() =
 
         errors, warnings, parser
 
-    do // Setup
-        DiagnosticsAsyncState.BuildPhase <- BuildPhase.Compile
+    // Setup
+    let globalScope = new CompilationGlobalsScope(DiagnosticsAsyncState.DiagnosticsLogger, BuildPhase.Compile)
+
     interface IDisposable with // Teardown
-        member _.Dispose() =
-            DiagnosticsAsyncState.BuildPhase <- BuildPhase.DefaultPhase
-            DiagnosticsAsyncState.DiagnosticsLogger <- DiagnosticsAsyncState.DiagnosticsLogger
+        member _.Dispose() = (globalScope :> IDisposable).Dispose()
 
     [<Fact>]
     member _.PositiveParserTestCases()=

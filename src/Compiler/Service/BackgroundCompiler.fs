@@ -309,7 +309,7 @@ type internal BackgroundCompiler
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
                             async {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Async.FromCancellable
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Async.FromCancellableWithScope
 
                                 match ilReaderOpt with
                                 | Some ilReader ->
@@ -335,7 +335,7 @@ type internal BackgroundCompiler
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
-                            |> Async.FromCancellable
+                            |> Async.FromCancellableWithScope
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm
@@ -727,7 +727,7 @@ type internal BackgroundCompiler
                     keepAssemblyContents,
                     suggestNamesForErrors
                 )
-                |> Async.FromCancellable
+                |> Async.FromCancellableWithScope
 
             GraphNode.SetPreferredUILang tcConfig.preferredUiLang
             return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.ProjectTimeStamp)
@@ -1384,7 +1384,7 @@ type internal BackgroundCompiler
 
             return options, (diags @ diagnostics.Diagnostics)
         }
-        |> Cancellable.toAsync
+        |> Async.FromCancellableWithScope
 
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         use _ =
