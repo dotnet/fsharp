@@ -259,7 +259,7 @@ and Compilation =
 
 module rec CompilerAssertHelpers =
 
-    let useTransparentCompiler = true
+    let useTransparentCompiler = FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically
     let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=useTransparentCompiler)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
