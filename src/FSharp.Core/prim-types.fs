@@ -5352,7 +5352,7 @@ namespace Microsoft.FSharp.Core
             #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
 
             [<CompiledName("NonNull")>]
-            let inline nonNull (x: 'T | null) : 'T = (# "" x : 'T #)
+            let inline nonNull (x: 'T | null when 'T : not null and 'T : not struct) : 'T = (# "" x : 'T #)
 
             [<CompiledName("NonNullQuickPattern")>]
             let inline (|NonNullQuick|) (value : 'T | null when 'T : not null and 'T : not struct) = nonNull value
