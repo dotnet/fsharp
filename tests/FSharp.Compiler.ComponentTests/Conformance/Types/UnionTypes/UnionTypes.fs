@@ -609,3 +609,62 @@ module UnionTypes =
         |> withDiagnostics [
             (Warning 42, Line 11, Col 12, Line 11, Col 24, "This construct is deprecated: it is only for use in the F# library")
         ]
+
+    [<Fact>]
+    let ``UnionCaseIsTester inlined and SignatureData`` () =
+
+        let myLibraryFsi =
+            SourceCodeFileKind.Create(
+                "myLibrary.fsi",
+                """
+module rec MyLibrary
+
+    [<RequireQualifiedAccess>]
+    type PrimaryAssembly =
+        | Mscorlib
+        | System_Runtime
+        | NetStandard
+                """)
+
+        let myLibraryFs =
+            SourceCodeFileKind.Create(
+                "myLibrary.fs",
+                """
+module MyLibrary
+
+    [<RequireQualifiedAccess>]
+    type PrimaryAssembly =
+        | Mscorlib
+        | System_Runtime
+        | NetStandard
+                """)
+
+        let myFileFs =
+            SourceCodeFileKind.Create(
+                "myFile.fs",
+                """
+module FileName
+
+    open MyLibrary
+    let inline getAssemblyType () = PrimaryAssembly.NetStandard
+    let inline isNetStandard () = (PrimaryAssembly.NetStandard).IsNetStandard
+                """)
+
+        let myLibrary =
+            (fsFromString myLibraryFsi) |> FS
+            |> withAdditionalSourceFiles [myLibraryFs; myFileFs]
+            |> asLibrary
+            |> withLangVersionPreview
+            |> withName "MyLibrary"
+
+        Fs """
+let x = MyLibrary.getAssemblyType().IsNetStandard
+let y = MyLibrary.getAssemblyType()
+let z = MyLibrary.isNetStandard()
+printfn "%b %A %b" x y z
+           """
+            |> asExe
+            |> withReferences [myLibrary]
+            |> withLangVersionPreview
+            |> compileAndRun
+            |> shouldSucceed
