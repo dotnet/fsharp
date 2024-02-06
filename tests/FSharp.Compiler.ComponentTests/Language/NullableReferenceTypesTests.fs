@@ -92,3 +92,39 @@ let myFunction (input : string | null) : string =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+[<InlineData("""(null,_aVal) | (_aVal, null) """)>]
+[<InlineData("""(null,("" | null | _)) | (_, null)""")>]
+[<Theory>]
+let ``Eliminate tupled nullness after matching`` (tp) = 
+    FSharp $"""module MyLibrary
+
+let myFunction (input1 : string | null) (input2 : string | null): string = 
+    match input1,input2 with
+    | {tp} -> ""
+    | nns1,nns2 -> string (nns1.Length + nns2.Length)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+
+[<InlineData("""(null,"a") | ("b",null) """)>]
+[<InlineData("(null,null)")>]
+[<InlineData(""" null, a """)>]
+[<InlineData(""" "a", "b" """)>]
+[<InlineData(""" (_a,_b) when System.Console.ReadLine() = "lucky"  """)>]
+[<InlineData("(_,null)")>]
+[<Theory>]
+let ``Should NOT eliminate tupled nullness after matching`` (tp) = 
+    FSharp $"""module MyLibrary
+
+let myFunction (input1 : string | null) (input2 : string | null): string = 
+    match input1,input2 with
+    | {tp} -> ""
+    | nns1,nns2 -> string (nns1.Length + nns2.Length)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withErrorCode 3261

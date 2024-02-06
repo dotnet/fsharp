@@ -10422,15 +10422,31 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
     let target = TTarget(vspecs, resultExpr, None)
 
     let inputTypeForNextPatterns= 
-        let rec didEliminateNull (p:Pattern) =
+        let removeNull t = replaceNullnessOfTy KnownWithoutNull t
+        let rec isWild (p:Pattern) = 
             match p with
-            | TPat_null _ | TPat_wild _  -> true
-            | TPat_as (p,_,_) -> didEliminateNull p
-            | TPat_disjs(patterns,_) -> patterns |> List.exists didEliminateNull
+            | TPat_wild _ -> true
+            | TPat_as (p,_,_) -> isWild p
+            | TPat_disjs(patterns,_) -> patterns |> List.exists isWild
+            | TPat_conjs(patterns,_) -> patterns |> List.forall isWild
+            | TPat_tuple (_,pats,_,_) -> pats |> List.forall isWild              
             | _ -> false
-        if whenExprOpt.IsNone && didEliminateNull pat then
-            replaceNullnessOfTy KnownWithoutNull inputTy
-        else inputTy
+
+        let rec eliminateNull (ty:TType) (p:Pattern)  = 
+            match p with
+            | TPat_null _ -> removeNull ty
+            | TPat_as (p,_,_) -> eliminateNull ty p
+            | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
+            | TPat_tuple (_,pats,_,_) -> 
+                match stripTyparEqns ty with
+                // In a tuple of size N, if 1 elem is matched for null and N-1 are wild => subsequent clauses can strip nullness
+                | TType_tuple(ti,tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
+                    TType_tuple(ti, List.map2 eliminateNull tys pats)
+                | _ -> ty
+            | _ -> ty
+        match whenExprOpt with
+        | None -> eliminateNull inputTy pat
+        | _ -> inputTy
     
     MatchClause(pat, whenExprOpt, target, patm), (tpenv,inputTypeForNextPatterns)
 
