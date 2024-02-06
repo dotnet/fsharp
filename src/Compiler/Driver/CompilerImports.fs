@@ -2244,11 +2244,8 @@ and [<Sealed>] TcImports
                         async {
                             use _ = UseDiagnosticsLogger captureTasks.LoggerForTask
                             try
-                                // Async.CompilationScope because this task tends to replace ambient DiagnosticsLogger.
-                                // TODO: Investigate why this acts defferent now then previously with NodeCode.
-                                return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm) |> Async.CompilationScope
+                                return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
                             with e ->
-
                                 errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
                                 return None
                         })
