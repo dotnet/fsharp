@@ -298,6 +298,7 @@ type internal BackgroundCompiler
                                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
                                     return! self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject(" + nm + ")")
                                 }
+                                |> Async.CompilationScope
 
                             member x.TryGetLogicalTimeStamp(cache) =
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
