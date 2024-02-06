@@ -10190,12 +10190,12 @@ let (|EmptyRange|_|) (start, step, finish) =
 
 /// 1..5 → start <= finish && step > 0 → FSharpForLoopUp
 /// 1..2..5 → start <= finish && step > 0 → FSharpForLoopUp
-/// 1..-2..-5 → finish < start && step < 0 → FSharpForLoopDown
+/// 1..-2..-5 → finish <= start && step < 0 → FSharpForLoopDown
 [<return: Struct>]
 let (|ConstRange|_|) (start, step, finish) =
     let inline upOrDown start step finish =
         assert (step <> LanguagePrimitives.GenericZero)
-        assert (start <= finish && step > LanguagePrimitives.GenericZero || finish < start && step < LanguagePrimitives.GenericZero)
+        assert (start <= finish && step > LanguagePrimitives.GenericZero || finish <= start && step < LanguagePrimitives.GenericZero)
 
         if start <= finish && step > LanguagePrimitives.GenericZero then
             FSharpForLoopUp
