@@ -72,3 +72,23 @@ let doStuff() =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+
+[<InlineData("null")>]
+[<InlineData(""" null | "" """)>]
+[<InlineData(""" "" | null """)>]
+[<InlineData(""" "" | " " | null """)>]
+[<InlineData("(null)")>]
+[<InlineData("(null) as _myUselessNullValue")>]
+[<Theory>]
+let ``Eliminate nullness after matching`` (tp) = 
+    FSharp $"""module MyLibrary
+
+let myFunction (input : string | null) : string = 
+    match input with
+    | {tp} -> ""
+    | nonNullString -> nonNullString
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed

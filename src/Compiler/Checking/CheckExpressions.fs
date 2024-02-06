@@ -10399,10 +10399,13 @@ and TcMatchPattern cenv inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynE
 and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     let mutable first = true
     let isFirst() = if first then first <- false; true else false
-    List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
+    let resultList,(tpEnv,_input) = 
+        List.mapFold (fun (unscopedTyParEnv,inputTy) -> TcMatchClause cenv inputTy resultTy env (isFirst()) unscopedTyParEnv) (tpenv,inputTy) clauses
+    resultList,tpEnv
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
     let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, _)) = synMatchClause
+
     let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt
 
     let resultEnv =
@@ -10417,8 +10420,19 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
     let resultExpr, tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv synResultExpr
 
     let target = TTarget(vspecs, resultExpr, None)
+
+    let inputTypeForNextPatterns= 
+        let rec didEliminateNull (p:Pattern) =
+            match p with
+            | TPat_null _ | TPat_wild _  -> true
+            | TPat_as (p,_,_) -> didEliminateNull p
+            | TPat_disjs(patterns,_) -> patterns |> List.exists didEliminateNull
+            | _ -> false
+        if whenExprOpt.IsNone && didEliminateNull pat then
+            replaceNullnessOfTy KnownWithoutNull inputTy
+        else inputTy
     
-    MatchClause(pat, whenExprOpt, target, patm), tpenv
+    MatchClause(pat, whenExprOpt, target, patm), (tpenv,inputTypeForNextPatterns)
 
 and TcStaticOptimizationConstraint cenv env tpenv c =
     let g = cenv.g
