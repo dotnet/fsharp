@@ -4434,6 +4434,9 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "add" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "add" x y : uint32 #) : byte #)
              when ^T : string      and ^U : string     = (# "" (String.Concat((# "" x : string #),(# "" y : string #))) : ^T #)
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+             when ^T : (string|null) and ^U : (string|null) = (# "" (String.Concat((# "" x : string #),(# "" y : string #))) : string #)
+#endif
              when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Addition((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
@@ -5345,6 +5348,24 @@ namespace Microsoft.FSharp.Core
 
             [<CompiledName("Hash")>]
             let inline hash x = GenericHash x
+
+            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+
+            [<CompiledName("NonNull")>]
+            let inline nonNull (x: 'T | null) : 'T = (# "" x : 'T #)
+
+            [<CompiledName("NonNullQuickPattern")>]
+            let inline (|NonNullQuick|) (value : 'T | null when 'T : not null and 'T : not struct) = nonNull value
+
+            #else
+
+            [<CompiledName("NonNull")>]
+            let inline nonNull (x: 'T ) : 'T = x
+
+            [<CompiledName("NonNullQuickPattern")>]
+            let inline (|NonNullQuick|) (value) = nonNull value
+
+            #endif
 
         module Checked = 
         
