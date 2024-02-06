@@ -135,19 +135,19 @@ neg20.fs(108,12,108,16): typecheck error FS0001: Type mismatch. Expecting a
     'B * B -> 'a'    
 but given a
     'A * A -> Data'    
-The type 'B' does not match the type 'A'
+The type 'A' does not match the type 'B'
 
 neg20.fs(109,12,109,16): typecheck error FS0001: Type mismatch. Expecting a
     'A * B -> 'a'    
 but given a
     'A * A -> Data'    
-The type 'B' does not match the type 'A'
+The type 'A' does not match the type 'B'
 
 neg20.fs(110,12,110,16): typecheck error FS0001: Type mismatch. Expecting a
     'B * A -> 'a'    
 but given a
     'A * A -> Data'    
-The type 'B' does not match the type 'A'
+The type 'A' does not match the type 'B'
 
 neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to have type
     'string'    
@@ -208,16 +208,6 @@ neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'obj'    
-
-neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'obj'    
-
 neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
@@ -229,16 +219,6 @@ but here has type
     'string'    
 
 neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'obj'    
-
-neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'obj'    
-
-neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'obj'    
@@ -261,16 +241,6 @@ neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'obj'    
-
-neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'obj'    
-
 neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
@@ -282,16 +252,6 @@ but here has type
     'string'    
 
 neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'obj'    
-
-neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'obj'    
-
-neg20.fs(190,34,190,39): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'obj'    

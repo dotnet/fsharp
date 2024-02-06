@@ -440,7 +440,12 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OfObj")>]
-    val inline ofObj: value: 'T -> 'T option when 'T: null
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    val inline ofObj: value: 'T -> 'T option  when 'T : null
+#else
+    // TODO NULLNESS: assess this change - is it a breaking change?
+    val inline ofObj: value: 'T | null -> 'T option  when 'T : not null and 'T : not struct
+#endif
 
     /// <summary>Convert an option to a potentially null value.</summary>
     ///
@@ -455,7 +460,12 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToObj")>]
-    val inline toObj: value: 'T option -> 'T when 'T: null
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    val inline toObj: value: 'T option -> 'T when 'T : null
+#else
+    // TODO NULLNESS: assess this change - is it a breaking change?
+    val inline toObj: value: 'T option -> 'T | null when 'T : not struct (* and 'T : not null *)
+#endif
 
 /// <summary>Contains operations for working with value options.</summary>
 ///
@@ -888,7 +898,12 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("OfObj")>]
-    val inline ofObj: value: 'T -> 'T voption when 'T: null
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    val inline ofObj: value: 'T -> 'T voption  when 'T : null
+#else
+    // TODO NULLNESS: assess this change - is it a breaking change?
+    val inline ofObj: value: 'T | null -> 'T voption  when 'T : not struct and 'T : not null
+#endif
 
     /// <summary>Convert an option to a potentially null value.</summary>
     ///
@@ -903,4 +918,9 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("ToObj")>]
-    val inline toObj: value: 'T voption -> 'T when 'T: null
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    val inline toObj: value: 'T voption -> 'T when 'T : null
+#else
+    // TODO NULLNESS: assess this change - is it a breaking change?
+    val inline toObj: value: 'T voption -> 'T | null when 'T : not struct (* and 'T : not null *)
+#endif

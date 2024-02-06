@@ -642,6 +642,8 @@ val destStructAnonRecdTy: TcGlobals -> TType -> TTypes
 
 val tryDestForallTy: TcGlobals -> TType -> Typars * TType
 
+val nullnessOfTy: TcGlobals -> TType -> Nullness
+
 val isFunTy: TcGlobals -> TType -> bool
 
 val isForallTy: TcGlobals -> TType -> bool
@@ -1068,6 +1070,7 @@ type DisplayEnv =
         showAttributes: bool
         showOverrides: bool
         showStaticallyResolvedTyparAnnotations: bool
+        showNullnessAnnotations: bool option
         abbreviateAdditionalConstraints: bool
         showTyparDefaultConstraints: bool
         /// If set, signatures will be rendered with XML documentation comments for members if they exist
@@ -1625,7 +1628,7 @@ val destArrayTy: TcGlobals -> TType -> TType
 val destListTy: TcGlobals -> TType -> TType
 
 /// Build an array type of the given rank
-val mkArrayTy: TcGlobals -> int -> TType -> range -> TType
+val mkArrayTy: TcGlobals -> int -> Nullness -> TType -> range -> TType
 
 /// Check if a type definition is one of the artificial type definitions used for array types of different ranks
 val isArrayTyconRef: TcGlobals -> TyconRef -> bool
@@ -1663,7 +1666,7 @@ val isFSharpDelegateTy: TcGlobals -> TType -> bool
 /// Determine if a type is an interface type
 val isInterfaceTy: TcGlobals -> TType -> bool
 
-/// Determine if a type is a FSharpRef type
+/// Determine if a type is a reference type
 val isRefTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a function (including generic). Not the same as isFunTy.
@@ -1771,17 +1774,17 @@ val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
 
 val CompileAsEvent: TcGlobals -> Attribs -> bool
 
-val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
-
 val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
-val TypeNullNotLiked: TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
+
+val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
 
 val TypeNullNever: TcGlobals -> TType -> bool
 
-val TypeSatisfiesNullConstraint: TcGlobals -> range -> TType -> bool
-
 val TypeHasDefaultValue: TcGlobals -> range -> TType -> bool
+
+val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon: Tycon -> bool
 
@@ -2240,6 +2243,8 @@ val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 //-------------------------------------------------------------------------
 
 val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+
+val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
 
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 

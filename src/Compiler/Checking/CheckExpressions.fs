@@ -977,6 +977,43 @@ let TranslatePartialValReprInfo tps (PrelimValReprInfo (argsData, retData)) =
 // Members
 //-------------------------------------------------------------------------
 
+let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC m =
+    let g = cenv.g
+    if g.langFeatureNullness then 
+        if TypeNullNever g innerTyC then
+            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
+
+        match tryAddNullnessToTy nullness innerTyC with 
+
+        | None -> 
+            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
+            innerTyC
+
+        | Some innerTyCWithNull ->
+            // The inner type is not allowed to support null or use null as a representation value.
+            // For example "int option?" is not allowed, nor "string??".
+            //
+            // For variable types in FSharp.Core we make an exception because we must allow
+            //    val toObj: value: 'T option -> 'T | null when 'T : not struct (* and 'T : not null *)
+            // wihout implying 'T is not null.  This is because it is legitimate to use this
+            // function to "collapse" null and obj-null-coming-from-option using such a function.
+
+            if not g.compilingFSharpCore || not (isTyparTy g innerTyC) then 
+                AddCxTypeDefnNotSupportsNull env.DisplayEnv cenv.css m NoTrace innerTyC
+
+            innerTyCWithNull
+
+    else
+        if warn then
+            warning(Error(FSComp.SR.tcNullnessCheckingNotEnabled(), m))
+        innerTyC
+
+//-------------------------------------------------------------------------
+// Members
+//-------------------------------------------------------------------------
+
 let ComputeLogicalName (id: Ident) (memberFlags: SynMemberFlags) =
     match memberFlags.MemberKind with
     | SynMemberKind.ClassConstructor -> ".cctor"
@@ -2101,7 +2138,7 @@ module GeneralizationHelpers =
             match tp.Constraints |> List.partition (function TyparConstraint.CoercesTo _ -> true | _ -> false) with
             | [TyparConstraint.CoercesTo(tgtTy, _)], others ->
                  // Throw away null constraints if they are implied
-                 if others |> List.exists (function TyparConstraint.SupportsNull _ -> not (TypeSatisfiesNullConstraint g m tgtTy) | _ -> true)
+                 if others |> List.exists (function TyparConstraint.SupportsNull _ -> not (TypeNullIsExtraValue g m tgtTy) | _ -> true)
                  then None
                  else Some tgtTy
             | _ -> None
@@ -4005,6 +4042,13 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
     | SynTypeConstraint.WhereTyparSupportsNull(tp, m) ->
         TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeUseSupportsNull
 
+    | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m) ->
+        if g.langFeatureNullness then 
+            TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeDefnNotSupportsNull
+        else
+            warning(Error(FSComp.SR.tcNullnessCheckingNotEnabled(), m))
+            tpenv
+
     | SynTypeConstraint.WhereTyparIsComparable(tp, m) ->
         TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeMustSupportComparison
 
@@ -4422,10 +4466,17 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.StaticConstant (synConst, m) ->
         TcTypeStaticConstant kindOpt tpenv synConst m
 
+    | SynType.StaticConstantNull m
     | SynType.StaticConstantNamed (_, _, m)
     | SynType.StaticConstantExpr (_, m) ->
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m))
         NewErrorType (), tpenv
+
+    | SynType.WithNull(innerTy, ambivalent, m) -> 
+        let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv innerTy
+        let nullness = if ambivalent then KnownAmbivalentToNull else KnownWithNull
+        let tyWithNull = TcAddNullnessToType false cenv env nullness innerTyC m
+        tyWithNull, tpenv
 
     | SynType.MeasurePower(ty, exponent, m) ->
         TcTypeMeasurePower kindOpt cenv newOk checkConstraints occ env tpenv ty exponent m
@@ -4578,7 +4629,7 @@ and TcFunctionType (cenv: cenv) newOk checkConstraints occ env tpenv domainTy re
 and TcArrayType (cenv: cenv) newOk checkConstraints occ env tpenv rank elemTy m =
     let g = cenv.g
     let elemTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv elemTy
-    let tyR = mkArrayTy g rank elemTy m
+    let tyR = mkArrayTy g rank g.knownWithoutNull elemTy m
     tyR, tpenv
 
 and TcTypeParameter kindOpt (cenv: cenv) env newOk tpenv tp =
@@ -4603,8 +4654,9 @@ and TcTypeWithConstraints (cenv: cenv) env newOk checkConstraints occ tpenv synT
 and TcTypeHashConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTy m =
     let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
     let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv synTy
-    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty (mkTyparTy tp)
-    tp.AsType, tpenv
+    let tpTy = mkTyparTy tp
+    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty tpTy
+    tpTy, tpenv
 
 // (x: 't & #I1 & #I2)
 // (x: #I1 & #I2)
@@ -4627,7 +4679,8 @@ and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv s
             | _ -> tpenv
         ) tpenv
 
-    tp.AsType, tpenv
+    let tpTy = tp.AsType KnownAmbivalentToNull // TODO: NULLNESS
+    tpTy, tpenv
 
 and TcTypeStaticConstant kindOpt tpenv c m =
     match c, kindOpt with
@@ -4781,7 +4834,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
             | SynConst.Double n when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
             | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
             | SynConst.String (s, _, _)
-            | SynConst.SourceIdentifier (_, s, _) when (not (isNull s)) && typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
+            | SynConst.SourceIdentifier (_, s, _) when typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)
             | _ -> fail()
         v, tpenv
@@ -4810,7 +4863,6 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
                 | Const.Single n -> record(g.float32_ty); box (n: single)
                 | Const.Double n -> record(g.float_ty); box (n: double)
                 | Const.Char n -> record(g.char_ty); box (n: char)
-                | Const.String null -> fail()
                 | Const.String s -> record(g.string_ty); box (s: string)
                 | Const.Bool b -> record(g.bool_ty); box (b: bool)
                 | _ -> fail()
@@ -4985,7 +5037,7 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv m tcref pathType
         List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
 
     // Try to decode System.Tuple --> F# tuple types etc.
-    let ty = g.decompileType tcref actualArgTys
+    let ty = g.decompileType tcref actualArgTys g.knownWithoutNull
 
     ty, tpenv
 
@@ -5661,7 +5713,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.Null m ->
         TcNonControlFlowExpr env <| fun env ->
         AddCxTypeUseSupportsNull env.DisplayEnv cenv.css m NoTrace overallTy.Commit
-        mkNull m overallTy.Commit, tpenv
+        let tyWithNull = addNullnessToTy KnownWithNull overallTy.Commit
+        mkNull m tyWithNull, tpenv
 
     | SynExpr.Lazy (synInnerExpr, m) ->
         TcNonControlFlowExpr env <| fun env ->
