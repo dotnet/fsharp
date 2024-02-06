@@ -1708,11 +1708,15 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | Parent p -> FSharpEntity(cenv, p) |> Some
 
     member _.ApparentEnclosingEntity: FSharpEntity = 
+        let createEntity (ttype: TType) =
+            let tcref, tyargs = destAppTy cenv.g ttype
+            FSharpEntity(cenv, tcref, tyargs)
+
         checkIsResolved()
         match d with 
-        | E e -> FSharpEntity(cenv, e.ApparentEnclosingTyconRef)
-        | P p -> FSharpEntity(cenv, p.ApparentEnclosingTyconRef)
-        | M m | C m -> FSharpEntity(cenv, m.ApparentEnclosingTyconRef)
+        | E e -> createEntity e.ApparentEnclosingType
+        | P p -> createEntity p.ApparentEnclosingType
+        | M m | C m -> createEntity m.ApparentEnclosingType
         | V v -> 
         match v.ApparentEnclosingEntity with 
         | ParentNone -> invalidOp "the value or member doesn't have a logical parent" 
