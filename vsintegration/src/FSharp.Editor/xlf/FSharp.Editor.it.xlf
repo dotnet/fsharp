@@ -200,8 +200,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Formattazione;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Formattazione;
 Larghezza descrizione preferita in caratteri;
 Formatta la firma in base alla larghezza specificata aggiungendo interruzioni di riga conformi alle regole di sintassi F#;
 Collegamenti di spostamento;
@@ -209,6 +210,11 @@ Mostra collegamenti di spostamento come;
 Sottolineatura a tinta unita;
 Sottolineatura a punto;
 Sottolineatura a trattini;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="new">Remarks:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

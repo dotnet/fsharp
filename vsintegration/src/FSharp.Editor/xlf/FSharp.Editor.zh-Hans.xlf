@@ -42,8 +42,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">块结构指南;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">块结构指南;
 显示 F# 代码的结构指南;
 大纲;
 显示 F# 代码的大纲和可折叠节点;
@@ -200,8 +200,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">格式设置；
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">格式设置；
 首选描述宽度 (以字符为单位)；
 通过添加符合 F# 语法规则的换行符，将签名格式设置为指定宽度；
 导航链接；
@@ -209,6 +210,11 @@ Dash underline;</source>
 实心下划线；
 点下划线；
 短划线下划线；</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="new">Remarks:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
