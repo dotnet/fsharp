@@ -618,32 +618,6 @@ in x
                 y - x
             "
 
-            (*
-            Bug: removing parens shadows `y` in `x + y`.
-            To address this, we'd need to ensure that any name bound in the inner scope
-            is never used again in the outer scope.
-            *)
-            //"
-            //let _ =
-            //    let y = 100
-            //    let x = 3
-            //    (
-            //        let y = 99
-            //        ignore (y - x)
-            //    )
-            //    x + y
-            //",
-            //"
-            //let _ =
-            //    let y = 100
-            //    let x = 3
-            //    (
-            //        let y = 99
-            //        ignore (y - x)
-            //    )
-            //    x + y
-            //"
-
             // TryWith
             "try (raise null) with _ -> reraise ()", "try raise null with _ -> reraise ()"
             "try raise null with (_) -> reraise ()", "try raise null with _ -> reraise ()"
@@ -669,6 +643,82 @@ in x
             """ (printfn "1"); printfn "2" """, """ printfn "1"; printfn "2" """
             """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
+
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            ",
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            "
+
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x
+            ",
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                let y = 99
+                ignore (y - x)
+                x
+            "
+
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            ",
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            "
+
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x
+            ",
+            "
+            let f y =
+                let x = 3
+                let y = 99
+                ignore (y - x)
+                x
+            "
 
             // IfThenElse
             "if (3 = 3) then 3 else 3", "if 3 = 3 then 3 else 3"
