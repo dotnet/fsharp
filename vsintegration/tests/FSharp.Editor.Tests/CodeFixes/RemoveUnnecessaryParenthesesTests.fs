@@ -244,7 +244,6 @@ let _ =
             async {
                 return 
                  1
-                
             }
             "
 
@@ -343,7 +342,7 @@ let _ =
             "
             let x =
              2
-           + 2
+             + 2
             in x
             "
 
@@ -362,9 +361,9 @@ let _ =
      
 
              2
-    
-
-           + 2
+      
+ 
+             + 2
             in x
             "
 
@@ -399,7 +398,7 @@ let _ =
             ",
             "
             let x = 2
-                  +             2
+                    +             2
             in x
             "
 
@@ -410,7 +409,7 @@ let _ =
             ",
             "
             let x = 2
-                  + 2
+                    + 2
             in x
             "
 
@@ -421,7 +420,7 @@ let _ =
             ",
             "
             let x = x
-                   +y
+                    +y
             in x
             "
 
@@ -443,7 +442,7 @@ let _ =
             ",
             "
             let x = 2
-                <<< 2
+                    <<< 2
             in x
             "
 
@@ -456,7 +455,7 @@ in x
             "
 let (<<<<<<<<) = (<<<)
 let x = 2
-<<<<<<<< 2
+        <<<<<<<< 2
 in x
             "
 
@@ -506,7 +505,7 @@ in x
 
             let y =
                 2
-              + 2
+                + 2
 
             in x + y
             "
@@ -533,8 +532,7 @@ in x
             "
             x <
                 2
-              + 3
-               
+                + 3
             "
 
             // LetOrUse
@@ -542,6 +540,109 @@ in x
             "let x = 3 in let y = 4 in (x + y)", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y =(4) in x + y", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y=(4) in x + y", "let x = 3 in let y=4 in x + y"
+
+            "
+            let _ =
+                let _ = 3
+                (
+                    44
+                )
+            ",
+            "
+            let _ =
+                let _ = 3
+                44
+            "
+
+            "
+            let (++++++) = (+)
+            let x =
+             ()
+             (
+                2
+         ++++++ 2
+             )
+            in x
+            ",
+            "
+            let (++++++) = (+)
+            let x =
+             ()
+             2
+             ++++++ 2
+            in x
+            "
+
+            "
+            let (!+++++) = (+)
+            let x =
+             ()
+             (
+              !+++++2
+             )
+            in x
+            ",
+            "
+            let (!+++++) = (+)
+            let x =
+             ()
+             !+++++2
+            in x
+            "
+
+            "
+            let _ =
+                (
+             printfn \"\"
+             +2
+                )
+            ",
+            "
+            let _ =
+                printfn \"\"
+                +2
+            "
+
+            "
+            let _ =
+                let x = 3
+                (
+                    let y = 99
+                    y - x
+                )
+            ",
+            "
+            let _ =
+                let x = 3
+                let y = 99
+                y - x
+            "
+
+            (*
+            Bug: removing parens shadows `y` in `x + y`.
+            To address this, we'd need to ensure that any name bound in the inner scope
+            is never used again in the outer scope.
+            *)
+            //"
+            //let _ =
+            //    let y = 100
+            //    let x = 3
+            //    (
+            //        let y = 99
+            //        ignore (y - x)
+            //    )
+            //    x + y
+            //",
+            //"
+            //let _ =
+            //    let y = 100
+            //    let x = 3
+            //    (
+            //        let y = 99
+            //        ignore (y - x)
+            //    )
+            //    x + y
+            //"
 
             // TryWith
             "try (raise null) with _ -> reraise ()", "try raise null with _ -> reraise ()"
@@ -655,7 +756,7 @@ in x
             """
             let mutable x = 3
             x <- 3
-             <<< 3
+                 <<< 3
             """
 
             // DotIndexedGet
