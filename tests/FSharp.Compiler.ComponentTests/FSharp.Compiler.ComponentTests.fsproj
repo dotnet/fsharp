@@ -225,6 +225,7 @@
     <Compile Include="Language\CopyAndUpdateTests.fs" />
     <Compile Include="Language\ConstraintIntersectionTests.fs" />
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
+    <Compile Include="Language\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\NullableCsharpImportTests.fs" />
     <Compile Include="Language\NullableReferenceTypesTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
