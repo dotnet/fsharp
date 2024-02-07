@@ -99,10 +99,10 @@ let myFunction (input : string | null) : string =
 let ``Eliminate tupled nullness after matching`` (tp) = 
     FSharp $"""module MyLibrary
 
-let myFunction (input1 : string | null) (input2 : string | null): string = 
+let myFunction (input1 : string | null) (input2 : string | null): (string*string) = 
     match input1,input2 with
-    | {tp} -> ""
-    | nns1,nns2 -> string (nns1.Length + nns2.Length)
+    | {tp} -> "",""
+    | nns1,nns2 -> nns1,nns2
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -119,10 +119,10 @@ let myFunction (input1 : string | null) (input2 : string | null): string =
 let ``Should NOT eliminate tupled nullness after matching`` (tp) = 
     FSharp $"""module MyLibrary
 
-let myFunction (input1 : string | null) (input2 : string | null): string = 
+let myFunction (input1 : string | null) (input2 : string | null): (string*string) = 
     match input1,input2 with
     | {tp} -> ""
-    | nns1,nns2 -> string (nns1.Length + nns2.Length)
+    | nns1,nns2 -> nns1,nns2
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
