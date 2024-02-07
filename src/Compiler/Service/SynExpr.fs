@@ -774,7 +774,7 @@ module SynExpr =
 
                 loop clauses
 
-            let innerBindingsWouldShadowOuter expr1 expr2 =
+            let innerBindingsWouldShadowOuter expr1 (expr2: SynExpr) =
                 let identsBoundInInner =
                     (Set.empty, [ SyntaxNode.SynExpr expr1 ])
                     ||> SyntaxNodes.fold (fun idents _path node ->
@@ -785,7 +785,7 @@ module SynExpr =
                 if identsBoundInInner.IsEmpty then
                     false
                 else
-                    (outer.Range.End, [ SyntaxNode.SynExpr expr2 ])
+                    (expr2.Range.End, [ SyntaxNode.SynExpr expr2 ])
                     ||> SyntaxNodes.exists (fun _path node ->
                         match node with
                         | SyntaxNode.SynExpr(SynExpr.Ident ident) -> identsBoundInInner.Contains ident.idText
