@@ -147,47 +147,51 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
                 match firstChar, lastChar with
                 | '(', ')' ->
-                    let (|ShouldPutSpaceBefore|_|) (s: string) =
-                        // "……(……)"
-                        //  ↑↑ ↑
-                        match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[1] with
-                        | _, _, ('\n' | '\r') -> None
-                        | '[', '|', (Punctuation | LetterOrDigit) -> None
-                        | _, '[', '<' -> Some ShouldPutSpaceBefore
-                        | _, ('(' | '[' | '{'), _ -> None
-                        | _, '>', _ -> Some ShouldPutSpaceBefore
-                        | ' ', '=', _ -> Some ShouldPutSpaceBefore
-                        | _, '=', ('(' | '[' | '{') -> None
-                        | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                        | _, LetterOrDigit, '(' -> None
-                        | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
-                        | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                        | _ -> None
+                    let adjusted =
+                        match sourceText with
+                        | TrailingOpen context.Span -> txt[1 .. txt.Length - 2].TrimEnd()
 
-                    let (|ShouldPutSpaceAfter|_|) (s: string) =
-                        // "(……)…"
-                        //    ↑ ↑
-                        match s[s.Length - 2], sourceText[min context.Span.End (sourceText.Length - 1)] with
-                        | '>', ('|' | ']') -> Some ShouldPutSpaceAfter
-                        | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
-                        | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
-                        | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
-                        | _ -> None
-
-                    let newText =
-                        match txt, sourceText with
-                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter, _ -> " " + txt[1 .. txt.Length - 2] + " "
-                        | ShouldPutSpaceBefore, _ -> " " + txt[1 .. txt.Length - 2].TrimEnd()
-                        | ShouldPutSpaceAfter, _ -> txt[1 .. txt.Length - 2].TrimStart() + " "
-                        | _, TrailingOpen context.Span -> txt[1 .. txt.Length - 2].TrimEnd()
-
-                        | _, Trim context.Span trim & OffsidesDiff context.Span spaces ->
+                        | Trim context.Span trim & OffsidesDiff context.Span spaces ->
                             match spaces with
                             | NoShift -> trim txt[1 .. txt.Length - 2]
                             | ShiftLeft spaces -> trim (txt[1 .. txt.Length - 2].Replace("\n" + String(' ', spaces), "\n"))
                             | ShiftRight spaces -> trim (txt[1 .. txt.Length - 2].Replace("\n", "\n" + String(' ', spaces)))
 
                         | _ -> txt[1 .. txt.Length - 2].Trim()
+
+                    let newText =
+                        let (|ShouldPutSpaceBefore|_|) (s: string) =
+                            // "……(……)"
+                            //  ↑↑ ↑
+                            match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[0] with
+                            | _, _, ('\n' | '\r') -> None
+                            | '[', '|', (Punctuation | LetterOrDigit) -> None
+                            | _, '[', '<' -> Some ShouldPutSpaceBefore
+                            | _, ('(' | '[' | '{'), _ -> None
+                            | _, '>', _ -> Some ShouldPutSpaceBefore
+                            | ' ', '=', _ -> Some ShouldPutSpaceBefore
+                            | _, '=', ('(' | '[' | '{') -> None
+                            | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
+                            | _, LetterOrDigit, '(' -> None
+                            | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
+                            | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
+                            | _ -> None
+
+                        let (|ShouldPutSpaceAfter|_|) (s: string) =
+                            // "(……)…"
+                            //    ↑ ↑
+                            match s[s.Length - 1], sourceText[min context.Span.End (sourceText.Length - 1)] with
+                            | '>', ('|' | ']') -> Some ShouldPutSpaceAfter
+                            | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
+                            | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
+                            | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
+                            | _ -> None
+
+                        match adjusted with
+                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter -> " " + adjusted + " "
+                        | ShouldPutSpaceBefore -> " " + adjusted
+                        | ShouldPutSpaceAfter -> adjusted + " "
+                        | adjusted -> adjusted
 
                     return
                         ValueSome
