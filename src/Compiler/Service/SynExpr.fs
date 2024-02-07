@@ -774,6 +774,23 @@ module SynExpr =
 
                 loop clauses
 
+            let innerBindingsWouldShadowOuter expr1 expr2 =
+                let identsBoundInInner =
+                    (Set.empty, [ SyntaxNode.SynExpr expr1 ])
+                    ||> SyntaxNodes.fold (fun idents _path node ->
+                        match node with
+                        | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident = ident))) -> idents.Add ident.idText
+                        | _ -> idents)
+
+                if identsBoundInInner.IsEmpty then
+                    false
+                else
+                    (outer.Range.End, [ SyntaxNode.SynExpr expr2 ])
+                    ||> SyntaxNodes.exists (fun _path node ->
+                        match node with
+                        | SyntaxNode.SynExpr(SynExpr.Ident ident) -> identsBoundInInner.Contains ident.idText
+                        | _ -> false)
+
             match outer, inner with
             | ConfusableWithTypeApp, _ -> true
 
@@ -822,22 +839,8 @@ module SynExpr =
             //         printfn $"{x}"
             //     )
             //     x
-            | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), _ ->
-                let identsBoundInInner =
-                    (Set.empty, [ SyntaxNode.SynExpr inner ])
-                    ||> SyntaxNodes.fold (fun idents _path node ->
-                        match node with
-                        | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident = ident))) -> idents.Add ident.idText
-                        | _ -> idents)
-
-                if identsBoundInInner.IsEmpty then
-                    false
-                else
-                    (outer.Range.End, [ SyntaxNode.SynExpr expr2 ])
-                    ||> SyntaxNodes.exists (fun _path node ->
-                        match node with
-                        | SyntaxNode.SynExpr(SynExpr.Ident ident) -> identsBoundInInner.Contains ident.idText
-                        | _ -> false)
+            | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), _ when innerBindingsWouldShadowOuter inner expr2 ->
+                true
 
             | SynExpr.InterpolatedString _, SynExpr.Sequential _ -> true
 
