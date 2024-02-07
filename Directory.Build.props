@@ -25,6 +25,7 @@
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <BUILDING_WITH_LKG>true</BUILDING_WITH_LKG>
+    <BUILD_FROM_SOURCE>true</BUILD_FROM_SOURCE>
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
     <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
     <BUILD_FROM_SOURCE Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">true</BUILD_FROM_SOURCE>

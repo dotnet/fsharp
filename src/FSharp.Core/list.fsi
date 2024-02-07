@@ -1594,7 +1594,7 @@ module List =
     /// Evaluates to <c>[ 1; 2; 5 ]</c>.
     /// </example>
     [<CompiledName("OfArray")>]
-    val ofArray : array:'T[] -> 'T list
+    val ofArray : array:'T array -> 'T list
 
     /// <summary>Builds a new list from the given enumerable object.</summary>
     ///
@@ -2176,7 +2176,7 @@ module List =
     /// Evaluates to <c>[| 1; 2; 5 |]</c>.
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: list:'T list -> 'T[]
+    val toArray: list:'T list -> 'T array
 
     /// <summary>Views the given list as a sequence.</summary>
     ///
