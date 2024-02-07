@@ -5346,6 +5346,24 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("Hash")>]
             let inline hash x = GenericHash x
 
+            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+
+            [<CompiledName("NonNull")>]
+            let inline nonNull (x: 'T | null when 'T : not null and 'T : not struct) : 'T = (# "" x : 'T #)
+
+            [<CompiledName("NonNullQuickPattern")>]
+            let inline (|NonNullQuick|) (value : 'T | null when 'T : not null and 'T : not struct) = nonNull value
+
+            #else
+
+            [<CompiledName("NonNull")>]
+            let inline nonNull (x: 'T ) : 'T = x
+
+            [<CompiledName("NonNullQuickPattern")>]
+            let inline (|NonNullQuick|) (value) = nonNull value
+
+            #endif
+
         module Checked = 
         
             let inline (+) (x: ^T) (y: ^U) : ^V = 
