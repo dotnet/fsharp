@@ -5740,6 +5740,28 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("Hash")>]
             val inline hash: 'T -> int
 
+            /// <summary>Unsafely retypes the value from ('T | null) to 'T without doing any null check at runtime. This is an unsafe operation.</summary>
+            /// <param name="value">The possibly nullable value.</param>
+            /// <returns>The same value as in the input.</returns>
+            [<CompiledName("NonNull")>]
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+            #else
+            val inline nonNull : value: 'T  -> 'T
+            #endif
+
+            /// <summary>When used in a pattern forgets 'nullness' of the value without any runtime check. This is an unsafe operation, as null check is being skipped and null value can be returned.</summary>
+            /// <param name="value">The value to retype from ('T | null) to 'T .</param>
+            /// <returns>The non-null value.</returns>
+            [<CompiledName("NonNullQuickPattern")>]
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+            #else
+            val inline (|NonNullQuick|) : value: 'T  -> 'T
+            #endif
+
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this
         /// module may make code that relies on structural or generic comparison no longer compile.</summary>
         module NonStructuralComparison = 
