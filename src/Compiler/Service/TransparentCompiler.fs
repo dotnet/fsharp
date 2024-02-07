@@ -1652,7 +1652,6 @@ type internal TransparentCompiler
 
                     let! tcInfo, ilAssemRef, assemblyDataResult, checkedImplFiles = ComputeProjectExtras bootstrapInfo snapshotWithSources
 
-                    let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
                     let fileName = DummyFileNameForRangesWithoutASpecificLocation
 
                     let topAttribs = tcInfo.topAttribs
@@ -1665,18 +1664,40 @@ type internal TransparentCompiler
                         SymbolEnv(bootstrapInfo.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, bootstrapInfo.TcImports)
                         |> Some
 
-                    let tcDiagnostics =
-                        DiagnosticHelpers.CreateDiagnostics(
-                            diagnosticsOptions,
-                            true,
-                            fileName,
-                            tcDiagnostics,
-                            suggestNamesForErrors,
-                            bootstrapInfo.TcConfig.flatErrors,
-                            symbolEnv
-                        )
+                    let getTcDiagnosticsWithFileSpecificOptions (file: FSharpFileSnapshot) =
+                        node {
+                            let isExe = bootstrapInfo.TcConfig.target.IsExe
+                            let isLastCompiland = file.FileName = (projectSnapshot.SourceFileNames |> List.last)
+                            let! fileWithSource = LoadSource file isExe isLastCompiland
+                            let! parsedFile = ComputeParseFile projectSnapshot bootstrapInfo.TcConfig fileWithSource
 
-                    let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
+                            let fileSpecificTcConfig =
+                                ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parsedFile.ParsedInput, file.FileName)
+
+                            let diagnosticsOptions = fileSpecificTcConfig.diagnosticsOptions
+
+                            let tcDiagnostics =
+                                DiagnosticHelpers.CreateDiagnostics(
+                                    diagnosticsOptions,
+                                    true,
+                                    fileName,
+                                    tcDiagnostics,
+                                    suggestNamesForErrors,
+                                    bootstrapInfo.TcConfig.flatErrors,
+                                    symbolEnv
+                                )
+
+                            return tcDiagnostics
+                        }
+
+                    let! fileTcDiags =
+                        projectSnapshot.SourceFiles
+                        |> Seq.map getTcDiagnosticsWithFileSpecificOptions
+                        |> NodeCode.Parallel
+
+                    let fileTcDiags = fileTcDiags |> Array.concat
+
+                    let diagnostics = [| yield! creationDiags; yield! fileTcDiags |]
 
                     let getAssemblyData () =
                         match assemblyDataResult with
