@@ -265,7 +265,7 @@ let stripUnitEqns unt = stripUnitEqnsAux false unt
 /// Detect a use of a nominal type, including type abbreviations.
 let (|AbbrevOrAppTy|_|) (ty: TType) =
     match stripTyparEqns ty with
-    | TType_app (tcref, _, _) -> Some tcref
+    | TType_app (tcref, tinst, _) -> Some(tcref, tinst)
     | _ -> None
 
 //---------------------------------------------------------------------------
