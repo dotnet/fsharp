@@ -37,7 +37,11 @@ module private Patterns =
         let (|TrailingOpen|_|) (span: TextSpan) (sourceText: SourceText) =
             let linePosition = sourceText.Lines.GetLinePosition span.Start
             let line = (sourceText.Lines.GetLineFromPosition span.Start).ToString()
-            if line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0 && line.AsSpan(linePosition.Character).IndexOfAnyExcept('(', ' ') < 0 then
+
+            if
+                line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0
+                && line.AsSpan(linePosition.Character).IndexOfAnyExcept('(', ' ') < 0
+            then
                 ValueSome TrailingOpen
             else
                 ValueNone
@@ -49,6 +53,7 @@ module private Patterns =
         let (|Trim|) (span: TextSpan) (sourceText: SourceText) =
             let linePosition = sourceText.Lines.GetLinePosition span.Start
             let line = (sourceText.Lines.GetLineFromPosition span.Start).ToString()
+
             if line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0 then
                 fun (s: string) -> s.TrimEnd().TrimStart ' '
             else
@@ -82,11 +87,12 @@ module private Patterns =
                 let rec loop innerOffsides lineNo startCol =
                     if lineNo <= endLineNo then
                         let line = sourceText.Lines[lineNo].ToString()
+
                         match line.AsSpan(startCol).IndexOfAnyExcept(' ', ')') with
                         | -1 -> loop innerOffsides (lineNo + 1) 0
                         | i -> loop (i + startCol) (lineNo + 1) 0
                     else
-                        ValueSome (startLinePosition.Character - innerOffsides)
+                        ValueSome(startLinePosition.Character - innerOffsides)
 
                 loop startLinePosition.Character startLineNo (startLinePosition.Character + 1)
 
