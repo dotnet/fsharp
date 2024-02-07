@@ -37,9 +37,10 @@ type ContextHolder(intialWorkspace, lspServices: ILspServices) =
 
 type FShapRequestContextFactory(lspServices: ILspServices) =
 
-    interface IRequestContextFactory<FSharpRequestContext> with 
-                
-        member _.CreateRequestContextAsync<'TRequestParam>(
+    interface IRequestContextFactory<FSharpRequestContext> with
+
+        member _.CreateRequestContextAsync<'TRequestParam>
+            (
                 queueItem: IQueueItem<FSharpRequestContext>,
                 requestParam: 'TRequestParam,
                 cancellationToken: CancellationToken
@@ -220,9 +221,12 @@ type FSharpLanguageServer
         lspServices :> ILspServices
 
     static member Create() =
-        FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation)
+        FSharpLanguageServer.Create(FSharpWorkspace.Create Seq.empty)
 
-    static member Create(logger: ILspLogger) =
+    static member Create(initialWorkspace) =
+        FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace)
+
+    static member Create(logger: ILspLogger, initialWorkspace) =
 
         let struct (clientStream, serverStream) = FullDuplexStream.CreatePair()
 
@@ -240,7 +244,7 @@ type FSharpLanguageServer
 
         jsonRpc.TraceSource.Switch.Level <- SourceLevels.Information
 
-        let server = new FSharpLanguageServer(jsonRpc, logger)
+        let server = new FSharpLanguageServer(jsonRpc, logger, initialWorkspace)
 
         jsonRpc.StartListening()
 
