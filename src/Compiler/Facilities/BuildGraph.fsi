@@ -24,7 +24,7 @@ type Async =
     /// Only used for testing, do not use
     static member StartAsTask_ForTesting: computation: Async<'T> * ?ct: CancellationToken -> Task<'T>
 
-    static member SequentialFailFast: computations: Async<'T> seq -> Async<'T array>
+    static member SequentialImmediate: computations: Async<'T> seq -> Async<'T array>
 
 /// Contains helpers related to the build graph
 [<RequireQualifiedAccess>]

@@ -568,7 +568,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                             async.Return
                             <| FSharpReferencedProjectSnapshot.ILModuleReference(outputName, getStamp, getReader))
 
-                    |> Async.SequentialFailFast
+                    |> Async.SequentialImmediate
 
                 let referencesOnDisk, otherOptions =
                     options.OtherOptions

@@ -34,7 +34,7 @@ type Async =
     static member StartAsTask_ForTesting(computation: Async<'T>, ?ct: CancellationToken) =
         Async.StartAsTask(computation |> Async.CompilationScope, cancellationToken = defaultArg ct CancellationToken.None)
 
-    static member SequentialFailFast(computations: Async<'T> seq) =
+    static member SequentialImmediate(computations: Async<'T> seq) =
         async {
             let results = ResizeArray()
 

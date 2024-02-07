@@ -2236,7 +2236,7 @@ and [<Sealed>] TcImports
             let runMethod =
                 match tcConfig.parallelReferenceResolution with
                 | ParallelReferenceResolution.On -> Async.Parallel
-                | ParallelReferenceResolution.Off -> Async.SequentialFailFast
+                | ParallelReferenceResolution.Off -> Async.SequentialImmediate
 
             let! results = async {
                     use captureTasks = new CaptureDiagnosticsConcurrently(DiagnosticsAsyncState.DiagnosticsLogger)
