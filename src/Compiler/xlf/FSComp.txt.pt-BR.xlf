@@ -962,6 +962,11 @@
         <target state="translated">Este acesso de membro é ambíguo. Use parênteses em torno da criação do objeto, por exemplo, '(new SomeType(args)).MemberName''.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
+        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
         <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
         <target state="translated">Declaração incompleta de um constructo estático. Use "static let","static do","static member" ou "static val" para declaração.</target>
