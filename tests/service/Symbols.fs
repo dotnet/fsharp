@@ -327,7 +327,7 @@ open System
         findSymbolUseByName "IDisposable" checkResults |> ignore
 
     
-    [<Test; Explicit>]
+    [<Test>]
     let ``Interface 04 - Type arg`` () =
         let _, checkResults = getParseAndCheckResults """
 open System.Collections.Generic
@@ -335,7 +335,8 @@ open System.Collections.Generic
 IList<int>
 """
         let symbolUse = findSymbolUseByName "IList`1" checkResults
-        let _, typeArg = symbolUse.GenericArguments[0]
+        let symbol = symbolUse.Symbol :?> FSharpEntity
+        let typeArg = symbol.GenericArguments[0]
         typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
 
     [<Test>]
@@ -351,7 +352,8 @@ type I<'T> =
             getSymbolUses checkResults
             |> Seq.findBack (fun symbolUse -> symbolUse.Symbol.DisplayName = "I")
 
-        let _, typeArg = symbolUse.GenericArguments[0]
+        let symbol = symbolUse.Symbol :?> FSharpEntity
+        let typeArg = symbol.GenericArguments[0]
         typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
 
     [<Test>]
@@ -367,8 +369,17 @@ type I<'T> =
             getSymbolUses checkResults
             |> Seq.findBack (fun symbolUse -> symbolUse.Symbol.DisplayName = "I")
 
-        let _, typeArg = symbolUse.GenericArguments[0]
+        let symbol = symbolUse.Symbol :?> FSharpEntity
+        let typeArg = symbol.GenericArguments[0]
         typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
+
+    [<Test>]
+    let ``Operator 01 - Type arg`` () =
+        let _, checkResults = getParseAndCheckResults """
+[1] |> ignore
+"""
+        let symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile()
+        ()
 
     [<Test>]
     let ``FSharpType.Format can use prefix representations`` () =
