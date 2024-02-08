@@ -30,6 +30,12 @@ open FSharp.Compiler.Text
 
 open Internal.Utilities.Collections
 
+[<Experimental "This type is experimental and likely to be removed in the future.">]
+[<RequireQualifiedAccess>]
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> Async<ISourceText option>)
+
 /// Delays the creation of an ILModuleReader
 [<Sealed>]
 type DelayedILModuleReader =

@@ -37,11 +37,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.BuildGraph
 
-[<RequireQualifiedAccess>]
-type DocumentSource =
-    | FileSystem
-    | Custom of (string -> Async<ISourceText option>)
-
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
 type IsResultObsolete = IsResultObsolete of (unit -> bool)
