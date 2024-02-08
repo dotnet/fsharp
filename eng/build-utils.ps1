@@ -179,7 +179,7 @@ function Get-PackageDir([string]$name, [string]$version = "") {
 }
 
 function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]$logFileName = "", [switch]$parallel = $true, [switch]$summary = $true, [switch]$warnAsError = $true, [string]$configuration = $script:configuration, [string]$verbosity = $script:verbosity) {
-    # Because we override the C#/VB toolset to build against our LKG package, it is important
+    # Because we override the C#/VB toolset to build against our LKG (Last Known Good) package, it is important
     # that we do not reuse MSBuild nodes from other jobs/builds on the machine. Otherwise,
     # we'll run into issues such as https://github.com/dotnet/roslyn/issues/6211.
     # MSBuildAdditionalCommandLineArgs=
