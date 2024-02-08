@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">Rückgabetypanmerkung hinzufügen</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -44,16 +44,17 @@ Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">Führungslinien für Blockstruktur;
-Strukturrichtlinien für F#-Code anzeigen;
-Gliederung;
-Gliederungs- und reduzierbare Knoten für F#-Code anzeigen;
-Inlinehinweise;
-Hinweise zu Inlinetypen anzeigen (Vorschau);
-Hinweise zu Rückgabetypen anzeigen (Vorschau);
-Hinweise zu Inlineparameternamen anzeigen (Vorschau);
-Livepuffer;
-Livepuffer (nicht gespeichert) zur Überprüfung verwenden</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
+Live Buffers;
+Use live (unsaved) buffers for analysis</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -175,7 +176,7 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">F#-Projekt- und Cacheleistungsoptionen;
+        <target state="translated">F#-Projekt- und Cacheleistungsoptionen;
 Projektübergreifende Verweise im Arbeitsspeicher aktivieren;
 Enable_partial_type_checking;
 IntelliSense-Leistungsoptionen;
@@ -230,7 +231,7 @@ Strich unterstrichen;</target>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">Unnötige Klammern entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -255,7 +256,7 @@ Strich unterstrichen;</target>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">Rückgabe:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
