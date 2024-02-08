@@ -4,24 +4,47 @@ This spec covers how equality is compiled and executed by the F# compiler and li
 
 ### What do we mean by an equality operation?
 
-This affects the semantics and performand of the following coding constructs
+This spec is about the semantics and performance of the following coding constructs
 
-* `a = b` where each element has some type `EQTYPE`
-* `a <> b` where each element has some type `EQTYPE`
+* `a = b`
+* `a <> b`
 
-In addition, the performance also affects uses of the following FSharp.Core constructs which, after inlining, genrate code that contains an equality check at the specific `EQTYPE`
+It is also about the semantics and performance of uses of the following FSharp.Core constructs.
 
-Inlined constructs (only resulting in naked generic equality if themselves used from a non-inlined generic context)
-* `HashIdentity.Structural<EQTYPE>`
-* `Array.contains<'T> x array`,  EQTYPE is inlined 'T, results in specialised equality
-* `Array.countBy` likewise
-* `List.contains` likewise
-* `Seq.contains` likewise
-* ... some more here ...
+which, after inlining, genrate code that contains an equality check at the specific `EQTYPE`
+* `HashIdentity.Structural<;T>`
+* `{Array,Seq,List}.contains` 
+* `{Array,Seq,List}.countBy` 
+* `{Array,Seq,List}.groupBy`
+* `{Array,Seq,List}.distinct` 
+* `{Array,Seq,List}.distinctBy` 
+* `{Array,Seq,List}.except` 
 
-Non-inlined constructs always resulting in naked generic equality
+All of which have implied equality checks. Some of these operations are inlined, see below, which in turn affects the semantics and performance of the overall operation.
+
+### What is the type known to the compiler and library for an equality operation?
+
+The static type known to the F# compiler is crucial to determining the performance of the operation. The runtime type of the equality check is also significant in some situations.
+
+Here we define the relevant static type `EQTYPE` for the different constructs above:
+
+#### Basics
+
+* `a = b`:  `EQTYPE` is the statically known type of `a` or `b`
+* `a <> b` `EQTYPE` is the statically known type of `a` or `b`
+
+#### Inlined constructs 
+* `HashIdentity.Structural<T>``,  EQTYPE is the **inlined** 'T (results in specialised equality)
+* `Array.contains<T>`,  EQTYPE is the **inlined** 'T (results in specialised equality)
+* `Array.countBy<T, Key>``,  EQTYPE is the **inlined** 'Key (results in specialised equality)
+* `List.contains<T>` likewise
+* `Seq.contains<T>` likewise
+
+These only resulting in naked generic equality if themselves used from a non-inlined generic context.
+
+#### Non-inlined constructs always resulting in naked generic equality
 * `Array.groupBy<'Key, 'T> f array`,  `,  EQTYPE is non-inlined 'Key, results in naked generic equality
-* `Array.distinct array` likewise
+* `Array.distinct<'T> array` likewise for T
 * `Array.distinctBy array` likewise
 * `Array.except array` likewise
 * `List.countBy` likewise
@@ -36,7 +59,8 @@ Non-inlined constructs always resulting in naked generic equality
 * `Seq.groupBy` likewise
 * ... may be more here, see `: equality` constraints in FSharp.Core for non-inlined code. 
 
-### What is the type known to the compiler and library for an equality operation?
+These **always** result in naked generic equality checks.
+
 
 Example 1:
 
@@ -44,34 +68,46 @@ Example 1:
 let x = HashIdentity.Structural<byte>  // EQTYPE known to compiler is `byte`
 ```
 
-Example 2: a "naked" generic context
+Example 2: a non-inlined "naked" generic context
 ```fsharp
-let f<'T> () =
+let f2<'T> () =
    ... some long code
    // EQTYPE known to the compiler is `'T`
    // RUNTIME-EQTYPE known to the library is `byte`
    let x = HashIdentity.Structural<'T>
    ... some long code
 
-f<byte>() // performance of this determined by EQTYPE<'T> and RUNTIME-EQTYPE<byte>
+f2<byte>() // performance of this determined by EQTYPE<'T> and RUNTIME-EQTYPE<byte>
 ```
 
-Example 2: a struct type 
+Example 3: an inlined generic context
 ```fsharp
-let f<'T> () =
+let f3<'T> () =
+   ... some long code
+   // EQTYPE known to the compiler is `byte`
+   // RUNTIME-EQTYPE known to the library is `byte`
+   let x = HashIdentity.Structural<'T>
+   ... some long code
+
+f3<byte>() // performance of this determined by EQTYPE<'T> and RUNTIME-EQTYPE<byte>
+```
+
+Example 4: a generic struct type in a non-inline generic context
+```fsharp
+let f4<'T> () =
    ... some long code
    // EQTYPE known to the compiler is `SomeStructType<'T>`
    // RUNTIME-EQTYPE known to the library is `SomeStructType<byte>`
    let x = HashIdentity.Structural<SomeStructType<'T>>
    ... some long code
 
-f<byte>() // performance of this determined by EQTYPE<SomeStructType<'T>> and RUNTIME-EQTYPE<SomeStructType<byte>>
+f4<byte>() // performance of this determined by EQTYPE<SomeStructType<'T>> and RUNTIME-EQTYPE<SomeStructType<byte>>
 ```
 
 
 ## How we compile equality "a = b"
 
-This very much depends on the type involved in the equality as known by the compiler
+This very much depends on the `EQTYPE` involved in the equality as known by the compiler
 
 Aim here is to flesh these all out with
 * **Semantics**: what semantics the user expects, and what the semantics actually is
