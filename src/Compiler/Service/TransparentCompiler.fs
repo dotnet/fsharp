@@ -1664,6 +1664,18 @@ type internal TransparentCompiler
                         SymbolEnv(bootstrapInfo.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, bootstrapInfo.TcImports)
                         |> Some
 
+                    let locationlessTcDiagnostics =
+                        DiagnosticHelpers.CreateDiagnostics(
+                            bootstrapInfo.TcConfig.diagnosticsOptions,
+                            true,
+                            fileName,
+                            tcDiagnostics,
+                            suggestNamesForErrors,
+                            bootstrapInfo.TcConfig.flatErrors,
+                            symbolEnv
+                        )
+                        |> Array.filter (fun d -> d.FileName = fileName)
+
                     let getTcDiagnosticsWithFileSpecificOptions (file: FSharpFileSnapshot) =
                         node {
                             let isExe = bootstrapInfo.TcConfig.target.IsExe
@@ -1687,7 +1699,9 @@ type internal TransparentCompiler
                                     symbolEnv
                                 )
 
-                            return tcDiagnostics
+                            let filtered = tcDiagnostics |> Array.filter (fun d -> d.FileName = file.FileName)
+
+                            return filtered
                         }
 
                     let! fileTcDiags =
@@ -1697,7 +1711,8 @@ type internal TransparentCompiler
 
                     let fileTcDiags = fileTcDiags |> Array.concat
 
-                    let diagnostics = [| yield! creationDiags; yield! fileTcDiags |]
+                    let diagnostics =
+                        [| yield! creationDiags; yield! locationlessTcDiagnostics; yield! fileTcDiags |]
 
                     let getAssemblyData () =
                         match assemblyDataResult with
