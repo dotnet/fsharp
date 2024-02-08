@@ -12,6 +12,7 @@ open NUnit.Framework
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Test
 
 let private filePath = "C:\\test.fs"
 
@@ -28,7 +29,7 @@ let private projectOptions : FSharpProjectOptions =
       UnresolvedReferences = None
       Stamp = None }
 
-let private checker = FSharpChecker.Create()
+let private checker = FSharpChecker.Create(useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
 
 let private assertAreEqual (expected, actual) =
     if actual <> expected then

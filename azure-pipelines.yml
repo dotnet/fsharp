@@ -433,7 +433,7 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              experimental_features:
+              transparent_compiler:
                 _configuration: Release
                 _testKind: testCoreclr
 
@@ -454,14 +454,14 @@ stages:
             env:
               NativeToolsOnMachine: true
             displayName: Build / Test
-            condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'experimental_features') )
+            condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'transparent_compiler') )
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
-              FSHARP_EXPERIMENTAL_FEATURES: 1
+              TEST_TRANSPARENT_COMPILER: 1
               NativeToolsOnMachine: true
-            displayName: Build / Test Experimental Features
-            condition: and( eq(variables['System.JobName'], 'experimental_features'), ne(variables['_testKind'], 'testIntegration') )
+            displayName: Build / Test Transparent Compiler
+            condition: and( eq(variables['System.JobName'], 'transparent_compiler'), ne(variables['_testKind'], 'testIntegration') )
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:

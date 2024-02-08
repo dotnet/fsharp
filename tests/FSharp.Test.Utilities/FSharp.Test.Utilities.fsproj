@@ -28,11 +28,11 @@
       <Link>scriptlib.fsx</Link>
     </Compile>
     <None Include="ScriptingShims.fsx" />
-    <Compile Include="ProjectGeneration.fs" />
     <Compile Include="TestFramework.fs" />
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="CompilerAssert.fs" />
+    <Compile Include="ProjectGeneration.fs" />
     <Compile Include="Assert.fs" />
     <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />

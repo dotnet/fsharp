@@ -1,5 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.FSharpExprPatternsTests
 
+open FSharp.Test
+
 #nowarn "57"
 
 open FSharp.Compiler.CodeAnalysis
@@ -137,7 +139,7 @@ let testPatterns handler source =
         }
 
     let checker =
-        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource, keepAssemblyContents = true)
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource, keepAssemblyContents = true, useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)

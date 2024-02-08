@@ -1,5 +1,6 @@
 ﻿module FSharp.Compiler.Service.Tests.TooltipTests
 
+
 #nowarn "57"
 
 open FSharp.Compiler.CodeAnalysis
@@ -8,6 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
+open FSharp.Test
 open NUnit.Framework
 
 let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEndOfNames lineText names (expectedContent: string) =
@@ -29,7 +31,8 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
             SourceFiles = [| "A.fsi"; "A.fs" |] }
 
     let checker =
-        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource,
+            useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
@@ -276,7 +279,8 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
             SourceFiles = [| "A.fs" |] }
 
     let checker =
-        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource,
+            useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
