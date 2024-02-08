@@ -1474,8 +1474,6 @@ type internal TransparentCompiler
                     let tcSymbolUses = sink.GetSymbolUses()
                     let tcOpenDeclarations = sink.GetOpenDeclarations()
 
-                    let tcDependencyFiles = [] // TODO add as a set to TcIntermediate
-
                     // TODO: Apparently creating diagnostics can produce further diagnostics. So let's capture those too. Hopefully there is a more elegant solution...
                     // Probably diagnostics need to be evaluated during typecheck anyway for proper formatting, which might take care of this too.
                     let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
@@ -1535,7 +1533,7 @@ type internal TransparentCompiler
                             projectSnapshot.IsIncompleteTypeCheckEnvironment,
                             None,
                             projectSnapshot.ToOptions(),
-                            Array.ofList tcDependencyFiles,
+                            Array.ofList tcInfo.tcDependencyFiles,
                             creationDiags,
                             parseResults.Diagnostics,
                             tcDiagnostics,
