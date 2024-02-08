@@ -16,10 +16,9 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 open TestFramework
-open FSharp.Test
 
 // Create an interactive checker instance
-let internal checker = FSharpChecker.Create(useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+let internal checker = FSharpChecker.Create()
 
 module internal Project1 =
 
