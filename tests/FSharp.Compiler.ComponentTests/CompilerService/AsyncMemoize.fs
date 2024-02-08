@@ -54,6 +54,8 @@ type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality>(mem
         let actual = events |> Seq.toArray
         Assert.Equal<_ array>(expected, actual)
 
+    member _.Sequence = events |> Seq.map id
+
 
 [<Fact>]
 let ``Basics``() =
@@ -63,10 +65,8 @@ let ``Basics``() =
         return key * 2
     }
 
-    let eventLog = ConcurrentBag()
-
     let memoize = AsyncMemoize<int, int, int>()
-    memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Add (e, k))
+    let events = EventRecorder(memoize)
 
     let result =
         seq {
@@ -84,7 +84,9 @@ let ``Basics``() =
 
     Assert.Equal<int array>(expected, result)
 
-    let groups = eventLog |> Seq.groupBy snd |> Seq.toList
+    (waitUntil (events.CountOf Finished) 3).Wait()
+
+    let groups = events.Sequence |> Seq.groupBy snd |> Seq.toList
     Assert.Equal(3, groups.Length)
     for key, events in groups do
         Assert.Equal<Set<(JobEvent * int)>>(Set [ Requested, key; Started, key; Finished, key ], Set events)
