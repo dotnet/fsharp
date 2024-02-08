@@ -1,5 +1,74 @@
 # Compiling Equality and Comparison
 
+This spec covers how equality is compiled and executed by the F# compiler and library, based mainly on the types involved in the equality operation after all inlining, type specialization and other optimizations have been applied.
+
+### What do we mean by an equality operation?
+
+This affects the semantics and performand of the following coding constructs
+
+* `a = b` where each element has some type `EQTYPE`
+* `a <> b` where each element has some type `EQTYPE`
+
+In addition, the performance also affects uses of the following FSharp.Core constructs which, after inlining, genrate code that contains an equality check at the specific `EQTYPE`
+
+Inlined constructs (only resulting in naked generic equality if themselves used from a non-inlined generic context)
+* `HashIdentity.Structural<EQTYPE>`
+* `Array.contains<'T> x array`,  EQTYPE is inlined 'T, results in specialised equality
+* `Array.countBy` likewise
+* `List.contains` likewise
+* `Seq.contains` likewise
+* ... some more here ...
+
+Non-inlined constructs always resulting in naked generic equality
+* `Array.groupBy<'Key, 'T> f array`,  `,  EQTYPE is non-inlined 'Key, results in naked generic equality
+* `Array.distinct array` likewise
+* `Array.distinctBy array` likewise
+* `Array.except array` likewise
+* `List.countBy` likewise
+* `List.distinct` likewise
+* `List.distinctBy` likewise
+* `List.except` likewise
+* `List.groupBy` likewise
+* `Seq.countBy` likewise
+* `Seq.distinct` likewise
+* `Seq.distinctBy` likewise
+* `Seq.except` likewise
+* `Seq.groupBy` likewise
+* ... may be more here, see `: equality` constraints in FSharp.Core for non-inlined code. 
+
+### What is the type known to the compiler and library for an equality operation?
+
+Example 1:
+
+```fsharp
+let x = HashIdentity.Structural<byte>  // EQTYPE known to compiler is `byte`
+```
+
+Example 2: a "naked" generic context
+```fsharp
+let f<'T> () =
+   ... some long code
+   // EQTYPE known to the compiler is `'T`
+   // RUNTIME-EQTYPE known to the library is `byte`
+   let x = HashIdentity.Structural<'T>
+   ... some long code
+
+f<byte>() // performance of this determined by EQTYPE<'T> and RUNTIME-EQTYPE<byte>
+```
+
+Example 2: a struct type 
+```fsharp
+let f<'T> () =
+   ... some long code
+   // EQTYPE known to the compiler is `SomeStructType<'T>`
+   // RUNTIME-EQTYPE known to the library is `SomeStructType<byte>`
+   let x = HashIdentity.Structural<SomeStructType<'T>>
+   ... some long code
+
+f<byte>() // performance of this determined by EQTYPE<SomeStructType<'T>> and RUNTIME-EQTYPE<SomeStructType<byte>>
+```
+
+
 ## How we compile equality "a = b"
 
 This very much depends on the type involved in the equality as known by the compiler
