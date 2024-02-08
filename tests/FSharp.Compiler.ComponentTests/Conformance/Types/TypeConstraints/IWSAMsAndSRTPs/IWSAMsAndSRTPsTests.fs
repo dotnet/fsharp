@@ -723,8 +723,7 @@ let main _ =
         |> shouldSucceed
         |> verifyIL [
             """
-             .method public specialname static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-                      '|GoodPotato|_|'<(class [Potato]Potato.Lib/IPotato`1<!!T>) T>(!!T x) cil managed
+             .method public specialname static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> '|GoodPotato|_|'<(class [Potato]Potato.Lib/IPotato`1<!!T>) T>(!!T x) cil managed
               {
 
                 .maxstack  8

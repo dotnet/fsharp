@@ -56,8 +56,7 @@ x.ToString()
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-  .method public specialname static valuetype [mscorlib]System.TimeSpan
-          get_x() cil managed
+  .method public specialname static valuetype [mscorlib]System.TimeSpan get_x() cil managed
   {
 
     .maxstack  8
@@ -106,8 +105,7 @@ x.Day
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-  .method public specialname static valuetype [mscorlib]System.DateTime
-          get_x() cil managed
+  .method public specialname static valuetype [mscorlib]System.DateTime get_x() cil managed
   {
 
     .maxstack  8
@@ -155,8 +153,7 @@ x.ToString()
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-  .method public specialname static valuetype [mscorlib]System.Decimal
-          get_x() cil managed
+  .method public specialname static valuetype [mscorlib]System.Decimal get_x() cil managed
   {
 
     .maxstack  8
@@ -221,8 +218,7 @@ type StaticC() =
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
     .field assembly int32 x
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.VolatileFieldAttribute::.ctor() = ( 01 00 00 00 )
-    .method public specialname rtspecialname
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
 
       .maxstack  8
@@ -237,8 +233,7 @@ type StaticC() =
       IL_0011:  ret
     }
 
-    .method public hidebysig specialname
-            instance int32  get_X() cil managed
+    .method public hidebysig specialname instance int32  get_X() cil managed
     {
 
       .maxstack  8
@@ -248,8 +243,7 @@ type StaticC() =
       IL_0008:  ret
     }
 
-    .method public hidebysig specialname
-            instance void  set_X(int32 v) cil managed
+    .method public hidebysig specialname instance void  set_X(int32 v) cil managed
     {
 
       .maxstack  8
@@ -275,8 +269,7 @@ type StaticC() =
     .field static assembly int32 x
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.VolatileFieldAttribute::.ctor() = ( 01 00 00 00 )
     .field static assembly int32 init@10
-    .method public specialname rtspecialname
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
 
       .maxstack  8
@@ -287,8 +280,7 @@ type StaticC() =
       IL_0008:  ret
     }
 
-    .method public specialname static int32
-            get_X() cil managed
+    .method public specialname static int32 get_X() cil managed
     {
 
       .maxstack  8
@@ -309,8 +301,7 @@ type StaticC() =
       IL_001c:  ret
     }
 
-    .method public specialname static void
-            set_X(int32 v) cil managed
+    .method public specialname static void set_X(int32 v) cil managed
     {
 
       .maxstack  8
@@ -332,8 +323,7 @@ type StaticC() =
       IL_001d:  ret
     }
 
-    .method private specialname rtspecialname static
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
 
       .maxstack  8

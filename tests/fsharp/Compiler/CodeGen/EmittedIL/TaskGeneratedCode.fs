@@ -37,8 +37,7 @@ let testTask() = task { return 1 }
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.method public strict virtual instance void 
-MoveNext() cil managed
+.method public strict virtual instance void MoveNext() cil managed
 {
     .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
           

@@ -5,6 +5,7 @@ namespace FSharp.Test
 #nowarn "57"
 
 open System
+open System.Globalization
 open System.IO
 open System.Text
 open System.Reflection
@@ -23,6 +24,42 @@ open Microsoft.CodeAnalysis.CSharp
 open NUnit.Framework
 open TestFramework
 open System.Collections.Immutable
+
+
+#if !NETCOREAPP
+module AssemblyResolver =
+
+    let probingPaths = [|
+        AppDomain.CurrentDomain.BaseDirectory
+        Path.GetDirectoryName(typeof<FactForDESKTOPAttribute>.Assembly.Location)
+    |]
+
+    let addResolver () =
+        AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
+            let found () =
+                (probingPaths ) |> Seq.tryPick(fun p ->
+                    try
+                        let name = AssemblyName(args.Name)
+                        let codebase = Path.GetFullPath(Path.Combine(p, name.Name))
+                        if File.Exists(codebase + ".dll") then
+                            name.CodeBase <- codebase  + ".dll"
+                            name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                            name.Version <- Unchecked.defaultof<Version>
+                            Some (name)
+                        elif File.Exists(codebase + ".exe") then
+                                name.CodeBase <- codebase + ".exe"
+                                name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                                name.Version <- Unchecked.defaultof<Version>
+                                Some (name)
+                        else None
+                    with | _ -> None
+                    )
+            match found() with
+            | None -> Unchecked.defaultof<Assembly>
+            | Some name -> Assembly.Load(name) )
+
+    do addResolver()
+#endif
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -621,6 +658,7 @@ module rec CompilerAssertHelpers =
         let timeout = 30000
         let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
+
 open CompilerAssertHelpers
 
 [<Sealed;AbstractClass>]

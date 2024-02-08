@@ -325,8 +325,7 @@ type C() =
        extends [System.Runtime]System.Attribute
 {
   .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-  .method public specialname rtspecialname
-          instance void  .ctor() cil managed
+  .method public specialname rtspecialname instance void  .ctor() cil managed
   {
     .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
     .custom instance void [netstandard]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -366,8 +365,7 @@ type C() =
           .get instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) System.Runtime.CompilerServices.C::get_X()
         }"""
 
-        let verifyMethod = """.method public hidebysig specialname instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute)
-                get_X() cil managed
+        let verifyMethod = """.method public hidebysig specialname instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) get_X() cil managed
         {
           .param [0]
           .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
@@ -377,8 +375,7 @@ type C() =
        extends [netstandard]System.Attribute
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
-  .method public specialname rtspecialname
-          instance void  .ctor() cil managed
+  .method public specialname rtspecialname instance void  .ctor() cil managed
   {
 
     .maxstack  8
@@ -408,8 +405,7 @@ type C<'T>() =
     member _.X<'U>(): inref<'T> = &x
             """
 
-        let verifyMethod = """.method public hidebysig instance !T& modreq([runtime]System.Runtime.InteropServices.InAttribute)
-                X<U>() cil managed
+        let verifyMethod = """.method public hidebysig instance !T& modreq([runtime]System.Runtime.InteropServices.InAttribute) X<U>() cil managed
         {
           .param [0]
           .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
@@ -435,8 +431,7 @@ module Test =
         member _.X<'U>(): inref<'T> = &x
             """
 
-        let verifyMethod = """.method public hidebysig instance !T& modreq([netstandard]System.Runtime.InteropServices.InAttribute)
-                X<U>() cil managed
+        let verifyMethod = """.method public hidebysig instance !T& modreq([netstandard]System.Runtime.InteropServices.InAttribute) X<U>() cil managed
         {
           .param [0]
           .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
@@ -463,7 +458,7 @@ type C<'T>() =
                 X<U>() cil managed
         {
           .param [0]
-          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) """
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
 
         FSharp src
         |> compile
