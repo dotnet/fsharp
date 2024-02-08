@@ -1,4 +1,4 @@
-# CI and PR triggers 
+# CI and PR triggers
 trigger:
   branches:
     include:
@@ -433,6 +433,10 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
+              experimental_features:
+                _configuration: Release
+                _testKind: testCoreclr
+
               ${{ if eq(variables['Build.Reason'], 'Flaky, disabled, was PullRequest') }}:
                 inttests_release:
                   _configuration: Release
@@ -450,7 +454,15 @@ stages:
             env:
               NativeToolsOnMachine: true
             displayName: Build / Test
-            condition: ne(variables['_testKind'], 'testIntegration')
+            condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'experimental_features') )
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: 1
+              NativeToolsOnMachine: true
+            displayName: Build / Test Experimental Features
+            condition: and( eq(variables['System.JobName'], 'experimental_features'), ne(variables['_testKind'], 'testIntegration') )
+
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
               NativeToolsOnMachine: true
