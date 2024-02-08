@@ -1214,3 +1214,24 @@ type T() =
     let i = 1
 """
         assertHasSymbolUsages ["i"] checkResults
+
+module Event =
+    [<Test>]
+    let ``CLIEvent member does not produce additional property symbol`` () =
+        let _, checkResults = getParseAndCheckResults """
+type T() = 
+    [<CLIEvent>]
+    member this.Event = Event<int>().Publish
+"""
+        let allSymbols =
+            checkResults.GetSymbolUsesAtLocation(4, 21, "    member this.Event = Event<int>().Publish", [ "Event" ])
+
+        let hasPropertySymbols =
+            allSymbols
+            |> List.exists (fun su ->
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.IsProperty
+                | _ -> false
+            )
+
+        Assert.False hasPropertySymbols
