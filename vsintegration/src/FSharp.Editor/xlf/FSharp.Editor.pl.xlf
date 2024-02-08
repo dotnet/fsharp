@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="translated">Dodaj adnotację zwracanego typu</target>
+        <target state="new">Add return type annotation</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -41,18 +41,19 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="translated">Przewodniki po strukturze bloku;
+        <target state="needs-review-translation">Przewodniki po strukturze bloku;
 Pokaż przewodniki po strukturze dla kodu języka F#;
 Tworzenie konspektu;
 Pokaż konspekt i węzły z możliwością zwijania dla kodu języka F#;
 Wskazówki w tekście;
-Wyświetl wskazówki dotyczące typu w tekście (wersja zapoznawcza);
-Wyświetlaj wskazówki dotyczące zwracanego typu (wersja zapoznawcza);
-Wyświetl wskazówki dotyczące nazw parametrów w tekście (wersja zapoznawcza);
+Wyświetl wskazówki w tekście dla typów (wersja zapoznawcza);
+Wyświetlaj wskazówki dotyczące typu zwrotu (wersja zapoznawcza);
+Wyświetl wskazówki w tekście dotyczące nazw parametrów (wersja zapoznawcza);
 Bufory bieżące;
-Do analizy używaj buforów bieżących (niezapisanych)</target>
+Do sprawdzania używaj buforów bieżących (niezapisanych)</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -174,7 +175,7 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Opcje wydajności projektów i buforowania języka F#;
+        <target state="needs-review-translation">Opcje wydajności projektów i buforowania języka F#;
 Włącz odwołania między projektami w pamięci;
 Enable_partial_type_checking;
 Opcje wydajności funkcji IntelliSense;
@@ -229,7 +230,7 @@ Podkreślenie kreską;</target>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="translated">Usuń niepotrzebne nawiasy</target>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -254,7 +255,7 @@ Podkreślenie kreską;</target>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="translated">Zwraca:</target>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">

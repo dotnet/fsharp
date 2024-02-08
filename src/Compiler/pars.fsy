@@ -1612,7 +1612,7 @@ tyconDefn:
            SynTypeDefn($1, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation mWithKwd, [], m), classDefns, None, m, trivia) }
 
   | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP opt_simplePatterns optAsSpec EQUALS tyconDefnRhsBlock
-     { let vis, spats, az = $3, $5, $6
+     { let vis, pat, az = $3, $5, $6
        let nameRange = rhs parseState 1
        let (tcDefRepr, mWith, members) = $8 nameRange
        let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
@@ -1624,8 +1624,8 @@ tyconDefn:
        let m = match lid with [] -> rhs parseState 1 | _ -> rangeOfLid lid
 
        let memberCtorPattern =
-           spats |> Option.map (fun spats ->
-               SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.bind snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
+           pat |> Option.map (fun pat ->
+               SynMemberDefn.ImplicitCtor(vis, $2, pat, Option.bind snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
            )
 
        let tcDefRepr =
@@ -1663,16 +1663,16 @@ tyconDefn:
            SynTypeDefn($1, tcDefRepr, members, memberCtorPattern, mWhole, trivia) }
 
   | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP opt_simplePatterns optAsSpec recover
-     { let vis, spats, az = $3, $5, $6
+     { let vis, pat, az = $3, $5, $6
        let (SynComponentInfo(longId = lid)) = $1
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc (parseState, $2, 2)
        let m = match lid with [] -> rhs parseState 1 | _ -> rangeOfLid lid
        let mName = $1.Range
        let members, mWhole =
-           match spats, vis, az with
-           | Some spats, _, _ ->
-               let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.bind snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
+           match pat, vis, az with
+           | Some pat, _, _ ->
+               let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, pat, Option.bind snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
                [memberCtorPattern], unionRanges mName memberCtorPattern.Range
 
            | _, _, Some(mAs, asId) ->
@@ -3412,38 +3412,6 @@ bindingPattern:
   | headBindingPattern
     { $1, $1.Range }
 
-// Subset of patterns allowed to be used in implicit ctors.
-// For a better error recovery we could replace these rules with the actual SynPat parsing
-// and use allowed patterns only at a later analysis stage reporting errors along the way.
-simplePattern:
-  | ident
-      { let m = rhs parseState 1
-        SynPat.Named(SynIdent($1, None), false, None, m) }
-
-  | QMARK ident
-      { SynPat.OptionalVal($2, rhs parseState 2) }
-
-  | simplePattern COLON typeWithTypeConstraints
-      { SynPat.Typed($1, $3, lhs parseState) }
-
-  | simplePattern COLON recover
-      { let mColon = rhs parseState 2
-        let ty = SynType.FromParseError(mColon.EndRange)
-        SynPat.Typed($1, ty, unionRanges $1.Range mColon) }
-
-  | attributes simplePattern %prec paren_pat_attribs
-      { SynPat.Attrib($2, $1, lhs parseState) }
-
-simplePatternCommaList:
-  | simplePattern
-      { $1 }
-
-  | simplePattern COMMA simplePatternCommaList
-      { let mComma = rhs parseState 2
-        match $3 with
-        | SynPat.Tuple(_, pats, commas, _) -> SynPat.Tuple(false, $1 :: pats, mComma :: commas, rhs2 parseState 1 3)
-        | _ -> SynPat.Tuple(false, [$1; $3], [mComma], rhs2 parseState 1 3) }
-
 opt_simplePatterns:
   | simplePatterns
       { Some $1 }
@@ -3451,32 +3419,11 @@ opt_simplePatterns:
   | { None }
 
 simplePatterns:
-  | LPAREN simplePatternCommaList rparen
-      { let parenPat = SynPat.Paren($2, rhs2 parseState 1 3)
-        let simplePats, _ = SimplePatsOfPat parseState.SynArgNameGenerator parenPat
-        simplePats }
+  | LPAREN parenPattern rparen
+      { SynPat.Paren($2, rhs2 parseState 1 3) }
 
   | LPAREN rparen
-      { let pat = SynPat.Const(SynConst.Unit, rhs2 parseState 1 2)
-        let simplePats, _ = SimplePatsOfPat parseState.SynArgNameGenerator pat
-        simplePats }
-
-  | LPAREN simplePatternCommaList recover
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
-        let parenPat = SynPat.Paren(SynPat.Tuple(false, [], [], rhs2 parseState 1 2), rhs2 parseState 1 2) // todo: report parsed pats anyway?
-        let simplePats, _ = SimplePatsOfPat parseState.SynArgNameGenerator parenPat
-        simplePats }
-
-  | LPAREN error rparen
-      { let parenPat = SynPat.Paren(SynPat.Wild(rhs parseState 2), rhs2 parseState 1 3) // silent recovery
-        let simplePats, _ = SimplePatsOfPat parseState.SynArgNameGenerator parenPat
-        simplePats }
-
-  | LPAREN recover
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
-        let pat = SynPat.Wild(lhs parseState)
-        let simplePats, _ = SimplePatsOfPat parseState.SynArgNameGenerator pat
-        simplePats }
+      { SynPat.Const(SynConst.Unit, rhs2 parseState 1 2) }
 
 
 headBindingPattern:

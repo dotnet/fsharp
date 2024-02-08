@@ -135,7 +135,7 @@ let createPreTypeDefs typeData =
     |> Array.ofList
     |> Array.map (fun data -> PreTypeDef data :> ILPreTypeDef)
 
-let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) options =
+let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options: FSharpProjectOptions) =
     let reader = new ModuleReader("Reference", mkILTypeDefsComputed getPreTypeDefs, cancelOnModuleAccess)
 
     let project = FSharpReferencedProject.ILModuleReference(

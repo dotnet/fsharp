@@ -481,14 +481,15 @@ let main1
 
     // See Bug 735819
     let lcidFromCodePage =
+        let thread = Thread.CurrentThread
+
         if
             (Console.OutputEncoding.CodePage <> 65001)
-            && (Console.OutputEncoding.CodePage
-                <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage)
-            && (Console.OutputEncoding.CodePage
-                <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage)
+            && (Console.OutputEncoding.CodePage <> thread.CurrentUICulture.TextInfo.OEMCodePage)
+            && (Console.OutputEncoding.CodePage <> thread.CurrentUICulture.TextInfo.ANSICodePage)
+            && (CultureInfo.InvariantCulture <> thread.CurrentUICulture)
         then
-            Thread.CurrentThread.CurrentUICulture <- CultureInfo("en-US")
+            thread.CurrentUICulture <- CultureInfo("en-US")
             Some 1033
         else
             None

@@ -74,6 +74,7 @@
       <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
     </Compile>
     <Compile Include="TreeVisitorTests.fs" />
+    <Compile Include="ParsedInputModuleTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

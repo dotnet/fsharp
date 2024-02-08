@@ -230,27 +230,30 @@ let (|OptionalCoerce|) expr =
 
 // Making 'seq' optional means this kicks in for FSharp.Core, see TcArrayOrListComputedExpression
 // which only adds a 'seq' call outside of FSharp.Core
+[<return: Struct>]
 let (|OptionalSeq|_|) g amap expr =
     match expr with
     // use 'seq { ... }' as an indicator
     | Seq g (e, elemTy) -> 
-        Some (e, elemTy)
+        ValueSome (e, elemTy)
     | _ -> 
     // search for the relevant element type
     match tyOfExpr g expr with
     | SeqElemTy g amap expr.Range elemTy ->
-        Some (expr, elemTy)
-    | _ -> None
+        ValueSome (expr, elemTy)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SeqToList|_|) g expr =
     match expr with
-    | ValApp g g.seq_to_list_vref (_, [seqExpr], m) -> Some (seqExpr, m)
-    | _ -> None
+    | ValApp g g.seq_to_list_vref (_, [seqExpr], m) -> ValueSome (seqExpr, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SeqToArray|_|) g expr =
     match expr with
-    | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> Some (seqExpr, m)
-    | _ -> None
+    | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> ValueSome (seqExpr, m)
+    | _ -> ValueNone
 
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in

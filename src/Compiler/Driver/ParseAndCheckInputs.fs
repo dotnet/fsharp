@@ -1483,7 +1483,7 @@ let CheckOneInputWithCallback
       prefixPathOpt,
       tcSink,
       tcState: TcState,
-      inp: ParsedInput,
+      input: ParsedInput,
       _skipImplIfSigExists: bool):
         (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
     : Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
@@ -1491,7 +1491,7 @@ let CheckOneInputWithCallback
         try
             CheckSimulateException tcConfig
 
-            let m = inp.Range
+            let m = input.Range
             let amap = tcImports.GetImportMap()
 
             let conditionalDefines =
@@ -1500,7 +1500,7 @@ let CheckOneInputWithCallback
                 else
                     Some tcConfig.conditionalDefines
 
-            match inp with
+            match input with
             | ParsedInput.SigFile file ->
                 let qualNameOfFile = file.QualifiedName
 
@@ -1740,6 +1740,43 @@ module private TypeCheckingGraphProcessing =
 
         finalFileResults, state
 
+let TransformDependencyGraph (graph: Graph<FileIndex>, filePairs: FilePairMap) =
+    let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
+    let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
+
+    /// Map any signature dependencies to the ArtificialImplFile counterparts,
+    /// unless the signature dependency is the backing file of the current (implementation) file.
+    let mapDependencies idx deps =
+        Array.map
+            (fun dep ->
+                if filePairs.IsSignature dep then
+                    let implIdx = filePairs.GetImplementationIndex dep
+
+                    if implIdx = idx then
+                        // This is the matching signature for the implementation.
+                        // Retain the direct dependency onto the signature file.
+                        mkPhysicalFile dep
+                    else
+                        mkArtificialImplFile dep
+                else
+                    mkPhysicalFile dep)
+            deps
+
+    // Transform the graph to include ArtificialImplFile nodes when necessary.
+    graph
+    |> Seq.collect (fun (KeyValue(fileIdx, deps)) ->
+        if filePairs.IsSignature fileIdx then
+            // Add an additional ArtificialImplFile node for the signature file.
+            [|
+                // Mark the current file as physical and map the dependencies.
+                mkPhysicalFile fileIdx, mapDependencies fileIdx deps
+                // Introduce a new node that depends on the signature.
+                mkArtificialImplFile fileIdx, [| mkPhysicalFile fileIdx |]
+            |]
+        else
+            [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
+    |> Graph.make
+
 /// Constructs a file dependency graph and type-checks the files in parallel where possible.
 let CheckMultipleInputsUsingGraphMode
     ((ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs):
@@ -1768,42 +1805,7 @@ let CheckMultipleInputsUsingGraphMode
     let filePairs = FilePairMap(sourceFiles)
     let graph, trie = DependencyResolution.mkGraph filePairs sourceFiles
 
-    let nodeGraph =
-        let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
-        let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
-
-        /// Map any signature dependencies to the ArtificialImplFile counterparts,
-        /// unless the signature dependency is the backing file of the current (implementation) file.
-        let mapDependencies idx deps =
-            Array.map
-                (fun dep ->
-                    if filePairs.IsSignature dep then
-                        let implIdx = filePairs.GetImplementationIndex dep
-
-                        if implIdx = idx then
-                            // This is the matching signature for the implementation.
-                            // Retain the direct dependency onto the signature file.
-                            mkPhysicalFile dep
-                        else
-                            mkArtificialImplFile dep
-                    else
-                        mkPhysicalFile dep)
-                deps
-
-        // Transform the graph to include ArtificialImplFile nodes when necessary.
-        graph
-        |> Seq.collect (fun (KeyValue(fileIdx, deps)) ->
-            if filePairs.IsSignature fileIdx then
-                // Add an additional ArtificialImplFile node for the signature file.
-                [|
-                    // Mark the current file as physical and map the dependencies.
-                    mkPhysicalFile fileIdx, mapDependencies fileIdx deps
-                    // Introduce a new node that depends on the signature.
-                    mkArtificialImplFile fileIdx, [| mkPhysicalFile fileIdx |]
-                |]
-            else
-                [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
-        |> Graph.make
+    let nodeGraph = TransformDependencyGraph(graph, filePairs)
 
     // Persist the graph to a Mermaid diagram if specified.
     if tcConfig.typeCheckingConfig.DumpGraph then
@@ -1823,7 +1825,7 @@ let CheckMultipleInputsUsingGraphMode
                         .TrimStart([| '\\'; '/' |])
 
                 (idx, friendlyFileName))
-            |> Graph.serialiseToMermaid graphFile)
+            |> Graph.writeMermaidToFile graphFile)
 
     let _ = ctok // TODO Use it
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
