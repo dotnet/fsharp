@@ -143,8 +143,10 @@ if true then 1 else "a"
         Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
         Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
 
-[<Fact>]
-let ``ArgumentsInSigAndImplMismatchExtendedData 01`` () =
+[<Theory>]
+[<InlineData true>]
+[<InlineData false>]
+let ``ArgumentsInSigAndImplMismatchExtendedData 01`` useTransparentCompiler =
     let encodeFsi =
         Fsi """
 module Test
@@ -157,7 +159,7 @@ let f (y: int) = ()
     """
     encodeFsi
     |> withAdditionalSourceFile encodeFs
-    |> typecheckProject true
+    |> typecheckProject true useTransparentCompiler
     |> checkDiagnostic
        (3218, "The argument names in the signature 'x' and implementation 'y' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.")
        (fun (argsMismatch: ArgumentsInSigAndImplMismatchExtendedData) ->
@@ -166,8 +168,10 @@ let f (y: int) = ()
         Assert.True(argsMismatch.SignatureRange.FileName.EndsWith("fsi"))
         Assert.True(argsMismatch.ImplementationRange.FileName.EndsWith("fs")))
 
-[<Fact>]
-let ``FieldNotContainedDiagnosticExtendedData 01`` () =
+[<Theory>]
+[<InlineData true>]
+[<InlineData false>]
+let ``FieldNotContainedDiagnosticExtendedData 01`` useTransparentCompiler =
     let encodeFsi =
         Fsi """
 namespace rec Foo
@@ -182,7 +186,7 @@ type A =
     """
     encodeFsi
     |> withAdditionalSourceFile encodeFs
-    |> typecheckProject true
+    |> typecheckProject true useTransparentCompiler
     |> checkDiagnostic
        (193, "The module contains the field\n    myStatic: int    \nbut its signature specifies\n    myStatic: int    \nthe accessibility specified in the signature is more than that specified in the implementation")
        (fun (fieldsData: FieldNotContainedDiagnosticExtendedData) ->
