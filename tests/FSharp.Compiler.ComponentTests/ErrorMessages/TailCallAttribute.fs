@@ -1512,3 +1512,29 @@ module Microsoft.FSharp.Core
               Message =
                 "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for recursive call in list comprehension`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let rec reverse (input: list<'t>) =
+            match input with
+            | head :: tail -> [ yield! reverse tail; head ]
+            | [] -> []
+        """
+        |> FSharp
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 9
+                        StartColumn = 40
+                        EndLine = 9
+                        EndColumn = 52 }
+              Message =
+                "The member or function 'reverse' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
