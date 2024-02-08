@@ -176,16 +176,16 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">F# Proje ve Önbelleğe Alma Performansı Seçenekleri;
+        <target state="translated">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
 Bellek içi çapraz proje başvurularını etkinleştir;
-Kısmi_tür_denetlemeyi_etkinleştir;
+Enable_partial_type_checking;
 IntelliSense Performans Seçenekleri;
 IntelliSense özellikleri için eski verileri etkinleştir;
-Eski sonuçların kullanılması için geçecek süre (milisaniye cinsinden);
+Eski sonuçlar kullanılana kadar geçen süre (milisaniye olarak);
 Paralelleştirme (yeniden başlatma gerektirir);
 İmza dosyalarıyla paralel tür denetlemeyi etkinleştir;
 Paralel başvuru çözümlemeyi etkinleştir;
-Başvuruları hızlı bulmayı ve yeniden adlandırmayı etkinleştir (yeniden başlatma gerektirir);
+Başvuruları hızlı bulma ve yeniden adlandırmayı etkinleştir (deneysel)
 Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
         <note />
       </trans-unit>
@@ -204,20 +204,19 @@ Solid underline;
 Dot underline;
 Dash underline;
 Show remarks in Quick Info</source>
-        <target state="translated">Biçimlendirme;
+        <target state="needs-review-translation">Biçimlendirme; 
 Karakter olarak tercih edilen açıklama genişliği;
-F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı belirtilen genişliğe biçimlendir;
+F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı verilen genişliğe biçimlendir;
 Gezinti bağlantıları;
-Gezinti bağlantılarını farklı göster;
-Kesintisiz alt çizgi;
+Gezinti bağlantılarını şöyle göster;
+Düz alt çizgi;
 Nokta alt çizgi;
-Tire alt çizgi;
-Açıklamaları Hızlı Bilgide göster</target>
+Tire alt çizgisi;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemarksHeader">
         <source>Remarks:</source>
-        <target state="translated">Açıklamalar:</target>
+        <target state="new">Remarks:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
