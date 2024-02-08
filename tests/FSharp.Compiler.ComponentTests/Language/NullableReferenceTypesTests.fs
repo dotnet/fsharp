@@ -9,7 +9,7 @@ let typeCheckWithStrictNullness cu =
     |> withCheckNulls
     |> withWarnOn 3261
     |> withOptions ["--warnaserror+"]
-    |> typecheck
+    |> compile
 
 [<Fact>]
 let ``Printing a nullable string should pass`` () = 
@@ -121,7 +121,7 @@ let ``Should NOT eliminate tupled nullness after matching`` (tp) =
 
 let myFunction (input1 : string | null) (input2 : string | null): (string*string) = 
     match input1,input2 with
-    | {tp} ->  "",""
+    | %s{tp} ->  "",""
     | nns1,nns2 -> nns1,nns2
 """
     |> asLibrary
