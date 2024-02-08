@@ -244,7 +244,6 @@ let _ =
             async {
                 return 
                  1
-                
             }
             "
 
@@ -343,7 +342,7 @@ let _ =
             "
             let x =
              2
-           + 2
+             + 2
             in x
             "
 
@@ -362,9 +361,9 @@ let _ =
      
 
              2
-    
-
-           + 2
+      
+ 
+             + 2
             in x
             "
 
@@ -399,7 +398,7 @@ let _ =
             ",
             "
             let x = 2
-                  +             2
+                    +             2
             in x
             "
 
@@ -410,7 +409,7 @@ let _ =
             ",
             "
             let x = 2
-                  + 2
+                    + 2
             in x
             "
 
@@ -421,7 +420,7 @@ let _ =
             ",
             "
             let x = x
-                   +y
+                    +y
             in x
             "
 
@@ -443,7 +442,7 @@ let _ =
             ",
             "
             let x = 2
-                <<< 2
+                    <<< 2
             in x
             "
 
@@ -456,7 +455,7 @@ in x
             "
 let (<<<<<<<<) = (<<<)
 let x = 2
-<<<<<<<< 2
+        <<<<<<<< 2
 in x
             "
 
@@ -506,7 +505,7 @@ in x
 
             let y =
                 2
-              + 2
+                + 2
 
             in x + y
             "
@@ -533,8 +532,7 @@ in x
             "
             x <
                 2
-              + 3
-               
+                + 3
             "
 
             // LetOrUse
@@ -542,6 +540,83 @@ in x
             "let x = 3 in let y = 4 in (x + y)", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y =(4) in x + y", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y=(4) in x + y", "let x = 3 in let y=4 in x + y"
+
+            "
+            let _ =
+                let _ = 3
+                (
+                    44
+                )
+            ",
+            "
+            let _ =
+                let _ = 3
+                44
+            "
+
+            "
+            let (++++++) = (+)
+            let x =
+             ()
+             (
+                2
+         ++++++ 2
+             )
+            in x
+            ",
+            "
+            let (++++++) = (+)
+            let x =
+             ()
+             2
+             ++++++ 2
+            in x
+            "
+
+            "
+            let (!+++++) = (+)
+            let x =
+             ()
+             (
+              !+++++2
+             )
+            in x
+            ",
+            "
+            let (!+++++) = (+)
+            let x =
+             ()
+             !+++++2
+            in x
+            "
+
+            "
+            let _ =
+                (
+             printfn \"\"
+             +2
+                )
+            ",
+            "
+            let _ =
+                printfn \"\"
+                +2
+            "
+
+            "
+            let _ =
+                let x = 3
+                (
+                    let y = 99
+                    y - x
+                )
+            ",
+            "
+            let _ =
+                let x = 3
+                let y = 99
+                y - x
+            "
 
             // TryWith
             "try (raise null) with _ -> reraise ()", "try raise null with _ -> reraise ()"
@@ -568,6 +643,82 @@ in x
             """ (printfn "1"); printfn "2" """, """ printfn "1"; printfn "2" """
             """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
+
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            ",
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            "
+
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x
+            ",
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                let y = 99
+                ignore (y - x)
+                x
+            "
+
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            ",
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            "
+
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x
+            ",
+            "
+            let f y =
+                let x = 3
+                let y = 99
+                ignore (y - x)
+                x
+            "
 
             // IfThenElse
             "if (3 = 3) then 3 else 3", "if 3 = 3 then 3 else 3"
@@ -655,7 +806,7 @@ in x
             """
             let mutable x = 3
             x <- 3
-             <<< 3
+                 <<< 3
             """
 
             // DotIndexedGet
@@ -817,6 +968,10 @@ in x
             "$\"{(x <- 3),-3}\"", "$\"{(x <- 3),-3}\""
             "$\"{(1, 2):N0}\"", "$\"{(1, 2):N0}\""
             "$\"{(1, 2),-3}\"", "$\"{(1, 2),-3}\""
+
+            "$\"{((); ())}\"", "$\"{((); ())}\""
+            "$\"{(do (); ())}\"", "$\"{do (); ()}\""
+            "$\"{(let x = 3 in ignore x; 99)}\"", "$\"{let x = 3 in ignore x; 99}\""
 
             """
             $"{(3 + LanguagePrimitives.GenericZero<int>):N0}"
