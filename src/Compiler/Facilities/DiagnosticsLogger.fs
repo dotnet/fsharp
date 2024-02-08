@@ -374,7 +374,7 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
-/// Type holds thread-static globals for use by the compile.
+/// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase

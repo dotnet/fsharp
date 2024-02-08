@@ -1101,4 +1101,5 @@ val SettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) li
 
 val GettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
 
-val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) option
+[<return: Struct>]
+val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) voption
