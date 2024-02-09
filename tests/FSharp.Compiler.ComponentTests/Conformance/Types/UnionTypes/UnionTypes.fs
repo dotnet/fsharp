@@ -670,3 +670,42 @@ printfn "%b %A %b" x y z
             |> withLangVersionPreview
             |> compileAndRun
             |> shouldSucceed
+
+    //SOURCE=W_UnionCaseProduction01.fsx SCFLAGS="-a --test:ErrorRanges"                          # W_UnionCaseProduction01.fsx
+    [<Fact>]
+    let ``UnionCaseInitialization_repro16431`` () =
+
+        let testFs =
+            SourceCodeFileKind.Create(
+                "testFs.fs",
+                $"""
+module Test
+
+type ABC =
+    | A
+    | B
+    | C of int
+
+    static let c75' = ABC.C 75
+    static member c75 = c75'
+
+    static let ab' = [ A; B ]
+    static member ab = ab'
+                 """)
+
+        let programFs =
+            SourceCodeFileKind.Create(
+                "programFs.fs",
+                $"""
+open Test
+
+if (sprintf "%%A" ABC.c75) <> "C 75" then failwith (sprintf "Failed: printing 'ABC.c75': Expected output: 'C 75'  Actual output: '%%A'" ABC.c75)
+if (sprintf "%%A" ABC.ab) <> "[A; B]" then failwith (sprintf "Failed: printing 'ABC.ab: Expected: '[A; B]'  Actual: '%%A'" ABC.ab)
+                 """)
+
+        (fsFromString testFs)
+        |> FS
+        |> withAdditionalSourceFiles [programFs]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

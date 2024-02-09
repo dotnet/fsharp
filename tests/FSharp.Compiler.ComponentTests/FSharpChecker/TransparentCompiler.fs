@@ -651,7 +651,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 [<InlineData(SignatureFiles.Some)>]
 let Fuzzing signatureFiles =
 
-    let seed = 1106087513
+    let seed = System.Random().Next()
     let rng = System.Random(int seed)
 
     let fileCount = 30
@@ -711,7 +711,6 @@ type GiraffeTheoryAttribute() =
 [<InlineData false>]
 let GiraffeFuzzing signatureFiles =
     let seed = System.Random().Next()
-    //let seed = 1044159179
 
     let giraffeDir = if signatureFiles then giraffeSignaturesDir else giraffeDir
     let giraffeTestsDir = if signatureFiles then giraffeSignaturesTestsDir else giraffeTestsDir
@@ -842,3 +841,57 @@ let ``TypeCheck last file in project with transparent compiler`` useTransparentC
         clearCache 
         checkFile lastFile expectOk
     }
+
+[<Fact>]
+let ``LoadClosure for script is computed once`` () =
+    let project = SyntheticProject.CreateForScript(
+        sourceFile "First" [])
+
+    let cacheEvents = ConcurrentQueue()
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50  // wait for events from initial project check
+                checker.Caches.ScriptClosure.OnEvent cacheEvents.Enqueue
+            })
+        
+        checkFile "First" expectOk
+    } |> ignore
+    
+    let closureComputations =
+        cacheEvents
+        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> Path.GetFileName f)
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
+        |> Map
+
+    Assert.Empty(closureComputations)
+
+[<Fact>]
+let ``LoadClosure for script is recomputed after changes`` () =
+    let project = SyntheticProject.CreateForScript(
+        sourceFile "First" [])
+
+    let cacheEvents = ConcurrentQueue()
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50  // wait for events from initial project check
+                checker.Caches.ScriptClosure.OnEvent cacheEvents.Enqueue
+            })
+        
+        checkFile "First" expectOk
+        updateFile "First" updateInternal
+        checkFile "First" expectOk
+        updateFile "First" updatePublicSurface
+        checkFile "First" expectOk
+    } |> ignore
+    
+    let closureComputations =
+        cacheEvents
+        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> Path.GetFileName f)
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
+        |> Map
+
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
