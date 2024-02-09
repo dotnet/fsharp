@@ -1176,30 +1176,24 @@ Actual:
 
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 
-    let private verifyFSILBaseline (baseline: Baseline option) (result: CompilationOutput) : unit =
-        match baseline with
-        | None -> failwith "Baseline was not provided."
-        | Some bsl ->
-            match result.OutputPath with
-                | None -> failwith "Operation didn't produce any output!"
-                | Some p ->
-                    let expectedIL =
-                        match bsl.ILBaseline.Content with
-                        | Some b -> b
-                        | None ->  String.Empty
-                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual [] p [expectedIL]
+    let private verifyFSILBaseline (baseline: Baseline) (result: CompilationOutput) : unit =
+        match result.OutputPath with
+        | None -> failwith "Operation didn't produce any output!"
+        | Some p ->
+            let expectedIL =
+                match baseline.ILBaseline.Content with
+                | Some b -> b
+                | None ->  String.Empty
+            let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual [] p [expectedIL]
 
-                    match success, baseline with
-                    | false, Some baseline ->
-                        // Failed try update baselines if required
-                        // If we are here then the il file has been produced we can write it back to the baseline location
-                        // if the environment variable TEST_UPDATE_BSL has been set
-                        updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
-                        createBaselineErrors baseline.ILBaseline actualIL
-                        let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
-                        Assert.Fail(errorMsg)
-                    | false, None -> Assert.Fail("No baseline provided")
-                    | _, _ -> ()
+            if not success then
+                // Failed try update baselines if required
+                // If we are here then the il file has been produced we can write it back to the baseline location
+                // if the environment variable TEST_UPDATE_BSL has been set
+                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
+                createBaselineErrors baseline.ILBaseline actualIL
+                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
+                Assert.Fail(errorMsg)
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -1215,7 +1209,7 @@ Actual:
                         File.WriteAllText(baseline.ILBaseline.BslSource, "")
                     else
                         failwith $"Build failure empty baseline at {baseline.ILBaseline.BslSource}: {a}"
-            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline (Some baseline) s
+            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline baseline s
             | _, None ->
                 failwithf $"Baseline was not provided."
         | _ -> failwith "Baseline tests are only supported for F#."
@@ -1437,7 +1431,7 @@ Actual:
         let private getErrorInfo (info: ErrorInfo) : string =
             sprintf "%A %A" info.Error info.Message
 
-        let private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
+        let inline private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
             if (List.length source) <> (List.length expected) then
                 failwith (sprintf "Expected list of issues differ from compilation result:\nExpected:\n %A\nActual:\n %A" expected (List.map getErrorInfo source))
             ()
