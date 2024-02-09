@@ -36,6 +36,7 @@ param (
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
     [string]$bootstrapTfm = "net472",
+    [string]$fsharpNetCoreProductTfm = "net8.0"
     [switch][Alias('bl')]$binaryLog = $true,
     [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
     [switch][Alias('nolog')]$noBinaryLog = $false,

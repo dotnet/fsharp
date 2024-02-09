@@ -14,6 +14,7 @@ $nodeReuse = if (Test-Path variable:nodeReuse) { $nodeReuse } else { $false }
 $bootstrapDir = if (Test-Path variable:bootstrapDir) { $bootstrapDir } else { "" }
 $bootstrapConfiguration = if (Test-Path variable:bootstrapConfiguration) { $bootstrapConfiguration } else { "Proto" }
 $bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "net472" }
+$fsharpNetCoreProductTfm = if (Test-Path variable:fsharpNetCoreProductTfm) { $bootstrapTfm } else { "net8.0" }
 $properties = if (Test-Path variable:properties) { $properties } else { @() }
 
 function GetProjectOutputBinary([string]$fileName, [string]$projectName = "", [string]$configuration = $script:configuration, [string]$tfm = "net472", [string]$rid = "", [bool]$published = $false) {
@@ -251,9 +252,9 @@ function Make-BootstrapBuild() {
     }
     Exec-Console $dotnetExe $args
 
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\AssemblyCheck" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\$fsharpNetCoreProductTfm" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\$fsharpNetCoreProductTfm" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\$fsharpNetCoreProductTfm" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
     $protoProject = "`"$RepoRoot\proto.sln`""
