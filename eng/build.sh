@@ -34,6 +34,7 @@ usage()
   echo "  --skipBuild                    Do not run the build"
   echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
   echo "  --sourceBuild                  Simulate building for source-build"
+  echo "  --tfm                          Override the default target framework"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -150,6 +151,10 @@ while [[ $# > 0 ]]; do
       ;;
     --sourcebuild)
       source_build=true
+      ;;
+    --tfm)
+      tfm=$2
+      shift
       ;;
     /p:*)
       properties="$properties $1"

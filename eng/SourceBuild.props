@@ -33,7 +33,7 @@
          -bl enables the binlogs for the tools and Proto builds, which make debugging failures here easier
     -->
     <Exec
-      Command="./build.sh --bootstrap --skipBuild -bl"
+      Command="./build.sh --bootstrap --skipBuild -bl --tfm $(SourceBuildBootstrapTfm)"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
       EnvironmentVariables="@(InnerBuildEnv);DotNetBuildFromSource=true" />
   </Target>
