@@ -60,6 +60,11 @@ open Internal.Utilities.Hashing
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
+[<RequireQualifiedAccess>]
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> Async<ISourceText option>)
+
 [<Sealed>]
 type DelayedILModuleReader =
     val private name: string
