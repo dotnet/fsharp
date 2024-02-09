@@ -1805,9 +1805,9 @@ type internal TypeCheckInfo
                         |> List.sortBy (fun d ->
                             let n =
                                 match d.Item with
-                                | Item.Types(_, AbbrevOrAppTy tcref :: _) -> 1 + tcref.TyparsNoRange.Length
+                                | Item.Types(_, AbbrevOrAppTy(tcref, _) :: _) -> 1 + tcref.TyparsNoRange.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                                | Item.DelegateCtor(AbbrevOrAppTy tcref) -> 1000 + tcref.TyparsNoRange.Length
+                                | Item.DelegateCtor(AbbrevOrAppTy(tcref, _)) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                                 | Item.CtorGroup(_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
                                 | _ -> 0
@@ -1823,10 +1823,10 @@ type internal TypeCheckInfo
                         items
                         |> List.groupBy (fun d ->
                             match d.Item with
-                            | Item.Types(_, AbbrevOrAppTy tcref :: _)
+                            | Item.Types(_, AbbrevOrAppTy(tcref, _) :: _)
                             | Item.ExnCase tcref -> tcref.LogicalName
                             | Item.UnqualifiedType(tcref :: _)
-                            | Item.DelegateCtor(AbbrevOrAppTy tcref) -> tcref.CompiledName
+                            | Item.DelegateCtor(AbbrevOrAppTy(tcref, _)) -> tcref.CompiledName
                             | Item.CtorGroup(_, cinfo :: _) -> cinfo.ApparentEnclosingTyconRef.CompiledName
                             | _ -> d.Item.DisplayName)
 

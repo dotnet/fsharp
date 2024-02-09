@@ -539,12 +539,10 @@ and CheckExprOp cenv (op, tyargs, args, m) ctxt : unit =
     | TOp.ValFieldSet _rf, _, [ _arg1; _arg2 ] -> ()
 
     | TOp.Coerce, [ tgtTy; srcTy ], [ x ] ->
-        let tailCall = TailCall.YesFromExpr cenv.g x
-
         if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
-            CheckExpr cenv x ctxt tailCall
+            CheckExpr cenv x ctxt TailCall.No
         else
-            CheckExprNoByrefs cenv tailCall x
+            CheckExprNoByrefs cenv TailCall.No x
 
     | TOp.Reraise, [ _ty1 ], [] -> ()
 

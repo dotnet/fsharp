@@ -132,6 +132,8 @@ type internal CompilerCaches =
 
     member TcIntermediate: AsyncMemoize<(string * (string * string)), (string * int), TcIntermediate>
 
+    member ScriptClosure: AsyncMemoize<(string * (string * string)), string, LoadClosure>
+
     member TcLastFile: AsyncMemoizeDisabled<obj, obj, obj>
 
 type internal TransparentCompiler =
