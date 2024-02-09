@@ -33,7 +33,13 @@ let getMethod methodName (ty: Type) =
     | methodInfo -> methodInfo
 
 /// Gets a type's private method
-let getPrivateMethod methodName (ty: Type) =
+let getPublicInstanceMethod methodName (ty: Type) =
+    match ty.GetMethod(methodName, BindingFlags.Public ||| BindingFlags.Instance) with
+    | null -> failwith $"Error: Type did not contain public method %s{methodName}"
+    | methodInfo -> methodInfo
+
+/// Gets a type's private method
+let getPrivateInstanceMethod methodName (ty: Type) =
     match ty.GetMethod(methodName, BindingFlags.NonPublic ||| BindingFlags.Instance) with
     | null -> failwith $"Error: Type did not contain private method %s{methodName}"
     | methodInfo -> methodInfo
