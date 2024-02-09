@@ -10113,8 +10113,7 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
         // Call global file initializer
         match eenv.initClassFieldSpec with
         | Some fs ->
-            cgbuf.mgbuf.AddExplicitInitToSpecificMethodDef(
-                (fun md -> md.Name = ".cctor"),
+            cgbuf.mgbuf.AddExplicitInitToCctor(
                 tref,
                 fs.Force(),
                 ilDebugRange,

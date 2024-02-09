@@ -355,8 +355,7 @@ type IsReadOnlyAttribute() =
 
 type C() =
     let x = 59
-    member _.X: inref<_> = &x
-            """
+    member _.X: inref<_> = &x"""
 
         let verifyProperty = """.property instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute)
                 X()
@@ -368,9 +367,6 @@ type C() =
         let verifyMethod = """.method public hidebysig specialname instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) get_X() cil managed
         {
           .param [0]
-          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
-          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
-          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
           .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
 
         let verifyIsReadOnlyAttribute = """

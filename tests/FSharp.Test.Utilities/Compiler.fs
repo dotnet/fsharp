@@ -1196,17 +1196,14 @@ Actual:
                 | None ->  String.Empty
             let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual [] p [expectedIL]
 
-                    match success, baseline with
-                    | false, Some baseline ->
-                        // Failed try update baselines if required
-                        // If we are here then the il file has been produced we can write it back to the baseline location
-                        // if the environment variable TEST_UPDATE_BSL has been set
-                        updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
-                        createBaselineErrors baseline.ILBaseline actualIL
-                        let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
-                        Assert.Fail(errorMsg)
-                    | false, None -> Assert.Fail("No baseline provided")
-                    | _, _ -> ()
+            if not success then
+                // Failed try update baselines if required
+                // If we are here then the il file has been produced we can write it back to the baseline location
+                // if the environment variable TEST_UPDATE_BSL has been set
+                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
+                createBaselineErrors baseline.ILBaseline actualIL
+                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
+                Assert.Fail(errorMsg)
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -1222,7 +1219,7 @@ Actual:
                         File.WriteAllText(baseline.ILBaseline.BslSource, "")
                     else
                         failwith $"Build failure empty baseline at {baseline.ILBaseline.BslSource}: {a}"
-            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline (Some baseline) s
+            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline baseline s
             | _, None ->
                 failwithf $"Baseline was not provided."
         | _ -> failwith "Baseline tests are only supported for F#."
