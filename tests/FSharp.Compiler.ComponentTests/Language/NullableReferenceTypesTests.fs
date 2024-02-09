@@ -12,6 +12,23 @@ let typeCheckWithStrictNullness cu =
     |> typecheck
 
 [<Fact>]
+let ``Boolean to string is not nullable`` () = 
+    FSharp """module MyLibrary
+let onlyWantNotNullString(x:string) = ()
+
+let processBool (b:bool) : (string|null) =
+    let asString = b.ToString()
+    onlyWantNotNullString asString
+    onlyWantNotNullString (true.ToString())
+    onlyWantNotNullString (false.ToString())
+
+    asString
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
 let ``Printing a nullable string should pass`` () = 
     FSharp """module MyLibrary
 let maybeNull : string | null = null
