@@ -1062,3 +1062,9 @@ let (|TypesForTypar|) (t: SynType) =
         | _ -> continuation [ t ]
 
     visit id t
+
+[<return: Struct>]
+let (|Get_OrSet_Ident|_|) (ident: Ident) =
+    if ident.idText.StartsWithOrdinal("get_") then ValueSome()
+    elif ident.idText.StartsWithOrdinal("set_") then ValueSome()
+    else ValueNone
