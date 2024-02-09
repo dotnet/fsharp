@@ -158,19 +158,19 @@ type internal TransparentCompiler =
 
     member FindReferencesInFile:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * symbol: FSharpSymbol * userOpName: string ->
-            NodeCode<range seq>
+            Async<range seq>
 
     member GetAssemblyData:
         projectSnapshot: ProjectSnapshot.ProjectSnapshot * fileName: string * _userOpName: string ->
-            NodeCode<ProjectAssemblyDataResult>
+            Async<ProjectAssemblyDataResult>
 
     member ParseAndCheckFileInProject:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * userOpName: string ->
-            NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer>
+            Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     member ParseFile:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * _userOpName: 'a ->
-            NodeCode<FSharpParseFileResults>
+            Async<FSharpParseFileResults>
 
     member SetCacheSizeFactor: sizeFactor: int -> unit
 

@@ -626,7 +626,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
             ()
         with
             | e ->
-                let _log = log.Values |> Seq.collect id |> Seq.sortBy p13 |> Seq.toArray
+                // let _log = log.Values |> Seq.collect id |> Seq.sortBy p13 |> Seq.toArray
                 failwith $"Seed: {seed}\nException: %A{e}"
     }
     let log = log.Values |> Seq.collect id |> Seq.sortBy p13 |> Seq.toArray

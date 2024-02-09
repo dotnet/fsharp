@@ -209,7 +209,7 @@ type DiagnosticsLogger =
 val DiscardErrorsLogger: DiagnosticsLogger
 
 /// Represents a DiagnosticsLogger that ignores diagnostics and asserts
-val AssertFalseDiagnosticsLogger: DiagnosticsLogger
+val UninitializedDiagnosticsLogger: DiagnosticsLogger
 
 /// Represents a DiagnosticsLogger that captures all diagnostics, optionally formatting them
 /// eagerly.
@@ -228,11 +228,9 @@ type CapturingDiagnosticsLogger =
 
 /// Thread statics for the installed diagnostic logger
 [<Class>]
-type DiagnosticsThreadStatics =
+type DiagnosticsAsyncState =
 
     static member BuildPhase: BuildPhase with get, set
-
-    static member BuildPhaseUnchecked: BuildPhase
 
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
@@ -285,6 +283,13 @@ val UseDiagnosticsLogger: newLogger: DiagnosticsLogger -> IDisposable
 val SetThreadBuildPhaseNoUnwind: phase: BuildPhase -> unit
 
 val SetThreadDiagnosticsLoggerNoUnwind: diagnosticsLogger: DiagnosticsLogger -> unit
+
+type CaptureDiagnosticsConcurrently =
+    new: target: DiagnosticsLogger -> CaptureDiagnosticsConcurrently
+
+    member LoggerForTask: DiagnosticsLogger
+
+    interface IDisposable
 
 /// Reports an error diagnostic and continues
 val errorR: exn: exn -> unit
