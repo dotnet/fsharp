@@ -54,6 +54,7 @@ val CheckOneImplFile:
     CcuThunk *
     OpenDeclaration list *
     (unit -> bool) *
+    bool *
     ConditionalDefines option *
     TcResultsSink *
     bool *
@@ -68,6 +69,7 @@ val CheckOneSigFile:
     ImportMap *
     CcuThunk *
     (unit -> bool) *
+    bool *
     ConditionalDefines option *
     TcResultsSink *
     bool *

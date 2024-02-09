@@ -308,6 +308,9 @@ type TcFileState =
       /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
       conditionalDefines: string list option
 
+      /// retain visibilities for internal/private members
+      realInternalSignature: bool
+
       namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
 
       isInternalTestSpanStackReferring: bool
@@ -334,7 +337,7 @@ type TcFileState =
 
     /// Create a new compilation environment
     static member Create
-         (g, isScript, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring, diagnosticOptions,
+         (g, isScript, amap, thisCcu, isSig, haveSig, realInternalSignature, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring, diagnosticOptions,
           tcPat,
           tcSimplePats,
           tcSequenceExpressionEntry,
@@ -363,6 +366,7 @@ type TcFileState =
           namedDebugPointsForInlinedCode = Dictionary()
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFSharpCore
           conditionalDefines = conditionalDefines
+          realInternalSignature = realInternalSignature
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           diagnosticOptions = diagnosticOptions
           argInfoCache = ConcurrentDictionary()

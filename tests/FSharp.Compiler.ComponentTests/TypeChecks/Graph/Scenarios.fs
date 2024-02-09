@@ -796,6 +796,7 @@ type Foo = class end
                 sourceFile
                     "Program"
                     """
+module RunMe
 printfn "Hello"
 """
                     Set.empty

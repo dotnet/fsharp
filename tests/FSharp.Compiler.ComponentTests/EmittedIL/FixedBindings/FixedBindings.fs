@@ -1,4 +1,4 @@
-namespace EmittedIL.FixedBindings
+namespace EmittedIL
 
 open System.Reflection
 open Microsoft.FSharp.NativeInterop
@@ -8,7 +8,7 @@ open FSharp.Test
 open FSharp.Test.Utilities
 open FSharp.Test.Compiler
 
-module Legacy =
+module FixedBindings =
     [<Theory>]
     [<InlineData("7.0")>]
     let ``Pin naked string`` langVersion =

@@ -48,8 +48,8 @@ type ValInline =
     /// Indicates the value must never be inlined by the optimizer
     | Never
 
-    /// Returns true if the implementation of a value must always be inlined
-    member x.MustInline = 
+    /// Returns true if the implementation of a value should be inlined
+    member x.ShouldInline = 
         match x with 
         | ValInline.Always -> true 
         | ValInline.Optional | ValInline.Never -> false
@@ -519,14 +519,21 @@ type PublicPath =
         assert (pp.Length >= 1)
         pp[0..pp.Length-2]
 
+/// Represents the specified visibility of the accessibility -- used to ensure IL visibility
+[<RequireQualifiedAccess>]
+type SyntaxAccess =
+    | Public
+    | Internal
+    | Private
+    | Unknown
 
 /// The information ILXGEN needs about the location of an item
-type CompilationPath = 
-    | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
+type CompilationPath =
+    | CompPath of ILScopeRef * SyntaxAccess * (string * ModuleOrNamespaceKind) list
 
-    member x.ILScopeRef = let (CompPath(scoref, _)) = x in scoref
+    member x.ILScopeRef = let (CompPath(scoref, _, _)) = x in scoref
 
-    member x.AccessPath = let (CompPath(_, p)) = x in p
+    member x.AccessPath = let (CompPath(_, _, p)) = x in p
 
     member x.MangledPath = List.map fst x.AccessPath
 
@@ -534,10 +541,10 @@ type CompilationPath =
 
     member x.ParentCompPath = 
         let a, _ = List.frontAndBack x.AccessPath
-        CompPath(x.ILScopeRef, a)
+        CompPath(x.ILScopeRef, x.SyntaxAccess, a)
 
     member x.NestedCompPath n moduleKind =
-        CompPath(x.ILScopeRef, x.AccessPath@[(n, moduleKind)])
+        CompPath(x.ILScopeRef, x.SyntaxAccess, x.AccessPath@[(n, moduleKind)])
 
     member x.DemangledPath = 
         x.AccessPath |> List.map (fun (nm, k) -> CompilationPath.DemangleEntityName nm k)
@@ -547,6 +554,8 @@ type CompilationPath =
         match k with 
         | FSharpModuleWithSuffix -> String.dropSuffix nm FSharpModuleSuffix
         | _ -> nm
+
+    member x.SyntaxAccess = let (CompPath(_, access, _)) = x in access
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -1271,7 +1280,7 @@ type Entity =
         | TProvidedNamespaceRepr _ -> failwith "No compiled representation for provided namespace"
         | _ ->
 #endif
-            let ilTypeRefForCompilationPath (CompPath(sref, p)) item = 
+            let ilTypeRefForCompilationPath (CompPath(sref, _, p)) item = 
                 let rec top racc p = 
                     match p with 
                     | [] -> ILTypeRef.Create(sref, [], textOfPath (List.rev (item :: racc)))
@@ -2138,19 +2147,78 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 type ModuleOrNamespace = Entity 
 
 /// Represents a type or exception definition in the typed AST
-type Tycon = Entity 
+type Tycon = Entity
+
+let getNameOfScopeRef sref = 
+    match sref with 
+    | ILScopeRef.Local -> "<local>"
+    | ILScopeRef.Module mref -> mref.Name
+    | ILScopeRef.Assembly aref -> aref.Name
+    | ILScopeRef.PrimaryAssembly -> "<primary>"
+
+let private isInternalCompPath x =
+    match x with
+    | CompPath(ILScopeRef.Local, _, []) -> true
+    | _ -> false
+
+let private (|Public|Internal|Private|) (TAccess p) =
+    match p with
+    | [] -> Public
+    | _ when List.forall isInternalCompPath p -> Internal 
+    | _ -> Private
+
+let getSyntaxAccessForCompPath (TAccess a) = match a with | CompPath(_, sa, _) :: _ -> sa | _ -> TypedTree.SyntaxAccess.Unknown
+
+let updateSyntaxAccessForCompPath access syntaxAccess =
+    match access with
+    | CompPath(sc, sa, p) :: rest when sa <> syntaxAccess -> ([CompPath(sc, syntaxAccess, p)]@rest)
+    | _ -> access
 
 /// Represents the constraint on access for a construct
 [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type Accessibility = 
-
+type Accessibility =
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
     | TAccess of compilationPaths: CompilationPath list
-    
+
+    member public x.IsPublic = match x with Public -> true | _ -> false
+
+    member public x.IsInternal = match x with Internal -> true | _ -> false
+
+    member public x.IsPrivate = match x with Private -> true | _ -> false
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "Accessibility(...)"
+    member x.AsILMemberAccess () =
+        match getSyntaxAccessForCompPath x with
+        | TypedTree.SyntaxAccess.Public -> ILMemberAccess.Public
+        | TypedTree.SyntaxAccess.Internal -> ILMemberAccess.Assembly
+        | TypedTree.SyntaxAccess.Private -> ILMemberAccess.Private
+        | _ ->
+            if x.IsPublic then ILMemberAccess.Public
+            elif x.IsInternal then ILMemberAccess.Assembly
+            else ILMemberAccess.Private
+
+    member x.AsILTypeDefAccess () =
+        if x.IsPublic then ILTypeDefAccess.Public
+        else ILTypeDefAccess.Private
+
+    member x.CompilationPaths = match x with | TAccess compilationPaths -> compilationPaths
+
+    override x.ToString() =
+        match x with
+        | TAccess (paths) ->
+            let mangledTextOfCompPath (CompPath(scoref, _, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+            let scopename =
+                if x.IsPublic then "public"
+                elif x.IsInternal then "internal"
+                else "private"
+            let paths = String.concat ";" (List.map mangledTextOfCompPath paths)
+            if paths = "" then
+                scopename
+            else
+                $"{scopename} {paths}"
+
 
 /// Represents less-frequently-required data about a type parameter of type inference variable
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -2906,8 +2974,8 @@ type Val =
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member x.IsImplied = x.val_flags.IsImplied
 
-    /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
-    member x.MustInline = x.InlineInfo.MustInline
+    /// Indicates whether the inline declaration for the value indicate that the value should be inlined?
+    member x.ShouldInline = x.InlineInfo.ShouldInline
 
     /// Indicates whether this value was generated by the compiler.
     ///
@@ -4065,7 +4133,7 @@ type ValRef =
     member x.InlineIfLambda = x.Deref.InlineIfLambda
 
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
-    member x.MustInline = x.Deref.MustInline
+    member x.ShouldInline = x.Deref.ShouldInline
 
     /// Indicates whether this value was generated by the compiler.
     ///
@@ -5898,7 +5966,7 @@ type Construct() =
             | None -> 
                 let ilScopeRef = st.TypeProviderAssemblyRef
                 let enclosingName = GetFSharpPathToProvidedType(st, m)
-                CompPath(ilScopeRef, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace true))
+                CompPath(ilScopeRef, SyntaxAccess.Unknown, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace true))
             | Some p -> p
         let pubpath = cpath.NestedPublicPath id
 
@@ -6127,7 +6195,7 @@ type Construct() =
 
     /// Create the new contents of an overall assembly
     static member NewCcuContents sref m nm mty =
-        Construct.NewModuleOrNamespace (Some(CompPath(sref, []))) taccessPublic (ident(nm, m)) XmlDoc.Empty [] (MaybeLazy.Strict mty)
+        Construct.NewModuleOrNamespace (Some(CompPath(sref, SyntaxAccess.Unknown, []))) taccessPublic (ident(nm, m)) XmlDoc.Empty [] (MaybeLazy.Strict mty)
 
     /// Create a tycon based on an existing one using the function 'f'. 
     /// We require that we be given the new parent for the new tycon. 

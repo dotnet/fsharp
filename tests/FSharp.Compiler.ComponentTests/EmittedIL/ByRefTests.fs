@@ -369,6 +369,9 @@ type C() =
         {
           .param [0]
           .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
 
         let verifyIsReadOnlyAttribute = """
 .class public auto ansi serializable System.Runtime.CompilerServices.IsReadOnlyAttribute

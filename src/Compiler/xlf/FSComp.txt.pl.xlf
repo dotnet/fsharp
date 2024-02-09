@@ -817,6 +817,11 @@
         <target state="translated">Nazwa pliku wyjściowego pdb nie może być zgodna z nazwą pliku wyjściowego kompilacji, użyj parametru --pdb:filename.pdb</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsRealInternalSignature">
+        <source>Generate assembly with dotnet visibility that matches source visibility</source>
+        <target state="new">Generate assembly with dotnet visibility that matches source visibility</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
         <target state="translated">Utwórz zestaw odwołania zamiast pełnego zestawu jako podstawowe dane wyjściowe</target>
@@ -6205,11 +6210,6 @@
       <trans-unit id="optValueMarkedInlineButWasNotBoundInTheOptEnv">
         <source>The value '{0}' was marked inline but was not bound in the optimization environment</source>
         <target state="translated">Wartość „{0}” została oznaczona jako śródwierszowa, ale nie powiązano jej w środowisku optymalizacji</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optLocalValueNotFoundDuringOptimization">
-        <source>Local value {0} not found during optimization</source>
-        <target state="translated">Nie znaleziono wartości lokalnej {0} podczas optymalizacji</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">

@@ -1909,6 +1909,7 @@ type ILMethodDef
         customAttrsStored: ILAttributesStored,
         metadataIndex: int32
     ) =
+    let _x = 10
 
     new(name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, securityDecls, customAttrs) =
         ILMethodDef(

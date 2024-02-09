@@ -258,6 +258,9 @@ type TcFileState =
         /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
         conditionalDefines: string list option
 
+        // Retain internal/private visibility
+        realInternalSignature: bool
+
         namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
 
         isInternalTestSpanStackReferring: bool
@@ -317,6 +320,7 @@ type TcFileState =
         thisCcu: CcuThunk *
         isSig: bool *
         haveSig: bool *
+        realInternalSignature: bool *
         conditionalDefines: string list option *
         tcSink: TcResultsSink *
         tcVal: TcValF *

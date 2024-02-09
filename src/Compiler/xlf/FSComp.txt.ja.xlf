@@ -817,6 +817,11 @@
         <target state="translated">PDB 出力ファイル名がビルド出力ファイル名と一致しません - --pdb:filename.pdb を使用してください</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsRealInternalSignature">
+        <source>Generate assembly with dotnet visibility that matches source visibility</source>
+        <target state="new">Generate assembly with dotnet visibility that matches source visibility</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
         <target state="translated">完全なアセンブリではなく、参照アセンブリをプライマリ出力として生成します</target>
@@ -6205,11 +6210,6 @@
       <trans-unit id="optValueMarkedInlineButWasNotBoundInTheOptEnv">
         <source>The value '{0}' was marked inline but was not bound in the optimization environment</source>
         <target state="translated">値 '{0}' は 'inline' とマークされましたが、最適化環境ではバインドされません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optLocalValueNotFoundDuringOptimization">
-        <source>Local value {0} not found during optimization</source>
-        <target state="translated">最適化中にローカルの値 {0} が見つかりませんでした</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">

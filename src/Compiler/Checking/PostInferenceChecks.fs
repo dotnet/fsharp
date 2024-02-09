@@ -85,6 +85,9 @@ type env =
       /// "module remap info", i.e. hiding information down the signature chain, used to compute what's hidden by a signature
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list
 
+      /// preserve internal/private signature information
+      realInternalSignature: bool
+
       /// Are we in a quotation?
       quote : bool
 
@@ -1970,7 +1973,8 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         let (TAccess l) = access
         // FSharp 1.0 bug 1908: Values hidden by signatures are implicitly at least 'internal'
         let scoref = cpath().ILScopeRef
-        TAccess(CompPath(scoref, []) :: l)
+        let sa = cpath().SyntaxAccess
+        TAccess(CompPath(scoref, sa, []) :: l)
     else
         access
 
@@ -2076,7 +2080,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         if cenv.reportErrors && isReturnsResumableCodeTy g v.TauType then
             if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                 error(Error(FSComp.SR.tcResumableCodeNotSupported(), bind.Var.Range))
-            if not v.MustInline then
+            if not v.ShouldInline then
                 warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
 
         if isReturnsResumableCodeTy g v.TauType then
@@ -2084,7 +2088,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         else
             env
 
-    CheckLambdas isTop (Some v) cenv env v.MustInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
+    CheckLambdas isTop (Some v) cenv env v.ShouldInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv env binds =
     for bind in binds do
@@ -2601,7 +2605,7 @@ let CheckImplFileContents cenv env implFileTy implFileContents  =
     UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
 
-let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
+let CheckImplFile (g, amap, realInternalSignature, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
     let cenv =
         { g = g
           reportErrors = reportErrors
@@ -2634,6 +2638,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
 
     let env =
         { sigToImplRemapInfo=[]
+          realInternalSignature = realInternalSignature
           quote=false
           boundTyparNames=[]
           argVals = ValMap.Empty

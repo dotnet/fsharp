@@ -817,6 +817,11 @@
         <target state="translated">pdb 輸出檔案名與使用 --pdb:filename.pdb 的建置輸出檔案名不相符</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsRealInternalSignature">
+        <source>Generate assembly with dotnet visibility that matches source visibility</source>
+        <target state="new">Generate assembly with dotnet visibility that matches source visibility</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
         <target state="translated">產生參考組件，而非完整組件作為主要輸出</target>
@@ -6205,11 +6210,6 @@
       <trans-unit id="optValueMarkedInlineButWasNotBoundInTheOptEnv">
         <source>The value '{0}' was marked inline but was not bound in the optimization environment</source>
         <target state="translated">值 '{0}' 已標記為內嵌，但是未在最佳化環境中繫結</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optLocalValueNotFoundDuringOptimization">
-        <source>Local value {0} not found during optimization</source>
-        <target state="translated">最佳化期間找不到區域數值 {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">

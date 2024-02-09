@@ -207,7 +207,7 @@ module rec Compiler =
         | Arm = 5
         | Arm64 = 6
 
-    let public defaultOptions : string list = []
+    let public defaultOptions : string list = ["--realInternalSignature+"]
 
     let normalizePathSeparator (text:string) = text.Replace(@"\", "/")
 
@@ -583,6 +583,16 @@ module rec Compiler =
         | FS x -> FS { x with OutputType = outputType }
         | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
+
+    let withRealInternalSignatureOff (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realInternalSignature-"] }
+        | _ -> failwith "withRealInternalSignatureOff only supported by f#"
+
+    let withRealInternalSignatureOn (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realInternalSignature+"] }
+        | _ -> failwith "withRealInternalSignatureOn only supported by f#"
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit
@@ -1186,14 +1196,17 @@ Actual:
                 | None ->  String.Empty
             let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual [] p [expectedIL]
 
-            if not success then
-                // Failed try update baselines if required
-                // If we are here then the il file has been produced we can write it back to the baseline location
-                // if the environment variable TEST_UPDATE_BSL has been set
-                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
-                createBaselineErrors baseline.ILBaseline actualIL
-                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
-                Assert.Fail(errorMsg)
+                    match success, baseline with
+                    | false, Some baseline ->
+                        // Failed try update baselines if required
+                        // If we are here then the il file has been produced we can write it back to the baseline location
+                        // if the environment variable TEST_UPDATE_BSL has been set
+                        updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
+                        createBaselineErrors baseline.ILBaseline actualIL
+                        let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
+                        Assert.Fail(errorMsg)
+                    | false, None -> Assert.Fail("No baseline provided")
+                    | _, _ -> ()
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -1209,7 +1222,7 @@ Actual:
                         File.WriteAllText(baseline.ILBaseline.BslSource, "")
                     else
                         failwith $"Build failure empty baseline at {baseline.ILBaseline.BslSource}: {a}"
-            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline baseline s
+            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline (Some baseline) s
             | _, None ->
                 failwithf $"Baseline was not provided."
         | _ -> failwith "Baseline tests are only supported for F#."
@@ -1431,7 +1444,7 @@ Actual:
         let private getErrorInfo (info: ErrorInfo) : string =
             sprintf "%A %A" info.Error info.Message
 
-        let inline private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
+        let private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
             if (List.length source) <> (List.length expected) then
                 failwith (sprintf "Expected list of issues differ from compilation result:\nExpected:\n %A\nActual:\n %A" expected (List.map getErrorInfo source))
             ()

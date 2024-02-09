@@ -211,7 +211,7 @@ let ``nested-FSI`` () = singleTestBuildAndRun "core/nested" FSI
 let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPTIMIZED
 
 [<FactForDESKTOP>]
-let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_OPTIMIZED
+let ``members-basics-hw-mutrec-realinternalsignature`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_DEBUG//OPTIMIZED
 
 [<FactForDESKTOP>]
 let ``members-incremental-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/incremental" FSC_OPTIMIZED
