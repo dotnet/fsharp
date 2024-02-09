@@ -9,10 +9,10 @@ This spec is about the semantics and performance of the following coding constru
 * `a = b`
 * `a <> b`
 
-It is also about the semantics and performance of uses of the following FSharp.Core constructs.
+It is also about the semantics and performance of uses of the following `FSharp.Core` constructs.
 
-which, after inlining, genrate code that contains an equality check at the specific `EQTYPE`
-* `HashIdentity.Structural<;T>`
+which, after inlining, generate code that contains an equality check at the specific `EQTYPE`
+* `HashIdentity.Structural<'T>`
 * `{Array,Seq,List}.contains` 
 * `{Array,Seq,List}.countBy` 
 * `{Array,Seq,List}.groupBy`
@@ -31,36 +31,37 @@ Here we define the relevant static type `EQTYPE` for the different constructs ab
 #### Basics
 
 * `a = b`:  `EQTYPE` is the statically known type of `a` or `b`
-* `a <> b` `EQTYPE` is the statically known type of `a` or `b`
+* `a <> b`: `EQTYPE` is the statically known type of `a` or `b`
 
-#### Inlined constructs 
-* `HashIdentity.Structural<T>``,  EQTYPE is the **inlined** 'T (results in specialised equality)
-* `Array.contains<T>`,  EQTYPE is the **inlined** 'T (results in specialised equality)
-* `Array.countBy<T, Key>``,  EQTYPE is the **inlined** 'Key (results in specialised equality)
+#### Inlined constructs
+
+* `HashIdentity.Structural<'T>`,  EQTYPE is the **inlined** `'T` (results in specialized equality)
+* `Array.contains<'T>`,  EQTYPE is the **inlined** `'T` (results in specialized equality)
 * `List.contains<T>` likewise
 * `Seq.contains<T>` likewise
 
 These only resulting in naked generic equality if themselves used from a non-inlined generic context.
 
 #### Non-inlined constructs always resulting in naked generic equality
-* `Array.groupBy<'Key, 'T> f array`,  `,  EQTYPE is non-inlined 'Key, results in naked generic equality
-* `Array.distinct<'T> array` likewise for T
+
+* `Array.groupBy<'Key, 'T> f array`, EQTYPE is non-inlined 'Key, results in naked generic equality
+* `Array.countBy array` likewise for `'T`
+* `Array.distinct<'T> array` likewise
 * `Array.distinctBy array` likewise
 * `Array.except array` likewise
+* `List.groupBy` likewise
 * `List.countBy` likewise
 * `List.distinct` likewise
 * `List.distinctBy` likewise
 * `List.except` likewise
-* `List.groupBy` likewise
+* `Seq.groupBy` likewise
 * `Seq.countBy` likewise
 * `Seq.distinct` likewise
 * `Seq.distinctBy` likewise
 * `Seq.except` likewise
-* `Seq.groupBy` likewise
-* ... may be more here, see `: equality` constraints in FSharp.Core for non-inlined code. 
+* ... may be more here, see `: equality` constraints in `FSharp.Core` for non-inlined code. 
 
 These **always** result in naked generic equality checks.
-
 
 Example 1:
 
@@ -68,7 +69,8 @@ Example 1:
 let x = HashIdentity.Structural<byte>  // EQTYPE known to compiler is `byte`
 ```
 
-Example 2: a non-inlined "naked" generic context
+Example 2 (a non-inlined "naked" generic context):
+
 ```fsharp
 let f2<'T> () =
    ... some long code
@@ -80,7 +82,8 @@ let f2<'T> () =
 f2<byte>() // performance of this determined by EQTYPE<'T> and RUNTIME-EQTYPE<byte>
 ```
 
-Example 3: an inlined generic context
+Example 3 (an inlined generic context):
+
 ```fsharp
 let f3<'T> () =
    ... some long code
@@ -92,7 +95,8 @@ let f3<'T> () =
 f3<byte>() // performance of this determined by EQTYPE<'T> and RUNTIME-EQTYPE<byte>
 ```
 
-Example 4: a generic struct type in a non-inline generic context
+Example 4 (a generic struct type in a non-inline generic context):
+
 ```fsharp
 let f4<'T> () =
    ... some long code
@@ -104,12 +108,11 @@ let f4<'T> () =
 f4<byte>() // performance of this determined by EQTYPE<SomeStructType<'T>> and RUNTIME-EQTYPE<SomeStructType<byte>>
 ```
 
-
 ## How we compile equality "a = b"
 
 This very much depends on the `EQTYPE` involved in the equality as known by the compiler
 
-Aim here is to flesh these all out with
+Aim here is to flesh these all out with:
 * **Semantics**: what semantics the user expects, and what the semantics actually is
 * **Perf expectation**: what perf the user expects
 * **Compilation today**: How we actually compile today, with sharplab.io link
@@ -117,7 +120,7 @@ Aim here is to flesh these all out with
 * **Test**: An IL baseline test case that pins down how we compile things today and allows us to measure change 
 * **sharplab**: sharplab.io link to how things are in whatever version is selected in sharplab
 
-### primitive integer types (int32, int64, ...)
+### primitive integer types (`int32`, `int64`, ...)
 
 ```fsharp
 let f (x: int) (y: int) = (x = y)
@@ -129,7 +132,7 @@ let f (x: int) (y: int) = (x = y)
 * Perf today: good ✅
 * [sharplab int32](https://sharplab.io/#v2:DYLgZgzgNAJiDUAfYBTALgAjBgFADxAwEsA7NASlwE9DSKMBeXPRjK8gWACgg===)
 
-### primitive floating point types (float32, float64)
+### primitive floating point types (`float32`, `float64`)
 
 ```fsharp
 let f (x: float32) (y: float32) = (x = y)
@@ -141,7 +144,7 @@ let f (x: float32) (y: float32) = (x = y)
 * Perf today: good ✅
 * [sharplab float32](https://sharplab.io/#v2:DYLgZgzgNAJiDUAfYBTALgAjBgFADxC2AHsBDNAZgCYBKXAT0LBPOroF5c8NP6aBYAFBA===)
 
-### primitive string, decimal
+### primitive `string`, `decimal`
 
 * Semantics: .NET equivalent equality, non-localized for strings
 * Perf: User expects full performance down to native
@@ -182,10 +185,10 @@ let f (x: float32) (y: float32) = (x = y)
 * Perf today:  this is hand-optimized for some primitive element types ✅ but boxes each element if "other" is struct or T, see Problem1, Problem2 ❌ 
 * [sharplab for `byte[]`](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQCgB4lQIwE9lEBtAXQEpVDUBeLbemy+IA=)
 
-Effect of 5112:
-* Compilation after 5112, either `FSharpEqualityComparer_PER`1<uint8[]>::get_EqualityComparer().Equals(...)` or `FSharpEqualityComparer_PER`1<T[]>::get_EqualityComparer().Equals(...)`
-* NOTE: Proposed adjustment to 5112 noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
-* Perf after 5112: CHECK ME ❔
+Effect of implementing (#5112):
+* Compilation after #5112, either ``FSharpEqualityComparer_PER`1<uint8[]>::get_EqualityComparer().Equals(...)`` or ``FSharpEqualityComparer_PER`1<T[]>::get_EqualityComparer().Equals(...)``
+* NOTE: Proposed adjustment to #5112 noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
+* Perf after #5112: ❔
 
 ### C# or F# enum type
 
@@ -241,6 +244,7 @@ The struct type has these generated methods:
 ```
 
 These call each other in sequence, boing then bunboxing then boxing. We do NOT generate this method, we probably should:
+
 ```csharp
     override bool Equals(SomeStruct obj, IEqualityComparer comp) //withcEqualsValUnboxed
 ```
@@ -265,11 +269,11 @@ Here "tiny" means the compiler-generated structural equality IS inlined
 * Compilation Today: flattened, calling `GenericEqualityERIntrinsic` on struct and generic fields
 * Perf today: boxes on struct and generic fields, see Problem1, Problem2
 
-Effect of 5112:
-* 5112: `FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)` on struct and generic fields
-* NOTE: Proposed adjustment to 5112 noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
+Effect of #5112:
+* #5112: ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)`` on struct and generic fields
+* NOTE: Proposed adjustment to #5112 noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
        
-### Any ref type supporting IEquatable<T>
+### Any ref type supporting `IEquatable<T>`
 
 * Semantics: User expects calling `IEquatable<T>` implementation is used, actual is call to `this.Equals(that)`. These are generally identical semantics
 
@@ -280,7 +284,6 @@ Effect of 5112:
 ### other ref type
 
 * Semantics: User expects fast reference equality
-* Compilation today: 
 
 ### Generic `'T` in non-inlined generic code
 
@@ -289,9 +292,9 @@ Effect of 5112:
 * Test: Equals06.fsx acts as a proxy because equals on small single-case union is inlined
 * Compilation today: GenericEqualityERIntrinsic (❌,boxes)
 
-Effect of 5112:
-* Compilation after 5112: FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)
-* NOTE: Proposed adjustment to 5112 noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
+Effect of #5112:
+* Compilation after #5112: ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
+* NOTE: Proposed adjustment to #5112 noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
 
 ### Generic `'T` in inlined generic code
 
@@ -308,10 +311,10 @@ For example see [this sharplab](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQC
 * Compilation today: `GenericEqualityWithComparerIntrinsic LanguagePrimitives.GenericComparer` 
 * Perf today: boxes
 
-Effect of 5112:
-* Compilation after 5112: FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)  // TODO: check ??
-* Perf after 5112: TBD, but much better, no boxing in many cases
-* NOTE: Proposed adjustment to 5112 noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityWithComparerIntrinsic` calls are internally optimized
+Effect of #5112:
+* Compilation after #5112: ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
+* Perf after #5112: TBD, but much better, no boxing in many cases
+* NOTE: Proposed adjustment to #5112 noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityWithComparerIntrinsic` calls are internally optimized
 
 ## Techniques available to us
  
@@ -325,7 +328,7 @@ Effect of 5112:
 
 ## Notes on previous attempts to improve things
 
-### 5112 https://github.com/dotnet/fsharp/pull/5112
+### #5112
 
 * Uses TT, DEQ, KFS, DV
 * Focuses on solving Problem2
@@ -334,7 +337,6 @@ Effect of 5112:
 Note: this included [changes to the optimizer to reduce GenericEqualityIntrinsic](https://github.com/dotnet/fsharp/pull/5112/files#diff-be48dbef2f0baca27a783ac4a31ec0aedb2704c7f42ea3a2b8228513f9904cfbR2360-R2363) down to a type-indexed table lookup fetching an IEqualityComparer and calling it. These hand-coded reductions appear unnecessary as the reduction doesn't open up any further optimizations. We can simply change the definition in the library like this:
 
 ```fsharp
-
 let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
     FSharpEqualityComparer_PER<'T>.EqualityComparer.Equals(x,y)
 
@@ -344,7 +346,3 @@ let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
 let GenericHashIntrinsic input =
     FSharpEqualityComparer_PER<'T>.EqualityComparer.Hash(input)
 ```
-
-
-```
-
