@@ -3,8 +3,9 @@
   <PropertyGroup>
     <PreRelease>true</PreRelease>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
+    <NuspecProperties>pkgTfm=$(FSharpNetCoreProductTargetFramework)</NuspecProperties>
     <IsPackable>true</IsPackable>
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Tools-$(FSProductVersionReleaseNotesVersion)</PackageReleaseNotes>
