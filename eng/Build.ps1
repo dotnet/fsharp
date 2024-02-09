@@ -62,6 +62,7 @@ param (
     [switch]$testAllButIntegration,
     [switch]$testpack,
     [switch]$testAOT,
+    [switch]$testBenchmarks,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
@@ -111,6 +112,7 @@ function Print-Usage() {
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
+    Write-Host "  -testBenchmarks               Build and Run Benchmark suite"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -176,6 +178,7 @@ function Process-Arguments() {
         $script:testVs = $False
         $script:testpack = $False
         $script:testAOT = $False
+        $script:testBenchmarks = $False
         $script:verifypackageshipstatus = $True
     }
 
@@ -209,6 +212,10 @@ function Process-Arguments() {
 
     if ($testAOT) {
         $script:pack = $True;
+    }
+
+    if ($testBenchmarks) {
+        $script:testBenchmarks = $True
     }
 
     foreach ($property in $properties) {
@@ -541,12 +548,17 @@ try {
         }
     }
 
+    if ($testBenchmarks) {
+        BuildSolution "FSharp.Benchmarks.sln" $False
+    }
+
     if ($pack) {
         $properties_storage = $properties
         $properties += "/p:GenerateSbom=false"
         BuildSolution "Microsoft.FSharp.Compiler.sln" $True
         $properties = $properties_storage
     }
+
     if ($build) {
         VerifyAssemblyVersionsAndSymbols
     }
@@ -659,6 +671,12 @@ try {
     if ($testAOT) {
         Push-Location "$RepoRoot\tests\AheadOfTime\Trimming"
         ./check.cmd
+        Pop-Location
+    }
+
+    if ($testBenchmarks) {
+        Push-Location "$RepoRoot\tests\benchmarks"
+        ./SmokeTestBenchmarks.ps1
         Pop-Location
     }
 

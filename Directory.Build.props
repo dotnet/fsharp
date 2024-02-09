@@ -24,6 +24,8 @@
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition = "Exists('$(RepoRoot)/Directory.Build.props.user')" />
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <BUILDING_WITH_LKG>true</BUILDING_WITH_LKG>
+    <BUILD_FROM_SOURCE>true</BUILD_FROM_SOURCE>
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
     <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>

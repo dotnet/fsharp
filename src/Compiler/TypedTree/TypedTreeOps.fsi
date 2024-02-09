@@ -1528,6 +1528,9 @@ val mkVoidPtrTy: TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType: TcGlobals -> TType -> TType
 
+/// Determine if a type is a bool type
+val isBoolTy: TcGlobals -> TType -> bool
+
 /// Determine if a type is a value option type
 val isValueOptionTy: TcGlobals -> TType -> bool
 
@@ -2449,10 +2452,11 @@ type PrettyNaming.ActivePatternInfo with
     member DisplayNameByIdx: idx: int -> string
 
     /// Get the result type for the active pattern
-    member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
+    member ResultType: g: TcGlobals -> range -> TType list -> ActivePatternReturnKind -> TType
 
     /// Get the overall type for a function that implements the active pattern
-    member OverallType: g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> isStruct: bool -> TType
+    member OverallType:
+        g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> retKind: ActivePatternReturnKind -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 

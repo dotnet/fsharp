@@ -18,6 +18,20 @@ if foo.IsBar then failwith "Should not be Bar"
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Simple Is* discriminated union properties are not visible for a single case union`` () =
+        Fsx """
+type Foo = Bar of string
+let foo = Foo.Bar "hi"
+if not foo.IsBar then failwith "Should be Bar"
+
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics  [Error 39, Line 4, Col 12, Line 4, Col 17, "The type 'Foo' does not define the field, constructor or member 'IsBar'. Maybe you want one of the following:
+   Bar"]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Simple Is* discriminated union property satisfies SRTP constraint`` () =
         Fsx """
 type X =

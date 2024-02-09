@@ -19,6 +19,7 @@
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
     <!-- allow testing of static methods in interfaces on .NET 6  -->
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
+	  <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
 </PropertyGroup>
 
 <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -31,75 +32,52 @@
       <Link>FsUnit.fs</Link>
     </Compile>
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\Basic.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\DelegateTypes\DelegateDefinition.fs" />
     <Compile Include="Conformance\BasicGrammarElements\EntryPoint\EntryPoint.fs" />
     <Compile Include="Conformance\BasicGrammarElements\Events\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ExceptionDefinitions\ExceptionDefinitions.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
     <Compile Include="Conformance\BasicGrammarElements\FieldMembers\FieldMembers.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ImportDeclarations\ImportDeclarations.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\InterfaceSpecificationsAndImplementations\InterfaceSpecificationsAndImplementations.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\InterfaceSpecificationsAndImplementations\InterfaceSpecificationsAndImplementations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MemberDefinitions.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\MemberDefinitions\NamedArguments\NamedArguments.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalArguments\OptionalArguments.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\NamedArguments\NamedArguments.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalArguments\OptionalArguments.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MethodResolution.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ModuleDefinitions\ModuleDefinitions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
     <Compile Include="Conformance\BasicGrammarElements\NullRepresentations\NullRepresentations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
     <Compile Include="Conformance\BasicGrammarElements\StaticLet\StaticLetInUnionsAndRecords.fs" />
     <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\TypeAbbreviations.fs" />
-    <Compile
-      Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
     <Compile Include="Conformance\Constraints\Unmanaged.fs" />
-    <Compile
-      Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
-    <Compile
-      Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
+    <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
+    <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
-    <Compile
-      Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
+    <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ComputationExpressions\CustomOperations.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
@@ -242,9 +220,10 @@
     <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
     <Compile Include="Language\PrintfFormatTests.fs" />
-	<Compile Include="Language\InterfaceTests.fs" />
-	<Compile Include="Language\CopyAndUpdateTests.fs" />
-	<Compile Include="Language\ConstraintIntersectionTests.fs" />
+  	<Compile Include="Language\InterfaceTests.fs" />
+	  <Compile Include="Language\CopyAndUpdateTests.fs" />
+	  <Compile Include="Language\ConstraintIntersectionTests.fs" />
+    <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
@@ -291,6 +270,9 @@
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
+    <Compile Include="CompilerService\LruCache.fs" />
+    <Compile Include="CompilerService\AsyncLock.fs" />
+	  <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -319,15 +301,16 @@
     <Compile Include="Signatures\MemberTests.fs" />
     <Compile Include="StaticLinking\StaticLinking.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
+    <Compile Include="FSharpChecker\ProjectSnapshot.fs" />
+    <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
+	    <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <None Include="**\*.bsl">

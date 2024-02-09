@@ -12,6 +12,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.Benchmarks
 open Microsoft.CodeAnalysis.Text
+open FSharp.Benchmarks.Common.Categories
 
 type private Config =
     {
@@ -66,6 +67,7 @@ let function%s{moduleName} (x: %s{moduleName}) =
 
 
 [<MemoryDiagnoser>]
+[<BenchmarkCategory(ShortCategory)>]
 type CompilerServiceBenchmarks() =
     let mutable configOpt : Config option = None
     let sourcePath = Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs")

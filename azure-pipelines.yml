@@ -1,4 +1,4 @@
-# CI and PR triggers
+# CI and PR triggers 
 trigger:
   branches:
     include:
@@ -110,13 +110,10 @@ stages:
             demands: ImageOverride -equals windows.vs2022preview.amd64
           timeoutInMinutes: 300
           variables:
-          - group: DotNet-Blob-Feed
           - group: DotNet-Symbol-Server-Pats
           - group: DotNet-DevDiv-Insertion-Workflow-Variables
           - name: _SignType
             value: Real
-          - name: _DotNetPublishToBlobFeed
-            value: true
           steps:
           - checkout: self
             clean: true
@@ -131,9 +128,6 @@ stages:
                     /p:MicroBuild_SigningEnabled=true
                     /p:OverridePackageSource=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
                     /p:TeamName=$(_TeamName)
-                    /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
-                    /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
-                    /p:DotNetPublishToBlobFeed=true
                     /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
                     /p:DotNetArtifactsCategory=$(_DotNetArtifactsCategory)
                     /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
@@ -710,6 +704,22 @@ stages:
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            continueOnError: true
+            condition: always()
+
+        # Build and run fast benchmarks
+        - job: Benchmarks
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          variables:
+          - name: _BuildConfig
+            value: Release
+          steps:
+          - checkout: self
+            clean: true
+          - script: eng\CIBuild.cmd -configuration $(_BuildConfig) -testBenchmarks
+            displayName: Smoke test fast benchmarks
             continueOnError: true
             condition: always()
 

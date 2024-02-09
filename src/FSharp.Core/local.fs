@@ -193,7 +193,7 @@ module internal List =
                 cons
 
     let groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
-        let dict = Dictionary<_, _ list []> comparer
+        let dict = Dictionary<_, _ list  array> comparer
 
         // Build the groupings
         let rec loop list =

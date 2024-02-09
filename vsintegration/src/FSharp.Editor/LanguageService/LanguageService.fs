@@ -25,6 +25,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
+open FSharp.Compiler.Text
 
 #nowarn "9" // NativePtr.toNativeInt
 #nowarn "57" // Experimental stuff
@@ -147,6 +148,8 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableBackgroundItemKeyStoreAndSemanticClassification =
                                 editorOptions.LanguageServicePerformance.EnableBackgroundItemKeyStoreAndSemanticClassification
 
+                            let useTransparentCompiler = editorOptions.Advanced.UseTransparentCompiler
+
                             // Default is false here
                             let solutionCrawler = editorOptions.Advanced.SolutionBackgroundAnalysis
 
@@ -168,6 +171,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableBackgroundItemKeyStoreAndSemanticClassification,
                                         enableBackgroundItemKeyStoreAndSemanticClassification
                                         "captureIdentifiersWhenParsing", enableFastFindReferences
+                                        nameof useTransparentCompiler, useTransparentCompiler
                                         nameof solutionCrawler, solutionCrawler
                                     |],
                                     TelemetryThrottlingStrategy.NoThrottling
@@ -187,13 +191,19 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     captureIdentifiersWhenParsing = enableFastFindReferences,
                                     documentSource =
                                         (if enableLiveBuffers then
-                                             DocumentSource.Custom getSource
+                                             (DocumentSource.Custom(fun filename ->
+                                                 async {
+                                                     match! getSource filename with
+                                                     | Some source -> return Some(source :> ISourceText)
+                                                     | None -> return None
+                                                 }))
                                          else
                                              DocumentSource.FileSystem),
-                                    useSyntaxTreeCache = useSyntaxTreeCache
+                                    useSyntaxTreeCache = useSyntaxTreeCache,
+                                    useTransparentCompiler = useTransparentCompiler
                                 )
 
-                            if enableLiveBuffers then
+                            if enableLiveBuffers && not useTransparentCompiler then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
                                         cancellableTask {
@@ -481,10 +491,10 @@ type internal HackCpsCommandLineChanges
         else
             Path.GetFileNameWithoutExtension projectFileName
 
-    [<ComponentModel.Composition.Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
+    [<ComponentModel.Composition.Export>]
     member _.HandleCommandLineChanges
         (
             path: string,
@@ -527,10 +537,10 @@ type internal HackCpsCommandLineChanges
 
         let sourcePaths = sources |> Seq.map (fun s -> getFullPath s.Path) |> Seq.toArray
 
-        /// Due to an issue in project system, when we close and reopen solution, it sends the CommandLineChanges twice for every project.
-        /// First time it sends a correct path, sources, references and options.
-        /// Second time it sends a correct path, empty sources, empty references and empty options, and we rewrite our cache, and fail to colourize the document later.
-        /// As a workaround, until we have a fix from PS or will move to Roslyn as a source of truth, we will not overwrite the cache in case of empty lists.
+        // Due to an issue in project system, when we close and reopen solution, it sends the CommandLineChanges twice for every project.
+        // First time it sends a correct path, sources, references and options.
+        // Second time it sends a correct path, empty sources, empty references and empty options, and we rewrite our cache, and fail to colourize the document later.
+        // As a workaround, until we have a fix from PS or will move to Roslyn as a source of truth, we will not overwrite the cache in case of empty lists.
 
         if not (sources.IsEmpty && references.IsEmpty && options.IsEmpty) then
             let workspaceService =

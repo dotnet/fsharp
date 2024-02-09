@@ -17,14 +17,12 @@ let wrapThreadStaticInfo computation =
     async {
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
-        let ct = Cancellable.Token
 
         try
             return! computation
         finally
             DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
             DiagnosticsThreadStatics.BuildPhase <- phase
-            Cancellable.Token <- ct
     }
 
 type Async<'T> with
@@ -127,7 +125,6 @@ type NodeCode private () =
     static member RunImmediate(computation: NodeCode<'T>, ct: CancellationToken) =
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
-        let ct2 = Cancellable.Token
 
         try
             try
@@ -135,7 +132,6 @@ type NodeCode private () =
                     async {
                         DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
                         DiagnosticsThreadStatics.BuildPhase <- phase
-                        Cancellable.Token <- ct2
                         return! computation |> Async.AwaitNodeCode
                     }
 
@@ -143,7 +139,6 @@ type NodeCode private () =
             finally
                 DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
                 DiagnosticsThreadStatics.BuildPhase <- phase
-                Cancellable.Token <- ct2
         with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
             raise (ex.InnerExceptions[0])
 
@@ -153,14 +148,12 @@ type NodeCode private () =
     static member StartAsTask_ForTesting(computation: NodeCode<'T>, ?ct: CancellationToken) =
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
-        let ct2 = Cancellable.Token
 
         try
             let work =
                 async {
                     DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
                     DiagnosticsThreadStatics.BuildPhase <- phase
-                    Cancellable.Token <- ct2
                     return! computation |> Async.AwaitNodeCode
                 }
 
@@ -168,7 +161,6 @@ type NodeCode private () =
         finally
             DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
             DiagnosticsThreadStatics.BuildPhase <- phase
-            Cancellable.Token <- ct2
 
     static member CancellationToken = cancellationToken
 
@@ -201,7 +193,19 @@ type NodeCode private () =
         }
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        computations |> Seq.map (fun (Node x) -> x) |> Async.Parallel |> Node
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        let phase = DiagnosticsThreadStatics.BuildPhase
+
+        computations
+        |> Seq.map (fun (Node x) ->
+            async {
+                DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                DiagnosticsThreadStatics.BuildPhase <- phase
+                return! x
+            })
+        |> Async.Parallel
+        |> wrapThreadStaticInfo
+        |> Node
 
 [<RequireQualifiedAccess>]
 module GraphNode =

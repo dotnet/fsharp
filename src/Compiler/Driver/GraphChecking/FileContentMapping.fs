@@ -9,14 +9,18 @@ type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileCo
 let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.collect mapping (Option.toList t)
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
-    if skipLast then
-        List.take (longId.Length - 1) longId
-    else
-        longId
+    match skipLast, longId with
+    | true, _ :: _ -> List.take (longId.Length - 1) longId
+    | _ -> longId
     |> List.map (fun ident -> ident.idText)
 
 let synLongIdentToPath (skipLast: bool) (synLongIdent: SynLongIdent) =
     longIdentToPath skipLast synLongIdent.LongIdent
+
+/// In some rare cases we are interested in the name of a single Ident.
+/// For example `nameof ModuleName` in expressions or patterns.
+let visitIdentAsPotentialModuleName (moduleNameIdent: Ident) =
+    FileContentEntry.ModuleName moduleNameIdent.idText
 
 let visitSynLongIdent (lid: SynLongIdent) : FileContentEntry list = visitLongIdent lid.LongIdent
 
@@ -51,7 +55,7 @@ let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
         | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ]; attributes = attributes); decls = decls) ->
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleDecl decls)
-        | SynModuleDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
+        | SynModuleDecl.NestedModule _ -> () // A nested module cannot have multiple identifiers. This will already be a parse error, but we could be working with recovered syntax tree
         | SynModuleDecl.Let(bindings = bindings) -> yield! List.collect visitBinding bindings
         | SynModuleDecl.Types(typeDefns = typeDefns) -> yield! List.collect visitSynTypeDefn typeDefns
         | SynModuleDecl.HashDirective _ -> ()
@@ -75,7 +79,7 @@ let visitSynModuleSigDecl (md: SynModuleSigDecl) =
         | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ]; attributes = attributes); moduleDecls = decls) ->
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleSigDecl decls)
-        | SynModuleSigDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
+        | SynModuleSigDecl.NestedModule _ -> () // A nested module cannot have multiple identifiers. This will already be a parse error, but we could be working with recovered syntax tree
         | SynModuleSigDecl.ModuleAbbrev(longId = longId) -> yield! visitLongIdentForModuleAbbrev longId
         | SynModuleSigDecl.Val(valSig, _) -> yield! visitSynValSig valSig
         | SynModuleSigDecl.Types(types = types) -> yield! List.collect visitSynTypeDefnSig types
@@ -200,7 +204,7 @@ let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
         | SynMemberDefn.GetSetMember(memberDefnForGet, memberDefnForSet, _, _) ->
             yield! collectFromOption visitBinding memberDefnForGet
             yield! collectFromOption visitBinding memberDefnForSet
-        | SynMemberDefn.ImplicitCtor(ctorArgs = ctorArgs) -> yield! visitSynSimplePats ctorArgs
+        | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> yield! visitPat pat
         | SynMemberDefn.ImplicitInherit(inheritType, inheritArgs, _, _) ->
             yield! visitSynType inheritType
             yield! visitSynExpr inheritArgs
@@ -302,9 +306,28 @@ let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
     | SynTypeConstraint.WhereTyparIsEnum(typeArgs = typeArgs) -> List.collect visitSynType typeArgs
     | SynTypeConstraint.WhereTyparIsDelegate(typeArgs = typeArgs) -> List.collect visitSynType typeArgs
 
+[<return: Struct>]
+let inline (|NameofIdent|_|) (ident: Ident) =
+    if ident.idText = "nameof" then ValueSome() else ValueNone
+
+/// Special case of `nameof Module` type of expression
+let (|NameofExpr|_|) (e: SynExpr) =
+    let rec stripParen (e: SynExpr) =
+        match e with
+        | SynExpr.Paren(expr = expr) -> stripParen expr
+        | _ -> e
+
+    match e with
+    | SynExpr.App(flag = ExprAtomicFlag.NonAtomic; isInfix = false; funcExpr = SynExpr.Ident NameofIdent; argExpr = moduleNameExpr) ->
+        match stripParen moduleNameExpr with
+        | SynExpr.Ident moduleNameIdent -> Some moduleNameIdent
+        | _ -> None
+    | _ -> None
+
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
         match e with
+        | NameofExpr moduleNameIdent -> continuation [ visitIdentAsPotentialModuleName moduleNameIdent ]
         | SynExpr.Const _ -> continuation []
         | SynExpr.Paren(expr = expr) -> visit expr continuation
         | SynExpr.Quote(operator = operator; quotedExpr = quotedExpr) ->
@@ -389,7 +412,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.IfThenElse(ifExpr = ifExpr; thenExpr = thenExpr; elseExpr = elseExpr) ->
             let continuations = List.map visit (ifExpr :: thenExpr :: Option.toList elseExpr)
             Continuation.concatenate continuations continuation
-        | SynExpr.Typar _ -> continuation []
+        | SynExpr.Typar _
         | SynExpr.Ident _ -> continuation []
         | SynExpr.LongIdent(longDotId = longDotId) -> continuation (visitSynLongIdent longDotId)
         | SynExpr.LongIdentSet(longDotId, expr, _) -> visit expr (fun nodes -> visitSynLongIdent longDotId @ nodes |> continuation)
@@ -517,9 +540,29 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
 
     visit e id
 
+/// Special case of `| nameof Module ->` type of pattern
+let (|NameofPat|_|) (pat: SynPat) =
+    let rec stripPats p =
+        match p with
+        | SynPat.Paren(pat = pat) -> stripPats pat
+        | _ -> p
+
+    match pat with
+    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ NameofIdent ]); typarDecls = None; argPats = SynArgPats.Pats [ moduleNamePat ]) ->
+        match stripPats moduleNamePat with
+        | SynPat.LongIdent(
+            longDotId = SynLongIdent.SynLongIdent(id = [ moduleNameIdent ]; dotRanges = []; trivia = [ None ])
+            extraId = None
+            typarDecls = None
+            argPats = SynArgPats.Pats []
+            accessibility = None) -> Some moduleNameIdent
+        | _ -> None
+    | _ -> None
+
 let visitPat (p: SynPat) : FileContentEntry list =
     let rec visit (p: SynPat) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
         match p with
+        | NameofPat moduleNameIdent -> continuation [ visitIdentAsPotentialModuleName moduleNameIdent ]
         | SynPat.Paren(pat = pat) -> visit pat continuation
         | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t)
         | SynPat.Const _ -> continuation []

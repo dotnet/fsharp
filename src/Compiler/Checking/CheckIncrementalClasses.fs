@@ -123,7 +123,7 @@ let TcStaticImplicitCtorInfo_Phase2A(cenv: cenv, env, tcref: TyconRef, m, copyOf
 
 /// Check and elaborate the "left hand side" of the implicit class construction 
 /// syntax.
-let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy, xmlDoc: PreXmlDoc) =
+let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attrs, pat: SynPat, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy, xmlDoc: PreXmlDoc) =
 
     let g = cenv.g
     let baseValOpt = 
@@ -135,16 +135,30 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
     let env = AddDeclaredTypars CheckForDuplicateTypars copyOfTyconTypars env
 
     // Type check arguments by processing them as 'simple' patterns 
-    //     NOTE: if we allow richer patterns here this is where we'd process those patterns 
-    let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, [], m))
+    let ctorArgNames, patEnv, SynSimplePats.SimplePats(spats, _, _) = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv pat
+
+    let rec reportGeneratedPattern spat =
+        match spat with
+        | SynSimplePat.Id(_, _, isCompilerGenerated, _, _, m) ->
+            if isCompilerGenerated then
+                errorR (Error(FSComp.SR.parsOnlySimplePatternsAreAllowedInConstructors(), m))
+
+        | SynSimplePat.Typed(pat, _, _)
+        | SynSimplePat.Attrib(pat, _, _) ->
+            reportGeneratedPattern pat
+
+    for spat in spats do
+      reportGeneratedPattern spat
 
     let (TcPatLinearEnv(_, names, _)) = patEnv
         
     // Create the values with the given names 
     let _, vspecs = MakeAndPublishSimpleVals cenv env names
 
-    if tcref.IsStructOrEnumTycon && isNil spats then 
+    match tcref.IsStructOrEnumTycon, pat with
+    | true, SynPat.Const(SynConst.Unit, _) ->
         errorR (ParameterlessStructCtor(tcref.Range))
+    | _ -> ()
         
     // Put them in order 
     let ctorArgs = List.map (fun v -> NameMap.find v vspecs) ctorArgNames

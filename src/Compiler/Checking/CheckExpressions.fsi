@@ -712,7 +712,8 @@ val TcMatchPattern:
     synWhenExprOpt: SynExpr option ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
 
-val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) option
+[<return: Struct>]
+val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) voption
 
 /// Check a set of let bindings in a class or module
 val TcLetBindings:
