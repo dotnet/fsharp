@@ -23,19 +23,6 @@
 
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition="Exists('$(RepoRoot)/Directory.Build.props.user')" />
 
-  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
-    <BUILDING_WITH_LKG>true</BUILDING_WITH_LKG>
-    <BUILD_FROM_SOURCE>true</BUILD_FROM_SOURCE>
-    <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
-    <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
-    <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
-    <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
-    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
-    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
-    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/net8.0/fslex.dll</FsLexPath>
-    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/net8.0/fsyacc.dll</FsYaccPath>
-  </PropertyGroup>
-
  <!-- To support source-build for the "next" version of .NET without forcing this repo to use it,
       we can utilize arcade's $(NetCurrent) property, and set it ourselves in the arcade-less scenarios. 
       For FCS solution, we set it to one for current dev cycle.
@@ -56,6 +43,19 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <BUILDING_WITH_LKG>true</BUILDING_WITH_LKG>
+    <BUILD_FROM_SOURCE>true</BUILD_FROM_SOURCE>
+    <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
+    <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
+    <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
+    <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/fslex.dll</FsLexPath>
+    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/fsyacc.dll</FsYaccPath>
+  </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>
   <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
