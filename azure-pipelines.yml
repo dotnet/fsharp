@@ -433,7 +433,7 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              transparent_compiler:
+              transparent_compiler_release:
                 _configuration: Release
                 _testKind: testCoreclr
 
@@ -454,14 +454,14 @@ stages:
             env:
               NativeToolsOnMachine: true
             displayName: Build / Test
-            condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'transparent_compiler') )
+            condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'transparent_compiler_release') )
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
               TEST_TRANSPARENT_COMPILER: 1
               NativeToolsOnMachine: true
             displayName: Build / Test Transparent Compiler
-            condition: and( eq(variables['System.JobName'], 'transparent_compiler'), ne(variables['_testKind'], 'testIntegration') )
+            condition: and( eq(variables['System.JobName'], 'transparent_compiler_release'), ne(variables['_testKind'], 'testIntegration') )
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
