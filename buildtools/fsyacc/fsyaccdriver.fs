@@ -502,7 +502,13 @@ let writeSpecToFile (generatorState: GeneratorState) (spec: ParserSpec) (compile
               | None -> ()
               writer.WriteLine "                 : %s));" (if types.ContainsKey nt then  types.[nt] else generatorState.generate_nonterminal_name nt);
           done;
-          writer.WriteLine "|]" ;
+          writer.WriteLine "|]"
+          writer.WriteLine """
+let _fsyacc_reductions_lock = obj()
+let _fsyacc_reductions_with_lock () = lock _fsyacc_reductions_lock (fun () -> _fsyacc_reductions.Value)
+let prefetchTables () = _fsyacc_reductions_with_lock() |> ignore
+"""
+          writer.WriteLineInterface "val prefetchTables : unit -> unit"
       end;
       writer.WriteLine "# %d \"%s\"" writer.OutputLineCount output;
       writer.WriteLine "let tables : %s.Tables<_> = " generatorState.parslib
