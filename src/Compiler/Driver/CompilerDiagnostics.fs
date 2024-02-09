@@ -2176,10 +2176,10 @@ type DiagnosticsLoggerFilteringByScopedPragmas
             if report then
                 if diagnostic.ReportAsError(diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Error)
-                elif diagnostic.ReportAsWarning(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Warning)
                 elif diagnostic.ReportAsInfo(diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, severity)
+                elif diagnostic.ReportAsWarning(diagnosticOptions, severity) then
+                    diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Warning)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
 
