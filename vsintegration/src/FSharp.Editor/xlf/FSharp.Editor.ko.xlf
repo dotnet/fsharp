@@ -176,16 +176,16 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">F# 프로젝트 및 캐싱 성능 옵션;
-메모리 내 프로젝트 간 참조 활성화;
+        <target state="translated">F# 프로젝트 및 캐싱 성능 옵션;
+메모리 내 크로스 프로젝트 참조 사용;
 Enable_partial_type_checking;
 IntelliSense 성능 옵션;
-IntelliSense 기능에 부실 데이터 사용;
+IntelliSense 기능에 대해 부실 데이터 사용;
 부실 결과가 사용될 때까지의 시간(밀리초);
 병렬화(다시 시작 필요);
-서명 파일과 함께 병렬 형식 검사 사용;
-병렬 참조 확인 사용;
-빠른 찾기 참조 및 이름 바꾸기 사용(실험적);
+서명 파일로 병렬 유형 검사 사용;
+병렬 참조 해상도 사용;
+빠른 찾기 참조 및 이름 바꾸기 사용(다시 시작 필요);
 캐시 구문 분석 결과(실험적)</target>
         <note />
       </trans-unit>
@@ -204,19 +204,20 @@ Solid underline;
 Dot underline;
 Dash underline;
 Show remarks in Quick Info</source>
-        <target state="needs-review-translation">서식;
-기본 설정 문자 설명 너비;
-F# 구문 규칙에 맞는 줄바꿈을 추가하여 지정된 너비에 서명 서식 지정;
+        <target state="translated">서식;
+기본 설정 설명 너비(문자);
+F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그니처의 서식 지정;
 탐색 링크;
-탐색 링크 표시 형식;
+탐색 링크를 다음으로 표시;
 실선 밑줄;
-점선 밑줄;
-대시 밑줄;</target>
+점 밑줄;
+대시 밑줄;
+요약 정보에 설명 표시</target>
         <note />
       </trans-unit>
       <trans-unit id="RemarksHeader">
         <source>Remarks:</source>
-        <target state="new">Remarks:</target>
+        <target state="translated">설명:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
