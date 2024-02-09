@@ -82,6 +82,25 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
                 |> Task.FromResult
         )
 
+    static member CreateFromDocumentSource(fileName: string, documentSource: DocumentSource) =
+
+        match documentSource with
+        | DocumentSource.Custom f ->
+            let version = DateTime.Now.Ticks.ToString()
+
+            FSharpFileSnapshot(
+                fileName,
+                version,
+                fun () ->
+                    task {
+                        match! f fileName |> Async.StartAsTask with
+                        | Some source -> return SourceTextNew.ofISourceText source
+                        | None -> return failwith $"Couldn't get source for file {f}"
+                    }
+            )
+
+        | DocumentSource.FileSystem -> FSharpFileSnapshot.CreateFromFileSystem fileName
+
     member public _.FileName = FileName
     member _.Version = Version
     member _.GetSource() = GetSource()
@@ -604,13 +623,22 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             return snapshotAccumulator[options]
         }
 
-    static member internal GetFileSnapshotFromDisk _ fileName =
-        FSharpFileSnapshot.CreateFromFileSystem fileName |> async.Return
+    static member FromOptions(options: FSharpProjectOptions, documentSource: DocumentSource) =
+        FSharpProjectSnapshot.FromOptions(
+            options,
+            fun _ fileName ->
+                FSharpFileSnapshot.CreateFromDocumentSource(fileName, documentSource)
+                |> async.Return
+        )
 
-    static member FromOptions(options: FSharpProjectOptions) =
-        FSharpProjectSnapshot.FromOptions(options, FSharpProjectSnapshot.GetFileSnapshotFromDisk)
-
-    static member FromOptions(options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText) =
+    static member FromOptions
+        (
+            options: FSharpProjectOptions,
+            fileName: string,
+            fileVersion: int,
+            sourceText: ISourceText,
+            documentSource: DocumentSource
+        ) =
 
         let getFileSnapshot _ fName =
             if fName = fileName then
@@ -620,7 +648,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                     fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
                 )
             else
-                FSharpFileSnapshot.CreateFromFileSystem fName
+                FSharpFileSnapshot.CreateFromDocumentSource(fName, documentSource)
             |> async.Return
 
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)

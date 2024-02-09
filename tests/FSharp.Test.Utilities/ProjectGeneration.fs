@@ -932,7 +932,7 @@ type ProjectWorkflowBuilder
         ?isExistingProject
     ) =
 
-    let useTransparentCompiler = defaultArg useTransparentCompiler FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically
+    let useTransparentCompiler = defaultArg useTransparentCompiler CompilerAssertHelpers.UseTransparentCompiler
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true

@@ -651,7 +651,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 [<InlineData(SignatureFiles.Some)>]
 let Fuzzing signatureFiles =
 
-    let seed = 1106087513
+    let seed = System.Random().Next()
     let rng = System.Random(int seed)
 
     let fileCount = 30
@@ -711,7 +711,6 @@ type GiraffeTheoryAttribute() =
 [<InlineData false>]
 let GiraffeFuzzing signatureFiles =
     let seed = System.Random().Next()
-    //let seed = 1044159179
 
     let giraffeDir = if signatureFiles then giraffeSignaturesDir else giraffeDir
     let giraffeTestsDir = if signatureFiles then giraffeSignaturesTestsDir else giraffeTestsDir
