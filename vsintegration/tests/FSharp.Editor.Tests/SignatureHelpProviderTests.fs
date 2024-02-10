@@ -12,6 +12,7 @@ open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis
 open Microsoft.IO
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open FSharp.Test
 
 module SignatureHelpProvider =
     let private DefaultDocumentationProvider =
@@ -20,7 +21,8 @@ module SignatureHelpProvider =
             override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
-    let checker = FSharpChecker.Create()
+    let checker =
+        FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
     let filePath = "C:\\test.fs"
 
