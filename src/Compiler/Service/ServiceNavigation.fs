@@ -13,6 +13,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.SyntaxTrivia
 
 /// Represents the different kinds of items that can appear in the navigation bar
 [<RequireQualifiedAccess>]
@@ -332,9 +333,10 @@ module NavigationImpl =
                          [
                              createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access)
                          ]
-                     | SynMemberDefn.AutoProperty(ident = id; accessibility = access) ->
+                     | SynMemberDefn.AutoProperty(ident = id; getterAccessibility = getterAccessibility; setterAccessibility = setterAccessibility) ->
                          [
-                             createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access)
+                             createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, getterAccessibility)
+                             createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, setterAccessibility)
                          ]
                      | SynMemberDefn.AbstractSlot(slotSig = SynValSig(ident = SynIdent(id, _); synType = ty; accessibility = access)) ->
                          [

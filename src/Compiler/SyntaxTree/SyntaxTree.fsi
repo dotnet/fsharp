@@ -228,20 +228,6 @@ type SynRationalConst =
 
     | Paren of rationalConst: SynRationalConst * range: range
 
-/// Represents an accessibility modifier in F# syntax
-[<RequireQualifiedAccess>]
-type SynAccess =
-    /// A construct marked or assumed 'public'
-    | Public of range: range
-
-    /// A construct marked or assumed 'internal'
-    | Internal of range: range
-
-    /// A construct marked or assumed 'private'
-    | Private of range: range
-
-    member Range: range
-
 /// Represents whether a debug point should be present for the target
 /// of a decision tree, that is whether the construct corresponds to a debug
 /// point in the original source.
@@ -1655,7 +1641,8 @@ type SynMemberDefn =
         memberFlags: SynMemberFlags *
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
+        getterAccessibility: SynAccess option *
+        setterAccessibility: SynAccess option *
         synExpr: SynExpr *
         range: range *
         trivia: SynMemberDefnAutoPropertyTrivia

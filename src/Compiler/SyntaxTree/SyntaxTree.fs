@@ -202,26 +202,6 @@ type SynRationalConst =
     | Paren of rationalConst: SynRationalConst * range: range
 
 [<RequireQualifiedAccess>]
-type SynAccess =
-    | Public of range: range
-
-    | Internal of range: range
-
-    | Private of range: range
-
-    override this.ToString() =
-        match this with
-        | Public _ -> "Public"
-        | Internal _ -> "Internal"
-        | Private _ -> "Private"
-
-    member this.Range: range =
-        match this with
-        | Public m
-        | Internal m
-        | Private m -> m
-
-[<RequireQualifiedAccess>]
 type DebugPointAtTarget =
     | Yes
     | No
@@ -1462,7 +1442,8 @@ type SynMemberDefn =
         memberFlags: SynMemberFlags *
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
+        getterAccessibility: SynAccess option *
+        setterAccessibility: SynAccess option *
         synExpr: SynExpr *
         range: range *
         trivia: SynMemberDefnAutoPropertyTrivia

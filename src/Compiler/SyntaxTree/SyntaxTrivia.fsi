@@ -444,12 +444,26 @@ type SynArgPatsNamePatPairsTrivia =
         ParenRange: range
     }
 
+/// Represents an accessibility modifier in F# syntax
+[<RequireQualifiedAccess>]
+type SynAccess =
+    /// A construct marked or assumed 'public'
+    | Public of range: range
+    
+    /// A construct marked or assumed 'internal'
+    | Internal of range: range
+    
+    /// A construct marked or assumed 'private'
+    | Private of range: range
+    
+    member Range: range
+
 /// Represents additional information for `get, set` syntax
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type GetSetKeywords =
     | Get of range
     | Set of range
-    | GetSet of get: range * set: range
+    | GetSet of get: range * getterAccess: SynAccess option * set: range * setterAccess: SynAccess option
 
     member Range: range
 

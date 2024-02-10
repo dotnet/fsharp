@@ -1048,20 +1048,44 @@ classMemberSpfnGetSetElements:
        else
            raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
-  | nameop COMMA nameop
-    { let (SynIdent(id, _)) = $1
-      let (SynIdent(id2, _)) = $3
+  | opt_access nameop COMMA nameop
+    { let (SynIdent(id, _)) = $2
+      let (SynIdent(id2, _)) = $4
       if not ((id.idText = "get" && id2.idText = "set") ||
               (id.idText = "set" && id2.idText = "get")) then
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
 
       if id.idText = "get" then
-          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, id2.idRange))
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, $1, id2.idRange, None))
       else
-          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, id.idRange)) }
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, None, id.idRange, $1)) }
 
-  | nameop COMMA recover
-    { (let (SynIdent(id:Ident, _)) = $1
+  | nameop COMMA opt_access nameop
+    { let (SynIdent(id, _)) = $1
+      let (SynIdent(id2, _)) = $4
+      if not ((id.idText = "get" && id2.idText = "set") ||
+              (id.idText = "set" && id2.idText = "get")) then
+         raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
+
+      if id.idText = "get" then
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, None, id2.idRange, $3))
+      else
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, $3, id.idRange, None)) }
+
+  | opt_access nameop COMMA opt_access nameop
+    { let (SynIdent(id, _)) = $2
+      let (SynIdent(id2, _)) = $5
+      if not ((id.idText = "get" && id2.idText = "set") ||
+              (id.idText = "set" && id2.idText = "get")) then
+         raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
+
+      if id.idText = "get" then
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, $1, id2.idRange, $4))
+      else
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, $4, id.idRange, $1)) }
+
+  | opt_access nameop COMMA recover
+    { (let (SynIdent(id:Ident, _)) = $2
        if id.idText = "get" then
            SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange)
        else if id.idText = "set" then

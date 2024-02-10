@@ -7,6 +7,7 @@
 
 namespace FSharp.Compiler.EditorServices
 
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
