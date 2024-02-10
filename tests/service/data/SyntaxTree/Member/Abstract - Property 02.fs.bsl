@@ -32,7 +32,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGetSet }, (4,4--4,33),
                          { GetSetKeywords =
-                            Some (GetSet ((4,25--4,28), (4,30--4,33))) })],
+                            Some
+                              (GetSet ((4,25--4,28), None, (4,30--4,33), None)) })],
                      (4,4--4,33)), [], None, (3,5--4,33),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)

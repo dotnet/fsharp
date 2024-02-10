@@ -34,13 +34,14 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Ident autoProp, (3,4--3,52),
+                         None, None, None, Ident autoProp, (3,4--3,52),
                          { LeadingKeyword =
                             MemberVal ((3,4--3,10), (3,11--3,14))
                            WithKeyword = Some (3,39--3,43)
                            EqualsRange = Some (3,28--3,29)
                            GetSetKeywords =
-                            Some (GetSet ((3,44--3,47), (3,49--3,52))) });
+                            Some
+                              (GetSet ((3,44--3,47), None, (3,49--3,52), None)) });
                       AutoProperty
                         ([], false, AutoProperty2, None, Member,
                          { IsInstance = true
@@ -56,7 +57,7 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Ident autoProp, (4,4--4,39),
+                         None, None, None, Ident autoProp, (4,4--4,39),
                          { LeadingKeyword =
                             MemberVal ((4,4--4,10), (4,11--4,14))
                            WithKeyword = None

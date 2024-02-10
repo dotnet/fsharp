@@ -51,13 +51,14 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Ident name, (4,4--5,40),
+                         None, None, None, Ident name, (4,4--5,40),
                          { LeadingKeyword =
                             MemberVal ((5,4--5,10), (5,11--5,14))
                            WithKeyword = Some (5,27--5,31)
                            EqualsRange = Some (5,20--5,21)
                            GetSetKeywords =
-                            Some (GetSet ((5,32--5,35), (5,37--5,40))) })],
+                            Some
+                              (GetSet ((5,32--5,35), None, (5,37--5,40), None)) })],
                      (4,4--5,40)), [],
                   Some
                     (ImplicitCtor

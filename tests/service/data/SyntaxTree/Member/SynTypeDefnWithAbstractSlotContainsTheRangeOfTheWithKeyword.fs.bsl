@@ -40,7 +40,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGetSet }, (3,4--3,42),
                          { GetSetKeywords =
-                            Some (GetSet ((3,35--3,38), (3,39--3,42))) })],
+                            Some
+                              (GetSet ((3,35--3,38), None, (3,39--3,42), None)) })],
                      (3,4--3,42)), [],
                   Some
                     (ImplicitCtor

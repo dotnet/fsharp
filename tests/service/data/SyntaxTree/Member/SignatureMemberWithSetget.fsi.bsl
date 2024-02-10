@@ -32,7 +32,8 @@ SigFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGetSet }, (6,4--8,39),
                          { GetSetKeywords =
-                            Some (GetSet ((8,36--8,39), (8,28--8,31))) })],
+                            Some
+                              (GetSet ((8,36--8,39), None, (8,28--8,31), None)) })],
                      (6,4--8,39)), [], (4,5--8,39),
                   { LeadingKeyword = Type (4,0--4,4)
                     EqualsRange = Some (4,7--4,8)

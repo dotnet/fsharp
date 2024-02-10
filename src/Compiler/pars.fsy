@@ -1083,6 +1083,15 @@ classMemberSpfnGetSetElements:
           SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, $1, id2.idRange, $4))
       else
           SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, $4, id.idRange, $1)) }
+          
+  | nameop COMMA recover
+    { (let (SynIdent(id:Ident, _)) = $1
+       if id.idText = "get" then
+           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange)
+       else if id.idText = "set" then
+           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange)
+       else
+           raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
   | opt_access nameop COMMA recover
     { (let (SynIdent(id:Ident, _)) = $2
