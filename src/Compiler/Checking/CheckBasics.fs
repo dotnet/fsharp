@@ -20,7 +20,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 

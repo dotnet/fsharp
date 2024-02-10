@@ -202,6 +202,67 @@ type SynRationalConst =
     | Paren of rationalConst: SynRationalConst * range: range
 
 [<RequireQualifiedAccess>]
+type SynAccess =
+    | Public of range: range
+
+    | Internal of range: range
+
+    | Private of range: range
+
+    override this.ToString() =
+        match this with
+        | Public _ -> "Public"
+        | Internal _ -> "Internal"
+        | Private _ -> "Private"
+
+    member this.Range: range =
+        match this with
+        | Public m
+        | Internal m
+        | Private m -> m
+
+[<NoEquality; NoComparison>]
+type GetSetKeywords =
+    | Get of range
+    | Set of range
+    | GetSet of get: range * getterAccess: SynAccess option * set: range * setterAccess: SynAccess option
+
+    member x.Range =
+        match x with
+        | Get m
+        | Set m -> m
+        | GetSet(mG, _, mS, _) ->
+            if Range.rangeBeforePos mG mS.Start then
+                Range.unionRanges mG mS
+            else
+                Range.unionRanges mS mG
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnAutoPropertyTrivia =
+    {
+        LeadingKeyword: SynLeadingKeyword
+        WithKeyword: range option
+        EqualsRange: range option
+        GetSetKeywords: GetSetKeywords option
+    }
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnAbstractSlotTrivia =
+    {
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero = { GetSetKeywords = None }
+
+[<NoEquality; NoComparison>]
+type SynMemberSigMemberTrivia =
+    {
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero: SynMemberSigMemberTrivia = { GetSetKeywords = None }
+
+[<RequireQualifiedAccess>]
 type DebugPointAtTarget =
     | Yes
     | No

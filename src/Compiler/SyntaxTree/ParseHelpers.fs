@@ -1118,10 +1118,11 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
     let isStatic = not memberFlags.IsInstance
 
     let getterAccess, setterAccess =
-        match access, getSetOpt with 
+        match access, getSetOpt with
         | Some _, Some(GetSetKeywords.GetSet(_, None, _, None)) -> access, access
         | Some _, Some(GetSetKeywords.GetSet(_, Some x, _, _))
-        | Some _, Some(GetSetKeywords.GetSet(_, _, _, Some x)) -> raiseParseErrorAt x.Range (FSComp.SR.parsMultipleAccessibilitiesForGetSet())
+        | Some _, Some(GetSetKeywords.GetSet(_, _, _, Some x)) ->
+            raiseParseErrorAt x.Range (FSComp.SR.parsMultipleAccessibilitiesForGetSet ())
         | None, Some(GetSetKeywords.GetSet(_, getterAccess, _, setterAccess)) -> getterAccess, setterAccess
         | _, Some(GetSetKeywords.Get _) -> access, None
         | _, Some(GetSetKeywords.Set _) -> None, access

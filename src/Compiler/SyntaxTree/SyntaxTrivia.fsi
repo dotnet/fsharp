@@ -444,56 +444,6 @@ type SynArgPatsNamePatPairsTrivia =
         ParenRange: range
     }
 
-/// Represents an accessibility modifier in F# syntax
-[<RequireQualifiedAccess>]
-type SynAccess =
-    /// A construct marked or assumed 'public'
-    | Public of range: range
-    
-    /// A construct marked or assumed 'internal'
-    | Internal of range: range
-    
-    /// A construct marked or assumed 'private'
-    | Private of range: range
-    
-    member Range: range
-
-/// Represents additional information for `get, set` syntax
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type GetSetKeywords =
-    | Get of range
-    | Set of range
-    | GetSet of get: range * getterAccess: SynAccess option * set: range * setterAccess: SynAccess option
-
-    member Range: range
-
-/// Represents additional information for SynMemberDefn.AutoProperty
-[<NoEquality; NoComparison>]
-type SynMemberDefnAutoPropertyTrivia =
-    {
-        /// Used leading keyword of AutoProperty
-        LeadingKeyword: SynLeadingKeyword
-
-        /// The syntax range of the `with` keyword
-        WithKeyword: range option
-
-        /// The syntax range of the `=` token
-        EqualsRange: range option
-
-        /// The syntax range of 'get, set'
-        GetSetKeywords: GetSetKeywords option
-    }
-
-///  Represents additional information for SynMemberDefn.AbstractSlot
-[<NoEquality; NoComparison>]
-type SynMemberDefnAbstractSlotTrivia =
-    {
-        /// The syntax range of 'get, set'
-        GetSetKeywords: GetSetKeywords option
-    }
-
-    static member Zero: SynMemberDefnAbstractSlotTrivia
-
 /// Represents additional information for SynField
 [<NoEquality; NoComparison>]
 type SynFieldTrivia =
@@ -521,16 +471,6 @@ type SynBindingReturnInfoTrivia =
         /// The syntax range of the `:` token
         ColonRange: range option
     }
-
-/// Represents additional information for SynMemberSig.Member
-[<NoEquality; NoComparison>]
-type SynMemberSigMemberTrivia =
-    {
-        /// The syntax range of 'get, set'
-        GetSetKeywords: GetSetKeywords option
-    }
-
-    static member Zero: SynMemberSigMemberTrivia
 
 /// Represents additional information for SynTyparDecl
 [<NoEquality; NoComparison>]
