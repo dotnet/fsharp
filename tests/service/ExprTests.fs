@@ -3612,9 +3612,10 @@ module internal ProjectForNoWarnHashDirective =
 module N.M
 #nowarn "40"
 let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
+let g() = ([] = [])
 """
     
-    let createOptions() = createOptionsAux [fileSource1] []
+    let createOptions() = createOptionsAux [fileSource1] ["--warnon:3559"]
     
 [<TestCase(false)>]
 [<TestCase(true)>]
@@ -3628,4 +3629,8 @@ let ``Test NoWarn HashDirective`` useTransparentCompiler =
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForNoWarnHashDirective error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 2
+    let infoDiagnostics =
+        wholeProjectResults.Diagnostics
+        |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Info)
+    infoDiagnostics.Length |> shouldEqual 2
