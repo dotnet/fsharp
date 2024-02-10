@@ -10112,15 +10112,7 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
 
         // Call global file initializer
         match eenv.initClassFieldSpec with
-        | Some fs ->
-            cgbuf.mgbuf.AddExplicitInitToCctor(
-                tref,
-                fs.Force(),
-                ilDebugRange,
-                eenv.imports,
-                feefee,
-                seqpt
-            )
+        | Some fs -> cgbuf.mgbuf.AddExplicitInitToCctor(tref, fs.Force(), ilDebugRange, eenv.imports, feefee, seqpt)
         | None -> ()
 
         // Add code to invoke envinner's class static initializer
