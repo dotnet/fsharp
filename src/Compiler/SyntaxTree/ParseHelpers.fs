@@ -1100,7 +1100,7 @@ let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, 
     let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
     SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
 
-let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDoc attribs flags rangeStart =
+let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDoc attribs flags rangeStart langVersion =
     let mWith, (getSet, getSetOpt) = accessors
 
     let memberRange =
@@ -1123,7 +1123,14 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
         | Some _, Some(GetSetKeywords.GetSet(_, Some x, _, _))
         | Some _, Some(GetSetKeywords.GetSet(_, _, _, Some x)) ->
             raiseParseErrorAt x.Range (FSComp.SR.parsMultipleAccessibilitiesForGetSet ())
-        | None, Some(GetSetKeywords.GetSet(_, getterAccess, _, setterAccess)) -> getterAccess, setterAccess
+        | None, Some(GetSetKeywords.GetSet(_, getterAccess, _, setterAccess)) ->
+            match getterAccess, setterAccess with
+            | Some x, _
+            | _, Some x ->
+                checkLanguageFeatureError langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
+            | None, None -> ()
+
+            getterAccess, setterAccess
         | _, Some(GetSetKeywords.Get _) -> access, None
         | _, Some(GetSetKeywords.Set _) -> None, access
         | _ -> None, None
@@ -1145,6 +1152,7 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
         memberFlags,
         memberFlagsForSet,
         xmlDoc,
+        access,
         getterAccess,
         setterAccess,
         expr,

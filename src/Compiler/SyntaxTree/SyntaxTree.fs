@@ -1503,6 +1503,7 @@ type SynMemberDefn =
         memberFlags: SynMemberFlags *
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
+        accessibility: SynAccess option *
         getterAccessibility: SynAccess option *
         setterAccessibility: SynAccess option *
         synExpr: SynExpr *

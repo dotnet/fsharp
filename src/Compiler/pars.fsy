@@ -2192,7 +2192,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 $4 $5 (Some mEquals) $7 $8 xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 $4 $5 (Some mEquals) $7 $8 xmlDoc attribs flags rangeStart parseState.LexBuffer.LanguageVersion ] }
 
 | VAL opt_mutable opt_access ident opt_typ ends_coming_soon_or_recover
      { let mVal = rhs parseState 1
@@ -2205,7 +2205,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart parseState.LexBuffer.LanguageVersion ] }
 
   | VAL opt_mutable opt_access ident opt_typ OBLOCKSEP
      { let mVal = rhs parseState 1
@@ -2218,7 +2218,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart parseState.LexBuffer.LanguageVersion ] }
 
 | VAL opt_mutable opt_access recover
      { let mVal = rhs parseState 1
@@ -2228,7 +2228,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 id None None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 id None None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart parseState.LexBuffer.LanguageVersion ] }
 
 /* An optional type on an auto-property definition */
 opt_typ:

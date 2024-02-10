@@ -277,6 +277,7 @@ val mkAutoPropDefn:
         attribs: SynAttributes ->
         flags: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
             rangeStart: range ->
+            langVersion: LanguageVersion ->
                 SynMemberDefn
 
 val mkValField:
