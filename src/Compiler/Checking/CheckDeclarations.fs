@@ -4364,24 +4364,30 @@ module TcDeclarations =
                             match getterAccess, setterAccess with
                             | None, None -> access, access
                             | Some x, _
-                            | _, Some x -> error(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                            | _, Some x -> 
+                                errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                                None, None
                         | None ->
                             match getterAccess, setterAccess with
                             | Some x, _
                             | _, Some x ->
-                                checkLanguageFeatureError g.langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
+                                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
                                 getterAccess, setterAccess
                             | _, _ -> None, None
                     | SynMemberKind.PropertySet ->
                         match access, setterAccess with
-                        | Some _, Some x -> error(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                        | Some _, Some x -> 
+                            errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                            None, None
                         | _, None -> None, access
                         | None, _ -> None, setterAccess
                     | SynMemberKind.Member
                     | SynMemberKind.PropertyGet
                     | _ ->
                         match access, getterAccess with
-                        | Some _, Some x -> error(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                        | Some _, Some x -> 
+                            errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                            None, None
                         | _, None -> access, None
                         | None, _ -> getterAccess, None
                 [ 
