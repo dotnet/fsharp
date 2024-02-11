@@ -560,7 +560,6 @@ type CalledMeth<'T>
                     // take the last ParamArray arg out, make it not break the optional/out params check
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs =
                         match List.rev unnamedCalledOptOrOutArgs with
-                        | [] -> unnamedCalledArgsTrimmed, []
                         | h :: t when h.IsParamArray -> unnamedCalledArgsTrimmed @ [h], List.rev t
                         | _ -> unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs
                     
