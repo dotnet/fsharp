@@ -556,6 +556,13 @@ type CalledMeth<'T>
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
+
+                    // take the last ParamArray arg out, make it not break the optional/out params check
+                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs =
+                        match List.rev unnamedCalledOptOrOutArgs with
+                        | [] -> unnamedCalledArgsTrimmed, []
+                        | h :: t when h.IsParamArray -> unnamedCalledArgsTrimmed @ [h], List.rev t
+                        | _ -> unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs
                     
                     let isOpt x = x.OptArgInfo.IsOptional
                     let isOut x = x.IsOutArg && isByrefTy g x.CalledArgumentType
