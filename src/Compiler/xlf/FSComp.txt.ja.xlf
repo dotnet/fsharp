@@ -887,6 +887,11 @@
         <target state="translated">'package management' (パッケージ管理) 機能には、言語バージョン 5.0 以降が必要です</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile">
+        <source>The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.</source>
+        <target state="new">The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
         <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
         <target state="translated">制約交差構文は、"#IDisposable &amp; #ISomeInterface" など、柔軟な型でのみ使用できます。</target>

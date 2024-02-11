@@ -887,6 +887,11 @@
         <target state="translated">La funzionalità 'gestione pacchetti' richiede la versione del linguaggio 5.0 o superiore</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile">
+        <source>The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.</source>
+        <target state="new">The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
         <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
         <target state="translated">La sintassi dell'intersezione dei vincoli può essere usata solo con tipi flessibili, ad esempio '#IDisposable &amp; #ISomeInterface'.</target>

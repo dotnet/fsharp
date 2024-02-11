@@ -40,8 +40,7 @@ ImplFile
                            WithKeyword = Some (3,39--3,43)
                            EqualsRange = Some (3,28--3,29)
                            GetSetKeywords =
-                            Some
-                              (GetSet ((3,44--3,47), None, (3,49--3,52), None)) });
+                            Some (GetSet ((3,44--3,47), (3,49--3,52))) });
                       AutoProperty
                         ([], false, AutoProperty2, None, Member,
                          { IsInstance = true

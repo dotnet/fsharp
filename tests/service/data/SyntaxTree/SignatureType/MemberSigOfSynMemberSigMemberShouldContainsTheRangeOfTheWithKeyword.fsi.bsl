@@ -35,8 +35,7 @@ SigFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGetSet }, (5,4--5,42),
                          { GetSetKeywords =
-                            Some
-                              (GetSet ((5,35--5,38), None, (5,39--5,42), None)) })],
+                            Some (GetSet ((5,35--5,38), (5,39--5,42))) })],
                      (5,4--5,42)), [], (4,5--5,42),
                   { LeadingKeyword = Type (4,0--4,4)
                     EqualsRange = Some (4,9--4,10)

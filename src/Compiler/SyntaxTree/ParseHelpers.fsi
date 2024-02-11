@@ -272,12 +272,11 @@ val mkAutoPropDefn:
     typ: SynType option ->
     mEquals: range option ->
     expr: SynExpr ->
-    accessors: range option * (SynMemberKind * GetSetKeywords option) ->
+    accessors: range option * (SynMemberKind * GetSetKeywords option * SynAccess option * SynAccess option) ->
         xmlDoc: PreXmlDoc ->
         attribs: SynAttributes ->
         flags: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
             rangeStart: range ->
-            langVersion: LanguageVersion ->
                 SynMemberDefn
 
 val mkValField:

@@ -40,10 +40,7 @@ ImplFile
                            WithKeyword = Some (4,26--4,30)
                            EqualsRange = Some (4,22--4,23)
                            GetSetKeywords =
-                            Some
-                              (GetSet
-                                 ((4,38--4,41), Some (Public (4,31--4,37)),
-                                  (4,51--4,54), Some (Private (4,43--4,50)))) })],
+                            Some (GetSet ((4,38--4,41), (4,51--4,54))) })],
                      (4,4--4,54)), [],
                   Some
                     (ImplicitCtor

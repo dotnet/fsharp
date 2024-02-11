@@ -45,4 +45,4 @@ ImplFile
 
 (5,0)-(5,0) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (4:22). Try indenting this further.
 To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-(5,0)-(5,0) parse error Incomplete structured construct at or before this point in member definition. Expected identifier, '(', '(*)' or other token.
+(5,0)-(5,0) parse error Incomplete structured construct at or before this point. Expected identifier, '(', '(*)' or other token.
