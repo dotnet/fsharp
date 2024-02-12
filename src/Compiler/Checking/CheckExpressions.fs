@@ -10556,8 +10556,24 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             | _, _, _ -> envinner.eCallerMemberName
 
         let envinner = {envinner with eCallerMemberName = callerName }
-
-        let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
+        let attrTgt =
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) then
+                let supportsNameofFeature = g.langVersion.SupportsFeature(LanguageFeature.NameOf)
+                let rhsExprIsFunction =
+                    match rhsExpr with
+                    | SynExpr.Lambda _
+                    | SynExpr.Match _
+                    | SynExpr.MatchLambda _ -> true
+                    | SynExpr.App(funcExpr = SynExpr.Ident(ident)) when supportsNameofFeature && ident.idText <> "nameof" -> true
+                    | SynExpr.Ident ident when ident.idText = "id" -> true
+                    | _ -> false
+                
+                match pat with
+                | SynPat.Tuple _ when not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+                | SynPat.Named _ when spatsL.IsEmpty && declaredTypars.IsEmpty && not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+                | _ -> declKind.AllowedAttribTargets memberFlagsOpt
+            else
+                declKind.AllowedAttribTargets memberFlagsOpt
 
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
             match rhsExpr with

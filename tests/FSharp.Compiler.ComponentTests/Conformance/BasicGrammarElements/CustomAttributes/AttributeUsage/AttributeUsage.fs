@@ -94,6 +94,29 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 24, Col 7, Line 24, Col 36, "This attribute is not valid for use on this language element")
             (Error 842, Line 29, Col 15, Line 29, Col 47, "This attribute is not valid for use on this language element")
         ]
+        
+    // SOURCE=E_AttributeTargets03.fs					# E_AttributeTargets03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets03.fs"|])>]
+    let ``E_AttributeTargets03_fs`` compilation =
+        compilation
+        |> withLangVersion80
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE=E_AttributeTargets03.fs					# E_AttributeTargets03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets03.fs"|])>]
+    let ``E_AttributeTargets03_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 8, Col 3, Line 8, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 11, Col 3, Line 11, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 14, Col 3, Line 14, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 17, Col 3, Line 17, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 20, Col 3, Line 20, Col 13, "This attribute is not valid for use on this language element")
+        ]
 
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ConditionalAttribute.fs"|])>]
