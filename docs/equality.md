@@ -2,7 +2,7 @@
 
 This spec covers how equality is compiled and executed by the F# compiler and library, based mainly on the types involved in the equality operation after all inlining, type specialization and other optimizations have been applied.
 
-### What do we mean by an equality operation?
+## What do we mean by an equality operation?
 
 This spec is about the semantics and performance of the following coding constructs
 
@@ -22,18 +22,34 @@ which, after inlining, generate code that contains an equality check at the spec
 
 All of which have implied equality checks. Some of these operations are inlined, see below, which in turn affects the semantics and performance of the overall operation.
 
-### What is the type known to the compiler and library for an equality operation?
+## ER vs PER equality
+
+In math, a (binary) relation is a way to describe a relationship between the elements of sets. "Greater than" is a relation for numbers, "Subset of" is a relation for sets.
+
+Here we talk about 3 particular relations:
+1) Reflexivity - every element is related to itself
+- For integers, `=` is reflexive (`a = a` is always true) and `>` is not (`a > a` is never true)
+2) Symmetry - if `a` is related to `b`, then `b` is related to `a`
+- For integers, `=` is symmetric (`a = b` -> `b = a`) and `>` is not (if `a > b` then `b > a` is false)
+3) Transitivity -  if `a` is related to `b`, and `b` is related to `c`, then `a` is also related `c`
+- For integers, `>` is transitive (`a > b` && `b > c` -> `a > c`) and `√` is not (`a = √b` && `b = √c` doesn't mean `a = √c`)
+
+If a relation has 1, 2, and 3, we talk about Equivalence Relation (ER). If a relation only has 2 and 3, we talk about Partial Equivalence Relation (PER).
+
+This matters in comparing floats since they include [NaN](https://en.wikipedia.org/wiki/NaN). Depending on if we consider `NaN = NaN` true or false, we talk about ER or PER comparison respectively. 
+
+## What is the type known to the compiler and library for an equality operation?
 
 The static type known to the F# compiler is crucial to determining the performance of the operation. The runtime type of the equality check is also significant in some situations.
 
 Here we define the relevant static type `EQTYPE` for the different constructs above:
 
-#### Basics
+### Basics
 
 * `a = b`:  `EQTYPE` is the statically known type of `a` or `b`
 * `a <> b`: `EQTYPE` is the statically known type of `a` or `b`
 
-#### Inlined constructs
+### Inlined constructs
 
 * `HashIdentity.Structural<'T>`,  EQTYPE is the **inlined** `'T` (results in specialized equality)
 * `Array.contains<'T>`,  EQTYPE is the **inlined** `'T` (results in specialized equality)
@@ -42,7 +58,7 @@ Here we define the relevant static type `EQTYPE` for the different constructs ab
 
 These only resulting in naked generic equality if themselves used from a non-inlined generic context.
 
-#### Non-inlined constructs always resulting in naked generic equality
+### Non-inlined constructs always resulting in naked generic equality
 
 * `Array.groupBy<'Key, 'T> f array`, EQTYPE is non-inlined 'Key, results in naked generic equality
 * `Array.countBy array` likewise for `'T`
