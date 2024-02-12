@@ -34,13 +34,14 @@ let x = deserialize "" |> f""", 3, 9, 3, 28
     [<Theory>]
     [<MemberData(nameof(warningCases))>]
     let ``Warning is emitted when type Obj is inferred``(code: string, line1: int, col1: int, line2: int, col2: int) =
+        let code = $"module M\n{code}"
         FSharp code
         |> withErrorRanges
         |> withWarnOn 3559
         |> withLangVersion80
-        |> typecheck
+        |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Information 3559, Line line1, Col col1, Line line2, Col col2, message)
+        |> withSingleDiagnostic (Warning 3559, Line (line1 + 1), Col col1, Line (line2 + 1), Col col2, message)
 
     let quotableNoWarningCases =
         [
