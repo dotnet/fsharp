@@ -817,7 +817,14 @@ type internal TransparentCompiler
                     )
 
                 let bootstrapId = Interlocked.Increment &BootstrapInfoIdCounter
-                importsInvalidatedByTypeProvider.Publish.Add(fun () -> caches.BootstrapInfoStatic.Clear(fun kv -> kv = cacheKey.GetKey()))
+
+                importsInvalidatedByTypeProvider.Publish.Add(fun () ->
+                    // caches.BootstrapInfoStatic.Clear()
+                    // caches.BootstrapInfo.Clear()
+                    caches.Clear(Set.singleton projectSnapshot.Identifier)
+                // TODO: Should we clear more caches?
+                // caches.BootstrapInfoStatic.Clear(fun kv -> kv = cacheKey.GetKey())
+                )
 
                 return bootstrapId, tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider
             }
