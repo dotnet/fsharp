@@ -198,7 +198,7 @@ let f (x: float32) (y: float32) = (x = y)
 * Semantics: User expects structural
 * Perf: User expects perf is sum of constituent parts
 * Compilation today: GenericEqualityIntrinsic<uint8[]>
-* Perf today:  this is hand-optimized for some primitive element types ✅ but boxes each element if "other" is struct or T, see Problem1, Problem2 ❌ 
+* Perf today:  this is hand-optimized ([here](https://github.com/dotnet/fsharp/blob/611e4f350e119a4173a2b235eac65539ac2b61b6/src/FSharp.Core/prim-types.fs#L1734)) for some primitive element types ✅ but boxes each element if "other" is struct or T, see Problem1, Problem2 ❌ 
 * [sharplab for `byte[]`](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQCgB4lQIwE9lEBtAXQEpVDUBeLbemy+IA=)
 
 Effect of implementing ([#5112](https://github.com/dotnet/fsharp/pull/5112)):
