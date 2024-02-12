@@ -240,7 +240,8 @@ type SyntheticProject =
       NugetReferences: Reference list
       FrameworkReferences: Reference list
       /// If set to true this project won't cause an exception if there are errors in the initial check
-      SkipInitialCheck: bool }
+      SkipInitialCheck: bool
+      UseScriptResolutionRules: bool }
 
     static member Create(?name: string) =
         let name = defaultArg name $"TestProject_{Guid.NewGuid().ToString()[..7]}"
@@ -255,13 +256,17 @@ type SyntheticProject =
           AutoAddModules = true
           NugetReferences = []
           FrameworkReferences = []
-          SkipInitialCheck = false }
+          SkipInitialCheck = false
+          UseScriptResolutionRules = false }
 
     static member Create([<ParamArray>] sourceFiles: SyntheticSourceFile[]) =
         { SyntheticProject.Create() with SourceFiles = sourceFiles |> List.ofArray }
 
     static member Create(name: string, [<ParamArray>] sourceFiles: SyntheticSourceFile[]) =
         { SyntheticProject.Create(name) with SourceFiles = sourceFiles |> List.ofArray }
+    
+    static member CreateForScript(scriptFile: SyntheticSourceFile) =
+        { SyntheticProject.Create() with SourceFiles = [scriptFile]; UseScriptResolutionRules = true }
 
     member this.Find fileId =
         this.SourceFiles
@@ -339,7 +344,7 @@ type SyntheticProject =
                         [| for p in this.DependsOn do
                                FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
                     IsIncompleteTypeCheckEnvironment = false
-                    UseScriptResolutionRules = false
+                    UseScriptResolutionRules = this.UseScriptResolutionRules
                     LoadTime = DateTime()
                     UnresolvedReferences = None
                     OriginalLoadReferences = []
@@ -926,7 +931,7 @@ type ProjectWorkflowBuilder
         ?isExistingProject
     ) =
 
-    let useTransparentCompiler = defaultArg useTransparentCompiler FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically
+    let useTransparentCompiler = defaultArg useTransparentCompiler CompilerAssertHelpers.UseTransparentCompiler
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true
