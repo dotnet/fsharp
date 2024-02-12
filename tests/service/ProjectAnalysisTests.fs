@@ -4749,17 +4749,17 @@ type TestRecord = { B : int }
 
 module Test =
     [<AttrTest(typeof<int>)>]
-    let withType = 0
+    let withType() = 0
     [<AttrTest(typeof<list<int>>)>]
-    let withGenericType = 0
+    let withGenericType() = 0
     [<AttrTest(typeof<int * int>)>]
-    let withTupleType = 0
+    let withTupleType() = 0
     [<AttrTest(typeof<int -> int>)>]
-    let withFuncType = 0
+    let withFuncType() = 0
     [<AttrTest([| typeof<TestUnion>; typeof<TestRecord> |])>]
-    let withTypeArray = 0
+    let withTypeArray() = 0
     [<AttrTest([| 0; 1; 2 |])>]
-    let withIntArray = 0
+    let withIntArray() = 0
     module NestedModule =
         type NestedRecordType = { B : int }
 
