@@ -452,3 +452,34 @@ let _, _ = Thing.Do()
             (Error 501, Line 6, Col 12, Line 6, Col 22, "The member or object constructor 'Do' takes 1 argument(s) but is here given 0. The required signature is 'static member Thing.Do: [<Optional>] i: outref<bool> -> bool'.")
         ]
 
+    [<Fact>]
+    let ``optional and ParamArray parameter resolves correctly `` () =
+        Fsx """
+open System.Runtime.InteropServices
+    
+type Thing =
+    static member Do(
+        [<Optional; DefaultParameterValue "">] something: string, 
+        [<System.ParamArray>] args: obj[]) = something, args
+    static member Do2(
+        [<Optional; DefaultParameterValue "">] something: string, 
+        outvar: outref<int>,
+        [<System.ParamArray>] args: obj[]) = 
+        
+        outvar <- 1
+        something, args
+let _, _ = Thing.Do()
+let _, _ = Thing.Do("123")
+let _, _ = Thing.Do("123", 1, 2, 3, 4)
+
+let _, _ = Thing.Do2()
+let _, _ = Thing.Do2("123")
+let _ =
+    let mutable x = 0
+    Thing.Do2("123", &x)
+let _ =
+    let mutable x = 0
+    Thing.Do2("123", &x, 1, 2, 3, 4)
+    """
+        |> typecheck
+        |> shouldSucceed
