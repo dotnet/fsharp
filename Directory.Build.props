@@ -29,8 +29,8 @@
   <Choose>
     <!-- Once we move to OOP in VS, and major dependants of FCS will move to netcore (not netstandard),
          we should also support $(NetPrevious) for all releases.
-         This will likely include FCS and FSharp.Core as well ash shipped products.
-         Right now, it only covers producs we ship (FSC and FSI), not NuGet packages. -->
+         This will likely include FCS and FSharp.Core as well as shipped products.
+         Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
     <When
       Condition="'$(DotNetBuildFromSource)' == 'true' AND '$(DotNetBuildFromSourceFlavor)' == 'Product'">
       <PropertyGroup>
