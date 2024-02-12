@@ -111,13 +111,13 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
     [<Theory>]
     [<MemberData(nameof(quotableWarningCases))>]
     let ``Warn also inside quotations of acceptable code``(expr: string, line1: int, col1: int, line2: int, col2: int) =
-        sprintf "<@ %s @> |> ignore" expr
+        sprintf "module M\n<@ %s @> |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
         |> withLangVersion80
-        |> typecheck
+        |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Information 3559, Line line1, Col (col1 + 3), Line line2, Col (col2 + 3), message)
+        |> withSingleDiagnostic (Warning 3559, Line (line1 + 1), Col (col1 + 3), Line (line2 + 1), Col (col2 + 3), message)
 
     [<Theory>]
     [<MemberData(nameof(quotableNoWarningCases))>]
