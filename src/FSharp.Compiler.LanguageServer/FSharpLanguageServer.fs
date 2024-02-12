@@ -119,19 +119,28 @@ type LanguageFeaturesHandler() =
             ) =
             Task.FromResult(new RelatedUnchangedDocumentDiagnosticReport())
 
-type CapabilitiesManager() =
+type IServerCapabilitiesOverride =
+    abstract member OverrideServerCapabilities: ServerCapabilities -> ServerCapabilities
+
+type CapabilitiesManager(scOverrides: IServerCapabilitiesOverride seq) =
 
     let mutable initializeParams = None
+
+    let defaultCapabilities =
+        ServerCapabilities(
+            TextDocumentSync = TextDocumentSyncOptions(OpenClose = true, Change = TextDocumentSyncKind.Full),
+            DiagnosticOptions =
+                DiagnosticOptions(WorkDoneProgress = true, InterFileDependencies = true, Identifier = "potato", WorkspaceDiagnostics = true)
+        // CompletionProvider = CompletionOptions(TriggerCharacters=[|"."; " "|], ResolveProvider=true, WorkDoneProgress=true)
+        )
 
     interface IInitializeManager<InitializeParams, InitializeResult> with
         member this.SetInitializeParams(request) = initializeParams <- Some request
 
         member this.GetInitializeResult() =
             let serverCapabilities =
-                ServerCapabilities(
-                    TextDocumentSync = TextDocumentSyncOptions(OpenClose = true, Change = TextDocumentSyncKind.Full),
-                    DiagnosticOptions = DiagnosticOptions(InterFileDependencies = true, Identifier = "potato", WorkspaceDiagnostics = true)
-                )
+                (defaultCapabilities, scOverrides)
+                ||> Seq.fold (fun acc (x: IServerCapabilitiesOverride) -> x.OverrideServerCapabilities acc)
 
             InitializeResult(Capabilities = serverCapabilities)
 
@@ -178,19 +187,13 @@ type FSharpLanguageServer
     (jsonRpc: JsonRpc, logger: ILspLogger, ?initialWorkspace: FSharpWorkspace, ?addExtraHandlers: Action<IServiceCollection>) =
     inherit AbstractLanguageServer<FSharpRequestContext>(jsonRpc, logger)
 
-    let mutable _addExtraHandlers = addExtraHandlers
-
-    let initialWorkspace =
-        defaultArg
-            initialWorkspace
-            {
-                Projects = Map.empty
-                OpenFiles = Map.empty
-            }
+    let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace.Create [])
 
     do
         // This spins up the queue and ensure the LSP is ready to start receiving requests
         base.Initialize()
+
+    member _.JsonRpc: JsonRpc = jsonRpc
 
     member private this.GetBaseHandlerProvider() = base.GetHandlerProvider()
 
@@ -212,7 +215,7 @@ type FSharpLanguageServer
                 .AddSingleton(this)
                 .AddSingleton<ILifeCycleManager>(new LspServiceLifeCycleManager())
 
-        match _addExtraHandlers with
+        match addExtraHandlers with
         | Some handler -> handler.Invoke(serviceCollection)
         | None -> ()
 
@@ -221,12 +224,12 @@ type FSharpLanguageServer
         lspServices :> ILspServices
 
     static member Create() =
-        FSharpLanguageServer.Create(FSharpWorkspace.Create Seq.empty)
+        FSharpLanguageServer.Create(FSharpWorkspace.Create Seq.empty, (fun _ -> ()))
 
-    static member Create(initialWorkspace) =
-        FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace)
+    static member Create(initialWorkspace, addExtraHandlers: Action<IServiceCollection>) =
+        FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace, addExtraHandlers)
 
-    static member Create(logger: ILspLogger, initialWorkspace) =
+    static member Create(logger: ILspLogger, initialWorkspace, ?addExtraHandlers: Action<IServiceCollection>) =
 
         let struct (clientStream, serverStream) = FullDuplexStream.CreatePair()
 
@@ -244,7 +247,8 @@ type FSharpLanguageServer
 
         jsonRpc.TraceSource.Switch.Level <- SourceLevels.Information
 
-        let server = new FSharpLanguageServer(jsonRpc, logger, initialWorkspace)
+        let server =
+            new FSharpLanguageServer(jsonRpc, logger, initialWorkspace, ?addExtraHandlers = addExtraHandlers)
 
         jsonRpc.StartListening()
 

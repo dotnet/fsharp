@@ -11,6 +11,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.10.17-preview-1" />
     <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.10.17-preview-1" />
+
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.10.13-preview" />
   </ItemGroup>
 
   <ItemGroup>

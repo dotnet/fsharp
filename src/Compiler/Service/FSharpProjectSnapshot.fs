@@ -652,6 +652,60 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
 
+    static member FromResponseFile(responseFile: FileInfo, projectFileName) =
+        if not responseFile.Exists then
+            failwith $"%s{responseFile.FullName} does not exist"
+
+        let compilerArgs = File.ReadAllLines responseFile.FullName
+
+        let fsharpFileExtensions = set [| ".fs"; ".fsi"; ".fsx" |]
+
+        let isFSharpFile (file: string) =
+            Set.exists (fun (ext: string) -> file.EndsWith(ext, StringComparison.Ordinal)) fsharpFileExtensions
+
+        let isReference: string -> bool = _.StartsWith("-r:")
+
+        let fsharpFiles =
+            compilerArgs
+            |> Array.choose (fun (line: string) ->
+                if not (isFSharpFile line) then
+                    None
+                else
+
+                    let fullPath = Path.Combine(responseFile.DirectoryName, line)
+                    if not (File.Exists fullPath) then None else Some fullPath)
+            |> Array.toList
+
+        let referencesOnDisk =
+            compilerArgs |> Seq.filter isReference |> Seq.map _.Substring(3) |> Seq.toList
+
+        let otherOptions =
+            compilerArgs
+            |> Seq.filter (not << isReference)
+            |> Seq.filter (not << isFSharpFile)
+            |> Seq.toList
+
+        FSharpProjectSnapshot.Create(
+            projectFileName = projectFileName,
+            projectId = None,
+            sourceFiles = (fsharpFiles |> List.map FSharpFileSnapshot.CreateFromFileSystem),
+            referencesOnDisk =
+                (referencesOnDisk
+                 |> List.map (fun x ->
+                     {
+                         Path = x
+                         LastModified = FileSystem.GetLastWriteTimeShim(x)
+                     })),
+            otherOptions = otherOptions,
+            referencedProjects = [],
+            isIncompleteTypeCheckEnvironment = false,
+            useScriptResolutionRules = false,
+            loadTime = DateTime.Now,
+            unresolvedReferences = None,
+            originalLoadReferences = [],
+            stamp = None
+        )
+
 let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
     {
         ProjectFileName = projectSnapshot.ProjectFileName
