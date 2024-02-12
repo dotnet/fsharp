@@ -805,7 +805,8 @@ module Stuff =
 /// References projects are expected to have been built.
 let localResponseFiles =
     [|
-        @"C:\Projects\fantomas\src\Fantomas.Core.Tests\Fantomas.Core.Tests.rsp"
+        // @"C:\Projects\fantomas\src\Fantomas.Core.Tests\Fantomas.Core.Tests.rsp"
+        @"C:\Users\nojaf\Projects\TypeProviderSample\TypeProviderSample.rsp"
     |]
     |> Array.collect (fun f ->
         [|
@@ -815,7 +816,7 @@ let localResponseFiles =
     )
 
 // Uncomment this attribute if you want run this test against local response files.
-// [<Theory>]
+[<Theory>]
 [<MemberData(nameof(localResponseFiles))>]
 let ``TypeCheck last file in project with transparent compiler`` useTransparentCompiler responseFile =
     let responseFile = FileInfo responseFile
@@ -837,8 +838,22 @@ let ``TypeCheck last file in project with transparent compiler`` useTransparentC
     | None -> failwithf "Last file of project could not be found"
     | Some lastFile ->
 
+    let updatedSource = "
+open FSharp.Data
+
+type Simple = JsonProvider<\"\"\" { \"name\":\"John\", \"level\": \"s\" } \"\"\">
+let simple = Simple.Parse(\"\"\" { \"name\":\"Tomas\", \"level\": \"a\" } \"\"\")
+
+ignore (simple.Level, simple.Name)
+
+// For more information see https://aka.ms/fsharp-console-apps
+printfn \"Hello from F#\"
+"
+
     workflow {
         clearCache 
+        checkFile lastFile expectOk
+        updateFile lastFile (fun sf -> { sf with Source =  updatedSource})
         checkFile lastFile expectOk
     }
 
