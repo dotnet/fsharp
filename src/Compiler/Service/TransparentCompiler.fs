@@ -818,6 +818,9 @@ type internal TransparentCompiler
 
                 let bootstrapId = Interlocked.Increment &BootstrapInfoIdCounter
 
+                // TODO: In the future it might make sense to expose the event on the ProjectSnapshot and let the consumer deal with this.
+                // We could include a timestamp as part of the ProjectSnapshot key that represents the last time since the TypeProvider assembly was invalidated.
+                // When the event trigger, the consumer could then create a new snapshot based on the updated time.
                 importsInvalidatedByTypeProvider.Publish.Add(fun () -> caches.Clear(Set.singleton projectSnapshot.Identifier))
 
                 return bootstrapId, tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider
