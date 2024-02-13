@@ -610,6 +610,66 @@ module UnionTypes =
             (Warning 42, Line 11, Col 12, Line 11, Col 24, "This construct is deprecated: it is only for use in the F# library")
         ]
 
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``UnionCaseIsTester inlined and SignatureData`` userec =
+
+        let kwrec = if userec then "rec" else ""
+        let myLibraryFsi =
+            SourceCodeFileKind.Create(
+                "myLibrary.fsi",
+                $"""
+module {kwrec} MyLibrary
+
+    [<RequireQualifiedAccess>]
+    type PrimaryAssembly =
+        | Mscorlib
+        | System_Runtime
+        | NetStandard""")
+
+        let myLibraryFs =
+            SourceCodeFileKind.Create(
+                "myLibrary.fs",
+                $"""
+module {kwrec} MyLibrary
+
+    [<RequireQualifiedAccess>]
+    type PrimaryAssembly =
+        | Mscorlib
+        | System_Runtime
+        | NetStandard
+                """)
+
+        let myFileFs =
+            SourceCodeFileKind.Create(
+                "myFile.fs",
+                $"""
+module {kwrec} FileName
+
+    open MyLibrary
+    let inline getAssemblyType () = PrimaryAssembly.NetStandard
+    let inline isNetStandard () = (PrimaryAssembly.NetStandard).IsNetStandard
+                """)
+
+        let myLibrary =
+            (fsFromString myLibraryFsi) |> FS
+            |> withAdditionalSourceFiles [myLibraryFs; myFileFs]
+            |> asLibrary
+            |> withLangVersionPreview
+            |> withName "MyLibrary"
+
+        Fs """
+let x = FileName.getAssemblyType().IsNetStandard
+let y = FileName.getAssemblyType()
+let z = FileName.isNetStandard()
+printfn "%b %A %b" x y z
+           """
+            |> asExe
+            |> withReferences [myLibrary]
+            |> withLangVersionPreview
+            |> compileAndRun
+            |> shouldSucceed
 
     //SOURCE=W_UnionCaseProduction01.fsx SCFLAGS="-a --test:ErrorRanges"                          # W_UnionCaseProduction01.fsx
     [<Fact>]
