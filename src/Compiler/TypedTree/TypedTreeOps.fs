@@ -10469,9 +10469,9 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     //     if step = 0 then
     //         ignore ((.. ..) start step finish) // Throws.
     //     if 0 < step then
-    //         if finish < start then 0 else (finish - start) / step + 1
+    //         if finish < start then 0 else unsigned (finish - start) / unsigned step + 1
     //     else // step < 0
-    //         if start < finish then 0 else (finish - start) / step + 1
+    //         if start < finish then 0 else unsigned (start - finish) / unsigned (abs step) + 1
     | _, _, _ ->
         // Let the range call throw the appropriate localized
         // exception at runtime if step is zero:
