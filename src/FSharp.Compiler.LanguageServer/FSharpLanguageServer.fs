@@ -13,27 +13,40 @@ open Nerdbank.Streams
 open System.Diagnostics
 open System.IO
 open Workspace
+open FSharp.Compiler.CodeAnalysis
 
 [<AutoOpen>]
 module Stuff =
     [<Literal>]
     let FSharpLanguageName = "F#"
 
-type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspace: FSharpWorkspace) =
+type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspace: FSharpWorkspace, checker) =
     member _.LspServices = lspServices
     member _.Logger = logger
     member _.Workspace = workspace
+    member _.Checker = checker
 
 type ContextHolder(intialWorkspace, lspServices: ILspServices) =
 
     let logger = lspServices.GetRequiredService<ILspLogger>()
+    let checker =
+        FSharpChecker.Create(
+            keepAssemblyContents=true,
+            keepAllBackgroundResolutions=true,
+            keepAllBackgroundSymbolUses=true,
+            enableBackgroundItemKeyStoreAndSemanticClassification=true,
+            enablePartialTypeChecking=true,
+            parallelReferenceResolution=true,
+            captureIdentifiersWhenParsing=true,
+            useSyntaxTreeCache=true,
+            useTransparentCompiler=true)
 
-    let mutable context = FSharpRequestContext(lspServices, logger, intialWorkspace)
+    let mutable context = FSharpRequestContext(lspServices, logger, intialWorkspace, checker)
 
     member _.GetContext() = context
 
     member _.UpdateWorkspace(f) =
-        context <- FSharpRequestContext(lspServices, logger, f context.Workspace)
+        context <- FSharpRequestContext(lspServices, logger, f context.Workspace, checker)
 
 type FShapRequestContextFactory(lspServices: ILspServices) =
 
