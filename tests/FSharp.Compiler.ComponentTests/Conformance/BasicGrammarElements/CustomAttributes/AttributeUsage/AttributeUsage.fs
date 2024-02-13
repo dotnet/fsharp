@@ -117,6 +117,40 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 17, Col 3, Line 17, Col 13, "This attribute is not valid for use on this language element")
             (Error 842, Line 20, Col 3, Line 20, Col 13, "This attribute is not valid for use on this language element")
         ]
+        
+    // SOURCE=E_AttributeTargets04.fs					# E_AttributeTargets04.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets04.fs"|])>]
+    let ``E_AttributeTargets04_fs`` compilation =
+        compilation
+        |> withLangVersion80
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE=E_AttributeTargets04.fs					# E_AttributeTargets04.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets04.fs"|])>]
+    let ``E_AttributeTargets04_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 23, Col 3, Line 23, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 26, Col 3, Line 26, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 29, Col 3, Line 29, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 32, Col 3, Line 32, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 35, Col 3, Line 35, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 38, Col 3, Line 38, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 41, Col 3, Line 41, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 44, Col 3, Line 44, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 47, Col 3, Line 47, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 50, Col 3, Line 50, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 53, Col 3, Line 53, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 64, Col 3, Line 64, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 70, Col 3, Line 70, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 77, Col 3, Line 77, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 83, Col 3, Line 83, Col 12, "This attribute is not valid for use on this language element")
+            (Error 842, Line 95, Col 3, Line 95, Col 12, "This attribute is not valid for use on this language element")
+        ]
 
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ConditionalAttribute.fs"|])>]

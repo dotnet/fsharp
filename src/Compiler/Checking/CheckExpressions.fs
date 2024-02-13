@@ -10571,7 +10571,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 match pat with
                 | SynPat.Tuple _ when not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
                 | SynPat.Named _ when spatsL.IsEmpty && declaredTypars.IsEmpty && not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
-                | _ -> declKind.AllowedAttribTargets memberFlagsOpt
+                | _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
             else
                 declKind.AllowedAttribTargets memberFlagsOpt
 
