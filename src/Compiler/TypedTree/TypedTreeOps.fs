@@ -10590,36 +10590,36 @@ let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, 
             f start step finish
     
         | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), _ ->
-            mkCompGenLetIn mIn (nameof finish) rangeTy finish (fun (_, finish) ->
+            mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) ->
                 f start step finish)
     
         | _, (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) ->
-            mkCompGenLetIn mIn (nameof start) rangeTy start (fun (_, start) ->
+            mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
                 f start step finish)
     
         | (Expr.Const _ | Expr.Val _), _, (Expr.Const _ | Expr.Val _) ->
-            mkCompGenLetIn mIn (nameof step) rangeTy step (fun (_, step) ->
+            mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
                 f start step finish)
     
         | _, (Expr.Const _ | Expr.Val _), _ ->
-            mkCompGenLetIn mIn (nameof start) rangeTy start (fun (_, start) ->
-                mkCompGenLetIn mIn (nameof finish) rangeTy finish (fun (_, finish) ->
+            mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
+                mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) ->
                     f start step finish))
     
         | (Expr.Const _ | Expr.Val _), _, _ ->
-            mkCompGenLetIn mIn (nameof step) rangeTy step (fun (_, step) ->
-                mkCompGenLetIn mIn (nameof finish) rangeTy finish (fun (_, finish) ->
+            mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
+                mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) ->
                     f start step finish))
     
         | _, _, (Expr.Const _ | Expr.Val _) ->
-            mkCompGenLetIn mIn (nameof start) rangeTy start (fun (_, start) ->
-                mkCompGenLetIn mIn (nameof step) rangeTy step (fun (_, step) ->
+            mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
+                mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
                     f start step finish))
     
         | _, _, _ ->
-            mkCompGenLetIn mIn (nameof start) rangeTy start (fun (_, start) ->
-                mkCompGenLetIn mIn (nameof step) rangeTy step (fun (_, step) ->
-                    mkCompGenLetIn mIn (nameof finish) rangeTy finish (fun (_, finish) ->
+            mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
+                mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
+                    mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) ->
                         f start step finish)))
 
     mkLetBindingsIfNeeded (fun start step finish ->
