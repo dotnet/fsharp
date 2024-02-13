@@ -10151,8 +10151,8 @@ module IntegralConst =
 
     /// Constant -1.
     [<return: Struct>]
-    let (|MinusOne|_|) expr =
-        match expr with
+    let (|MinusOne|_|) c =
+        match c with
         | Const.Int32 -1
         | Const.Int64 -1L
         | Const.IntPtr -1L
@@ -10162,8 +10162,8 @@ module IntegralConst =
 
     /// Positive constant.
     [<return: Struct>]
-    let (|Positive|_|) expr =
-        match expr with
+    let (|Positive|_|) c =
+        match c with
         | Const.Int32 v when v > 0 -> ValueSome Positive
         | Const.Int64 v when v > 0L -> ValueSome Positive
         | Const.IntPtr v when v > 0L -> ValueSome Positive
@@ -10177,8 +10177,9 @@ module IntegralConst =
         | Const.Char v when v > '\000' -> ValueSome Positive
         | _ -> ValueNone
 
-    let abs expr =
-        match expr with
+    /// Returns the absolute value of the given integral constant.
+    let abs c =
+        match c with
         | Const.Int32 Int32.MinValue -> Const.UInt32 (uint Int32.MaxValue + 1u)
         | Const.Int64 Int64.MinValue -> Const.UInt64 (uint64 Int64.MaxValue + 1UL)
         | Const.IntPtr Int64.MinValue -> Const.UIntPtr (uint64 Int64.MaxValue + 1UL)
@@ -10189,7 +10190,7 @@ module IntegralConst =
         | Const.IntPtr v -> Const.IntPtr (abs v)
         | Const.Int16 v -> Const.Int16 (abs v)
         | Const.SByte v -> Const.SByte (abs v)
-        | _ -> expr
+        | _ -> c
 
 /// start..finish
 /// start..step..finish
