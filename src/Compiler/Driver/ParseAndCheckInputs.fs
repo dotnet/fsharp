@@ -1828,7 +1828,7 @@ let CheckMultipleInputsUsingGraphMode
             |> Graph.writeMermaidToFile graphFile)
 
     let _ = ctok // TODO Use it
-    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    let diagnosticsLogger = DiagnosticsAsyncState.DiagnosticsLogger
 
     // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
     // somewhere in the files processed prior to each one, or in the processing of this particular file.

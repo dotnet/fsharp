@@ -13,6 +13,7 @@ open System.Reflection
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open System.Threading
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -342,11 +343,12 @@ let DiscardErrorsLogger =
         member _.ErrorCount = 0
     }
 
-let AssertFalseDiagnosticsLogger =
-    { new DiagnosticsLogger("AssertFalseDiagnosticsLogger") with
-        // TODO: reenable these asserts in the compiler service
-        member _.DiagnosticSink(diagnostic, severity) = (* assert false; *) ()
-        member _.ErrorCount = (* assert false; *) 0
+let UninitializedDiagnosticsLogger =
+    { new DiagnosticsLogger("UninitialzedDiagnosticsLogger") with
+        member _.DiagnosticSink(diagnostic, severity) =
+            failwith "DiagnosticsAsyncState.DiagnosticsLogger not set."
+
+        member _.ErrorCount = failwith "DiagnosticsAsyncState.DiagnosticsLogger not set."
     }
 
 type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
@@ -375,28 +377,23 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
 /// Type holds thread-static globals for use by the compiler.
-type internal DiagnosticsThreadStatics =
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private buildPhase: BuildPhase
+type DiagnosticsAsyncState =
+    static let buildPhase = new AsyncLocal<BuildPhase voption>()
+    static let diagnosticsLogger = new AsyncLocal<DiagnosticsLogger voption>()
 
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private diagnosticsLogger: DiagnosticsLogger
-
-    static member BuildPhaseUnchecked = DiagnosticsThreadStatics.buildPhase
+    static let getOrCreate (holder: AsyncLocal<_>) defaultValue =
+        holder.Value
+        |> ValueOption.defaultWith (fun () ->
+            holder.Value <- ValueSome defaultValue
+            defaultValue)
 
     static member BuildPhase
-        with get () =
-            match box DiagnosticsThreadStatics.buildPhase with
-            | Null -> BuildPhase.DefaultPhase
-            | _ -> DiagnosticsThreadStatics.buildPhase
-        and set v = DiagnosticsThreadStatics.buildPhase <- v
+        with get () = getOrCreate buildPhase BuildPhase.DefaultPhase
+        and set v = buildPhase.Value <- ValueSome v
 
     static member DiagnosticsLogger
-        with get () =
-            match box DiagnosticsThreadStatics.diagnosticsLogger with
-            | Null -> AssertFalseDiagnosticsLogger
-            | _ -> DiagnosticsThreadStatics.diagnosticsLogger
-        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
+        with get () = getOrCreate diagnosticsLogger UninitializedDiagnosticsLogger
+        and set v = diagnosticsLogger.Value <- ValueSome v
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
@@ -438,7 +435,7 @@ module DiagnosticsLoggerExtensions =
             | ReportedError _ ->
                 PreserveStackTrace exn
                 raise exn
-            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase), severity)
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, DiagnosticsAsyncState.BuildPhase), severity)
 
         member x.ErrorR exn =
             x.EmitDiagnostic(exn, FSharpDiagnosticSeverity.Error)
@@ -498,32 +495,32 @@ module DiagnosticsLoggerExtensions =
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseBuildPhase (phase: BuildPhase) =
-    let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
-    DiagnosticsThreadStatics.BuildPhase <- phase
+    let oldBuildPhase = DiagnosticsAsyncState.BuildPhase
+    DiagnosticsAsyncState.BuildPhase <- phase
 
     { new IDisposable with
         member x.Dispose() =
-            DiagnosticsThreadStatics.BuildPhase <- oldBuildPhase
+            DiagnosticsAsyncState.BuildPhase <- oldBuildPhase
     }
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
-    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
+    let oldLogger = DiagnosticsAsyncState.DiagnosticsLogger
+    DiagnosticsAsyncState.DiagnosticsLogger <- transformer oldLogger
 
     { new IDisposable with
         member _.Dispose() =
-            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
+            DiagnosticsAsyncState.DiagnosticsLogger <- oldLogger
     }
 
 let UseDiagnosticsLogger newLogger =
     UseTransformedDiagnosticsLogger(fun _ -> newLogger)
 
 let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
-    DiagnosticsThreadStatics.BuildPhase <- phase
+    DiagnosticsAsyncState.BuildPhase <- phase
 
 let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
-    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+    DiagnosticsAsyncState.DiagnosticsLogger <- diagnosticsLogger
 
 /// This represents the thread-local state established as each task function runs as part of the build.
 ///
@@ -541,30 +538,43 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
             unwindBP.Dispose()
             unwindEL.Dispose()
 
+type CaptureDiagnosticsConcurrently(target) =
+    let loggers = System.Collections.Concurrent.ConcurrentQueue()
+
+    member _.LoggerForTask: DiagnosticsLogger =
+        let logger = CapturingDiagnosticsLogger("One of parallel computations")
+        loggers.Enqueue logger
+        logger
+
+    interface IDisposable with
+        member _.Dispose() =
+            for logger in loggers do
+                logger.CommitDelayedDiagnostics target
+
 // Global functions are still used by parser and TAST ops.
 
 /// Raises an exception with error recovery and returns unit.
 let errorR exn =
-    DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR exn
+    DiagnosticsAsyncState.DiagnosticsLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.
 let warning exn =
-    DiagnosticsThreadStatics.DiagnosticsLogger.Warning exn
+    DiagnosticsAsyncState.DiagnosticsLogger.Warning exn
 
 /// Raises a warning with error recovery and returns unit.
 let informationalWarning exn =
-    DiagnosticsThreadStatics.DiagnosticsLogger.InformationalWarning exn
+    DiagnosticsAsyncState.DiagnosticsLogger.InformationalWarning exn
 
 /// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
 let error exn =
-    DiagnosticsThreadStatics.DiagnosticsLogger.Error exn
+    DiagnosticsAsyncState.DiagnosticsLogger.Error exn
 
 /// Simulates an error. For test purposes only.
 let simulateError (diagnostic: PhasedDiagnostic) =
-    DiagnosticsThreadStatics.DiagnosticsLogger.SimulateError diagnostic
+    DiagnosticsAsyncState.DiagnosticsLogger.SimulateError diagnostic
 
 let diagnosticSink (diagnostic, severity) =
-    DiagnosticsThreadStatics.DiagnosticsLogger.DiagnosticSink(diagnostic, severity)
+    DiagnosticsAsyncState.DiagnosticsLogger.DiagnosticSink(diagnostic, severity)
 
 let errorSink diagnostic =
     diagnosticSink (diagnostic, FSharpDiagnosticSeverity.Error)
@@ -573,13 +583,13 @@ let warnSink diagnostic =
     diagnosticSink (diagnostic, FSharpDiagnosticSeverity.Warning)
 
 let errorRecovery exn m =
-    DiagnosticsThreadStatics.DiagnosticsLogger.ErrorRecovery exn m
+    DiagnosticsAsyncState.DiagnosticsLogger.ErrorRecovery exn m
 
 let stopProcessingRecovery exn m =
-    DiagnosticsThreadStatics.DiagnosticsLogger.StopProcessingRecovery exn m
+    DiagnosticsAsyncState.DiagnosticsLogger.StopProcessingRecovery exn m
 
 let errorRecoveryNoRange exn =
-    DiagnosticsThreadStatics.DiagnosticsLogger.ErrorRecoveryNoRange exn
+    DiagnosticsAsyncState.DiagnosticsLogger.ErrorRecoveryNoRange exn
 
 let deprecatedWithError s m = errorR (Deprecated(s, m))
 
@@ -598,7 +608,7 @@ let mlCompatError s m =
 
 [<DebuggerStepThrough>]
 let suppressErrorReporting f =
-    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    let diagnosticsLogger = DiagnosticsAsyncState.DiagnosticsLogger
 
     try
         let diagnosticsLogger =
@@ -857,14 +867,11 @@ type StackGuard(maxDepth: int, name: string) =
 
         try
             if depth % maxDepth = 0 then
-                let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                let buildPhase = DiagnosticsThreadStatics.BuildPhase
                 let ct = Cancellable.Token
 
                 async {
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
-                    use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
                     use _token = Cancellable.UsingToken ct
                     return f ()
                 }

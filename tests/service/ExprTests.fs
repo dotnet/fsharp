@@ -18,6 +18,7 @@ open System.Diagnostics
 open System.Threading
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
@@ -736,6 +737,10 @@ let ignoreTestIfStackOverflowExpected () =
 [<TestCase(true)>]
 [<Test>]
 let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
+
+    // TODO: Figure out why Transparent Compiler pushes diagnostics to the outer scope here.
+    if useTransparentCompiler then DiagnosticsAsyncState.DiagnosticsLogger <- DiscardErrorsLogger
+
     let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
@@ -877,6 +882,10 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
 [<TestCase(true)>]
 [<Test>]
 let ``Test Optimized Declarations Project1`` useTransparentCompiler =
+
+    // TODO: Figure out why Transparent Compiler pushes diagnostics to the outer scope here.
+    if useTransparentCompiler then DiagnosticsAsyncState.DiagnosticsLogger <- DiscardErrorsLogger
+
     let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)

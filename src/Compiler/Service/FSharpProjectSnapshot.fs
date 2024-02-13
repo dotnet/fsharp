@@ -19,6 +19,7 @@ open System.Runtime.CompilerServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.BuildGraph
 
 type internal ProjectIdentifier = string * string
 
@@ -586,7 +587,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                             async.Return
                             <| FSharpReferencedProjectSnapshot.ILModuleReference(outputName, getStamp, getReader))
 
-                    |> Async.Sequential
+                    |> Async.SequentialImmediate
 
                 let referencesOnDisk, otherOptions =
                     options.OtherOptions

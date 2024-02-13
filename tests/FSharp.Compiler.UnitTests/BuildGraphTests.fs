@@ -3,6 +3,7 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Xunit
 open FSharp.Test
@@ -16,14 +17,14 @@ module BuildGraphTests =
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let private createNode () =
         let o = obj ()
-        GraphNode(node { 
+        GraphNode(async { 
             Assert.shouldBeTrue (o <> null)
             return 1 
         }), WeakReference(o)
 
     [<Fact>]
     let ``Intialization of graph node should not have a computed value``() =
-        let node = GraphNode(node { return 1 })
+        let node = GraphNode(async { return 1 })
         Assert.shouldBeTrue(node.TryPeekValue().IsNone)
         Assert.shouldBeFalse(node.HasValue)
 
@@ -33,23 +34,23 @@ module BuildGraphTests =
         let resetEventInAsync = new ManualResetEvent(false)
 
         let graphNode = 
-            GraphNode(node { 
+            GraphNode(async { 
                 resetEventInAsync.Set() |> ignore
-                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
+                let! _ = Async.AwaitWaitHandle(resetEvent)
                 return 1 
             })
 
         let task1 =
-            node {
+            async {
                 let! _ = graphNode.GetOrComputeValue()
                 ()
-            } |> NodeCode.StartAsTask_ForTesting
+            } |> Async.StartAsTask_ForTesting
 
         let task2 =
-            node {
+            async {
                 let! _ = graphNode.GetOrComputeValue()
                 ()
-            } |> NodeCode.StartAsTask_ForTesting
+            } |> Async.StartAsTask_ForTesting
 
         resetEventInAsync.WaitOne() |> ignore
         resetEvent.Set() |> ignore
@@ -66,12 +67,12 @@ module BuildGraphTests =
         let mutable computationCount = 0
 
         let graphNode = 
-            GraphNode(node { 
+            GraphNode(async { 
                 computationCount <- computationCount + 1
                 return 1 
             })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
         Async.RunImmediate(work)
         |> ignore
@@ -82,9 +83,9 @@ module BuildGraphTests =
     let ``Many requests to get a value asynchronously should get the correct value``() =
         let requests = 10000
 
-        let graphNode = GraphNode(node { return 1 })
+        let graphNode = GraphNode(async { return 1 })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
         let result = Async.RunImmediate(work)
 
@@ -101,7 +102,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        NodeCode.RunImmediateWithoutCancellation(graphNode.GetOrComputeValue())
+        Async.RunImmediateWithoutCancellation(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -118,7 +119,7 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode)))
+        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -128,59 +129,45 @@ module BuildGraphTests =
     [<Fact>]
     let ``A request can cancel``() =
         let graphNode = 
-            GraphNode(node { 
+            GraphNode(async { 
                 return 1 
             })
 
         use cts = new CancellationTokenSource()
 
-        let work =
-            node {
+        let work(): Task =
+            Async.StartAsTask(
+            async {
                 cts.Cancel()
                 return! graphNode.GetOrComputeValue()
-            }
+            }, cancellationToken = cts.Token)
 
-        let ex =
-            try
-                NodeCode.RunImmediate(work, ct = cts.Token)
-                |> ignore
-                failwith "Should have canceled"
-            with
-            | :? OperationCanceledException as ex ->
-                ex
-
-        Assert.shouldBeTrue(ex <> null)
+        Assert.ThrowsAnyAsync<OperationCanceledException>(work).Wait()
 
     [<Fact>]
     let ``A request can cancel 2``() =
         let resetEvent = new ManualResetEvent(false)
 
         let graphNode = 
-            GraphNode(node { 
-                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
-                return 1 
+            GraphNode(async { 
+                let! _ = Async.AwaitWaitHandle(resetEvent)
+                failwith "Should have canceled" 
             })
 
         use cts = new CancellationTokenSource()
 
         let task =
-            node {
+            async {
                 cts.Cancel()
                 resetEvent.Set() |> ignore
             }
-            |> NodeCode.StartAsTask_ForTesting
+            |> Async.StartAsTask_ForTesting
 
-        let ex =
-            try
-                NodeCode.RunImmediate(graphNode.GetOrComputeValue(), ct = cts.Token)
-                |> ignore
-                failwith "Should have canceled"
-            with
-            | :? OperationCanceledException as ex ->
-                ex
+        Assert.ThrowsAnyAsync<OperationCanceledException>(fun () ->
+            Async.StartImmediateAsTask(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)      
+        ) |> ignore
 
-        Assert.shouldBeTrue(ex <> null)
-        try task.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ()
+        if task.Wait(1000) |> not then raise (TimeoutException())
 
     [<Fact>]
     let ``Many requests to get a value asynchronously might evaluate the computation more than once even when some requests get canceled``() =
@@ -190,9 +177,9 @@ module BuildGraphTests =
         let mutable computationCount = 0
 
         let graphNode = 
-            GraphNode(node { 
+            GraphNode(async { 
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
-                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
+                let! _ = Async.AwaitWaitHandle(resetEvent)
                 computationCount <- computationCount + 1
                 return 1 
             })
@@ -200,7 +187,7 @@ module BuildGraphTests =
         use cts = new CancellationTokenSource()
 
         let work = 
-            node { 
+            async { 
                 let! _ = graphNode.GetOrComputeValue()
                 ()
             }
@@ -209,15 +196,15 @@ module BuildGraphTests =
 
         for i = 0 to requests - 1 do
             if i % 10 = 0 then
-                NodeCode.StartAsTask_ForTesting(work, ct = cts.Token)
+                Async.StartAsTask_ForTesting(work, ct = cts.Token)
                 |> tasks.Add
             else
-                NodeCode.StartAsTask_ForTesting(work)
+                Async.StartAsTask_ForTesting(work)
                 |> tasks.Add
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        NodeCode.RunImmediateWithoutCancellation(work)
+        Async.RunImmediateWithoutCancellation(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
@@ -242,16 +229,16 @@ module BuildGraphTests =
             let rng = Random()
             fun n -> rng.Next n
     
-        let job phase _ = node {
-            do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
-            Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+        let job phase _ = async {
+            do! random 10 |> Async.Sleep 
+            Assert.Equal(phase, DiagnosticsAsyncState.BuildPhase)
         }
     
         let work (phase: BuildPhase) =
-            node {
+            async {
                 use _ = new CompilationGlobalsScope(DiscardErrorsLogger, phase)
-                let! _ = Seq.init 8 (job phase) |> NodeCode.Parallel
-                Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+                let! _ = Seq.init 8 (job phase) |> Async.Parallel
+                Assert.Equal(phase, DiagnosticsAsyncState.BuildPhase)
             }
     
         let phases = [|
@@ -270,6 +257,6 @@ module BuildGraphTests =
     
         let pickRandomPhase _ = phases[random phases.Length]
         Seq.init 100 pickRandomPhase
-        |> Seq.map (work >> Async.AwaitNodeCode)
+        |> Seq.map work
         |> Async.Parallel
         |> Async.RunSynchronously
