@@ -30,6 +30,7 @@ type TypeOne () = class end
 type TypeTwo () = class end
 type TypeThree () = class end
 type TypeFour () = class end
+type HiddenType () = class end
         """))
         |> asLibrary
         |> withLangVersionPreview
@@ -73,7 +74,6 @@ type TypeFour () = class end
 
 }"""
 
-
                 """
 .class public auto ansi serializable RealInternalSignature.TypeThree
        extends [runtime]System.Object
@@ -109,6 +109,24 @@ type TypeFour () = class end
   } 
 
 }"""
+                """
+.class private auto ansi serializable RealInternalSignature.HiddenType
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+  .method public specialname rtspecialname instance void  .ctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  pop
+    IL_0008:  ret
+  } 
+
+}"""
+
             else
                 """
 .class public auto ansi serializable RealInternalSignature.TypeOne
@@ -146,7 +164,6 @@ type TypeFour () = class end
 
 }"""
 
-
                 """
 .class public auto ansi serializable RealInternalSignature.TypeThree
        extends [runtime]System.Object
@@ -167,6 +184,24 @@ type TypeFour () = class end
 
                 """
 .class public auto ansi serializable RealInternalSignature.TypeFour
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+  .method public specialname rtspecialname instance void  .ctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  pop
+    IL_0008:  ret
+  } 
+
+}"""
+
+                """
+.class private auto ansi serializable RealInternalSignature.HiddenType
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
@@ -205,6 +240,7 @@ type TypeOne () = class end
 type TypeTwo () = class end
 type TypeThree () = class end
 type TypeFour () = class end
+type HiddenType () = class end
         """))
         |> asLibrary
         |> withLangVersionPreview
@@ -283,6 +319,24 @@ type TypeFour () = class end
 
 }"""
 
+                """
+.class private auto ansi serializable RealInternalSignature.HiddenType
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+  .method public specialname rtspecialname instance void  .ctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  pop
+    IL_0008:  ret
+  } 
+
+}"""
+
             ]
         |> shouldSucceed
 
@@ -305,7 +359,8 @@ type TestType () =
     member _.PublicMethod() = ()
     member _.InternalMethod() = ()
     member _.PrivateMethod() = ()
-    member _.DefaultMethod() = ()"""))
+    member _.DefaultMethod() = ()
+    member _.HiddenMethod() = ()"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -316,11 +371,14 @@ type TestType () =
                 ".method assembly hidebysig instance void InternalMethod() cil managed"
                 ".method private hidebysig instance void PrivateMethod() cil managed"
                 ".method public hidebysig instance void DefaultMethod() cil managed"
+                ".method assembly hidebysig instance void HiddenMethod() cil managed"
+
             else
                 ".method public hidebysig instance void PublicMethod() cil managed"
                 ".method assembly hidebysig instance void InternalMethod() cil managed"
                 ".method assembly hidebysig instance void PrivateMethod() cil managed"
                 ".method public hidebysig instance void DefaultMethod() cil managed"
+                ".method assembly hidebysig instance void HiddenMethod() cil managed"
 
             ]
         |> shouldSucceed
@@ -344,7 +402,8 @@ type TestType () =
     member _.PublicMethod() = ()
     member _.InternalMethod() = ()
     member _.PrivateMethod() = ()
-    member _.DefaultMethod() = ()"""))
+    member _.DefaultMethod() = ()
+    member _.HiddenMethod() = ()"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -355,12 +414,14 @@ type TestType () =
                 ".method assembly hidebysig instance void InternalMethod() cil managed"
                 ".method private hidebysig instance void PrivateMethod() cil managed"
                 ".method public hidebysig instance void DefaultMethod() cil managed"
+                ".method assembly hidebysig instance void HiddenMethod() cil managed"
 
             else
                 ".method assembly hidebysig instance void PublicMethod() cil managed"
                 ".method assembly hidebysig instance void InternalMethod() cil managed"
                 ".method assembly hidebysig instance void PrivateMethod() cil managed"
                 ".method assembly hidebysig instance void DefaultMethod() cil managed"
+                ".method assembly hidebysig instance void HiddenMethod() cil managed"
 
             ]
         |> shouldSucceed
@@ -388,7 +449,8 @@ type TestType () =
     member val PublicProperty = 0 with get, set
     member val InternalProperty = 0 with get, set
     member val PrivateProperty = 0 with get, set
-    member val DefaultProperty = 0 with get, set"""))
+    member val DefaultProperty = 0 with get, set
+    member val HiddenProperty = 0 with get, set"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -403,6 +465,8 @@ type TestType () =
                 ".method private hidebysig specialname instance void set_PrivateProperty(int32 v) cil managed"
                 ".method public hidebysig specialname instance int32 get_DefaultProperty() cil managed"
                 ".method public hidebysig specialname instance void set_DefaultProperty(int32 v) cil managed"
+                ".method assembly hidebysig specialname instance int32  get_HiddenProperty() cil managed"
+                ".method assembly hidebysig specialname instance void  set_HiddenProperty(int32 v) cil managed"
 
             else
                 ".method public hidebysig specialname instance int32 get_PublicProperty() cil managed"
@@ -413,6 +477,8 @@ type TestType () =
                 ".method assembly hidebysig specialname instance void  set_PrivateProperty(int32 v) cil managed"
                 ".method public hidebysig specialname instance int32 get_DefaultProperty() cil managed"
                 ".method public hidebysig specialname instance void set_DefaultProperty(int32 v) cil managed"
+                ".method assembly hidebysig specialname instance int32  get_HiddenProperty() cil managed"
+                ".method assembly hidebysig specialname instance void  set_HiddenProperty(int32 v) cil managed"
 
             ]
         |> shouldSucceed
@@ -440,7 +506,8 @@ type TestType () =
     member val PublicProperty = 0 with get, set
     member val InternalProperty = 0 with get, set
     member val PrivateProperty = 0 with get, set
-    member val DefaultProperty = 0 with get, set"""))
+    member val DefaultProperty = 0 with get, set
+    member val HiddenProperty = 0 with get, set"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -455,6 +522,8 @@ type TestType () =
                 ".method private hidebysig specialname instance void set_PrivateProperty(int32 v) cil managed"
                 ".method public hidebysig specialname instance int32 get_DefaultProperty() cil managed"
                 ".method public hidebysig specialname instance void set_DefaultProperty(int32 v) cil managed"
+                ".method assembly hidebysig specialname instance int32  get_HiddenProperty() cil managed"
+                ".method assembly hidebysig specialname instance void  set_HiddenProperty(int32 v) cil managed"
 
             else
                 ".method assembly hidebysig specialname instance int32  get_PublicProperty() cil managed"
@@ -465,6 +534,8 @@ type TestType () =
                 ".method assembly hidebysig specialname instance void  set_PrivateProperty(int32 v) cil managed"
                 ".method assembly hidebysig specialname instance int32  get_DefaultProperty() cil managed"
                 ".method assembly hidebysig specialname instance void  set_DefaultProperty(int32 v) cil managed"
+                ".method assembly hidebysig specialname instance int32  get_HiddenProperty() cil managed"
+                ".method assembly hidebysig specialname instance void  set_HiddenProperty(int32 v) cil managed"
 
             ]
         |> shouldSucceed
@@ -705,7 +776,8 @@ type TestType () =
     static member PublicMethod() = ()
     static member InternalMethod() = ()
     static member PrivateMethod() = ()
-    static member DefaultMethod() = ()"""))
+    static member DefaultMethod() = ()
+    static member HiddenMethod() = ()"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -716,11 +788,14 @@ type TestType () =
                 ".method assembly static void  InternalMethod() cil managed"
                 ".method private static void  PrivateMethod() cil managed"
                 ".method public static void  DefaultMethod() cil managed"
+                ".method assembly static void  HiddenMethod() cil managed"
+
             else
                 ".method public static void  PublicMethod() cil managed"
                 ".method assembly static void  InternalMethod() cil managed"
                 ".method assembly static void  PrivateMethod() cil managed"
                 ".method public static void  DefaultMethod() cil managed"
+                ".method assembly static void  HiddenMethod() cil managed"
 
             ]
         |> shouldSucceed
@@ -781,7 +856,8 @@ type TestType () =
     static member val PublicProperty = 0 with get, set
     static member val InternalProperty = 0 with get, set
     static member val PrivateProperty = 0 with get, set
-    static member val DefaultProperty = 0 with get, set"""))
+    static member val DefaultProperty = 0 with get, set
+    static member val HiddenProperty = 0 with get, set"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -796,6 +872,8 @@ type TestType () =
                 ".method private specialname static void set_PrivateProperty(int32 v) cil managed"
                 ".method public specialname static int32 get_DefaultProperty() cil managed"
                 ".method public specialname static void set_DefaultProperty(int32 v) cil managed"
+                ".method assembly specialname static int32 get_HiddenProperty() cil managed"
+                ".method assembly specialname static void set_HiddenProperty(int32 v) cil managed"
 
             else
                 ".method public specialname static int32 get_PublicProperty() cil managed"
@@ -806,6 +884,8 @@ type TestType () =
                 ".method assembly specialname static void set_PrivateProperty(int32 v) cil managed"
                 ".method public specialname static int32 get_DefaultProperty() cil managed"
                 ".method public specialname static void set_DefaultProperty(int32 v) cil managed"
+                ".method assembly specialname static int32 get_HiddenProperty() cil managed"
+                ".method assembly specialname static void set_HiddenProperty(int32 v) cil managed"
 
             ]
         |> shouldSucceed
@@ -833,7 +913,8 @@ type TestType () =
     static member val PublicProperty = 0 with get, set
     static member val InternalProperty = 0 with get, set
     static member val PrivateProperty = 0 with get, set
-    static member val DefaultProperty = 0 with get, set"""))
+    static member val DefaultProperty = 0 with get, set
+    static member val HiddenProperty = 0 with get, set"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -848,6 +929,8 @@ type TestType () =
                 ".method private specialname static void set_PrivateProperty(int32 v) cil managed"
                 ".method public specialname static int32 get_DefaultProperty() cil managed"
                 ".method public specialname static void set_DefaultProperty(int32 v) cil managed"
+                ".method assembly specialname static int32 get_HiddenProperty() cil managed"
+                ".method assembly specialname static void set_HiddenProperty(int32 v) cil managed"
 
             else
                 ".method assembly specialname static int32 get_PublicProperty() cil managed"
@@ -858,6 +941,8 @@ type TestType () =
                 ".method assembly specialname static void set_PrivateProperty(int32 v) cil managed"
                 ".method assembly specialname static int32 get_DefaultProperty() cil managed"
                 ".method assembly specialname static void set_DefaultProperty(int32 v) cil managed"
+                ".method assembly specialname static int32 get_HiddenProperty() cil managed"
+                ".method assembly specialname static void set_HiddenProperty(int32 v) cil managed"
 
             ]
         |> shouldSucceed
@@ -1098,7 +1183,8 @@ type TestType () =
     static member PublicMethod() = ()
     static member InternalMethod() = ()
     static member PrivateMethod() = ()
-    static member DefaultMethod() = ()"""))
+    static member DefaultMethod() = ()
+    static member HiddenMethod() = ()"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -1109,11 +1195,14 @@ type TestType () =
                 ".method assembly static void  InternalMethod() cil managed"
                 ".method assembly static void  PrivateMethod() cil managed"
                 ".method assembly static void  DefaultMethod() cil managed"
+                ".method assembly static void  HiddenMethod() cil managed"
+
             else
                 ".method public static void  PublicMethod() cil managed"
                 ".method assembly static void  InternalMethod() cil managed"
                 ".method assembly static void  PrivateMethod() cil managed"
                 ".method assembly static void  DefaultMethod() cil managed"
+                ".method assembly static void  HiddenMethod() cil managed"
 
             ]
         |> shouldSucceed
@@ -1139,7 +1228,8 @@ type TestType () =
         static member PublicMethod() = ()
         static member InternalMethod() = ()
         static member PrivateMethod() = ()
-        static member DefaultMethod() = ()"""))
+        static member DefaultMethod() = ()
+        static member HiddenMethod() = ()"""))
         |> asLibrary
         |> withLangVersionPreview
         |> withRealInternalSignature realSig
@@ -1150,11 +1240,13 @@ type TestType () =
                 ".method assembly static void  InternalMethod() cil managed"
                 ".method assembly static void  PrivateMethod() cil managed"
                 ".method assembly static void  DefaultMethod() cil managed"
+                ".method assembly static void  HiddenMethod() cil managed"
             else
                 ".method public static void  PublicMethod() cil managed"
                 ".method assembly static void  InternalMethod() cil managed"
                 ".method assembly static void  PrivateMethod() cil managed"
                 ".method assembly static void  DefaultMethod() cil managed"
+                ".method assembly static void  HiddenMethod() cil managed"
 
             ]
         |> shouldSucceed
