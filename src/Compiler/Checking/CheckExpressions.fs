@@ -10556,8 +10556,13 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             | _, _, _ -> envinner.eCallerMemberName
 
         let envinner = {envinner with eCallerMemberName = callerName }
+        let isInstance =
+            match memberFlagsOpt with
+            | Some memberFlags  -> memberFlags.IsInstance
+            | _ -> false
+
         let attrTgt =
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) then
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) && not isInstance then
                 let supportsNameofFeature = g.langVersion.SupportsFeature(LanguageFeature.NameOf)
                 let rhsExprIsFunction =
                     match rhsExpr with
@@ -10569,7 +10574,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                     | _ -> false
                 
                 match pat with
-                | SynPat.Tuple _ when not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+                | SynPat.Tuple _ when not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.ReturnValue
                 | SynPat.Named _ when spatsL.IsEmpty && declaredTypars.IsEmpty && not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
                 | _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
             else

@@ -151,6 +151,26 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 83, Col 3, Line 83, Col 12, "This attribute is not valid for use on this language element")
             (Error 842, Line 95, Col 3, Line 95, Col 12, "This attribute is not valid for use on this language element")
         ]
+        
+        // SOURCE=E_AttributeTargets05.fs					# E_AttributeTargets05.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets05.fs"|])>]
+    let ``E_AttributeTargets05_fs`` compilation =
+        compilation
+        |> withLangVersion80
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE=E_AttributeTargets05.fs					# E_AttributeTargets05.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets05.fs"|])>]
+    let ``E_AttributeTargets05_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 20, Col 6, Line 20, Col 15, "This attribute is not valid for use on this language element");
+            (Error 842, Line 23, Col 6, Line 23, Col 16, "This attribute is not valid for use on this language element")
+        ]
 
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ConditionalAttribute.fs"|])>]
