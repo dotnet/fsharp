@@ -29,9 +29,10 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
 type ContextHolder(intialWorkspace, lspServices: ILspServices) =
 
     let logger = lspServices.GetRequiredService<ILspLogger>()
+
+    // TODO: We need to get configuration for this somehow. Also make it replaceable when configuration changes.
     let checker =
         FSharpChecker.Create(
-            keepAssemblyContents=true,
             keepAllBackgroundResolutions=true,
             keepAllBackgroundSymbolUses=true,
             enableBackgroundItemKeyStoreAndSemanticClassification=true,
