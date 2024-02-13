@@ -63,44 +63,42 @@
       IL_000a:  stloc.2
       IL_000b:  ldc.i4.0
       IL_000c:  stloc.3
-      IL_000d:  br.s       IL_001f
+      IL_000d:  br.s       IL_001b
 
       IL_000f:  ldloc.1
       IL_0010:  ldloc.2
       IL_0011:  ldloc.3
-      IL_0012:  stelem     [runtime]System.Int32
-      IL_0017:  ldloc.3
+      IL_0012:  stelem.i4
+      IL_0013:  ldloc.3
+      IL_0014:  ldc.i4.1
+      IL_0015:  add
+      IL_0016:  stloc.3
+      IL_0017:  ldloc.2
       IL_0018:  ldc.i4.1
       IL_0019:  add
-      IL_001a:  stloc.3
+      IL_001a:  stloc.2
       IL_001b:  ldloc.2
-      IL_001c:  ldc.i4.1
-      IL_001d:  add
-      IL_001e:  stloc.2
-      IL_001f:  ldloc.2
+      IL_001c:  ldc.i4.s   101
+      IL_001e:  blt.un.s   IL_000f
+
       IL_0020:  ldloc.1
-      IL_0021:  ldlen
-      IL_0022:  conv.i4
-      IL_0023:  blt.s      IL_000f
+      IL_0021:  stloc.0
+      IL_0022:  ldc.i4.0
+      IL_0023:  stloc.2
+      IL_0024:  br.s       IL_0031
 
-      IL_0025:  ldloc.1
-      IL_0026:  stloc.0
-      IL_0027:  ldc.i4.0
-      IL_0028:  stloc.2
-      IL_0029:  br.s       IL_0036
+      IL_0026:  ldloc.0
+      IL_0027:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashIntrinsic<int32[]>(!!0)
+      IL_002c:  stloc.3
+      IL_002d:  ldloc.2
+      IL_002e:  ldc.i4.1
+      IL_002f:  add
+      IL_0030:  stloc.2
+      IL_0031:  ldloc.2
+      IL_0032:  ldc.i4     0x989681
+      IL_0037:  blt.s      IL_0026
 
-      IL_002b:  ldloc.0
-      IL_002c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashIntrinsic<int32[]>(!!0)
-      IL_0031:  stloc.3
-      IL_0032:  ldloc.2
-      IL_0033:  ldc.i4.1
-      IL_0034:  add
-      IL_0035:  stloc.2
-      IL_0036:  ldloc.2
-      IL_0037:  ldc.i4     0x989681
-      IL_003c:  blt.s      IL_002b
-
-      IL_003e:  ret
+      IL_0039:  ret
     } 
 
   } 

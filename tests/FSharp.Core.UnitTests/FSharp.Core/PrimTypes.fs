@@ -821,7 +821,9 @@ module internal RangeTestsHelpers =
         enumerator.Current |> ignore
 
     let inline exceptions zero one two =
+        Assert.Throws (typeof<System.ArgumentException>, (fun () -> {one .. zero .. two} |> Seq.length |> ignore)) |> ignore
         Assert.Throws (typeof<System.ArgumentException>, (fun () -> [one .. zero .. two] |> List.length |> ignore)) |> ignore
+        Assert.Throws (typeof<System.ArgumentException>, (fun () -> [|one .. zero .. two|] |> Array.length |> ignore)) |> ignore
 
         Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionBeforeStartSingleStepRangeEnumerator zero one)) |> ignore
         Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionBeforeStartVariableStepIntegralRange zero two)) |> ignore
@@ -829,27 +831,63 @@ module internal RangeTestsHelpers =
         Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionAfterEndVariableStepIntegralRange zero two))    |> ignore
 
     let inline common (min0, min1, min2, min3) (max0, max1, max2, max3) (zero, one, two, three) =
+        Assert.AreEqual ({min0 ..          min3}, seq {yield min0; yield min1; yield min2; yield min3})
+        Assert.AreEqual ({min0 .. one   .. min3}, seq {min0; min1; min2; min3})
+        Assert.AreEqual ({min0 .. two   .. min3}, seq {min0; min2})
+        Assert.AreEqual ({min0 .. three .. min3}, seq {min0; min3})
+
         Assert.AreEqual ([min0 ..          min3], [min0; min1; min2; min3])
         Assert.AreEqual ([min0 .. one   .. min3], [min0; min1; min2; min3])
         Assert.AreEqual ([min0 .. two   .. min3], [min0; min2])
         Assert.AreEqual ([min0 .. three .. min3], [min0; min3])
+
+        Assert.AreEqual ([|min0 ..          min3|], [|min0; min1; min2; min3|])
+        Assert.AreEqual ([|min0 .. one   .. min3|], [|min0; min1; min2; min3|])
+        Assert.AreEqual ([|min0 .. two   .. min3|], [|min0; min2|])
+        Assert.AreEqual ([|min0 .. three .. min3|], [|min0; min3|])
+
+        Assert.AreEqual ({max3 ..          max0}, seq {yield max3; yield max2; yield max1; yield max0})
+        Assert.AreEqual ({max3 .. one   .. max0}, seq {max3; max2; max1; max0})
+        Assert.AreEqual ({max3 .. two   .. max0}, seq {max3; max1})
+        Assert.AreEqual ({max3 .. three .. max0}, seq {max3; max0})
 
         Assert.AreEqual ([max3 ..          max0], [max3; max2; max1; max0])
         Assert.AreEqual ([max3 .. one   .. max0], [max3; max2; max1; max0])
         Assert.AreEqual ([max3 .. two   .. max0], [max3; max1])
         Assert.AreEqual ([max3 .. three .. max0], [max3; max0])
 
+        Assert.AreEqual ([|max3 ..          max0|], [|max3; max2; max1; max0|])
+        Assert.AreEqual ([|max3 .. one   .. max0|], [|max3; max2; max1; max0|])
+        Assert.AreEqual ([|max3 .. two   .. max0|], [|max3; max1|])
+        Assert.AreEqual ([|max3 .. three .. max0|], [|max3; max0|])
+
+        Assert.AreEqual ({max0 ..          min0}, Seq.empty)
+        Assert.AreEqual ({max0 .. one   .. min0}, Seq.empty)
+        Assert.AreEqual ({max0 .. two   .. min0}, Seq.empty)
+        Assert.AreEqual ({max0 .. three .. min0}, Seq.empty)
+
         Assert.AreEqual ([max0 ..          min0], [])
         Assert.AreEqual ([max0 .. one   .. min0], [])
         Assert.AreEqual ([max0 .. two   .. min0], [])
         Assert.AreEqual ([max0 .. three .. min0], [])
 
+        Assert.AreEqual ([|max0 ..          min0|], [||])
+        Assert.AreEqual ([|max0 .. one   .. min0|], [||])
+        Assert.AreEqual ([|max0 .. two   .. min0|], [||])
+        Assert.AreEqual ([|max0 .. three .. min0|], [||])
+
         exceptions zero one two
 
         // tests for singleStepRangeEnumerator, as it only is used if start and/or end are not the
         // minimum or maximum of the number range and it is counting by 1s
+        Assert.AreEqual ({min1 .. min3}, seq {min1; min2; min3})
+        Assert.AreEqual ({max3 .. max1}, seq {max3; max2; max1})
+
         Assert.AreEqual ([min1 .. min3], [min1; min2; min3])
         Assert.AreEqual ([max3 .. max1], [max3; max2; max1])
+
+        Assert.AreEqual ([|min1 .. min3|], [|min1; min2; min3|])
+        Assert.AreEqual ([|max3 .. max1|], [|max3; max2; max1|])
 
     let inline signed min0 max0 =
         let zero  = LanguagePrimitives.GenericZero
@@ -867,27 +905,71 @@ module internal RangeTestsHelpers =
 
         common (min0, min1, min2, min3) (max0, max1, max2, max3) (zero, one, two, three)
 
+        Assert.AreEqual ({min0 .. max0 .. max0}, seq { min0; min0 + max0; min0 + max0 + max0 })
+        Assert.AreEqual ({min0 .. max1 .. max0}, seq { min0; min0 + max1; min0 + max1 + max1 })
+        Assert.AreEqual ({min0 .. max2 .. max0}, seq { min0; min0 + max2; min0 + max2 + max2 })
+        Assert.AreEqual ({min0 .. max3 .. max0}, seq { min0; min0 + max3; min0 + max3 + max3 })
+
         Assert.AreEqual ([min0 .. max0 .. max0], [ min0; min0 + max0; min0 + max0 + max0 ])
         Assert.AreEqual ([min0 .. max1 .. max0], [ min0; min0 + max1; min0 + max1 + max1 ])
         Assert.AreEqual ([min0 .. max2 .. max0], [ min0; min0 + max2; min0 + max2 + max2 ])
         Assert.AreEqual ([min0 .. max3 .. max0], [ min0; min0 + max3; min0 + max3 + max3 ])
 
+        Assert.AreEqual ([|min0 .. max0 .. max0|], [| min0; min0 + max0; min0 + max0 + max0 |])
+        Assert.AreEqual ([|min0 .. max1 .. max0|], [| min0; min0 + max1; min0 + max1 + max1 |])
+        Assert.AreEqual ([|min0 .. max2 .. max0|], [| min0; min0 + max2; min0 + max2 + max2 |])
+        Assert.AreEqual ([|min0 .. max3 .. max0|], [| min0; min0 + max3; min0 + max3 + max3 |])
+
+        Assert.AreEqual ({min3 .. -one   .. min0}, seq {min3; min2; min1; min0})
+        Assert.AreEqual ({min3 .. -two   .. min0}, seq {min3; min1})
+        Assert.AreEqual ({min3 .. -three .. min0}, seq {min3; min0})
+
         Assert.AreEqual ([min3 .. -one   .. min0], [min3; min2; min1; min0])
         Assert.AreEqual ([min3 .. -two   .. min0], [min3; min1])
         Assert.AreEqual ([min3 .. -three .. min0], [min3; min0])
+
+        Assert.AreEqual ([|min3 .. -one   .. min0|], [|min3; min2; min1; min0|])
+        Assert.AreEqual ([|min3 .. -two   .. min0|], [|min3; min1|])
+        Assert.AreEqual ([|min3 .. -three .. min0|], [|min3; min0|])
+
+        Assert.AreEqual ({max0 .. -one   .. max3}, seq {max0; max1; max2; max3})
+        Assert.AreEqual ({max0 .. -two   .. max3}, seq {max0; max2})
+        Assert.AreEqual ({max0 .. -three .. max3}, seq {max0; max3})
 
         Assert.AreEqual ([max0 .. -one   .. max3], [max0; max1; max2; max3])
         Assert.AreEqual ([max0 .. -two   .. max3], [max0; max2])
         Assert.AreEqual ([max0 .. -three .. max3], [max0; max3])
 
+        Assert.AreEqual ([|max0 .. -one   .. max3|], [|max0; max1; max2; max3|])
+        Assert.AreEqual ([|max0 .. -two   .. max3|], [|max0; max2|])
+        Assert.AreEqual ([|max0 .. -three .. max3|], [|max0; max3|])
+
+        Assert.AreEqual ({min0 .. -one   .. max0}, Seq.empty)
+        Assert.AreEqual ({min0 .. -two   .. max0}, Seq.empty)
+        Assert.AreEqual ({min0 .. -three .. max0}, Seq.empty)
+
         Assert.AreEqual ([min0 .. -one   .. max0], [])
         Assert.AreEqual ([min0 .. -two   .. max0], [])
         Assert.AreEqual ([min0 .. -three .. max0], [])
+
+        Assert.AreEqual ([|min0 .. -one   .. max0|], [||])
+        Assert.AreEqual ([|min0 .. -two   .. max0|], [||])
+        Assert.AreEqual ([|min0 .. -three .. max0|], [||])
+
+        Assert.AreEqual ({max0 .. min0 .. min0}, seq {max0; max0 + min0})
+        Assert.AreEqual ({max0 .. min1 .. min0}, seq {max0; max0 + min1; max0 + min1 + min1 })
+        Assert.AreEqual ({max0 .. min2 .. min0}, seq {max0; max0 + min2; max0 + min2 + min2 })
+        Assert.AreEqual ({max0 .. min3 .. min0}, seq {max0; max0 + min3; max0 + min3 + min3 })
 
         Assert.AreEqual ([max0 .. min0 .. min0], [max0; max0 + min0])
         Assert.AreEqual ([max0 .. min1 .. min0], [max0; max0 + min1; max0 + min1 + min1 ])
         Assert.AreEqual ([max0 .. min2 .. min0], [max0; max0 + min2; max0 + min2 + min2 ])
         Assert.AreEqual ([max0 .. min3 .. min0], [max0; max0 + min3; max0 + min3 + min3 ])
+
+        Assert.AreEqual ([|max0 .. min0 .. min0|], [|max0; max0 + min0|])
+        Assert.AreEqual ([|max0 .. min1 .. min0|], [|max0; max0 + min1; max0 + min1 + min1 |])
+        Assert.AreEqual ([|max0 .. min2 .. min0|], [|max0; max0 + min2; max0 + min2 + min2 |])
+        Assert.AreEqual ([|max0 .. min3 .. min0|], [|max0; max0 + min3; max0 + min3 + min3 |])
 
     let inline unsigned min0 max0 =
         let zero  = LanguagePrimitives.GenericZero
@@ -905,32 +987,100 @@ module internal RangeTestsHelpers =
 
         common (min0, min1, min2, min3) (max0, max1, max2, max3) (zero, one, two, three)
 
+        Assert.AreEqual ({min0 .. max0 .. max0}, seq {yield min0; yield min0 + max0})
+        Assert.AreEqual ({min0 .. max1 .. max0}, seq {min0; min0 + max1})
+        Assert.AreEqual ({min0 .. max2 .. max0}, seq {min0; min0 + max2})
+        Assert.AreEqual ({min0 .. max3 .. max0}, seq {min0; min0 + max3})
+
         Assert.AreEqual ([min0 .. max0 .. max0], [min0; min0 + max0])
         Assert.AreEqual ([min0 .. max1 .. max0], [min0; min0 + max1])
         Assert.AreEqual ([min0 .. max2 .. max0], [min0; min0 + max2])
         Assert.AreEqual ([min0 .. max3 .. max0], [min0; min0 + max3])
 
+        Assert.AreEqual ([|min0 .. max0 .. max0|], [|min0; min0 + max0|])
+        Assert.AreEqual ([|min0 .. max1 .. max0|], [|min0; min0 + max1|])
+        Assert.AreEqual ([|min0 .. max2 .. max0|], [|min0; min0 + max2|])
+        Assert.AreEqual ([|min0 .. max3 .. max0|], [|min0; min0 + max3|])
 
-type RangeTests() =
-    [<Fact>] member _.``Range.SByte``  () = RangeTestsHelpers.signed   System.SByte.MinValue  System.SByte.MaxValue
-    [<Fact>] member _.``Range.Byte``   () = RangeTestsHelpers.unsigned System.Byte.MinValue   System.Byte.MaxValue
-    [<Fact>] member _.``Range.Int16``  () = RangeTestsHelpers.signed   System.Int16.MinValue  System.Int16.MaxValue
-    [<Fact>] member _.``Range.UInt16`` () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
-    [<Fact>] member _.``Range.Int32``  () = RangeTestsHelpers.signed   System.Int32.MinValue  System.Int32.MaxValue
-    [<Fact>] member _.``Range.UInt32`` () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
-    [<Fact>] member _.``Range.Int64``  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
-    [<Fact>] member _.``Range.UInt64`` () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
+module RangeTests =
+    module BuildTime =
+        [<Fact>]
+        let ``Range.SByte``  () = RangeTestsHelpers.signed   System.SByte.MinValue  System.SByte.MaxValue
 
-    [<Fact>]
-    member _.``Range.IntPtr`` () =
-        if System.IntPtr.Size >= 4 then RangeTestsHelpers.signed (System.IntPtr System.Int32.MinValue) (System.IntPtr System.Int32.MaxValue)
-        if System.IntPtr.Size >= 8 then RangeTestsHelpers.signed (System.IntPtr System.Int64.MinValue) (System.IntPtr System.Int64.MaxValue)
-        
-    [<Fact>]
-    member _.``Range.UIntPtr`` () =
-        if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt32.MinValue) (System.UIntPtr System.UInt32.MaxValue)
-        if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
-        
+        [<Fact>]
+        let ``Range.Byte``   () = RangeTestsHelpers.unsigned System.Byte.MinValue   System.Byte.MaxValue
+
+        // Note: the IEnumerable<char> range iterator doesn't currently pass these tests. Should it?
+        //[<Fact>]
+        //let ``Range.Char``   () = RangeTestsHelpers.unsigned System.Char.MinValue   System.Char.MaxValue
+
+        [<Fact>]
+        let ``Range.Int16``  () = RangeTestsHelpers.signed   System.Int16.MinValue  System.Int16.MaxValue
+
+        [<Fact>]
+        let ``Range.UInt16`` () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
+
+        [<Fact>]
+        let ``Range.Int32``  () = RangeTestsHelpers.signed   System.Int32.MinValue  System.Int32.MaxValue
+
+        [<Fact>]
+        let ``Range.UInt32`` () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
+
+        [<Fact>]
+        let ``Range.Int64``  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
+
+        [<Fact>]
+        let ``Range.UInt64`` () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
+
+        [<Fact>]
+        let ``Range.IntPtr`` () =
+            // 0x80000000n is negative on x86, but would be positive on x64.
+            if System.IntPtr.Size = 4 then RangeTestsHelpers.signed 0x80000000n         0x7fffffffn
+            if System.IntPtr.Size = 8 then RangeTestsHelpers.signed 0x8000000000000000n 0x7fffffffffffffffn
+            
+        [<Fact>]
+        let ``Range.UIntPtr`` () =
+            if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned 0x0un           0xffffffffun
+            if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned 0x0un           0xffffffffffffffffun
+
+    module RunTime =
+        [<Theory; InlineData(System.SByte.MinValue, System.SByte.MaxValue)>]
+        let ``Range.SByte``  (min0: sbyte) (max0: sbyte) = RangeTestsHelpers.signed   min0 max0
+
+        [<Theory; InlineData(System.Byte.MinValue, System.Byte.MaxValue)>]
+        let ``Range.Byte``   (min0: byte) (max0: byte) = RangeTestsHelpers.unsigned min0 max0
+
+        // Note: the IEnumerable<char> range iterator doesn't currently pass these tests. Should it?
+        //[<Theory; InlineData(System.Char.MinValue, System.Char.MaxValue)>]
+        //let ``Range.Char``   (min0: char) (max0: char) = RangeTestsHelpers.unsigned min0 max0
+
+        [<Theory; InlineData(System.Int16.MinValue, System.Int16.MaxValue)>]
+        let ``Range.Int16``  (min0: int16) (max0: int16) = RangeTestsHelpers.signed   min0 max0
+
+        [<Theory; InlineData(System.UInt16.MinValue, System.UInt16.MaxValue)>]
+        let ``Range.UInt16`` (min0: uint16) (max0: uint16) = RangeTestsHelpers.unsigned min0 max0
+
+        [<Theory; InlineData(System.Int32.MinValue, System.Int32.MaxValue)>]
+        let ``Range.Int32``  min0 max0 = RangeTestsHelpers.signed   min0 max0
+
+        [<Theory; InlineData(System.UInt32.MinValue, System.UInt32.MaxValue)>]
+        let ``Range.UInt32`` (min0: uint) (max0: uint) = RangeTestsHelpers.unsigned min0 max0
+
+        [<Theory; InlineData(System.Int64.MinValue, System.Int64.MaxValue)>]
+        let ``Range.Int64``  (min0: int64) (max0: int64) = RangeTestsHelpers.signed   min0 max0
+
+        [<Theory; InlineData(System.UInt64.MinValue, System.UInt64.MaxValue)>]
+        let ``Range.UInt64`` (min0: uint64) (max0: uint64) = RangeTestsHelpers.unsigned min0 max0
+
+        [<Fact>]
+        let ``Range.IntPtr`` () =
+            if System.IntPtr.Size >= 4 then RangeTestsHelpers.signed (System.IntPtr System.Int32.MinValue) (System.IntPtr System.Int32.MaxValue)
+            if System.IntPtr.Size >= 8 then RangeTestsHelpers.signed (System.IntPtr System.Int64.MinValue) (System.IntPtr System.Int64.MaxValue)
+            
+        [<Fact>]
+        let ``Range.UIntPtr`` () =
+            if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt32.MinValue) (System.UIntPtr System.UInt32.MaxValue)
+            if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
 
 open NonStructuralComparison
 
