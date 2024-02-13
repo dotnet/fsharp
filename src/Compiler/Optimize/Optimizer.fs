@@ -3068,7 +3068,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         if fvs.UsesMethodLocalConstructs then
             // Discarding lambda for binding because uses protected members --- TBD: Should we warn or error here
             None 
-        elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
+        elif fvs.FreeLocals |> Seq.exists(fun v -> v.Accessibility.IsPrivate ) then
             // Discarding lambda for binding because uses private members --- TBD: Should we warn or error here
             None
         else
