@@ -467,3 +467,5 @@ type CompilationGlobalsScope =
     member DiagnosticsLogger: DiagnosticsLogger
 
     member BuildPhase: BuildPhase
+
+val PreserveAsyncScope: Async<'T> -> Async<'T>

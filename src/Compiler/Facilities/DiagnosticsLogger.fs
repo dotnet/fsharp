@@ -392,7 +392,8 @@ type internal DiagnosticsThreadStatics =
     static let log prefix name nc =
         let stack = StackTrace(2, true).GetFrames() |> Seq.map _.ToString() |> String.concat "\t"
         let nctag = if nc then "NC" else "    "
-        let str = $"{nctag} {prefix} %-50s{name}\n\n\t{stack}"
+        let tid = Thread.CurrentThread.ManagedThreadId
+        let str = $"t:{tid} {nctag} {prefix} %-50s{name}\n\n\t{stack}"
         if not nc then changesAsync.Push str
         changes.Push str
 
@@ -621,6 +622,13 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
         member _.Dispose() =
             unwindBP.Dispose()
             unwindEL.Dispose()
+
+///
+let PreserveAsyncScope computation =
+    async {
+        use _ = new CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
+        return! computation
+    }
 
 // Global functions are still used by parser and TAST ops.
 
