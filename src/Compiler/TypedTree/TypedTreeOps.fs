@@ -10235,7 +10235,6 @@ let (|EmptyRange|_|) (start, step, finish) =
 [<return: Struct>]
 let (|ConstCount|_|) (start, step, finish) =
     match start, step, finish with
-    // This will cause an overflow exception to be raised at runtime, which we need for parity with the library implementation.
     | Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 1L), Expr.Const (value = Const.Int64 Int64.MaxValue)
     | Expr.Const (value = Const.Int64 Int64.MaxValue), Expr.Const (value = Const.Int64 -1L), Expr.Const (value = Const.Int64 Int64.MinValue)
     | Expr.Const (value = Const.UInt64 UInt64.MinValue), Expr.Const (value = Const.UInt64 1UL), Expr.Const (value = Const.UInt64 UInt64.MaxValue) -> ValueSome (Const.UInt64 UInt64.MaxValue)

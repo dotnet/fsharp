@@ -364,8 +364,7 @@ module Array =
                     // if count < 1 then
                     //     [||]
                     // else
-                    //     let array = (# "newarr !0" type ('T) count : 'T array #)
-                    //     in
+                    //     let array = (# "newarr !0" type ('T) count : 'T array #) in
                     //     <initialization loop>
                     //     array
                     mkCond
