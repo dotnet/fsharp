@@ -333,8 +333,7 @@ type DiagnosticsLogger(nameForDebugging: string) =
 
     member x.CheckForErrors() = (x.ErrorCount > 0)
 
-    member _.DebugDisplay() =
-        sprintf "DiagnosticsLogger(%s)" nameForDebugging
+    member _.DebugDisplay() = nameForDebugging
 
 let DiscardErrorsLogger =
     { new DiagnosticsLogger("DiscardErrorsLogger") with
@@ -345,8 +344,8 @@ let DiscardErrorsLogger =
 let AssertFalseDiagnosticsLogger =
     { new DiagnosticsLogger("AssertFalseDiagnosticsLogger") with
         // TODO: reenable these asserts in the compiler service
-        member _.DiagnosticSink(diagnostic, severity) = (* assert false; *) ()
-        member _.ErrorCount = (* assert false; *) 0
+        member _.DiagnosticSink(diagnostic, severity) = assert false
+        member _.ErrorCount = assert false; 0
     }
 
 type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
@@ -376,6 +375,47 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
 
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
+
+    static let buildPhaseAsync = new AsyncLocal<BuildPhase voption>()
+    static let diagnosticsLoggerAsync = new AsyncLocal<DiagnosticsLogger voption>()
+
+    static let getOrCreate (holder: AsyncLocal<_>) defaultValue =
+        holder.Value
+        |> ValueOption.defaultWith (fun () ->
+            holder.Value <- ValueSome defaultValue
+            defaultValue)
+
+#if DEBUG
+    static let changes = System.Collections.Concurrent.ConcurrentStack()
+    static let changesAsync = System.Collections.Concurrent.ConcurrentStack()
+
+    static let log prefix name nc =
+        let stack = StackTrace(2, true).GetFrames() |> Seq.map _.ToString() |> String.concat "\t"
+        let nctag = if nc then "NC" else "    "
+        let str = $"{nctag} {prefix} %-50s{name}\n\n\t{stack}"
+        if not nc then changesAsync.Push str
+        changes.Push str
+
+    static let logPhase (bp: BuildPhase) = log "bp:" (if box bp |> isNull then "NULL" else bp.ToString())
+    static let logLogger (dl: DiagnosticsLogger) = log "dl:" (if box dl |> isNull then "NULL" else dl.DebugDisplay())
+#else
+    static let logPhase = ignore
+    static let logLogger = ignore
+#endif
+
+    static let checkForNull v =
+        if box v |> isNull then failwith $"{v.GetType().Name} set to null."
+
+    static let checkPhaseDiverged v =
+        let a = getOrCreate buildPhaseAsync BuildPhase.DefaultPhase
+        if a <> v then
+            failwith $"BuildPhase diverged. AsyncLocal: <{a}>, ThreadStatic: <{v}>."
+
+    static let checkLoggerDiverged v =
+        let a = getOrCreate diagnosticsLoggerAsync AssertFalseDiagnosticsLogger
+        if a <> v then
+            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{a.DebugDisplay()}>, ThreadStatic: <{v.DebugDisplay()}>."
+
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
 
@@ -387,16 +427,54 @@ type internal DiagnosticsThreadStatics =
     static member BuildPhase
         with get () =
             match box DiagnosticsThreadStatics.buildPhase with
-            | Null -> BuildPhase.DefaultPhase
-            | _ -> DiagnosticsThreadStatics.buildPhase
-        and set v = DiagnosticsThreadStatics.buildPhase <- v
+            | Null ->
+                checkPhaseDiverged BuildPhase.DefaultPhase
+                BuildPhase.DefaultPhase
+            | _ ->
+                checkPhaseDiverged DiagnosticsThreadStatics.buildPhase
+                DiagnosticsThreadStatics.buildPhase
+        and set v =
+            logPhase v false
+            buildPhaseAsync.Value <- ValueSome v
+            DiagnosticsThreadStatics.buildPhase <- v
+            checkForNull v
 
     static member DiagnosticsLogger
         with get () =
             match box DiagnosticsThreadStatics.diagnosticsLogger with
+            | Null ->
+                checkLoggerDiverged AssertFalseDiagnosticsLogger
+                AssertFalseDiagnosticsLogger
+            | _ ->
+                checkLoggerDiverged DiagnosticsThreadStatics.diagnosticsLogger
+                DiagnosticsThreadStatics.diagnosticsLogger
+        and set v =
+            logLogger v false
+            diagnosticsLoggerAsync.Value <- ValueSome v
+            DiagnosticsThreadStatics.diagnosticsLogger <- v
+            checkForNull v
+
+    static member BuildPhaseNC
+        with get () =
+            match box DiagnosticsThreadStatics.buildPhase with
+            | Null -> BuildPhase.DefaultPhase
+            | _ -> DiagnosticsThreadStatics.buildPhase
+        and set v =
+            DiagnosticsThreadStatics.buildPhase <- v
+            logPhase v true
+            checkForNull v
+            checkPhaseDiverged v
+
+    static member DiagnosticsLoggerNC
+        with get () =
+            match box DiagnosticsThreadStatics.diagnosticsLogger with
             | Null -> AssertFalseDiagnosticsLogger
             | _ -> DiagnosticsThreadStatics.diagnosticsLogger
-        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
+        and set v =
+            logLogger v true
+            DiagnosticsThreadStatics.diagnosticsLogger <- v
+            checkForNull v
+            checkLoggerDiverged v
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
@@ -498,7 +576,10 @@ module DiagnosticsLoggerExtensions =
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseBuildPhase (phase: BuildPhase) =
-    let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
+
+    // TODO: possibly restore this optimization. BuildPhaseUnchecked can be null so it complicates things for us.
+    // let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
+    let oldBuildPhase = DiagnosticsThreadStatics.BuildPhase
     DiagnosticsThreadStatics.BuildPhase <- phase
 
     { new IDisposable with

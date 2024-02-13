@@ -15,14 +15,14 @@ type NodeCode<'T> = Node of Async<'T>
 
 let wrapThreadStaticInfo computation =
     async {
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
+        let phase = DiagnosticsThreadStatics.BuildPhaseNC
 
         try
             return! computation
         finally
-            DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-            DiagnosticsThreadStatics.BuildPhase <- phase
+            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+            DiagnosticsThreadStatics.BuildPhaseNC <- phase
     }
 
 type Async<'T> with
@@ -96,8 +96,8 @@ type NodeCodeBuilder() =
     member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
         Node(
             async {
-                DiagnosticsThreadStatics.DiagnosticsLogger <- value.DiagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhase <- value.BuildPhase
+                DiagnosticsThreadStatics.DiagnosticsLoggerNC <- value.DiagnosticsLogger
+                DiagnosticsThreadStatics.BuildPhaseNC <- value.BuildPhase
 
                 try
                     return! binder value |> Async.AwaitNodeCode
@@ -123,22 +123,22 @@ type NodeCode private () =
     static let cancellationToken = Node(wrapThreadStaticInfo Async.CancellationToken)
 
     static member RunImmediate(computation: NodeCode<'T>, ct: CancellationToken) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
+        let phase = DiagnosticsThreadStatics.BuildPhaseNC
 
         try
             try
                 let work =
                     async {
-                        DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                        DiagnosticsThreadStatics.BuildPhase <- phase
+                        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+                        DiagnosticsThreadStatics.BuildPhaseNC <- phase
                         return! computation |> Async.AwaitNodeCode
                     }
 
                 Async.StartImmediateAsTask(work, cancellationToken = ct).Result
             finally
-                DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhase <- phase
+                DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+                DiagnosticsThreadStatics.BuildPhaseNC <- phase
         with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
             raise (ex.InnerExceptions[0])
 
@@ -146,21 +146,21 @@ type NodeCode private () =
         NodeCode.RunImmediate(computation, CancellationToken.None)
 
     static member StartAsTask_ForTesting(computation: NodeCode<'T>, ?ct: CancellationToken) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
+        let phase = DiagnosticsThreadStatics.BuildPhaseNC
 
         try
             let work =
                 async {
-                    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                    DiagnosticsThreadStatics.BuildPhase <- phase
+                    DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+                    DiagnosticsThreadStatics.BuildPhaseNC <- phase
                     return! computation |> Async.AwaitNodeCode
                 }
 
             Async.StartAsTask(work, cancellationToken = defaultArg ct CancellationToken.None)
         finally
-            DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-            DiagnosticsThreadStatics.BuildPhase <- phase
+            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+            DiagnosticsThreadStatics.BuildPhaseNC <- phase
 
     static member CancellationToken = cancellationToken
 
@@ -193,14 +193,14 @@ type NodeCode private () =
         }
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let phase = DiagnosticsThreadStatics.BuildPhase
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
+        let phase = DiagnosticsThreadStatics.BuildPhaseNC
 
         computations
         |> Seq.map (fun (Node x) ->
             async {
-                DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhase <- phase
+                DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+                DiagnosticsThreadStatics.BuildPhaseNC <- phase
                 return! x
             })
         |> Async.Parallel

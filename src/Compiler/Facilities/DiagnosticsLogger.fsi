@@ -236,6 +236,10 @@ type DiagnosticsThreadStatics =
 
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
+    static member BuildPhaseNC: BuildPhase with get, set
+
+    static member DiagnosticsLoggerNC: DiagnosticsLogger with get, set
+
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
 
