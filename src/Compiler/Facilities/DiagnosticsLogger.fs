@@ -381,42 +381,25 @@ type internal DiagnosticsThreadStatics =
 
 #if DEBUG
     static let changes = System.Collections.Concurrent.ConcurrentStack()
-    static let changesAsync = System.Collections.Concurrent.ConcurrentStack()
+    //static let changesAsync = System.Collections.Concurrent.ConcurrentStack()
 
     static let dlName (dl: DiagnosticsLogger) =
         if box dl |> isNull then "NULL" else dl.DebugDisplay()
 
-    static let log prefix nc =
-        let al = dlName diagnosticsLoggerAsync.Value
-        let ts = dlName DiagnosticsThreadStatics.diagnosticsLogger
+    static let log prefix =
+        let al = diagnosticsLoggerAsync.Value
+        let ts = DiagnosticsThreadStatics.diagnosticsLogger
         let stack = StackTrace(2, true).GetFrames() |> Seq.map _.ToString() |> String.concat "\t"
-        let nctag = if nc then "NC" else "    "
         let tid = Thread.CurrentThread.ManagedThreadId
-        let str = $"t:{tid} {nctag} {prefix} al: {al}, ts: {ts}                \n\n\t{stack}"
-        if not nc then changesAsync.Push str
+        let dls = if box al = box ts then dlName al else  $"DIVERGED AsyncLocal: {dlName al}, ThreadStatic: {dlName ts}"
+        let str = $"t:{tid} {prefix} %-300s{dls} \n\n\t{stack}"
         changes.Push str
 
-    //static let logPhase _ = ignore
-    //// static let logPhase (bp: BuildPhase) = log "bp:" (if box bp |> isNull then "NULL" else bp.ToString())
-    //static let logLogger (dl: DiagnosticsLogger) = log "dl:" (if box dl |> isNull then "NULL" else dl.DebugDisplay())
+        if box al <> box ts then
+            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 #else
-    static let log _ _ = ()
+    static let log _ = ()
 #endif
-
-    static let checkForNull v =
-        if box v |> isNull then failwith $"{v.GetType().Name} set to null."
-
-    static let checkPhaseDiverged() =
-        let a = buildPhaseAsync.Value
-        let v = DiagnosticsThreadStatics.buildPhase
-        if box a <> box v then
-            failwith $"BuildPhase diverged. AsyncLocal: <{a}>, ThreadStatic: <{v}>."
-
-    static let checkLoggerDiverged() =
-        let a = diagnosticsLoggerAsync.Value
-        let v = DiagnosticsThreadStatics.diagnosticsLogger
-        if box a <> box v then
-            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{a.DebugDisplay()}>, ThreadStatic: <{v.DebugDisplay()}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
@@ -439,38 +422,32 @@ type internal DiagnosticsThreadStatics =
 
     static member DiagnosticsLogger
         with get () =
-            log "get" false
+            log "get"
             match box DiagnosticsThreadStatics.diagnosticsLogger with
             | Null ->
                 AssertFalseDiagnosticsLogger
             | _ ->
                 DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
-            log "set" false
+            log "set"
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
 
     static member BuildPhaseNC
-        with get () = BuildPhase.DefaultPhase
-            //match box DiagnosticsThreadStatics.buildPhase with
-            //| Null -> BuildPhase.DefaultPhase
-            //| _ -> DiagnosticsThreadStatics.buildPhase
-        and set (v: BuildPhase) = ignore v
-            //DiagnosticsThreadStatics.buildPhase <- v
-            //logPhase v true
-            //checkForNull v
-            //checkPhaseDiverged v
+        with get () =
+            match box DiagnosticsThreadStatics.buildPhase with
+            | Null -> BuildPhase.DefaultPhase
+            | _ -> DiagnosticsThreadStatics.buildPhase
+        and set (v: BuildPhase) = DiagnosticsThreadStatics.buildPhase <- v
 
     static member DiagnosticsLoggerNC
-        with get () = AssertFalseDiagnosticsLogger
-            //match box DiagnosticsThreadStatics.diagnosticsLogger with
-            //| Null -> AssertFalseDiagnosticsLogger
-            //| _ -> DiagnosticsThreadStatics.diagnosticsLogger
-        and set (v: DiagnosticsLogger) = ignore v
-            //logLogger v true
-            //DiagnosticsThreadStatics.diagnosticsLogger <- v
-            //checkForNull v
-            //checkLoggerDiverged v
+        with get () =
+            match box DiagnosticsThreadStatics.diagnosticsLogger with
+            | Null -> AssertFalseDiagnosticsLogger
+            | _ -> DiagnosticsThreadStatics.diagnosticsLogger
+        and set (v: DiagnosticsLogger) =
+            DiagnosticsThreadStatics.diagnosticsLogger <- v
+            log "NC set"
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
