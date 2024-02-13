@@ -285,28 +285,7 @@ module List =
                     mkListInit mkLoop
 
                 | _dynamicCount ->
-                    let countTy = tyOfExpr g count
-
-                    // count < 1
-                    let countLtOne =
-                        if isSignedIntegerTy g countTy then
-                            mkILAsmClt g m count (mkOne g m)
-                        else
-                            mkAsmExpr ([AI_clt_un], [], [count; mkOne g m], [g.bool_ty], m)
-
-                    // if count < 1 then
-                    //     []
-                    // else
-                    //     let collector = ListCollector () in
-                    //     <initialization loop>
-                    //     collector.Close ()
-                    mkCond
-                        DebugPointAtBinding.NoneAtInvisible
-                        m
-                        (mkListTy g overallElemTy)
-                        countLtOne
-                        (mkNil g m overallElemTy)
-                        (mkListInit mkLoop)
+                    mkListInit mkLoop
             )
 
 module Array =
