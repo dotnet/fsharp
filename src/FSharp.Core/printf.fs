@@ -2,8 +2,6 @@
 
 namespace Microsoft.FSharp.Core
 
-#nowarn "1118"  // 'Make' marked 'inline', perhaps because a recursive value was marked 'inline'
-
 open System
 open System.IO
 open System.Text
@@ -548,7 +546,7 @@ module internal PrintfImpl =
     /// A wrapper struct used to slightly strengthen the types of "ValueConverter" objects produced during composition of
     /// the dynamic implementation.  These are always functions but sometimes they take one argument, sometimes two.
     [<Struct; NoEquality; NoComparison>]
-    type ValueConverter private (f: obj) =
+    type ValueConverter internal (f: obj) =
         member x.FuncObj = f
 
         static member inline Make (f: obj -> string) = ValueConverter(box f)
