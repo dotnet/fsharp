@@ -355,3 +355,7 @@ val getTypeFromTuplePath: path: SynTupleTypeSegment list -> SynType list
 val (|MultiDimensionArrayType|_|): t: SynType -> (int * SynType * range) voption
 
 val (|TypesForTypar|): t: SynType -> SynType list
+
+/// Generated get_XYZ or set_XYZ ident text
+[<return: Struct>]
+val (|Get_OrSet_Ident|_|): Ident -> unit voption
