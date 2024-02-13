@@ -1205,29 +1205,16 @@ type internal TransparentCompiler
                         tcConfig.flatErrors
                     )
 
-                use _ =
-                    new CompilationGlobalsScope(errHandler.DiagnosticsLogger, BuildPhase.TypeCheck)
-
                 // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
                 let tcConfig =
                     ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName)
 
-                // update the error handler with the modified tcConfig
-                errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
-
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
-                //let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
+                let diagnosticsLogger =
+                    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, diagnosticsLogger)
 
-                //let diagnosticsLogger =
-                //    GetDiagnosticsLoggerFilteringByScopedPragmas(
-                //        false,
-                //        input.ScopedPragmas,
-                //        tcConfig.diagnosticsOptions,
-                //        capturingDiagnosticsLogger
-                //    )
-
-                //use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
+                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
                 //beforeFileChecked.Trigger fileName
 
