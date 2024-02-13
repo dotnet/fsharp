@@ -240,16 +240,16 @@ The struct type has these generated methods:
 ```csharp
     override bool Equals(object y) 
     override bool Equals(SomeStruct obj)
-    override bool Equals(object obj, IEqualityComparer comp) //withcEqualsVal
+    override bool Equals(object obj, IEqualityComparer comp) //with EqualsVal
 ```
 
-These call each other in sequence, boing then bunboxing then boxing. We do NOT generate this method, we probably should:
+These call each other in sequence, boxing then unboxing then boxing. We do NOT generate this method, we probably should:
 
 ```csharp
-    override bool Equals(SomeStruct obj, IEqualityComparer comp) //withcEqualsValUnboxed
+    override bool Equals(SomeStruct obj, IEqualityComparer comp) //with EqualsValUnboxed
 ```
 
-If we did, the devirtualizing optimization should reduce to this directly, which would result in no boxing.]
+If we did, the devirtualizing optimization should reduce to this directly, which would result in no boxing.
 
 ### array type (byte[], int[], some-struct-type[],  ...)
 
@@ -266,25 +266,26 @@ Effect of implementing ([#5112](https://github.com/dotnet/fsharp/pull/5112)):
 
 ### F# large ref record/union type
 
-Here "large" means the compiler-generated structural equality is not inlined
+Here "large" means the compiler-generated structural equality is NOT inlined.
 
 * Semantics: User expects structural by default
 * Perf: User expects perf is sum of constituent parts, type-specialized if generic
-* Today: direct call to `Equals(T)`, which has specialized code but boxes fields if struct or T, see Problem3, Problem4 ❌
+* Compilation today: direct call to `Equals(T)`
+* Perf today: the call to `Equals(T)` has specialized code but boxes fields if struct or generic, see Problem3, Problem4 ❌
 
 ### F# tiny ref record/union type
 
-Here "tiny" means the compiler-generated structural equality IS inlined
+Here "tiny" means the compiler-generated structural equality IS inlined.
 
 * Semantics: User expects structural by default
 * Perf: User expects perf is sum of constituent parts, type-specialized if generic
-* Test: Equals06.fsx
-* Compilation Today: flattened, calling `GenericEqualityERIntrinsic` on struct and generic fields
-* Perf today: boxes on struct and generic fields, see Problem3, Problem4
+* Compilation today: flattened, calling `GenericEqualityERIntrinsic` on struct and generic fields
+* Perf today: boxes on struct and generic fields, see Problem3, Problem4 ❌
 
 Effect of [#5112](https://github.com/dotnet/fsharp/pull/5112):
 * [#5112](https://github.com/dotnet/fsharp/pull/5112): ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)`` on struct and generic fields
 * NOTE: Proposed adjustment to [#5112](https://github.com/dotnet/fsharp/pull/5112) noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
+* NOTE: The test for this is Equals06.fsx
        
 ### Any ref type supporting `IEquatable<T>`
 
@@ -300,10 +301,10 @@ Effect of [#5112](https://github.com/dotnet/fsharp/pull/5112):
 
 ### Generic `'T` in non-inlined generic code
 
-* Semantics: User expects the PER equality semantics of whatever T actually is  
-* Perf: User expects no boxing (❌, Problem4, fails if T is any non-reference type)
+* Semantics: User expects the PER equality semantics of whatever `'T` actually is  
+* Perf: User expects no boxing (Problem4 ❌, fails if `'T` is any non-reference type)
 * Test: Equals06.fsx acts as a proxy because equals on small single-case union is inlined
-* Compilation today: GenericEqualityERIntrinsic (❌,boxes)
+* Compilation today: GenericEqualityERIntrinsic (❌, boxes)
 
 Effect of [#5112](https://github.com/dotnet/fsharp/pull/5112):
 * Compilation after [#5112](https://github.com/dotnet/fsharp/pull/5112): ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
