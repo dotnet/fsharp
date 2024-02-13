@@ -354,15 +354,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                                 log (Restarted, key)
                                                 Interlocked.Increment &restarted |> ignore
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
 
-                                                try
-                                                    let! result = computation |> Async.AwaitNodeCode
-                                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                                    return ()
-                                                finally
-                                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
+                                                use _ = UseDiagnosticsLogger cachingLogger
+                                                let! result = computation |> Async.AwaitNodeCode
+                                                post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                                return ()
                                             with
                                             | TaskCancelled _ ->
                                                 Interlocked.Increment &cancel_exception_subsequent |> ignore
@@ -500,17 +496,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         Async.StartAsTask(
                             async {
                                 // TODO: Should unify starting and restarting
-                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
-
                                 log (Started, key)
 
-                                try
-                                    let! result = computation |> Async.AwaitNodeCode
-                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                    return result
-                                finally
-                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
+                                use _ = UseDiagnosticsLogger cachingLogger
+                                let! result = computation |> Async.AwaitNodeCode
+                                post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                return result
                             },
                             cancellationToken = linkedCtSource.Token
                         )
