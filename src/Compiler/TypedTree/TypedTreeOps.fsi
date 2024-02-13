@@ -2560,11 +2560,6 @@ module IntegralConst =
     [<return: Struct>]
     val (|Zero|_|): c: Const -> unit voption
 
-/// Matches if the given start, step, and finish represent
-/// a range that is known to be empty at compile-time.
-[<return: Struct>]
-val (|EmptyRange|_|): start: Expr * step: Expr * finish: Expr -> unit voption
-
 type Count = Expr
 type Idx = Expr
 type Elem = Expr
