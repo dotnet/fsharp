@@ -75,7 +75,8 @@ type internal BootstrapInfo =
       InitialTcInfo: TcInfo
       LoadedSources: (range * ProjectSnapshot.FSharpFileSnapshot) list
       LoadClosure: LoadClosure option
-      LastFileName: string }
+      LastFileName: string
+      ImportsInvalidatedByTypeProvider: Event<unit> }
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
