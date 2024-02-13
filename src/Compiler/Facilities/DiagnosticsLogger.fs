@@ -399,8 +399,8 @@ type internal DiagnosticsThreadStatics =
     static let logPhase (bp: BuildPhase) = log "bp:" (if box bp |> isNull then "NULL" else bp.ToString())
     static let logLogger (dl: DiagnosticsLogger) = log "dl:" (if box dl |> isNull then "NULL" else dl.DebugDisplay())
 #else
-    static let logPhase = ignore
-    static let logLogger = ignore
+    static let logPhase _ = ignore
+    static let logLogger _ = ignore
 #endif
 
     static let checkForNull v =
