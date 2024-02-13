@@ -10556,13 +10556,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             | _, _, _ -> envinner.eCallerMemberName
 
         let envinner = {envinner with eCallerMemberName = callerName }
-        let isInstance =
-            match memberFlagsOpt with
-            | Some memberFlags  -> memberFlags.IsInstance
-            | _ -> false
-
         let attrTgt =
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) && not isInstance then
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) && memberFlagsOpt.IsNone then
                 let supportsNameofFeature = g.langVersion.SupportsFeature(LanguageFeature.NameOf)
                 let rhsExprIsFunction =
                     match rhsExpr with

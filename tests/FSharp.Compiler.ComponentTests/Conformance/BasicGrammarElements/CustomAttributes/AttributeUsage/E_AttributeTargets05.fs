@@ -26,3 +26,6 @@ type Test() =
    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
    member this.IsNone = match 0 with 1 -> true | _ -> false
 
+   [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+   static member None = None
+
