@@ -2,10 +2,12 @@
 
 namespace Language
 
+open Xunit
 open FSharp.Test.Compiler
 
 module DiscriminatedUnionTests =
-    [<FSharp.Test.FactForNETCOREAPP>]
+
+    [<Fact>]
     let ``Simple Is* discriminated union properties are visible, proper values are returned`` () =
         Fsx """
 type Foo = | Foo of string | Bar
@@ -17,7 +19,7 @@ if foo.IsBar then failwith "Should not be Bar"
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    [<Fact>]
     let ``Simple Is* discriminated union properties are not visible for a single case union`` () =
         Fsx """
 type Foo = Bar of string
@@ -31,7 +33,7 @@ if not foo.IsBar then failwith "Should be Bar"
         |> withDiagnostics  [Error 39, Line 4, Col 12, Line 4, Col 17, "The type 'Foo' does not define the field, constructor or member 'IsBar'. Maybe you want one of the following:
    Bar"]
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    [<Fact>]
     let ``Simple Is* discriminated union property satisfies SRTP constraint`` () =
         Fsx """
 type X =
@@ -47,7 +49,7 @@ X.A "a" |> test
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    [<Fact>]
     let ``Lowercase Is* discriminated union properties are visible, proper values are returned`` () =
         Fsx """
 [<RequireQualifiedAccess>]
@@ -63,42 +65,8 @@ if foo.IsA then failwith "Should not be A"
         |> compileExeAndRun
         |> shouldSucceed
 
-    // TODO nullness - wait for https://github.com/fsharp/fslang-design/discussions/760
-    // [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Is* DU property roundtrip over pickled metadata and with fsi file`` () = 
-        let libCode =  """module rec TestLib
 
-type X = A | B"""
-        let appCode = """
-let x = TestLib.X.A
-let isA = x.IsA
-printfn "%A" isA """
-        let lib = 
-            Fsi(libCode)
-            |> withAdditionalSourceFile (FsSource libCode)
-            |> withLangVersionPreview
-            |> asLibrary
-            |> withName "fsLib"
-
-        lib
-        |> compile
-        |> verifyIL [""".method public hidebysig specialname 
-instance bool  get_IsA() cil managed """]
-
-        FSharp appCode
-        |> asExe
-        |> withReferences [lib]
-        |> withWarnOn 3186
-        |> withOptions ["--warnaserror+"]
-        |> withName "AppCodeProjectName"
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withDiagnosticMessageMatches "does not define the field, constructor or member 'IsA'"
-
-    
-
-    [<FSharp.Test.FactForNETCOREAPP>]
+    [<Fact>]
     let ``Is* discriminated union properties with backticks are visible, proper values are returned`` () =
         Fsx """
 type Foo = | Foo of string | ``Mars Bar``
@@ -114,7 +82,7 @@ if not marsbar.``IsMars Bar`` then failwith "Should be ``Mars Bar``"
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    [<Fact>]
     let ``Is* discriminated union properties are visible, proper values are returned in recursive namespace, before the definition`` () =
         FSharp """
 namespace rec Hello
@@ -137,7 +105,7 @@ type Foo =
         |> shouldSucceed
 
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    [<Fact>]
     let ``Is* discriminated union properties are visible, proper values are returned in recursive namespace, in SRTP`` () =
         FSharp """
 namespace Hello
@@ -165,7 +133,7 @@ module Main =
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    [<Fact>]
     let ``Is* discriminated union properties are unavailable with DefaultAugmentation(false)`` () =
         Fsx """
 [<DefaultAugmentation(false)>]
@@ -179,20 +147,41 @@ let isFoo = foo.IsFoo
         |> withErrorMessage "The type 'Foo' does not define the field, constructor or member 'IsFoo'. Maybe you want one of the following:
    Foo"
 
-    // TODO nullness - wait for https://github.com/fsharp/fslang-design/discussions/760
-    //[<FSharp.Test.FactForNETCOREAPP>]
-    let ``Is* discriminated union properties are unavailable on voption`` () =
+
+    [<Fact>]
+    let ``Is* discriminated union properties are unavailable on union case with lang version 8`` () =
         Fsx """
-let x = (ValueSome 1).IsSome
-let y = ValueOption<int>.None.IsValueNone
+[<RequireQualifiedAccess>]
+type PrimaryAssembly =
+| Mscorlib
+| System_Runtime
+| NetStandard
+
+let x = (PrimaryAssembly.Mscorlib).IsMscorlib
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldFail
-        |> withErrorMessage "The type 'ValueOption<_>' does not define the field, constructor or member 'IsValueNone'. Maybe you want one of the following:
-   ValueNone"
+        |> withErrorMessage "The type 'PrimaryAssembly' does not define the field, constructor or member 'IsMscorlib'. Maybe you want one of the following:
+   Mscorlib"
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+
+    [<Fact>]
+    let ``Is* discriminated union properties are available on union case after lang version 8`` () =
+        Fsx """
+[<RequireQualifiedAccess>]
+type PrimaryAssembly =
+| Mscorlib
+| System_Runtime
+| NetStandard
+
+let x = (PrimaryAssembly.Mscorlib).IsMscorlib
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Is* discriminated union properties work with UseNullAsTrueValue`` () =
         Fsx """
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]

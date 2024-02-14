@@ -325,6 +325,11 @@ type internal TransparentCompiler
         useSyntaxTreeCache
     ) as self =
 
+    let documentSource =
+        match getSource with
+        | Some getSource -> DocumentSource.Custom getSource
+        | None -> DocumentSource.FileSystem
+
     // Is having just one of these ok?
     let lexResourceManager = Lexhelp.LexResourceManager()
 
@@ -1193,29 +1198,16 @@ type internal TransparentCompiler
                         tcConfig.flatErrors
                     )
 
-                use _ =
-                    new CompilationGlobalsScope(errHandler.DiagnosticsLogger, BuildPhase.TypeCheck)
-
                 // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
                 let tcConfig =
                     ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName)
 
-                // update the error handler with the modified tcConfig
-                errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
-
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
-                //let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
+                let diagnosticsLogger =
+                    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, diagnosticsLogger)
 
-                //let diagnosticsLogger =
-                //    GetDiagnosticsLoggerFilteringByScopedPragmas(
-                //        false,
-                //        input.ScopedPragmas,
-                //        tcConfig.diagnosticsOptions,
-                //        capturingDiagnosticsLogger
-                //    )
-
-                //use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
+                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
                 //beforeFileChecked.Trigger fileName
 
@@ -1474,8 +1466,6 @@ type internal TransparentCompiler
                     let tcSymbolUses = sink.GetSymbolUses()
                     let tcOpenDeclarations = sink.GetOpenDeclarations()
 
-                    let tcDependencyFiles = [] // TODO add as a set to TcIntermediate
-
                     // TODO: Apparently creating diagnostics can produce further diagnostics. So let's capture those too. Hopefully there is a more elegant solution...
                     // Probably diagnostics need to be evaluated during typecheck anyway for proper formatting, which might take care of this too.
                     let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
@@ -1535,7 +1525,7 @@ type internal TransparentCompiler
                             projectSnapshot.IsIncompleteTypeCheckEnvironment,
                             None,
                             projectSnapshot.ToOptions(),
-                            Array.ofList tcDependencyFiles,
+                            Array.ofList tcInfo.tcDependencyFiles,
                             creationDiags,
                             parseResults.Diagnostics,
                             tcDiagnostics,
@@ -1934,7 +1924,7 @@ type internal TransparentCompiler
             ) : NodeCode<FSharpCheckFileAnswer> =
             node {
                 let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
+                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
                     |> NodeCode.AwaitAsync
 
                 ignore parseResults
@@ -1955,7 +1945,7 @@ type internal TransparentCompiler
             ) : NodeCode<FSharpCheckFileAnswer option> =
             node {
                 let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
+                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
                     |> NodeCode.AwaitAsync
 
                 ignore parseResults
@@ -2007,7 +1997,10 @@ type internal TransparentCompiler
             ) : NodeCode<seq<range>> =
             node {
                 ignore canInvalidateProject
-                let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
+
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                    |> NodeCode.AwaitAsync
 
                 return! this.FindReferencesInFile(fileName, snapshot.ProjectSnapshot, symbol, userOpName)
             }
@@ -2020,7 +2013,10 @@ type internal TransparentCompiler
 
         member this.GetAssemblyData(options: FSharpProjectOptions, fileName, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
             node {
-                let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                    |> NodeCode.AwaitAsync
+
                 return! this.GetAssemblyData(snapshot.ProjectSnapshot, fileName, userOpName)
             }
 
@@ -2039,7 +2035,9 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileResults> =
             node {
-                let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                    |> NodeCode.AwaitAsync
 
                 match! this.ParseAndCheckFileInProject(fileName, snapshot.ProjectSnapshot, userOpName) with
                 | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return parseResult, checkResult
@@ -2053,7 +2051,10 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpParseFileResults> =
             node {
-                let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                    |> NodeCode.AwaitAsync
+
                 return! this.ParseFile(fileName, snapshot.ProjectSnapshot, userOpName)
             }
 
@@ -2068,7 +2069,7 @@ type internal TransparentCompiler
                 ignore builder
 
                 let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText)
+                    FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText, documentSource)
                     |> NodeCode.AwaitAsync
 
                 match! this.ParseAndCheckFileInProject(fileName, snapshot.ProjectSnapshot, "GetCachedCheckFileResult") with
@@ -2118,7 +2119,11 @@ type internal TransparentCompiler
             ) : NodeCode<EditorServices.SemanticClassificationView option> =
             node {
                 ignore userOpName
-                let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
+
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                    |> NodeCode.AwaitAsync
+
                 return! ComputeSemanticClassification(fileName, snapshot.ProjectSnapshot)
             }
 
@@ -2141,7 +2146,7 @@ type internal TransparentCompiler
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
             node {
                 let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
+                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
                     |> NodeCode.AwaitAsync
 
                 return! this.ParseAndCheckFileInProject(fileName, snapshot.ProjectSnapshot, userOpName)
@@ -2153,7 +2158,11 @@ type internal TransparentCompiler
         member this.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             node {
                 ignore userOpName
-                let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
+
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                    |> NodeCode.AwaitAsync
+
                 return! ComputeParseAndCheckProject snapshot.ProjectSnapshot
             }
 
