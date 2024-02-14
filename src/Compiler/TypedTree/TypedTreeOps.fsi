@@ -2545,8 +2545,8 @@ val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list option
 val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
 
 /// Matches if the given expression is an application
-/// of an integral range operator and returns the
-/// type, start, step, and finish if so.
+/// of the range or range-step operator on an integral type
+/// and returns the type, start, step, and finish if so.
 ///
 /// start..finish
 ///
@@ -2560,14 +2560,26 @@ module IntegralConst =
     [<return: Struct>]
     val (|Zero|_|): c: Const -> unit voption
 
+/// An expression holding the loop's iteration count.
 type Count = Expr
+
+/// An expression representing the loop's current iteration index.
 type Idx = Expr
+
+/// An expression representing the current loop element.
 type Elem = Expr
+
+/// An expression representing the loop body.
 type Body = Expr
+
+/// An expression representing the overall loop.
 type Loop = Expr
 
-/// Makes an optimized while-loop for the given
-/// integral start, step, and finish.
+/// Makes an optimized while-loop for a range expression with the given integral start, step, and finish:
+///
+/// start..step..finish
+///
+/// The buildLoop function enables using the precomputed iteration count in an optional initialization step before the loop is executed.
 val mkOptimizedRangeLoop:
     g: TcGlobals ->
     mBody: range * mFor: range * mIn: range * spInWhile: DebugPointAtWhile ->
