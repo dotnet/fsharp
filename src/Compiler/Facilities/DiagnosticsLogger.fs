@@ -13,7 +13,6 @@ open System.Reflection
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open DiagnosticsThreadStatics
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -437,31 +436,19 @@ type internal DiagnosticsThreadStatics =
     static member DiagnosticsLogger
         with get () =
             logOrCheck "get"
-            match box DiagnosticsThreadStatics.diagnosticsLogger with
-            | Null ->
-                AssertFalseDiagnosticsLogger
-            | _ ->
-                DiagnosticsThreadStatics.diagnosticsLogger
+            DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
             logOrCheck "set"
 
     static member BuildPhaseNC
-        with get () =
-            match box DiagnosticsThreadStatics.buildPhase with
-            | Null -> BuildPhase.DefaultPhase
-            | _ -> DiagnosticsThreadStatics.buildPhase
-        and set (v: BuildPhase) = DiagnosticsThreadStatics.buildPhase <- v
+        with get () = DiagnosticsThreadStatics.buildPhase
+        and set v = DiagnosticsThreadStatics.buildPhase <- v
 
     static member DiagnosticsLoggerNC
-        with get () =
-            match box DiagnosticsThreadStatics.diagnosticsLogger with
-            | Null -> AssertFalseDiagnosticsLogger
-            | _ -> DiagnosticsThreadStatics.diagnosticsLogger
-        and set (v: DiagnosticsLogger) =
-            DiagnosticsThreadStatics.diagnosticsLogger <- v
-            // logOrCheck "NC set"
+        with get () = DiagnosticsThreadStatics.diagnosticsLogger
+        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
@@ -612,8 +599,13 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
 ///
 let PreserveAsyncScope computation =
     async {
-        use _ = new CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
-        return! computation
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        let buildPhase = DiagnosticsThreadStatics.BuildPhase
+        try
+            return! computation
+        finally
+        DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+        DiagnosticsThreadStatics.BuildPhase <- buildPhase
     }
 
 let InitGlobalDiagnostics computation =

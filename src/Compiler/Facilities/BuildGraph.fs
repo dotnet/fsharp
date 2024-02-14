@@ -209,7 +209,7 @@ type NodeCode private () =
             return! run
         }
         |> InitGlobalDiagnostics // do not pass any loggers into parallel computations.
-        |> wrapThreadStaticInfo // make sure we restore the threadstatic state even if it got mangled by Async.Parallel.
+        // |> wrapThreadStaticInfo // this does not work when the computation ends on a different thread.
         |> PreserveAsyncScope // not really needed?
         |> Node
         

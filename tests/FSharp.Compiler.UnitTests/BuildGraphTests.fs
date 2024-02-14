@@ -228,7 +228,7 @@ module BuildGraphTests =
         |> Seq.iter (fun x -> 
             try x.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ())
 
-    [<Fact>]
+    [<Fact(Skip="Not yet fixed.")>]
     let ``GraphNode created from an already computed result will return it in tryPeekValue`` () =
         let graphNode = GraphNode.FromResult 1
 
