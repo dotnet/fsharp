@@ -10238,6 +10238,7 @@ let (|EmptyRange|_|) (start, step, finish) =
 [<return: Struct>]
 let (|ConstCount|_|) (start, step, finish) =
     match start, step, finish with
+    // Such a range would use up the entire address space, but for parity with the library implementation we need it to fail at runtime, not at build time.
     | Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 1L), Expr.Const (value = Const.Int64 Int64.MaxValue)
     | Expr.Const (value = Const.Int64 Int64.MaxValue), Expr.Const (value = Const.Int64 -1L), Expr.Const (value = Const.Int64 Int64.MinValue)
     | Expr.Const (value = Const.UInt64 UInt64.MinValue), Expr.Const (value = Const.UInt64 1UL), Expr.Const (value = Const.UInt64 UInt64.MaxValue) -> ValueSome (Const.UInt64 UInt64.MaxValue)
@@ -10556,7 +10557,7 @@ type Elem = Expr
 type Body = Expr
 type Loop = Expr
 
-let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) buildLoop =
+let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr)) =
     let mkZero g m ty =
         let underlyingTy = stripMeasuresFromTy g ty
         if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 0, m, ty)
