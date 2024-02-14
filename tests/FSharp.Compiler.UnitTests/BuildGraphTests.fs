@@ -237,23 +237,29 @@ module BuildGraphTests =
 
     
     [<Fact>]
-    let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
+    let ``NodeCode preserves DiagnosticsThreadStatics`` () =
         let random =
             let rng = Random()
             fun n -> rng.Next n
-    
-        let job phase _ = node {
-            do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
-            Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+     
+        let asyncTask expectedPhase = async {
+            do! Async.Sleep 10
+            Assert.Equal(expectedPhase, DiagnosticsThreadStatics.BuildPhase)
         }
-    
+        
+        let rec job phase i = node {  
+            for i in 1 .. 10 do
+                Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+                do! asyncTask phase |> NodeCode.AwaitAsync
+        }
+        
         let work (phase: BuildPhase) =
             node {
-                use _ = new CompilationGlobalsScope(DiscardErrorsLogger, phase)
+                DiagnosticsThreadStatics.BuildPhase <- phase
                 let! _ = Seq.init 8 (job phase) |> NodeCode.Parallel
                 Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             }
-    
+
         let phases = [|
             BuildPhase.DefaultPhase
             BuildPhase.Compile
@@ -267,10 +273,10 @@ module BuildGraphTests =
             BuildPhase.Output
             BuildPhase.Interactive
         |]
-    
-        // start a bunch of computations in parallel, simulating a typical IDE scenario.
+
         let pickRandomPhase _ = phases[random phases.Length]
-        Seq.init 100 pickRandomPhase
+    
+        Seq.init 10 pickRandomPhase
         |> Seq.map (work >> Async.AwaitNodeCode)
         |> Async.Parallel
         |> Async.RunSynchronously
