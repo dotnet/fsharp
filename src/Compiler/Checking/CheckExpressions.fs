@@ -10558,20 +10558,24 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let envinner = {envinner with eCallerMemberName = callerName }
         let attrTgt =
             if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) && memberFlagsOpt.IsNone then
-                let supportsNameofFeature = g.langVersion.SupportsFeature(LanguageFeature.NameOf)
-                let rhsExprIsFunction =
-                    match rhsExpr with
-                    | SynExpr.Lambda _
-                    | SynExpr.Match _
-                    | SynExpr.MatchLambda _ -> true
-                    | SynExpr.App(funcExpr = SynExpr.Ident(ident)) when supportsNameofFeature && ident.idText <> "nameof" -> true
-                    | SynExpr.Ident ident when ident.idText = "id" -> true
-                    | _ -> false
-                
-                match pat with
-                | SynPat.Tuple _ when not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.ReturnValue
-                | SynPat.Named _ when spatsL.IsEmpty && declaredTypars.IsEmpty && not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
-                | _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
+                match declKind with
+                | ModuleOrMemberBinding
+                | ClassLetBinding _ -> 
+                    let supportsNameofFeature = g.langVersion.SupportsFeature(LanguageFeature.NameOf)
+                    let rhsExprIsFunction =
+                        match rhsExpr with
+                        | SynExpr.Lambda _
+                        | SynExpr.Match _
+                        | SynExpr.MatchLambda _ -> true
+                        | SynExpr.App(funcExpr = SynExpr.Ident(ident)) when supportsNameofFeature && ident.idText <> "nameof" -> true
+                        | SynExpr.Ident ident when ident.idText = "id" -> true
+                        | _ -> false
+                    
+                    match pat with
+                    | SynPat.Tuple _
+                    | SynPat.Named _ when spatsL.IsEmpty && declaredTypars.IsEmpty && not rhsExprIsFunction -> AttributeTargets.Field ||| AttributeTargets.ReturnValue
+                    | _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
+                | _ -> declKind.AllowedAttribTargets memberFlagsOpt
             else
                 declKind.AllowedAttribTargets memberFlagsOpt
 
