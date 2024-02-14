@@ -13,6 +13,21 @@ open Internal.Utilities.Library
 [<NoEquality; NoComparison>]
 type NodeCode<'T> = Node of Async<'T>
 
+let restoreThreadStaticInfo() =
+    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
+    let phase = DiagnosticsThreadStatics.BuildPhaseNC
+
+    fun () ->
+        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+        DiagnosticsThreadStatics.BuildPhaseNC <- phase
+        
+let initThreadStaticInfo computation =
+    async {
+        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
+        DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
+        return! computation
+    }
+
 let wrapThreadStaticInfo computation =
     async {
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
@@ -25,11 +40,13 @@ let wrapThreadStaticInfo computation =
             DiagnosticsThreadStatics.BuildPhaseNC <- phase
     }
 
+let toAsync (Node(wrapped)) = wrapThreadStaticInfo wrapped
+
 type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node(computation) -> wrapThreadStaticInfo computation
+        | Node(computation) -> initThreadStaticInfo computation
 
 [<Sealed>]
 type NodeCodeBuilder() =
@@ -93,25 +110,11 @@ type NodeCodeBuilder() =
     member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
+    member _.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
         Node(
             async {
-                DiagnosticsThreadStatics.DiagnosticsLoggerNC <- value.DiagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhaseNC <- value.BuildPhase
-
-                try
-                    return! binder value |> Async.AwaitNodeCode
-                finally
-                    (value :> IDisposable).Dispose()
-            }
-        )
-
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: IDisposable, binder: IDisposable -> NodeCode<'U>) =
-        Node(
-            async {
-                use _ = value
-                return! binder value |> Async.AwaitNodeCode
+                use _ = resource
+                return! binder resource |> toAsync
             }
         )
 
@@ -132,7 +135,7 @@ type NodeCode private () =
                     async {
                         DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
                         DiagnosticsThreadStatics.BuildPhaseNC <- phase
-                        return! computation |> Async.AwaitNodeCode
+                        return! computation |> toAsync
                     }
 
                 Async.StartImmediateAsTask(work, cancellationToken = ct).Result
@@ -154,7 +157,7 @@ type NodeCode private () =
                 async {
                     DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
                     DiagnosticsThreadStatics.BuildPhaseNC <- phase
-                    return! computation |> Async.AwaitNodeCode
+                    return! computation |> toAsync
                 }
 
             Async.StartAsTask(work, cancellationToken = defaultArg ct CancellationToken.None)
@@ -165,7 +168,7 @@ type NodeCode private () =
     static member CancellationToken = cancellationToken
 
     static member FromCancellable(computation: Cancellable<'T>) =
-        Node(wrapThreadStaticInfo (Cancellable.toAsync computation))
+        Node(wrapThreadStaticInfo (Cancellable.toAsync computation |> PreserveAsyncScope))
 
     static member AwaitAsync(computation: Async<'T>) = Node(wrapThreadStaticInfo computation)
 
@@ -175,6 +178,18 @@ type NodeCode private () =
     static member AwaitTask(task: Task) =
         Node(wrapThreadStaticInfo (Async.AwaitTask task))
 
+    static member AwaitTaskWithoutWrapping<'T>(task: Task<'T>) =
+        Node((Async.AwaitTask task))
+
+    static member AwaitTaskWithoutWrapping(task: Task) =
+        Node((Async.AwaitTask task))
+
+    static member AwaitAsyncWithoutWrapping(computation: Async<'T>) = Node(computation)
+
+    static member Unwrap(computation: NodeCode<'T>) = let (Node(wrapped)) = computation in wrapped
+
+    static member ToAsync(computation: NodeCode<'T>) = let (Node(wrapped)) = computation in wrapThreadStaticInfo wrapped
+
     static member AwaitWaitHandle_ForTesting(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
 
@@ -182,30 +197,40 @@ type NodeCode private () =
         Node(wrapThreadStaticInfo (Async.Sleep(ms)))
 
     static member Sequential(computations: NodeCode<'T> seq) =
-        node {
+        async {
             let results = ResizeArray()
 
             for computation in computations do
-                let! res = computation
+                let! res = computation |> toAsync |> PreserveAsyncScope
                 results.Add(res)
 
             return results.ToArray()
-        }
+        } |> NodeCode.AwaitAsync
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
-        let phase = DiagnosticsThreadStatics.BuildPhaseNC
+        async {
+            let restore = restoreThreadStaticInfo()
 
-        computations
-        |> Seq.map (fun (Node x) ->
-            async {
-                DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhaseNC <- phase
-                return! x
-            })
-        |> Async.Parallel
-        |> wrapThreadStaticInfo
+            // We don't want parallel computations acting on non-threadsafe loggers.
+            DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
+            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
+
+            let withRestore computation = 
+                async {
+                    try
+                        return! NodeCode.Unwrap computation
+                    finally
+                        restore()
+                }
+
+            return!
+                computations
+                |> Seq.map withRestore
+                |> Async.Parallel
+        }
+        |> PreserveAsyncScope
         |> Node
+        
 
 [<RequireQualifiedAccess>]
 module GraphNode =
@@ -245,6 +270,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
             cachedResultNode
         else
             node {
+
                 Interlocked.Increment(&requestCount) |> ignore
 
                 try
@@ -267,18 +293,17 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                      ||| TaskContinuationOptions.NotOnFaulted
                                      ||| TaskContinuationOptions.ExecuteSynchronously)
                                 )
-                            |> NodeCode.AwaitTask
+                            |> NodeCode.AwaitTaskWithoutWrapping
 
                         match cachedResult with
                         | ValueSome value -> return value
                         | _ ->
                             let tcs = TaskCompletionSource<'T>()
-                            let (Node(p)) = computation
 
                             Async.StartWithContinuations(
                                 async {
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! p
+                                    return! computation |> toAsync |> PreserveAsyncScope
                                 },
                                 (fun res ->
                                     cachedResult <- ValueSome res
@@ -290,7 +315,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                 ct
                             )
 
-                            return! tcs.Task |> NodeCode.AwaitTask
+                            return! tcs.Task |> NodeCode.AwaitTaskWithoutWrapping
                     finally
                         if taken then
                             semaphore.Release() |> ignore

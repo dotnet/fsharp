@@ -379,27 +379,40 @@ type internal DiagnosticsThreadStatics =
     static let buildPhaseAsync = new AsyncLocal<BuildPhase>()
     static let diagnosticsLoggerAsync = new AsyncLocal<DiagnosticsLogger>()
 
+    static let withDefault (holder: AsyncLocal<_>) defaultValue =
+        match box holder.Value with
+        | Null -> defaultValue
+        | _ -> holder.Value
+
 #if DEBUG
     static let changes = System.Collections.Concurrent.ConcurrentStack()
     //static let changesAsync = System.Collections.Concurrent.ConcurrentStack()
+#endif
 
     static let dlName (dl: DiagnosticsLogger) =
         if box dl |> isNull then "NULL" else dl.DebugDisplay()
 
-    static let log prefix =
-        let al = diagnosticsLoggerAsync.Value
+    static let logOrCheck prefix =
+        let al = withDefault diagnosticsLoggerAsync AssertFalseDiagnosticsLogger
         let ts = DiagnosticsThreadStatics.diagnosticsLogger
+
+#if DEBUG
         let stack = StackTrace(2, true).GetFrames() |> Seq.map _.ToString() |> String.concat "\t"
         let tid = Thread.CurrentThread.ManagedThreadId
         let dls = if box al = box ts then dlName al else  $"DIVERGED AsyncLocal: {dlName al}, ThreadStatic: {dlName ts}"
         let str = $"t:{tid} {prefix} %-300s{dls} \n\n\t{stack}"
         changes.Push str
-
-        if box al <> box ts then
-            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
-#else
-    static let log _ = ()
 #endif
+        ignore prefix
+
+        match box al, box ts with
+        | al, ts when al = ts -> ()
+        // ThreadStatic likes to be null quite often. We ignore this, as long as it doesn't push diagnostics to null logger.
+        | _, ts when ts = AssertFalseDiagnosticsLogger -> ()
+        | _, Null -> ()
+        | _ ->
+            // Debugger.Break()
+            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
@@ -422,16 +435,16 @@ type internal DiagnosticsThreadStatics =
 
     static member DiagnosticsLogger
         with get () =
-            log "get"
+            logOrCheck "get"
             match box DiagnosticsThreadStatics.diagnosticsLogger with
             | Null ->
                 AssertFalseDiagnosticsLogger
             | _ ->
                 DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
-            log "set"
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
+            logOrCheck "set"
 
     static member BuildPhaseNC
         with get () =
@@ -447,7 +460,7 @@ type internal DiagnosticsThreadStatics =
             | _ -> DiagnosticsThreadStatics.diagnosticsLogger
         and set (v: DiagnosticsLogger) =
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-            log "NC set"
+            // logOrCheck "NC set"
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
