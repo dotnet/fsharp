@@ -115,6 +115,7 @@ type internal BootstrapInfo =
 
         LoadClosure: LoadClosure option
         LastFileName: string
+        ImportsInvalidatedByTypeProvider: Event<unit>
     }
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
@@ -742,9 +743,10 @@ type internal TransparentCompiler
 
     /// Bootstrap info that does not depend source files
     let ComputeBootstrapInfoStatic (projectSnapshot: ProjectCore, tcConfig: TcConfig, assemblyName: string, loadClosureOpt) =
+        let cacheKey = projectSnapshot.CacheKeyWith("BootstrapInfoStatic", assemblyName)
 
         caches.BootstrapInfoStatic.Get(
-            projectSnapshot.CacheKeyWith("BootstrapInfoStatic", assemblyName),
+            cacheKey,
             node {
                 use _ =
                     Activity.start
@@ -816,6 +818,11 @@ type internal TransparentCompiler
 
                 let bootstrapId = Interlocked.Increment &BootstrapInfoIdCounter
 
+                // TODO: In the future it might make sense to expose the event on the ProjectSnapshot and let the consumer deal with this.
+                // We could include a timestamp as part of the ProjectSnapshot key that represents the last time since the TypeProvider assembly was invalidated.
+                // When the event trigger, the consumer could then create a new snapshot based on the updated time.
+                importsInvalidatedByTypeProvider.Publish.Add(fun () -> caches.Clear(Set.singleton projectSnapshot.Identifier))
+
                 return bootstrapId, tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider
             }
         )
@@ -865,7 +872,7 @@ type internal TransparentCompiler
             let tcConfig = TcConfig.Create(tcConfigB, validate = true)
             let outFile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
-            let! bootstrapId, tcImports, tcGlobals, initialTcInfo, _importsInvalidatedByTypeProvider =
+            let! bootstrapId, tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider =
                 ComputeBootstrapInfoStatic(projectSnapshot.ProjectCore, tcConfig, assemblyName, loadClosureOpt)
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
@@ -889,7 +896,7 @@ type internal TransparentCompiler
                             LoadedSources = loadedSources
                             LoadClosure = loadClosureOpt
                             LastFileName = sourceFiles |> List.tryLast |> Option.defaultValue ""
-                        //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
+                            ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
                         }
         }
 
@@ -1719,7 +1726,6 @@ type internal TransparentCompiler
                 | None, creationDiags ->
                     return FSharpCheckProjectResults(projectSnapshot.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
                 | Some bootstrapInfo, creationDiags ->
-
                     let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
                     let! tcInfo, ilAssemRef, assemblyDataResult, checkedImplFiles = ComputeProjectExtras bootstrapInfo snapshotWithSources
