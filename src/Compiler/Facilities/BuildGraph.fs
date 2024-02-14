@@ -13,13 +13,13 @@ open Internal.Utilities.Library
 [<NoEquality; NoComparison>]
 type NodeCode<'T> = Node of Async<'T>
 
-let restoreThreadStaticInfo() =
-    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
-    let phase = DiagnosticsThreadStatics.BuildPhaseNC
+//let restoreThreadStaticInfo() =
+//    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
+//    let phase = DiagnosticsThreadStatics.BuildPhaseNC
 
-    fun () ->
-        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
-        DiagnosticsThreadStatics.BuildPhaseNC <- phase
+//    fun () ->
+//        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+//        DiagnosticsThreadStatics.BuildPhaseNC <- phase
         
 let initThreadStaticInfo computation =
     async {
@@ -209,24 +209,29 @@ type NodeCode private () =
 
     static member Parallel(computations: NodeCode<'T> seq) =
         async {
-            let restore = restoreThreadStaticInfo()
-
-            // We don't want parallel computations acting on non-threadsafe loggers.
-            DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
-            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
+            // let restore = restoreThreadStaticInfo()
 
             let withRestore computation = 
                 async {
                     try
                         return! NodeCode.Unwrap computation
                     finally
-                        restore()
+                        DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
+                        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
+                        // restore()
                 }
 
-            return!
+            // We don't want parallel computations acting on non-threadsafe loggers.
+            let control = ExecutionContext.SuppressFlow() 
+            DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
+            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
+            let! run = 
                 computations
                 |> Seq.map withRestore
                 |> Async.Parallel
+                |> Async.StartChild
+            control.Undo()
+            return! run
         }
         |> PreserveAsyncScope
         |> Node
