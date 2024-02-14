@@ -140,9 +140,11 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
-/// A set of helpers for determining if/what specifiers a string has.
-/// Used to decide if interpolated string can be lowered to a concat call.
-/// We don't have to care about single- vs multi-$ strings here, because lexer took care of that already.
+//----------------------------------------------------------------------------------------------
+// Helpers for determining if/what specifiers a string has.
+// Used to decide if interpolated string can be lowered to a concat call.
+// We don't care about single- vs multi-$ strings here, because lexer took care of that already.
+//----------------------------------------------------------------------------------------------
 module private ParseString =
     open System.Text.RegularExpressions
 
@@ -7391,7 +7393,13 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
                         | _ -> true
                     | SynInterpolatedStringPart.String(s, _) -> not <| ParseString.HasFormatSpecifier s)
 
-            if isString && (nonEmptyParts.Length < 5) && (argTys |> List.forall (isStringTy g)) && (noSpecifiers nonEmptyParts) then
+            if
+                (g.langVersion.SupportsFeature LanguageFeature.LowerInterpolatedStringToConcat)
+                && isString
+                && (nonEmptyParts.Length < 5)
+                && (argTys |> List.forall (isStringTy g))
+                && (noSpecifiers nonEmptyParts)
+            then
 
                 let args =
                     // We already have the type-checked fill expressions from before
