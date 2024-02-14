@@ -245,7 +245,11 @@ let rec stripUnitEqnsAux canShortcut unt =
 let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
     match nullnessOrig.Evaluate() with
     | NullnessInfo.WithoutNull -> nullnessNew
-    | NullnessInfo.AmbivalentToNull -> nullnessOrig
+    | NullnessInfo.AmbivalentToNull ->
+        match nullnessNew.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessOrig
+        | NullnessInfo.AmbivalentToNull -> nullnessOrig
+        | NullnessInfo.WithNull -> nullnessNew
     | NullnessInfo.WithNull -> 
         match nullnessNew.Evaluate() with
         | NullnessInfo.WithoutNull -> nullnessOrig

@@ -12,7 +12,7 @@ let typeCheckWithStrictNullness cu =
     |> withOptions ["--warnaserror+"]
     |> compile
 
-[<Fact>]
+[<FactForNETCOREAPP>]
 let ``Passing null to IlGenerator BeginCatchBlock is fine`` () = 
     FSharp """module MyLibrary
 open System.Reflection.Emit
@@ -34,6 +34,20 @@ let doSomethingAboutIt (ilg:ILGenerator) =
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
+[<FactForNETCOREAPP>]
+let ``Nullable directory info show warn on prop access`` () = 
+    FSharp """module MyLibrary
+open System.IO
+open System
+
+let d : DirectoryInfo | null = null
+let s : string = d.Name // should warn here!!
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 6, Col 18, Line 6, Col 24, "Nullness warning: The types 'FileSystemInfo' and 'FileSystemInfo | null' do not have compatible nullability."]
+
 [<Fact>]
 let ``Consumption of netstandard2 BCL api which is not annotated`` () = 
     FSharp """module MyLibrary
@@ -54,6 +68,7 @@ let FromAssemblyName (aname: AssemblyName) =
         | NonNull bytes -> Some(PublicKeyToken bytes)
     | NonNull bytes -> Some(PublicKey bytes)"""
     |> asLibrary
+    |> asNetStandard20
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 

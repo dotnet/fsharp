@@ -11,17 +11,41 @@ let typeCheckWithStrictNullness cu =
     |> withOptions ["--warnaserror+"]
     |> typecheck
 
+    
+[<Fact>]
+let ``Cannot pass possibly null value to a strict function``() =
+    FSharp """
+let strictFunc(x:string) = ()
+let nonStrictFunc(x:string | null) = strictFunc(x)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 49, Line 3, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+
+[<Fact>]
+let ``Boolean literal to string is not nullable`` () = 
+    FSharp """module MyLibrary
+let onlyWantNotNullString(x:string) = ()
+
+let processBool () : string =
+    onlyWantNotNullString (true.ToString())
+    onlyWantNotNullString (false.ToString())
+
+    true.ToString()
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 [<Fact>]
 let ``Boolean to string is not nullable`` () = 
     FSharp """module MyLibrary
 let onlyWantNotNullString(x:string) = ()
 
-let processBool (b:bool) : (string|null) =
-    let asString = b.ToString()
-    onlyWantNotNullString asString
-    onlyWantNotNullString (true.ToString())
-    onlyWantNotNullString (false.ToString())
-
+let processBool (b:bool) : string =
+    let asString = b.ToString()  
     asString
 """
     |> asLibrary

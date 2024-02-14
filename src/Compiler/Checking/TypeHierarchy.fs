@@ -56,8 +56,7 @@ let GetSuperTypeOfType g amap m ty =
             let tinst = argsOfAppTy g ty
             match tdef.Extends with
             | None -> None
-                                // 'inherit' cannot refer to a nullable type
-            | Some ilTy -> 
+            | Some ilTy ->   // 'inherit' can refer to a type which has nullable type arguments (e.g. List<string?>)
                 let typeAttrs = AttributesFromIL(tdef.MetadataIndex,tdef.CustomAttrsStored)
                 let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
                 Some (RescopeAndImportILType scoref amap m tinst nullness ilTy)

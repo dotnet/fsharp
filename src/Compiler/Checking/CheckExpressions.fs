@@ -9229,7 +9229,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
     // 'base' calls use a different resolution strategy when finding methods.
     let findFlag =
         let baseCall = IsBaseCall objArgs
-        (if baseCall then PreferOverrides else IgnoreOverrides)
+        (if baseCall then PreferOverrides else PreferOverrides)
 
     // Canonicalize inference problem prior to '.' lookup on variable types
     if isTyparTy g objExprTy then

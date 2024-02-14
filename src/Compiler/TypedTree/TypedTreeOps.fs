@@ -1082,6 +1082,18 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
 
     | _ -> false
 
+and nullnessSensitivetypeAEquivAux  erasureFlag g aenv ty1 ty2 = 
+    let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
+    let ty2 = stripTyEqnsWrtErasure erasureFlag g ty2
+    match ty1, ty2 with
+    | TType_var (_,n1), TType_var (_,n2)
+    | TType_app (_,_,n1), TType_app (_,_,n2)     
+    | TType_fun (_,_,n1), TType_fun (_,_,n2) ->
+        n1 === n2
+    | _ -> true
+
+    && typeAEquivAux erasureFlag g aenv ty1 ty2
+
 and anonInfoEquiv (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =
     ccuEq anonInfo1.Assembly anonInfo2.Assembly && 
     structnessAEquiv anonInfo1.TupInfo anonInfo2.TupInfo && 
@@ -9009,6 +9021,7 @@ let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
 
 let nullnessOfTy g ty =
     ty
+    // stripping is where the evil is for abbrevs
     |> stripTyEqns g
     |> function
         | TType_app(tcref, _, nullness) ->
