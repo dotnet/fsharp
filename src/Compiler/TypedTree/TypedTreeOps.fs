@@ -10209,7 +10209,7 @@ let (|IntegralRange|_|) g expr =
     | ValApp g g.range_byte_op_vref ([], [start; step; finish], _) -> ValueSome (g.byte_ty, (start, step, finish))
     | ValApp g g.range_char_op_vref ([], [start; finish], _) -> ValueSome (g.char_ty, (start, Expr.Const (Const.Char '\001', Text.Range.range0, g.char_ty), finish))
     | ValApp g g.range_op_vref ([ty], [start; finish], _) -> ValueSome (ty, (start, Expr.Const (Const.Int32 1, Text.Range.range0, ty), finish))
-    | ValApp g g.range_step_op_vref ([ty], [start; step; finish], _) -> ValueSome (ty, (start, step, finish))
+    | ValApp g g.range_step_op_vref (ty :: _, [start; step; finish], _) -> ValueSome (ty, (start, step, finish))
     | _ -> ValueNone
 
 /// 5..1
