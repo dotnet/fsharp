@@ -10099,7 +10099,7 @@ let (|CompiledForEachExpr|_|) g expr =
 
         Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr))
     | _ -> None  
-             
+
 
 let (|CompiledInt32RangeForEachExpr|_|) g expr = 
     match expr with
@@ -10326,30 +10326,6 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\001', m, ty)
         else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
 
-    let mkMinValue ty =
-        let underlyingTy = stripMeasuresFromTy g ty
-        if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 Int32.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 Int64.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 UInt64.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 UInt32.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr Int64.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr UInt64.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 Int16.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 UInt16.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte SByte.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte Byte.MinValue, m, ty)
-        elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\000', m, ty)
-        else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
-
-    let mkMaxValuePlusOneAsUnsigned originalTy destTy =
-        let underlyingTy = stripMeasuresFromTy g originalTy
-        if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.UInt64 (uint64 (uint Int32.MaxValue + 1u)), m, destTy)
-        elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.UInt64 (uint64 Int64.MaxValue + 1UL), m, destTy)
-        elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.UIntPtr (uint64 Int64.MaxValue + 1UL), m, destTy)
-        elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.UInt64 (uint64 (uint16 Int16.MaxValue + 1us)), m, destTy)
-        elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.UInt64 (uint64 (byte SByte.MaxValue + 1uy)), m, destTy)
-        else error (InternalError ($"Unrecognized signed integral type '{originalTy}'.", m))
-
     /// Widened diff as unsigned: unsigned (e1 - e2).
     /// Expects that e1 >= e2.
     let mkDiff e1 e2 =
@@ -10506,21 +10482,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                 let negativeStep =
                     let diff = mkDiff start finish
                     let diffTy = tyOfExpr g diff
-
-                    let absStep =
-                        if typeEquiv g (stripMeasuresFromTy g rangeTy) g.nativeint_ty then
-                            mkAsmExpr ([AI_neg], [], [step], [diffTy], m)
-                        else
-                            mkAsmExpr ([AI_conv DT_I8], [], [(mkAsmExpr ([AI_neg], [], [step], [diffTy], m))], [diffTy], m)
-
-                    let step =
-                        mkCond
-                            DebugPointAtBinding.NoneAtInvisible
-                            m
-                            diffTy
-                            (mkILAsmCeq g m step (mkMinValue rangeTy))
-                            (mkMaxValuePlusOneAsUnsigned rangeTy diffTy)
-                            absStep
+                    let absStep = mkAsmExpr ([AI_add], [], [mkAsmExpr ([AI_not], [], [step], [diffTy], m); mkOne diffTy], [diffTy], m)
 
                     mkCond
                         DebugPointAtBinding.NoneAtInvisible
@@ -10528,7 +10490,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                         diffTy
                         (mkSignednessAppropriateClt rangeTy start finish)
                         (mkZero diffTy)
-                        (mkAddOne (mkQuotient diff step))
+                        (mkAddOne (mkQuotient diff absStep))
 
                 mkCond
                     DebugPointAtBinding.NoneAtInvisible
