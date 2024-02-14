@@ -268,6 +268,7 @@ module BuildGraphTests =
             BuildPhase.Interactive
         |]
     
+        // start a bunch of computations in parallel, simulating a typical IDE scenario.
         let pickRandomPhase _ = phases[random phases.Length]
         Seq.init 100 pickRandomPhase
         |> Seq.map (work >> Async.AwaitNodeCode)

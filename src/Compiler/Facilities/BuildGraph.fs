@@ -93,25 +93,11 @@ type NodeCodeBuilder() =
     member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
+    member _.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
         Node(
             async {
-                DiagnosticsThreadStatics.DiagnosticsLoggerNC <- value.DiagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhaseNC <- value.BuildPhase
-
-                try
-                    return! binder value |> Async.AwaitNodeCode
-                finally
-                    (value :> IDisposable).Dispose()
-            }
-        )
-
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: IDisposable, binder: IDisposable -> NodeCode<'U>) =
-        Node(
-            async {
-                use _ = value
-                return! binder value |> Async.AwaitNodeCode
+                use _ = resource
+                return! binder resource |> Async.AwaitNodeCode
             }
         )
 
@@ -165,7 +151,7 @@ type NodeCode private () =
     static member CancellationToken = cancellationToken
 
     static member FromCancellable(computation: Cancellable<'T>) =
-        Node(wrapThreadStaticInfo (Cancellable.toAsync computation))
+        Node(wrapThreadStaticInfo (Cancellable.toAsync computation |> PreserveAsyncScope))
 
     static member AwaitAsync(computation: Async<'T>) = Node(wrapThreadStaticInfo computation)
 
@@ -175,6 +161,16 @@ type NodeCode private () =
     static member AwaitTask(task: Task) =
         Node(wrapThreadStaticInfo (Async.AwaitTask task))
 
+    static member AwaitTaskWithoutWrapping<'T>(task: Task<'T>) =
+        Node((Async.AwaitTask task))
+
+    static member AwaitTaskWithoutWrapping(task: Task) =
+        Node((Async.AwaitTask task))
+
+    static member AwaitAsyncWithoutWrapping(computation: Async<'T>) = Node(computation)
+
+    static member Unwrap(computation: NodeCode<'T>) = let (Node(wrapped)) = computation in wrapped
+
     static member AwaitWaitHandle_ForTesting(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
 
@@ -182,30 +178,28 @@ type NodeCode private () =
         Node(wrapThreadStaticInfo (Async.Sleep(ms)))
 
     static member Sequential(computations: NodeCode<'T> seq) =
-        node {
+        async {
             let results = ResizeArray()
 
             for computation in computations do
-                let! res = computation
+                let! res = computation |> Async.AwaitNodeCode |> PreserveAsyncScope
                 results.Add(res)
 
             return results.ToArray()
-        }
+        } |> NodeCode.AwaitAsync
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
-        let phase = DiagnosticsThreadStatics.BuildPhaseNC
-
-        computations
-        |> Seq.map (fun (Node x) ->
-            async {
-                DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhaseNC <- phase
-                return! x
-            })
-        |> Async.Parallel
-        |> wrapThreadStaticInfo
+        async {
+            DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
+            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
+            return!
+                computations
+                |> Seq.map NodeCode.Unwrap
+                |> Async.Parallel
+        }
+        |> PreserveAsyncScope
         |> Node
+        
 
 [<RequireQualifiedAccess>]
 module GraphNode =
@@ -245,6 +239,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
             cachedResultNode
         else
             node {
+
                 Interlocked.Increment(&requestCount) |> ignore
 
                 try
@@ -267,18 +262,17 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                      ||| TaskContinuationOptions.NotOnFaulted
                                      ||| TaskContinuationOptions.ExecuteSynchronously)
                                 )
-                            |> NodeCode.AwaitTask
+                            |> NodeCode.AwaitTaskWithoutWrapping
 
                         match cachedResult with
                         | ValueSome value -> return value
                         | _ ->
                             let tcs = TaskCompletionSource<'T>()
-                            let (Node(p)) = computation
 
                             Async.StartWithContinuations(
                                 async {
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! p
+                                    return! computation |> Async.AwaitNodeCode |> PreserveAsyncScope
                                 },
                                 (fun res ->
                                     cachedResult <- ValueSome res
@@ -290,7 +284,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                 ct
                             )
 
-                            return! tcs.Task |> NodeCode.AwaitTask
+                            return! tcs.Task |> NodeCode.AwaitTaskWithoutWrapping
                     finally
                         if taken then
                             semaphore.Release() |> ignore
