@@ -13,6 +13,7 @@ open System.Reflection
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open DiagnosticsThreadStatics
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -612,6 +613,13 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
 let PreserveAsyncScope computation =
     async {
         use _ = new CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
+        return! computation
+    }
+
+let InitGlobalDiagnostics computation =
+    async {
+        DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
+        DiagnosticsThreadStatics.DiagnosticsLogger <- AssertFalseDiagnosticsLogger
         return! computation
     }
 

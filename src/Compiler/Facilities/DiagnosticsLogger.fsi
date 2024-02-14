@@ -469,3 +469,5 @@ type CompilationGlobalsScope =
     member BuildPhase: BuildPhase
 
 val PreserveAsyncScope: Async<'T> -> Async<'T>
+
+val InitGlobalDiagnostics: Async<'T> -> Async<'T>

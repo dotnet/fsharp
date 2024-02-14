@@ -17,16 +17,10 @@ type NodeCode<'T> = Node of Async<'T>
 //    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
 //    let phase = DiagnosticsThreadStatics.BuildPhaseNC
 
-//    fun () ->
-//        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
-//        DiagnosticsThreadStatics.BuildPhaseNC <- phase
-        
-let initThreadStaticInfo computation =
-    async {
-        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
-        DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
-        return! computation
-    }
+//    { new IDisposable with
+//        member _.Dispose() =
+//            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
+//            DiagnosticsThreadStatics.BuildPhaseNC <- phase }
 
 let wrapThreadStaticInfo computation =
     async {
@@ -46,7 +40,7 @@ type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node(computation) -> initThreadStaticInfo computation
+        | Node(computation) -> InitGlobalDiagnostics computation
 
 [<Sealed>]
 type NodeCodeBuilder() =
@@ -184,12 +178,6 @@ type NodeCode private () =
     static member AwaitTaskWithoutWrapping(task: Task) =
         Node((Async.AwaitTask task))
 
-    static member AwaitAsyncWithoutWrapping(computation: Async<'T>) = Node(computation)
-
-    static member Unwrap(computation: NodeCode<'T>) = let (Node(wrapped)) = computation in wrapped
-
-    static member ToAsync(computation: NodeCode<'T>) = let (Node(wrapped)) = computation in wrapThreadStaticInfo wrapped
-
     static member AwaitWaitHandle_ForTesting(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
 
@@ -209,31 +197,20 @@ type NodeCode private () =
 
     static member Parallel(computations: NodeCode<'T> seq) =
         async {
-            // let restore = restoreThreadStaticInfo()
-
-            let withRestore computation = 
-                async {
-                    try
-                        return! NodeCode.Unwrap computation
-                    finally
-                        DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
-                        DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
-                        // restore()
-                }
 
             // We don't want parallel computations acting on non-threadsafe loggers.
             let control = ExecutionContext.SuppressFlow() 
-            DiagnosticsThreadStatics.BuildPhaseNC <- BuildPhase.DefaultPhase
-            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- AssertFalseDiagnosticsLogger
             let! run = 
                 computations
-                |> Seq.map withRestore
+                |> Seq.map toAsync
                 |> Async.Parallel
                 |> Async.StartChild
             control.Undo()
             return! run
         }
-        |> PreserveAsyncScope
+        |> InitGlobalDiagnostics // do not pass any loggers into parallel computations.
+        |> wrapThreadStaticInfo // make sure we restore the threadstatic state even if it got mangled by Async.Parallel.
+        |> PreserveAsyncScope // not really needed?
         |> Node
         
 
