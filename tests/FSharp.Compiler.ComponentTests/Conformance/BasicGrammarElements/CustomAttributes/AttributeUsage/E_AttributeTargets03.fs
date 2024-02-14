@@ -99,3 +99,10 @@ let (|IfThen|_|) =
      | TestExpr.Const(TestConst.Bool b1, _, _) as expr -> ValueSome expr
      | _ -> ValueNone)
 
+[<MethodOnly>]
+let rec f = 0
+and [<MethodOnly>] g() = []
+
+[<MethodOnly>]
+let rec f1 = 0
+and [<MethodOnly>] g2() = []
