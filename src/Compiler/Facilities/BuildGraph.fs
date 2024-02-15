@@ -34,6 +34,8 @@ let wrapThreadStaticInfo computation =
             DiagnosticsThreadStatics.BuildPhaseNC <- phase
     }
 
+let unwrapNode (Node(computation)) = computation
+
 let toAsync (Node(wrapped)) = wrapThreadStaticInfo wrapped
 
 type Async<'T> with
@@ -196,23 +198,28 @@ type NodeCode private () =
         } |> NodeCode.AwaitAsync
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        async {
+        node {
+            let concurrentLogging = new CaptureDiagnosticsConcurrently()
+            let phase = DiagnosticsThreadStatics.BuildPhase
+            // Why does it return just IDisposable?
+            use _ = concurrentLogging
 
-            // We don't want parallel computations acting on non-threadsafe loggers.
-            let control = ExecutionContext.SuppressFlow() 
-            let! run = 
+            let injectLogger i computation =
+                let logger = concurrentLogging.GetLoggerForTask($"NodeCode.Parallel {i}")
+
+                node {
+                    use _ = new CompilationGlobalsScope(logger, phase)
+                    return! computation
+                }
+
+            return!
                 computations
-                |> Seq.map toAsync
+                |> Seq.mapi injectLogger
+                |> Seq.map unwrapNode
                 |> Async.Parallel
-                |> Async.StartChild
-            control.Undo()
-            return! run
+                |> wrapThreadStaticInfo
+                |> Node
         }
-        |> InitGlobalDiagnostics // do not pass any loggers into parallel computations.
-        // |> wrapThreadStaticInfo // this does not work when the computation ends on a different thread.
-        |> PreserveAsyncScope // not really needed?
-        |> Node
-        
 
 [<RequireQualifiedAccess>]
 module GraphNode =

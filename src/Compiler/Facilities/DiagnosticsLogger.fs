@@ -964,3 +964,17 @@ type StackGuard(maxDepth: int, name: string) =
 
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
+
+type CaptureDiagnosticsConcurrently() =
+    let target = DiagnosticsThreadStatics.DiagnosticsLogger
+    let loggers = ResizeArray()
+
+    member _.GetLoggerForTask(name) : DiagnosticsLogger =
+        let logger = CapturingDiagnosticsLogger(name)
+        loggers.Add logger
+        logger
+
+    interface IDisposable with
+        member _.Dispose() =
+            for logger in loggers do
+                logger.CommitDelayedDiagnostics target

@@ -235,28 +235,34 @@ module BuildGraphTests =
         Assert.shouldBeTrue graphNode.HasValue
         Assert.shouldBe (ValueSome 1) (graphNode.TryPeekValue())
 
-    
     [<Fact>]
     let ``NodeCode preserves DiagnosticsThreadStatics`` () =
         let random =
             let rng = Random()
             fun n -> rng.Next n
-     
-        let asyncTask expectedPhase = async {
-            do! Async.Sleep 10
-            Assert.Equal(expectedPhase, DiagnosticsThreadStatics.BuildPhase)
-        }
-        
-        let rec job phase i = node {  
-            for i in 1 .. 10 do
-                Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
-                do! asyncTask phase |> NodeCode.AwaitAsync
+    
+        let job phase i = node {
+            do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
+            Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+            DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
+            |> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
+
+            errorR (System.Exception($"job {i}"))
         }
         
         let work (phase: BuildPhase) =
             node {
-                DiagnosticsThreadStatics.BuildPhase <- phase
-                let! _ = Seq.init 8 (job phase) |> NodeCode.Parallel
+                let n = 8
+                let logger = CapturingDiagnosticsLogger("test NodeCode")
+                use _ = new CompilationGlobalsScope(logger, phase)
+                let! _ = Seq.init n (job phase) |> NodeCode.Parallel
+
+                let diags = logger.Diagnostics |> List.map fst
+
+                diags |> List.map _.Phase |> Set |> Assert.shouldBe (Set.singleton phase)
+                diags |> List.map _.Exception.Message
+                |> Assert.shouldBe (List.init n <| sprintf "job %d")
+
                 Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             }
 

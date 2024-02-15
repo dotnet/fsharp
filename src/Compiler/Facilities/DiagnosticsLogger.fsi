@@ -471,3 +471,14 @@ type CompilationGlobalsScope =
 val PreserveAsyncScope: Async<'T> -> Async<'T>
 
 val InitGlobalDiagnostics: Async<'T> -> Async<'T>
+
+type CaptureDiagnosticsConcurrently =
+    new: unit -> CaptureDiagnosticsConcurrently
+
+    member GetLoggerForTask: string -> DiagnosticsLogger
+
+    interface IDisposable
+
+val PreserveAsyncScope: Async<'T> -> Async<'T>
+
+val InitGlobalDiagnostics: Async<'T> -> Async<'T>
