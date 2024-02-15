@@ -14,16 +14,15 @@ module MemberDefinitions_MethodsAndProperties =
         |> withOptions ["--nowarn:988"]
         |> compile
 
-    let verifyCompileAndRun compilation =
-        compilation
-        |> asExe
-        |> withOptions ["--nowarn:988"]
-        |> compileAndRun
+    let verifyCompileAndRun = verifyCompile >> run
+
 
     // SOURCE=AbstractProperties01.fs								# AbstractProperties01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AbstractProperties01.fs"|])>]
     let ``AbstractProperties01_fs`` compilation =
         compilation
+        |> withLangVersionPreview
+        |> withCheckNulls
         |> verifyCompileAndRun
         |> shouldSucceed
    

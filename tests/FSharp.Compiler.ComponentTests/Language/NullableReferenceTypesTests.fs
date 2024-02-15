@@ -15,6 +15,7 @@ let typeCheckWithStrictNullness cu =
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =
     FSharp """
+module MyLib
 let strictFunc(x:string) = ()
 let nonStrictFunc(x:string | null) = strictFunc(x)
     """
@@ -22,7 +23,7 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 3, Col 49, Line 3, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+        Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
 
 [<Fact>]
 let ``Boolean literal to string is not nullable`` () = 
@@ -36,6 +37,7 @@ let processBool () : string =
     true.ToString()
 """
     |> asLibrary
+    |> withNoWarn 52 // The value has been copied to ensure the original is not mutated...
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 

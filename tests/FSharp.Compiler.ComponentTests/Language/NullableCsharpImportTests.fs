@@ -46,7 +46,7 @@ let s : string = d.Name // should warn here!!
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 6, Col 18, Line 6, Col 24, "Nullness warning: The types 'FileSystemInfo' and 'FileSystemInfo | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 6, Col 18, Line 6, Col 24, "Nullness warning: The types 'DirectoryInfo' and 'DirectoryInfo | null' do not have compatible nullability."]
 
 [<Fact>]
 let ``Consumption of netstandard2 BCL api which is not annotated`` () = 

@@ -18,16 +18,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -171,7 +161,7 @@
       IL_0034:  ldloc.s    V_4
       IL_0036:  stloc.s    V_5
       IL_0038:  ldloc.s    V_5
-      IL_003a:  callvirt   instance string [runtime]System.Exception::get_Message()
+      IL_003a:  callvirt   instance string [runtime]System.ArgumentException::get_Message()
       IL_003f:  call       void [runtime]System.Console::WriteLine(string)
       IL_0044:  leave.s    IL_0051
 
@@ -293,7 +283,7 @@
       IL_002b:  unbox.any  [runtime]System.ArgumentException
       IL_0030:  stloc.3
       IL_0031:  ldloc.3
-      IL_0032:  callvirt   instance string [runtime]System.Exception::get_Message()
+      IL_0032:  callvirt   instance string [runtime]System.ArgumentException::get_Message()
       IL_0037:  call       void [runtime]System.Console::WriteLine(string)
       IL_003c:  leave.s    IL_005f
 
