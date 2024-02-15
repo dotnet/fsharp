@@ -431,6 +431,162 @@ type DummyException(msg) =
     inherit Exception(msg)
 
 [<Fact>]
+let ``Preserve thread static diagnostics with inner task`` () = 
+
+    let seed = System.Random().Next()
+
+    let rng = System.Random seed
+    
+    let job1Cache = AsyncMemoize()
+    let job2Cache = AsyncMemoize()
+
+    let taskJob = task {
+        do! Task.Delay 10
+        let ex = DummyException("job1 error")
+        DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
+    }
+
+    let job1 (input: string) = node {
+        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
+        do! taskJob |> NodeCode.AwaitTask
+        return Ok input
+    }
+
+    let job2 (input: int) = node {
+        
+        DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 1"))
+
+        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
+
+        let key = { new ICacheKey<_, _> with
+                        member _.GetKey() = "job1"
+                        member _.GetVersion() = input
+                        member _.GetLabel() = "job1" }
+
+        let! result = job1Cache.Get(key, job1 "${input}" )
+
+        DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 2"))
+
+        return input, result
+
+    }
+
+    let tasks = seq {
+        for i in 1 .. 100 do
+
+            task {
+                let diagnosticsLogger =
+                    CompilationDiagnosticLogger($"Testing task {i}", FSharpDiagnosticOptions.Default)
+
+                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
+
+                DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("task error"))
+
+
+                let key = { new ICacheKey<_, _> with
+                                member _.GetKey() = "job2"
+                                member _.GetVersion() = rng.Next(1, 10)
+                                member _.GetLabel() = "job2" }
+
+                let! result = job2Cache.Get(key, job2 (i % 10)) |> Async.AwaitNodeCode
+
+                let diagnostics = diagnosticsLogger.GetDiagnostics()
+
+                //Assert.Equal(3, diagnostics.Length)
+
+                return result, diagnostics
+            }
+    }
+
+    let results = (Task.WhenAll tasks).Result
+
+    let _diagnosticCounts = results |> Seq.map snd |> Seq.map Array.length |> Seq.groupBy id |> Seq.map (fun (k, v) -> k, v |> Seq.length) |> Seq.sortBy fst |> Seq.toList
+
+    //Assert.Equal<(int * int) list>([4, 100], diagnosticCounts)
+
+    let diagnosticMessages = results |> Seq.map snd |> Seq.map (Array.map (fun (d, _) -> d.Exception.Message) >> Array.toList) |> Set
+
+    Assert.Equal<Set<_>>(Set [["task error"; "job2 error 1"; "job1 error"; "job2 error 2"; ]], diagnosticMessages)
+
+[<Fact>]
+let ``Preserve thread static diagnostics with async computation`` () = 
+
+    let seed = System.Random().Next()
+
+    let rng = System.Random seed
+    
+    let job1Cache = AsyncMemoize()
+    let job2Cache = AsyncMemoize()
+
+    let asyncJob = async {
+        do! Async.Sleep 10
+        let ex = DummyException("job1 error")
+        DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
+    }
+
+    let job1 (input: string) = node {
+        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
+        do! asyncJob |> NodeCode.AwaitAsync
+        return Ok input
+    }
+
+    let job2 (input: int) = node {
+        
+        DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 1"))
+
+        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
+
+        let key = { new ICacheKey<_, _> with
+                        member _.GetKey() = "job1"
+                        member _.GetVersion() = input
+                        member _.GetLabel() = "job1" }
+
+        let! result = job1Cache.Get(key, job1 "${input}" )
+
+        DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 2"))
+
+        return input, result
+
+    }
+
+    let tasks = seq {
+        for i in 1 .. 100 do
+
+            task {
+                let diagnosticsLogger =
+                    CompilationDiagnosticLogger($"Testing task {i}", FSharpDiagnosticOptions.Default)
+
+                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
+
+                DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("task error"))
+
+
+                let key = { new ICacheKey<_, _> with
+                                member _.GetKey() = "job2"
+                                member _.GetVersion() = rng.Next(1, 10)
+                                member _.GetLabel() = "job2" }
+
+                let! result = job2Cache.Get(key, job2 (i % 10)) |> Async.AwaitNodeCode
+
+                let diagnostics = diagnosticsLogger.GetDiagnostics()
+
+                //Assert.Equal(3, diagnostics.Length)
+
+                return result, diagnostics
+            }
+    }
+
+    let results = (Task.WhenAll tasks).Result
+
+    let _diagnosticCounts = results |> Seq.map snd |> Seq.map Array.length |> Seq.groupBy id |> Seq.map (fun (k, v) -> k, v |> Seq.length) |> Seq.sortBy fst |> Seq.toList
+
+    //Assert.Equal<(int * int) list>([4, 100], diagnosticCounts)
+
+    let diagnosticMessages = results |> Seq.map snd |> Seq.map (Array.map (fun (d, _) -> d.Exception.Message) >> Array.toList) |> Set
+
+    Assert.Equal<Set<_>>(Set [["task error"; "job2 error 1"; "job1 error"; "job2 error 2"; ]], diagnosticMessages)
+
+[<Fact>]
 let ``Preserve thread static diagnostics`` () = 
 
     let seed = System.Random().Next()
