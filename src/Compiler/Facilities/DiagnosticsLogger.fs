@@ -408,6 +408,7 @@ type internal DiagnosticsThreadStatics =
         changes.Push str
         changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
         changesByContext.AddOrUpdate(ExecutionContext.Capture().GetHashCode(), [str], (fun _ vs -> str :: vs)) |> ignore
+        Trace.WriteLine($"t:{tid} {prefix}    {dls}")
 
 #endif
         ignore prefix

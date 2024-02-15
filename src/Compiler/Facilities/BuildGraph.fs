@@ -166,7 +166,11 @@ type NodeCode private () =
     static member FromCancellable(computation: Cancellable<'T>) =
         Node(wrapThreadStaticInfo (Cancellable.toAsync computation |> PreserveAsyncScope))
 
-    static member AwaitAsync(computation: Async<'T>) = Node(wrapThreadStaticInfo computation)
+    static member AwaitAsync(computation: Async<'T>) = 
+        async {
+            Trace.TraceWarning("NodeCode.AwaitAsync")
+            return! computation
+        } |> wrapThreadStaticInfo |> Node
 
     static member AwaitTask(task: Task<'T>) =
         Node(wrapThreadStaticInfo (Async.AwaitTask task))
