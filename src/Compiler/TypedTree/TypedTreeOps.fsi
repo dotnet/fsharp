@@ -1958,6 +1958,12 @@ val mkTwo: TcGlobals -> range -> Expr
 
 val mkMinusOne: TcGlobals -> range -> Expr
 
+/// Makes an expression holding a constant 0 value of the given numeric type.
+val mkTypedZero: g: TcGlobals -> m: range -> ty: TType -> Expr
+
+/// Makes an expression holding a constant 1 value of the given numeric type.
+val mkTypedOne: g: TcGlobals -> m: range -> ty: TType -> Expr
+
 val destInt32: Expr -> int32 option
 
 //-------------------------------------------------------------------------

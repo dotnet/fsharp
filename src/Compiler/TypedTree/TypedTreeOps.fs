@@ -7403,6 +7403,42 @@ let mkTwo g m = mkInt g m 2
 
 let mkMinusOne g m = mkInt g m -1
 
+let mkTypedZero g m ty =
+    let underlyingTy = stripMeasuresFromTy g ty
+    if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 0, m, ty)
+    elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 0L, m, ty)
+    elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 0UL, m, ty)
+    elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 0u, m, ty)
+    elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 0L, m, ty)
+    elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 0UL, m, ty)
+    elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 0s, m, ty)
+    elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 0us, m, ty)
+    elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 0y, m, ty)
+    elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 0uy, m, ty)
+    elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\000', m, ty)
+    elif typeEquiv g underlyingTy g.float32_ty then Expr.Const (Const.Single 0.0f, m, ty)
+    elif typeEquiv g underlyingTy g.float_ty then Expr.Const (Const.Double 0.0, m, ty)
+    elif typeEquiv g underlyingTy g.decimal_ty then Expr.Const (Const.Decimal 0m, m, ty)
+    else error (InternalError ($"Unrecognized numeric type '{ty}'.", m))
+
+let mkTypedOne g m ty =
+    let underlyingTy = stripMeasuresFromTy g ty
+    if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 1, m, ty)
+    elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 1L, m, ty)
+    elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 1UL, m, ty)
+    elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 1u, m, ty)
+    elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 1L, m, ty)
+    elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 1UL, m, ty)
+    elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 1s, m, ty)
+    elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 1us, m, ty)
+    elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 1y, m, ty)
+    elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 1uy, m, ty)
+    elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\001', m, ty)
+    elif typeEquiv g underlyingTy g.float32_ty then Expr.Const (Const.Single 1.0f, m, ty)
+    elif typeEquiv g underlyingTy g.float_ty then Expr.Const (Const.Double 1.0, m, ty)
+    elif typeEquiv g underlyingTy g.decimal_ty then Expr.Const (Const.Decimal 1m, m, ty)
+    else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
+
 let destInt32 = function Expr.Const (Const.Int32 n, _, _) -> Some n | _ -> None
 
 let isIDelegateEventType g ty =
@@ -10347,36 +10383,6 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         else
             mkAsmExpr ([AI_clt_un], [], [e1; e2], [g.bool_ty], m)
 
-    let mkZero ty =
-        let underlyingTy = stripMeasuresFromTy g ty
-        if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 0, m, ty)
-        elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 0L, m, ty)
-        elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 0UL, m, ty)
-        elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 0u, m, ty)
-        elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 0L, m, ty)
-        elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 0UL, m, ty)
-        elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 0s, m, ty)
-        elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 0us, m, ty)
-        elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 0y, m, ty)
-        elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 0uy, m, ty)
-        elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\000', m, ty)
-        else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
-
-    let mkOne ty =
-        let underlyingTy = stripMeasuresFromTy g ty
-        if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 1, m, ty)
-        elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 1L, m, ty)
-        elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 1UL, m, ty)
-        elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 1u, m, ty)
-        elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 1L, m, ty)
-        elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 1UL, m, ty)
-        elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 1s, m, ty)
-        elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 1us, m, ty)
-        elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 1y, m, ty)
-        elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 1uy, m, ty)
-        elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\001', m, ty)
-        else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
-
     let mkWiden e =
         let ty = stripMeasuresFromTy g (tyOfExpr g e)
 
@@ -10424,9 +10430,9 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         let ty = tyOfExpr g pseudoCount
 
         if shouldRaiseOverflowExnAtRuntime then
-            mkAsmExpr ([AI_add_ovf_un], [], [pseudoCount; mkOne ty], [ty], m)
+            mkAsmExpr ([AI_add_ovf_un], [], [pseudoCount; mkTypedOne g m ty], [ty], m)
         else
-            mkAsmExpr ([AI_add], [], [pseudoCount; mkOne ty], [ty], m)
+            mkAsmExpr ([AI_add], [], [pseudoCount; mkTypedOne g m ty], [ty], m)
 
     match start, step, finish with
     // start..0..finish
@@ -10434,7 +10440,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
 
     // 5..1
     // 1..-1..5
-    | EmptyRange -> mkZero rangeTy
+    | EmptyRange -> mkTypedZero g m rangeTy
 
     // 1..5
     // 1..2..5
@@ -10454,7 +10460,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             m
             diffTy
             (mkSignednessAppropriateClt rangeTy finish start)
-            (mkZero diffTy)
+            (mkTypedZero g m diffTy)
             (mkAddOne diff)
 
     // (Only possible for signed types.)
@@ -10471,7 +10477,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             m
             diffTy
             (mkSignednessAppropriateClt rangeTy start finish)
-            (mkZero diffTy)
+            (mkTypedZero g m diffTy)
             (mkAddOne diff)
 
     // start..2..finish
@@ -10486,7 +10492,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             m
             diffTy
             (mkSignednessAppropriateClt rangeTy finish start)
-            (mkZero diffTy)
+            (mkTypedZero g m diffTy)
             (mkAddOne (mkQuotient diff step))
 
     // (Only possible for signed types.)
@@ -10503,7 +10509,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             m
             diffTy
             (mkSignednessAppropriateClt rangeTy start finish)
-            (mkZero diffTy)
+            (mkTypedZero g m diffTy)
             (mkAddOne (mkQuotient diff (Expr.Const (IntegralConst.abs negativeStep, m, diffTy))))
 
     // start..step..finish
@@ -10524,7 +10530,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                 DebugPointAtBinding.NoneAtInvisible
                 m
                 g.unit_ty
-                (mkILAsmCeq g m step (mkZero rangeTy))
+                (mkILAsmCeq g m step (mkTypedZero g m rangeTy))
                 callAndIgnoreRangeExpr
                 (mkUnit g m)
 
@@ -10539,27 +10545,27 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                         m
                         diffTy
                         (mkSignednessAppropriateClt rangeTy finish start)
-                        (mkZero diffTy)
+                        (mkTypedZero g m diffTy)
                         (mkAddOne (mkQuotient diff step))
 
                 let negativeStep =
                     let diff = mkDiff start finish
                     let diffTy = tyOfExpr g diff
-                    let absStep = mkAsmExpr ([AI_add], [], [mkAsmExpr ([AI_not], [], [step], [diffTy], m); mkOne diffTy], [diffTy], m)
+                    let absStep = mkAsmExpr ([AI_add], [], [mkAsmExpr ([AI_not], [], [step], [diffTy], m); mkTypedOne g m diffTy], [diffTy], m)
 
                     mkCond
                         DebugPointAtBinding.NoneAtInvisible
                         m
                         diffTy
                         (mkSignednessAppropriateClt rangeTy start finish)
-                        (mkZero diffTy)
+                        (mkTypedZero g m diffTy)
                         (mkAddOne (mkQuotient diff absStep))
 
                 mkCond
                     DebugPointAtBinding.NoneAtInvisible
                     m
                     (tyOfExpr g positiveStep)
-                    (mkSignednessAppropriateClt rangeTy (mkZero rangeTy) step)
+                    (mkSignednessAppropriateClt rangeTy (mkTypedZero g m rangeTy) step)
                     positiveStep
                     negativeStep
             else // Unsigned.
@@ -10571,7 +10577,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                     m
                     rangeTy
                     (mkSignednessAppropriateClt rangeTy finish start)
-                    (mkZero diffTy)
+                    (mkTypedZero g m diffTy)
                     (mkAddOne (mkQuotient diff step))
 
         mkSequential m throwIfStepIsZero count
@@ -10583,36 +10589,6 @@ type Body = Expr
 type Loop = Expr
 
 let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr)) =
-    let mkZero g m ty =
-        let underlyingTy = stripMeasuresFromTy g ty
-        if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 0, m, ty)
-        elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 0L, m, ty)
-        elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 0UL, m, ty)
-        elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 0u, m, ty)
-        elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 0L, m, ty)
-        elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 0UL, m, ty)
-        elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 0s, m, ty)
-        elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 0us, m, ty)
-        elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 0y, m, ty)
-        elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 0uy, m, ty)
-        elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\000', m, ty)
-        else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
-
-    let mkOne g m ty =
-        let underlyingTy = stripMeasuresFromTy g ty
-        if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 1, m, ty)
-        elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 1L, m, ty)
-        elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 1UL, m, ty)
-        elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 1u, m, ty)
-        elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 1L, m, ty)
-        elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 1UL, m, ty)
-        elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 1s, m, ty)
-        elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 1us, m, ty)
-        elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 1y, m, ty)
-        elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 1uy, m, ty)
-        elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\001', m, ty)
-        else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
-
     let inline mkLetBindingsIfNeeded f =
         match start, step, finish with
         | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) ->
@@ -10661,13 +10637,13 @@ let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, 
             buildLoop count (fun mkBody ->
                 let countTy = tyOfExpr g count
 
-                mkCompGenLetMutableIn mIn "i" countTy (mkZero g mIn countTy) (fun (idxVal, idxVar) ->
+                mkCompGenLetMutableIn mIn "i" countTy (mkTypedZero g mIn countTy) (fun (idxVal, idxVar) ->
                     mkCompGenLetMutableIn mIn "loopVar" rangeTy start (fun (loopVal, loopVar) ->
                         // loopVar <- loopVar + step
                         let incrV = mkValSet mIn (mkLocalValRef loopVal) (mkAsmExpr ([AI_add], [], [loopVar; step], [rangeTy], mIn))
 
                         // i <- i + 1
-                        let incrI = mkValSet mIn (mkLocalValRef idxVal) (mkAsmExpr ([AI_add], [], [idxVar; mkOne g mIn countTy], [rangeTy], mIn))
+                        let incrI = mkValSet mIn (mkLocalValRef idxVal) (mkAsmExpr ([AI_add], [], [idxVar; mkTypedOne g mIn countTy], [rangeTy], mIn))
 
                         // <body>
                         // loopVar <- loopVar + step
