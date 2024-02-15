@@ -311,10 +311,14 @@ module Array =
         let convToNativeInt expr =
             let ty = stripMeasuresFromTy g (tyOfExpr g expr)
 
-            if typeEquiv g ty g.int64_ty || typeEquiv g ty g.nativeint_ty then
+            if typeEquiv g ty g.int64_ty then
                 mkAsmExpr ([AI_conv_ovf DT_I], [], [expr], [g.nativeint_ty], m)
-            elif typeEquiv g ty g.uint64_ty || typeEquiv g ty g.unativeint_ty then
+            elif typeEquiv g ty g.nativeint_ty then
+                mkAsmExpr ([AI_conv_ovf DT_I], [], [mkAsmExpr ([AI_conv DT_I8], [], [expr], [g.int64_ty], m)], [g.nativeint_ty], m)
+            elif typeEquiv g ty g.uint64_ty then
                 mkAsmExpr ([AI_conv_ovf_un DT_I], [], [expr], [g.nativeint_ty], m)
+            elif typeEquiv g ty g.unativeint_ty then
+                mkAsmExpr ([AI_conv_ovf_un DT_I], [], [mkAsmExpr ([AI_conv DT_U8], [], [expr], [g.uint64_ty], m)], [g.nativeint_ty], m)
             else
                 expr
 
