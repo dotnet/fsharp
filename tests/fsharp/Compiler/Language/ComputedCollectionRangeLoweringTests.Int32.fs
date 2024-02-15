@@ -217,65 +217,59 @@ module Int32 =
                         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
                         
                         .maxstack  5
-                        .locals init (uint64 V_0,
+                        .locals init (uint32 V_0,
                                  int32[] V_1,
-                                 uint64 V_2,
+                                 uint32 V_2,
                                  int32 V_3)
                         IL_0000:  ldarg.1
                         IL_0001:  ldarg.0
-                        IL_0002:  bge.s      IL_0008
+                        IL_0002:  bge.s      IL_0007
                     
                         IL_0004:  ldc.i4.0
-                        IL_0005:  conv.i8
-                        IL_0006:  br.s       IL_0010
+                        IL_0005:  br.s       IL_000e
                     
-                        IL_0008:  ldarg.1
-                        IL_0009:  conv.i8
-                        IL_000a:  ldarg.0
-                        IL_000b:  conv.i8
-                        IL_000c:  sub
-                        IL_000d:  ldc.i4.1
-                        IL_000e:  conv.i8
-                        IL_000f:  add
-                        IL_0010:  stloc.0
-                        IL_0011:  ldloc.0
-                        IL_0012:  ldc.i4.1
-                        IL_0013:  bge.un.s   IL_001b
+                        IL_0007:  ldarg.1
+                        IL_0008:  conv.i4
+                        IL_0009:  ldarg.0
+                        IL_000a:  conv.i4
+                        IL_000b:  sub
+                        IL_000c:  ldc.i4.1
+                        IL_000d:  add
+                        IL_000e:  stloc.0
+                        IL_000f:  ldloc.0
+                        IL_0010:  ldc.i4.1
+                        IL_0011:  bge.un.s   IL_0019
                     
-                        IL_0015:  call       !!0[] [runtime]System.Array::Empty<int32>()
-                        IL_001a:  ret
+                        IL_0013:  call       !!0[] [runtime]System.Array::Empty<int32>()
+                        IL_0018:  ret
                     
-                        IL_001b:  ldloc.0
-                        IL_001c:  conv.ovf.i.un
-                        IL_001d:  newarr     [runtime]System.Int32
-                        IL_0022:  stloc.1
-                        IL_0023:  ldc.i4.0
-                        IL_0024:  conv.i8
-                        IL_0025:  stloc.2
-                        IL_0026:  ldarg.0
-                        IL_0027:  stloc.3
-                        IL_0028:  br.s       IL_0038
+                        IL_0019:  ldloc.0
+                        IL_001a:  newarr     [runtime]System.Int32
+                        IL_001f:  stloc.1
+                        IL_0020:  ldc.i4.0
+                        IL_0021:  stloc.2
+                        IL_0022:  ldarg.0
+                        IL_0023:  stloc.3
+                        IL_0024:  br.s       IL_0032
                     
-                        IL_002a:  ldloc.1
-                        IL_002b:  ldloc.2
-                        IL_002c:  conv.ovf.i.un
-                        IL_002d:  ldloc.3
-                        IL_002e:  stelem.i4
-                        IL_002f:  ldloc.3
-                        IL_0030:  ldc.i4.1
-                        IL_0031:  add
-                        IL_0032:  stloc.3
-                        IL_0033:  ldloc.2
-                        IL_0034:  ldc.i4.1
-                        IL_0035:  conv.i8
-                        IL_0036:  add
-                        IL_0037:  stloc.2
-                        IL_0038:  ldloc.2
-                        IL_0039:  ldloc.0
-                        IL_003a:  blt.un.s   IL_002a
+                        IL_0026:  ldloc.1
+                        IL_0027:  ldloc.2
+                        IL_0028:  ldloc.3
+                        IL_0029:  stelem.i4
+                        IL_002a:  ldloc.3
+                        IL_002b:  ldc.i4.1
+                        IL_002c:  add
+                        IL_002d:  stloc.3
+                        IL_002e:  ldloc.2
+                        IL_002f:  ldc.i4.1
+                        IL_0030:  add
+                        IL_0031:  stloc.2
+                        IL_0032:  ldloc.2
+                        IL_0033:  ldloc.0
+                        IL_0034:  blt.un.s   IL_0026
                     
-                        IL_003c:  ldloc.1
-                        IL_003d:  ret
+                        IL_0036:  ldloc.1
+                        IL_0037:  ret
                       } 
                     
                     } 
@@ -364,9 +358,9 @@ module Int32 =
                         .maxstack  5
                         .locals init (int32 V_0,
                                  int32 V_1,
-                                 uint64 V_2,
+                                 uint32 V_2,
                                  int32[] V_3,
-                                 uint64 V_4,
+                                 uint32 V_4,
                                  int32 V_5)
                         IL_0000:  ldc.i4.s   10
                         IL_0002:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::ZeroCreate<object>(int32)
@@ -380,59 +374,53 @@ module Int32 =
                         IL_0013:  stloc.1
                         IL_0014:  ldloc.1
                         IL_0015:  ldloc.0
-                        IL_0016:  bge.s      IL_001c
+                        IL_0016:  bge.s      IL_001b
                     
                         IL_0018:  ldc.i4.0
-                        IL_0019:  conv.i8
-                        IL_001a:  br.s       IL_0024
+                        IL_0019:  br.s       IL_0022
                     
-                        IL_001c:  ldloc.1
-                        IL_001d:  conv.i8
-                        IL_001e:  ldloc.0
-                        IL_001f:  conv.i8
-                        IL_0020:  sub
-                        IL_0021:  ldc.i4.1
-                        IL_0022:  conv.i8
-                        IL_0023:  add
-                        IL_0024:  stloc.2
-                        IL_0025:  ldloc.2
-                        IL_0026:  ldc.i4.1
-                        IL_0027:  bge.un.s   IL_002f
+                        IL_001b:  ldloc.1
+                        IL_001c:  conv.i4
+                        IL_001d:  ldloc.0
+                        IL_001e:  conv.i4
+                        IL_001f:  sub
+                        IL_0020:  ldc.i4.1
+                        IL_0021:  add
+                        IL_0022:  stloc.2
+                        IL_0023:  ldloc.2
+                        IL_0024:  ldc.i4.1
+                        IL_0025:  bge.un.s   IL_002d
                     
-                        IL_0029:  call       !!0[] [runtime]System.Array::Empty<int32>()
-                        IL_002e:  ret
+                        IL_0027:  call       !!0[] [runtime]System.Array::Empty<int32>()
+                        IL_002c:  ret
                     
-                        IL_002f:  ldloc.2
-                        IL_0030:  conv.ovf.i.un
-                        IL_0031:  newarr     [runtime]System.Int32
-                        IL_0036:  stloc.3
-                        IL_0037:  ldc.i4.0
-                        IL_0038:  conv.i8
-                        IL_0039:  stloc.s    V_4
-                        IL_003b:  ldloc.0
-                        IL_003c:  stloc.s    V_5
-                        IL_003e:  br.s       IL_0054
+                        IL_002d:  ldloc.2
+                        IL_002e:  newarr     [runtime]System.Int32
+                        IL_0033:  stloc.3
+                        IL_0034:  ldc.i4.0
+                        IL_0035:  stloc.s    V_4
+                        IL_0037:  ldloc.0
+                        IL_0038:  stloc.s    V_5
+                        IL_003a:  br.s       IL_004e
                     
-                        IL_0040:  ldloc.3
-                        IL_0041:  ldloc.s    V_4
-                        IL_0043:  conv.ovf.i.un
-                        IL_0044:  ldloc.s    V_5
-                        IL_0046:  stelem.i4
-                        IL_0047:  ldloc.s    V_5
-                        IL_0049:  ldc.i4.1
-                        IL_004a:  add
-                        IL_004b:  stloc.s    V_5
-                        IL_004d:  ldloc.s    V_4
-                        IL_004f:  ldc.i4.1
-                        IL_0050:  conv.i8
-                        IL_0051:  add
-                        IL_0052:  stloc.s    V_4
-                        IL_0054:  ldloc.s    V_4
-                        IL_0056:  ldloc.2
-                        IL_0057:  blt.un.s   IL_0040
+                        IL_003c:  ldloc.3
+                        IL_003d:  ldloc.s    V_4
+                        IL_003f:  ldloc.s    V_5
+                        IL_0041:  stelem.i4
+                        IL_0042:  ldloc.s    V_5
+                        IL_0044:  ldc.i4.1
+                        IL_0045:  add
+                        IL_0046:  stloc.s    V_5
+                        IL_0048:  ldloc.s    V_4
+                        IL_004a:  ldc.i4.1
+                        IL_004b:  add
+                        IL_004c:  stloc.s    V_4
+                        IL_004e:  ldloc.s    V_4
+                        IL_0050:  ldloc.2
+                        IL_0051:  blt.un.s   IL_003c
                     
-                        IL_0059:  ldloc.3
-                        IL_005a:  ret
+                        IL_0053:  ldloc.3
+                        IL_0054:  ret
                       } 
                     
                     } 
@@ -654,9 +642,9 @@ module Int32 =
                                                                                                                                         00 00 00 00 ) 
                         
                         .maxstack  5
-                        .locals init (uint64 V_0,
+                        .locals init (uint32 V_0,
                                  int32[] V_1,
-                                 uint64 V_2,
+                                 uint32 V_2,
                                  int32 V_3)
                         IL_0000:  ldarg.1
                         IL_0001:  brtrue.s   IL_000e
@@ -665,98 +653,87 @@ module Int32 =
                         IL_0004:  ldarg.1
                         IL_0005:  ldarg.2
                         IL_0006:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                                               int32,
-                                                                                                                                                                                               int32)
+                                                                                                                                                                                         int32,
+                                                                                                                                                                                         int32)
                         IL_000b:  pop
                         IL_000c:  br.s       IL_000e
                     
                         IL_000e:  ldc.i4.0
                         IL_000f:  ldarg.1
-                        IL_0010:  bge.s      IL_0027
+                        IL_0010:  bge.s      IL_0024
                     
                         IL_0012:  ldarg.2
                         IL_0013:  ldarg.0
-                        IL_0014:  bge.s      IL_001a
+                        IL_0014:  bge.s      IL_0019
                     
                         IL_0016:  ldc.i4.0
-                        IL_0017:  conv.i8
-                        IL_0018:  br.s       IL_003e
+                        IL_0017:  br.s       IL_0037
                     
-                        IL_001a:  ldarg.2
-                        IL_001b:  conv.i8
-                        IL_001c:  ldarg.0
-                        IL_001d:  conv.i8
-                        IL_001e:  sub
-                        IL_001f:  ldarg.1
-                        IL_0020:  conv.i8
-                        IL_0021:  div.un
-                        IL_0022:  ldc.i4.1
-                        IL_0023:  conv.i8
-                        IL_0024:  add
-                        IL_0025:  br.s       IL_003e
+                        IL_0019:  ldarg.2
+                        IL_001a:  conv.i4
+                        IL_001b:  ldarg.0
+                        IL_001c:  conv.i4
+                        IL_001d:  sub
+                        IL_001e:  ldarg.1
+                        IL_001f:  div.un
+                        IL_0020:  ldc.i4.1
+                        IL_0021:  add
+                        IL_0022:  br.s       IL_0037
                     
-                        IL_0027:  ldarg.0
-                        IL_0028:  ldarg.2
-                        IL_0029:  bge.s      IL_002f
+                        IL_0024:  ldarg.0
+                        IL_0025:  ldarg.2
+                        IL_0026:  bge.s      IL_002b
                     
-                        IL_002b:  ldc.i4.0
-                        IL_002c:  conv.i8
-                        IL_002d:  br.s       IL_003e
+                        IL_0028:  ldc.i4.0
+                        IL_0029:  br.s       IL_0037
                     
-                        IL_002f:  ldarg.0
-                        IL_0030:  conv.i8
-                        IL_0031:  ldarg.2
-                        IL_0032:  conv.i8
-                        IL_0033:  sub
-                        IL_0034:  ldarg.1
-                        IL_0035:  not
-                        IL_0036:  ldc.i4.1
-                        IL_0037:  conv.i8
-                        IL_0038:  add
-                        IL_0039:  conv.i8
-                        IL_003a:  div.un
-                        IL_003b:  ldc.i4.1
-                        IL_003c:  conv.i8
-                        IL_003d:  add
-                        IL_003e:  stloc.0
-                        IL_003f:  ldloc.0
-                        IL_0040:  ldc.i4.1
-                        IL_0041:  bge.un.s   IL_0049
+                        IL_002b:  ldarg.0
+                        IL_002c:  conv.i4
+                        IL_002d:  ldarg.2
+                        IL_002e:  conv.i4
+                        IL_002f:  sub
+                        IL_0030:  ldarg.1
+                        IL_0031:  not
+                        IL_0032:  ldc.i4.1
+                        IL_0033:  add
+                        IL_0034:  div.un
+                        IL_0035:  ldc.i4.1
+                        IL_0036:  add
+                        IL_0037:  stloc.0
+                        IL_0038:  ldloc.0
+                        IL_0039:  ldc.i4.1
+                        IL_003a:  bge.un.s   IL_0042
                     
-                        IL_0043:  call       !!0[] [runtime]System.Array::Empty<int32>()
-                        IL_0048:  ret
+                        IL_003c:  call       !!0[] [runtime]System.Array::Empty<int32>()
+                        IL_0041:  ret
                     
-                        IL_0049:  ldloc.0
-                        IL_004a:  conv.ovf.i.un
-                        IL_004b:  newarr     [runtime]System.Int32
-                        IL_0050:  stloc.1
-                        IL_0051:  ldc.i4.0
-                        IL_0052:  conv.i8
-                        IL_0053:  stloc.2
-                        IL_0054:  ldarg.0
-                        IL_0055:  stloc.3
-                        IL_0056:  br.s       IL_0066
+                        IL_0042:  ldloc.0
+                        IL_0043:  newarr     [runtime]System.Int32
+                        IL_0048:  stloc.1
+                        IL_0049:  ldc.i4.0
+                        IL_004a:  stloc.2
+                        IL_004b:  ldarg.0
+                        IL_004c:  stloc.3
+                        IL_004d:  br.s       IL_005b
                     
-                        IL_0058:  ldloc.1
-                        IL_0059:  ldloc.2
-                        IL_005a:  conv.ovf.i.un
-                        IL_005b:  ldloc.3
-                        IL_005c:  stelem.i4
-                        IL_005d:  ldloc.3
-                        IL_005e:  ldarg.1
-                        IL_005f:  add
-                        IL_0060:  stloc.3
-                        IL_0061:  ldloc.2
-                        IL_0062:  ldc.i4.1
-                        IL_0063:  conv.i8
-                        IL_0064:  add
-                        IL_0065:  stloc.2
-                        IL_0066:  ldloc.2
-                        IL_0067:  ldloc.0
-                        IL_0068:  blt.un.s   IL_0058
+                        IL_004f:  ldloc.1
+                        IL_0050:  ldloc.2
+                        IL_0051:  ldloc.3
+                        IL_0052:  stelem.i4
+                        IL_0053:  ldloc.3
+                        IL_0054:  ldarg.1
+                        IL_0055:  add
+                        IL_0056:  stloc.3
+                        IL_0057:  ldloc.2
+                        IL_0058:  ldc.i4.1
+                        IL_0059:  add
+                        IL_005a:  stloc.2
+                        IL_005b:  ldloc.2
+                        IL_005c:  ldloc.0
+                        IL_005d:  blt.un.s   IL_004f
                     
-                        IL_006a:  ldloc.1
-                        IL_006b:  ret
+                        IL_005f:  ldloc.1
+                        IL_0060:  ret
                       } 
                     
                     } 
@@ -858,9 +835,9 @@ module Int32 =
                         .locals init (int32 V_0,
                                  int32 V_1,
                                  int32 V_2,
-                                 uint64 V_3,
+                                 uint32 V_3,
                                  int32[] V_4,
-                                 uint64 V_5,
+                                 uint32 V_5,
                                  int32 V_6)
                         IL_0000:  ldc.i4.s   10
                         IL_0002:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::ZeroCreate<object>(int32)
@@ -884,98 +861,87 @@ module Int32 =
                         IL_0025:  ldloc.1
                         IL_0026:  ldloc.2
                         IL_0027:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                                               int32,
-                                                                                                                                                                                               int32)
+                                                                                                                                                                                         int32,
+                                                                                                                                                                                         int32)
                         IL_002c:  pop
                         IL_002d:  br.s       IL_002f
                     
                         IL_002f:  ldc.i4.0
                         IL_0030:  ldloc.1
-                        IL_0031:  bge.s      IL_0048
+                        IL_0031:  bge.s      IL_0045
                     
                         IL_0033:  ldloc.2
                         IL_0034:  ldloc.0
-                        IL_0035:  bge.s      IL_003b
+                        IL_0035:  bge.s      IL_003a
                     
                         IL_0037:  ldc.i4.0
-                        IL_0038:  conv.i8
-                        IL_0039:  br.s       IL_005f
+                        IL_0038:  br.s       IL_0058
                     
-                        IL_003b:  ldloc.2
-                        IL_003c:  conv.i8
-                        IL_003d:  ldloc.0
-                        IL_003e:  conv.i8
-                        IL_003f:  sub
-                        IL_0040:  ldloc.1
-                        IL_0041:  conv.i8
-                        IL_0042:  div.un
-                        IL_0043:  ldc.i4.1
-                        IL_0044:  conv.i8
-                        IL_0045:  add
-                        IL_0046:  br.s       IL_005f
+                        IL_003a:  ldloc.2
+                        IL_003b:  conv.i4
+                        IL_003c:  ldloc.0
+                        IL_003d:  conv.i4
+                        IL_003e:  sub
+                        IL_003f:  ldloc.1
+                        IL_0040:  div.un
+                        IL_0041:  ldc.i4.1
+                        IL_0042:  add
+                        IL_0043:  br.s       IL_0058
                     
-                        IL_0048:  ldloc.0
-                        IL_0049:  ldloc.2
-                        IL_004a:  bge.s      IL_0050
+                        IL_0045:  ldloc.0
+                        IL_0046:  ldloc.2
+                        IL_0047:  bge.s      IL_004c
                     
-                        IL_004c:  ldc.i4.0
-                        IL_004d:  conv.i8
-                        IL_004e:  br.s       IL_005f
+                        IL_0049:  ldc.i4.0
+                        IL_004a:  br.s       IL_0058
                     
-                        IL_0050:  ldloc.0
-                        IL_0051:  conv.i8
-                        IL_0052:  ldloc.2
-                        IL_0053:  conv.i8
-                        IL_0054:  sub
-                        IL_0055:  ldloc.1
-                        IL_0056:  not
-                        IL_0057:  ldc.i4.1
-                        IL_0058:  conv.i8
-                        IL_0059:  add
-                        IL_005a:  conv.i8
-                        IL_005b:  div.un
-                        IL_005c:  ldc.i4.1
-                        IL_005d:  conv.i8
-                        IL_005e:  add
-                        IL_005f:  stloc.3
-                        IL_0060:  ldloc.3
-                        IL_0061:  ldc.i4.1
-                        IL_0062:  bge.un.s   IL_006a
+                        IL_004c:  ldloc.0
+                        IL_004d:  conv.i4
+                        IL_004e:  ldloc.2
+                        IL_004f:  conv.i4
+                        IL_0050:  sub
+                        IL_0051:  ldloc.1
+                        IL_0052:  not
+                        IL_0053:  ldc.i4.1
+                        IL_0054:  add
+                        IL_0055:  div.un
+                        IL_0056:  ldc.i4.1
+                        IL_0057:  add
+                        IL_0058:  stloc.3
+                        IL_0059:  ldloc.3
+                        IL_005a:  ldc.i4.1
+                        IL_005b:  bge.un.s   IL_0063
                     
-                        IL_0064:  call       !!0[] [runtime]System.Array::Empty<int32>()
-                        IL_0069:  ret
+                        IL_005d:  call       !!0[] [runtime]System.Array::Empty<int32>()
+                        IL_0062:  ret
                     
-                        IL_006a:  ldloc.3
-                        IL_006b:  conv.ovf.i.un
-                        IL_006c:  newarr     [runtime]System.Int32
-                        IL_0071:  stloc.s    V_4
-                        IL_0073:  ldc.i4.0
-                        IL_0074:  conv.i8
-                        IL_0075:  stloc.s    V_5
-                        IL_0077:  ldloc.0
-                        IL_0078:  stloc.s    V_6
-                        IL_007a:  br.s       IL_0091
+                        IL_0063:  ldloc.3
+                        IL_0064:  newarr     [runtime]System.Int32
+                        IL_0069:  stloc.s    V_4
+                        IL_006b:  ldc.i4.0
+                        IL_006c:  stloc.s    V_5
+                        IL_006e:  ldloc.0
+                        IL_006f:  stloc.s    V_6
+                        IL_0071:  br.s       IL_0086
                     
-                        IL_007c:  ldloc.s    V_4
-                        IL_007e:  ldloc.s    V_5
-                        IL_0080:  conv.ovf.i.un
-                        IL_0081:  ldloc.s    V_6
-                        IL_0083:  stelem.i4
-                        IL_0084:  ldloc.s    V_6
-                        IL_0086:  ldloc.1
-                        IL_0087:  add
-                        IL_0088:  stloc.s    V_6
-                        IL_008a:  ldloc.s    V_5
-                        IL_008c:  ldc.i4.1
-                        IL_008d:  conv.i8
-                        IL_008e:  add
-                        IL_008f:  stloc.s    V_5
-                        IL_0091:  ldloc.s    V_5
-                        IL_0093:  ldloc.3
-                        IL_0094:  blt.un.s   IL_007c
+                        IL_0073:  ldloc.s    V_4
+                        IL_0075:  ldloc.s    V_5
+                        IL_0077:  ldloc.s    V_6
+                        IL_0079:  stelem.i4
+                        IL_007a:  ldloc.s    V_6
+                        IL_007c:  ldloc.1
+                        IL_007d:  add
+                        IL_007e:  stloc.s    V_6
+                        IL_0080:  ldloc.s    V_5
+                        IL_0082:  ldc.i4.1
+                        IL_0083:  add
+                        IL_0084:  stloc.s    V_5
+                        IL_0086:  ldloc.s    V_5
+                        IL_0088:  ldloc.3
+                        IL_0089:  blt.un.s   IL_0073
                     
-                        IL_0096:  ldloc.s    V_4
-                        IL_0098:  ret
+                        IL_008b:  ldloc.s    V_4
+                        IL_008d:  ret
                       } 
                     
                     } 
@@ -1197,53 +1163,49 @@ module Int32 =
                         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
                         
                         .maxstack  4
-                        .locals init (uint64 V_0,
+                        .locals init (uint32 V_0,
                                  valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
-                                 uint64 V_2,
+                                 uint32 V_2,
                                  int32 V_3)
                         IL_0000:  ldarg.1
                         IL_0001:  ldarg.0
-                        IL_0002:  bge.s      IL_0008
+                        IL_0002:  bge.s      IL_0007
                     
                         IL_0004:  ldc.i4.0
-                        IL_0005:  conv.i8
-                        IL_0006:  br.s       IL_0010
+                        IL_0005:  br.s       IL_000e
                     
-                        IL_0008:  ldarg.1
-                        IL_0009:  conv.i8
-                        IL_000a:  ldarg.0
-                        IL_000b:  conv.i8
-                        IL_000c:  sub
-                        IL_000d:  ldc.i4.1
-                        IL_000e:  conv.i8
-                        IL_000f:  add
-                        IL_0010:  stloc.0
-                        IL_0011:  ldc.i4.0
-                        IL_0012:  conv.i8
-                        IL_0013:  stloc.2
-                        IL_0014:  ldarg.0
-                        IL_0015:  stloc.3
-                        IL_0016:  br.s       IL_0029
+                        IL_0007:  ldarg.1
+                        IL_0008:  conv.i4
+                        IL_0009:  ldarg.0
+                        IL_000a:  conv.i4
+                        IL_000b:  sub
+                        IL_000c:  ldc.i4.1
+                        IL_000d:  add
+                        IL_000e:  stloc.0
+                        IL_000f:  ldc.i4.0
+                        IL_0010:  stloc.2
+                        IL_0011:  ldarg.0
+                        IL_0012:  stloc.3
+                        IL_0013:  br.s       IL_0025
                     
-                        IL_0018:  ldloca.s   V_1
-                        IL_001a:  ldloc.3
-                        IL_001b:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-                        IL_0020:  ldloc.3
-                        IL_0021:  ldc.i4.1
-                        IL_0022:  add
-                        IL_0023:  stloc.3
-                        IL_0024:  ldloc.2
-                        IL_0025:  ldc.i4.1
-                        IL_0026:  conv.i8
-                        IL_0027:  add
-                        IL_0028:  stloc.2
-                        IL_0029:  ldloc.2
-                        IL_002a:  ldloc.0
-                        IL_002b:  blt.un.s   IL_0018
+                        IL_0015:  ldloca.s   V_1
+                        IL_0017:  ldloc.3
+                        IL_0018:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+                        IL_001d:  ldloc.3
+                        IL_001e:  ldc.i4.1
+                        IL_001f:  add
+                        IL_0020:  stloc.3
+                        IL_0021:  ldloc.2
+                        IL_0022:  ldc.i4.1
+                        IL_0023:  add
+                        IL_0024:  stloc.2
+                        IL_0025:  ldloc.2
+                        IL_0026:  ldloc.0
+                        IL_0027:  blt.un.s   IL_0015
                     
-                        IL_002d:  ldloca.s   V_1
-                        IL_002f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-                        IL_0034:  ret
+                        IL_0029:  ldloca.s   V_1
+                        IL_002b:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+                        IL_0030:  ret
                       } 
                     
                     } 
@@ -1332,9 +1294,9 @@ module Int32 =
                         .maxstack  4
                         .locals init (int32 V_0,
                                  int32 V_1,
-                                 uint64 V_2,
+                                 uint32 V_2,
                                  valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_3,
-                                 uint64 V_4,
+                                 uint32 V_4,
                                  int32 V_5)
                         IL_0000:  ldc.i4.s   10
                         IL_0002:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::ZeroCreate<object>(int32)
@@ -1348,47 +1310,43 @@ module Int32 =
                         IL_0013:  stloc.1
                         IL_0014:  ldloc.1
                         IL_0015:  ldloc.0
-                        IL_0016:  bge.s      IL_001c
+                        IL_0016:  bge.s      IL_001b
                     
                         IL_0018:  ldc.i4.0
-                        IL_0019:  conv.i8
-                        IL_001a:  br.s       IL_0024
+                        IL_0019:  br.s       IL_0022
                     
-                        IL_001c:  ldloc.1
-                        IL_001d:  conv.i8
-                        IL_001e:  ldloc.0
-                        IL_001f:  conv.i8
-                        IL_0020:  sub
-                        IL_0021:  ldc.i4.1
-                        IL_0022:  conv.i8
-                        IL_0023:  add
-                        IL_0024:  stloc.2
-                        IL_0025:  ldc.i4.0
-                        IL_0026:  conv.i8
-                        IL_0027:  stloc.s    V_4
-                        IL_0029:  ldloc.0
-                        IL_002a:  stloc.s    V_5
-                        IL_002c:  br.s       IL_0044
+                        IL_001b:  ldloc.1
+                        IL_001c:  conv.i4
+                        IL_001d:  ldloc.0
+                        IL_001e:  conv.i4
+                        IL_001f:  sub
+                        IL_0020:  ldc.i4.1
+                        IL_0021:  add
+                        IL_0022:  stloc.2
+                        IL_0023:  ldc.i4.0
+                        IL_0024:  stloc.s    V_4
+                        IL_0026:  ldloc.0
+                        IL_0027:  stloc.s    V_5
+                        IL_0029:  br.s       IL_0040
                     
-                        IL_002e:  ldloca.s   V_3
-                        IL_0030:  ldloc.s    V_5
-                        IL_0032:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-                        IL_0037:  ldloc.s    V_5
-                        IL_0039:  ldc.i4.1
-                        IL_003a:  add
-                        IL_003b:  stloc.s    V_5
-                        IL_003d:  ldloc.s    V_4
-                        IL_003f:  ldc.i4.1
-                        IL_0040:  conv.i8
-                        IL_0041:  add
-                        IL_0042:  stloc.s    V_4
-                        IL_0044:  ldloc.s    V_4
-                        IL_0046:  ldloc.2
-                        IL_0047:  blt.un.s   IL_002e
+                        IL_002b:  ldloca.s   V_3
+                        IL_002d:  ldloc.s    V_5
+                        IL_002f:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+                        IL_0034:  ldloc.s    V_5
+                        IL_0036:  ldc.i4.1
+                        IL_0037:  add
+                        IL_0038:  stloc.s    V_5
+                        IL_003a:  ldloc.s    V_4
+                        IL_003c:  ldc.i4.1
+                        IL_003d:  add
+                        IL_003e:  stloc.s    V_4
+                        IL_0040:  ldloc.s    V_4
+                        IL_0042:  ldloc.2
+                        IL_0043:  blt.un.s   IL_002b
                     
-                        IL_0049:  ldloca.s   V_3
-                        IL_004b:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-                        IL_0050:  ret
+                        IL_0045:  ldloca.s   V_3
+                        IL_0047:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+                        IL_004c:  ret
                       } 
                     
                     } 
@@ -1610,9 +1568,9 @@ module Int32 =
                                                                                                                                         00 00 00 00 ) 
                         
                         .maxstack  5
-                        .locals init (uint64 V_0,
+                        .locals init (uint32 V_0,
                                  valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
-                                 uint64 V_2,
+                                 uint32 V_2,
                                  int32 V_3)
                         IL_0000:  ldarg.1
                         IL_0001:  brtrue.s   IL_000e
@@ -1621,86 +1579,77 @@ module Int32 =
                         IL_0004:  ldarg.1
                         IL_0005:  ldarg.2
                         IL_0006:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                                               int32,
-                                                                                                                                                                                               int32)
+                                                                                                                                                                                         int32,
+                                                                                                                                                                                         int32)
                         IL_000b:  pop
                         IL_000c:  br.s       IL_000e
                     
                         IL_000e:  ldc.i4.0
                         IL_000f:  ldarg.1
-                        IL_0010:  bge.s      IL_0027
+                        IL_0010:  bge.s      IL_0024
                     
                         IL_0012:  ldarg.2
                         IL_0013:  ldarg.0
-                        IL_0014:  bge.s      IL_001a
+                        IL_0014:  bge.s      IL_0019
                     
                         IL_0016:  ldc.i4.0
-                        IL_0017:  conv.i8
-                        IL_0018:  br.s       IL_003e
+                        IL_0017:  br.s       IL_0037
                     
-                        IL_001a:  ldarg.2
-                        IL_001b:  conv.i8
-                        IL_001c:  ldarg.0
-                        IL_001d:  conv.i8
-                        IL_001e:  sub
-                        IL_001f:  ldarg.1
-                        IL_0020:  conv.i8
-                        IL_0021:  div.un
-                        IL_0022:  ldc.i4.1
-                        IL_0023:  conv.i8
-                        IL_0024:  add
-                        IL_0025:  br.s       IL_003e
+                        IL_0019:  ldarg.2
+                        IL_001a:  conv.i4
+                        IL_001b:  ldarg.0
+                        IL_001c:  conv.i4
+                        IL_001d:  sub
+                        IL_001e:  ldarg.1
+                        IL_001f:  div.un
+                        IL_0020:  ldc.i4.1
+                        IL_0021:  add
+                        IL_0022:  br.s       IL_0037
                     
-                        IL_0027:  ldarg.0
-                        IL_0028:  ldarg.2
-                        IL_0029:  bge.s      IL_002f
+                        IL_0024:  ldarg.0
+                        IL_0025:  ldarg.2
+                        IL_0026:  bge.s      IL_002b
                     
-                        IL_002b:  ldc.i4.0
-                        IL_002c:  conv.i8
-                        IL_002d:  br.s       IL_003e
+                        IL_0028:  ldc.i4.0
+                        IL_0029:  br.s       IL_0037
                     
-                        IL_002f:  ldarg.0
-                        IL_0030:  conv.i8
-                        IL_0031:  ldarg.2
-                        IL_0032:  conv.i8
-                        IL_0033:  sub
-                        IL_0034:  ldarg.1
-                        IL_0035:  not
-                        IL_0036:  ldc.i4.1
-                        IL_0037:  conv.i8
-                        IL_0038:  add
-                        IL_0039:  conv.i8
-                        IL_003a:  div.un
-                        IL_003b:  ldc.i4.1
-                        IL_003c:  conv.i8
-                        IL_003d:  add
-                        IL_003e:  stloc.0
-                        IL_003f:  ldc.i4.0
-                        IL_0040:  conv.i8
-                        IL_0041:  stloc.2
-                        IL_0042:  ldarg.0
-                        IL_0043:  stloc.3
-                        IL_0044:  br.s       IL_0057
+                        IL_002b:  ldarg.0
+                        IL_002c:  conv.i4
+                        IL_002d:  ldarg.2
+                        IL_002e:  conv.i4
+                        IL_002f:  sub
+                        IL_0030:  ldarg.1
+                        IL_0031:  not
+                        IL_0032:  ldc.i4.1
+                        IL_0033:  add
+                        IL_0034:  div.un
+                        IL_0035:  ldc.i4.1
+                        IL_0036:  add
+                        IL_0037:  stloc.0
+                        IL_0038:  ldc.i4.0
+                        IL_0039:  stloc.2
+                        IL_003a:  ldarg.0
+                        IL_003b:  stloc.3
+                        IL_003c:  br.s       IL_004e
                     
-                        IL_0046:  ldloca.s   V_1
-                        IL_0048:  ldloc.3
-                        IL_0049:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-                        IL_004e:  ldloc.3
-                        IL_004f:  ldarg.1
-                        IL_0050:  add
-                        IL_0051:  stloc.3
-                        IL_0052:  ldloc.2
-                        IL_0053:  ldc.i4.1
-                        IL_0054:  conv.i8
-                        IL_0055:  add
-                        IL_0056:  stloc.2
-                        IL_0057:  ldloc.2
-                        IL_0058:  ldloc.0
-                        IL_0059:  blt.un.s   IL_0046
+                        IL_003e:  ldloca.s   V_1
+                        IL_0040:  ldloc.3
+                        IL_0041:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+                        IL_0046:  ldloc.3
+                        IL_0047:  ldarg.1
+                        IL_0048:  add
+                        IL_0049:  stloc.3
+                        IL_004a:  ldloc.2
+                        IL_004b:  ldc.i4.1
+                        IL_004c:  add
+                        IL_004d:  stloc.2
+                        IL_004e:  ldloc.2
+                        IL_004f:  ldloc.0
+                        IL_0050:  blt.un.s   IL_003e
                     
-                        IL_005b:  ldloca.s   V_1
-                        IL_005d:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-                        IL_0062:  ret
+                        IL_0052:  ldloca.s   V_1
+                        IL_0054:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+                        IL_0059:  ret
                       } 
                     
                     } 
@@ -1802,9 +1751,9 @@ module Int32 =
                         .locals init (int32 V_0,
                                  int32 V_1,
                                  int32 V_2,
-                                 uint64 V_3,
+                                 uint32 V_3,
                                  valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_4,
-                                 uint64 V_5,
+                                 uint32 V_5,
                                  int32 V_6)
                         IL_0000:  ldc.i4.s   10
                         IL_0002:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::ZeroCreate<object>(int32)
@@ -1828,86 +1777,77 @@ module Int32 =
                         IL_0025:  ldloc.1
                         IL_0026:  ldloc.2
                         IL_0027:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                                               int32,
-                                                                                                                                                                                               int32)
+                                                                                                                                                                                         int32,
+                                                                                                                                                                                         int32)
                         IL_002c:  pop
                         IL_002d:  br.s       IL_002f
                     
                         IL_002f:  ldc.i4.0
                         IL_0030:  ldloc.1
-                        IL_0031:  bge.s      IL_0048
+                        IL_0031:  bge.s      IL_0045
                     
                         IL_0033:  ldloc.2
                         IL_0034:  ldloc.0
-                        IL_0035:  bge.s      IL_003b
+                        IL_0035:  bge.s      IL_003a
                     
                         IL_0037:  ldc.i4.0
-                        IL_0038:  conv.i8
-                        IL_0039:  br.s       IL_005f
+                        IL_0038:  br.s       IL_0058
                     
-                        IL_003b:  ldloc.2
-                        IL_003c:  conv.i8
-                        IL_003d:  ldloc.0
-                        IL_003e:  conv.i8
-                        IL_003f:  sub
-                        IL_0040:  ldloc.1
-                        IL_0041:  conv.i8
-                        IL_0042:  div.un
-                        IL_0043:  ldc.i4.1
-                        IL_0044:  conv.i8
-                        IL_0045:  add
-                        IL_0046:  br.s       IL_005f
+                        IL_003a:  ldloc.2
+                        IL_003b:  conv.i4
+                        IL_003c:  ldloc.0
+                        IL_003d:  conv.i4
+                        IL_003e:  sub
+                        IL_003f:  ldloc.1
+                        IL_0040:  div.un
+                        IL_0041:  ldc.i4.1
+                        IL_0042:  add
+                        IL_0043:  br.s       IL_0058
                     
-                        IL_0048:  ldloc.0
-                        IL_0049:  ldloc.2
-                        IL_004a:  bge.s      IL_0050
+                        IL_0045:  ldloc.0
+                        IL_0046:  ldloc.2
+                        IL_0047:  bge.s      IL_004c
                     
-                        IL_004c:  ldc.i4.0
-                        IL_004d:  conv.i8
-                        IL_004e:  br.s       IL_005f
+                        IL_0049:  ldc.i4.0
+                        IL_004a:  br.s       IL_0058
                     
-                        IL_0050:  ldloc.0
-                        IL_0051:  conv.i8
-                        IL_0052:  ldloc.2
-                        IL_0053:  conv.i8
-                        IL_0054:  sub
-                        IL_0055:  ldloc.1
-                        IL_0056:  not
-                        IL_0057:  ldc.i4.1
-                        IL_0058:  conv.i8
-                        IL_0059:  add
-                        IL_005a:  conv.i8
-                        IL_005b:  div.un
-                        IL_005c:  ldc.i4.1
-                        IL_005d:  conv.i8
-                        IL_005e:  add
-                        IL_005f:  stloc.3
-                        IL_0060:  ldc.i4.0
-                        IL_0061:  conv.i8
-                        IL_0062:  stloc.s    V_5
-                        IL_0064:  ldloc.0
-                        IL_0065:  stloc.s    V_6
-                        IL_0067:  br.s       IL_007f
+                        IL_004c:  ldloc.0
+                        IL_004d:  conv.i4
+                        IL_004e:  ldloc.2
+                        IL_004f:  conv.i4
+                        IL_0050:  sub
+                        IL_0051:  ldloc.1
+                        IL_0052:  not
+                        IL_0053:  ldc.i4.1
+                        IL_0054:  add
+                        IL_0055:  div.un
+                        IL_0056:  ldc.i4.1
+                        IL_0057:  add
+                        IL_0058:  stloc.3
+                        IL_0059:  ldc.i4.0
+                        IL_005a:  stloc.s    V_5
+                        IL_005c:  ldloc.0
+                        IL_005d:  stloc.s    V_6
+                        IL_005f:  br.s       IL_0076
                     
-                        IL_0069:  ldloca.s   V_4
-                        IL_006b:  ldloc.s    V_6
-                        IL_006d:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-                        IL_0072:  ldloc.s    V_6
-                        IL_0074:  ldloc.1
-                        IL_0075:  add
-                        IL_0076:  stloc.s    V_6
-                        IL_0078:  ldloc.s    V_5
-                        IL_007a:  ldc.i4.1
-                        IL_007b:  conv.i8
-                        IL_007c:  add
-                        IL_007d:  stloc.s    V_5
-                        IL_007f:  ldloc.s    V_5
-                        IL_0081:  ldloc.3
-                        IL_0082:  blt.un.s   IL_0069
+                        IL_0061:  ldloca.s   V_4
+                        IL_0063:  ldloc.s    V_6
+                        IL_0065:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+                        IL_006a:  ldloc.s    V_6
+                        IL_006c:  ldloc.1
+                        IL_006d:  add
+                        IL_006e:  stloc.s    V_6
+                        IL_0070:  ldloc.s    V_5
+                        IL_0072:  ldc.i4.1
+                        IL_0073:  add
+                        IL_0074:  stloc.s    V_5
+                        IL_0076:  ldloc.s    V_5
+                        IL_0078:  ldloc.3
+                        IL_0079:  blt.un.s   IL_0061
                     
-                        IL_0084:  ldloca.s   V_4
-                        IL_0086:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-                        IL_008b:  ret
+                        IL_007b:  ldloca.s   V_4
+                        IL_007d:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+                        IL_0082:  ret
                       } 
                     
                     } 
