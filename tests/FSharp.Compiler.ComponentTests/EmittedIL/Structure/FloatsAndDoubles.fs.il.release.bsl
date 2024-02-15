@@ -1087,7 +1087,7 @@
     IL_0054:  ldelem     floatsanddoubles/Double
     IL_0059:  box        floatsanddoubles/Double
     IL_005e:  constrained. floatsanddoubles/Double
-    IL_0064:  callvirt   instance bool [runtime]System.ValueType::Equals(object)
+    IL_0064:  callvirt   instance bool [runtime]System.Object::Equals(object)
     IL_0069:  call       valuetype floatsanddoubles/Double[] floatsanddoubles::get_doubles()
     IL_006e:  ldloc.0
     IL_006f:  ldelema    floatsanddoubles/Double
@@ -1155,7 +1155,7 @@
     IL_0111:  ldelem     floatsanddoubles/Float
     IL_0116:  box        floatsanddoubles/Float
     IL_011b:  constrained. floatsanddoubles/Float
-    IL_0121:  callvirt   instance bool [runtime]System.ValueType::Equals(object)
+    IL_0121:  callvirt   instance bool [runtime]System.Object::Equals(object)
     IL_0126:  call       valuetype floatsanddoubles/Float[] floatsanddoubles::get_floats()
     IL_012b:  ldloc.3
     IL_012c:  ldelema    floatsanddoubles/Float
