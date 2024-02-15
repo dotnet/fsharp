@@ -46,6 +46,13 @@ type public HashIfExpression() =
 
         sb.ToString ()
 
+    let restoreScope =
+        let logger = DiagnosticsThreadStatics.DiagnosticsLogger
+        let phase = DiagnosticsThreadStatics.BuildPhase
+        fun () ->
+            DiagnosticsThreadStatics.DiagnosticsLogger <- logger
+            DiagnosticsThreadStatics.BuildPhase <- phase
+
     let createParser () =
         let errors = ResizeArray<PhasedDiagnostic>()
         let warnings = ResizeArray<PhasedDiagnostic>()
@@ -79,9 +86,7 @@ type public HashIfExpression() =
     do // Setup
         DiagnosticsThreadStatics.BuildPhase <- BuildPhase.Compile
     interface IDisposable with // Teardown
-        member _.Dispose() =
-            DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
-            DiagnosticsThreadStatics.DiagnosticsLogger <- DiagnosticsThreadStatics.DiagnosticsLogger
+        member _.Dispose() = restoreScope()
 
     [<Fact>]
     member _.PositiveParserTestCases()=
