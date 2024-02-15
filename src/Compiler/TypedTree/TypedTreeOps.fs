@@ -10166,15 +10166,29 @@ module IntegralConst =
         match c with
         | Const.Int32 v when v > 0 -> ValueSome Positive
         | Const.Int64 v when v > 0L -> ValueSome Positive
-        | Const.IntPtr v when v > 0L -> ValueSome Positive
+        // sizeof<nativeint> is not constant, so |𝑐| ≥ 0x80000000n cannot be treated as a constant.
+        | Const.IntPtr v when v > 0L && uint64 v < 0x80000000UL -> ValueSome Positive
         | Const.Int16 v when v > 0s -> ValueSome Positive
         | Const.SByte v when v > 0y -> ValueSome Positive
         | Const.UInt64 v when v > 0UL -> ValueSome Positive
         | Const.UInt32 v when v > 0u -> ValueSome Positive
-        | Const.UIntPtr v when v > 0UL -> ValueSome Positive
+        // sizeof<unativeint> is not constant, so |𝑐| > 0xffffffffun cannot be treated as a constant.
+        | Const.UIntPtr v when v > 0UL && v <= 0xffffffffUL -> ValueSome Positive
         | Const.UInt16 v when v > 0us -> ValueSome Positive
         | Const.Byte v when v > 0uy -> ValueSome Positive
         | Const.Char v when v > '\000' -> ValueSome Positive
+        | _ -> ValueNone
+
+    /// Negative constant.
+    [<return: Struct>]
+    let (|Negative|_|) c =
+        match c with
+        | Const.Int32 v when v < 0 -> ValueSome Negative
+        | Const.Int64 v when v < 0L -> ValueSome Negative
+        // sizeof<nativeint> is not constant, so |𝑐| ≥ 0x80000000n cannot be treated as a constant.
+        | Const.IntPtr v when v < 0L && uint64 v < 0x80000000UL -> ValueSome Negative
+        | Const.Int16 v when v < 0s -> ValueSome Negative
+        | Const.SByte v when v < 0y -> ValueSome Negative
         | _ -> ValueNone
 
     /// Returns the absolute value of the given integral constant.
@@ -10224,8 +10238,25 @@ let (|EmptyRange|_|) (start, step, finish) =
     | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 step), Expr.Const (value = Const.Int64 finish) when finish < start && step > 0L || finish > start && step < 0L -> ValueSome EmptyRange
     | Expr.Const (value = Const.UInt64 start), Expr.Const (value = Const.UInt64 _), Expr.Const (value = Const.UInt64 finish) when finish < start -> ValueSome EmptyRange
     | Expr.Const (value = Const.UInt32 start), Expr.Const (value = Const.UInt32 _), Expr.Const (value = Const.UInt32 finish) when finish < start -> ValueSome EmptyRange
-    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) when finish < start && step > 0L || finish > start && step < 0L -> ValueSome EmptyRange
-    | Expr.Const (value = Const.UIntPtr start), Expr.Const (value = Const.UIntPtr _), Expr.Const (value = Const.UIntPtr finish) when finish < start -> ValueSome EmptyRange
+
+    // sizeof<nativeint> is not constant, so |𝑐| ≥ 0x80000000n cannot be treated as a constant.
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) when
+        uint64 start < 0x80000000UL
+        && uint64 step < 0x80000000UL
+        && uint64 finish < 0x80000000UL
+        && (finish < start && step > 0L || finish > start && step < 0L)
+        ->
+        ValueSome EmptyRange
+
+    // sizeof<unativeint> is not constant, so |𝑐| > 0xffffffffun cannot be treated as a constant.
+    | Expr.Const (value = Const.UIntPtr start), Expr.Const (value = Const.UIntPtr step), Expr.Const (value = Const.UIntPtr finish) when
+        start <= 0xffffffffUL
+        && step <= 0xffffffffUL
+        && finish <= 0xffffffffUL
+        && finish <= start
+        ->
+        ValueSome EmptyRange
+
     | Expr.Const (value = Const.Int16 start), Expr.Const (value = Const.Int16 step), Expr.Const (value = Const.Int16 finish) when finish < start && step > 0s || finish > start && step < 0s -> ValueSome EmptyRange
     | Expr.Const (value = Const.UInt16 start), Expr.Const (value = Const.UInt16 _), Expr.Const (value = Const.UInt16 finish) when finish < start -> ValueSome EmptyRange
     | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) when finish < start && step > 0y || finish > start && step < 0y -> ValueSome EmptyRange
@@ -10254,8 +10285,21 @@ let (|ConstCount|_|) (start, step, finish) =
     | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 step), Expr.Const (value = Const.Int64 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / uint64 (abs step) + 1UL))
     | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 step), Expr.Const (value = Const.Int64 finish) -> ValueSome (Const.UInt64 ((uint64 start - uint64 finish) / uint64 (abs step) + 1UL))
 
-    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) when start <= finish -> ValueSome (Const.UIntPtr ((uint64 finish - uint64 start) / uint64 (abs step) + 1UL))
-    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) -> ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / uint64 (abs step) + 1UL))
+    // sizeof<nativeint> is not constant, so |𝑐| ≥ 0x80000000n cannot be treated as a constant.
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) when
+        uint64 start < 0x80000000UL
+        && uint64 step < 0x80000000UL
+        && uint64 finish < 0x80000000UL
+        && start <= finish
+        ->
+        ValueSome (Const.UIntPtr ((uint64 finish - uint64 start) / uint64 (abs step) + 1UL))
+
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) when
+        uint64 start < 0x80000000UL
+        && uint64 step < 0x80000000UL
+        && uint64 finish < 0x80000000UL
+        ->
+        ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / uint64 (abs step) + 1UL))
 
     | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) when start <= finish -> ValueSome (Const.UInt32 (uint32 ((uint64 finish - uint64 start) / uint64 (abs (int64 step)) + 1UL)))
     | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) -> ValueSome (Const.UInt32 (uint32 ((uint64 start - uint64 finish) / uint64 (abs (int64 step)) + 1UL)))
@@ -10266,7 +10310,14 @@ let (|ConstCount|_|) (start, step, finish) =
     | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) when start <= finish -> ValueSome (Const.Byte (byte ((uint64 finish - uint64 start) / uint64 (abs (int64 step)) + 1UL)))
     | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) -> ValueSome (Const.Byte (byte ((uint64 start - uint64 finish) / uint64 (abs (int64 step)) + 1UL)))
 
-    | Expr.Const (value = Const.UIntPtr start), Expr.Const (value = Const.UIntPtr step), Expr.Const (value = Const.UIntPtr finish) -> ValueSome (Const.UIntPtr ((finish - start) / step + 1UL))
+    // sizeof<unativeint> is not constant, so |𝑐| > 0xffffffffun cannot be treated as a constant.
+    | Expr.Const (value = Const.UIntPtr start), Expr.Const (value = Const.UIntPtr step), Expr.Const (value = Const.UIntPtr finish) when
+        start <= 0xffffffffUL
+        && step <= 0xffffffffUL
+        && finish <= 0xffffffffUL
+        ->
+        ValueSome (Const.UIntPtr ((finish - start) / step + 1UL))
+
     | Expr.Const (value = Const.UInt64 start), Expr.Const (value = Const.UInt64 step), Expr.Const (value = Const.UInt64 finish) -> ValueSome (Const.UInt64 ((finish - start) / step + 1UL))
     | Expr.Const (value = Const.UInt32 start), Expr.Const (value = Const.UInt32 step), Expr.Const (value = Const.UInt32 finish) -> ValueSome (Const.UInt32 ((finish - start) / step + 1u))
     | Expr.Const (value = Const.UInt16 start), Expr.Const (value = Const.UInt16 step), Expr.Const (value = Const.UInt16 finish) -> ValueSome (Const.UInt16 ((finish - start) / step + 1us))
@@ -10326,14 +10377,26 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\001', m, ty)
         else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
 
-    /// Widened diff as unsigned: unsigned (e1 - e2).
-    /// Expects that e1 >= e2.
-    let mkDiff e1 e2 =
-        if isSignedIntegerTy g rangeTy && not (typeEquiv g (stripMeasuresFromTy g rangeTy) g.nativeint_ty) then
-            let mkWiden e = mkAsmExpr ([AI_conv DT_I8], [], [e], [g.uint64_ty], m)
-            mkAsmExpr ([AI_sub], [], [mkWiden e1; mkWiden e2], [g.uint64_ty], m)
+    let mkWiden e =
+        let ty = stripMeasuresFromTy g (tyOfExpr g e)
+
+        if typeEquiv g ty g.int64_ty then
+            mkAsmExpr ([AI_conv DT_I8], [], [e], [g.uint64_ty], m)
+        elif typeEquiv g ty g.int32_ty then
+            mkAsmExpr ([AI_conv DT_I4], [], [e], [g.uint32_ty], m)
+        elif typeEquiv g ty g.int16_ty then
+            mkAsmExpr ([AI_conv DT_I2], [], [e], [g.uint16_ty], m)
+        elif typeEquiv g ty g.sbyte_ty then
+            mkAsmExpr ([AI_conv DT_I1], [], [e], [g.byte_ty], m)
         else
-            mkAsmExpr ([AI_sub], [], [e1; e2], [rangeTy], m)
+            e
+
+    /// Widened diff as unsigned: unsigned (e1 - e2).
+    /// Expects that |e1| ≥ |e2|.
+    let mkDiff e1 e2 =
+        let e1 = mkWiden e1
+        let e2 = mkWiden e2
+        mkAsmExpr ([AI_sub], [], [e1; e2], [tyOfExpr g e1], m)
 
     /// diff / step
     let mkQuotient diff step =
@@ -10431,7 +10494,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     // start..-2..finish
     //
     //     if start < finish then 0 else (start - finish) / abs step + 1
-    | _, Expr.Const (value = negativeStep), _ ->
+    | _, Expr.Const (value = IntegralConst.Negative as negativeStep), _ ->
         let diff = mkDiff start finish
         let diffTy = tyOfExpr g diff
 
