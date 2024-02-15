@@ -379,21 +379,25 @@ type internal DiagnosticsThreadStatics =
     static let buildPhaseAsync = new AsyncLocal<BuildPhase>()
     static let diagnosticsLoggerAsync = new AsyncLocal<DiagnosticsLogger>()
 
-    static let withDefault (holder: AsyncLocal<_>) defaultValue =
-        match box holder.Value with
-        | Null -> defaultValue
-        | _ -> holder.Value
+    //static let getOrCreateExecutionContextId() =
+    //    match executionContextId.Value with
+    //    | Null -> executionContextId.Value <- ExecutionContext.Capture().GetHashCode
 
 #if DEBUG
     static let changes = System.Collections.Concurrent.ConcurrentStack()
-    //static let changesAsync = System.Collections.Concurrent.ConcurrentStack()
+    static let changesByThreadId = System.Collections.Concurrent.ConcurrentDictionary<int, string list>()
+    static let changesByContext = System.Collections.Concurrent.ConcurrentDictionary<int, string list>()
+
+    let logByThreadId tid str =
+        changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
+
 #endif
 
     static let dlName (dl: DiagnosticsLogger) =
         if box dl |> isNull then "NULL" else dl.DebugDisplay()
 
     static let logOrCheck prefix =
-        let al = withDefault diagnosticsLoggerAsync AssertFalseDiagnosticsLogger
+        let al = diagnosticsLoggerAsync.Value
         let ts = DiagnosticsThreadStatics.diagnosticsLogger
 
 #if DEBUG
@@ -402,6 +406,9 @@ type internal DiagnosticsThreadStatics =
         let dls = if box al = box ts then dlName al else  $"DIVERGED AsyncLocal: {dlName al}, ThreadStatic: {dlName ts}"
         let str = $"t:{tid} {prefix} %-300s{dls} \n\n\t{stack}"
         changes.Push str
+        changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
+        changesByContext.AddOrUpdate(ExecutionContext.Capture().GetHashCode(), [str], (fun _ vs -> str :: vs)) |> ignore
+
 #endif
         ignore prefix
 
