@@ -106,13 +106,8 @@ type NodeCodeBuilder() =
     member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
-        Node(
-            async {
-                use _ = resource
-                return! binder resource |> toAsync
-            }
-        )
+    member this.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
+        async.Using(resource, binder >> toAsync) |> wrapThreadStaticInfo |> Node
 
 let node = NodeCodeBuilder()
 
@@ -164,7 +159,7 @@ type NodeCode private () =
     static member CancellationToken = cancellationToken
 
     static member FromCancellable(computation: Cancellable<'T>) =
-        Node(wrapThreadStaticInfo (Cancellable.toAsync computation |> PreserveAsyncScope))
+        Node(Cancellable.toAsync computation)
 
     static member AwaitAsync(computation: Async<'T>) = 
         async {
@@ -296,7 +291,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                             Async.StartWithContinuations(
                                 async {
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! computation |> toAsync |> PreserveAsyncScope
+                                    return! computation |> unwrapNode
                                 },
                                 (fun res ->
                                     cachedResult <- ValueSome res
