@@ -163,6 +163,10 @@ type internal IBackgroundCompiler =
         fileName: string * options: FSharpProjectOptions * sourceText: ISourceText option * userOpName: string ->
             (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option
 
+    abstract member TryGetRecentCheckResultsForFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * sourceText: ISourceText option * userOpName: string ->
+            (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option
+
     abstract member BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions>
 
     abstract member FileChecked: IEvent<string * FSharpProjectOptions>
@@ -1158,6 +1162,16 @@ type internal BackgroundCompiler
             | None -> None
         | None -> None
 
+    member _.TryGetRecentCheckResultsForFile
+        (
+            fileName: string,
+            projectSnapshot: FSharpProjectSnapshot,
+            sourceText: ISourceText option,
+            userOpName: string
+        ) =
+        let options = projectSnapshot.ToOptions()
+        self.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
+
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private _.ParseAndCheckProjectImpl(options, userOpName) =
         node {
@@ -1678,3 +1692,12 @@ type internal BackgroundCompiler
                 userOpName: string
             ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
             self.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
+
+        member _.TryGetRecentCheckResultsForFile
+            (
+                fileName: string,
+                projectSnapshot: FSharpProjectSnapshot,
+                sourceText: ISourceText option,
+                userOpName: string
+            ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
+            self.TryGetRecentCheckResultsForFile(fileName, projectSnapshot, sourceText, userOpName)

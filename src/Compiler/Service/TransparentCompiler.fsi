@@ -5,6 +5,7 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CheckBasics
@@ -121,6 +122,11 @@ type internal CompilerCaches =
         AsyncMemoize<(string * (string * string)), string, (FSharpParseFileResults * FSharpCheckFileAnswer)>
 
     member ParseAndCheckProject: AsyncMemoize<(string * string), string, FSharpCheckProjectResults>
+
+    member RecentCheckFileResults:
+        AsyncMemoize<string * int64 * ProjectIdentifier, obj, FSharpParseFileResults *
+        FSharpCheckFileResults *
+        SourceTextHash>
 
     member ParseFile:
         AsyncMemoize<((string * string) * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>

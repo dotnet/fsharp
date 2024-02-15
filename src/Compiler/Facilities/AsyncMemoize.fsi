@@ -69,6 +69,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member Get': key: 'TKey * computation: NodeCode<'TValue> -> NodeCode<'TValue>
 
+    member TryGet: key: 'TKey -> 'TValue option
+
+    member Set: key: 'TKey * value: 'TValue -> unit
+
     member Event: IEvent<JobEvent * (string * 'TKey * 'TVersion)>
 
     member OnEvent: ((JobEvent * (string * 'TKey * 'TVersion) -> unit) -> unit)

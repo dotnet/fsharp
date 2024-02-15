@@ -153,6 +153,10 @@ type internal IBackgroundCompiler =
         fileName: string * options: FSharpProjectOptions * sourceText: ISourceText option * userOpName: string ->
             (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option
 
+    abstract TryGetRecentCheckResultsForFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * sourceText: ISourceText option * userOpName: string ->
+            (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option
+
     abstract BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions>
 
     abstract FileChecked: IEvent<string * FSharpProjectOptions>

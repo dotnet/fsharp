@@ -338,6 +338,10 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
 
+    member _.TryGetRecentCheckResultsForFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, ?sourceText, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.TryGetRecentCheckResultsForFile(fileName, projectSnapshot, sourceText, userOpName)
+
     member _.Compile(argv: string[], ?userOpName: string) =
         let _userOpName = defaultArg userOpName "Unknown"
         use _ = Activity.start "FSharpChecker.Compile" [| Activity.Tags.userOpName, _userOpName |]

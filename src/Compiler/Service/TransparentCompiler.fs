@@ -272,6 +272,8 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val ParseAndCheckProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckProject")
 
+    member val RecentCheckFileResults = AsyncMemoize(sf, 2 * sf, name = "RecentCheckFileResults")
+
     member val FrameworkImports = AsyncMemoize(sf, 2 * sf, name = "FrameworkImports")
 
     member val BootstrapInfoStatic = AsyncMemoize(sf, 2 * sf, name = "BootstrapInfoStatic")
@@ -306,7 +308,8 @@ type internal CompilerCaches(sizeFactor: int) =
         this.AssemblyData.Clear(shouldClear)
         this.SemanticClassification.Clear(snd >> shouldClear)
         this.ItemKeyStore.Clear(snd >> shouldClear)
-        this.ScriptClosure.Clear(snd >> shouldClear) // Todo check if correct predicate
+        this.ScriptClosure.Clear(snd >> shouldClear)
+        this.RecentCheckFileResults.Clear(fun (_, _, i) -> shouldClear i)
 
 type internal TransparentCompiler
     (
@@ -1549,6 +1552,14 @@ type internal TransparentCompiler
                             tcOpenDeclarations
                         )
 
+                    let recentCheckFileKey =
+                        (fileName, file.Source.GetHashCode() |> int64, projectSnapshot.Identifier)
+
+                    let recentCheckFileValue =
+                        (parseResults, typedResults, file.Source.GetHashCode() |> int64)
+
+                    caches.RecentCheckFileResults.Set(recentCheckFileKey, recentCheckFileValue)
+
                     return (parseResults, FSharpCheckFileAnswer.Succeeded typedResults)
             }
         )
@@ -1574,6 +1585,24 @@ type internal TransparentCompiler
                     |> NodeCode.AwaitAsync
             }
         )
+
+    let TryGetRecentCheckResultsForFile
+        (
+            fileName: string,
+            projectSnapshot: FSharpProjectSnapshot,
+            sourceText: ISourceText option,
+            userOpName: string
+        ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
+        ignore userOpName
+
+        match sourceText with
+        | None -> None
+        | Some t ->
+            let key =
+                (fileName, t.GetHashCode() |> int64, projectSnapshot.ProjectSnapshot.Identifier)
+
+            let v = caches.RecentCheckFileResults.TryGet(key)
+            v
 
     let ComputeProjectExtras (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
         caches.ProjectExtras.Get(
@@ -2201,3 +2230,12 @@ type internal TransparentCompiler
                 userOpName: string
             ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
             backgroundCompiler.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
+
+        member this.TryGetRecentCheckResultsForFile
+            (
+                fileName: string,
+                projectSnapshot: FSharpProjectSnapshot,
+                sourceText: ISourceText option,
+                userOpName: string
+            ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
+            TryGetRecentCheckResultsForFile(fileName, projectSnapshot, sourceText, userOpName)
