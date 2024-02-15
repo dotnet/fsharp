@@ -383,15 +383,15 @@ type internal DiagnosticsThreadStatics =
     //    match executionContextId.Value with
     //    | Null -> executionContextId.Value <- ExecutionContext.Capture().GetHashCode
 
-#if DEBUG
-    static let changes = System.Collections.Concurrent.ConcurrentStack()
-    static let changesByThreadId = System.Collections.Concurrent.ConcurrentDictionary<int, string list>()
-    static let changesByContext = System.Collections.Concurrent.ConcurrentDictionary<int, string list>()
+//#if DEBUG
+//    static let changes = System.Collections.Concurrent.ConcurrentStack()
+//    static let changesByThreadId = System.Collections.Concurrent.ConcurrentDictionary<int, string list>()
+//    static let changesByContext = System.Collections.Concurrent.ConcurrentDictionary<int, string list>()
 
-    let logByThreadId tid str =
-        changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
+//    let logByThreadId tid str =
+//        changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
 
-#endif
+//#endif
 
     static let dlName (dl: DiagnosticsLogger) =
         if box dl |> isNull then "NULL" else dl.DebugDisplay()
@@ -401,26 +401,26 @@ type internal DiagnosticsThreadStatics =
         let ts = DiagnosticsThreadStatics.diagnosticsLogger
 
 #if DEBUG
-        let stack = StackTrace(2, true).GetFrames() |> Seq.map _.ToString() |> String.concat "\t"
+        // let stack = StackTrace(2, true).GetFrames() |> Seq.map _.ToString() |> String.concat "\t"
         let tid = Thread.CurrentThread.ManagedThreadId
         let dls = if box al = box ts then dlName al else  $"DIVERGED AsyncLocal: {dlName al}, ThreadStatic: {dlName ts}"
-        let str = $"t:{tid} {prefix} %-300s{dls} \n\n\t{stack}"
-        changes.Push str
-        changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
-        changesByContext.AddOrUpdate(ExecutionContext.Capture().GetHashCode(), [str], (fun _ vs -> str :: vs)) |> ignore
+        //let str = $"t:{tid} {prefix} %-300s{dls} \n\n\t{stack}"
+        //changes.Push str
+        //changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
+        //changesByContext.AddOrUpdate(ExecutionContext.Capture().GetHashCode(), [str], (fun _ vs -> str :: vs)) |> ignore
         Trace.WriteLine($"t:{tid} {prefix}    {dls}")
 
 #endif
         ignore prefix
 
-        match box al, box ts with
-        | al, ts when al = ts -> ()
+        match al, ts with
         // ThreadStatic likes to be null quite often. We ignore this, as long as it doesn't push diagnostics to null logger.
         | _, ts when ts = AssertFalseDiagnosticsLogger -> ()
-        //| _, Null -> ()
+        | _ when box ts |> isNull -> ()
+        | al, ts when al = ts -> ()
         | _ ->
-            // Debugger.Break()
-            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
+            Debugger.Break()
+            // failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
@@ -443,20 +443,24 @@ type internal DiagnosticsThreadStatics =
 
     static member DiagnosticsLogger
         with get () =
-            logOrCheck "get"
+            logOrCheck "->"
             DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-            logOrCheck "set"
+            logOrCheck "<-"
 
     static member BuildPhaseNC
         with get () = DiagnosticsThreadStatics.buildPhase
         and set v = DiagnosticsThreadStatics.buildPhase <- v
 
     static member DiagnosticsLoggerNC
-        with get () = DiagnosticsThreadStatics.diagnosticsLogger
-        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
+        with get () =
+            logOrCheck "-> NC"
+            DiagnosticsThreadStatics.diagnosticsLogger
+        and set v =
+            DiagnosticsThreadStatics.diagnosticsLogger <- v
+            logOrCheck "<- NC"
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
@@ -603,25 +607,6 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
         member _.Dispose() =
             unwindBP.Dispose()
             unwindEL.Dispose()
-
-///
-let PreserveAsyncScope computation =
-    async {
-        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        let buildPhase = DiagnosticsThreadStatics.BuildPhase
-        try
-            return! computation
-        finally
-        DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-        DiagnosticsThreadStatics.BuildPhase <- buildPhase
-    }
-
-let InitGlobalDiagnostics computation =
-    async {
-        DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
-        DiagnosticsThreadStatics.DiagnosticsLogger <- AssertFalseDiagnosticsLogger
-        return! computation
-    }
 
 // Global functions are still used by parser and TAST ops.
 
@@ -965,6 +950,27 @@ type StackGuard(maxDepth: int, name: string) =
 
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
+
+
+///
+let PreserveAsyncScope computation = computation : Async<'T>
+    //async {
+    //    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    //    let buildPhase = DiagnosticsThreadStatics.BuildPhase
+    //    try
+    //        return! computation
+    //    finally
+    //    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+    //    DiagnosticsThreadStatics.BuildPhase <- buildPhase
+    //}
+
+let InitGlobalDiagnostics computation =
+    async {
+        DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
+        DiagnosticsThreadStatics.DiagnosticsLogger <- AssertFalseDiagnosticsLogger
+        return! computation
+    }
+
 
 type CaptureDiagnosticsConcurrently() =
     let target = DiagnosticsThreadStatics.DiagnosticsLogger
