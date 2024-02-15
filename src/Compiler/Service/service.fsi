@@ -405,7 +405,7 @@ type public FSharpChecker =
     member InvalidateConfiguration: options: FSharpProjectOptions * ?userOpName: string -> unit
 
     /// <summary>
-    ///  This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
+    ///  This function is called when the configuration is known to have changed for reasons not encoded in the projectSnapshot.
     ///  For example, dependent references may have been deleted or created.
     /// </summary>
     [<Experimental("This FCS API is experimental and subject to change.")>]
