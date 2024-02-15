@@ -1344,7 +1344,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         syntaxTree.ParseNode.GetOrComputeValue()
         |> Async.AwaitNodeCode
         |> PreserveAsyncScope
-        |> Async.RunSynchronously
+        |> Async.RunImmediate
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
         node {
