@@ -416,7 +416,7 @@ type internal DiagnosticsThreadStatics =
         | al, ts when al = ts -> ()
         // ThreadStatic likes to be null quite often. We ignore this, as long as it doesn't push diagnostics to null logger.
         | _, ts when ts = AssertFalseDiagnosticsLogger -> ()
-        | _, Null -> ()
+        //| _, Null -> ()
         | _ ->
             // Debugger.Break()
             failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
