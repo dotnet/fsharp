@@ -144,7 +144,6 @@ module IncrementalBuildSyntaxTree =
                             Activity.Tags.fileName, fileName
                             Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
                         |]
-
                 try
                     let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
                     // Return the disposable object that cleans up
@@ -165,8 +164,7 @@ module IncrementalBuildSyntaxTree =
                 with exn ->
                     let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
                     System.Diagnostics.Debug.Assert(false, msg)
-                    failwith msg
-                    return Unchecked.defaultof<_>
+                    return failwith msg
             }
 
         /// Parse the given file and return the given input.
@@ -391,7 +389,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async.AwaitNodeCode |> PreserveAsyncScope |> Async.Catch |> Async.Ignore |> Async.RunImmediate
+                startComputingFullTypeCheck |> Async.AwaitNodeCode |> PreserveAsyncScope |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
