@@ -293,6 +293,21 @@ module Array =
     let mkFromIntegralRange g m overallElemTy overallSeqExpr start step finish =
         let arrayTy = mkArrayType g overallElemTy
 
+        let mkOne ty =
+            let underlyingTy = stripMeasuresFromTy g ty
+            if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 1, m, ty)
+            elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 1L, m, ty)
+            elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 1UL, m, ty)
+            elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 1u, m, ty)
+            elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 1L, m, ty)
+            elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 1UL, m, ty)
+            elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 1s, m, ty)
+            elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 1us, m, ty)
+            elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 1y, m, ty)
+            elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 1uy, m, ty)
+            elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\001', m, ty)
+            else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
+
         let convToNativeInt expr =
             let ty = stripMeasuresFromTy g (tyOfExpr g expr)
 
@@ -357,9 +372,9 @@ module Array =
                     // count < 1
                     let countLtOne =
                         if isSignedIntegerTy g countTy then
-                            mkILAsmClt g m count (mkOne g m)
+                            mkILAsmClt g m count (mkOne countTy)
                         else
-                            mkAsmExpr ([AI_clt_un], [], [count; mkOne g m], [g.bool_ty], m)
+                            mkAsmExpr ([AI_clt_un], [], [count; mkOne countTy], [g.bool_ty], m)
 
                     // if count < 1 then
                     //     [||]
