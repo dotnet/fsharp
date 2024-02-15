@@ -167,3 +167,23 @@ let GetAllUsesOfAllSymbols() =
     traceProvider.Dispose()
 
     if result.Length <> 79 then failwith $"Expected 79 symbolUses, got {result.Length}:\n%A{result}"
+
+[<Fact>]
+let ``We don't lose subsequent diagnostics when there's error in one file`` () =
+    let project =
+        { SyntheticProject.Create(
+            { sourceFile "First" [] with
+                Source = "module AbstractBaseClass.File1 \n\n\n a" },
+            { sourceFile "Second" [] with
+                Source = """module AbstractBaseClass.File2
+
+    type AbstractBaseClass() =
+
+        abstract P: int""" }) with
+            AutoAddModules = false
+            SkipInitialCheck = true }
+
+    project.Workflow {
+        checkFile "First" (expectErrorCodes ["FS0039"])
+        checkFile "Second" (expectErrorCodes ["FS0054"; "FS0365"])
+    }
