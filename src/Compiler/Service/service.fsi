@@ -60,7 +60,8 @@ type public FSharpChecker =
             bool ->
             FSharpChecker
 
-    member internal UsesTransparentCompiler: bool
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member UsesTransparentCompiler: bool
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
