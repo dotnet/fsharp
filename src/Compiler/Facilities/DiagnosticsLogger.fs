@@ -404,7 +404,7 @@ type internal DiagnosticsThreadStatics =
 #if DEBUG
         // let stack = StackTrace(2, true).GetFrames() |> Seq.map _.ToString() |> String.concat "\t"
         let tid = Thread.CurrentThread.ManagedThreadId
-        let dls = if box al = box ts then dlName al else  $"DIVERGED AsyncLocal: {dlName al}, ThreadStatic: {dlName ts}"
+        let dls = if box al = box ts then dlName al else  $"DIVERGED \nAsyncLocal: {dlName al}\nThreadStatic: {dlName ts}"
         //let str = $"t:{tid} {prefix} %-300s{dls} \n\n\t{stack}"
         //changes.Push str
         //changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
@@ -420,8 +420,8 @@ type internal DiagnosticsThreadStatics =
         | _ when box ts |> isNull -> ()
         | al, ts when al = ts -> ()
         | _ ->
-            Debugger.Break()
-            // failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
+            // Debugger.Break()
+            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
