@@ -190,11 +190,11 @@ type NodeCode private () =
             let results = ResizeArray()
 
             for computation in computations do
-                let! res = computation |> toAsync |> PreserveAsyncScope
+                let! res = computation |> toAsync
                 results.Add(res)
 
             return results.ToArray()
-        } |> NodeCode.AwaitAsync
+        } |> wrapThreadStaticInfo |> Node
 
     static member Parallel(computations: NodeCode<'T> seq) =
         node {

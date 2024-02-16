@@ -468,8 +468,6 @@ type CompilationGlobalsScope =
 
     member BuildPhase: BuildPhase
 
-val PreserveAsyncScope: Async<'T> -> Async<'T>
-
 val InitGlobalDiagnostics: Async<'T> -> Async<'T>
 
 type CaptureDiagnosticsConcurrently =
@@ -478,7 +476,5 @@ type CaptureDiagnosticsConcurrently =
     member GetLoggerForTask: string -> DiagnosticsLogger
 
     interface IDisposable
-
-val PreserveAsyncScope: Async<'T> -> Async<'T>
 
 val InitGlobalDiagnostics: Async<'T> -> Async<'T>

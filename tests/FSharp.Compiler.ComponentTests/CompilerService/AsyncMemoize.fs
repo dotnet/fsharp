@@ -56,6 +56,9 @@ type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality>(mem
 
     member _.Sequence = events |> Seq.map id
 
+type internal InitTestDiagnostics() =
+    inherit CompilationGlobalsScope(CapturingDiagnosticsLogger("Asynmemoize tests"), BuildPhase.DefaultPhase)
+
 
 [<Fact>]
 let ``Basics``() =
@@ -560,21 +563,20 @@ let ``We get diagnostics from the job that failed`` () =
     let result =
         [1; 2]
         |> Seq.map (fun i ->
-            async {
+        node {
             let diagnosticsLogger = CompilationDiagnosticLogger($"Testing", FSharpDiagnosticOptions.Default)
 
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
             try
-                let! _ = cache.Get(key, job i ) |> Async.AwaitNodeCode
+                let! _ = cache.Get(key, job i )
                 ()
             with _ ->
                 ()
             let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
 
             return diagnosticMessages
-        })
+        } |> Async.AwaitNodeCode)
         |> Async.Parallel
-        |> InitGlobalDiagnostics
         |> Async.StartAsTask
         |> (fun t -> t.Result)
         |> Array.toList

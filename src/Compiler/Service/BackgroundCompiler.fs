@@ -1666,7 +1666,7 @@ type internal BackgroundCompiler
             let options = projectSnapshot.ToOptions()
 
             self.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
-            |> Async.AwaitNodeCode |> PreserveAsyncScope
+            |> Async.AwaitNodeCode
 
         member _.ProjectChecked: IEvent<FSharpProjectOptions> = self.ProjectChecked
 

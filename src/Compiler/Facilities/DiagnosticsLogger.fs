@@ -419,8 +419,8 @@ type internal DiagnosticsThreadStatics =
         | _ when box ts |> isNull -> ()
         | al, ts when al = ts -> ()
         | _ ->
-            // Debugger.Break()
-            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
+            Debugger.Break()
+            // failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
@@ -950,18 +950,6 @@ type StackGuard(maxDepth: int, name: string) =
 
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
-
-
-let PreserveAsyncScope computation =  computation : Async<'T>
-    //async {
-    //    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-    //    let buildPhase = DiagnosticsThreadStatics.BuildPhase
-    //    try
-    //        return! computation
-    //    finally
-    //    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-    //    DiagnosticsThreadStatics.BuildPhase <- buildPhase
-    //}
 
 let InitGlobalDiagnostics computation =
     async {

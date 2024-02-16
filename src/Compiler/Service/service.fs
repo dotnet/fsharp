@@ -498,7 +498,6 @@ type FSharpChecker
         node {
             let! parseResults =
                 backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
-                |> PreserveAsyncScope
                 |> NodeCode.AwaitAsync
 
             if
