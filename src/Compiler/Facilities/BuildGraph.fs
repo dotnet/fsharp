@@ -159,7 +159,7 @@ type NodeCode private () =
     static member CancellationToken = cancellationToken
 
     static member FromCancellable(computation: Cancellable<'T>) =
-        Node(Cancellable.toAsync computation)
+        Node(Cancellable.toAsync computation |> wrapThreadStaticInfo)
 
     static member AwaitAsync(computation: Async<'T>) = 
         async {
