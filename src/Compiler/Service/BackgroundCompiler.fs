@@ -1162,22 +1162,19 @@ type internal BackgroundCompiler
             | None -> None
         | None -> None
 
-    member _.TryGetRecentCheckResultsForFile
-        (
-            fileName: string,
-            projectSnapshot: FSharpProjectSnapshot,
-            userOpName: string
-        ) =
-            let file =
-                projectSnapshot.ProjectSnapshot.SourceFiles |> List.tryFind(fun f -> f.FileName = fileName)
-            match file with
-            | Some f ->
-                async {
-                    let options = projectSnapshot.ToOptions()
-                    let! sourceText = f.GetSource() |> Async.AwaitTask
-                    return self.TryGetRecentCheckResultsForFile(fileName, options, Some sourceText, userOpName)
-                }
-            | None -> async.Return None
+    member _.TryGetRecentCheckResultsForFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
+        let file =
+            projectSnapshot.ProjectSnapshot.SourceFiles
+            |> List.tryFind (fun f -> f.FileName = fileName)
+
+        match file with
+        | Some f ->
+            async {
+                let options = projectSnapshot.ToOptions()
+                let! sourceText = f.GetSource() |> Async.AwaitTask
+                return self.TryGetRecentCheckResultsForFile(fileName, options, Some sourceText, userOpName)
+            }
+        | None -> async.Return None
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private _.ParseAndCheckProjectImpl(options, userOpName) =

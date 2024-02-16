@@ -1593,16 +1593,22 @@ type internal TransparentCompiler
             userOpName: string
         ) : Async<(FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option> =
         ignore userOpName
-        let file = projectSnapshot.ProjectSnapshot.SourceFiles |> List.tryFind(fun f -> f.FileName = fileName)
+
+        let file =
+            projectSnapshot.ProjectSnapshot.SourceFiles
+            |> List.tryFind (fun f -> f.FileName = fileName)
+
         match file with
-            | Some f ->
-                async {
-                    let! sourceText = f.GetSource() |> Async.AwaitTask
-                    let key = (fileName, sourceText.GetHashCode() |> int64, projectSnapshot.ProjectSnapshot.Identifier)
-                    let v = caches.RecentCheckFileResults.TryGet(key)
-                    return v
-                }
-            | None -> async.Return None
+        | Some f ->
+            async {
+                let! sourceText = f.GetSource() |> Async.AwaitTask
+
+                let key =
+                    (fileName, sourceText.GetHashCode() |> int64, projectSnapshot.ProjectSnapshot.Identifier)
+
+                return caches.RecentCheckFileResults.TryGet(key)
+            }
+        | None -> async.Return None
 
     let ComputeProjectExtras (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
         caches.ProjectExtras.Get(
