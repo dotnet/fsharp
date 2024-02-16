@@ -819,6 +819,8 @@ type TcGlobals(
   let v_range_sbyte_op_info        = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeSByte"                           , None                 , None          , [],     ([[v_sbyte_ty];[v_sbyte_ty];[v_sbyte_ty]], mkSeqTy v_sbyte_ty))
   let v_range_byte_op_info         = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeByte"                            , None                 , None          , [],     ([[v_byte_ty];[v_byte_ty];[v_byte_ty]], mkSeqTy v_byte_ty))
   let v_range_char_op_info         = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeChar"                            , None                 , None          , [],     ([[v_char_ty];[v_char_ty];[v_char_ty]], mkSeqTy v_char_ty))
+  let v_range_generic_op_info      = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeGeneric"                         , None                 , None          , [vara],      ([[varaTy];[varaTy]], mkSeqTy varaTy))
+  let v_range_step_generic_op_info = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeStepGeneric"                     , None                 , None          , [vara;varb], ([[varaTy];[varbTy];[varaTy]], mkSeqTy varaTy))
 
   let v_array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               , None                 , Some "Length" , [vara],     ([[mkArrayType 1 varaTy]], v_int_ty))
   let v_array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             , None                 , None          , [vara],     ([[mkArrayType 1 varaTy]; [v_int_ty]], varaTy))
@@ -1707,6 +1709,8 @@ type TcGlobals(
   member val range_sbyte_op_vref        = ValRefForIntrinsic v_range_sbyte_op_info
   member val range_byte_op_vref         = ValRefForIntrinsic v_range_byte_op_info
   member val range_char_op_vref         = ValRefForIntrinsic v_range_char_op_info
+  member val range_generic_op_vref      = ValRefForIntrinsic v_range_generic_op_info
+  member val range_step_generic_op_vref = ValRefForIntrinsic v_range_step_generic_op_info
   member val array_get_vref             = ValRefForIntrinsic v_array_get_info
   member val array2D_get_vref           = ValRefForIntrinsic v_array2D_get_info
   member val array3D_get_vref           = ValRefForIntrinsic v_array3D_get_info

@@ -10259,7 +10259,9 @@ let (|IntegralRange|_|) g expr =
     | ValApp g g.range_byte_op_vref ([], [start; step; finish], _) -> ValueSome (g.byte_ty, (start, step, finish))
     | ValApp g g.range_char_op_vref ([], [start; finish], _) -> ValueSome (g.char_ty, (start, Expr.Const (Const.Char '\001', Text.Range.range0, g.char_ty), finish))
     | ValApp g g.range_op_vref (ty :: _, [start; finish], _) when isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty -> ValueSome (ty, (start, mkTypedOne g Text.Range.range0 ty, finish))
-    | ValApp g g.range_step_op_vref (ty :: _, [start; step; finish], _) when isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty -> ValueSome (ty, (start, step, finish))
+    | ValApp g g.range_step_op_vref ([ty; ty2], [start; step; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, step, finish))
+    | ValApp g g.range_generic_op_vref ([ty; ty2], [_one; _add; start; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, mkTypedOne g Text.Range.range0 ty, finish))
+    | ValApp g g.range_step_generic_op_vref ([ty; ty2], [_zero; _add; start; step; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, step, finish))
     | _ -> ValueNone
 
 /// 5..1
@@ -10365,12 +10367,17 @@ let (|ConstCount|_|) (start, step, finish) =
 /// Makes an expression to compute the iteration count for the given integral range.
 let mkRangeCount g m rangeTy rangeExpr start step finish =
     /// This will raise an exception at runtime if step is zero.
-    let callAndIgnoreRangeExpr =
+    let mkCallAndIgnoreRangeExpr start step finish =
         // Use the potentially-evaluated-and-bound start, step, and finish.
         let rangeExpr =
             match rangeExpr with
-            | Expr.App (funcExpr, formalType, tyargs, _, m) -> Expr.App (funcExpr, formalType, tyargs, [start; step; finish], m)
-            | _ -> rangeExpr
+            // Type-specific range op (RangeInt32, etc.).
+            | Expr.App (funcExpr, formalType, tyargs, [_start; _step; _finish], m) -> Expr.App (funcExpr, formalType, tyargs, [start; step; finish], m)
+            // Generic range op (RangeGeneric).
+            | Expr.App (funcExpr, formalType, tyargs, [one; add; _start; _finish], m) -> Expr.App (funcExpr, formalType, tyargs, [one; add; start; finish], m)
+            // Generic range–step op (RangeStepGeneric).
+            | Expr.App (funcExpr, formalType, tyargs, [zero; add; _start; _ste; _finish], m) -> Expr.App (funcExpr, formalType, tyargs, [zero; add; start; step; finish], m)
+            | _ -> error (InternalError ($"Unrecognized range function application '{rangeExpr}'.", m))
 
         mkSequential
             m
@@ -10436,7 +10443,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
 
     match start, step, finish with
     // start..0..finish
-    | _, Expr.Const (value = IntegralConst.Zero), _ -> mkSequential m callAndIgnoreRangeExpr (mkMinusOne g m)
+    | _, Expr.Const (value = IntegralConst.Zero), _ -> mkSequential m (mkCallAndIgnoreRangeExpr start step finish) (mkMinusOne g m)
 
     // 5..1
     // 1..-1..5
@@ -10531,7 +10538,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                 m
                 g.unit_ty
                 (mkILAsmCeq g m step (mkTypedZero g m rangeTy))
-                callAndIgnoreRangeExpr
+                (mkCallAndIgnoreRangeExpr start step finish)
                 (mkUnit g m)
 
         let count =
