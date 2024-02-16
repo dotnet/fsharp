@@ -9024,7 +9024,6 @@ let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
 
 let nullnessOfTy g ty =
     ty
-    // stripping is where the evil is for abbrevs
     |> stripTyEqns g
     |> function
         | TType_app(tcref, _, nullness) ->
