@@ -1590,19 +1590,19 @@ type internal TransparentCompiler
         (
             fileName: string,
             projectSnapshot: FSharpProjectSnapshot,
-            sourceText: ISourceText option,
             userOpName: string
-        ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
+        ) : Async<(FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option> =
         ignore userOpName
-
-        match sourceText with
-        | None -> None
-        | Some t ->
-            let key =
-                (fileName, t.GetHashCode() |> int64, projectSnapshot.ProjectSnapshot.Identifier)
-
-            let v = caches.RecentCheckFileResults.TryGet(key)
-            v
+        let file = projectSnapshot.ProjectSnapshot.SourceFiles |> List.tryFind(fun f -> f.FileName = fileName)
+        match file with
+            | Some f ->
+                async {
+                    let! sourceText = f.GetSource() |> Async.AwaitTask
+                    let key = (fileName, sourceText.GetHashCode() |> int64, projectSnapshot.ProjectSnapshot.Identifier)
+                    let v = caches.RecentCheckFileResults.TryGet(key)
+                    return v
+                }
+            | None -> async.Return None
 
     let ComputeProjectExtras (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
         caches.ProjectExtras.Get(
@@ -2235,7 +2235,6 @@ type internal TransparentCompiler
             (
                 fileName: string,
                 projectSnapshot: FSharpProjectSnapshot,
-                sourceText: ISourceText option,
                 userOpName: string
-            ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
-            TryGetRecentCheckResultsForFile(fileName, projectSnapshot, sourceText, userOpName)
+            ) : Async<(FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option> =
+            TryGetRecentCheckResultsForFile(fileName, projectSnapshot, userOpName)

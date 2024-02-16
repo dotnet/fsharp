@@ -395,8 +395,8 @@ type public FSharpChecker =
 
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member TryGetRecentCheckResultsForFile:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * ?sourceText: ISourceText * ?userOpName: string ->
-            (FSharpParseFileResults * FSharpCheckFileResults (* hash *) * int64) option
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+            Async<(FSharpParseFileResults * FSharpCheckFileResults (* hash *) * int64) option>
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit
