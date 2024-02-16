@@ -2429,6 +2429,8 @@ let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: M
 
 /// Used to hide/filter members from base classes based on signature
 let PropInfosEquivByNameAndPartialSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =
+    //(pinfo.HasGetter = pinfo2.HasGetter) &&
+    //(pinfo.HasSetter = pinfo2.HasSetter) &&
     pinfo.PropertyName = pinfo2.PropertyName &&
     let argTys = pinfo.GetParamTypes(amap, m)
     let argTys2 = pinfo2.GetParamTypes(amap, m)
@@ -2440,13 +2442,12 @@ let MethInfosEquivByNameAndSig erasureFlag ignoreFinal g amap m minfo minfo2 =
     let (CompiledSig(_, retTy, formalMethTypars, _)) = CompiledSigOfMeth g amap m minfo
     let (CompiledSig(_, retTy2, formalMethTypars2, _)) = CompiledSigOfMeth g amap m minfo2
     match retTy, retTy2 with
-    | None, None -> true     
-                                // putting nullnessSensitivetypeAEquivAux here is right or not?
+    | None, None -> true                            
     | Some retTy, Some retTy2 -> typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) retTy retTy2
     | _ -> false
 
 /// Used to hide/filter members from super classes based on signature
-let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =
+let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =    
     PropInfosEquivByNameAndPartialSig erasureFlag g amap m pinfo pinfo2 &&
     let retTy = pinfo.GetPropertyType(amap, m)
     let retTy2 = pinfo2.GetPropertyType(amap, m)
