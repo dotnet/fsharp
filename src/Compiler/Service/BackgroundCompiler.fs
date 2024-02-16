@@ -133,6 +133,8 @@ type internal IBackgroundCompiler =
 
     abstract member InvalidateConfiguration: options: FSharpProjectOptions * userOpName: string -> unit
 
+    abstract InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * userOpName: string -> unit
+
     abstract member NotifyFileChanged: fileName: string * options: FSharpProjectOptions * userOpName: string -> NodeCode<unit>
 
     abstract member NotifyProjectCleaned: options: FSharpProjectOptions * userOpName: string -> Async<unit>
@@ -1610,6 +1612,10 @@ type internal BackgroundCompiler
             self.GetSemanticClassificationForFile(fileName, snapshot.ToOptions(), userOpName)
 
         member _.InvalidateConfiguration(options: FSharpProjectOptions, userOpName: string) : unit =
+            self.InvalidateConfiguration(options, userOpName)
+
+        member this.InvalidateConfiguration(projectSnapshot: FSharpProjectSnapshot, userOpName: string) : unit =
+            let options = projectSnapshot.ToOptions()
             self.InvalidateConfiguration(options, userOpName)
 
         member _.NotifyFileChanged(fileName: string, options: FSharpProjectOptions, userOpName: string) : NodeCode<unit> =

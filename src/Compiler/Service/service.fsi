@@ -405,6 +405,13 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateConfiguration: options: FSharpProjectOptions * ?userOpName: string -> unit
 
+    /// <summary>
+    ///  This function is called when the configuration is known to have changed for reasons not encoded in the projectSnapshot.
+    ///  For example, dependent references may have been deleted or created.
+    /// </summary>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * ?userOpName: string -> unit
+
     /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
