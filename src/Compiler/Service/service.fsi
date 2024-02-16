@@ -60,7 +60,8 @@ type public FSharpChecker =
             bool ->
             FSharpChecker
 
-    member internal UsesTransparentCompiler: bool
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member UsesTransparentCompiler: bool
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -403,6 +404,13 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateConfiguration: options: FSharpProjectOptions * ?userOpName: string -> unit
+
+    /// <summary>
+    ///  This function is called when the configuration is known to have changed for reasons not encoded in the projectSnapshot.
+    ///  For example, dependent references may have been deleted or created.
+    /// </summary>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * ?userOpName: string -> unit
 
     /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>
