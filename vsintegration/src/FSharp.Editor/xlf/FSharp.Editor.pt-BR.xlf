@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">Adicionar anotação de tipo de retorno</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -44,16 +44,17 @@ Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">Guias de Estrutura de Bloco;
-Mostrar diretrizes de estrutura para código F#;
-Estrutura de tópicos;
-Mostrar nós de estrutura de tópicos e recolhíveis para código F#;
-Dicas embutidas;
-Exibir dicas de tipo embutido (versão prévia);
-Exibir dicas de tipo de retorno (versão prévia);
-Exibir dicas de nome de parâmetro embutido (versão prévia);
-Buffers Dinâmicos;
-Usar buffers dinâmicos (não salvos) para verificação</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
+Live Buffers;
+Use live (unsaved) buffers for analysis</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -231,7 +232,7 @@ Mostrar os comentários nas Informações Rápidas</target>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">Remover os parênteses desnecessários</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -256,7 +257,7 @@ Mostrar os comentários nas Informações Rápidas</target>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">Retorna:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
