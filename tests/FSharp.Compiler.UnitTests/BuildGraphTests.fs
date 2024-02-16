@@ -235,6 +235,8 @@ module BuildGraphTests =
         Assert.shouldBeTrue graphNode.HasValue
         Assert.shouldBe (ValueSome 1) (graphNode.TryPeekValue())
 
+    type ExampleException(msg) = inherit System.Exception(msg)
+
     [<Fact>]
     let ``NodeCode preserves DiagnosticsThreadStatics`` () =
         let random =
@@ -247,7 +249,7 @@ module BuildGraphTests =
             DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
             |> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
 
-            errorR (System.Exception($"job {i}"))
+            errorR (ExampleException($"job {i}"))
         }
         
         let work (phase: BuildPhase) =

@@ -333,7 +333,8 @@ type DiagnosticsLogger(nameForDebugging: string) =
 
     member x.CheckForErrors() = (x.ErrorCount > 0)
 
-    member _.DebugDisplay() = nameForDebugging
+    member _.DebugDisplay() =
+        sprintf "DiagnosticsLogger(%s)" nameForDebugging
 
 let DiscardErrorsLogger =
     { new DiagnosticsLogger("DiscardErrorsLogger") with
