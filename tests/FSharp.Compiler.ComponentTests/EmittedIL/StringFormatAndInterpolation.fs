@@ -42,6 +42,7 @@ module StringFormatAndInterpolation
 
 let str () = {str}
         """
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
