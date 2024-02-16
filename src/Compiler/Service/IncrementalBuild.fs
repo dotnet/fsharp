@@ -1511,12 +1511,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             //
             // This operation is done when constructing the builder itself, rather than as an incremental task.
             let nonFrameworkAssemblyInputs =
-                // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
-                // This is ok because not much can actually go wrong here.
-                let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
-                // Return the disposable object that cleans up
-                use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
-
                 [ for r in nonFrameworkResolutions do
                     let fileName = r.resolvedPath
                     yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
