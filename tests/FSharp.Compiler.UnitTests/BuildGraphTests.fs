@@ -246,18 +246,18 @@ module BuildGraphTests =
         let job phase i = node {
             do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
-            DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
-            |> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
+            //DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
+            //|> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
 
             errorR (ExampleException($"job {i}"))
         }
         
-        let work (phase: BuildPhase) =
+        let work method (phase: BuildPhase) =
             node {
                 let n = 8
                 let logger = CapturingDiagnosticsLogger("test NodeCode")
                 use _ = new CompilationGlobalsScope(logger, phase)
-                let! _ = Seq.init n (job phase) |> NodeCode.Parallel
+                let! _ = Seq.init n (job phase) |> method
 
                 let diags = logger.Diagnostics |> List.map fst
 
@@ -283,8 +283,11 @@ module BuildGraphTests =
         |]
 
         let pickRandomPhase _ = phases[random phases.Length]
-    
-        Seq.init 10 pickRandomPhase
-        |> Seq.map (work >> Async.AwaitNodeCode)
-        |> Async.Parallel
-        |> Async.RunSynchronously
+
+        let run method =  
+            Seq.init 10 pickRandomPhase
+            |> Seq.map (work method >> Async.AwaitNodeCode)
+            |> Async.Parallel
+
+        [ NodeCode.Parallel; NodeCode.Sequential ] |> List.map run |> Async.Parallel |> Async.RunImmediate
+

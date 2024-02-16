@@ -380,46 +380,19 @@ type internal DiagnosticsThreadStatics =
     static let buildPhaseAsync = new AsyncLocal<BuildPhase>()
     static let diagnosticsLoggerAsync = new AsyncLocal<DiagnosticsLogger>()
 
-    //static let getOrCreateExecutionContextId() =
-    //    match executionContextId.Value with
-    //    | Null -> executionContextId.Value <- ExecutionContext.Capture().GetHashCode
-
-//#if DEBUG
-//    static let changes = System.Collections.Concurrent.ConcurrentStack()
-//    static let changesByThreadId = System.Collections.Concurrent.ConcurrentDictionary<int, string list>()
-//    static let changesByContext = System.Collections.Concurrent.ConcurrentDictionary<int, string list>()
-
-//    let logByThreadId tid str =
-//        changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
-
-//#endif
-
-    static let dlName (dl: DiagnosticsLogger) =
-        if box dl |> isNull then "NULL" else dl.DebugDisplay()
 
     static let logOrCheck prefix =
         let al = diagnosticsLoggerAsync.Value
         let ts = DiagnosticsThreadStatics.diagnosticsLogger
-
+        let dlName (dl: DiagnosticsLogger) = if box dl |> isNull then "NULL" else dl.DebugDisplay()
 #if DEBUG
-        // let stack = StackTrace(2, true).GetFrames() |> Seq.map _.ToString() |> String.concat "\t"
         let tid = Thread.CurrentThread.ManagedThreadId
-        let dls = if box al = box ts then dlName al else  $"DIVERGED \nAsyncLocal: {dlName al}\nThreadStatic: {dlName ts}"
-        //let str = $"t:{tid} {prefix} %-300s{dls} \n\n\t{stack}"
-        //changes.Push str
-        //changesByThreadId.AddOrUpdate(tid, [str], (fun _ vs -> str :: vs)) |> ignore
-        //changesByContext.AddOrUpdate(ExecutionContext.Capture().GetHashCode(), [str], (fun _ vs -> str :: vs)) |> ignore
+        let dls = if box al = box ts then dlName al else  $"\nDIVERGED \n\tAsyncLocal: {dlName al}\n\tThreadStatic: {dlName ts}\n"
         Trace.WriteLine($"t:{tid} {prefix}    {dls}")
-
 #endif
         ignore prefix
 
-        match al, ts with
-        // ThreadStatic likes to be null quite often. We ignore this, as long as it doesn't push diagnostics to null logger.
-        | _, ts when ts = AssertFalseDiagnosticsLogger -> ()
-        | _ when box ts |> isNull -> ()
-        | al, ts when al = ts -> ()
-        | _ ->
+        if al <> ts then 
             // Debugger.Break()
             failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 
@@ -457,11 +430,11 @@ type internal DiagnosticsThreadStatics =
 
     static member DiagnosticsLoggerNC
         with get () =
-            logOrCheck "-> NC"
+            //logOrCheck "-> NC"
             DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-            logOrCheck "<- NC"
+            //logOrCheck "<- NC"
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =

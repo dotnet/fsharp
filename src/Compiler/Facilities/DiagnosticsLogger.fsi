@@ -476,5 +476,3 @@ type CaptureDiagnosticsConcurrently =
     member GetLoggerForTask: string -> DiagnosticsLogger
 
     interface IDisposable
-
-val InitGlobalDiagnostics: Async<'T> -> Async<'T>

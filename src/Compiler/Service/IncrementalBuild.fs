@@ -144,10 +144,12 @@ module IncrementalBuildSyntaxTree =
                             Activity.Tags.fileName, fileName
                             Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
                         |]
+
+                let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
+                // Return the disposable object that cleans up
+                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
+
                 try
-                    let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
-                    // Return the disposable object that cleans up
-                    use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
                     use! text = source.GetTextContainer() |> NodeCode.AwaitAsync
                     let input =
                         match text with

@@ -13,15 +13,6 @@ open Internal.Utilities.Library
 [<NoEquality; NoComparison>]
 type NodeCode<'T> = Node of Async<'T>
 
-//let restoreThreadStaticInfo() =
-//    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
-//    let phase = DiagnosticsThreadStatics.BuildPhaseNC
-
-//    { new IDisposable with
-//        member _.Dispose() =
-//            DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
-//            DiagnosticsThreadStatics.BuildPhaseNC <- phase }
-
 let wrapThreadStaticInfo computation =
     async {
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLoggerNC
@@ -35,8 +26,6 @@ let wrapThreadStaticInfo computation =
     }
 
 let unwrapNode (Node(computation)) = computation
-
-let toAsync (Node(wrapped)) = wrapThreadStaticInfo wrapped
 
 type Async<'T> with
 
@@ -107,7 +96,12 @@ type NodeCodeBuilder() =
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member this.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
-        async.Using(resource, binder >> toAsync) |> Node
+        async.Using(resource, binder >> unwrapNode) |> Node
+        //this.Delay( fun () ->
+        //    Node(
+        //        async.Using(resource, binder >> unwrapNode)
+        //    )
+        //)
 
 let node = NodeCodeBuilder()
 
@@ -126,7 +120,7 @@ type NodeCode private () =
                     async {
                         DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
                         DiagnosticsThreadStatics.BuildPhaseNC <- phase
-                        return! computation |> toAsync
+                        return! unwrapNode computation
                     }
 
                 Async.StartImmediateAsTask(work, cancellationToken = ct).Result
@@ -148,7 +142,7 @@ type NodeCode private () =
                 async {
                     DiagnosticsThreadStatics.DiagnosticsLoggerNC <- diagnosticsLogger
                     DiagnosticsThreadStatics.BuildPhaseNC <- phase
-                    return! computation |> toAsync
+                    return! unwrapNode computation
                 }
 
             Async.StartAsTask(work, cancellationToken = defaultArg ct CancellationToken.None)
@@ -159,7 +153,7 @@ type NodeCode private () =
     static member CancellationToken = cancellationToken
 
     static member FromCancellable(computation: Cancellable<'T>) =
-        Node(Cancellable.toAsync computation |> wrapThreadStaticInfo)
+        Node(computation |> Cancellable.toAsync |> wrapThreadStaticInfo)
 
     static member AwaitAsync(computation: Async<'T>) = 
         async {
@@ -173,12 +167,6 @@ type NodeCode private () =
     static member AwaitTask(task: Task) =
         Node(wrapThreadStaticInfo (Async.AwaitTask task))
 
-    static member AwaitTaskWithoutWrapping<'T>(task: Task<'T>) =
-        Node((Async.AwaitTask task))
-
-    static member AwaitTaskWithoutWrapping(task: Task) =
-        Node((Async.AwaitTask task))
-
     static member AwaitWaitHandle_ForTesting(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
 
@@ -186,23 +174,21 @@ type NodeCode private () =
         Node(wrapThreadStaticInfo (Async.Sleep(ms)))
 
     static member Sequential(computations: NodeCode<'T> seq) =
-        async {
+        node {
             let results = ResizeArray()
 
             for computation in computations do
-                let! res = computation |> toAsync
+                let! res = computation
                 results.Add(res)
 
             return results.ToArray()
-        } |> wrapThreadStaticInfo |> Node
+        }
 
     static member Parallel(computations: NodeCode<'T> seq) =
         async {
-            let concurrentLogging = new CaptureDiagnosticsConcurrently()
             let phase = DiagnosticsThreadStatics.BuildPhase
             let ambientLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-            // Why does it return just IDisposable?
-            use _ = concurrentLogging
+            use concurrentLogging = new CaptureDiagnosticsConcurrently()
 
             let injectLogger i computation =
                 let logger = concurrentLogging.GetLoggerForTask($"NodeCode.Parallel {i}")
@@ -213,7 +199,6 @@ type NodeCode private () =
                     try 
                         return! unwrapNode computation
                     finally
-                        // only needed because of NodeCode attaching continuations here
                         DiagnosticsThreadStatics.DiagnosticsLogger <- ambientLogger
                         DiagnosticsThreadStatics.BuildPhase <- phase                                   
                 }
@@ -222,8 +207,9 @@ type NodeCode private () =
                 computations
                 |> Seq.mapi injectLogger
                 |> Async.Parallel
+                |> wrapThreadStaticInfo
 
-        } |> wrapThreadStaticInfo |> Node
+        } |> Node
 
 [<RequireQualifiedAccess>]
 module GraphNode =
@@ -286,7 +272,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                      ||| TaskContinuationOptions.NotOnFaulted
                                      ||| TaskContinuationOptions.ExecuteSynchronously)
                                 )
-                            |> NodeCode.AwaitTaskWithoutWrapping
+                            |> NodeCode.AwaitTask
 
                         match cachedResult with
                         | ValueSome value -> return value
@@ -308,7 +294,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                 ct
                             )
 
-                            return! tcs.Task |> NodeCode.AwaitTaskWithoutWrapping
+                            return! tcs.Task |> NodeCode.AwaitTask
                     finally
                         if taken then
                             semaphore.Release() |> ignore

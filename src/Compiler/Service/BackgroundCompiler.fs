@@ -1386,7 +1386,7 @@ type internal BackgroundCompiler
 
             return options, (diags @ diagnostics.Diagnostics)
         }
-        |> Cancellable.toAsync
+        |> Cancellable.toAsync |> InitGlobalDiagnostics
 
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         use _ =
