@@ -124,7 +124,7 @@ type internal CompilerCaches =
     member ParseAndCheckProject: AsyncMemoize<(string * string), string, FSharpCheckProjectResults>
 
     member RecentCheckFileResults:
-        AsyncMemoize<string * int64 * ProjectIdentifier, obj, FSharpParseFileResults *
+        AsyncMemoize<string * int64 * ProjectIdentifier, int, FSharpParseFileResults *
         FSharpCheckFileResults *
         SourceTextHash>
 

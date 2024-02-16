@@ -272,7 +272,7 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val ParseAndCheckProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckProject")
 
-    member val RecentCheckFileResults = AsyncMemoize(sf, 2 * sf, name = "RecentCheckFileResults")
+    member val RecentCheckFileResults: AsyncMemoize<_, int, _> = AsyncMemoize(sf, 2 * sf, name = "RecentCheckFileResults")
 
     member val FrameworkImports = AsyncMemoize(sf, 2 * sf, name = "FrameworkImports")
 
