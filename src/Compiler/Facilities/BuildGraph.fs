@@ -204,15 +204,15 @@ type NodeCode private () =
             let injectLogger i computation =
                 let logger = concurrentLogging.GetLoggerForTask($"NodeCode.Parallel {i}")
 
-                node {
-                    use _ = new CompilationGlobalsScope(logger, phase)
-                    return! computation
+                async {
+                    DiagnosticsThreadStatics.DiagnosticsLogger <- logger
+                    DiagnosticsThreadStatics.BuildPhase <- phase
+                    return! unwrapNode computation
                 }
 
             return!
                 computations
                 |> Seq.mapi injectLogger
-                |> Seq.map unwrapNode
                 |> Async.Parallel
                 |> wrapThreadStaticInfo
                 |> Node
