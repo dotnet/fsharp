@@ -107,7 +107,7 @@ type NodeCodeBuilder() =
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member this.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
-        async.Using(resource, binder >> toAsync) |> wrapThreadStaticInfo |> Node
+        async.Using(resource, binder >> toAsync) |> Node
 
 let node = NodeCodeBuilder()
 
