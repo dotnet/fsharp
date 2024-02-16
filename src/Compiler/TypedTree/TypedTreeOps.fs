@@ -7437,7 +7437,7 @@ let mkTypedOne g m ty =
     elif typeEquiv g underlyingTy g.float32_ty then Expr.Const (Const.Single 1.0f, m, ty)
     elif typeEquiv g underlyingTy g.float_ty then Expr.Const (Const.Double 1.0, m, ty)
     elif typeEquiv g underlyingTy g.decimal_ty then Expr.Const (Const.Decimal 1m, m, ty)
-    else error (InternalError ($"Unrecognized integral type '{ty}'.", m))
+    else error (InternalError ($"Unrecognized numeric type '{ty}'.", m))
 
 let destInt32 = function Expr.Const (Const.Int32 n, _, _) -> Some n | _ -> None
 
