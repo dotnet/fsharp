@@ -449,7 +449,8 @@ let parseFormatStringInternal
                 checkOtherFlags ch
                 collectSpecifierLocation fragLine fragCol 1
                 let i = skipPossibleInterpolationHole (i+1)
-                parseLoop ((posi, g.string_ty)  :: acc) (i, fragLine, fragCol+1) fragments
+                let stringTy = if g.checkNullness && g.langFeatureNullness then g.string_ty_withNull else g.string_ty
+                parseLoop ((posi, stringTy) :: acc) (i, fragLine, fragCol+1) fragments
 
             | 'O' ->
                 checkOtherFlags ch
