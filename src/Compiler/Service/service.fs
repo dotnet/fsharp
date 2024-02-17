@@ -245,6 +245,9 @@ type FSharpChecker
 
         let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
 
+        SetThreadDiagnosticsLoggerNoUnwind AssertFalseDiagnosticsLogger
+        SetThreadBuildPhaseNoUnwind BuildPhase.DefaultPhase
+
         FSharpChecker(
             legacyReferenceResolver,
             projectCacheSizeReal,
@@ -345,7 +348,7 @@ type FSharpChecker
         async {
             let ctok = CompilationThreadToken()
             return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
-        } |> InitGlobalDiagnostics
+        }
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     /// For example, the type provider approvals file may have changed.

@@ -468,8 +468,6 @@ type CompilationGlobalsScope =
 
     member BuildPhase: BuildPhase
 
-val InitGlobalDiagnostics: Async<'T> -> Async<'T>
-
 type CaptureDiagnosticsConcurrently =
     new: unit -> CaptureDiagnosticsConcurrently
 

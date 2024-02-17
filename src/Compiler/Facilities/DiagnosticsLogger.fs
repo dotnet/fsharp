@@ -392,9 +392,12 @@ type internal DiagnosticsThreadStatics =
 #endif
         ignore prefix
 
-        if al <> ts then 
-            // Debugger.Break()
+        if al <> ts then
+            #if DEBUG
+            Debugger.Break()
+            #else
             failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
+            #endif
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
@@ -422,7 +425,9 @@ type internal DiagnosticsThreadStatics =
         and set v =
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-            // logOrCheck "<-"
+            #if DEBUG
+            logOrCheck "<-"
+            #endif
 
     static member BuildPhaseNC
         with get () = DiagnosticsThreadStatics.buildPhase
@@ -430,11 +435,15 @@ type internal DiagnosticsThreadStatics =
 
     static member DiagnosticsLoggerNC
         with get () =
-            //logOrCheck "-> NC"
+            #if DEBUG
+            logOrCheck "-> NC"
+            #endif
             DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-            //logOrCheck "<- NC"
+            #if DEBUG
+            logOrCheck "<- NC"
+            #endif
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
@@ -924,14 +933,6 @@ type StackGuard(maxDepth: int, name: string) =
 
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
-
-let InitGlobalDiagnostics computation =
-    async {
-        DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
-        DiagnosticsThreadStatics.DiagnosticsLogger <- AssertFalseDiagnosticsLogger
-        return! computation
-    }
-
 
 type CaptureDiagnosticsConcurrently() =
     let target = DiagnosticsThreadStatics.DiagnosticsLogger

@@ -31,7 +31,12 @@ type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node(computation) -> InitGlobalDiagnostics computation
+        | Node(computation) -> 
+            async {
+                SetThreadDiagnosticsLoggerNoUnwind AssertFalseDiagnosticsLogger
+                SetThreadBuildPhaseNoUnwind BuildPhase.DefaultPhase
+                return! computation
+            }
 
 [<Sealed>]
 type NodeCodeBuilder() =

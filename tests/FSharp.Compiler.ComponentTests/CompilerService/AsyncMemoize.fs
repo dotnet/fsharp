@@ -436,8 +436,6 @@ type DummyException(msg) =
 [<Fact>]
 let ``Preserve thread static diagnostics`` () = 
 
-    async.Zero() |> InitGlobalDiagnostics |> Async.RunSynchronously
-
     let seed = System.Random().Next()
 
     let rng = System.Random seed
@@ -539,7 +537,6 @@ let ``Preserve thread static diagnostics already completed job`` () =
         Assert.Equal<list<_>>(["job 1 error"; "job 1 error"], diagnosticMessages)
 
     }
-    |> InitGlobalDiagnostics
     |> Async.StartAsTask
 
 

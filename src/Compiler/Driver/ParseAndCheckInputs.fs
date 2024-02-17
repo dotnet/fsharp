@@ -42,6 +42,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.BuildGraph
 
 let CanonicalizeFilename fileName =
     let basic = FileSystemUtils.fileNameOfPath fileName
@@ -811,23 +812,31 @@ let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
             logger.CommitDelayedDiagnostics diagnosticsLogger
 
 let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFiles, delayLogger: DiagnosticsLogger, retryLocked) =
+    node {
+        use _ = UseDiagnosticsLogger delayLogger
 
-    let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
+        let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
 
-    for fileName in sourceFiles do
-        checkInputFile tcConfig fileName
+        for fileName in sourceFiles do
+            checkInputFile tcConfig fileName
 
-    let sourceFiles = List.zip sourceFiles isLastCompiland
+        let sourceFiles = List.zip sourceFiles isLastCompiland
 
-    UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
-        sourceFilesWithDelayLoggers
-        |> ListParallel.map (fun ((fileName, isLastCompiland), delayLogger) ->
-            let directoryName = Path.GetDirectoryName fileName
+        let! result =
+            sourceFiles
+            |> Seq.map (fun (fileName, isLastCompiland) -> node {
+                    let directoryName = Path.GetDirectoryName fileName
 
-            let input =
-                parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayLogger, retryLocked)
+                    let input =
+                        parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), DiagnosticsThreadStatics.DiagnosticsLogger, retryLocked)
 
-            (input, directoryName)))
+                    return (input, directoryName)
+                })
+            |> NodeCode.Parallel
+        return result |> Array.toList
+    }
+    |> Async.AwaitNodeCode
+    |> Async.RunImmediate
 
 let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, retryLocked) =
     let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
