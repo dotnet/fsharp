@@ -112,6 +112,8 @@ type internal IBackgroundCompiler =
 
     abstract InvalidateConfiguration: options: FSharpProjectOptions * userOpName: string -> unit
 
+    abstract InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * userOpName: string -> unit
+
     abstract NotifyFileChanged: fileName: string * options: FSharpProjectOptions * userOpName: string -> NodeCode<unit>
 
     abstract NotifyProjectCleaned: options: FSharpProjectOptions * userOpName: string -> Async<unit>

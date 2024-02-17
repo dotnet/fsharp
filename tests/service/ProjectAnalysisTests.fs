@@ -7,7 +7,7 @@
 module Tests.Service.ProjectAnalysisTests
 #endif
 
-#nowarn "57"
+#nowarn "57" // Experimental stuff
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 

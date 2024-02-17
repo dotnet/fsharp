@@ -2203,6 +2203,12 @@ type internal TransparentCompiler
         member this.InvalidateConfiguration(options: FSharpProjectOptions, userOpName: string) : unit =
             backgroundCompiler.InvalidateConfiguration(options, userOpName)
 
+        member this.InvalidateConfiguration(projectSnapshot: FSharpProjectSnapshot, _userOpName: string) : unit =
+            let (FSharpProjectIdentifier(projectFileName, outputFileName)) =
+                projectSnapshot.Identifier
+
+            this.Caches.Clear(Set.singleton (ProjectIdentifier(projectFileName, outputFileName)))
+
         member this.NotifyFileChanged(fileName: string, options: FSharpProjectOptions, userOpName: string) : NodeCode<unit> =
             backgroundCompiler.NotifyFileChanged(fileName, options, userOpName)
 
