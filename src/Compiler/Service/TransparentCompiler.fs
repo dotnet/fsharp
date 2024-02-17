@@ -1627,8 +1627,7 @@ type internal TransparentCompiler
                         member _.GetKey() =
                             fileName, projectSnapshot.ProjectSnapshot.ProjectCore.Identifier
 
-                        member _.GetVersion() =
-                            fileKey.GetVersion(), sourceHash
+                        member _.GetVersion() = fileKey.GetVersion(), sourceHash
                     }
 
                 let parseFileResultsAndcheckFileAnswer =
