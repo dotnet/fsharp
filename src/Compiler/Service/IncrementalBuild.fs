@@ -259,53 +259,52 @@ type BoundModel private (
 
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
 
-            let! wrapper = node {
-                let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-                use scope = new CompilationGlobalsScope(
-                    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger),
-                    BuildPhase.TypeCheck)
 
-                beforeFileChecked.Trigger fileName
+            let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
+            use scope = new CompilationGlobalsScope(
+                GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger),
+                BuildPhase.TypeCheck)
+
+            beforeFileChecked.Trigger fileName
                     
-                ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
-                let sink = TcResultsSinkImpl(tcGlobals)
-                let hadParseErrors = not (Array.isEmpty parseErrors)
-                let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
+            let sink = TcResultsSinkImpl(tcGlobals)
+            let hadParseErrors = not (Array.isEmpty parseErrors)
+            let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
-                let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
-                    CheckOneInput (
-                            (fun () -> hadParseErrors || scope.DiagnosticsLogger.ErrorCount > 0),
-                            tcConfig, tcImports,
-                            tcGlobals,
-                            None,
-                            TcResultsSink.WithSink sink,
-                            prevTcInfo.tcState, input )
-                    |> NodeCode.FromCancellable
+            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
+                CheckOneInput (
+                        (fun () -> hadParseErrors || scope.DiagnosticsLogger.ErrorCount > 0),
+                        tcConfig, tcImports,
+                        tcGlobals,
+                        None,
+                        TcResultsSink.WithSink sink,
+                        prevTcInfo.tcState, input )
+                |> NodeCode.FromCancellable
 
-                fileChecked.Trigger fileName
+            fileChecked.Trigger fileName
 
-                let newErrors = Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
-                let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
+            let newErrors = Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
+            let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
 
-                let tcInfo =
-                    {
-                        tcState = tcState
-                        tcEnvAtEndOfFile = tcEnvAtEndOfFile
-                        moduleNamesDict = moduleNamesDict
-                        latestCcuSigForFile = Some ccuSigForFile
-                        tcDiagnosticsRev = newErrors :: prevTcInfo.tcDiagnosticsRev
-                        topAttribs = Some topAttribs
-                        tcDependencyFiles = fileName :: prevTcInfo.tcDependencyFiles
-                        sigNameOpt =
-                            match input with
-                            | ParsedInput.SigFile sigFile ->
-                                Some(sigFile.FileName, sigFile.QualifiedName)
-                            | _ ->
-                                None
-                    }
-                return tcInfo, sink, implFile, fileName, newErrors
-            }
-            return wrapper
+            let tcInfo =
+                {
+                    tcState = tcState
+                    tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                    moduleNamesDict = moduleNamesDict
+                    latestCcuSigForFile = Some ccuSigForFile
+                    tcDiagnosticsRev = newErrors :: prevTcInfo.tcDiagnosticsRev
+                    topAttribs = Some topAttribs
+                    tcDependencyFiles = fileName :: prevTcInfo.tcDependencyFiles
+                    sigNameOpt =
+                        match input with
+                        | ParsedInput.SigFile sigFile ->
+                            Some(sigFile.FileName, sigFile.QualifiedName)
+                        | _ ->
+                            None
+                }
+            return tcInfo, sink, implFile, fileName, newErrors
+
         }
 
     let skippedImplemetationTypeCheck =
@@ -1348,7 +1347,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let syntaxTree = currentState.slots[slotOfFile].SyntaxTree
         syntaxTree.ParseNode.GetOrComputeValue()
         |> Async.AwaitNodeCode
-        |> Async.RunImmediate
+        |> Async.RunSynchronously
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
         node {

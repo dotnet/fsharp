@@ -245,9 +245,6 @@ type FSharpChecker
 
         let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
 
-        SetThreadDiagnosticsLoggerNoUnwind AssertFalseDiagnosticsLogger
-        SetThreadBuildPhaseNoUnwind BuildPhase.DefaultPhase
-
         FSharpChecker(
             legacyReferenceResolver,
             projectCacheSizeReal,

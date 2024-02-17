@@ -3506,7 +3506,7 @@ type FSharpCheckProjectResults
                     | _ -> [||])
                 |> Array.toSeq
             | Choice2Of2 task ->
-                Async.RunImmediate(
+                Async.RunSynchronously(
                     async {
                         let! tcSymbolUses = task
 

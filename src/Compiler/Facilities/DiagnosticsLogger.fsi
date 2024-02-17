@@ -240,6 +240,8 @@ type DiagnosticsThreadStatics =
 
     static member DiagnosticsLoggerNC: DiagnosticsLogger with get, set
 
+    static member InitGlobals: unit -> unit
+
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
 

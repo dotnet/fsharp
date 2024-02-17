@@ -31,10 +31,9 @@ type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node(computation) -> 
+        | Node(computation) ->
             async {
-                SetThreadDiagnosticsLoggerNoUnwind AssertFalseDiagnosticsLogger
-                SetThreadBuildPhaseNoUnwind BuildPhase.DefaultPhase
+                DiagnosticsThreadStatics.InitGlobals()
                 return! computation
             }
 
@@ -102,11 +101,6 @@ type NodeCodeBuilder() =
     [<DebuggerHidden; DebuggerStepThrough>]
     member this.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
         async.Using(resource, binder >> unwrapNode) |> Node
-        //this.Delay( fun () ->
-        //    Node(
-        //        async.Using(resource, binder >> unwrapNode)
-        //    )
-        //)
 
 let node = NodeCodeBuilder()
 
@@ -187,7 +181,7 @@ type NodeCode private () =
                 results.Add(res)
 
             return results.ToArray()
-        }
+                }
 
     static member Parallel(computations: NodeCode<'T> seq) =
         async {

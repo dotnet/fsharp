@@ -377,27 +377,35 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
 
+    static let dlName (dl: DiagnosticsLogger) = if box dl |> isNull then "NULL" else dl.DebugDisplay()
+
     static let buildPhaseAsync = new AsyncLocal<BuildPhase>()
-    static let diagnosticsLoggerAsync = new AsyncLocal<DiagnosticsLogger>()
+    static let diagnosticsLoggerAsync = new AsyncLocal<DiagnosticsLogger>(fun args ->
+        if args.ThreadContextChanged then
+            Trace.WriteLine($"t:{Thread.CurrentThread.ManagedThreadId} prev: {dlName args.PreviousValue}, current: {dlName args.CurrentValue}, THREAD CONTEXT CHANGED"))
 
-
-    static let logOrCheck prefix =
+    static let check() =
         let al = diagnosticsLoggerAsync.Value
         let ts = DiagnosticsThreadStatics.diagnosticsLogger
-        let dlName (dl: DiagnosticsLogger) = if box dl |> isNull then "NULL" else dl.DebugDisplay()
+        match box al, box ts with
+        | Null, _ -> () // New context started.
+        | _, Null -> () // ??
+        | a, t when not <| a.Equals(t) -> // Not good.
+            #if DEBUG
+            Debug.Assert(false, $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}.")
+            #else
+            Debug.Assert(false, $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}.")
+            // failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
+            #endif
+        | _ -> ()
 #if DEBUG
+    static let log prefix =
+        let al = diagnosticsLoggerAsync.Value
+        let ts = DiagnosticsThreadStatics.diagnosticsLogger
         let tid = Thread.CurrentThread.ManagedThreadId
         let dls = if box al = box ts then dlName al else  $"\nDIVERGED \n\tAsyncLocal: {dlName al}\n\tThreadStatic: {dlName ts}\n"
         Trace.WriteLine($"t:{tid} {prefix}    {dls}")
 #endif
-        ignore prefix
-
-        if al <> ts then
-            #if DEBUG
-            Debugger.Break()
-            #else
-            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
-            #endif
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
@@ -420,13 +428,16 @@ type internal DiagnosticsThreadStatics =
 
     static member DiagnosticsLogger
         with get () =
-            logOrCheck "->"
+            #if DEBUG
+            log "->"
+            #endif
+            check()
             DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
             #if DEBUG
-            logOrCheck "<-"
+            log "<-"
             #endif
 
     static member BuildPhaseNC
@@ -436,18 +447,24 @@ type internal DiagnosticsThreadStatics =
     static member DiagnosticsLoggerNC
         with get () =
             #if DEBUG
-            logOrCheck "-> NC"
+            log "-> NC"
             #endif
             DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             DiagnosticsThreadStatics.diagnosticsLogger <- v
             #if DEBUG
-            logOrCheck "<- NC"
+            log "<- NC"
             #endif
+
+    static member InitGlobals() =
+        Trace.WriteLine($"t:{Thread.CurrentThread.ManagedThreadId} INIT GLOBAL DIAGNOSTICS")
+        buildPhaseAsync.Value <- BuildPhase.DefaultPhase
+        diagnosticsLoggerAsync.Value <- DiscardErrorsLogger
+        DiagnosticsThreadStatics.buildPhase <- BuildPhase.DefaultPhase
+        DiagnosticsThreadStatics.diagnosticsLogger <- DiscardErrorsLogger
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
-
     // Dev15.0 shipped with a bug in diasymreader in the portable pdb symbol reader which causes an AV
     // This uses a simple heuristic to detect it (the vsversion is < 16.0)
     let tryAndDetectDev15 =
