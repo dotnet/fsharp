@@ -272,8 +272,6 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val ParseAndCheckProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckProject")
 
-    member val RecentCheckFileResults: AsyncMemoize<_, int, _> = AsyncMemoize(sf, 2 * sf, name = "RecentCheckFileResults")
-
     member val FrameworkImports = AsyncMemoize(sf, 2 * sf, name = "FrameworkImports")
 
     member val BootstrapInfoStatic = AsyncMemoize(sf, 2 * sf, name = "BootstrapInfoStatic")
@@ -309,7 +307,6 @@ type internal CompilerCaches(sizeFactor: int) =
         this.SemanticClassification.Clear(snd >> shouldClear)
         this.ItemKeyStore.Clear(snd >> shouldClear)
         this.ScriptClosure.Clear(snd >> shouldClear)
-        this.RecentCheckFileResults.Clear(fun (_, _, i) -> shouldClear i)
 
 type internal TransparentCompiler
     (
@@ -1446,123 +1443,141 @@ type internal TransparentCompiler
         FSharpParseFileResults(diagnostics, parseTree, true, [||])
 
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: ProjectSnapshot) =
-        caches.ParseAndCheckFileInProject.Get(
-            projectSnapshot.FileKey fileName,
-            node {
+        node {
+            let fileKey = projectSnapshot.FileKey fileName
 
-                use _ =
-                    Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+            let file =
+                projectSnapshot.SourceFiles |> List.tryFind (fun f -> f.FileName = fileName)
 
-                match! ComputeBootstrapInfo projectSnapshot with
-                | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
+            match file with
+            | None -> return emptyParseResult fileName [||], FSharpCheckFileAnswer.Aborted
+            | Some f ->
+                let! source = f.GetSource() |> NodeCode.AwaitTask
 
-                | Some bootstrapInfo, creationDiags ->
+                let cacheKey =
+                    { new ICacheKey<_, _> with
+                        member _.GetLabel() = $"{fileName} ({projectSnapshot.Label})"
 
-                    let priorSnapshot = projectSnapshot.UpTo fileName
-                    let! snapshotWithSources = LoadSources bootstrapInfo priorSnapshot
-                    let file = snapshotWithSources.SourceFiles |> List.last
+                        member _.GetKey() =
+                            fileName, projectSnapshot.ProjectCore.Identifier
 
-                    let! parseResults = getParseResult projectSnapshot Seq.empty file bootstrapInfo.TcConfig
+                        member _.GetVersion() =
+                            fileKey.GetVersion(), source.GetHashCode() |> int64
+                    }
 
-                    let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
+                return!
+                    caches.ParseAndCheckFileInProject.Get(
+                        cacheKey,
+                        node {
 
-                    let (tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile) = result
+                            use _ =
+                                Activity.start
+                                    "ComputeParseAndCheckFileInProject"
+                                    [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
-                    let tcState = tcInfo.tcState
+                            match! ComputeBootstrapInfo projectSnapshot with
+                            | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
 
-                    let sink = tcInfo.sink.Head // TODO: don't use head
+                            | Some bootstrapInfo, creationDiags ->
 
-                    let tcResolutions = sink.GetResolutions()
-                    let tcSymbolUses = sink.GetSymbolUses()
-                    let tcOpenDeclarations = sink.GetOpenDeclarations()
+                                let priorSnapshot = projectSnapshot.UpTo fileName
+                                let! snapshotWithSources = LoadSources bootstrapInfo priorSnapshot
+                                let file = snapshotWithSources.SourceFiles |> List.last
 
-                    // TODO: Apparently creating diagnostics can produce further diagnostics. So let's capture those too. Hopefully there is a more elegant solution...
-                    // Probably diagnostics need to be evaluated during typecheck anyway for proper formatting, which might take care of this too.
-                    let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
-                    use _ = new CompilationGlobalsScope(extraLogger, BuildPhase.TypeCheck)
+                                let! parseResults = getParseResult projectSnapshot Seq.empty file bootstrapInfo.TcConfig
 
-                    // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-                    let tcConfig =
-                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName)
+                                let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
-                    let diagnosticsOptions = tcConfig.diagnosticsOptions
+                                let (tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile) = result
 
-                    let symbolEnv =
-                        SymbolEnv(bootstrapInfo.TcGlobals, tcState.Ccu, Some tcState.CcuSig, bootstrapInfo.TcImports)
+                                let tcState = tcInfo.tcState
 
-                    let tcDiagnostics =
-                        DiagnosticHelpers.CreateDiagnostics(
-                            diagnosticsOptions,
-                            false,
-                            fileName,
-                            tcInfo.TcDiagnostics,
-                            suggestNamesForErrors,
-                            bootstrapInfo.TcConfig.flatErrors,
-                            Some symbolEnv
-                        )
+                                let sink = tcInfo.sink.Head // TODO: don't use head
 
-                    let extraDiagnostics =
-                        DiagnosticHelpers.CreateDiagnostics(
-                            diagnosticsOptions,
-                            false,
-                            fileName,
-                            extraLogger.Diagnostics,
-                            suggestNamesForErrors,
-                            bootstrapInfo.TcConfig.flatErrors,
-                            Some symbolEnv
-                        )
+                                let tcResolutions = sink.GetResolutions()
+                                let tcSymbolUses = sink.GetSymbolUses()
+                                let tcOpenDeclarations = sink.GetOpenDeclarations()
 
-                    let tcDiagnostics = [| yield! extraDiagnostics; yield! tcDiagnostics |]
+                                // TODO: Apparently creating diagnostics can produce further diagnostics. So let's capture those too. Hopefully there is a more elegant solution...
+                                // Probably diagnostics need to be evaluated during typecheck anyway for proper formatting, which might take care of this too.
+                                let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
+                                use _ = new CompilationGlobalsScope(extraLogger, BuildPhase.TypeCheck)
 
-                    let! loadClosure =
-                        ComputeScriptClosure
-                            fileName
-                            file.Source
-                            tcConfig.fsharpBinariesDir
-                            tcConfig.useSimpleResolution
-                            (Some tcConfig.useFsiAuxLib)
-                            (Some tcConfig.useSdkRefs)
-                            tcConfig.sdkDirOverride
-                            (Some tcConfig.assumeDotNetFramework)
-                            projectSnapshot
+                                // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
+                                let tcConfig =
+                                    ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName)
 
-                    let typedResults =
-                        FSharpCheckFileResults.Make(
-                            fileName,
-                            projectSnapshot.ProjectFileName,
-                            bootstrapInfo.TcConfig,
-                            bootstrapInfo.TcGlobals,
-                            projectSnapshot.IsIncompleteTypeCheckEnvironment,
-                            None,
-                            projectSnapshot.ToOptions(),
-                            Array.ofList tcInfo.tcDependencyFiles,
-                            creationDiags,
-                            parseResults.Diagnostics,
-                            tcDiagnostics,
-                            keepAssemblyContents,
-                            ccuSigForFile,
-                            tcState.Ccu,
-                            bootstrapInfo.TcImports,
-                            tcEnv.AccessRights,
-                            tcResolutions,
-                            tcSymbolUses,
-                            tcEnv.NameEnv,
-                            Some loadClosure,
-                            checkedImplFileOpt,
-                            tcOpenDeclarations
-                        )
+                                let diagnosticsOptions = tcConfig.diagnosticsOptions
 
-                    let recentCheckFileKey =
-                        (fileName, file.Source.GetHashCode() |> int64, projectSnapshot.Identifier)
+                                let symbolEnv =
+                                    SymbolEnv(bootstrapInfo.TcGlobals, tcState.Ccu, Some tcState.CcuSig, bootstrapInfo.TcImports)
 
-                    let recentCheckFileValue =
-                        (parseResults, typedResults, file.Source.GetHashCode() |> int64)
+                                let tcDiagnostics =
+                                    DiagnosticHelpers.CreateDiagnostics(
+                                        diagnosticsOptions,
+                                        false,
+                                        fileName,
+                                        tcInfo.TcDiagnostics,
+                                        suggestNamesForErrors,
+                                        bootstrapInfo.TcConfig.flatErrors,
+                                        Some symbolEnv
+                                    )
 
-                    caches.RecentCheckFileResults.Set(recentCheckFileKey, recentCheckFileValue)
+                                let extraDiagnostics =
+                                    DiagnosticHelpers.CreateDiagnostics(
+                                        diagnosticsOptions,
+                                        false,
+                                        fileName,
+                                        extraLogger.Diagnostics,
+                                        suggestNamesForErrors,
+                                        bootstrapInfo.TcConfig.flatErrors,
+                                        Some symbolEnv
+                                    )
 
-                    return (parseResults, FSharpCheckFileAnswer.Succeeded typedResults)
-            }
-        )
+                                let tcDiagnostics = [| yield! extraDiagnostics; yield! tcDiagnostics |]
+
+                                let! loadClosure =
+                                    ComputeScriptClosure
+                                        fileName
+                                        file.Source
+                                        tcConfig.fsharpBinariesDir
+                                        tcConfig.useSimpleResolution
+                                        (Some tcConfig.useFsiAuxLib)
+                                        (Some tcConfig.useSdkRefs)
+                                        tcConfig.sdkDirOverride
+                                        (Some tcConfig.assumeDotNetFramework)
+                                        projectSnapshot
+
+                                let typedResults =
+                                    FSharpCheckFileResults.Make(
+                                        fileName,
+                                        projectSnapshot.ProjectFileName,
+                                        bootstrapInfo.TcConfig,
+                                        bootstrapInfo.TcGlobals,
+                                        projectSnapshot.IsIncompleteTypeCheckEnvironment,
+                                        None,
+                                        projectSnapshot.ToOptions(),
+                                        Array.ofList tcInfo.tcDependencyFiles,
+                                        creationDiags,
+                                        parseResults.Diagnostics,
+                                        tcDiagnostics,
+                                        keepAssemblyContents,
+                                        ccuSigForFile,
+                                        tcState.Ccu,
+                                        bootstrapInfo.TcImports,
+                                        tcEnv.AccessRights,
+                                        tcResolutions,
+                                        tcSymbolUses,
+                                        tcEnv.NameEnv,
+                                        Some loadClosure,
+                                        checkedImplFileOpt,
+                                        tcOpenDeclarations
+                                    )
+
+                                return (parseResults, FSharpCheckFileAnswer.Succeeded typedResults)
+                        }
+                    )
+        }
 
     let ComputeParseAndCheckAllFilesInProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
         caches.ParseAndCheckAllFilesInProject.Get(
@@ -1601,12 +1616,30 @@ type internal TransparentCompiler
         match file with
         | Some f ->
             async {
-                let! sourceText = f.GetSource() |> Async.AwaitTask
+                let! source = f.GetSource() |> Async.AwaitTask
+                let fileKey = projectSnapshot.ProjectSnapshot.FileKey fileName
+                let sourceHash = source.GetHashCode() |> int64
 
-                let key =
-                    (fileName, sourceText.GetHashCode() |> int64, projectSnapshot.ProjectSnapshot.Identifier)
+                let cacheKey =
+                    { new ICacheKey<_, _> with
+                        member _.GetLabel() = $"{fileName} ({projectSnapshot.Label})"
 
-                return caches.RecentCheckFileResults.TryGet(key)
+                        member _.GetKey() =
+                            fileName, projectSnapshot.ProjectSnapshot.ProjectCore.Identifier
+
+                        member _.GetVersion() =
+                            fileKey.GetVersion(), sourceHash
+                    }
+
+                let parseFileResultsAndcheckFileAnswer =
+                    let version = cacheKey.GetVersion()
+                    let _, _ba = version
+                    caches.ParseAndCheckFileInProject.TryGet(cacheKey.GetKey(), ("", 0L), (fun v -> v = version))
+
+                match parseFileResultsAndcheckFileAnswer with
+                | Some(parseFileResults, FSharpCheckFileAnswer.Succeeded checkFileResults) ->
+                    return Some(parseFileResults, checkFileResults, sourceHash)
+                | _ -> return None
             }
         | None -> async.Return None
 

@@ -534,16 +534,14 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
         }
 
-    member _.TryGet(key) =
-        let x = cache.TryGet(key)
+    member _.TryGet(key: 'TKey, dummyVersion: 'TVersion, predicate: 'TVersion -> bool) : 'TValue option =
+        let _, versionsAndJobs = cache.GetAll(key, dummyVersion)
 
-        match x with
-        | Some(Completed(value, _)) -> Some value
-        | _ -> None
-
-    member _.Set(key, value) =
-        let v = Job.Completed(value, [])
-        cache.Set(key, v)
+        versionsAndJobs
+        |> Seq.tryPick (fun (version, job) ->
+            match predicate version, job with
+            | true, Completed(completed, _) -> Some completed
+            | _ -> None)
 
     member _.Clear() = cache.Clear()
 
