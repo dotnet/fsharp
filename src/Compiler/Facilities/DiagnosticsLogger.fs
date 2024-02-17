@@ -422,7 +422,7 @@ type internal DiagnosticsThreadStatics =
         and set v =
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-            logOrCheck "<-"
+            // logOrCheck "<-"
 
     static member BuildPhaseNC
         with get () = DiagnosticsThreadStatics.buildPhase
