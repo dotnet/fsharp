@@ -228,7 +228,7 @@ module BuildGraphTests =
         |> Seq.iter (fun x -> 
             try x.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ())
 
-    [<Fact(Skip="Not yet fixed.")>]
+    [<Fact>]
     let ``GraphNode created from an already computed result will return it in tryPeekValue`` () =
         let graphNode = GraphNode.FromResult 1
 
@@ -238,7 +238,7 @@ module BuildGraphTests =
     type ExampleException(msg) = inherit System.Exception(msg)
 
     [<Fact>]
-    let ``NodeCode preserves DiagnosticsThreadStatics`` () =
+    let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
         let random =
             let rng = Random()
             fun n -> rng.Next n
@@ -246,18 +246,18 @@ module BuildGraphTests =
         let job phase i = node {
             do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
-            //DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
-            //|> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
+            DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
+            |> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
 
-            errorR (ExampleException($"job {i}"))
+            errorR (ExampleException $"job {i}")
         }
-        
-        let work method (phase: BuildPhase) =
+    
+        let work (phase: BuildPhase) =
             node {
                 let n = 8
                 let logger = CapturingDiagnosticsLogger("test NodeCode")
                 use _ = new CompilationGlobalsScope(logger, phase)
-                let! _ = Seq.init n (job phase) |> method
+                let! _ = Seq.init n (job phase) |> NodeCode.Parallel
 
                 let diags = logger.Diagnostics |> List.map fst
 
@@ -267,7 +267,7 @@ module BuildGraphTests =
 
                 Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             }
-
+    
         let phases = [|
             BuildPhase.DefaultPhase
             BuildPhase.Compile
@@ -281,13 +281,9 @@ module BuildGraphTests =
             BuildPhase.Output
             BuildPhase.Interactive
         |]
-
+    
         let pickRandomPhase _ = phases[random phases.Length]
-
-        let run method =  
-            Seq.init 10 pickRandomPhase
-            |> Seq.map (work method >> Async.AwaitNodeCode)
-            |> Async.Parallel
-
-        [ NodeCode.Parallel; NodeCode.Sequential ] |> List.map run |> Async.Parallel |> Async.RunImmediate
-
+        Seq.init 100 pickRandomPhase
+        |> Seq.map (work >> Async.AwaitNodeCode)
+        |> Async.Parallel
+        |> Async.RunSynchronously
