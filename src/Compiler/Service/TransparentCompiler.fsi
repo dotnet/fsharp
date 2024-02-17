@@ -5,7 +5,6 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CheckBasics
