@@ -566,7 +566,7 @@ type internal BackgroundCompiler
             flatErrors: bool,
             userOpName: string
         ) =
-        async {
+        node {
             use _ =
                 Activity.start
                     "BackgroundCompiler.ParseFile"
@@ -583,7 +583,7 @@ type internal BackgroundCompiler
                 | Some res -> return res
                 | None ->
                     Interlocked.Increment(&actualParseFileCount) |> ignore
-                    let! ct = Async.CancellationToken
+                    let! ct = NodeCode.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -603,7 +603,7 @@ type internal BackgroundCompiler
                     parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
                     return res
             else
-                let! ct = Async.CancellationToken
+                let! ct = NodeCode.CancellationToken
 
                 let parseDiagnostics, parseTree, anyErrors =
                     ParseAndCheckFile.parseFile (
@@ -1666,7 +1666,7 @@ type internal BackgroundCompiler
                 flatErrors: bool,
                 userOpName: string
             ) =
-            self.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
+            self.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName) |> Async.AwaitNodeCode
 
         member _.ParseFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
             let options = projectSnapshot.ToOptions()
