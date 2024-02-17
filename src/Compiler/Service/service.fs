@@ -372,6 +372,10 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, userOpName)
 
+    member _.InvalidateConfiguration(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.InvalidateConfiguration(projectSnapshot, userOpName)
+
     /// Clear the internal cache of the given projects.
     member _.ClearCache(options: seq<FSharpProjectOptions>, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
