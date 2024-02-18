@@ -399,16 +399,12 @@ type internal DiagnosticsThreadStatics =
         match box al, box ts with
         | Null, _ -> () // New context started.
         | _, Null -> () // ??
+        | _ when al.DebugDisplay().Contains("NodeCode.Parallel") -> () // Threadstatic needs to catch up.
         | a, t when not <| a.Equals(t) -> // Not good.
 #if DEBUG
-            Debug.Assert(
-                false,
-                $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
-            )
+            if Debugger.IsAttached then Debugger.Break()
 #else
-            ()
-        // Debug.Assert(false, $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}.")
-        // failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
+            failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 #endif
         | _ -> ()
 #if DEBUG
@@ -476,9 +472,9 @@ type internal DiagnosticsThreadStatics =
     static member InitGlobals() =
         Trace.WriteLine($"t:{Thread.CurrentThread.ManagedThreadId} INIT GLOBAL DIAGNOSTICS")
         buildPhaseAsync.Value <- BuildPhase.DefaultPhase
-        diagnosticsLoggerAsync.Value <- DiscardErrorsLogger
+        diagnosticsLoggerAsync.Value <- AssertFalseDiagnosticsLogger
         DiagnosticsThreadStatics.buildPhase <- BuildPhase.DefaultPhase
-        DiagnosticsThreadStatics.diagnosticsLogger <- DiscardErrorsLogger
+        DiagnosticsThreadStatics.diagnosticsLogger <- AssertFalseDiagnosticsLogger
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =

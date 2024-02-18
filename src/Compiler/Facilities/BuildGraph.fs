@@ -9,6 +9,7 @@ open System.Diagnostics
 open System.Globalization
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Cancellable
 
 [<NoEquality; NoComparison>]
 type NodeCode<'T> = Node of Async<'T>
@@ -36,6 +37,8 @@ type Async<'T> with
                 DiagnosticsThreadStatics.InitGlobals()
                 return! computation
             }
+
+    static member AwaitNodeCodeAsyncMemoize(node: NodeCode<'T>) = unwrapNode node
 
 [<Sealed>]
 type NodeCodeBuilder() =
@@ -186,29 +189,24 @@ type NodeCode private () =
         }
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        async {
+        node {
             let phase = DiagnosticsThreadStatics.BuildPhase
-            let ambientLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+            //let ambientLogger = DiagnosticsThreadStatics.DiagnosticsLogger
             use concurrentLogging = new CaptureDiagnosticsConcurrently()
 
             let injectLogger i computation =
                 let logger = concurrentLogging.GetLoggerForTask($"NodeCode.Parallel {i}")
 
                 async {
-                    DiagnosticsThreadStatics.DiagnosticsLogger <- logger
-                    DiagnosticsThreadStatics.BuildPhase <- phase
+                    SetThreadDiagnosticsLoggerNoUnwind logger
+                    SetThreadBuildPhaseNoUnwind phase
 
-                    try
-                        return! unwrapNode computation
-                    finally
-                        DiagnosticsThreadStatics.DiagnosticsLogger <- ambientLogger
-                        DiagnosticsThreadStatics.BuildPhase <- phase
+                    return! computation |> unwrapNode
                 }
 
-            return! computations |> Seq.mapi injectLogger |> Async.Parallel |> wrapThreadStaticInfo
+            return! computations |> Seq.mapi injectLogger |> Async.Parallel |> Node
 
         }
-        |> Node
 
 [<RequireQualifiedAccess>]
 module GraphNode =
