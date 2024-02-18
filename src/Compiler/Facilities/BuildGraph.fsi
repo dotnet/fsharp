@@ -22,6 +22,8 @@ type Async<'T> with
     /// Asynchronously await code in the build graph
     static member AwaitNodeCode: node: NodeCode<'T> -> Async<'T>
 
+    static member AwaitNodeCodeAsyncMemoize: node: NodeCode<'T> -> Async<'T>
+
 /// A standard builder for node code.
 [<Sealed>]
 type NodeCodeBuilder =

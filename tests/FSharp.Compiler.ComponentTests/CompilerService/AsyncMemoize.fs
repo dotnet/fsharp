@@ -56,10 +56,6 @@ type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality>(mem
 
     member _.Sequence = events |> Seq.map id
 
-type internal InitTestDiagnostics() =
-    inherit CompilationGlobalsScope(CapturingDiagnosticsLogger("Asynmemoize tests"), BuildPhase.DefaultPhase)
-
-
 [<Fact>]
 let ``Basics``() =
 
@@ -434,7 +430,7 @@ type DummyException(msg) =
     inherit Exception(msg)
 
 [<Fact>]
-let ``Preserve thread static diagnostics`` () = 
+let ``Preserve thread static diagnostics`` () =
 
     let seed = System.Random().Next()
 
@@ -472,7 +468,7 @@ let ``Preserve thread static diagnostics`` () =
     let tasks = seq {
         for i in 1 .. 100 do
 
-            task {
+            node {
                 let diagnosticsLogger =
                     CompilationDiagnosticLogger($"Testing task {i}", FSharpDiagnosticOptions.Default)
 
@@ -486,7 +482,7 @@ let ``Preserve thread static diagnostics`` () =
                                 member _.GetVersion() = rng.Next(1, 10)
                                 member _.GetLabel() = "job2" }
 
-                let! result = job2Cache.Get(key, job2 (i % 10)) |> Async.AwaitNodeCode
+                let! result = job2Cache.Get(key, job2 (i % 10))
 
                 let diagnostics = diagnosticsLogger.GetDiagnostics()
 
@@ -496,7 +492,7 @@ let ``Preserve thread static diagnostics`` () =
             }
     }
 
-    let results = (Task.WhenAll tasks).Result
+    let results = tasks |> NodeCode.Parallel |> Async.AwaitNodeCode |> Async.RunSynchronously
 
     let _diagnosticCounts = results |> Seq.map snd |> Seq.map Array.length |> Seq.groupBy id |> Seq.map (fun (k, v) -> k, v |> Seq.length) |> Seq.sortBy fst |> Seq.toList
 
@@ -509,6 +505,8 @@ let ``Preserve thread static diagnostics`` () =
 
 [<Fact>]
 let ``Preserve thread static diagnostics already completed job`` () =
+
+    DiagnosticsThreadStatics.InitGlobals()
 
     let cache = AsyncMemoize()
 
@@ -523,25 +521,27 @@ let ``Preserve thread static diagnostics already completed job`` () =
         return Ok input
     }
 
-    async {
+    node {
 
         let diagnosticsLogger = CompilationDiagnosticLogger($"Testing", FSharpDiagnosticOptions.Default)
 
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
 
-        let! _ = cache.Get(key, job "1" ) |> Async.AwaitNodeCode
-        let! _ = cache.Get(key, job "2" ) |> Async.AwaitNodeCode
+        let! _ = cache.Get(key, job "1" )
+        let! _ = cache.Get(key, job "2" )
 
         let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
 
         Assert.Equal<list<_>>(["job 1 error"; "job 1 error"], diagnosticMessages)
 
     }
-    |> Async.StartAsTask
+    |> NodeCode.StartAsTask_ForTesting
 
 
 [<Fact>]
 let ``We get diagnostics from the job that failed`` () =
+
+    DiagnosticsThreadStatics.InitGlobals()
 
     let cache = AsyncMemoize()
 
@@ -572,9 +572,9 @@ let ``We get diagnostics from the job that failed`` () =
             let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
 
             return diagnosticMessages
-        } |> Async.AwaitNodeCode)
-        |> Async.Parallel
-        |> Async.StartAsTask
+        })
+        |> NodeCode.Parallel
+        |> NodeCode.StartAsTask_ForTesting
         |> (fun t -> t.Result)
         |> Array.toList
 

@@ -401,10 +401,8 @@ type internal DiagnosticsThreadStatics =
         | _, Null -> () // ??
         | a, t when not <| a.Equals(t) -> // Not good.
 #if DEBUG
-            Debug.Assert(
-                false,
-                $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
-            )
+            if Debugger.IsAttached then Debugger.Break() else ()
+        // failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 #else
             ()
         // Debug.Assert(false, $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}.")
