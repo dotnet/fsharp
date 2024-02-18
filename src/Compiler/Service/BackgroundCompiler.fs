@@ -1666,7 +1666,8 @@ type internal BackgroundCompiler
                 flatErrors: bool,
                 userOpName: string
             ) =
-            self.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName) |> Async.AwaitNodeCode
+            self.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
+            |> Async.AwaitNodeCode
 
         member _.ParseFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
             let options = projectSnapshot.ToOptions()

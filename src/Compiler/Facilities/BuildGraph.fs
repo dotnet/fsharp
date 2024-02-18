@@ -154,11 +154,13 @@ type NodeCode private () =
     static member FromCancellable(computation: Cancellable<'T>) =
         Node(computation |> Cancellable.toAsync |> wrapThreadStaticInfo)
 
-    static member AwaitAsync(computation: Async<'T>) = 
+    static member AwaitAsync(computation: Async<'T>) =
         async {
             Trace.TraceWarning("NodeCode.AwaitAsync")
             return! computation
-        } |> wrapThreadStaticInfo |> Node
+        }
+        |> wrapThreadStaticInfo
+        |> Node
 
     static member AwaitTask(task: Task<'T>) =
         Node(wrapThreadStaticInfo (Async.AwaitTask task))
@@ -181,7 +183,7 @@ type NodeCode private () =
                 results.Add(res)
 
             return results.ToArray()
-                }
+        }
 
     static member Parallel(computations: NodeCode<'T> seq) =
         async {
@@ -195,20 +197,18 @@ type NodeCode private () =
                 async {
                     DiagnosticsThreadStatics.DiagnosticsLogger <- logger
                     DiagnosticsThreadStatics.BuildPhase <- phase
-                    try 
+
+                    try
                         return! unwrapNode computation
                     finally
                         DiagnosticsThreadStatics.DiagnosticsLogger <- ambientLogger
-                        DiagnosticsThreadStatics.BuildPhase <- phase                                   
+                        DiagnosticsThreadStatics.BuildPhase <- phase
                 }
 
-            return!
-                computations
-                |> Seq.mapi injectLogger
-                |> Async.Parallel
-                |> wrapThreadStaticInfo
+            return! computations |> Seq.mapi injectLogger |> Async.Parallel |> wrapThreadStaticInfo
 
-        } |> Node
+        }
+        |> Node
 
 [<RequireQualifiedAccess>]
 module GraphNode =

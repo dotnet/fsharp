@@ -824,15 +824,24 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
 
         let! result =
             sourceFiles
-            |> Seq.map (fun (fileName, isLastCompiland) -> node {
+            |> Seq.map (fun (fileName, isLastCompiland) ->
+                node {
                     let directoryName = Path.GetDirectoryName fileName
 
                     let input =
-                        parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), DiagnosticsThreadStatics.DiagnosticsLogger, retryLocked)
+                        parseInputFileAux (
+                            tcConfig,
+                            lexResourceManager,
+                            fileName,
+                            (isLastCompiland, isExe),
+                            DiagnosticsThreadStatics.DiagnosticsLogger,
+                            retryLocked
+                        )
 
                     return (input, directoryName)
                 })
             |> NodeCode.Parallel
+
         return result |> Array.toList
     }
     |> Async.AwaitNodeCode
