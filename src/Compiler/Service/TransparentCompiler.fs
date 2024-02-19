@@ -384,10 +384,11 @@ type internal TransparentCompiler
         (useSdkRefs: bool option)
         (sdkDirOverride: string option)
         (assumeDotNetFramework: bool option)
-        (projectSnapshot: ProjectSnapshot)
+        (fileKey: ICacheKey<string * ProjectIdentifier, string>)
+        (otherOptions: string list)
         =
         caches.ScriptClosure.Get(
-            projectSnapshot.FileKey fileName,
+            fileKey,
             node {
                 let useFsiAuxLib = defaultArg useFsiAuxLib true
                 let useSdkRefs = defaultArg useSdkRefs true
@@ -396,7 +397,7 @@ type internal TransparentCompiler
 
                 let applyCompilerOptions tcConfig =
                     let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
-                    ParseCompilerOptions(ignore, fsiCompilerOptions, projectSnapshot.OtherOptions)
+                    ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
 
                 let closure =
                     LoadClosure.ComputeClosureOfScriptText(
@@ -665,7 +666,8 @@ type internal TransparentCompiler
                                 None
                                 None
                                 None
-                                projectSnapshot
+                                (projectSnapshot.FileKey fsxFile.FileName)
+                                projectSnapshot.OtherOptions
 
                         return (Some closure)
                     }
@@ -1521,7 +1523,8 @@ type internal TransparentCompiler
                             (Some tcConfig.useSdkRefs)
                             tcConfig.sdkDirOverride
                             (Some tcConfig.assumeDotNetFramework)
-                            projectSnapshot
+                            (projectSnapshot.FileKey fileName)
+                            projectSnapshot.OtherOptions
 
                     let typedResults =
                         FSharpCheckFileResults.Make(
@@ -2110,6 +2113,144 @@ type internal TransparentCompiler
                 optionsStamp,
                 userOpName
             )
+
+        member this.GetProjectSnapshotFromScript
+            (
+                fileName: string,
+                sourceText: ISourceTextNew,
+                previewEnabled: bool option,
+                loadedTimeStamp: DateTime option,
+                otherFlags: string array option,
+                useFsiAuxLib: bool option,
+                useSdkRefs: bool option,
+                sdkDirOverride: string option,
+                assumeDotNetFramework: bool option,
+                optionsStamp: int64 option,
+                userOpName: string
+            ) : Async<FSharpProjectSnapshot * FSharpDiagnostic list> =
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.GetProjectOptionsFromScript"
+                    [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
+
+            cancellable {
+                let previewEnabled = defaultArg previewEnabled false
+                let! ct = Cancellable.token ()
+                use _ = Cancellable.UsingToken(ct)
+
+                let extraFlags =
+                    if previewEnabled then
+                        [| "--langversion:preview" |]
+                    else
+                        [||]
+
+                let otherFlags = defaultArg otherFlags extraFlags
+                use diagnostics = new DiagnosticsScope(otherFlags |> Array.contains "--flaterrors")
+
+                let useSimpleResolution =
+                    otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
+
+                let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
+                let projectFileName = fileName + ".fsproj"
+
+                let currentSourceFile =
+                    FSharpFileSnapshot.Create(
+                        fileName,
+                        sourceText.GetHashCode().ToString(),
+                        fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
+                    )
+
+                let cacheKey: ICacheKey<string * ProjectIdentifier, string> =
+                    let hash =
+                        Md5Hasher.empty
+                        |> Md5Hasher.addString fileName
+                        |> Md5Hasher.addString (string sourceText)
+
+                    { new ICacheKey<string * ProjectIdentifier, string> with
+                        member _.GetLabel() =
+                            $"{fileName} ({shortPath projectFileName})"
+
+                        member _.GetKey() = fileName, (projectFileName, "")
+                        member _.GetVersion() = hash |> Md5Hasher.toString
+                    }
+
+                // TODO: this is most likely wrong from the Cancellable/NodeCode/Async side of things
+                // the NodeCode needs to be a Cancellable thing...
+                let loadClosure =
+                    ComputeScriptClosure
+                        fileName
+                        sourceText
+                        FSharpCheckerResultsSettings.defaultFSharpBinariesDir
+                        useSimpleResolution
+                        useFsiAuxLib
+                        useSdkRefs
+                        sdkDirOverride
+                        assumeDotNetFramework
+                        cacheKey
+                        (Array.toList otherFlags)
+                    |> fun n -> NodeCode.RunImmediate(n, ct)
+
+                let otherFlags =
+                    [
+                        yield "--noframework"
+                        yield "--warn:3"
+                        yield! otherFlags
+                        for code, _ in loadClosure.NoWarns do
+                            yield "--nowarn:" + code
+                    ]
+
+                let sourceFiles =
+                    loadClosure.SourceFiles
+                    |> List.map (fun (sf, _) ->
+                        if sf = fileName then
+                            currentSourceFile
+                        else
+                            FSharpFileSnapshot.CreateFromFileSystem sf)
+
+                let references =
+                    loadClosure.References
+                    |> List.map (fun (r, _) ->
+                        let lastModified = FileSystem.GetLastWriteTimeShim r
+
+                        {
+                            Path = r
+                            LastModified = lastModified
+                        })
+
+                let snapshot =
+                    FSharpProjectSnapshot.Create(
+                        fileName + ".fsproj",
+                        None,
+                        sourceFiles,
+                        references,
+                        otherFlags,
+                        List.empty,
+                        false,
+                        true,
+                        loadedTimeStamp,
+                        Some(FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences)),
+                        loadClosure.OriginalLoadReferences,
+                        optionsStamp
+                    )
+
+                // I would expect the closure to be cached in this case.
+                // scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
+
+                let diags =
+                    loadClosure.LoadClosureRootFileDiagnostics
+                    |> List.map (fun (exn, isError) ->
+                        FSharpDiagnostic.CreateFromException(
+                            exn,
+                            isError,
+                            range.Zero,
+                            false,
+                            otherFlags |> List.contains "--flaterrors",
+                            None
+                        ))
+
+                return snapshot, (diags @ diagnostics.Diagnostics)
+            }
+            |> Cancellable.toAsync
 
         member this.GetSemanticClassificationForFile(fileName: string, snapshot: FSharpProjectSnapshot, userOpName: string) =
             node {
