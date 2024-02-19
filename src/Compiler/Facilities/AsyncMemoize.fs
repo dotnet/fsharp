@@ -534,8 +534,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
         }
 
-    member _.TryGet(key: 'TKey, dummyVersion: 'TVersion, predicate: 'TVersion -> bool) : 'TValue option =
-        let _, versionsAndJobs = cache.GetAll(key, dummyVersion)
+    member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
+        let versionsAndJobs = cache.GetAll(key)
 
         versionsAndJobs
         |> Seq.tryPick (fun (version, job) ->

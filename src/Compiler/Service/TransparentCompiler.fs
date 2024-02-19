@@ -1633,7 +1633,7 @@ type internal TransparentCompiler
                 let parseFileResultsAndcheckFileAnswer =
                     let version = cacheKey.GetVersion()
                     let _, _ba = version
-                    caches.ParseAndCheckFileInProject.TryGet(cacheKey.GetKey(), ("", 0L), (fun v -> v = version))
+                    caches.ParseAndCheckFileInProject.TryGet(cacheKey.GetKey(), (fun v -> v = version))
 
                 match parseFileResultsAndcheckFileAnswer with
                 | Some(parseFileResults, FSharpCheckFileAnswer.Succeeded checkFileResults) ->
