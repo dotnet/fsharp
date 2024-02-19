@@ -1,10 +1,10 @@
 {
   "sdk": {
-    "version": "8.0.101",
+    "version": "8.0.200",
     "allowPrerelease": true
   },
   "tools": {
-    "dotnet": "8.0.101",
+    "dotnet": "8.0.200",
     "vs": {
       "version": "17.8",
       "components": [
