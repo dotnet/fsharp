@@ -9,6 +9,7 @@ open System.Diagnostics
 open System.Globalization
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Cancellable
 
 [<NoEquality; NoComparison>]
 type NodeCode<'T> = Node of Async<'T>
@@ -29,9 +30,7 @@ let unwrapNode (Node(computation)) = computation
 
 type Async<'T> with
 
-    static member AwaitNodeCode(node: NodeCode<'T>) =
-        match node with
-        | Node(computation) -> wrapThreadStaticInfo computation
+    static member AwaitNodeCode(node: NodeCode<'T>) = unwrapNode node
 
 [<Sealed>]
 type NodeCodeBuilder() =
@@ -95,27 +94,8 @@ type NodeCodeBuilder() =
     member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
-        Node(
-            async {
-                DiagnosticsThreadStatics.DiagnosticsLogger <- value.DiagnosticsLogger
-                DiagnosticsThreadStatics.BuildPhase <- value.BuildPhase
-
-                try
-                    return! binder value |> Async.AwaitNodeCode
-                finally
-                    (value :> IDisposable).Dispose()
-            }
-        )
-
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: IDisposable, binder: IDisposable -> NodeCode<'U>) =
-        Node(
-            async {
-                use _ = value
-                return! binder value |> Async.AwaitNodeCode
-            }
-        )
+    member this.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
+        async.Using(resource, binder >> unwrapNode) |> Node
 
 let node = NodeCodeBuilder()
 
@@ -134,7 +114,7 @@ type NodeCode private () =
                     async {
                         DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
                         DiagnosticsThreadStatics.BuildPhase <- phase
-                        return! computation |> Async.AwaitNodeCode
+                        return! unwrapNode computation
                     }
 
                 Async.StartImmediateAsTask(work, cancellationToken = ct).Result
@@ -156,7 +136,7 @@ type NodeCode private () =
                 async {
                     DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
                     DiagnosticsThreadStatics.BuildPhase <- phase
-                    return! computation |> Async.AwaitNodeCode
+                    return! unwrapNode computation
                 }
 
             Async.StartAsTask(work, cancellationToken = defaultArg ct CancellationToken.None)
@@ -166,8 +146,7 @@ type NodeCode private () =
 
     static member CancellationToken = cancellationToken
 
-    static member FromCancellable(computation: Cancellable<'T>) =
-        Node(wrapThreadStaticInfo (Cancellable.toAsync computation))
+    static member FromCancellable(computation: Cancellable<'T>) = Node(Cancellable.toAsync computation)
 
     static member AwaitAsync(computation: Async<'T>) = Node(wrapThreadStaticInfo computation)
 
@@ -176,6 +155,10 @@ type NodeCode private () =
 
     static member AwaitTask(task: Task) =
         Node(wrapThreadStaticInfo (Async.AwaitTask task))
+
+    static member AwaitTaskWithoutWrapping(task: Task<'T>) = Node((Async.AwaitTask task))
+
+    static member AwaitTaskWithoutWrapping(task: Task) = Node((Async.AwaitTask task))
 
     static member AwaitWaitHandle_ForTesting(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
@@ -196,18 +179,17 @@ type NodeCode private () =
 
     static member Parallel(computations: NodeCode<'T> seq) =
         node {
-            let concurrentLogging = new CaptureDiagnosticsConcurrently()
             let phase = DiagnosticsThreadStatics.BuildPhase
-            // Why does it return just IDisposable?
-            use _ = concurrentLogging
+            use concurrentLogging = new CaptureDiagnosticsConcurrently()
 
             let injectLogger i computation =
                 let logger = concurrentLogging.GetLoggerForTask($"NodeCode.Parallel {i}")
 
                 async {
-                    DiagnosticsThreadStatics.DiagnosticsLogger <- logger
-                    DiagnosticsThreadStatics.BuildPhase <- phase
-                    return! unwrapNode computation
+                    SetThreadDiagnosticsLoggerNoUnwind logger
+                    SetThreadBuildPhaseNoUnwind phase
+
+                    return! computation |> unwrapNode
                 }
 
             return!
@@ -216,6 +198,7 @@ type NodeCode private () =
                 |> Async.Parallel
                 |> wrapThreadStaticInfo
                 |> Node
+
         }
 
 [<RequireQualifiedAccess>]
@@ -256,6 +239,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
             cachedResultNode
         else
             node {
+
                 Interlocked.Increment(&requestCount) |> ignore
 
                 try
@@ -278,18 +262,17 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                      ||| TaskContinuationOptions.NotOnFaulted
                                      ||| TaskContinuationOptions.ExecuteSynchronously)
                                 )
-                            |> NodeCode.AwaitTask
+                            |> NodeCode.AwaitTaskWithoutWrapping
 
                         match cachedResult with
                         | ValueSome value -> return value
                         | _ ->
                             let tcs = TaskCompletionSource<'T>()
-                            let (Node(p)) = computation
 
                             Async.StartWithContinuations(
                                 async {
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! p
+                                    return! computation |> unwrapNode |> wrapThreadStaticInfo
                                 },
                                 (fun res ->
                                     cachedResult <- ValueSome res
@@ -301,7 +284,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                 ct
                             )
 
-                            return! tcs.Task |> NodeCode.AwaitTask
+                            return! tcs.Task |> NodeCode.AwaitTaskWithoutWrapping
                     finally
                         if taken then
                             semaphore.Release() |> ignore
