@@ -719,7 +719,7 @@ type internal BackgroundCompiler
                     tcInfo.tcState,
                     tcInfo.moduleNamesDict,
                     loadClosure,
-                    builder.InitialErrors,
+                    tcInfo.TcDiagnostics,
                     options.IsIncompleteTypeCheckEnvironment,
                     options,
                     Some builder,
