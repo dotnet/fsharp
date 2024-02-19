@@ -103,7 +103,7 @@ type NodeCodeBuilder() =
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member this.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
-        async.Using(resource, binder >> unwrapNode) |> Node
+        async.Using(resource, binder >> unwrapNode >> wrapThreadStaticInfo) |> Node
 
 let node = NodeCodeBuilder()
 
@@ -155,15 +155,9 @@ type NodeCode private () =
     static member CancellationToken = cancellationToken
 
     static member FromCancellable(computation: Cancellable<'T>) =
-        Node(computation |> Cancellable.toAsync |> wrapThreadStaticInfo)
+        Node(wrapThreadStaticInfo (Cancellable.toAsync computation))
 
-    static member AwaitAsync(computation: Async<'T>) =
-        async {
-            Trace.TraceWarning("NodeCode.AwaitAsync")
-            return! computation
-        }
-        |> wrapThreadStaticInfo
-        |> Node
+    static member AwaitAsync(computation: Async<'T>) = Node(wrapThreadStaticInfo computation)
 
     static member AwaitTask(task: Task<'T>) =
         Node(wrapThreadStaticInfo (Async.AwaitTask task))
@@ -179,19 +173,26 @@ type NodeCode private () =
 
     static member Sequential(computations: NodeCode<'T> seq) =
         node {
-            let results = ResizeArray()
+            use concurrentLogging = new CaptureDiagnosticsConcurrently()
 
-            for computation in computations do
-                let! res = computation
-                results.Add(res)
+            let sequential = node {
+                use _ = UseDiagnosticsLogger (concurrentLogging.GetLoggerForTask "NodeCode.Sequential")
 
-            return results.ToArray()
+                let results = ResizeArray()
+
+                for computation in computations do
+                    let! res = computation
+                    results.Add(res)
+
+                return results.ToArray()
+            }
+
+            return! sequential
         }
 
     static member Parallel(computations: NodeCode<'T> seq) =
         node {
             let phase = DiagnosticsThreadStatics.BuildPhase
-            //let ambientLogger = DiagnosticsThreadStatics.DiagnosticsLogger
             use concurrentLogging = new CaptureDiagnosticsConcurrently()
 
             let injectLogger i computation =

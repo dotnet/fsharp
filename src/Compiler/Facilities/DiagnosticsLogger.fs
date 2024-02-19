@@ -396,13 +396,12 @@ type internal DiagnosticsThreadStatics =
         let al = diagnosticsLoggerAsync.Value
         let ts = DiagnosticsThreadStatics.diagnosticsLogger
 
-        match box al, box ts with
+        match box al, ts with
         | Null, _ -> () // New context started.
-        | _, Null -> () // ??
-        | _ when al.DebugDisplay().Contains("NodeCode.Parallel") -> () // Threadstatic needs to catch up.
-        | a, t when not <| a.Equals(t) -> // Not good.
+        | _ when al <> ts && al.DebugDisplay().Contains("NodeCode") -> () // Threadstatic needs to catch up.
+        | _ when al <> ts  -> // Not good.
 #if DEBUG
-            if Debugger.IsAttached then Debugger.Break()
+            Debugger.Break()
 #else
             failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
 #endif
@@ -596,9 +595,9 @@ let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #Diagnost
 
     { new IDisposable with
         member _.Dispose() =
-            Trace.WriteLine $"releasing: {newLogger.DebugDisplay()}, restoring: {oldLogger.DebugDisplay()}"
-            Trace.IndentLevel <- Trace.IndentLevel - 1
             DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
+            Trace.WriteLine $"released: {newLogger.DebugDisplay()}, restored: {oldLogger.DebugDisplay()}"
+            Trace.IndentLevel <- Trace.IndentLevel - 1
     }
 
 let UseDiagnosticsLogger newLogger =
