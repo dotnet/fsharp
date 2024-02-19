@@ -5506,18 +5506,19 @@ type A(i:int) =
 """
     let fileSource1Edited = SourceText.ofString fileSource1TextEdited
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1TextEdited)
+    let snapshotAfterFileEdit = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
 
-    let rafterEditBefore2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot) |> Async.RunImmediate
+    let rafterEditBefore2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit) |> Async.RunImmediate
     match rafterEditBefore2ndCheckResults with
     | Some(fileResults, checkFileResults, hash) -> failwith "stale cache results from TryGetRecentCheckResultsForFile after edit"
     | None -> ()
     
-    checker.ParseAndCheckFileInProject(fileName1, snapshot)  |> Async.RunImmediate
+    checker.ParseAndCheckFileInProject(fileName1, snapshotAfterFileEdit)  |> Async.RunImmediate
     |> function
         | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
         | _ -> failwithf "Parsing aborted unexpectedly..."
         
-    let rafterEditAfter2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot) |> Async.RunImmediate
+    let rafterEditAfter2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit) |> Async.RunImmediate
     match rafterEditAfter2ndCheckResults with
     | Some(fileResults, checkFileResults, hash) ->
         Assert.AreEqual(fileSource1TextEdited.GetHashCode() |> int64, hash)
