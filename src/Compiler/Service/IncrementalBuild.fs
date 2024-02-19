@@ -145,11 +145,11 @@ module IncrementalBuildSyntaxTree =
                             Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
                         |]
 
-                let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
-                // Return the disposable object that cleans up
-                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
-
                 try
+                    let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
+                    // Return the disposable object that cleans up
+                    use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
+
                     use! text = source.GetTextContainer() |> NodeCode.AwaitAsync
                     let input =
                         match text with
@@ -395,7 +395,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async.AwaitNodeCodeNoInit |> Async.Catch |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
@@ -1346,8 +1346,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let slotOfFile = builder.GetSlotOfFileName fileName
         let syntaxTree = currentState.slots[slotOfFile].SyntaxTree
         syntaxTree.ParseNode.GetOrComputeValue()
-        |> Async.AwaitNodeCode
-        |> Async.RunSynchronously
+        |> Async.AwaitNodeCodeNoInit
+        |> Async.RunImmediate
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
         node {

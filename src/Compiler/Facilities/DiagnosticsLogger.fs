@@ -592,7 +592,7 @@ let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #Diagnost
     let newLogger = transformer oldLogger
     DiagnosticsThreadStatics.DiagnosticsLogger <- newLogger
     Trace.IndentLevel <- Trace.IndentLevel + 1
-    Trace.WriteLine $"using: {DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()}"
+    Trace.WriteLine $"using: {DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()}, old logger: {oldLogger.DebugDisplay()}"
 
     { new IDisposable with
         member _.Dispose() =
@@ -630,7 +630,7 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
 
 /// Raises an exception with error recovery and returns unit.
 let errorR exn =
-    Trace.WriteLine $"t:{Thread.CurrentThread.ManagedThreadId} pushing ERROR"
+    Trace.WriteLine $"t:{Thread.CurrentThread.ManagedThreadId} pushing ERROR to {DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()}"
     DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.
