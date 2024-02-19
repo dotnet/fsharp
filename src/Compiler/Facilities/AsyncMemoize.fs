@@ -356,7 +356,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
 
                                                 use _ = UseDiagnosticsLogger cachingLogger
-                                                let! result = computation |> Async.AwaitNodeCodeAsyncMemoize
+                                                let! result = computation |> Async.AwaitNodeCodeNoInit
                                                 post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
                                                 return ()
                                             with
@@ -499,7 +499,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 log (Started, key)
 
                                 use _ = UseDiagnosticsLogger cachingLogger
-                                let! result = computation |> Async.AwaitNodeCodeAsyncMemoize
+                                let! result = computation |> Async.AwaitNodeCodeNoInit
                                 post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
                                 return result
                             },

@@ -395,7 +395,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Catch |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> Async.AwaitNodeCodeNoInit |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics

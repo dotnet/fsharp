@@ -389,7 +389,7 @@ type internal DiagnosticsThreadStatics =
         new AsyncLocal<DiagnosticsLogger>(fun args ->
             if args.ThreadContextChanged then
                 Trace.WriteLine(
-                    $"t:{Thread.CurrentThread.ManagedThreadId} prev: {dlName args.PreviousValue}, current: {dlName args.CurrentValue}, THREAD CONTEXT CHANGED"
+                   "" //$"\nt:{Thread.CurrentThread.ManagedThreadId} ASYNCLOCAL context change\n\t\tprev: {dlName args.PreviousValue}\n\t\tcurrent: {dlName args.CurrentValue}\n"
                 ))
 
     static let check () =
@@ -442,7 +442,7 @@ type internal DiagnosticsThreadStatics =
     static member DiagnosticsLogger
         with get () =
 #if DEBUG
-            log "->"
+            //log "->"
 #endif
             check ()
             DiagnosticsThreadStatics.diagnosticsLogger
@@ -450,7 +450,7 @@ type internal DiagnosticsThreadStatics =
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
 #if DEBUG
-            log "<-"
+            //log "<-"
 #endif
 
     static member BuildPhaseNC
@@ -460,13 +460,13 @@ type internal DiagnosticsThreadStatics =
     static member DiagnosticsLoggerNC
         with get () =
 #if DEBUG
-            log "-> NC"
+            //log "-> NC"
 #endif
             DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             DiagnosticsThreadStatics.diagnosticsLogger <- v
 #if DEBUG
-            log "<- NC"
+            //log "<- NC"
 #endif
 
     static member InitGlobals() =
@@ -589,10 +589,15 @@ let UseBuildPhase (phase: BuildPhase) =
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
     let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
+    let newLogger = transformer oldLogger
+    DiagnosticsThreadStatics.DiagnosticsLogger <- newLogger
+    Trace.IndentLevel <- Trace.IndentLevel + 1
+    Trace.WriteLine $"using: {DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()}"
 
     { new IDisposable with
         member _.Dispose() =
+            Trace.WriteLine $"releasing: {newLogger.DebugDisplay()}, restoring: {oldLogger.DebugDisplay()}"
+            Trace.IndentLevel <- Trace.IndentLevel - 1
             DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
     }
 
@@ -625,6 +630,7 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
 
 /// Raises an exception with error recovery and returns unit.
 let errorR exn =
+    Trace.WriteLine $"t:{Thread.CurrentThread.ManagedThreadId} pushing ERROR"
     DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.

@@ -38,7 +38,7 @@ type Async<'T> with
                 return! computation
             }
 
-    static member AwaitNodeCodeAsyncMemoize(node: NodeCode<'T>) = unwrapNode node
+    static member AwaitNodeCodeNoInit(node: NodeCode<'T>) = unwrapNode node
 
 [<Sealed>]
 type NodeCodeBuilder() =
