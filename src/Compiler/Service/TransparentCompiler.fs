@@ -1442,10 +1442,21 @@ type internal TransparentCompiler
         let parseTree = EmptyParsedInput(fileName, (false, false))
         FSharpParseFileResults(diagnostics, parseTree, true, [||])
 
+    let keyForParseAndCheckFileInProject (fileName: string) (source: ISourceTextNew) (projectSnapshot: ProjectSnapshot) =
+        let fileKey = projectSnapshot.FileKey fileName
+        let sourceHash = source.GetHashCode() |> int64
+
+        { new ICacheKey<_, _> with
+            member _.GetLabel() = $"{fileName} ({projectSnapshot.Label})"
+
+            member _.GetKey() =
+                fileName, projectSnapshot.ProjectCore.Identifier
+
+            member _.GetVersion() = fileKey.GetVersion(), sourceHash
+        }
+
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: ProjectSnapshot) =
         node {
-            let fileKey = projectSnapshot.FileKey fileName
-
             let file =
                 projectSnapshot.SourceFiles |> List.tryFind (fun f -> f.FileName = fileName)
 
@@ -1453,17 +1464,7 @@ type internal TransparentCompiler
             | None -> return emptyParseResult fileName [||], FSharpCheckFileAnswer.Aborted
             | Some f ->
                 let! source = f.GetSource() |> NodeCode.AwaitTask
-
-                let cacheKey =
-                    { new ICacheKey<_, _> with
-                        member _.GetLabel() = $"{fileName} ({projectSnapshot.Label})"
-
-                        member _.GetKey() =
-                            fileName, projectSnapshot.ProjectCore.Identifier
-
-                        member _.GetVersion() =
-                            fileKey.GetVersion(), source.GetHashCode() |> int64
-                    }
+                let cacheKey = keyForParseAndCheckFileInProject fileName source projectSnapshot
 
                 return!
                     caches.ParseAndCheckFileInProject.Get(
@@ -1617,18 +1618,10 @@ type internal TransparentCompiler
         | Some f ->
             async {
                 let! source = f.GetSource() |> Async.AwaitTask
-                let fileKey = projectSnapshot.ProjectSnapshot.FileKey fileName
                 let sourceHash = source.GetHashCode() |> int64
 
                 let cacheKey =
-                    { new ICacheKey<_, _> with
-                        member _.GetLabel() = $"{fileName} ({projectSnapshot.Label})"
-
-                        member _.GetKey() =
-                            fileName, projectSnapshot.ProjectSnapshot.ProjectCore.Identifier
-
-                        member _.GetVersion() = fileKey.GetVersion(), sourceHash
-                    }
+                    keyForParseAndCheckFileInProject fileName source projectSnapshot.ProjectSnapshot
 
                 let parseFileResultsAndcheckFileAnswer =
                     caches.ParseAndCheckFileInProject.TryGet(cacheKey.GetKey(), (fun (_, hash) -> hash = sourceHash))
