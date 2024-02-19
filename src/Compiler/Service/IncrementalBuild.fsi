@@ -182,6 +182,8 @@ type internal IncrementalBuilder =
     /// overall analysis results for the project will be quick.
     member ProjectChecked: IEvent<unit>
 
+    member InitialErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+
 #if !NO_TYPEPROVIDERS
     /// Raised when the build is invalidated.
     member ImportsInvalidatedByTypeProvider: IEvent<unit>

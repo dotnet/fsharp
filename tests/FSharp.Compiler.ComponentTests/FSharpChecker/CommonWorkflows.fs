@@ -173,16 +173,24 @@ let ``We don't lose subsequent diagnostics when there's error in one file`` () =
     let project =
         { SyntheticProject.Create(
             { sourceFile "First" [] with
-                Source = "module AbstractBaseClass.File1 \n\n\n a" },
+                Source = """module AbstractBaseClass.File1 
+                
+                let foo x = ()
+                
+                a""" },
             { sourceFile "Second" [] with
                 Source = """module AbstractBaseClass.File2
 
-    type AbstractBaseClass() =
+                open AbstractBaseClass.File1
 
-        abstract P: int""" }) with
+                let goo = foo 1
+
+                type AbstractBaseClass() =
+
+                    abstract P: int""" }) with
             AutoAddModules = false
             SkipInitialCheck = true }
-
+                
     project.Workflow {
         checkFile "First" (expectErrorCodes ["FS0039"])
         checkFile "Second" (expectErrorCodes ["FS0054"; "FS0365"])

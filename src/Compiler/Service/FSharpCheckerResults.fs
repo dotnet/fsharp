@@ -2910,9 +2910,9 @@ module internal ParseAndCheckFile =
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
 
             // Play background errors and warnings for this file.
-            //do
-            //    for err, severity in backgroundDiagnostics do
-            //        diagnosticSink (err, severity)
+            do
+                for err, severity in backgroundDiagnostics do
+                    diagnosticSink (err, severity)
 
             // If additional references were brought in by the preprocessor then we need to process them
             ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)

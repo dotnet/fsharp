@@ -1182,6 +1182,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.ProjectChecked = projectChecked.Publish
 
+    member _.InitialErrors = initialState.initialErrors
+
 #if !NO_TYPEPROVIDERS
     member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
 #endif
