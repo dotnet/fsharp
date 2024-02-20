@@ -113,12 +113,12 @@ type internal CompilerCaches =
 
     member FrameworkImports: AsyncMemoize<string, FrameworkImportsCacheKey, (TcGlobals * TcImports)>
 
-    member ItemKeyStore: AsyncMemoize<(string * (string * string)), string, ItemKeyStore option>
+    member ItemKeyStore: AsyncMemoize<(string * (string * string)), string * string, ItemKeyStore option>
 
     member ParseAndCheckAllFilesInProject: AsyncMemoizeDisabled<obj, obj, obj>
 
     member ParseAndCheckFileInProject:
-        AsyncMemoize<(string * (string * string)), string, (FSharpParseFileResults * FSharpCheckFileAnswer)>
+        AsyncMemoize<(string * (string * string)), string * string, (FSharpParseFileResults * FSharpCheckFileAnswer)>
 
     member ParseAndCheckProject: AsyncMemoize<(string * string), string, FSharpCheckProjectResults>
 
@@ -127,13 +127,13 @@ type internal CompilerCaches =
 
     member ProjectExtras: AsyncMemoizeDisabled<obj, obj, obj>
 
-    member SemanticClassification: AsyncMemoize<(string * (string * string)), string, SemanticClassificationView option>
+    member SemanticClassification: AsyncMemoize<(string * (string * string)), string * string, SemanticClassificationView option>
 
     member SizeFactor: int
 
-    member TcIntermediate: AsyncMemoize<(string * (string * string)), (string * int), TcIntermediate>
+    member TcIntermediate: AsyncMemoize<(string * (string * string)), ((string * string) * int), TcIntermediate>
 
-    member ScriptClosure: AsyncMemoize<(string * (string * string)), string, LoadClosure>
+    member ScriptClosure: AsyncMemoize<(string * (string * string)), string * string, LoadClosure>
 
     member TcLastFile: AsyncMemoizeDisabled<obj, obj, obj>
 

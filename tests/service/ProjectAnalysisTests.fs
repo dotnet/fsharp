@@ -5496,7 +5496,7 @@ type A(i:int) =
     let rafterCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot) |> Async.RunImmediate
     match rafterCheckResults with
     | Some(fileResults, checkFileResults, hash) ->
-        Assert.AreEqual(fileSource1Text.GetHashCode() |> int64, hash)
+        Assert.AreEqual(fileSource1.GetHashCode() |> int64, hash)
     | None -> failwith "no results from TryGetRecentCheckResultsForFile"
    
     let fileSource1TextEdited = """
@@ -5521,7 +5521,7 @@ type A(i:int) =
     let rafterEditAfter2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit) |> Async.RunImmediate
     match rafterEditAfter2ndCheckResults with
     | Some(fileResults, checkFileResults, hash) ->
-        Assert.AreEqual(fileSource1TextEdited.GetHashCode() |> int64, hash)
+        Assert.AreEqual(fileSource1Edited.GetHashCode() |> int64, hash)
     | None -> failwith "no results from TryGetRecentCheckResultsForFile"
 
 [<TestCase(([||]: string[]), ([||]: bool[]))>]

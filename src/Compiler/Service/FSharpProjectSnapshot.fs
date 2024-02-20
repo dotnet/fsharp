@@ -235,7 +235,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
              { new ICacheKey<_, _> with
                  member _.GetLabel() = $"{f.FileName} ({projectCore.Label})"
                  member _.GetKey() = f.FileName, projectCore.Identifier
-                 member _.GetVersion() = hash |> Md5Hasher.toString
+                 member _.GetVersion() = hash |> Md5Hasher.toString, f.Version |> Md5Hasher.toString
              })
 
     let sourceFileNames = lazy (sourceFiles |> List.map (fun x -> x.FileName))

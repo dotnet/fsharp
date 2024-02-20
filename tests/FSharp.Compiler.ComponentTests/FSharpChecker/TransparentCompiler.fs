@@ -3,6 +3,7 @@
 open System.Collections.Concurrent
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open Internal.Utilities.Library.Extras
@@ -895,3 +896,98 @@ let ``LoadClosure for script is recomputed after changes`` () =
         |> Map
 
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    let getSource f = f |> getSourceText project :> ISourceText |> Some |> async.Return
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withProject( fun project checker ->
+                async {
+                    let projectOptions = project.GetProjectOptions(checker)
+                    let projectSnapshot = FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.Custom getSource) |> Async.RunSynchronously
+                    let r = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshot) |> Async.RunSynchronously
+                    Assert.True(Option.isNone r)
+                }
+            )
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [] )
+    
+    let getSource f = f |> getSourceText project :> ISourceText |> Some |> async.Return
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        
+        withProject( fun project checker ->
+                async {
+                    let projectOptions = project.GetProjectOptions(checker)
+                    let! projectSnapshot = FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.Custom getSource)
+                    do! checker.ParseAndCheckFileInProject (project.SourceFilePaths[0], projectSnapshot) |> Async.Ignore
+                    let! r = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshot)
+                    Assert.True(Option.isSome r)
+                }
+            )
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    let getSource f = f |> getSourceText project :> ISourceText |> Some |> async.Return
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        
+        withProject( fun project checker ->
+                async {
+                    let projectOptions = project.GetProjectOptions(checker)
+                    let! projectSnapshot = FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.Custom getSource)
+                    do! checker.ParseAndCheckFileInProject (project.SourceFilePaths[0], projectSnapshot) |> Async.Ignore
+                    let! rBeforeEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshot)
+                    Assert.True(Option.isSome rBeforeEdit)
+
+                    // update file
+                    let projectAfterEdit = ProjectOperations.updateFile "First" updateInternal project
+                    let projectOptionsAfterEdit = projectAfterEdit.GetProjectOptions(checker)
+                    let! projectSnapshotAfterEdit = FSharpProjectSnapshot.FromOptions(projectOptionsAfterEdit, DocumentSource.Custom getSource)
+                    let! rAfterEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshotAfterEdit)
+                    Assert.True(Option.isNone rAfterEdit)
+                }
+            )
+    } |> ignore
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" [])
+    
+    let getSource f = f |> getSourceText project :> ISourceText |> Some |> async.Return
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        
+        withProject( fun project checker ->
+                async {
+                    let projectOptions = project.GetProjectOptions(checker)
+                    let! projectSnapshot = FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.Custom getSource)
+                    do! checker.ParseAndCheckFileInProject (project.SourceFilePaths[0], projectSnapshot) |> Async.Ignore
+                    do! checker.ParseAndCheckFileInProject (project.SourceFilePaths[1], projectSnapshot) |> Async.Ignore
+                    let! rBeforeEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshot)
+                    Assert.True(Option.isSome rBeforeEdit)
+                    
+                    // update other file
+                    let projectAfterEdit = ProjectOperations.updateFile "Second" updateInternal project
+                    let! newFileSnapShot = getFileSnapshot projectAfterEdit projectOptions projectSnapshot.SourceFiles[1].FileName
+                    let projectSnapshotAfterEdit = projectSnapshot.Replace([newFileSnapShot])
+
+                    let! rAfterEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshotAfterEdit)
+                    Assert.True(Option.isSome rAfterEdit)
+                }
+            )
+    } |> ignore
