@@ -386,13 +386,31 @@ type internal TransparentCompiler
         (assumeDotNetFramework: bool option)
         (projectSnapshot: ProjectSnapshot)
         =
+        let useFsiAuxLib = defaultArg useFsiAuxLib true
+        let useSdkRefs = defaultArg useSdkRefs true
+        let assumeDotNetFramework = defaultArg assumeDotNetFramework false
+
+        let key =
+            { new ICacheKey<string * ProjectIdentifier, string> with
+                member _.GetKey() =
+                    $"ScriptClosure%s{fileName}%b{useFsiAuxLib}%b{useSdkRefs}%b{assumeDotNetFramework}", projectSnapshot.Identifier
+
+                member _.GetLabel() = $"ScriptClosure for %s{fileName}"
+
+                member _.GetVersion() =
+                    Md5Hasher.empty
+                    |> Md5Hasher.addStrings [| fileName; string (source.GetHashCode()) |]
+                    |> Md5Hasher.addBool useFsiAuxLib
+                    |> Md5Hasher.addBool useFsiAuxLib
+                    |> Md5Hasher.addBool useSdkRefs
+                    |> Md5Hasher.addBool assumeDotNetFramework
+                    |> Md5Hasher.toString
+            }
+
         caches.ScriptClosure.Get(
-            projectSnapshot.FileKey fileName,
+            key,
             node {
-                let useFsiAuxLib = defaultArg useFsiAuxLib true
-                let useSdkRefs = defaultArg useSdkRefs true
                 let reduceMemoryUsage = ReduceMemoryFlag.Yes
-                let assumeDotNetFramework = defaultArg assumeDotNetFramework false
 
                 let applyCompilerOptions tcConfig =
                     let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
