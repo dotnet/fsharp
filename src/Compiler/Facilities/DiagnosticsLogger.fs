@@ -464,13 +464,18 @@ type internal DiagnosticsThreadStatics =
 
     static member DiagnosticsLoggerNC
         with get () =
-            // log "NC ->"
+            #if DEBUG
+            log "NC ->"
+            #endif
             match box DiagnosticsThreadStatics.diagnosticsLogger with
             | Null -> AssertFalseDiagnosticsLogger
             | _ -> DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-            // log "NC <-"
+            #if DEBUG
+            log "NC <-"
+            #endif
+
 
     static member InitGlobals() =
         Trace.WriteLine($"t:{Thread.CurrentThread.ManagedThreadId} INIT GLOBAL DIAGNOSTICS")
@@ -602,7 +607,7 @@ let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #Diagnost
     { new IDisposable with
         member _.Dispose() =
             DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
-            Trace.WriteLine $"released: {newLogger.DebugDisplay()}, restored: {oldLogger.DebugDisplay()}"
+            Trace.WriteLine $"t:{tid()} disp: {newLogger.DebugDisplay()}, restored: {oldLogger.DebugDisplay()}"
             Trace.IndentLevel <- Trace.IndentLevel - 1
     }
 

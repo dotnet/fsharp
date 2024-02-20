@@ -151,7 +151,7 @@ module IncrementalBuildSyntaxTree =
                     use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
                     use! text = source.GetTextContainer() |> NodeCode.AwaitAsync
                     let input =
-                        match text :?> TextContainer with
+                        match text with
                         | TextContainer.Stream(stream) ->
                             ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
                         | TextContainer.SourceText(sourceText) ->
