@@ -323,6 +323,22 @@ type PhasedDiagnostic =
         | BuildPhase.TypeCheck -> true
         | _ -> false
 
+module TrackThreadStaticsUse =
+    // After a thread shitch threadstatics are no longer valid, when not under NodeCode protecion.
+    let switchedThreadWhileInFalldownFromNodeCodeToAsync = AsyncLocal<bool>()
+
+    // If true, it indicates NodeCode called back into pure async e.g. through NodeCode.AwaitAsync.
+    let fellDownToAsync =
+        AsyncLocal<bool>(fun args ->
+            // identify if actual thread switch happened inside NodeCode.AwaitAsync et. al.
+            if args.ThreadContextChanged && args.CurrentValue then
+                switchedThreadWhileInFalldownFromNodeCodeToAsync.Value <- true)
+
+    let checkForAsyncFalldown prefix =
+        // Accessing threadstatics from a wrong thread w.r.t the current computation.
+        if switchedThreadWhileInFalldownFromNodeCodeToAsync.Value then
+            failwith $"{prefix}: Attempt to access wrong thread's diagnosticsLogger from NodeCode.AsyncAwait after thread switch."
+
 [<AbstractClass>]
 [<DebuggerDisplay("{DebugDisplay()}")>]
 type DiagnosticsLogger(nameForDebugging: string) =
@@ -375,13 +391,30 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
+[<AutoOpen>]
+module Tracing =
+    let dlName (dl: DiagnosticsLogger) =
+        if box dl |> isNull then "NULL" else dl.DebugDisplay()
+
+    let tid () = Thread.CurrentThread.ManagedThreadId
+
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
+
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private diagnosticsLogger: DiagnosticsLogger
+
+    static member FellDownToAsync
+        with get () = TrackThreadStaticsUse.fellDownToAsync.Value
+        and set v =
+            if not v then
+                // We can reset this, too.
+                TrackThreadStaticsUse.switchedThreadWhileInFalldownFromNodeCodeToAsync.Value <- false
+
+            TrackThreadStaticsUse.fellDownToAsync.Value <- v
 
     static member BuildPhaseUnchecked = DiagnosticsThreadStatics.buildPhase
 
@@ -397,11 +430,14 @@ type internal DiagnosticsThreadStatics =
             match box DiagnosticsThreadStatics.diagnosticsLogger with
             | Null -> AssertFalseDiagnosticsLogger
             | _ -> DiagnosticsThreadStatics.diagnosticsLogger
-        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
+
+        and set v =
+            if DiagnosticsThreadStatics.diagnosticsLogger <> v then
+                TrackThreadStaticsUse.checkForAsyncFalldown "DiagnosticsLogger_set"
+            DiagnosticsThreadStatics.diagnosticsLogger <- v
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
-
     // Dev15.0 shipped with a bug in diasymreader in the portable pdb symbol reader which causes an AV
     // This uses a simple heuristic to detect it (the vsversion is < 16.0)
     let tryAndDetectDev15 =
@@ -428,6 +464,10 @@ module DiagnosticsLoggerExtensions =
     type DiagnosticsLogger with
 
         member x.EmitDiagnostic(exn, severity) =
+
+            // This is not foolproof, as there could always be direct access to DiagnosticsLogger's DiagnosticSink somewhere.
+            TrackThreadStaticsUse.checkForAsyncFalldown "DiagnosticsLogger.EmitDiagnostic"
+
             match exn with
             | InternalError(s, _)
             | InternalException(_, s, _)
@@ -499,6 +539,7 @@ module DiagnosticsLoggerExtensions =
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseBuildPhase (phase: BuildPhase) =
+
     let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
     DiagnosticsThreadStatics.BuildPhase <- phase
 
@@ -510,11 +551,23 @@ let UseBuildPhase (phase: BuildPhase) =
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
     let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
+    let newLogger = transformer oldLogger
+    DiagnosticsThreadStatics.DiagnosticsLogger <- newLogger
+    Trace.IndentLevel <- Trace.IndentLevel + 1
+    Trace.WriteLine $"t:{tid ()} use : {dlName DiagnosticsThreadStatics.DiagnosticsLogger}"
 
     { new IDisposable with
         member _.Dispose() =
+            //// Check if the logger we "put on the stack" is still there.
+            //let current = DiagnosticsThreadStatics.DiagnosticsLogger
+
+            //if not <| current.Equals(newLogger) then
+            //    failwith
+            //        $"Out of order DiagnosticsLogger stack unwind. Expected {newLogger.DebugDisplay()} but found {current.DebugDisplay()} while restoring {oldLogger.DebugDisplay()}."
+
             DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
+            Trace.WriteLine $"t:{tid ()} disp: {newLogger.DebugDisplay()}, restored: {oldLogger.DebugDisplay()}"
+            Trace.IndentLevel <- Trace.IndentLevel - 1
     }
 
 let UseDiagnosticsLogger newLogger =
@@ -546,6 +599,7 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
 
 /// Raises an exception with error recovery and returns unit.
 let errorR exn =
+    Trace.WriteLine $"t:{Thread.CurrentThread.ManagedThreadId} pushing ERROR to {DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()}"
     DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.

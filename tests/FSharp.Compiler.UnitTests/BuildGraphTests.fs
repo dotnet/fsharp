@@ -238,6 +238,24 @@ module BuildGraphTests =
     type ExampleException(msg) = inherit System.Exception(msg)
 
     [<Fact>]
+    let internal ``Just SwitchToNewThread wrapped in AwaitAsync will not trigger fail`` () =
+        node {
+            do! Async.SwitchToNewThread() |> NodeCode.AwaitAsync
+        } |> NodeCode.StartAsTask_ForTesting
+
+    [<Fact>]
+    let internal ``Thread switch in AwaitAsync will get detected`` () =
+        Assert.ThrowsAsync<System.Exception>(fun () ->
+            node {
+                use _ = UseDiagnosticsLogger (CapturingDiagnosticsLogger "Test NodeCode.AwaitAsync")
+                do! 
+                    async {
+                        do! Async.SwitchToNewThread()
+                        errorR (ExampleException "on th wrong thread")             
+                    } |> NodeCode.AwaitAsync
+            } |> NodeCode.StartAsTask_ForTesting :> Tasks.Task)
+
+    [<Fact>]
     let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
         let random =
             let rng = Random()

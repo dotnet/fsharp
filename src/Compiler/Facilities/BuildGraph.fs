@@ -25,13 +25,32 @@ let wrapThreadStaticInfo computation =
             DiagnosticsThreadStatics.BuildPhase <- phase
     }
 
+let wrapFallDown computation =
+    async {
+        DiagnosticsThreadStatics.FellDownToAsync <- true
+
+        try
+            return! computation
+        finally
+            DiagnosticsThreadStatics.FellDownToAsync <- false
+    }
+
 let unwrapNode (Node(computation)) = computation
 
 type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node(computation) -> wrapThreadStaticInfo computation
+        | Node(computation) ->
+            async {
+                let previous = DiagnosticsThreadStatics.FellDownToAsync
+                DiagnosticsThreadStatics.FellDownToAsync <- false
+
+                try
+                    return! wrapThreadStaticInfo computation
+                finally
+                    DiagnosticsThreadStatics.FellDownToAsync <- previous
+            }
 
 [<Sealed>]
 type NodeCodeBuilder() =
@@ -167,18 +186,19 @@ type NodeCode private () =
     static member CancellationToken = cancellationToken
 
     static member FromCancellable(computation: Cancellable<'T>) =
-        Node(wrapThreadStaticInfo (Cancellable.toAsync computation))
+        Node(Cancellable.toAsync computation |> wrapFallDown |> wrapThreadStaticInfo)
 
-    static member AwaitAsync(computation: Async<'T>) = Node(wrapThreadStaticInfo computation)
+    static member AwaitAsync(computation: Async<'T>) =
+        Node(computation |> wrapFallDown |> wrapThreadStaticInfo)
 
     static member AwaitTask(task: Task<'T>) =
-        Node(wrapThreadStaticInfo (Async.AwaitTask task))
+        Node(Async.AwaitTask task |> wrapFallDown |> wrapThreadStaticInfo )
 
     static member AwaitTask(task: Task) =
-        Node(wrapThreadStaticInfo (Async.AwaitTask task))
+        Node(Async.AwaitTask task |> wrapFallDown |> wrapThreadStaticInfo)
 
     static member AwaitWaitHandle_ForTesting(waitHandle: WaitHandle) =
-        Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
+        Node(Async.AwaitWaitHandle(waitHandle) |> wrapFallDown |> wrapThreadStaticInfo)
 
     static member Sleep(ms: int) =
         Node(wrapThreadStaticInfo (Async.Sleep(ms)))

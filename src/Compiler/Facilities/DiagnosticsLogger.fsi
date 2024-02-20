@@ -230,6 +230,8 @@ type CapturingDiagnosticsLogger =
 [<Class>]
 type DiagnosticsThreadStatics =
 
+    static member FellDownToAsync: bool with get, set
+
     static member BuildPhase: BuildPhase with get, set
 
     static member BuildPhaseUnchecked: BuildPhase
