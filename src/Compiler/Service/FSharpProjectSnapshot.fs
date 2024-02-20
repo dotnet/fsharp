@@ -235,7 +235,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
              { new ICacheKey<_, _> with
                  member _.GetLabel() = $"{f.FileName} ({projectCore.Label})"
                  member _.GetKey() = f.FileName, projectCore.Identifier
-                 member _.GetVersion() = hash |> Md5Hasher.toString, f.Version |> Md5Hasher.toString
+                 member _.GetVersion() = hash |> Md5Hasher.toString
              })
 
     let sourceFileNames = lazy (sourceFiles |> List.map (fun x -> x.FileName))
@@ -344,6 +344,19 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
     //TODO: cache it here?
     member this.FileKey(fileName: string) = this.UpTo(fileName).LastFileKey
     member this.FileKey(index: FileIndex) = this.UpTo(index).LastFileKey
+
+    member this.FileKeyWithExtraFileSnapshotVersion(fileName: string) =
+        let fileKey = this.FileKey fileName
+        let fileSnapshot = this.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
+
+        { new ICacheKey<_, _> with
+            member _.GetLabel() = $"{fileName} ({this.Label})"
+
+            member _.GetKey() = fileName, this.ProjectCore.Identifier
+
+            member _.GetVersion() =
+                fileKey.GetVersion(), fileSnapshot.Version |> Md5Hasher.toString
+        }
 
 /// Project snapshot with filenames and versions given as initial input
 and internal ProjectSnapshot = ProjectSnapshotBase<FSharpFileSnapshot>

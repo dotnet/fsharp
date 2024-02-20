@@ -1442,25 +1442,9 @@ type internal TransparentCompiler
         let parseTree = EmptyParsedInput(fileName, (false, false))
         FSharpParseFileResults(diagnostics, parseTree, true, [||])
 
-    
-    // let keyForParseAndCheckFileInProject (fileName: string) (projectSnapshot: ProjectSnapshot) =
-    //     let fileKey = projectSnapshot.FileKey fileName
-    //     let fileSnapshot = projectSnapshot.SourceFiles |> Seq.find(fun f -> f.FileName = fileName)
-    //
-    //     { new ICacheKey<_, _> with
-    //         member _.GetLabel() = $"{fileName} ({projectSnapshot.Label})"
-    //
-    //         member _.GetKey() =
-    //             fileName, projectSnapshot.ProjectCore.Identifier
-    //
-    //         member _.GetVersion() = fileKey.GetVersion(), fileSnapshot.Version 
-    //     }
-        
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: ProjectSnapshot) =
-        let key = projectSnapshot.FileKey fileName // keyForParseAndCheckFileInProject fileName projectSnapshot
-        
         caches.ParseAndCheckFileInProject.Get(
-            key,
+            projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
             node {
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
@@ -1608,14 +1592,13 @@ type internal TransparentCompiler
                 let! source = f.GetSource() |> Async.AwaitTask
                 let sourceHash = source.GetHashCode() |> int64
 
-                let cacheKey = projectSnapshot.ProjectSnapshot.FileKey fileName // keyForParseAndCheckFileInProject fileName projectSnapshot.ProjectSnapshot
+                let cacheKey =
+                    projectSnapshot.ProjectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName
+
                 let version = cacheKey.GetVersion()
 
                 let parseFileResultsAndcheckFileAnswer =
-                    caches.ParseAndCheckFileInProject.TryGet(
-                        cacheKey.GetKey(),
-                        (fun cachedVersion -> cachedVersion = version)
-                    )
+                    caches.ParseAndCheckFileInProject.TryGet(cacheKey.GetKey(), (fun cachedVersion -> cachedVersion = version))
 
                 match parseFileResultsAndcheckFileAnswer with
                 | Some(parseFileResults, FSharpCheckFileAnswer.Succeeded checkFileResults) ->
