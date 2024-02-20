@@ -317,10 +317,13 @@ let parseFormatStringInternal
             |> Seq.takeWhile (fun c -> c = '%')
             |> Seq.length
         if delimLen <= 1 && fmt[i..(i+1)] = "%%" then
-            specifierLocations.Add(
-                (Range.mkFileIndexRange m.FileIndex
-                    (Position.mkPos fragLine fragCol)
-                    (Position.mkPos fragLine (fragCol+2))), 0)
+            match context with
+            | Some _ ->
+                specifierLocations.Add(
+                    (Range.mkFileIndexRange m.FileIndex
+                        (Position.mkPos fragLine fragCol)
+                        (Position.mkPos fragLine (fragCol+2))), 0)
+            | None -> ()
             appendToDotnetFormatString "%"
             parseLoop acc (i+2, fragLine, fragCol+2) fragments
         elif delimLen > 1 && nPercentSigns < delimLen then

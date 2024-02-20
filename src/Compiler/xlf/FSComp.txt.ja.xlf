@@ -373,8 +373,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
-        <source>Optimizes interpolated strings in certains cases, by lowering to concatenation</source>
-        <target state="new">Optimizes interpolated strings in certains cases, by lowering to concatenation</target>
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
