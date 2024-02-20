@@ -2131,9 +2131,13 @@ type internal TransparentCompiler
                     [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
 
             async {
+                // Use the same default as the background compiler.
+                let useFsiAuxLib = defaultArg useFsiAuxLib true
+                let useSdkRefs = defaultArg useSdkRefs true
                 let previewEnabled = defaultArg previewEnabled false
-                let! ct = Async.CancellationToken
-                use _ = Cancellable.UsingToken(ct)
+
+                // Do we assume .NET Framework references for scripts?
+                let assumeDotNetFramework = defaultArg assumeDotNetFramework true
 
                 let extraFlags =
                     if previewEnabled then
@@ -2176,10 +2180,10 @@ type internal TransparentCompiler
                         sourceText
                         FSharpCheckerResultsSettings.defaultFSharpBinariesDir
                         useSimpleResolution
-                        useFsiAuxLib
-                        useSdkRefs
+                        (Some useFsiAuxLib)
+                        (Some useSdkRefs)
                         sdkDirOverride
-                        assumeDotNetFramework
+                        (Some assumeDotNetFramework)
                         loadCloseSnapshot.ProjectSnapshot
                     |> Async.AwaitNodeCode
 
