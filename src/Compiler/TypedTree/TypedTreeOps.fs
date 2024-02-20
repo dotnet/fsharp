@@ -10390,7 +10390,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         else
             mkAsmExpr ([AI_clt_un], [], [e1; e2], [g.bool_ty], m)
 
-    let mkWiden e =
+    let mkConvToUnsigned e =
         let ty = stripMeasuresFromTy g (tyOfExpr g e)
 
         if typeEquiv g ty g.int64_ty then
@@ -10404,11 +10404,11 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         else
             e
 
-    /// Widened diff as unsigned: unsigned (e1 - e2).
+    /// Unsigned diff: unsigned (e1 - e2).
     /// Expects that |e1| ≥ |e2|.
     let mkDiff e1 e2 =
-        let e1 = mkWiden e1
-        let e2 = mkWiden e2
+        let e1 = mkConvToUnsigned e1
+        let e2 = mkConvToUnsigned e2
         mkAsmExpr ([AI_sub], [], [e1; e2], [tyOfExpr g e1], m)
 
     /// diff / step
