@@ -384,11 +384,10 @@ type internal TransparentCompiler
         (useSdkRefs: bool option)
         (sdkDirOverride: string option)
         (assumeDotNetFramework: bool option)
-        (fileKey: ICacheKey<string * ProjectIdentifier, string>)
-        (otherOptions: string list)
+        (projectSnapshot: ProjectSnapshot)
         =
         caches.ScriptClosure.Get(
-            fileKey,
+            projectSnapshot.FileKey fileName,
             node {
                 let useFsiAuxLib = defaultArg useFsiAuxLib true
                 let useSdkRefs = defaultArg useSdkRefs true
@@ -397,7 +396,7 @@ type internal TransparentCompiler
 
                 let applyCompilerOptions tcConfig =
                     let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
-                    ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
+                    ParseCompilerOptions(ignore, fsiCompilerOptions, projectSnapshot.OtherOptions)
 
                 let closure =
                     LoadClosure.ComputeClosureOfScriptText(
@@ -666,8 +665,7 @@ type internal TransparentCompiler
                                 None
                                 None
                                 None
-                                (projectSnapshot.FileKey fsxFile.FileName)
-                                projectSnapshot.OtherOptions
+                                projectSnapshot
 
                         return (Some closure)
                     }
@@ -1523,8 +1521,7 @@ type internal TransparentCompiler
                             (Some tcConfig.useSdkRefs)
                             tcConfig.sdkDirOverride
                             (Some tcConfig.assumeDotNetFramework)
-                            (projectSnapshot.FileKey fileName)
-                            projectSnapshot.OtherOptions
+                            projectSnapshot
 
                     let typedResults =
                         FSharpCheckFileResults.Make(
@@ -2133,9 +2130,9 @@ type internal TransparentCompiler
                     "BackgroundCompiler.GetProjectOptionsFromScript"
                     [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
 
-            cancellable {
+            async {
                 let previewEnabled = defaultArg previewEnabled false
-                let! ct = Cancellable.token ()
+                let! ct = Async.CancellationToken
                 use _ = Cancellable.UsingToken(ct)
 
                 let extraFlags =
@@ -2154,29 +2151,26 @@ type internal TransparentCompiler
                 let projectFileName = fileName + ".fsproj"
 
                 let currentSourceFile =
-                    FSharpFileSnapshot.Create(
-                        fileName,
-                        sourceText.GetHashCode().ToString(),
-                        fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
+                    FSharpFileSnapshot.Create(fileName, sourceText.GetHashCode().ToString(), (fun () -> Task.FromResult sourceText))
+
+                // We create a intermediate snapshot with the first file only to reuse the cache key logic.
+                let loadCloseSnapshot =
+                    FSharpProjectSnapshot.Create(
+                        projectFileName,
+                        None,
+                        [ currentSourceFile ],
+                        List.empty,
+                        List.ofArray otherFlags,
+                        List.empty,
+                        false,
+                        true,
+                        loadedTimeStamp,
+                        None,
+                        List.empty,
+                        optionsStamp
                     )
 
-                let cacheKey: ICacheKey<string * ProjectIdentifier, string> =
-                    let hash =
-                        Md5Hasher.empty
-                        |> Md5Hasher.addString fileName
-                        |> Md5Hasher.addString (string sourceText)
-
-                    { new ICacheKey<string * ProjectIdentifier, string> with
-                        member _.GetLabel() =
-                            $"{fileName} ({shortPath projectFileName})"
-
-                        member _.GetKey() = fileName, (projectFileName, "")
-                        member _.GetVersion() = hash |> Md5Hasher.toString
-                    }
-
-                // TODO: this is most likely wrong from the Cancellable/NodeCode/Async side of things
-                // the NodeCode needs to be a Cancellable thing...
-                let loadClosure =
+                let! loadClosure =
                     ComputeScriptClosure
                         fileName
                         sourceText
@@ -2186,9 +2180,8 @@ type internal TransparentCompiler
                         useSdkRefs
                         sdkDirOverride
                         assumeDotNetFramework
-                        cacheKey
-                        (Array.toList otherFlags)
-                    |> fun n -> NodeCode.RunImmediate(n, ct)
+                        loadCloseSnapshot.ProjectSnapshot
+                    |> Async.AwaitNodeCode
 
                 let otherFlags =
                     [
@@ -2250,7 +2243,6 @@ type internal TransparentCompiler
 
                 return snapshot, (diags @ diagnostics.Diagnostics)
             }
-            |> Cancellable.toAsync
 
         member this.GetSemanticClassificationForFile(fileName: string, snapshot: FSharpProjectSnapshot, userOpName: string) =
             node {
