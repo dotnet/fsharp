@@ -30,15 +30,7 @@ let unwrapNode (Node(computation)) = computation
 
 type Async<'T> with
 
-    static member AwaitNodeCode(node: NodeCode<'T>) =
-        match node with
-        | Node(computation) ->
-            async {
-                DiagnosticsThreadStatics.InitGlobals()
-                return! computation
-            }
-
-    static member AwaitNodeCodeNoInit(node: NodeCode<'T>) = unwrapNode node
+    static member AwaitNodeCode(node: NodeCode<'T>) = unwrapNode node 
 
 [<Sealed>]
 type NodeCodeBuilder() =
@@ -102,8 +94,27 @@ type NodeCodeBuilder() =
     member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Using(resource: ('T :> IDisposable), binder: ('T :> IDisposable) -> NodeCode<'U>) =
-        async.Using(resource, binder >> unwrapNode >> wrapThreadStaticInfo) |> Node
+    member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
+        Node(
+            async {
+                DiagnosticsThreadStatics.DiagnosticsLogger <- value.DiagnosticsLogger
+                DiagnosticsThreadStatics.BuildPhase <- value.BuildPhase
+
+                try
+                    return! binder value |> Async.AwaitNodeCode
+                finally
+                    (value :> IDisposable).Dispose()
+            }
+        )
+
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.Using(value: IDisposable, binder: IDisposable -> NodeCode<'U>) =
+        Node(
+            async {
+                use _ = value
+                return! binder value |> Async.AwaitNodeCode
+            }
+        )
 
 let node = NodeCodeBuilder()
 
@@ -173,27 +184,20 @@ type NodeCode private () =
 
     static member Sequential(computations: NodeCode<'T> seq) =
         node {
-            use concurrentLogging = new CaptureDiagnosticsConcurrently()
+            let results = ResizeArray()
 
-            let sequential = node {
-                use _ = UseDiagnosticsLogger (concurrentLogging.GetLoggerForTask "NodeCode.Sequential")
+            for computation in computations do
+                let! res = computation
+                results.Add(res)
 
-                let results = ResizeArray()
-
-                for computation in computations do
-                    let! res = computation
-                    results.Add(res)
-
-                return results.ToArray()
-            }
-
-            return! sequential
+            return results.ToArray()
         }
 
     static member Parallel(computations: NodeCode<'T> seq) =
         node {
             let phase = DiagnosticsThreadStatics.BuildPhase
-            use concurrentLogging = new CaptureDiagnosticsConcurrently()
+            let concurrentLogging = new CaptureDiagnosticsConcurrently()
+            use _ = concurrentLogging
 
             let injectLogger i computation =
                 let logger = concurrentLogging.GetLoggerForTask($"NodeCode.Parallel {i}")

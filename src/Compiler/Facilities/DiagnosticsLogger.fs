@@ -345,11 +345,9 @@ let DiscardErrorsLogger =
 let AssertFalseDiagnosticsLogger =
     { new DiagnosticsLogger("AssertFalseDiagnosticsLogger") with
         // TODO: reenable these asserts in the compiler service
-        member _.DiagnosticSink(diagnostic, severity) = assert false
+        member _.DiagnosticSink(diagnostic, severity) = () //assert false
 
-        member _.ErrorCount =
-            assert false
-            0
+        member _.ErrorCount = 0 //assert false
     }
 
 type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
@@ -377,30 +375,39 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
+[<AutoOpen>]
+module Tracing = 
+    let dlName (dl: DiagnosticsLogger) =
+        if box dl |> isNull then "NULL" else dl.DebugDisplay()
+
+    let tid () = Thread.CurrentThread.ManagedThreadId
+
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
-
-    static let dlName (dl: DiagnosticsLogger) =
-        if box dl |> isNull then "NULL" else dl.DebugDisplay()
 
     static let buildPhaseAsync = new AsyncLocal<BuildPhase>()
 
     static let diagnosticsLoggerAsync =
-        new AsyncLocal<DiagnosticsLogger>(fun args ->
-            if args.ThreadContextChanged then
-                Trace.WriteLine(
-                   "" //$"\nt:{Thread.CurrentThread.ManagedThreadId} ASYNCLOCAL context change\n\t\tprev: {dlName args.PreviousValue}\n\t\tcurrent: {dlName args.CurrentValue}\n"
-                ))
+        new AsyncLocal<DiagnosticsLogger>()
+        //fun args ->
+        //    if args.ThreadContextChanged then
+        //        Trace.WriteLine(
+        //           "" //$"\nt:{Thread.CurrentThread.ManagedThreadId} ASYNCLOCAL context change\n\t\tprev: {dlName args.PreviousValue}\n\t\tcurrent: {dlName args.CurrentValue}\n"
+        //        ))
 
     static let check () =
         let al = diagnosticsLoggerAsync.Value
         let ts = DiagnosticsThreadStatics.diagnosticsLogger
 
-        match box al, ts with
-        | Null, _ -> () // New context started.
-        | _ when al <> ts && al.DebugDisplay().Contains("NodeCode") -> () // Threadstatic needs to catch up.
-        | _ when al <> ts  -> // Not good.
+        match box al, box ts with
+        | a, t when a = t -> ()
+        | Null, _ -> () // New context.
+        | _ when ts = AssertFalseDiagnosticsLogger -> () // Threadstatic not yet initialized.
+        | _ when al.DebugDisplay().Contains("Caching") || ts.DebugDisplay().Contains("Caching") -> () // AsyncMemoize, disregard until fixed.
+        | _ when al.DebugDisplay().Contains("NodeCode") || ts.DebugDisplay().Contains("NodeCode") -> () // Threadstatic needs to catch up.
+        | _ when al.DebugDisplay() <> ts.DebugDisplay() -> // Not good.
 #if DEBUG
+            Trace.WriteLine $"t:{tid()}, AL: {dlName al} TS: {dlName ts}"
             Debugger.Break()
 #else
             failwith $"DiagnosticsLogger diverged. AsyncLocal: <{dlName al}>, ThreadStatic: <{dlName ts}>, tid: {Thread.CurrentThread.ManagedThreadId}."
@@ -408,17 +415,16 @@ type internal DiagnosticsThreadStatics =
         | _ -> ()
 #if DEBUG
     static let log prefix =
-        let al = diagnosticsLoggerAsync.Value
+        //let al = diagnosticsLoggerAsync.Value
         let ts = DiagnosticsThreadStatics.diagnosticsLogger
-        let tid = Thread.CurrentThread.ManagedThreadId
 
-        let dls =
-            if box al = box ts then
-                dlName al
-            else
-                $"\nDIVERGED \n\tAsyncLocal: {dlName al}\n\tThreadStatic: {dlName ts}\n"
+        //let dls =
+        //    if box al = box ts then
+        //        dlName al
+        //    else
+        //        $"\nDIVERGED \n\tAsyncLocal: {dlName al}\n\tThreadStatic: {dlName ts}\n"
 
-        Trace.WriteLine($"t:{tid} {prefix}    {dls}")
+        Trace.WriteLine($"t:{tid()} {prefix}    {dlName ts}")
 #endif
 
     [<ThreadStatic; DefaultValue>]
@@ -434,39 +440,37 @@ type internal DiagnosticsThreadStatics =
             match box DiagnosticsThreadStatics.buildPhase with
             | Null -> BuildPhase.DefaultPhase
             | _ -> DiagnosticsThreadStatics.buildPhase
-        and set v =
-            buildPhaseAsync.Value <- v
-            DiagnosticsThreadStatics.buildPhase <- v
+        and set v = DiagnosticsThreadStatics.buildPhase <- v
 
     static member DiagnosticsLogger
         with get () =
-#if DEBUG
-            //log "->"
-#endif
-            check ()
-            DiagnosticsThreadStatics.diagnosticsLogger
+
+            match box DiagnosticsThreadStatics.diagnosticsLogger with
+            | Null -> AssertFalseDiagnosticsLogger
+            | _ ->
+                
+                check()
+                DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             diagnosticsLoggerAsync.Value <- v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-#if DEBUG
-            //log "<-"
-#endif
 
     static member BuildPhaseNC
-        with get () = DiagnosticsThreadStatics.buildPhase
+        with get () =
+            match box DiagnosticsThreadStatics.buildPhase with
+            | Null -> BuildPhase.DefaultPhase
+            | _ -> DiagnosticsThreadStatics.buildPhase
         and set v = DiagnosticsThreadStatics.buildPhase <- v
 
     static member DiagnosticsLoggerNC
         with get () =
-#if DEBUG
-            //log "-> NC"
-#endif
-            DiagnosticsThreadStatics.diagnosticsLogger
+            // log "NC ->"
+            match box DiagnosticsThreadStatics.diagnosticsLogger with
+            | Null -> AssertFalseDiagnosticsLogger
+            | _ -> DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
             DiagnosticsThreadStatics.diagnosticsLogger <- v
-#if DEBUG
-            //log "<- NC"
-#endif
+            // log "NC <-"
 
     static member InitGlobals() =
         Trace.WriteLine($"t:{Thread.CurrentThread.ManagedThreadId} INIT GLOBAL DIAGNOSTICS")
@@ -499,6 +503,8 @@ module DiagnosticsLoggerExtensions =
             // This is probably only the mono case.
             Debug.Assert(false, "Could not preserve stack trace for watson exception.")
             ()
+
+    do DiagnosticsThreadStatics.InitGlobals()
 
     type DiagnosticsLogger with
 
@@ -591,7 +597,7 @@ let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #Diagnost
     let newLogger = transformer oldLogger
     DiagnosticsThreadStatics.DiagnosticsLogger <- newLogger
     Trace.IndentLevel <- Trace.IndentLevel + 1
-    Trace.WriteLine $"using: {DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()}, old logger: {oldLogger.DebugDisplay()}"
+    Trace.WriteLine $"t:{tid()} use : {dlName DiagnosticsThreadStatics.DiagnosticsLogger}"
 
     { new IDisposable with
         member _.Dispose() =

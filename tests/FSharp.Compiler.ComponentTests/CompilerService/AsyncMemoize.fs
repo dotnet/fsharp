@@ -506,8 +506,6 @@ let ``Preserve thread static diagnostics`` () =
 [<Fact>]
 let ``Preserve thread static diagnostics already completed job`` () =
 
-    DiagnosticsThreadStatics.InitGlobals()
-
     let cache = AsyncMemoize()
 
     let key = { new ICacheKey<_, _> with
@@ -540,8 +538,6 @@ let ``Preserve thread static diagnostics already completed job`` () =
 
 [<Fact>]
 let ``We get diagnostics from the job that failed`` () =
-
-    DiagnosticsThreadStatics.InitGlobals()
 
     let cache = AsyncMemoize()
 

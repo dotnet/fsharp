@@ -148,11 +148,10 @@ module IncrementalBuildSyntaxTree =
                 try
                     let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
                     // Return the disposable object that cleans up
-                    use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
-
+                    use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
                     use! text = source.GetTextContainer() |> NodeCode.AwaitAsync
                     let input =
-                        match text with
+                        match text :?> TextContainer with
                         | TextContainer.Stream(stream) ->
                             ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
                         | TextContainer.SourceText(sourceText) ->
@@ -166,7 +165,8 @@ module IncrementalBuildSyntaxTree =
                 with exn ->
                     let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
                     System.Diagnostics.Debug.Assert(false, msg)
-                    return failwith msg
+                    failwith msg
+                    return Unchecked.defaultof<_>
             }
 
         /// Parse the given file and return the given input.
@@ -258,12 +258,9 @@ type BoundModel private (
             use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, fileName|]
 
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
-
-
             let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-            use scope = new CompilationGlobalsScope(
-                GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger),
-                BuildPhase.TypeCheck)
+            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+            use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName
                     
@@ -274,7 +271,7 @@ type BoundModel private (
 
             let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
                 CheckOneInput (
-                        (fun () -> hadParseErrors || scope.DiagnosticsLogger.ErrorCount > 0),
+                        (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
                         tcConfig, tcImports,
                         tcGlobals,
                         None,
@@ -304,7 +301,6 @@ type BoundModel private (
                             None
                 }
             return tcInfo, sink, implFile, fileName, newErrors
-
         }
 
     let skippedImplemetationTypeCheck =
@@ -1346,7 +1342,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let slotOfFile = builder.GetSlotOfFileName fileName
         let syntaxTree = currentState.slots[slotOfFile].SyntaxTree
         syntaxTree.ParseNode.GetOrComputeValue()
-        |> Async.AwaitNodeCodeNoInit
+        |> Async.AwaitNodeCode
         |> Async.RunSynchronously
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
@@ -1516,6 +1512,12 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             //
             // This operation is done when constructing the builder itself, rather than as an incremental task.
             let nonFrameworkAssemblyInputs =
+                // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
+                // This is ok because not much can actually go wrong here.
+                let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
+                // Return the disposable object that cleans up
+                use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
+
                 [ for r in nonFrameworkResolutions do
                     let fileName = r.resolvedPath
                     yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
