@@ -2230,9 +2230,6 @@ type internal TransparentCompiler
                         optionsStamp
                     )
 
-                // I would expect the closure to be cached in this case.
-                // scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
-
                 let diags =
                     loadClosure.LoadClosureRootFileDiagnostics
                     |> List.map (fun (exn, isError) ->
