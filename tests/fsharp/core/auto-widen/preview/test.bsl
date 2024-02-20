@@ -131,15 +131,15 @@ test.fsx(147,18,147,19): typecheck error FS3391: This expression uses the implic
 
 test.fsx(147,18,147,19): typecheck error FS3388: This expression implicitly converts type 'int' to type 'decimal'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(149,39,149,41): typecheck error FS3391: This expression uses the implicit conversion 'Xml.Linq.XNamespace.op_Implicit(namespaceName: string | null) : Xml.Linq.XNamespace | null' to convert type 'string' to type 'Xml.Linq.XNamespace'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".
+test.fsx(149,39,149,41): typecheck error FS3391: This expression uses the implicit conversion 'Xml.Linq.XNamespace.op_Implicit(namespaceName: string) : Xml.Linq.XNamespace' to convert type 'string' to type 'Xml.Linq.XNamespace'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".
 
 test.fsx(149,39,149,41): typecheck error FS3388: This expression implicitly converts type 'string' to type 'Xml.Linq.XNamespace'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(154,18,154,20): typecheck error FS3395: This expression uses the implicit conversion 'Xml.Linq.XNamespace.op_Implicit(namespaceName: string | null) : Xml.Linq.XNamespace | null' to convert type 'string' to type 'Xml.Linq.XNamespace'.
+test.fsx(154,18,154,20): typecheck error FS3395: This expression uses the implicit conversion 'Xml.Linq.XNamespace.op_Implicit(namespaceName: string) : Xml.Linq.XNamespace' to convert type 'string' to type 'Xml.Linq.XNamespace'.
 
 test.fsx(154,18,154,20): typecheck error FS3388: This expression implicitly converts type 'string' to type 'Xml.Linq.XNamespace'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(159,18,159,21): typecheck error FS3395: This expression uses the implicit conversion 'Xml.Linq.XName.op_Implicit(expandedName: string | null) : Xml.Linq.XName | null' to convert type 'string' to type 'Xml.Linq.XName'.
+test.fsx(159,18,159,21): typecheck error FS3395: This expression uses the implicit conversion 'Xml.Linq.XName.op_Implicit(expandedName: string) : Xml.Linq.XName' to convert type 'string' to type 'Xml.Linq.XName'.
 
 test.fsx(159,18,159,21): typecheck error FS3388: This expression implicitly converts type 'string' to type 'Xml.Linq.XName'. See https://aka.ms/fsharp-implicit-convs.
 
@@ -562,9 +562,9 @@ test.fsx(454,46,454,47): typecheck error FS3389: This expression uses a built-in
 test.fsx(454,46,454,47): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(463,18,463,19): typecheck error FS0001: This expression was expected to have type
-    'C'
+    'C'    
 but here has type
-    'int'
+    'int'    
 
 test.fsx(471,18,471,19): typecheck error FS3395: This expression uses the implicit conversion 'static member C.op_Implicit: x: int -> C' to convert type 'int' to type 'C'.
 
@@ -585,9 +585,9 @@ test.fsx(519,18,519,21): typecheck error FS3395: This expression uses the implic
 test.fsx(538,18,538,21): typecheck error FS3395: This expression uses the implicit conversion 'static member C.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
 
 test.fsx(543,30,543,31): typecheck error FS0001: This expression was expected to have type
-    'float32'
+    'float32'    
 but here has type
-    'int'
+    'int'    
 
 test.fsx(543,32,543,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'float32'. This element has type 'int'.
 
