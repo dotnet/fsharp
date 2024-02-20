@@ -98,24 +98,28 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"NonTrivialBranchingBindingInEnd03.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd03_fs_opt`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=NonTrivialBranchingBindingInEnd03.fs SCFLAGS="--optimize-"	# NonTrivialBranchingBindingInEnd03.fs --optimize-
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NonTrivialBranchingBindingInEnd03.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd03_fs_nonopt`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=NonTrivialBranchingBindingInEnd04.fs SCFLAGS="--optimize+"	# NonTrivialBranchingBindingInEnd04.fs --optimize+
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"NonTrivialBranchingBindingInEnd04.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd04_fs_opt`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=NonTrivialBranchingBindingInEnd04.fs SCFLAGS="--optimize-"	# NonTrivialBranchingBindingInEnd04.fs --optimize-
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NonTrivialBranchingBindingInEnd04.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd04_fs_nonopt`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=NonTrivialBranchingBindingInEnd05.fs SCFLAGS="--optimize+"	# NonTrivialBranchingBindingInEnd05.fs --optimize+

@@ -26,6 +26,7 @@ module ListExpressionStepping =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ListExpressionStepping02.fs"|])>]
     let ``ListExpressionStepping02_fs`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=ListExpressionSteppingTest3.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest3.exe"    # ListExpressionSteppingTest3.fs 

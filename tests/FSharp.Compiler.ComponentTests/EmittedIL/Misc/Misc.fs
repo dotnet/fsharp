@@ -27,6 +27,7 @@ module Misc =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CodeGenRenamings01.fs"|])>]
     let ``CodeGenRenamings01_fs`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> asExe
         |> verifyCompilation
 
@@ -62,6 +63,7 @@ module Misc =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoop01.fs"|])>]
     let ``ForLoop01_fs`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> asExe
         |> verifyCompilation
 

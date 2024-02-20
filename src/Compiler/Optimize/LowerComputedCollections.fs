@@ -5,6 +5,7 @@ module internal FSharp.Compiler.LowerComputedCollectionExpressions
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.LowerSequenceExpressions
 open FSharp.Compiler.MethodCalls
@@ -389,7 +390,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             match overallSeqExpr with
             // [start..finish]
             // [start..step..finish]
-            | IntegralRange g (_, (start, step, finish)) ->
+            | IntegralRange g (_, (start, step, finish)) when g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops ->
                 Some (List.mkFromIntegralRange tcVal g amap m overallElemTy overallSeqExpr start step finish)
 
             // [(* Anything more complex. *)]
@@ -402,7 +403,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             match overallSeqExpr with
             // [|start..finish|]
             // [|start..step..finish|]
-            | IntegralRange g (_, (start, step, finish)) ->
+            | IntegralRange g (_, (start, step, finish)) when g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops ->
                 Some (Array.mkFromIntegralRange g m overallElemTy overallSeqExpr start step finish)
 
             // [|(* Anything more complex. *)|]

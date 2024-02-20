@@ -13,7 +13,7 @@ module Int32 =
         module Range =
             [<Test>]
             let ``Lone RangeInt32 with const args when start > finish lowers to empty array`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -76,7 +76,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with const args lowers to init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -167,7 +167,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with dynamic args lowers to init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -283,7 +283,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with dynamic args that are not consts or bound vals stores those in vars before init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -436,7 +436,7 @@ module Int32 =
         module RangeStep =
             [<Test>]
             let ``Lone RangeInt32 with const args when (finish - start) / step + 1 ≤ 0 lowers to empty array`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -499,7 +499,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with const args lowers to init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -590,7 +590,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with dynamic args lowers to init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -747,7 +747,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with dynamic args that are not consts or bound vals stores those in vars before init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -959,7 +959,7 @@ module Int32 =
         module Range =
             [<Test>]
             let ``Lone RangeInt32 with const args when start > finish lowers to empty list`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -1023,7 +1023,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with const args lowers to init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -1112,7 +1112,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with dynamic args lowers to init loop``() =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -1219,7 +1219,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with dynamic args that are not consts or bound vals stores those in vars before init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"|],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize+"; "/langversion:preview"|],
                     """
                     module Test
 
@@ -1362,7 +1362,7 @@ module Int32 =
         module RangeStep =
             [<Test>]
             let ``Lone RangeInt32 with const args when (finish - start) / step + 1 ≤ 0 lowers to empty list`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions(["--optimize+"],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions(["--optimize+"; "/langversion:preview"],
                     """
                     module Test
 
@@ -1426,7 +1426,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with const args lowers to init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions(["--optimize+"],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions(["--optimize+"; "/langversion:preview"],
                     """
                     module Test
 
@@ -1515,7 +1515,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with dynamic args lowers to init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions(["--optimize+"],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions(["--optimize+"; "/langversion:preview"],
                     """
                     module Test
 
@@ -1663,7 +1663,7 @@ module Int32 =
 
             [<Test>]
             let ``Lone RangeInt32 with dynamic args that are not consts or bound vals stores those in vars before init loop`` () =
-                CompilerAssert.CompileLibraryAndVerifyILWithOptions(["--optimize+"],
+                CompilerAssert.CompileLibraryAndVerifyILWithOptions(["--optimize+"; "/langversion:preview"],
                     """
                     module Test
 

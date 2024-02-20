@@ -57,4 +57,5 @@ module SeqExpressionStepping =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SeqExpressionSteppingTest07.fs"|])>]
     let ``SeqExpressionSteppingTest07_fs`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation

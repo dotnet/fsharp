@@ -10694,7 +10694,9 @@ let DetectAndOptimizeForEachExpression g option expr =
            let spFor = match spFor with DebugPointAtBinding.Yes mFor -> DebugPointAtFor.Yes mFor | _ -> DebugPointAtFor.No
            mkFastForLoop g (spFor, spIn, mWholeExpr, elemVar, startExpr, (step = 1), finishExpr, bodyExpr)
 
-    | OptimizeAllForExpressions, CompiledForEachExpr g (_enumTy, rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), elemVar, bodyExpr, ranges) ->
+    | OptimizeAllForExpressions, CompiledForEachExpr g (_enumTy, rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), elemVar, bodyExpr, ranges) when
+        g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
+        ->
         let mBody, _spFor, _spIn, mFor, mIn, spInWhile, _mWhole = ranges
 
         mkOptimizedRangeLoop
