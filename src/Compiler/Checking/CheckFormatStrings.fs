@@ -384,12 +384,15 @@ let parseFormatStringInternal
                     failwith (FSComp.SR.forFormatInvalidForInterpolated3())
 
             let collectSpecifierLocation fragLine fragCol numStdArgs =
-                let numArgsForSpecifier =
-                    numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
-                specifierLocations.Add(
-                    (Range.mkFileIndexRange m.FileIndex
-                        (Position.mkPos fragLine startFragCol)
-                        (Position.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
+                match context with
+                | Some _ ->
+                    let numArgsForSpecifier =
+                        numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
+                    specifierLocations.Add(
+                        (Range.mkFileIndexRange m.FileIndex
+                            (Position.mkPos fragLine startFragCol)
+                            (Position.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
+                | None -> ()
 
             let ch = fmt[i]
             match ch with
