@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests.ComputedCollectionRangeLoweringTests
 open NUnit.Framework
 open FSharp.Test
 
+// TODO https://github.com/dotnet/fsharp/issues/16739: Remove /langversion:preview from these tests when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
 [<TestFixture>]
 module Int32 =
     /// [|…|]
