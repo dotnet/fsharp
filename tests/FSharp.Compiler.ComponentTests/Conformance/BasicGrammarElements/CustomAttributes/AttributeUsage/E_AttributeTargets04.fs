@@ -106,3 +106,17 @@ and [<FieldOnly>] g() = []
 [<FieldOnly>]
 let rec f1 = 0
 and [<FieldOnly>] g2() = []
+
+[<FieldOnly>]
+let (a :: _) = []
+
+[<FieldOnly>]
+let (d, e) as foo = 1, 2
+
+[<FieldOnly>]
+let 1 = 0
+
+type X = { X: int }
+
+[<FieldOnly>]
+let { X = _ } = { X = 1 }

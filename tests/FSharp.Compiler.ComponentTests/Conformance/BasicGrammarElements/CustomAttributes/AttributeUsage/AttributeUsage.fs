@@ -100,6 +100,7 @@ module CustomAttributes_AttributeUsage =
     let ``E_AttributeTargets03_fs`` compilation =
         compilation
         |> withLangVersion80
+        |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
         
@@ -108,6 +109,7 @@ module CustomAttributes_AttributeUsage =
     let ``E_AttributeTargets03_fs preview`` compilation =
         compilation
         |> withLangVersionPreview
+        |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -118,6 +120,10 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 20, Col 3, Line 20, Col 13, "This attribute is not valid for use on this language element")
             (Error 842, Line 102, Col 3, Line 102, Col 13, "This attribute is not valid for use on this language element")
             (Error 842, Line 106, Col 3, Line 106, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 110, Col 3, Line 110, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 113, Col 3, Line 113, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 116, Col 3, Line 116, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 121, Col 3, Line 121, Col 13, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=E_AttributeTargets04.fs					# E_AttributeTargets04.fs
@@ -125,6 +131,7 @@ module CustomAttributes_AttributeUsage =
     let ``E_AttributeTargets04_fs`` compilation =
         compilation
         |> withLangVersion80
+        |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
         
@@ -133,6 +140,7 @@ module CustomAttributes_AttributeUsage =
     let ``E_AttributeTargets04_fs preview`` compilation =
         compilation
         |> withLangVersionPreview
+        |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

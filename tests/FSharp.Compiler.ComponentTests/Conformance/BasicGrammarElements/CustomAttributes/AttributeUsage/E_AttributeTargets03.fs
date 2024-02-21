@@ -106,3 +106,17 @@ and [<MethodOnly>] g() = []
 [<MethodOnly>]
 let rec f1 = 0
 and [<MethodOnly>] g2() = []
+
+[<MethodOnly>]
+let (a :: _) = []
+
+[<MethodOnly>]
+let (d, e) as foo = 1, 2
+
+[<MethodOnly>]
+let 1 = 0
+
+type X = { X: int }
+
+[<MethodOnly>]
+let { X = _ } = { X = 1 }
