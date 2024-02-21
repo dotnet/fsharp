@@ -167,7 +167,7 @@ type internal IBackgroundCompiler =
 
     abstract member TryGetRecentCheckResultsForFile:
         fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
-            Async<(FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option>
+            (FSharpParseFileResults * FSharpCheckFileResults) option
 
     abstract member BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions>
 
@@ -1165,18 +1165,14 @@ type internal BackgroundCompiler
         | None -> None
 
     member _.TryGetRecentCheckResultsForFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
-        let file =
-            projectSnapshot.ProjectSnapshot.SourceFiles
-            |> List.tryFind (fun f -> f.FileName = fileName)
+        projectSnapshot.ProjectSnapshot.SourceFiles
+        |> List.tryFind (fun f -> f.FileName = fileName)
+        |> Option.bind (fun (f: FSharpFileSnapshot) ->
+            let options = projectSnapshot.ToOptions()
+            let sourceText = f.GetSource() |> Async.AwaitTask |> Async.RunSynchronously
 
-        match file with
-        | Some f ->
-            async {
-                let options = projectSnapshot.ToOptions()
-                let! sourceText = f.GetSource() |> Async.AwaitTask
-                return self.TryGetRecentCheckResultsForFile(fileName, options, Some sourceText, userOpName)
-            }
-        | None -> async.Return None
+            self.TryGetRecentCheckResultsForFile(fileName, options, Some sourceText, userOpName)
+            |> Option.map (fun (parseFileResults, checkFileResults, _hash) -> (parseFileResults, checkFileResults)))
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private _.ParseAndCheckProjectImpl(options, userOpName) =
@@ -1708,5 +1704,5 @@ type internal BackgroundCompiler
                 fileName: string,
                 projectSnapshot: FSharpProjectSnapshot,
                 userOpName: string
-            ) : Async<(FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option> =
+            ) : (FSharpParseFileResults * FSharpCheckFileResults) option =
             self.TryGetRecentCheckResultsForFile(fileName, projectSnapshot, userOpName)

@@ -902,8 +902,9 @@ let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAnd
     let project = SyntheticProject.Create(
         sourceFile "First" [])
     
-    ProjectWorkflowBuilder(project, autoStart = false, useTransparentCompiler = true) {
-        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectNone expectNone)
+    ProjectWorkflowBuilder(project) {
+        clearCache
+        tryGetRecentCheckResults "First" expectNone
     } |> ignore
 
 [<Fact>]
@@ -911,8 +912,8 @@ let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAn
     let project = SyntheticProject.Create(
         sourceFile "First" [] )
     
-    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
     } |> ignore
 
 [<Fact>]
@@ -920,12 +921,12 @@ let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [])
     
-    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
         updateFile "First" updateInternal
-        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectNone expectNone)
+        tryGetRecentCheckResults "First" expectNone
         checkFile "First" expectOk
-        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
+        tryGetRecentCheckResults "First" expectSome
     } |> ignore
     
 [<Fact>]
@@ -934,10 +935,10 @@ let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` 
         sourceFile "First" [],
         sourceFile "Second" [])
     
-    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
-        tryGetRecentCheckResults "Second" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        tryGetRecentCheckResults "Second" expectSome
         updateFile "Second" updateInternal
-        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
-        tryGetRecentCheckResults "Second" (TryGetRecentCheckExpects.ExpectNone expectNone)
+        tryGetRecentCheckResults "First"  expectSome
+        tryGetRecentCheckResults "Second" expectNone
     } |> ignore

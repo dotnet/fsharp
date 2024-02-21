@@ -681,11 +681,17 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
 
 let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
+    let referencesOnDisk, otherOptions = // making sure we always produce the same order of flags and -r references
+        projectSnapshot.CommandLineOptions
+        |> List.partition (fun x -> x.StartsWith("-r:"))
+
+    let commandLineOptions = List.append otherOptions referencesOnDisk |> List.toArray
+
     {
         ProjectFileName = projectSnapshot.ProjectFileName
         ProjectId = projectSnapshot.ProjectId
         SourceFiles = projectSnapshot.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
-        OtherOptions = projectSnapshot.CommandLineOptions |> List.toArray
+        OtherOptions = commandLineOptions
         ReferencedProjects =
             projectSnapshot.ReferencedProjects
             |> Seq.map (function

@@ -5483,9 +5483,9 @@ type A(i:int) =
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
     let snapshot = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
 
-    let rbefore = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot) |> Async.RunImmediate
+    let rbefore = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot)
     match rbefore with
-    | Some(fileResults, checkFileResults, int64) -> failwith "cached results before ParseAndCheckFileInProject was called"
+    | Some(fileResults, checkFileResults) -> failwith "cached results before ParseAndCheckFileInProject was called"
     | None -> ()
     
     checker.ParseAndCheckFileInProject(fileName1, snapshot)  |> Async.RunImmediate
@@ -5493,10 +5493,9 @@ type A(i:int) =
         | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
         | _ -> failwithf "Parsing aborted unexpectedly..."
             
-    let rafterCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot) |> Async.RunImmediate
+    let rafterCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot)
     match rafterCheckResults with
-    | Some(fileResults, checkFileResults, hash) ->
-        Assert.AreEqual(fileSource1.GetHashCode() |> int64, hash)
+    | Some(fileResults, checkFileResults) -> ()
     | None -> failwith "no results from TryGetRecentCheckResultsForFile"
    
     let fileSource1TextEdited = """
@@ -5508,9 +5507,9 @@ type A(i:int) =
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1TextEdited)
     let snapshotAfterFileEdit = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
 
-    let rafterEditBefore2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit) |> Async.RunImmediate
+    let rafterEditBefore2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit)
     match rafterEditBefore2ndCheckResults with
-    | Some(fileResults, checkFileResults, hash) -> failwith "stale cache results from TryGetRecentCheckResultsForFile after edit"
+    | Some(fileResults, checkFileResults) -> failwith "stale cache results from TryGetRecentCheckResultsForFile after edit"
     | None -> ()
     
     checker.ParseAndCheckFileInProject(fileName1, snapshotAfterFileEdit)  |> Async.RunImmediate
@@ -5518,10 +5517,9 @@ type A(i:int) =
         | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
         | _ -> failwithf "Parsing aborted unexpectedly..."
         
-    let rafterEditAfter2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit) |> Async.RunImmediate
+    let rafterEditAfter2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit)
     match rafterEditAfter2ndCheckResults with
-    | Some(fileResults, checkFileResults, hash) ->
-        Assert.AreEqual(fileSource1Edited.GetHashCode() |> int64, hash)
+    | Some(fileResults, checkFileResults) -> ()
     | None -> failwith "no results from TryGetRecentCheckResultsForFile"
 
 [<TestCase(([||]: string[]), ([||]: bool[]))>]
