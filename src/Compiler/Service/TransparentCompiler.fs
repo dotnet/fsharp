@@ -384,7 +384,9 @@ type internal TransparentCompiler
         (useSdkRefs: bool option)
         (sdkDirOverride: string option)
         (assumeDotNetFramework: bool option)
-        (projectSnapshot: ProjectSnapshot)
+        (projectIdentifier: ProjectIdentifier)
+        (otherOptions: string list)
+        (stamp: int64 option)
         =
         let useFsiAuxLib = defaultArg useFsiAuxLib true
         let useSdkRefs = defaultArg useSdkRefs true
@@ -392,9 +394,7 @@ type internal TransparentCompiler
 
         let key =
             { new ICacheKey<string * ProjectIdentifier, string> with
-                member _.GetKey() =
-                    $"ScriptClosure%s{fileName}%b{useFsiAuxLib}%b{useSdkRefs}%b{assumeDotNetFramework}", projectSnapshot.Identifier
-
+                member _.GetKey() = fileName, projectIdentifier
                 member _.GetLabel() = $"ScriptClosure for %s{fileName}"
 
                 member _.GetVersion() =
@@ -403,7 +403,7 @@ type internal TransparentCompiler
                         [|
                             fileName
                             string (source.GetHashCode())
-                            match projectSnapshot.Stamp with
+                            match stamp with
                             | None -> ()
                             | Some stamp -> string stamp
                         |]
@@ -421,7 +421,7 @@ type internal TransparentCompiler
 
                 let applyCompilerOptions tcConfig =
                     let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
-                    ParseCompilerOptions(ignore, fsiCompilerOptions, projectSnapshot.OtherOptions)
+                    ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
 
                 let closure =
                     LoadClosure.ComputeClosureOfScriptText(
@@ -690,7 +690,9 @@ type internal TransparentCompiler
                                 None
                                 None
                                 None
-                                projectSnapshot
+                                projectSnapshot.Identifier
+                                projectSnapshot.OtherOptions
+                                projectSnapshot.Stamp
 
                         return (Some closure)
                     }
@@ -1546,7 +1548,9 @@ type internal TransparentCompiler
                             (Some tcConfig.useSdkRefs)
                             tcConfig.sdkDirOverride
                             (Some tcConfig.assumeDotNetFramework)
-                            projectSnapshot
+                            projectSnapshot.Identifier
+                            projectSnapshot.OtherOptions
+                            projectSnapshot.Stamp
 
                     let typedResults =
                         FSharpCheckFileResults.Make(
@@ -2182,23 +2186,6 @@ type internal TransparentCompiler
                 let currentSourceFile =
                     FSharpFileSnapshot.Create(fileName, sourceText.GetHashCode().ToString(), (fun () -> Task.FromResult sourceText))
 
-                // We create a intermediate snapshot with the first file only to reuse the cache key logic.
-                let loadCloseSnapshot =
-                    FSharpProjectSnapshot.Create(
-                        projectFileName,
-                        None,
-                        [ currentSourceFile ],
-                        List.empty,
-                        List.ofArray otherFlags,
-                        List.empty,
-                        false,
-                        true,
-                        loadedTimeStamp,
-                        None,
-                        List.empty,
-                        optionsStamp
-                    )
-
                 let! loadClosure =
                     ComputeScriptClosure
                         fileName
@@ -2209,7 +2196,9 @@ type internal TransparentCompiler
                         (Some useSdkRefs)
                         sdkDirOverride
                         (Some assumeDotNetFramework)
-                        loadCloseSnapshot.ProjectSnapshot
+                        (projectFileName, fileName)
+                        (List.ofArray otherFlags)
+                        optionsStamp
                     |> Async.AwaitNodeCode
 
                 let otherFlags =
