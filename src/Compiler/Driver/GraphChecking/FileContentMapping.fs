@@ -341,10 +341,11 @@ let (|NameofExpr|_|) (e: SynExpr) : NameofResult option =
         match stripParen moduleNameExpr with
         | SynExpr.Ident moduleNameIdent -> Some(NameofResult.SingleIdent moduleNameIdent)
         | SynExpr.LongIdent(longDotId = longIdent) ->
-            if longIdent.LongIdent.IsEmpty then
-                None
-            else
-                Some(NameofResult.LongIdent(longIdent.LongIdent))
+            match longIdent.LongIdent with
+            | [] -> None
+            // This is highly unlikely to be produced by the parser
+            | [ moduleNameIdent ] -> Some(NameofResult.SingleIdent moduleNameIdent)
+            | lid -> Some(NameofResult.LongIdent(lid))
         | _ -> None
     | _ -> None
 
@@ -575,18 +576,22 @@ let (|NameofPat|_|) (pat: SynPat) =
     | SynPat.LongIdent(longDotId = SynLongIdent(id = [ NameofIdent ]); typarDecls = None; argPats = SynArgPats.Pats [ moduleNamePat ]) ->
         match stripPats moduleNamePat with
         | SynPat.LongIdent(
-            longDotId = SynLongIdent.SynLongIdent(id = [ moduleNameIdent ]; dotRanges = []; trivia = [ None ])
+            longDotId = SynLongIdent.SynLongIdent(id = longIdent)
             extraId = None
             typarDecls = None
             argPats = SynArgPats.Pats []
-            accessibility = None) -> Some moduleNameIdent
+            accessibility = None) ->
+            match longIdent with
+            | [] -> None
+            | [ moduleNameIdent ] -> Some(NameofResult.SingleIdent moduleNameIdent)
+            | lid -> Some(NameofResult.LongIdent lid)
         | _ -> None
     | _ -> None
 
 let visitPat (p: SynPat) : FileContentEntry list =
     let rec visit (p: SynPat) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
         match p with
-        | NameofPat moduleNameIdent -> continuation [ visitIdentAsPotentialModuleName moduleNameIdent ]
+        | NameofPat moduleNameIdent -> continuation [ visitNameofResult moduleNameIdent ]
         | SynPat.Paren(pat = pat) -> visit pat continuation
         | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t)
         | SynPat.Const _ -> continuation []
