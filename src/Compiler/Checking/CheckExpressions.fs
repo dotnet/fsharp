@@ -6,6 +6,7 @@ module internal FSharp.Compiler.CheckExpressions
 
 open System
 open System.Collections.Generic
+open System.Text.RegularExpressions
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -145,27 +146,35 @@ exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: s
 // Used to decide if interpolated string can be lowered to a concat call.
 // We don't care about single- vs multi-$ strings here, because lexer took care of that already.
 //----------------------------------------------------------------------------------------------
-module private ParseString =
-    open System.Text.RegularExpressions
+[<return: Struct>]
+let (|HasFormatSpecifier|_|) (s: string) =
+    if
+        Regex.IsMatch(
+            s,
+            """
+            (^|[^%])                # Start with beginning of string or any char other than '%'
+            (%%)*%                  # followed by an odd number of '%' chars
+            [+-0 ]{0,3}             # optionally followed by flags
+            (\d+)?                  # optionally followed by width
+            (\.\d+)?                # optionally followed by .precision
+            [bscdiuxXoBeEfFgGMOAat] # and then a char that determines specifier's type
+            """,
+            RegexOptions.Compiled ||| RegexOptions.IgnorePatternWhitespace)
+    then
+        ValueSome HasFormatSpecifier
+    else
+        ValueNone
 
-    // Regex for strings ending with unescaped '%s'
-    // For efficiency sake using lookbehind, starting from end of the string
-    let stringSpecifier = Regex(@"$(?<=(^|[^%])(%%)*%s)", RegexOptions.Compiled)
-    let EndsWithStringSpecifierNoFlags = stringSpecifier.IsMatch
-
-    // Regex pattern for something like: %[flags][width][.precision][type]
-    // but match only if % is not escaped by another %
-    let formatSpecifier =
-        let sb = Text.StringBuilder(64)
-        sb.Append(@"(^|[^%])")                |> ignore // Start with beginning of string or any char other than '%'
-        sb.Append(@"(%%)*%")                  |> ignore // followed by an odd number of '%' chars
-        sb.Append(@"[+-0 ]{0,3}")             |> ignore // optionally followed by flags
-        sb.Append(@"(\d+)?")                  |> ignore // optionally followed by width
-        sb.Append(@"(\.\d+)?")                |> ignore // optionally followed by .precision
-        sb.Append(@"[bscdiuxXoBeEfFgGMOAat]") |> ignore // and then a char that determines specifier's type
-        let pattern = sb.ToString()
-        Regex(pattern, RegexOptions.Compiled)
-    let HasFormatSpecifier = formatSpecifier.IsMatch
+let (|WithTrailingStringSpecifierRemoved|) (s: string) =
+    if s.EndsWith "%s" then
+        let i = s.AsSpan(0, s.Length - 2).LastIndexOfAnyExcept '%'
+        let diff = s.Length - 2 - i
+        if diff &&& 1 <> 0 then
+            s[..i]
+        else
+            s
+    else
+        s
 
 /// Compute the available access rights from a particular location in code
 let ComputeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType =
@@ -7363,72 +7372,48 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             // Type check the expressions filling the holes
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
-            // If all fill expressions are strings and there is less then 5 parts of the interpolated string total
-            // then we can use System.String.Concat instead of a sprintf call.
-            // First filter out all string parts that are empty or only have a '%s' string specifier,
-            // also get rid of the '%s' specifier right before the interpolation expression.
-            let nonEmptyParts =
-                parts
-                |> List.map (fun x ->
-                    match x with
-                    | SynInterpolatedStringPart.String(s, m) when ParseString.EndsWithStringSpecifierNoFlags s ->
-                        SynInterpolatedStringPart.String(s.Substring(0, s.Length-2), shiftEnd 0 (-2) m)
-                    | _ -> x)
-                |> List.filter (fun x ->
-                    match x with
-                    | SynInterpolatedStringPart.String(s, _) -> not <| System.String.IsNullOrEmpty s
-                    | SynInterpolatedStringPart.FillExpr(_, _) -> true)
+            // Take all interpolated string parts and typed fill expressions
+            // and convert them to typed expressions that can be used as args to System.String.Concat
+            // return an empty list if there are some format specifiers that make lowering to not applicable
+            let rec concatenable acc fillExprs parts =
+                match fillExprs, parts with
+                | [], [] ->
+                    List.rev acc
+                | [], SynInterpolatedStringPart.FillExpr _ :: _
+                | _, [] ->
+                    // This should never happen, there will always be as many typed fill expressions
+                    // as there are FillExprs in the interpolated string parts
+                    error(InternalError("Mismatch in interpolation expression count", m))
+                | _, SynInterpolatedStringPart.String (WithTrailingStringSpecifierRemoved "", _) :: parts ->
+                    // If the string is empty (after trimming %s of the end), we skip it
+                    concatenable acc fillExprs parts
 
-            // Then check if there are any format specifiers that might require actual formatting (as opposed to type checking)
-            let noSpecifiers stringParts =
-                stringParts
-                |> List.forall (fun x ->
-                    match x with
-                    | SynInterpolatedStringPart.FillExpr(expr, qualifiers) ->
-                        match expr, qualifiers with
-                        // Something like "...{x:hh}..."
-                        | _, Some _ -> false
-                        // Detect "x" part of "...{x,3}..."
-                        | SynExpr.Tuple (false, [_; SynExpr.Const (SynConst.Int32 _align, _)], _, _), _ -> false
-                        | _ -> true
-                    | SynInterpolatedStringPart.String(s, _) -> not <| ParseString.HasFormatSpecifier s)
+                | _, SynInterpolatedStringPart.String (WithTrailingStringSpecifierRemoved HasFormatSpecifier, _) :: _
+                | _, SynInterpolatedStringPart.FillExpr (_, Some _) :: _
+                | _, SynInterpolatedStringPart.FillExpr (SynExpr.Tuple (isStruct = false; exprs = [_; SynExpr.Const (SynConst.Int32 _, _)]), _) :: _ ->
+                    // There was a format specifier like %20s{..} or {..,20} or {x:hh}, which means we cannot simply concat
+                    []
 
-            if
-                (g.langVersion.SupportsFeature LanguageFeature.LowerInterpolatedStringToConcat)
+                | _, SynInterpolatedStringPart.String (s & WithTrailingStringSpecifierRemoved trimmed, m) :: parts ->
+                    let finalStr = trimmed.Replace("%%", "%")
+                    concatenable (mkString g (shiftEnd 0 (finalStr.Length - s.Length) m) finalStr :: acc) fillExprs parts
+
+                | fillExpr :: fillExprs, SynInterpolatedStringPart.FillExpr _ :: parts ->
+                    concatenable (fillExpr :: acc) fillExprs parts
+
+            let canLower =
+                g.langVersion.SupportsFeature LanguageFeature.LowerInterpolatedStringToConcat
                 && isString
-                && (nonEmptyParts.Length < 5)
-                && (argTys |> List.forall (isStringTy g))
-                && (noSpecifiers nonEmptyParts)
-            then
+                && argTys |> List.forall (isStringTy g)
 
-                let args =
-                    // We already have the type-checked fill expressions from before
-                    // so let's just weave them with the string parts in the right order
-                    nonEmptyParts
-                    |> List.fold (fun (fillExprs, acc) stringPart ->
-                        match stringPart with
-                        | SynInterpolatedStringPart.String(s, m) ->
-                            let sb = System.Text.StringBuilder(s).Replace("%%", "%")
-                            (fillExprs, (mkString g m (sb.ToString()))::acc)
-                        | SynInterpolatedStringPart.FillExpr(_, _) ->
-                            match fillExprs with
-                            | expr::exprs -> (exprs, expr::acc)
-                            | _ -> error(InternalError("Mismatch in interpolation expression count", m))) (fillExprs, [])
-                    |> snd
-                    |> List.rev
+            let concatenableExprs = if canLower then concatenable [] fillExprs parts else []
 
-                assert (args.Length = nonEmptyParts.Length)
-                if args.Length = 4 then
-                    (mkStaticCall_String_Concat4 g m args[0] args[1] args[2] args[3], tpenv)
-                elif args.Length = 3 then
-                    (mkStaticCall_String_Concat3 g m args[0] args[1] args[2], tpenv)
-                elif args.Length = 2 then
-                    (mkStaticCall_String_Concat2 g m args[0] args[1], tpenv)
-                elif args.Length = 1 then
-                    args[0], tpenv
-                else
-                    error(InternalError("Mismatch in arg count when lowering to Concat", m))
-            else
+            match concatenableExprs with
+            | [p1; p2; p3; p4] -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv
+            | [p1; p2; p3] -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv
+            | [p1; p2] -> mkStaticCall_String_Concat2 g m p1 p2, tpenv
+            | [p1] -> p1, tpenv
+            | _ ->
 
                 let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
