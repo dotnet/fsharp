@@ -674,11 +674,6 @@ let visitSynMatchClause (SynMatchClause(pat = pat; whenExpr = whenExpr; resultEx
     ]
 
 let visitBinding (SynBinding(attributes = attributes; headPat = headPat; returnInfo = returnInfo; expr = expr)) : FileContentEntry list =
-    let foo = visitSynAttributes attributes
-
-    if not foo.IsEmpty then
-        ()
-
     [
         yield! visitSynAttributes attributes
         match headPat with
