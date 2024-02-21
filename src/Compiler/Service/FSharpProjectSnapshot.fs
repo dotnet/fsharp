@@ -407,10 +407,10 @@ and internal ProjectCore
     let commandLineOptions =
         lazy
             (seq {
+                yield! OtherOptions
+
                 for r in ReferencesOnDisk do
                     $"-r:{r.Path}"
-
-                yield! OtherOptions
              }
              |> Seq.toList)
 
@@ -681,17 +681,11 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
 
 let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
-    let referencesOnDisk, otherOptions = // making sure we always produce the same order of flags and -r references
-        projectSnapshot.CommandLineOptions
-        |> List.partition (fun x -> x.StartsWith("-r:"))
-
-    let commandLineOptions = List.append otherOptions referencesOnDisk |> List.toArray
-
     {
         ProjectFileName = projectSnapshot.ProjectFileName
         ProjectId = projectSnapshot.ProjectId
         SourceFiles = projectSnapshot.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
-        OtherOptions = commandLineOptions
+        OtherOptions = projectSnapshot.CommandLineOptions |> List.toArray
         ReferencedProjects =
             projectSnapshot.ReferencedProjects
             |> Seq.map (function
