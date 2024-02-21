@@ -933,7 +933,7 @@ let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
 let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [],
-        sourceFile "Second" [])
+        sourceFile "Second" ["First"])
     
     ProjectWorkflowBuilder(project) {
         tryGetRecentCheckResults "First" expectSome
