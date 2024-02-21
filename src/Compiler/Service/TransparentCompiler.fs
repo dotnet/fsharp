@@ -399,7 +399,14 @@ type internal TransparentCompiler
 
                 member _.GetVersion() =
                     Md5Hasher.empty
-                    |> Md5Hasher.addStrings [| fileName; string (source.GetHashCode()) |]
+                    |> Md5Hasher.addStrings
+                        [|
+                            fileName
+                            string (source.GetHashCode())
+                            match projectSnapshot.Stamp with
+                            | None -> ()
+                            | Some stamp -> string stamp
+                        |]
                     |> Md5Hasher.addBool useFsiAuxLib
                     |> Md5Hasher.addBool useFsiAuxLib
                     |> Md5Hasher.addBool useSdkRefs
