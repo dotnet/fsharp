@@ -349,14 +349,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
         let fileKey = this.FileKey fileName
         let fileSnapshot = this.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
 
-        { new ICacheKey<_, _> with
-            member _.GetLabel() = $"{fileName} ({this.Label})"
-
-            member _.GetKey() = fileName, this.ProjectCore.Identifier
-
-            member _.GetVersion() =
-                fileKey.GetVersion(), fileSnapshot.Version |> Md5Hasher.toString
-        }
+        fileKey.WithExtraVersion(fileSnapshot.Version |> Md5Hasher.toString)
 
 /// Project snapshot with filenames and versions given as initial input
 and internal ProjectSnapshot = ProjectSnapshotBase<FSharpFileSnapshot>
