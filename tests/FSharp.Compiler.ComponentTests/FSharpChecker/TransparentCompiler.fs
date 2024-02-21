@@ -938,7 +938,7 @@ let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` 
     ProjectWorkflowBuilder(project) {
         tryGetRecentCheckResults "First" expectSome
         tryGetRecentCheckResults "Second" expectSome
-        updateFile "Second" updateInternal
-        tryGetRecentCheckResults "First"  expectSome
-        tryGetRecentCheckResults "Second" expectNone
+        updateFile "First" updateInternal
+        tryGetRecentCheckResults "First"  expectNone
+        tryGetRecentCheckResults "Second" expectSome // file didn't change so we still want to get the recent result
     } |> ignore
