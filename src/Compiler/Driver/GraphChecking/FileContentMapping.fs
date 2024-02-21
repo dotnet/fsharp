@@ -310,8 +310,27 @@ let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
 let inline (|NameofIdent|_|) (ident: Ident) =
     if ident.idText = "nameof" then ValueSome() else ValueNone
 
+/// nameof X.Y.Z can be used in expressions and patterns
+[<RequireQualifiedAccess; NoComparison>]
+type NameofResult =
+    /// Example: nameof X
+    /// Where X is a module name
+    | SingleIdent of potentialModuleName: Ident
+    /// Example: nameof X.Y.Z
+    /// Where Z is either a module name or something from inside module or namespace Y.
+    /// Both options need to be explored.
+    | LongIdent of longIdent: LongIdent
+
+let visitNameofResult (nameofResult: NameofResult) : FileContentEntry =
+    match nameofResult with
+    | NameofResult.SingleIdent moduleName -> visitIdentAsPotentialModuleName moduleName
+    | NameofResult.LongIdent longIdent ->
+        // In this case the last part of the part could be a module name.
+        // So we should not cut off the last part.
+        FileContentEntry.PrefixedIdentifier(longIdentToPath false longIdent)
+
 /// Special case of `nameof Module` type of expression
-let (|NameofExpr|_|) (e: SynExpr) =
+let (|NameofExpr|_|) (e: SynExpr) : NameofResult option =
     let rec stripParen (e: SynExpr) =
         match e with
         | SynExpr.Paren(expr = expr) -> stripParen expr
@@ -320,14 +339,19 @@ let (|NameofExpr|_|) (e: SynExpr) =
     match e with
     | SynExpr.App(flag = ExprAtomicFlag.NonAtomic; isInfix = false; funcExpr = SynExpr.Ident NameofIdent; argExpr = moduleNameExpr) ->
         match stripParen moduleNameExpr with
-        | SynExpr.Ident moduleNameIdent -> Some moduleNameIdent
+        | SynExpr.Ident moduleNameIdent -> Some(NameofResult.SingleIdent moduleNameIdent)
+        | SynExpr.LongIdent(longDotId = longIdent) ->
+            if longIdent.LongIdent.IsEmpty then
+                None
+            else
+                Some(NameofResult.LongIdent(longIdent.LongIdent))
         | _ -> None
     | _ -> None
 
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
         match e with
-        | NameofExpr moduleNameIdent -> continuation [ visitIdentAsPotentialModuleName moduleNameIdent ]
+        | NameofExpr nameofResult -> continuation [ visitNameofResult nameofResult ]
         | SynExpr.Const _ -> continuation []
         | SynExpr.Paren(expr = expr) -> visit expr continuation
         | SynExpr.Quote(operator = operator; quotedExpr = quotedExpr) ->
@@ -645,6 +669,11 @@ let visitSynMatchClause (SynMatchClause(pat = pat; whenExpr = whenExpr; resultEx
     ]
 
 let visitBinding (SynBinding(attributes = attributes; headPat = headPat; returnInfo = returnInfo; expr = expr)) : FileContentEntry list =
+    let foo = visitSynAttributes attributes
+
+    if not foo.IsEmpty then
+        ()
+
     [
         yield! visitSynAttributes attributes
         match headPat with
