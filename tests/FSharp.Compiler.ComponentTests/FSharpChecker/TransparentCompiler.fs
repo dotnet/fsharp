@@ -902,17 +902,8 @@ let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAnd
     let project = SyntheticProject.Create(
         sourceFile "First" [])
     
-    let getSource f = f |> getSourceText project :> ISourceText |> Some |> async.Return
-    
-    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        withProject( fun project checker ->
-                async {
-                    let projectOptions = project.GetProjectOptions(checker)
-                    let projectSnapshot = FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.Custom getSource) |> Async.RunSynchronously
-                    let r = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshot) |> Async.RunSynchronously
-                    Assert.True(Option.isNone r)
-                }
-            )
+    ProjectWorkflowBuilder(project, autoStart = false, useTransparentCompiler = true) {
+        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectNone expectNone)
     } |> ignore
 
 [<Fact>]
@@ -920,19 +911,8 @@ let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAn
     let project = SyntheticProject.Create(
         sourceFile "First" [] )
     
-    let getSource f = f |> getSourceText project :> ISourceText |> Some |> async.Return
-    
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        
-        withProject( fun project checker ->
-                async {
-                    let projectOptions = project.GetProjectOptions(checker)
-                    let! projectSnapshot = FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.Custom getSource)
-                    do! checker.ParseAndCheckFileInProject (project.SourceFilePaths[0], projectSnapshot) |> Async.Ignore
-                    let! r = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshot)
-                    Assert.True(Option.isSome r)
-                }
-            )
+        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
     } |> ignore
 
 [<Fact>]
@@ -940,26 +920,12 @@ let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [])
     
-    let getSource f = f |> getSourceText project :> ISourceText |> Some |> async.Return
-    
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        
-        withProject( fun project checker ->
-                async {
-                    let projectOptions = project.GetProjectOptions(checker)
-                    let! projectSnapshot = FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.Custom getSource)
-                    do! checker.ParseAndCheckFileInProject (project.SourceFilePaths[0], projectSnapshot) |> Async.Ignore
-                    let! rBeforeEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshot)
-                    Assert.True(Option.isSome rBeforeEdit)
-
-                    // update file
-                    let projectAfterEdit = ProjectOperations.updateFile "First" updateInternal project
-                    let! newFileSnapShot = getFileSnapshot projectAfterEdit projectOptions projectSnapshot.SourceFiles[0].FileName
-                    let projectSnapshotAfterEdit = projectSnapshot.Replace([newFileSnapShot])
-                    let! rAfterEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshotAfterEdit)
-                    Assert.True(Option.isNone rAfterEdit)
-                }
-            )
+        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
+        updateFile "First" updateInternal
+        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectNone expectNone)
+        checkFile "First" expectOk
+        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
     } |> ignore
     
 [<Fact>]
@@ -968,26 +934,10 @@ let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` 
         sourceFile "First" [],
         sourceFile "Second" [])
     
-    let getSource f = f |> getSourceText project :> ISourceText |> Some |> async.Return
-    
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        
-        withProject( fun project checker ->
-                async {
-                    let projectOptions = project.GetProjectOptions(checker)
-                    let! projectSnapshot = FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.Custom getSource)
-                    do! checker.ParseAndCheckFileInProject (project.SourceFilePaths[0], projectSnapshot) |> Async.Ignore
-                    do! checker.ParseAndCheckFileInProject (project.SourceFilePaths[1], projectSnapshot) |> Async.Ignore
-                    let! rBeforeEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshot)
-                    Assert.True(Option.isSome rBeforeEdit)
-                    
-                    // update other file
-                    let projectAfterEdit = ProjectOperations.updateFile "Second" updateInternal project
-                    let! newFileSnapShot = getFileSnapshot projectAfterEdit projectOptions projectSnapshot.SourceFiles[1].FileName
-                    let projectSnapshotAfterEdit = projectSnapshot.Replace([newFileSnapShot])
-
-                    let! rAfterEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshotAfterEdit)
-                    Assert.True(Option.isSome rAfterEdit)
-                }
-            )
+        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
+        tryGetRecentCheckResults "Second" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
+        updateFile "Second" updateInternal
+        tryGetRecentCheckResults "First" (TryGetRecentCheckExpects.ExpectSome expectRecentCheck)
+        tryGetRecentCheckResults "Second" (TryGetRecentCheckExpects.ExpectNone expectNone)
     } |> ignore

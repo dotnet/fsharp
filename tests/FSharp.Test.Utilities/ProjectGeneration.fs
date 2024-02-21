@@ -754,6 +754,19 @@ module ProjectOperations =
             |> Seq.toArray
 
         Assert.Equal<(string * int * int * int)[]>(expected |> Seq.sort |> Seq.toArray, actual)
+        
+    let expectNone x =
+        if Option.isSome x then failwith "expected None, but was Some"
+        
+    let expectRecentCheck (results: (FSharpParseFileResults * FSharpCheckFileResults * int64) option) expectedHash =
+        match results with
+        | Some (_parseFileResults, _checkFileResults, hash) -> Assert.Equal(expectedHash, hash)
+        | _ -> failwith "expected Some, but was None"
+        
+    [<RequireQualifiedAccess>]
+    type TryGetRecentCheckExpects =
+        | ExpectNone of ((FSharpParseFileResults * FSharpCheckFileResults * int64) option -> unit)
+        | ExpectSome of ((FSharpParseFileResults * FSharpCheckFileResults * int64) option -> int64 -> unit)
 
     let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
         async {
@@ -1344,6 +1357,26 @@ type ProjectWorkflowBuilder
             let! _diagnostics, exitCode = checker.Compile(arguments)
             if exitCode <> 0 then
                 exn $"Compilation failed with exit code {exitCode}" |> raise
+            return ctx
+        }
+        
+    [<CustomOperation "tryGetRecentCheckResults">]
+    member this.TryGetRecentCheckResults(workflow: Async<WorkflowContext>, fileId: string, expected: TryGetRecentCheckExpects) = //((FSharpParseFileResults * FSharpCheckFileResults * int64) option -> unit)
+        async {
+            let! ctx = workflow
+            let project, file = ctx.Project.FindInAllProjects fileId
+            let fileName = project.ProjectDir ++ file.FileName
+            let options = project.GetProjectOptions checker
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
+            let! r = checker.TryGetRecentCheckResultsForFile(fileName, snapshot)
+            match expected with
+            | TryGetRecentCheckExpects.ExpectNone e -> e r
+            | TryGetRecentCheckExpects.ExpectSome tupleOptionFunc ->
+                let fileSnapshot = snapshot.SourceFiles |> List.find (fun f -> f.FileName = fileName)
+                let! source = fileSnapshot.GetSource() |> Async.AwaitTask
+                let hash = source.GetHashCode()
+                tupleOptionFunc r hash 
+            
             return ctx
         }
 
