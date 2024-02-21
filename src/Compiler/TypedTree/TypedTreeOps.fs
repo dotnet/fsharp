@@ -10307,17 +10307,18 @@ let (|EmptyRange|_|) (start, step, finish) =
 [<return: Struct>]
 let (|ConstCount|_|) (start, step, finish) =
     match start, step, finish with
-    // Such a range would use up the entire address space, but for parity with the library implementation we need it to fail at runtime, not at build time.
+    // The count for these ranges is 2⁶⁴ + 1. Let the count calculation raise an overflow exception at runtime.
     | Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 1L), Expr.Const (value = Const.Int64 Int64.MaxValue)
     | Expr.Const (value = Const.Int64 Int64.MaxValue), Expr.Const (value = Const.Int64 -1L), Expr.Const (value = Const.Int64 Int64.MinValue)
-    | Expr.Const (value = Const.UInt64 UInt64.MinValue), Expr.Const (value = Const.UInt64 1UL), Expr.Const (value = Const.UInt64 UInt64.MaxValue) -> ValueSome (Const.UInt64 UInt64.MaxValue)
-
+    | Expr.Const (value = Const.UInt64 UInt64.MinValue), Expr.Const (value = Const.UInt64 1UL), Expr.Const (value = Const.UInt64 UInt64.MaxValue)
     | Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr 1L), Expr.Const (value = Const.IntPtr Int64.MaxValue)
     | Expr.Const (value = Const.IntPtr Int64.MaxValue), Expr.Const (value = Const.IntPtr -1L), Expr.Const (value = Const.IntPtr Int64.MinValue)
-    | Expr.Const (value = Const.UIntPtr UInt64.MinValue), Expr.Const (value = Const.UIntPtr 1UL), Expr.Const (value = Const.UIntPtr UInt64.MaxValue) -> ValueSome (Const.UIntPtr UInt64.MaxValue)
+    | Expr.Const (value = Const.UIntPtr UInt64.MinValue), Expr.Const (value = Const.UIntPtr 1UL), Expr.Const (value = Const.UIntPtr UInt64.MaxValue) -> ValueNone
 
     // We must special-case a step of Int64.MinValue, since we cannot call abs on it.
+    | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / (uint64 Int64.MaxValue + 1UL) + 1UL))
     | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 finish) -> ValueSome (Const.UInt64 ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr finish) when start<= finish -> ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
     | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr finish) -> ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
 
     | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 step), Expr.Const (value = Const.Int64 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / uint64 (abs step) + 1UL))
@@ -10339,14 +10340,14 @@ let (|ConstCount|_|) (start, step, finish) =
         ->
         ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / uint64 (abs step) + 1UL))
 
-    | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) when start <= finish -> ValueSome (Const.UInt32 (uint32 ((uint64 finish - uint64 start) / uint64 (abs (int64 step)) + 1UL)))
-    | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) -> ValueSome (Const.UInt32 (uint32 ((uint64 start - uint64 finish) / uint64 (abs (int64 step)) + 1UL)))
+    | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / uint64 (abs (int64 step)) + 1UL))
+    | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) -> ValueSome (Const.UInt64 ((uint64 start - uint64 finish) / uint64 (abs (int64 step)) + 1UL))
 
-    | Expr.Const (value = Const.Int16 start), Expr.Const (value = Const.Int16 step), Expr.Const (value = Const.Int16 finish) when start <= finish -> ValueSome (Const.UInt16 (uint16 ((uint64 finish - uint64 start) / uint64 (abs (int64 step)) + 1UL)))
-    | Expr.Const (value = Const.Int16 start), Expr.Const (value = Const.Int16 step), Expr.Const (value = Const.Int16 finish) -> ValueSome (Const.UInt16 (uint16 ((uint64 start - uint64 finish) / uint64 (abs (int64 step)) + 1UL)))
+    | Expr.Const (value = Const.Int16 start), Expr.Const (value = Const.Int16 step), Expr.Const (value = Const.Int16 finish) when start <= finish -> ValueSome (Const.UInt32 ((uint finish - uint start) / uint (abs (int step)) + 1u))
+    | Expr.Const (value = Const.Int16 start), Expr.Const (value = Const.Int16 step), Expr.Const (value = Const.Int16 finish) -> ValueSome (Const.UInt32 ((uint start - uint finish) / uint (abs (int step)) + 1u))
 
-    | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) when start <= finish -> ValueSome (Const.Byte (byte ((uint64 finish - uint64 start) / uint64 (abs (int64 step)) + 1UL)))
-    | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) -> ValueSome (Const.Byte (byte ((uint64 start - uint64 finish) / uint64 (abs (int64 step)) + 1UL)))
+    | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) when start <= finish -> ValueSome (Const.UInt16 ((uint16 finish - uint16 start) / uint16 (abs (int16 step)) + 1us))
+    | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) -> ValueSome (Const.UInt16 ((uint16 start - uint16 finish) / uint16 (abs (int16 step)) + 1us))
 
     // sizeof<unativeint> is not constant, so |𝑐| > 0xffffffffun cannot be treated as a constant.
     | Expr.Const (value = Const.UIntPtr start), Expr.Const (value = Const.UIntPtr step), Expr.Const (value = Const.UIntPtr finish) when
@@ -10356,11 +10357,16 @@ let (|ConstCount|_|) (start, step, finish) =
         ->
         ValueSome (Const.UIntPtr ((finish - start) / step + 1UL))
 
-    | Expr.Const (value = Const.UInt64 start), Expr.Const (value = Const.UInt64 step), Expr.Const (value = Const.UInt64 finish) -> ValueSome (Const.UInt64 ((finish - start) / step + 1UL))
-    | Expr.Const (value = Const.UInt32 start), Expr.Const (value = Const.UInt32 step), Expr.Const (value = Const.UInt32 finish) -> ValueSome (Const.UInt32 ((finish - start) / step + 1u))
-    | Expr.Const (value = Const.UInt16 start), Expr.Const (value = Const.UInt16 step), Expr.Const (value = Const.UInt16 finish) -> ValueSome (Const.UInt16 ((finish - start) / step + 1us))
-    | Expr.Const (value = Const.Byte start), Expr.Const (value = Const.Byte step), Expr.Const (value = Const.Byte finish) -> ValueSome (Const.Byte ((finish - start) / step + 1uy))
-    | Expr.Const (value = Const.Char start), Expr.Const (value = Const.Char step), Expr.Const (value = Const.Char finish) -> ValueSome (Const.Char (char (uint16 (finish - start) / uint16 step) + '\001'))
+    | Expr.Const (value = Const.UInt64 start), Expr.Const (value = Const.UInt64 step), Expr.Const (value = Const.UInt64 finish) when start <= finish -> ValueSome (Const.UInt64 ((finish - start) / step + 1UL))
+    | Expr.Const (value = Const.UInt64 start), Expr.Const (value = Const.UInt64 step), Expr.Const (value = Const.UInt64 finish) -> ValueSome (Const.UInt64 ((start - finish) / step + 1UL))
+    | Expr.Const (value = Const.UInt32 start), Expr.Const (value = Const.UInt32 step), Expr.Const (value = Const.UInt32 finish) when start <= finish -> ValueSome (Const.UInt64 (uint64 (finish - start) / uint64 step + 1UL))
+    | Expr.Const (value = Const.UInt32 start), Expr.Const (value = Const.UInt32 step), Expr.Const (value = Const.UInt32 finish) -> ValueSome (Const.UInt64 (uint64 (start - finish) / uint64 step + 1UL))
+    | Expr.Const (value = Const.UInt16 start), Expr.Const (value = Const.UInt16 step), Expr.Const (value = Const.UInt16 finish) when start <= finish -> ValueSome (Const.UInt32 (uint (finish - start) / uint step + 1u))
+    | Expr.Const (value = Const.UInt16 start), Expr.Const (value = Const.UInt16 step), Expr.Const (value = Const.UInt16 finish) -> ValueSome (Const.UInt32 (uint (start - finish) / uint step + 1u))
+    | Expr.Const (value = Const.Byte start), Expr.Const (value = Const.Byte step), Expr.Const (value = Const.Byte finish) when start <= finish -> ValueSome (Const.UInt16 (uint16 (finish - start) / uint16 step + 1us))
+    | Expr.Const (value = Const.Byte start), Expr.Const (value = Const.Byte step), Expr.Const (value = Const.Byte finish) -> ValueSome (Const.UInt16 (uint16 (start - finish) / uint16 step + 1us))
+    | Expr.Const (value = Const.Char start), Expr.Const (value = Const.Char step), Expr.Const (value = Const.Char finish) when start <= finish -> ValueSome (Const.UInt32 (uint (finish - start) / uint step + 1u))
+    | Expr.Const (value = Const.Char start), Expr.Const (value = Const.Char step), Expr.Const (value = Const.Char finish) -> ValueSome (Const.UInt32 (uint (start - finish) / uint step + 1u))
 
     | _ -> ValueNone
 
@@ -10390,25 +10396,39 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         else
             mkAsmExpr ([AI_clt_un], [], [e1; e2], [g.bool_ty], m)
 
-    let mkConvToUnsigned e =
+    /// Find the unsigned type with twice the width of the given type, if available.
+    let nextWidestUnsignedTy ty =
+        let ty = stripMeasuresFromTy g ty
+
+        if typeEquiv g ty g.int64_ty || typeEquiv g ty g.int32_ty || typeEquiv g ty g.uint32_ty then
+            g.uint64_ty
+        elif typeEquiv g ty g.int16_ty || typeEquiv g ty g.uint16_ty || typeEquiv g ty g.char_ty then
+            g.uint32_ty
+        elif typeEquiv g ty g.sbyte_ty || typeEquiv g ty g.byte_ty then
+            g.uint16_ty
+        else
+            ty
+
+    /// Convert the value to the next-widest unsigned type.
+    /// We do this so that adding one won't result in overflow.
+    /// If finish - start (or start - finish) = 2⁶⁴, an overflow exception will be raised when we try to add one in a subsequent step.
+    let mkWiden e =
         let ty = stripMeasuresFromTy g (tyOfExpr g e)
 
-        if typeEquiv g ty g.int64_ty then
+        if typeEquiv g ty g.int64_ty || typeEquiv g ty g.int32_ty || typeEquiv g ty g.uint32_ty then
             mkAsmExpr ([AI_conv DT_I8], [], [e], [g.uint64_ty], m)
-        elif typeEquiv g ty g.int32_ty then
+        elif typeEquiv g ty g.int16_ty || typeEquiv g ty g.uint16_ty || typeEquiv g ty g.char_ty then
             mkAsmExpr ([AI_conv DT_I4], [], [e], [g.uint32_ty], m)
-        elif typeEquiv g ty g.int16_ty then
+        elif typeEquiv g ty g.sbyte_ty || typeEquiv g ty g.byte_ty then
             mkAsmExpr ([AI_conv DT_I2], [], [e], [g.uint16_ty], m)
-        elif typeEquiv g ty g.sbyte_ty then
-            mkAsmExpr ([AI_conv DT_I1], [], [e], [g.byte_ty], m)
         else
             e
 
-    /// Unsigned diff: unsigned (e1 - e2).
+    /// Unsigned, widened diff.
     /// Expects that |e1| ≥ |e2|.
     let mkDiff e1 e2 =
-        let e1 = mkConvToUnsigned e1
-        let e2 = mkConvToUnsigned e2
+        let e1 = mkWiden e1
+        let e2 = mkWiden e2
         mkAsmExpr ([AI_sub], [], [e1; e2], [tyOfExpr g e1], m)
 
     /// diff / step
@@ -10425,7 +10445,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     let mkAddOne pseudoCount =
         // For parity with the behavior of (..) and (.. ..) in FSharp.Core,
         // we want an overflow exception to be raised at runtime
-        // instead of returning a 0 count here.
+        // instead of returning a 0 or negative count here.
         let shouldRaiseOverflowExnAtRuntime =
             let ty = stripMeasuresFromTy g rangeTy
 
@@ -10452,7 +10472,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     // 1..5
     // 1..2..5
     // 5..-1..1
-    | ConstCount count -> Expr.Const (count, m, rangeTy)
+    | ConstCount count -> Expr.Const (count, m, nextWidestUnsignedTy rangeTy)
 
     // start..finish
     // start..1..finish
@@ -10558,7 +10578,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                 let negativeStep =
                     let diff = mkDiff start finish
                     let diffTy = tyOfExpr g diff
-                    let absStep = mkAsmExpr ([AI_add], [], [mkAsmExpr ([AI_not], [], [step], [diffTy], m); mkTypedOne g m diffTy], [diffTy], m)
+                    let absStep = mkAsmExpr ([AI_add], [], [mkWiden (mkAsmExpr ([AI_not], [], [step], [rangeTy], m)); mkTypedOne g m diffTy], [diffTy], m)
 
                     mkCond
                         DebugPointAtBinding.NoneAtInvisible
@@ -10582,7 +10602,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                 mkCond
                     DebugPointAtBinding.NoneAtInvisible
                     m
-                    rangeTy
+                    diffTy
                     (mkSignednessAppropriateClt rangeTy finish start)
                     (mkTypedZero g m diffTy)
                     (mkAddOne (mkQuotient diff step))
