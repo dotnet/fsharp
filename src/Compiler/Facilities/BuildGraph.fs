@@ -15,6 +15,9 @@ type NodeCode<'T> = Node of Async<'T>
 
 let wrapThreadStaticInfo computation =
     async {
+        let previous = DiagnosticsThreadStatics.FellDownToAsync
+        DiagnosticsThreadStatics.FellDownToAsync <- false
+
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
 
@@ -23,6 +26,8 @@ let wrapThreadStaticInfo computation =
         finally
             DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
             DiagnosticsThreadStatics.BuildPhase <- phase
+
+            DiagnosticsThreadStatics.FellDownToAsync <- previous
     }
 
 let wrapFallDown computation =
@@ -192,7 +197,7 @@ type NodeCode private () =
         Node(computation |> wrapFallDown |> wrapThreadStaticInfo)
 
     static member AwaitTask(task: Task<'T>) =
-        Node(Async.AwaitTask task |> wrapFallDown |> wrapThreadStaticInfo )
+        Node(Async.AwaitTask task |> wrapFallDown |> wrapThreadStaticInfo)
 
     static member AwaitTask(task: Task) =
         Node(Async.AwaitTask task |> wrapFallDown |> wrapThreadStaticInfo)
@@ -309,7 +314,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                             Async.StartWithContinuations(
                                 async {
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! p
+                                    return! p |> wrapFallDown
                                 },
                                 (fun res ->
                                     cachedResult <- ValueSome res

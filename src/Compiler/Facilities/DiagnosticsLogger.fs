@@ -434,6 +434,7 @@ type internal DiagnosticsThreadStatics =
         and set v =
             if DiagnosticsThreadStatics.diagnosticsLogger <> v then
                 TrackThreadStaticsUse.checkForAsyncFalldown "DiagnosticsLogger_set"
+
             DiagnosticsThreadStatics.diagnosticsLogger <- v
 
 [<AutoOpen>]
