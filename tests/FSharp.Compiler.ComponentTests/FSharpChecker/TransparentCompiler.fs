@@ -954,8 +954,8 @@ let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
 
                     // update file
                     let projectAfterEdit = ProjectOperations.updateFile "First" updateInternal project
-                    let projectOptionsAfterEdit = projectAfterEdit.GetProjectOptions(checker)
-                    let! projectSnapshotAfterEdit = FSharpProjectSnapshot.FromOptions(projectOptionsAfterEdit, DocumentSource.Custom getSource)
+                    let! newFileSnapShot = getFileSnapshot projectAfterEdit projectOptions projectSnapshot.SourceFiles[0].FileName
+                    let projectSnapshotAfterEdit = projectSnapshot.Replace([newFileSnapShot])
                     let! rAfterEdit = checker.TryGetRecentCheckResultsForFile(project.SourceFilePaths[0], projectSnapshotAfterEdit)
                     Assert.True(Option.isNone rAfterEdit)
                 }
