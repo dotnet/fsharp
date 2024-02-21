@@ -73,7 +73,7 @@
 
       IL_0014:  ldloc.2
       IL_0015:  ldloc.3
-      IL_0016:  conv.ovf.i.un
+      IL_0016:  conv.i
       IL_0017:  ldloc.s    V_4
       IL_0019:  stelem.i4
       IL_001a:  ldloc.s    V_4
@@ -106,7 +106,7 @@
 
       IL_0040:  ldloc.s    V_5
       IL_0042:  ldloc.3
-      IL_0043:  conv.ovf.i.un
+      IL_0043:  conv.i
       IL_0044:  ldloc.s    V_4
       IL_0046:  stelem.i4
       IL_0047:  ldloc.s    V_4

@@ -142,7 +142,7 @@ module Int32 =
                     
                         IL_0014:  ldloc.0
                         IL_0015:  ldloc.1
-                        IL_0016:  conv.ovf.i.un
+                        IL_0016:  conv.i
                         IL_0017:  ldloc.2
                         IL_0018:  stelem.i4
                         IL_0019:  ldloc.2
@@ -266,7 +266,7 @@ module Int32 =
                     
                         IL_002b:  ldloc.1
                         IL_002c:  ldloc.2
-                        IL_002d:  conv.ovf.i.un
+                        IL_002d:  conv.i
                         IL_002e:  ldloc.3
                         IL_002f:  stelem.i4
                         IL_0030:  ldloc.3
@@ -424,7 +424,7 @@ module Int32 =
                     
                         IL_0041:  ldloc.3
                         IL_0042:  ldloc.s    V_4
-                        IL_0044:  conv.ovf.i.un
+                        IL_0044:  conv.i
                         IL_0045:  ldloc.s    V_5
                         IL_0047:  stelem.i4
                         IL_0048:  ldloc.s    V_5
@@ -585,7 +585,7 @@ module Int32 =
                     
                         IL_0014:  ldloc.0
                         IL_0015:  ldloc.1
-                        IL_0016:  conv.ovf.i.un
+                        IL_0016:  conv.i
                         IL_0017:  ldloc.2
                         IL_0018:  stelem.i4
                         IL_0019:  ldloc.2
@@ -756,7 +756,7 @@ module Int32 =
                     
                         IL_005a:  ldloc.1
                         IL_005b:  ldloc.2
-                        IL_005c:  conv.ovf.i.un
+                        IL_005c:  conv.i
                         IL_005d:  ldloc.3
                         IL_005e:  stelem.i4
                         IL_005f:  ldloc.3
@@ -977,7 +977,7 @@ module Int32 =
                     
                         IL_007e:  ldloc.s    V_4
                         IL_0080:  ldloc.s    V_5
-                        IL_0082:  conv.ovf.i.un
+                        IL_0082:  conv.i
                         IL_0083:  ldloc.s    V_6
                         IL_0085:  stelem.i4
                         IL_0086:  ldloc.s    V_6
