@@ -151,6 +151,7 @@ let (|HasFormatSpecifier|_|) (s: string) =
     if
         Regex.IsMatch(
             s,
+            // Regex pattern for something like: %[flags][width][.precision][type]
             """
             (^|[^%])                # Start with beginning of string or any char other than '%'
             (%%)*%                  # followed by an odd number of '%' chars
@@ -165,6 +166,7 @@ let (|HasFormatSpecifier|_|) (s: string) =
     else
         ValueNone
 
+// Removes trailing "%s" unless it was escaped by another '%' (checks for odd sequence of '%' before final "%s")
 let (|WithTrailingStringSpecifierRemoved|) (s: string) =
     if s.EndsWith "%s" then
         let i = s.AsSpan(0, s.Length - 2).LastIndexOfAnyExcept '%'
