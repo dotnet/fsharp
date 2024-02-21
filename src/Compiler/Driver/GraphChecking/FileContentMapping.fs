@@ -325,7 +325,7 @@ let visitNameofResult (nameofResult: NameofResult) : FileContentEntry =
     match nameofResult with
     | NameofResult.SingleIdent moduleName -> visitIdentAsPotentialModuleName moduleName
     | NameofResult.LongIdent longIdent ->
-        // In this case the last part of the part could be a module name.
+        // In this case the last part of the LongIdent could be a module name.
         // So we should not cut off the last part.
         FileContentEntry.PrefixedIdentifier(longIdentToPath false longIdent)
 
