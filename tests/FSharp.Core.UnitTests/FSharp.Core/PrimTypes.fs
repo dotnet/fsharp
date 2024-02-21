@@ -889,9 +889,7 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([|min1 .. min3|], [|min1; min2; min3|])
         Assert.AreEqual ([|max3 .. max1|], [|max3; max2; max1|])
 
-    let inline signed min0 max0 =
-        let zero  = LanguagePrimitives.GenericZero
-        let one   = LanguagePrimitives.GenericOne
+    let inline signed zero one min0 max0 =
         let two   = one + one
         let three = two + one
 
@@ -971,9 +969,7 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([|max0 .. min2 .. min0|], [|max0; max0 + min2; max0 + min2 + min2 |])
         Assert.AreEqual ([|max0 .. min3 .. min0|], [|max0; max0 + min3; max0 + min3 + min3 |])
 
-    let inline unsigned min0 max0 =
-        let zero  = LanguagePrimitives.GenericZero
-        let one   = LanguagePrimitives.GenericOne
+    let inline unsigned zero one min0 max0 =
         let two   = one + one
         let three = two + one
 
@@ -1065,53 +1061,53 @@ module RangeTests =
             Assert.AreEqual(allSBytesSeq, {System.SByte.MinValue..System.SByte.MaxValue})
             Assert.AreEqual(allSBytesList, [System.SByte.MinValue..System.SByte.MaxValue])
             Assert.AreEqual(allSBytesArray, [|System.SByte.MinValue..System.SByte.MaxValue|])
-            RangeTestsHelpers.signed System.SByte.MinValue System.SByte.MaxValue
+            RangeTestsHelpers.signed 0y 1y System.SByte.MinValue System.SByte.MaxValue
 
         [<Fact>]
         let ``Range.Byte`` () =
             Assert.AreEqual(allBytesSeq, {System.Byte.MinValue..System.Byte.MaxValue})
             Assert.AreEqual(allBytesList, [System.Byte.MinValue..System.Byte.MaxValue])
             Assert.AreEqual(allBytesArray, [|System.Byte.MinValue..System.Byte.MaxValue|])
-            RangeTestsHelpers.unsigned System.Byte.MinValue System.Byte.MaxValue
+            RangeTestsHelpers.unsigned 0uy 1uy System.Byte.MinValue System.Byte.MaxValue
 
         //// Note: the IEnumerable<char> range iterator doesn't currently pass these tests. Should it?
         //[<Fact>]
-        //let ``Range.Char`` () = RangeTestsHelpers.unsigned System.Char.MinValue System.Char.MaxValue
+        //let ``Range.Char`` () = RangeTestsHelpers.unsigned '\000' '\001' System.Char.MinValue System.Char.MaxValue
 
         [<Fact>]
-        let ``Range.Int16`` () = RangeTestsHelpers.signed System.Int16.MinValue System.Int16.MaxValue
+        let ``Range.Int16`` () = RangeTestsHelpers.signed 0s 1s System.Int16.MinValue System.Int16.MaxValue
 
         [<Fact>]
-        let ``Range.UInt16`` () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
+        let ``Range.UInt16`` () = RangeTestsHelpers.unsigned 0us 1us System.UInt16.MinValue System.UInt16.MaxValue
 
         [<Fact>]
-        let ``Range.Int32`` () = RangeTestsHelpers.signed System.Int32.MinValue System.Int32.MaxValue
+        let ``Range.Int32`` () = RangeTestsHelpers.signed 0 1 System.Int32.MinValue System.Int32.MaxValue
 
         [<Fact>]
-        let ``Range.UInt32`` () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
+        let ``Range.UInt32`` () = RangeTestsHelpers.unsigned 0u 1u System.UInt32.MinValue System.UInt32.MaxValue
 
         [<Fact>]
-        let ``Range.Int64`` () = RangeTestsHelpers.signed System.Int64.MinValue System.Int64.MaxValue
+        let ``Range.Int64`` () = RangeTestsHelpers.signed 0L 1L System.Int64.MinValue System.Int64.MaxValue
 
         [<Fact>]
-        let ``Range.UInt64`` () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
+        let ``Range.UInt64`` () = RangeTestsHelpers.unsigned 0UL 1UL System.UInt64.MinValue System.UInt64.MaxValue
 
         [<Fact>]
         let ``Range.IntPtr`` () =
             // 0x80000000n is negative on x86, but would be positive on x64.
-            if System.IntPtr.Size = 4 then RangeTestsHelpers.signed 0x80000000n 0x7fffffffn
-            if System.IntPtr.Size = 8 then RangeTestsHelpers.signed 0x8000000000000000n 0x7fffffffffffffffn
+            if System.IntPtr.Size = 4 then RangeTestsHelpers.signed 0x0n 0x1n 0x80000000n 0x7fffffffn
+            if System.IntPtr.Size = 8 then RangeTestsHelpers.signed 0x0n 0x1n 0x8000000000000000n 0x7fffffffffffffffn
          
         [<Fact>]
         let ``Range.UIntPtr`` () =
-            if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned 0x0un 0xffffffffun
-            if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned 0x0un 0xffffffffffffffffun
+            if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned 0x0un 0x1un 0x0un 0xffffffffun
+            if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned 0x0un 0x1un 0x0un 0xffffffffffffffffun
 
-    /// These tests' arguments are intentionally _not_ inlined,
-    /// and so the size of the computed collection must thus be computed at runtime.
+    /// These tests' arguments are intentionally _not_ inlined
+    /// to force the size of the collection (for lists and arrays) to be computed at runtime.
     module Runtime =
-        [<Theory; InlineData(System.SByte.MinValue, 1y, System.SByte.MaxValue)>]
-        let ``Range.SByte`` (min0: sbyte) (one: sbyte) (max0: sbyte) =
+        [<Theory; InlineData(0y, 1y, System.SByte.MinValue, System.SByte.MaxValue)>]
+        let ``Range.SByte`` (zero: sbyte) (one: sbyte) (min0: sbyte) (max0: sbyte) =
             Assert.AreEqual(allSBytesSeq, {min0..max0})
             Assert.AreEqual(allSBytesList, [min0..max0])
             Assert.AreEqual(allSBytesArray, [|min0..max0|])
@@ -1124,10 +1120,10 @@ module RangeTests =
             Assert.AreEqual(List.rev allSBytesList, [max0 .. -one .. min0])
             Assert.AreEqual(Array.rev allSBytesArray, [|max0 .. -one .. min0|])
 
-            RangeTestsHelpers.signed min0 max0
+            RangeTestsHelpers.signed zero one min0 max0
 
-        [<Theory; InlineData(System.Byte.MinValue, 1uy, System.Byte.MaxValue)>]
-        let ``Range.Byte`` (min0: byte) (one: byte) (max0: byte) =
+        [<Theory; InlineData(0uy, 1uy, System.Byte.MinValue, System.Byte.MaxValue)>]
+        let ``Range.Byte`` (zero: byte) (one: byte) (min0: byte) (max0: byte) =
             Assert.AreEqual(allBytesSeq, {min0..max0})
             Assert.AreEqual(allBytesList, [min0..max0])
             Assert.AreEqual(allBytesArray, [|min0..max0|])
@@ -1136,41 +1132,41 @@ module RangeTests =
             Assert.AreEqual(allBytesList, [min0..one..max0])
             Assert.AreEqual(allBytesArray, [|min0..one..max0|])
 
-            RangeTestsHelpers.unsigned min0 max0
+            RangeTestsHelpers.unsigned zero one min0 max0
 
         //// Note: the IEnumerable<char> range iterator doesn't currently pass these tests. Should it?
-        //[<Theory; InlineData(System.Char.MinValue, System.Char.MaxValue)>]
-        //let ``Range.Char`` (min0: char) (max0: char) = RangeTestsHelpers.unsigned min0 max0
+        //[<Theory; InlineData('\000', '\001', System.Char.MinValue, System.Char.MaxValue)>]
+        //let ``Range.Char`` (zero: char) (one: char) (min0: char) (max0: char) = RangeTestsHelpers.unsigned zero one min0 max0
 
-        [<Theory; InlineData(System.Int16.MinValue, System.Int16.MaxValue)>]
-        let ``Range.Int16`` (min0: int16) (max0: int16) = RangeTestsHelpers.signed min0 max0
+        [<Theory; InlineData(0s, 1s, System.Int16.MinValue, System.Int16.MaxValue)>]
+        let ``Range.Int16`` (zero: int16) (one: int16) (min0: int16) (max0: int16) = RangeTestsHelpers.signed zero one min0 max0
 
-        [<Theory; InlineData(System.UInt16.MinValue, System.UInt16.MaxValue)>]
-        let ``Range.UInt16`` (min0: uint16) (max0: uint16) = RangeTestsHelpers.unsigned min0 max0
+        [<Theory; InlineData(0us, 1us, System.UInt16.MinValue, System.UInt16.MaxValue)>]
+        let ``Range.UInt16`` (zero: uint16) (one: uint16) (min0: uint16) (max0: uint16) = RangeTestsHelpers.unsigned zero one min0 max0
 
-        [<Theory; InlineData(System.Int32.MinValue, System.Int32.MaxValue)>]
-        let ``Range.Int32`` min0 max0 = RangeTestsHelpers.signed min0 max0
+        [<Theory; InlineData(0, 1, System.Int32.MinValue, System.Int32.MaxValue)>]
+        let ``Range.Int32`` (zero: int) (one: int) (min0: int) (max0: int) = RangeTestsHelpers.signed zero one min0 max0
 
-        [<Theory; InlineData(System.UInt32.MinValue, System.UInt32.MaxValue)>]
-        let ``Range.UInt32`` (min0: uint) (max0: uint) = RangeTestsHelpers.unsigned min0 max0
+        [<Theory; InlineData(0u, 1u, System.UInt32.MinValue, System.UInt32.MaxValue)>]
+        let ``Range.UInt32`` (zero: uint) (one: uint) (min0: uint) (max0: uint) = RangeTestsHelpers.unsigned zero one min0 max0
 
-        [<Theory; InlineData(System.Int64.MinValue, System.Int64.MaxValue)>]
-        let ``Range.Int64`` (min0: int64) (max0: int64) = RangeTestsHelpers.signed min0 max0
+        [<Theory; InlineData(0L, 1L, System.Int64.MinValue, System.Int64.MaxValue)>]
+        let ``Range.Int64`` (zero: int64) (one: int64) (min0: int64) (max0: int64) = RangeTestsHelpers.signed zero one min0 max0
 
-        [<Theory; InlineData(System.UInt64.MinValue, System.UInt64.MaxValue)>]
-        let ``Range.UInt64`` (min0: uint64) (max0: uint64) = RangeTestsHelpers.unsigned min0 max0
+        [<Theory; InlineData(0UL, 1UL, System.UInt64.MinValue, System.UInt64.MaxValue)>]
+        let ``Range.UInt64`` (zero: uint64) (one: uint64) (min0: uint64) (max0: uint64) = RangeTestsHelpers.unsigned zero one min0 max0
 
         [<Fact>]
         let ``Range.IntPtr`` () =
             // The arguments here aren't being passed in as constants, so it doesn't matter if they're inlined.
-            if System.IntPtr.Size >= 4 then RangeTestsHelpers.signed (System.IntPtr System.Int32.MinValue) (System.IntPtr System.Int32.MaxValue)
-            if System.IntPtr.Size >= 8 then RangeTestsHelpers.signed (System.IntPtr System.Int64.MinValue) (System.IntPtr System.Int64.MaxValue)
+            if System.IntPtr.Size >= 4 then RangeTestsHelpers.signed (System.IntPtr 0) (System.IntPtr 1) (System.IntPtr System.Int32.MinValue) (System.IntPtr System.Int32.MaxValue)
+            if System.IntPtr.Size >= 8 then RangeTestsHelpers.signed (System.IntPtr 0) (System.IntPtr 1) (System.IntPtr System.Int64.MinValue) (System.IntPtr System.Int64.MaxValue)
 
         [<Fact>]
         let ``Range.UIntPtr`` () =
             // The arguments here aren't being passed in as constants, so it doesn't matter if they're inlined.
-            if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt32.MinValue) (System.UIntPtr System.UInt32.MaxValue)
-            if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
+            if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned (System.UIntPtr 0u) (System.UIntPtr 1u) (System.UIntPtr System.UInt32.MinValue) (System.UIntPtr System.UInt32.MaxValue)
+            if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr 0u) (System.UIntPtr 1u) (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
 
 open NonStructuralComparison
 
