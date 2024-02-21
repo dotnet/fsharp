@@ -527,6 +527,21 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
     member _.Label = projectSnapshot.Label
     member _.Identifier = FSharpProjectIdentifier projectSnapshot.ProjectCore.Identifier
+    member _.ProjectFileName = projectSnapshot.ProjectFileName
+    member _.ProjectId = projectSnapshot.ProjectId
+    member _.SourceFiles = projectSnapshot.SourceFiles
+    member _.ReferencesOnDisk = projectSnapshot.ReferencesOnDisk
+    member _.OtherOptions = projectSnapshot.OtherOptions
+    member _.ReferencedProjects = projectSnapshot.ReferencedProjects
+
+    member _.IsIncompleteTypeCheckEnvironment =
+        projectSnapshot.IsIncompleteTypeCheckEnvironment
+
+    member _.UseScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
+    member _.LoadTime = projectSnapshot.LoadTime
+    member _.UnresolvedReferences = projectSnapshot.UnresolvedReferences
+    member _.OriginalLoadReferences = projectSnapshot.OriginalLoadReferences
+    member _.Stamp = projectSnapshot.Stamp
 
     static member Create
         (

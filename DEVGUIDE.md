@@ -49,7 +49,7 @@ Install the latest released [Visual Studio](https://visualstudio.microsoft.com/v
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
-You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
+You will also need .NET SDK installed from [here](https://dotnet.microsoft.com/download/dotnet), exact version can be found in the global.json file in the root of the repository.
 
 Building is simple:
 
@@ -76,7 +76,7 @@ If you are just developing the core compiler and library then building ``FSharp.
 We recommend installing the latest Visual Studio preview and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
 * [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
-* [.NET 7](https://dotnet.microsoft.com/download/dotnet/7.0)
+* [.NET SDK](https://dotnet.microsoft.com/download/dotnet) (see exact version in global.json file in the repository root).
 
 You'll need to pass an additional flag to the build script:
 
