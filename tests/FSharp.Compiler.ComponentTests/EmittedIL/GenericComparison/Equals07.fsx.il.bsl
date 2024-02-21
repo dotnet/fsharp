@@ -54,7 +54,7 @@
       .locals init (bool V_0,
                uint8[] V_1,
                uint8[] V_2,
-               uint8 V_3,
+               uint16 V_3,
                uint8 V_4,
                uint8[] V_5,
                int32 V_6)

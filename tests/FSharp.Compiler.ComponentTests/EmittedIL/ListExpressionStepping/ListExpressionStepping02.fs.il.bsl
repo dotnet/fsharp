@@ -51,8 +51,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<!a,int32>,class [runtime]System.Tuple`2<!a,int32>>
     {
       .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!a> @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -63,8 +62,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> 
-              Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
+      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
       {
         
         .maxstack  7
@@ -85,8 +83,7 @@
         IL_0017:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
@@ -101,8 +98,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<!a,int32>,class [runtime]System.Tuple`2<!a,int32>>
     {
       .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a> @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -113,8 +109,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> 
-              Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
+      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
       {
         
         .maxstack  7
@@ -135,8 +130,7 @@
         IL_0017:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
@@ -151,8 +145,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`3<!a,int32,int32>,class [runtime]System.Tuple`3<!a,int32,int32>>
     {
       .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!a> @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -163,8 +156,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Tuple`3<!a,int32,int32> 
-              Invoke(class [runtime]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
+      .method public strict virtual instance class [runtime]System.Tuple`3<!a,int32,int32> Invoke(class [runtime]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
       {
         
         .maxstack  7
@@ -191,8 +183,7 @@
         IL_001f:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
@@ -207,8 +198,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`3<!a,int32,int32>,class [runtime]System.Tuple`3<!a,int32,int32>>
     {
       .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!a> @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -219,8 +209,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Tuple`3<!a,int32,int32> 
-              Invoke(class [runtime]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
+      .method public strict virtual instance class [runtime]System.Tuple`3<!a,int32,int32> Invoke(class [runtime]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
       {
         
         .maxstack  7
@@ -247,8 +236,7 @@
         IL_001f:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
@@ -259,8 +247,7 @@
 
     } 
 
-    .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-            f1() cil managed
+    .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f1() cil managed
     {
       
       .maxstack  4
@@ -287,8 +274,7 @@
       IL_003a:  ret
     } 
 
-    .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!a,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!a,int32,int32>>> 
-            f2<a>(!!a x) cil managed
+    .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!a,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!a,int32,int32>>> f2<a>(!!a x) cil managed
     {
       
       .maxstack  6
@@ -296,7 +282,7 @@
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> V_1,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_2,
                valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_3,
-               int32 V_4,
+               uint64 V_4,
                int32 V_5,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!a,int32>> V_6,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!a,int32>> V_7,
@@ -304,11 +290,11 @@
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> V_9,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_10,
                valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_11,
-               int32 V_12,
+               uint64 V_12,
                int32 V_13,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_14,
                valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_15,
-               int32 V_16,
+               uint64 V_16,
                int32 V_17,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!a,int32,int32>> V_18,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!a,int32,int32>> V_19)
@@ -324,128 +310,137 @@
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
       IL_0017:  stloc.1
       IL_0018:  ldc.i4.0
-      IL_0019:  stloc.s    V_4
-      IL_001b:  ldc.i4.0
-      IL_001c:  stloc.s    V_5
-      IL_001e:  br.s       IL_0036
+      IL_0019:  conv.i8
+      IL_001a:  stloc.s    V_4
+      IL_001c:  ldc.i4.0
+      IL_001d:  stloc.s    V_5
+      IL_001f:  br.s       IL_0038
 
-      IL_0020:  ldloca.s   V_3
-      IL_0022:  ldloc.s    V_5
-      IL_0024:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-      IL_0029:  nop
-      IL_002a:  ldloc.s    V_5
-      IL_002c:  ldc.i4.1
-      IL_002d:  add
-      IL_002e:  stloc.s    V_5
-      IL_0030:  ldloc.s    V_4
-      IL_0032:  ldc.i4.1
-      IL_0033:  add
-      IL_0034:  stloc.s    V_4
-      IL_0036:  ldloc.s    V_4
-      IL_0038:  ldc.i4.3
-      IL_0039:  blt.un.s   IL_0020
+      IL_0021:  ldloca.s   V_3
+      IL_0023:  ldloc.s    V_5
+      IL_0025:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+      IL_002a:  nop
+      IL_002b:  ldloc.s    V_5
+      IL_002d:  ldc.i4.1
+      IL_002e:  add
+      IL_002f:  stloc.s    V_5
+      IL_0031:  ldloc.s    V_4
+      IL_0033:  ldc.i4.1
+      IL_0034:  conv.i8
+      IL_0035:  add
+      IL_0036:  stloc.s    V_4
+      IL_0038:  ldloc.s    V_4
+      IL_003a:  ldc.i4.3
+      IL_003b:  conv.i8
+      IL_003c:  blt.un.s   IL_0021
 
-      IL_003b:  ldloca.s   V_3
-      IL_003d:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-      IL_0042:  stloc.2
-      IL_0043:  ldloc.1
-      IL_0044:  ldloc.2
-      IL_0045:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!0,!!1>> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Zip<!!0,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>,
+      IL_003e:  ldloca.s   V_3
+      IL_0040:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+      IL_0045:  stloc.2
+      IL_0046:  ldloc.1
+      IL_0047:  ldloc.2
+      IL_0048:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!0,!!1>> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Zip<!!0,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>,
                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1>)
-      IL_004a:  stloc.s    V_6
-      IL_004c:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!!a>::@_instance
-      IL_0051:  ldloc.s    V_6
-      IL_0053:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [runtime]System.Tuple`2<!!0,int32>,class [runtime]System.Tuple`2<!!0,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+      IL_004d:  stloc.s    V_6
+      IL_004f:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!!a>::@_instance
+      IL_0054:  ldloc.s    V_6
+      IL_0056:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [runtime]System.Tuple`2<!!0,int32>,class [runtime]System.Tuple`2<!!0,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
-      IL_0058:  stloc.s    V_7
-      IL_005a:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!!a>::@_instance
-      IL_005f:  ldloc.s    V_7
-      IL_0061:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [runtime]System.Tuple`2<!!0,int32>,class [runtime]System.Tuple`2<!!0,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+      IL_005b:  stloc.s    V_7
+      IL_005d:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!!a>::@_instance
+      IL_0062:  ldloc.s    V_7
+      IL_0064:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [runtime]System.Tuple`2<!!0,int32>,class [runtime]System.Tuple`2<!!0,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
-      IL_0066:  stloc.0
-      IL_0067:  ldarg.0
-      IL_0068:  ldarg.0
-      IL_0069:  ldarg.0
-      IL_006a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::get_Empty()
-      IL_006f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+      IL_0069:  stloc.0
+      IL_006a:  ldarg.0
+      IL_006b:  ldarg.0
+      IL_006c:  ldarg.0
+      IL_006d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::get_Empty()
+      IL_0072:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_0074:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+      IL_0077:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_0079:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+      IL_007c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_007e:  stloc.s    V_9
-      IL_0080:  ldc.i4.0
-      IL_0081:  stloc.s    V_12
+      IL_0081:  stloc.s    V_9
       IL_0083:  ldc.i4.0
-      IL_0084:  stloc.s    V_13
-      IL_0086:  br.s       IL_009e
+      IL_0084:  conv.i8
+      IL_0085:  stloc.s    V_12
+      IL_0087:  ldc.i4.0
+      IL_0088:  stloc.s    V_13
+      IL_008a:  br.s       IL_00a3
 
-      IL_0088:  ldloca.s   V_11
-      IL_008a:  ldloc.s    V_13
-      IL_008c:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-      IL_0091:  nop
-      IL_0092:  ldloc.s    V_13
-      IL_0094:  ldc.i4.1
-      IL_0095:  add
-      IL_0096:  stloc.s    V_13
-      IL_0098:  ldloc.s    V_12
-      IL_009a:  ldc.i4.1
-      IL_009b:  add
-      IL_009c:  stloc.s    V_12
-      IL_009e:  ldloc.s    V_12
-      IL_00a0:  ldc.i4.3
-      IL_00a1:  blt.un.s   IL_0088
+      IL_008c:  ldloca.s   V_11
+      IL_008e:  ldloc.s    V_13
+      IL_0090:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+      IL_0095:  nop
+      IL_0096:  ldloc.s    V_13
+      IL_0098:  ldc.i4.1
+      IL_0099:  add
+      IL_009a:  stloc.s    V_13
+      IL_009c:  ldloc.s    V_12
+      IL_009e:  ldc.i4.1
+      IL_009f:  conv.i8
+      IL_00a0:  add
+      IL_00a1:  stloc.s    V_12
+      IL_00a3:  ldloc.s    V_12
+      IL_00a5:  ldc.i4.3
+      IL_00a6:  conv.i8
+      IL_00a7:  blt.un.s   IL_008c
 
-      IL_00a3:  ldloca.s   V_11
-      IL_00a5:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-      IL_00aa:  stloc.s    V_10
-      IL_00ac:  ldc.i4.0
-      IL_00ad:  stloc.s    V_16
-      IL_00af:  ldc.i4.0
-      IL_00b0:  stloc.s    V_17
-      IL_00b2:  br.s       IL_00ca
+      IL_00a9:  ldloca.s   V_11
+      IL_00ab:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+      IL_00b0:  stloc.s    V_10
+      IL_00b2:  ldc.i4.0
+      IL_00b3:  conv.i8
+      IL_00b4:  stloc.s    V_16
+      IL_00b6:  ldc.i4.0
+      IL_00b7:  stloc.s    V_17
+      IL_00b9:  br.s       IL_00d2
 
-      IL_00b4:  ldloca.s   V_15
-      IL_00b6:  ldloc.s    V_17
-      IL_00b8:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-      IL_00bd:  nop
-      IL_00be:  ldloc.s    V_17
-      IL_00c0:  ldc.i4.1
-      IL_00c1:  add
-      IL_00c2:  stloc.s    V_17
-      IL_00c4:  ldloc.s    V_16
-      IL_00c6:  ldc.i4.1
-      IL_00c7:  add
-      IL_00c8:  stloc.s    V_16
-      IL_00ca:  ldloc.s    V_16
-      IL_00cc:  ldc.i4.3
-      IL_00cd:  blt.un.s   IL_00b4
+      IL_00bb:  ldloca.s   V_15
+      IL_00bd:  ldloc.s    V_17
+      IL_00bf:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+      IL_00c4:  nop
+      IL_00c5:  ldloc.s    V_17
+      IL_00c7:  ldc.i4.1
+      IL_00c8:  add
+      IL_00c9:  stloc.s    V_17
+      IL_00cb:  ldloc.s    V_16
+      IL_00cd:  ldc.i4.1
+      IL_00ce:  conv.i8
+      IL_00cf:  add
+      IL_00d0:  stloc.s    V_16
+      IL_00d2:  ldloc.s    V_16
+      IL_00d4:  ldc.i4.3
+      IL_00d5:  conv.i8
+      IL_00d6:  blt.un.s   IL_00bb
 
-      IL_00cf:  ldloca.s   V_15
-      IL_00d1:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-      IL_00d6:  stloc.s    V_14
-      IL_00d8:  ldloc.s    V_9
-      IL_00da:  ldloc.s    V_10
-      IL_00dc:  ldloc.s    V_14
-      IL_00de:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!0,!!1,!!2>> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Zip3<!!0,int32,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>,
+      IL_00d8:  ldloca.s   V_15
+      IL_00da:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+      IL_00df:  stloc.s    V_14
+      IL_00e1:  ldloc.s    V_9
+      IL_00e3:  ldloc.s    V_10
+      IL_00e5:  ldloc.s    V_14
+      IL_00e7:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!0,!!1,!!2>> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Zip3<!!0,int32,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>,
                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1>,
                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!2>)
-      IL_00e3:  stloc.s    V_18
-      IL_00e5:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!!a>::@_instance
-      IL_00ea:  ldloc.s    V_18
-      IL_00ec:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [runtime]System.Tuple`3<!!0,int32,int32>,class [runtime]System.Tuple`3<!!0,int32,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+      IL_00ec:  stloc.s    V_18
+      IL_00ee:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!!a>::@_instance
+      IL_00f3:  ldloc.s    V_18
+      IL_00f5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [runtime]System.Tuple`3<!!0,int32,int32>,class [runtime]System.Tuple`3<!!0,int32,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
-      IL_00f1:  stloc.s    V_19
-      IL_00f3:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!!a>::@_instance
-      IL_00f8:  ldloc.s    V_19
-      IL_00fa:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [runtime]System.Tuple`3<!!0,int32,int32>,class [runtime]System.Tuple`3<!!0,int32,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+      IL_00fa:  stloc.s    V_19
+      IL_00fc:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!!a>::@_instance
+      IL_0101:  ldloc.s    V_19
+      IL_0103:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [runtime]System.Tuple`3<!!0,int32,int32>,class [runtime]System.Tuple`3<!!0,int32,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
-      IL_00ff:  stloc.s    V_8
-      IL_0101:  ldloc.0
-      IL_0102:  ldloc.s    V_8
-      IL_0104:  newobj     instance void class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!a,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!a,int32,int32>>>::.ctor(!0,
+      IL_0108:  stloc.s    V_8
+      IL_010a:  ldloc.0
+      IL_010b:  ldloc.s    V_8
+      IL_010d:  newobj     instance void class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!a,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!a,int32,int32>>>::.ctor(!0,
                                                                                                                                                                                                                                                                                                                         !1)
-      IL_0109:  ret
+      IL_0112:  ret
     } 
 
   } 

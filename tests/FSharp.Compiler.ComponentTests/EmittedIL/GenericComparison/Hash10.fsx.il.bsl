@@ -53,7 +53,7 @@
       .maxstack  5
       .locals init (uint8[] V_0,
                uint8[] V_1,
-               uint8 V_2,
+               uint16 V_2,
                uint8 V_3,
                int32 V_4,
                int32 V_5)
