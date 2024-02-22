@@ -452,6 +452,9 @@ type StackGuard =
 
     static member GetDepthOption: string -> int
 
+    /// Gets the depth according to the given values and depending on the detected OS platform
+    static member GetOsDependentDepth: mac: int * unix: int * win: int * other: int -> int
+
 /// This represents the global state established as each task function runs as part of the build.
 ///
 /// Use to reset error and warning handlers.

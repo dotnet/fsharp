@@ -885,6 +885,14 @@ type StackGuard(maxDepth: int, name: string) =
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
+    static member GetOsDependentDepth(mac: int, unix: int, win: int, other: int) : int =
+        let osPlatform = Environment.OSVersion.Platform
+
+        if osPlatform = PlatformID.Win32NT then win
+        elif osPlatform = PlatformID.Unix then unix
+        else if osPlatform = PlatformID.MacOSX then mac
+        else other
+
 type CaptureDiagnosticsConcurrently() =
     let target = DiagnosticsThreadStatics.DiagnosticsLogger
     let loggers = ResizeArray()
