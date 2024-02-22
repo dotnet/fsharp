@@ -24,8 +24,6 @@
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition = "Exists('$(RepoRoot)/Directory.Build.props.user')" />
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
-    <BUILDING_WITH_LKG>true</BUILDING_WITH_LKG>
-    <BUILD_FROM_SOURCE>true</BUILD_FROM_SOURCE>
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
     <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
@@ -34,6 +32,7 @@
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
     <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/net8.0/fslex.dll</FsLexPath>
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/net8.0/fsyacc.dll</FsYaccPath>
+    <DefineConstants>NO_CHECKNULLS;BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>
