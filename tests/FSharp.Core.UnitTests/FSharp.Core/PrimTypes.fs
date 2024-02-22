@@ -998,6 +998,8 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([|min0 .. max2 .. max0|], [|min0; min0 + max2|])
         Assert.AreEqual ([|min0 .. max3 .. max0|], [|min0; min0 + max3|])
 
+// Note to future contributors: if the code gen for ranges is not correct,
+// some of these tests may loop forever or use up all available memory instead of failing outright.
 module RangeTests =
     /// [|Byte.MinValue..Byte.MaxValue|]
     let allBytesArray =
