@@ -1542,7 +1542,7 @@ type internal TransparentCompiler
                     let! loadClosure =
                         ComputeScriptClosure
                             fileName
-                            (SourceTextNew.ofISourceText file.Source)
+                            file.Source
                             tcConfig.fsharpBinariesDir
                             tcConfig.useSimpleResolution
                             (Some tcConfig.useFsiAuxLib)
