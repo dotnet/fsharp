@@ -911,4 +911,33 @@ let _ = nameof ((Foo))
 """
                     (set [| 0 |])
             ]
+        scenario
+            "prefixed module name in nameof expression"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+open System.ComponentModel
+
+[<Description(nameof X.Y.Z)>]
+let v = 2
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+do ignore (match "" with | nameof X.Y.Z -> () | _ -> ())
+"""
+                    (set [| 0 |])
+            ]
     ]
