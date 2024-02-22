@@ -68,10 +68,7 @@ type ReadOnlySpanExtensions =
         while not found && i >= 0 do
             let c = span[i]
 
-            if c <> value then
-                found <- true
-            else
-                i <- i - 1
+            if c <> value then found <- true else i <- i - 1
 
         if found then i else -1
 #endif
