@@ -3265,6 +3265,11 @@ type internal MagicAssemblyResolution() =
     //  assemblies. Better to let those assemblies decide for themselves which is safer.
     static let assemblyLoadFrom (path: string) = Assembly.UnsafeLoadFrom(path)
 
+    static let noopIDisposable =
+        { new IDisposable with
+            member _.Dispose(): unit =
+                failwith "Not Implemented"  }
+
     static member private ResolveAssemblyCore
         (
             ctok,
@@ -3454,29 +3459,61 @@ type internal MagicAssemblyResolution() =
     static member Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
         let rangeStdin0 = rangeN stdinMockFileName 0
+        // Explanation: our understanding is that magic assembly resolution happens
+        // during compilation. So we recover the CompilationThreadToken here.
+        let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let resolveAssembly =
-            ResolveEventHandler(fun _ args ->
-                // Explanation: our understanding is that magic assembly resolution happens
-                // during compilation. So we recover the CompilationThreadToken here.
-                let ctok = AssumeCompilationThreadWithoutEvidence()
+        if isRunningOnCoreClr then
+            let loadContextType = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
+            let alc =
+                if loadContextType <> null then
+                    let constructor = loadContextType.GetConstructor([| typeof<string>; typeof<bool> |])
+                    ValueSome (constructor.Invoke([| "CollectibleFsiCoreClrAssesmblyLoadContext"; true |]))
+                else
+                    ValueNone
 
-                MagicAssemblyResolution.ResolveAssembly(
-                    ctok,
-                    rangeStdin0,
-                    tcConfigB,
-                    tcImports,
-                    fsiDynamicCompiler,
-                    fsiConsoleOutput,
-                    args.Name
-                ))
+            match alc with
+            | ValueNone -> noopIDisposable
+            | ValueSome alc ->
+                let eventInfo = alc.GetType().GetEvent("Resolving")
+                let resolveAssembly =
+                    Func<_, AssemblyName, Assembly>(fun _ctxt asmName ->
+                        MagicAssemblyResolution.ResolveAssembly(
+                            ctok,
+                            rangeStdin0,
+                            tcConfigB,
+                            tcImports,
+                            fsiDynamicCompiler,
+                            fsiConsoleOutput,
+                            asmName.Name
+                        ))
 
-        AppDomain.CurrentDomain.add_AssemblyResolve (resolveAssembly)
+                eventInfo.AddEventHandler(alc, resolveAssembly)
 
-        { new IDisposable with
-            member _.Dispose() =
-                AppDomain.CurrentDomain.remove_AssemblyResolve (resolveAssembly)
-        }
+                { new IDisposable with
+                    member _.Dispose() =
+                        eventInfo.RemoveEventHandler(alc, resolveAssembly)
+                        alc.GetType().GetMethod("Unload").Invoke(alc, null) |> ignore }
+
+        else
+            let resolveAssembly =
+                ResolveEventHandler(fun _ args ->
+                    MagicAssemblyResolution.ResolveAssembly(
+                        ctok,
+                        rangeStdin0,
+                        tcConfigB,
+                        tcImports,
+                        fsiDynamicCompiler,
+                        fsiConsoleOutput,
+                        args.Name
+                    ))
+
+            AppDomain.CurrentDomain.add_AssemblyResolve (resolveAssembly)
+
+            { new IDisposable with
+                member _.Dispose() =
+                    AppDomain.CurrentDomain.remove_AssemblyResolve (resolveAssembly)
+            }
 
 //----------------------------------------------------------------------------
 // Reading stdin
