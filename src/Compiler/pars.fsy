@@ -6776,8 +6776,8 @@ interpolatedStringParts:
   | INTERP_STRING_END
      { [ SynInterpolatedStringPart.String(fst $1, rhs parseState 1) ] }
 
-    | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
-        { SynInterpolatedStringPart.String(fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
+  | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
+     { SynInterpolatedStringPart.String(fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
 
   | INTERP_STRING_PART interpolatedStringParts
      { let rbrace = parseState.InputEndPosition 1

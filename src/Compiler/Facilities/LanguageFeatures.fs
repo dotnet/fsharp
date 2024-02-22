@@ -85,6 +85,7 @@ type LanguageFeature =
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
 
 /// LanguageVersion management
@@ -198,6 +199,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
                 LanguageFeature.UnionIsPropertiesVisible, previewVersion
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
+                LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
                 LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
             ]
 
@@ -342,6 +344,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
         | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
             FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
+        | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
 
     /// Get a version string associated with the given feature.

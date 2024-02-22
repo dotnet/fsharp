@@ -17,4 +17,7 @@ type internal ReadOnlySpanExtensions =
 
     [<Extension>]
     static member LastIndexOfAnyInRange: span: ReadOnlySpan<char> * lowInclusive: char * highInclusive: char -> int
+
+    [<Extension>]
+    static member LastIndexOfAnyExcept: span: ReadOnlySpan<char> * value: char -> int
 #endif
