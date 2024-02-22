@@ -2249,7 +2249,7 @@ module CommonExtensions =
     type System.IO.Stream with
 
         [<CompiledName("AsyncRead")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-        member stream.AsyncRead(buffer: byte[], ?offset, ?count) =
+        member stream.AsyncRead(buffer: byte array, ?offset, ?count) =
             let offset = defaultArg offset 0
             let count = defaultArg count buffer.Length
             Async.FromBeginEnd(buffer, offset, count, stream.BeginRead, stream.EndRead)
@@ -2271,7 +2271,7 @@ module CommonExtensions =
             }
 
         [<CompiledName("AsyncWrite")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-        member stream.AsyncWrite(buffer: byte[], ?offset: int, ?count: int) =
+        member stream.AsyncWrite(buffer: byte array, ?offset: int, ?count: int) =
             let offset = defaultArg offset 0
             let count = defaultArg count buffer.Length
             Async.FromBeginEnd(buffer, offset, count, stream.BeginWrite, stream.EndWrite)
@@ -2361,7 +2361,7 @@ module WebExtensions =
             )
 
         [<CompiledName("AsyncDownloadData")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-        member this.AsyncDownloadData(address: Uri) : Async<byte[]> =
+        member this.AsyncDownloadData(address: Uri) : Async<byte array> =
             this.Download(
                 event = this.DownloadDataCompleted,
                 handler = (fun action -> Net.DownloadDataCompletedEventHandler action),

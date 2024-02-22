@@ -1042,8 +1042,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                     false, (RQUOTE(s, raw), leftc, rightc - 1)
                 | INFIX_COMPARE_OP(LexFilter.TyparsCloseOp(greaters, afterOp) as opstr) ->
                     match afterOp with
-                    | None -> ()
-                    | Some tok -> delayToken (tok, leftc + greaters.Length, rightc)
+                    | ValueNone -> ()
+                    | ValueSome tok -> delayToken (tok, leftc + greaters.Length, rightc)
 
                     for i = greaters.Length - 1 downto 1 do
                         delayToken (greaters[i]false, leftc + i, rightc - opstr.Length + i + 1)

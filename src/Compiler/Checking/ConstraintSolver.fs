@@ -57,96 +57,17 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
-
-//-------------------------------------------------------------------------
-// Generate type variables and record them in within the scope of the
-// compilation environment, which currently corresponds to the scope
-// of the constraint resolution carried out by type checking.
-//------------------------------------------------------------------------- 
-   
-let compgenId = mkSynId range0 unassignedTyparName
-
-let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
-    Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
-    
-let AnonTyparId m = mkSynId m unassignedTyparName
-
-let NewAnonTypar (kind, m, rigid, var, dyn) = 
-    Construct.NewTypar (kind, rigid, SynTypar(AnonTyparId m, var, true), false, dyn, [], false, false)
-    
-let NewNamedInferenceMeasureVar (_m, rigid, var, id) = 
-    Construct.NewTypar(TyparKind.Measure, rigid, SynTypar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
-
-let NewInferenceMeasurePar () =
-    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
-
-let NewErrorTypar () =
-    NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
-
-let NewErrorMeasureVar () =
-    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
-
-let NewInferenceType (g: TcGlobals) = 
-    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
-    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
-
-let NewErrorType () =
-    mkTyparTy (NewErrorTypar ())
-
-let NewErrorMeasure () =
-    Measure.Var (NewErrorMeasureVar ())
-
-let NewByRefKindInferenceType (g: TcGlobals) m = 
-    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)
-    if g.byrefkind_InOut_tcr.CanDeref then
-        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull), m)]
-    mkTyparTy tp
-
-let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
-
-let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
-    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
-    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
-    let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
-    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
-
-// QUERY: should 'rigid' ever really be 'true'? We set this when we know
-// we are going to have to generalize a typar, e.g. when implementing a 
-// abstract generic method slot. But we later check the generalization 
-// condition anyway, so we could get away with a non-rigid typar. This 
-// would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars g m rigid fctps tinst tpsorig =
-    let tps = tpsorig |> List.map (FreshenTypar g rigid)
-    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
-    tps, renaming, tinst
-
-let FreshenTypeInst g m tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig
-
-let FreshMethInst g m fctps tinst tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig
-
-let FreshenTypars g m tpsorig =
-    match tpsorig with 
-    | [] -> []
-    | _ -> 
-        let _, _, tpTys = FreshenTypeInst g m tpsorig
-        tpTys
-
-let FreshenMethInfo m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
-    tpTys
 
 //-------------------------------------------------------------------------
 // Unification of types: solve/record equality constraints
@@ -1718,8 +1639,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   let propName = nm[4..]
                   let props = 
                     supportTys |> List.choose (fun ty ->
-                        match NameResolution.TryFindAnonRecdFieldOfType g ty propName with
-                        | Some (NameResolution.Item.AnonRecdField(anonInfo, tinst, i, _)) -> Some (anonInfo, tinst, i)
+                        match TryFindAnonRecdFieldOfType g ty propName with
+                        | Some (Item.AnonRecdField(anonInfo, tinst, i, _)) -> Some (anonInfo, tinst, i)
                         | _ -> None)
                   match props with 
                   | [ prop ] -> Some prop

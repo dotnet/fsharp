@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.EditorServices
 
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 module public UnusedOpens =
@@ -32,14 +31,3 @@ module public UnusedDeclarations =
 
     /// Get all unused declarations in a file
     val getUnusedDeclarations: checkFileResults: FSharpCheckFileResults * isScriptFile: bool -> Async<seq<range>>
-
-module public UnnecessaryParentheses =
-
-    /// Gets the ranges of all unnecessary pairs of parentheses in a file.
-    ///
-    /// Note that this may include pairs of nested ranges each of whose
-    /// lack of necessity depends on the other's presence, such
-    /// that it is valid to remove either set of parentheses but not both, e.g.:
-    ///
-    /// (x.M(y)).N → (x.M y).N ↮ x.M(y).N
-    val getUnnecessaryParentheses: getSourceLineStr: (int -> string) -> parsedInput: ParsedInput -> Async<range seq>

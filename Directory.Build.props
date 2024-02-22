@@ -32,6 +32,7 @@
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
     <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/net8.0/fslex.dll</FsLexPath>
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/net8.0/fsyacc.dll</FsYaccPath>
+    <DefineConstants>NO_CHECKNULLS;BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>

@@ -6,11 +6,10 @@
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="obj\**" />
-    <EmbeddedResource Remove="obj\**" />
-    <None Remove="obj\**" />
-  </ItemGroup>
+  <PropertyGroup>
+    <!--missing XML comments-->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
