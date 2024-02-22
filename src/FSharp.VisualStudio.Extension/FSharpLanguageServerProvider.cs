@@ -73,37 +73,41 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
 }
 
 
-internal class VsDiagnosticsHandler 
+internal class VsDiagnosticsHandler
     : IRequestHandler<VSInternalDocumentDiagnosticsParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
       IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
 {
     public bool MutatesSolutionState => false;
 
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName)]
-    public Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
+    public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
-       var rep = new VSInternalDiagnosticReport
+        var result = await context.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+
+        var rep = new VSInternalDiagnosticReport
         {
             ResultId = "potato1", // Has to be present for diagnostic to show up
             //Identifier = 69,
             //Version = 1,
             Diagnostics =
-            [
-                new Diagnostic
-                {
-                    Range = new Microsoft.VisualStudio.LanguageServer.Protocol.Range
-                    {
-                        Start = new Position { Line = 0, Character = 0 },
-                        End = new Position { Line = 0, Character = 1 }
-                    },
-                    Severity = DiagnosticSeverity.Error,
-                    Message = "This is a test diagnostic",
-                    //Source = "Intellisense",
-                    Code = "1234"
-                }
-            ]
+                 result.Select(d =>
+
+                 new Diagnostic
+                 {
+                     Range = new Microsoft.VisualStudio.LanguageServer.Protocol.Range
+                     {
+                         Start = new Position { Line = d.StartLine, Character = d.StartColumn },
+                         End = new Position { Line = d.EndLine, Character = d.EndColumn }
+                     },
+                     Severity = DiagnosticSeverity.Error,
+                     Message = $"LSP: {d.Message}",
+                     //Source = "Intellisense",
+                     Code = d.ErrorNumberText
+                 }
+             ).ToArray()
         };
-        return Task.FromResult(new[] { rep });
+
+        return [rep];
     }
 
     [LanguageServerEndpoint("textDocument/_vs_getProjectContexts")]
@@ -116,6 +120,7 @@ internal class VsDiagnosticsHandler
                 new() {
                     Id = "potato",
                     Label = "Potato",
+                    // PR for F# project kind: https://devdiv.visualstudio.com/DevDiv/_git/VSLanguageServerClient/pullrequest/529882
                     Kind = VSProjectKind.VisualBasic
                 },
                 new () {
@@ -174,7 +179,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         try
         {
             // Some hardcoded projects before we create them from the ProjectQuery
-            var projectsRoot = @"D:\code\FS";
+            var projectsRoot = @"D:\code";
             var giraffe = FSharpProjectSnapshot.FromResponseFile(
                 new FileInfo(Path.Combine(projectsRoot, @"Giraffe\src\Giraffe\Giraffe.rsp")),
                 Path.Combine(projectsRoot, @"Giraffe\src\Giraffe\Giraffe.fsproj"));
