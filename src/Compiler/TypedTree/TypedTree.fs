@@ -4565,6 +4565,17 @@ type DecisionTreeCase =
     member x.DebugText = x.ToString()
 
     override x.ToString() = sprintf "DecisionTreeCase(...)"
+    
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
+type ActivePatternReturnKind =
+    | RefTypeWrapper
+    | StructTypeWrapper
+    | Boolean
+    member this.IsStruct with get () = 
+        match this with
+        | RefTypeWrapper -> false
+        | StructTypeWrapper
+        | Boolean -> true
 
 [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
 type DecisionTreeTest = 
@@ -4585,20 +4596,20 @@ type DecisionTreeTest =
     /// Test if the input to a decision tree is an instance of the given type 
     | IsInst of source: TType * target: TType
 
-    /// Test.ActivePatternCase(activePatExpr, activePatResTys, isStructRetTy, activePatIdentity, idx, activePatInfo)
+    /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatRetKind, activePatIdentity, idx, activePatInfo)
     ///
     /// Run the active pattern and bind a successful result to a 
     /// variable in the remaining tree. 
     ///     activePatExpr -- The active pattern function being called, perhaps applied to some active pattern parameters.
     ///     activePatResTys -- The result types (case types) of the active pattern.
-    ///     isStructRetTy -- Is the active pattern a struct return
+    ///     activePatRetKind -- Indicating what is returning from the active pattern
     ///     activePatIdentity -- The value and the types it is applied to. If there are any active pattern parameters then this is empty. 
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of
         activePatExpr: Expr *        
         activePatResTys: TTypes *
-        isStructRetTy: bool *
+        activePatRetKind: ActivePatternReturnKind *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
         activePatternInfo: ActivePatternInfo
@@ -4667,7 +4678,7 @@ type ActivePatternElemRef =
         activePatternInfo: ActivePatternInfo *
         activePatternVal: ValRef *
         caseIndex: int *
-        isStructRetTy: bool
+        activePatRetKind: ActivePatternReturnKind
 
     /// Get the full information about the active pattern being referred to
     member x.ActivePatternInfo = (let (APElemRef(info, _, _, _)) = x in info)
@@ -4676,7 +4687,7 @@ type ActivePatternElemRef =
     member x.ActivePatternVal = (let (APElemRef(_, vref, _, _)) = x in vref)
 
     /// Get a reference to the value for the active pattern being referred to
-    member x.IsStructReturn = (let (APElemRef(_, _, _, isStructRetTy)) = x in isStructRetTy)
+    member x.ActivePatternRetKind = (let (APElemRef(_, _, _, activePatRetKind)) = x in activePatRetKind)
 
     /// Get the index of the active pattern element within the overall active pattern 
     member x.CaseIndex = (let (APElemRef(_, _, n, _)) = x in n)

@@ -5,7 +5,7 @@
 
 You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET](https://dotnet.microsoft.com/).
 
-You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
+You will also need .NET SDK installed from [here](https://dotnet.microsoft.com/download/dotnet), exact version can be found in the global.json file in the root of the repository.
 
 ## Contributing
 

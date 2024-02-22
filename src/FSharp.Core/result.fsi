@@ -266,7 +266,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val inline toArray: result: Result<'T, 'Error> -> 'T[]
+    val inline toArray: result: Result<'T, 'Error> -> 'T array
 
     /// <summary>Convert the result to a list of length 0 or 1.</summary>
     ///

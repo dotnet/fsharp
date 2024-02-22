@@ -249,7 +249,7 @@ module Seq =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("ChunkBySize")>]
-    val chunkBySize: chunkSize: int -> source: seq<'T> -> seq<'T[]>
+    val chunkBySize: chunkSize: int -> source: seq<'T> -> seq<'T array>
 
     /// <summary>Applies the given function to each element of the sequence and concatenates all the
     /// results.</summary>
@@ -530,7 +530,7 @@ module Seq =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("SplitInto")>]
-    val splitInto: count: int -> source: seq<'T> -> seq<'T[]>
+    val splitInto: count: int -> source: seq<'T> -> seq<'T array>
 
     /// <summary>Creates an empty sequence.</summary>
     ///
@@ -1833,7 +1833,7 @@ module Seq =
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 5 }</c>.
     /// </example>
     [<CompiledName("OfArray")>]
-    val ofArray: source: 'T[] -> seq<'T>
+    val ofArray: source: 'T array -> seq<'T>
 
     /// <summary>Views the given list as a sequence.</summary>
     ///
@@ -1955,7 +1955,7 @@ module Seq =
     ///
     /// let readonlyView = input |> Seq.readonly
     ///
-    /// (readonlyView :?> int[]).[1] &lt;- 4
+    /// (readonlyView :?> int array).[1] &lt;- 4
     /// </code>
     /// Throws an <c>InvalidCastException</c>.
     /// </example>
@@ -2474,7 +2474,7 @@ module Seq =
     /// Evaluates to <c>[| 1; 2; 5 |]</c>.
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: source: seq<'T> -> 'T[]
+    val toArray: source: seq<'T> -> 'T array
 
     /// <summary>Builds a list from the given collection.</summary>
     ///
@@ -2792,7 +2792,7 @@ module Seq =
     /// Evaluates to a sequence of arrays yielding the results <c>seq { [| 1; 2; 3 |]; [| 2; 3; 4 |]; [| 3; 4; 5 |] }</c>
     /// </example>
     [<CompiledName("Windowed")>]
-    val windowed: windowSize: int -> source: seq<'T> -> seq<'T[]>
+    val windowed: windowSize: int -> source: seq<'T> -> seq<'T array>
 
     /// <summary>Combines the two sequences into a sequence of pairs. The two sequences need not have equal lengths:
     /// when one sequence is exhausted any remaining elements in the other

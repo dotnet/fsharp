@@ -92,7 +92,7 @@ let ChooseParamNames fieldNamesAndTypes =
         ilParamName, ilFieldName, ilPropType)
 
 /// Approximation for purposes of optimization and giving a warning when compiling definition-only files as EXEs
-let rec CheckCodeDoesSomething (code: ILCode) =
+let CheckCodeDoesSomething (code: ILCode) =
     code.Instrs
     |> Array.exists (function
         | AI_ldnull
@@ -476,7 +476,7 @@ let CompLocForPrivateImplementationDetails cloc =
     }
 
 /// Compute an ILTypeRef for a CompilationLocation
-let rec TypeRefForCompLoc cloc =
+let TypeRefForCompLoc cloc =
     match cloc.Enclosing with
     | [] -> mkILTyRef (cloc.Scope, TypeNameForPrivateImplementationDetails cloc)
     | [ h ] ->
@@ -1908,7 +1908,16 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         if not discard then
             AddPropertyDefToHash m gproperties pdef
 
-    member _.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
+    member _.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
+        match ResizeArray.tryFindIndex cond gmethods with
+        | Some idx -> gmethods[idx] <- appendInstrsToMethod instrs gmethods[idx]
+        | None ->
+            let body =
+                mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
+
+            gmethods.Add(mkILClassCtor body)
+
+    member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
         match ResizeArray.tryFindIndex cond gmethods with
         | Some idx -> gmethods[idx] <- prependInstrsToMethod instrs gmethods[idx]
         | None ->
@@ -1916,6 +1925,8 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
             gmethods.Add(mkILClassCtor body)
+
+        this
 
 and TypeDefsBuilder() =
 
@@ -2264,6 +2275,22 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     /// static init fields on script modules.
     let scriptInitFspecs = ConcurrentStack<ILFieldSpec * range>()
 
+    let initialInstrs seqpt feefee =
+        [
+            yield!
+                (if isEnvVarSet "NO_ADD_FEEFEE_TO_CCTORS" then []
+                 elif isEnvVarSet "ADD_SEQPT_TO_CCTORS" then seqpt
+                 else feefee) // mark start of hidden code
+        ]
+
+    let finalInstrs fspec =
+        [
+            yield mkLdcInt32 0
+            yield mkNormalStsfld fspec
+            yield mkNormalLdsfld fspec
+            yield AI_pop
+        ]
+
     member _.AddScriptInitFieldSpec(fieldSpec, range) =
         scriptInitFspecs.Push((fieldSpec, range))
 
@@ -2276,15 +2303,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             let InitializeCompiledScript (fspec, m) =
                 let ilDebugRange = GenPossibleILDebugRange cenv m
 
-                mgbuf.AddExplicitInitToSpecificMethodDef(
-                    (fun (md: ILMethodDef) -> md.IsEntryPoint),
-                    tref,
-                    fspec,
-                    ilDebugRange,
-                    imports,
-                    [],
-                    []
-                )
+                mgbuf.AddExplicitInitToEntryPoint(tref, fspec, ilDebugRange, imports, [], [])
 
             scriptInitFspecs |> Seq.iter InitializeCompiledScript
         | None -> ()
@@ -2325,24 +2344,23 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         if ilMethodDef.IsEntryPoint then
             explicitEntryPointInfo <- Some tref
 
-    member _.AddExplicitInitToSpecificMethodDef(cond, tref, fspec, sourceOpt, imports, feefee, seqpt) =
-        // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
-        // Doing both a store and load keeps FxCop happier because it thinks the field is useful
-        let instrs =
-            [
-                yield!
-                    (if isEnvVarSet "NO_ADD_FEEFEE_TO_CCTORS" then []
-                     elif isEnvVarSet "ADD_SEQPT_TO_CCTORS" then seqpt
-                     else feefee) // mark start of hidden code
-                yield mkLdcInt32 0
-                yield mkNormalStsfld fspec
-                yield mkNormalLdsfld fspec
-                yield AI_pop
-            ]
+    member _.AddExplicitInitToEntryPoint(tref, fspec, sourceOpt, imports, feefee, seqpt) =
+
+        let cond = (fun (md: ILMethodDef) -> md.IsEntryPoint)
 
         gtdefs
             .FindNestedTypeDefBuilder(tref)
-            .PrependInstructionsToSpecificMethodDef(cond, instrs, sourceOpt, imports)
+            .PrependInstructionsToSpecificMethodDef(cond, (initialInstrs seqpt feefee) @ (finalInstrs fspec), sourceOpt, imports)
+        |> ignore
+
+    member _.AddExplicitInitToCctor(tref, fspec, sourceOpt, imports, feefee, seqpt) =
+
+        let cond = (fun (md: ILMethodDef) -> md.Name = ".cctor")
+
+        gtdefs
+            .FindNestedTypeDefBuilder(tref)
+            .PrependInstructionsToSpecificMethodDef(cond, initialInstrs seqpt feefee, sourceOpt, imports)
+            .AppendInstructionsToSpecificMethodDef(cond, finalInstrs fspec, sourceOpt, imports)
 
     member _.AddEventDef(tref, edef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddEventDef(edef)
@@ -10194,15 +10212,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
                     // This adds the explicit init of the .cctor to the explicit entry point main method
                     let ilDebugRange = GenPossibleILDebugRange cenv m
 
-                    mgbuf.AddExplicitInitToSpecificMethodDef(
-                        (fun md -> md.IsEntryPoint),
-                        tref,
-                        fspec,
-                        ilDebugRange,
-                        eenv.imports,
-                        feefee,
-                        seqpt
-                    ))
+                    mgbuf.AddExplicitInitToEntryPoint(tref, fspec, ilDebugRange, eenv.imports, feefee, seqpt))
 
                 let cctorMethDef =
                     mkILClassCtor (MethodBody.IL(InterruptibleLazy.FromValue topCode))
@@ -10289,7 +10299,7 @@ and GenForceWholeFileInitializationAsPartOfCCtor cenv (mgbuf: AssemblyBuilder) (
     // Doing both a store and load keeps FxCop happier because it thinks the field is useful
     lazyInitInfo.Add(fun fspec feefee seqpt ->
         let ilDebugRange = GenPossibleILDebugRange cenv m
-        mgbuf.AddExplicitInitToSpecificMethodDef((fun md -> md.Name = ".cctor"), tref, fspec, ilDebugRange, imports, feefee, seqpt))
+        mgbuf.AddExplicitInitToCctor(tref, fspec, ilDebugRange, imports, feefee, seqpt))
 
 /// Generate an Equals method.
 and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThatTy) =

@@ -31,7 +31,7 @@ type Async with
         task.Result
 
 // Create one global interactive checker instance
-let checker = FSharpChecker.Create()
+let checker = FSharpChecker.Create(useTransparentCompiler=FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically)
 
 type TempFile(ext, contents: string) =
     let tmpFile =  Path.ChangeExtension(tryCreateTemporaryFileName (), ext)
@@ -137,8 +137,8 @@ let mkTestFileAndOptions source additionalArgs =
     let fileSource1 = "module M"
     FileSystem.OpenFileForWriteShim(fileName).Write(fileSource1)
 
-    let args = Array.append (mkProjectCommandLineArgs (dllName, [fileName])) additionalArgs
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let args = Array.append (mkProjectCommandLineArgs (dllName, [])) additionalArgs
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = [| fileName |] }
     fileName, options
 
 let parseAndCheckFile fileName source options =
@@ -158,7 +158,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
             let fname = Path.Combine(path, Path.GetFileName(file))
             let dllName = Path.ChangeExtension(fname, ".dll")
             let projName = Path.ChangeExtension(fname, ".fsproj")
-            let args = mkProjectCommandLineArgsForScript (dllName, [file])
+            let args = mkProjectCommandLineArgsForScript (dllName, [])
             printfn "file = %A, args = %A" file args
             checker.GetProjectOptionsFromCommandLineArgs (projName, args)
 
@@ -171,7 +171,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
     //printfn "projectOptions = %A" projectOptions
 #endif
 
-    let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
+    let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions; SourceFiles = [|file|] }
     let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunImmediate
 
     // if parseResult.Errors.Length > 0 then

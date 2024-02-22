@@ -76,8 +76,7 @@ extends [runtime]System.Object
 
   }
 
-  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32>
-   get_patternInput@9() cil managed
+  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> get_patternInput@9() cil managed
   {
 
     .maxstack  8
@@ -85,8 +84,7 @@ extends [runtime]System.Object
     IL_0005:  ret
   }
 
-  .method assembly specialname static int32
-   get_outArg@9() cil managed
+  .method assembly specialname static int32 get_outArg@9() cil managed
   {
 
     .maxstack  8
@@ -94,8 +92,7 @@ extends [runtime]System.Object
     IL_0005:  ret
   }
 
-  .method assembly specialname static void
-   set_outArg@9(int32 'value') cil managed
+  .method assembly specialname static void set_outArg@9(int32 'value') cil managed
   {
 
     .maxstack  8
@@ -104,8 +101,7 @@ extends [runtime]System.Object
     IL_0006:  ret
   }
 
-  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32>
-   'get_patternInput@10-1'() cil managed
+  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> 'get_patternInput@10-1'() cil managed
   {
 
     .maxstack  8
@@ -113,8 +109,7 @@ extends [runtime]System.Object
     IL_0005:  ret
   }
 
-  .method assembly specialname static int32
-   'get_outArg@10-1'() cil managed
+  .method assembly specialname static int32 'get_outArg@10-1'() cil managed
   {
 
     .maxstack  8
@@ -122,8 +117,7 @@ extends [runtime]System.Object
     IL_0005:  ret
   }
 
-  .method assembly specialname static void
-   'set_outArg@10-1'(int32 'value') cil managed
+  .method assembly specialname static void 'set_outArg@10-1'(int32 'value') cil managed
   {
 
     .maxstack  8
@@ -174,8 +168,7 @@ extends [runtime]System.Object
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 )
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
-  .method private specialname rtspecialname static
-   void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
 
     .maxstack  4
@@ -269,3 +262,34 @@ let _, _ = Thing.Do()
             (Error 501, Line 6, Col 12, Line 6, Col 22, "The member or object constructor 'Do' takes 1 argument(s) but is here given 0. The required signature is 'static member Thing.Do: [<Optional>] i: outref<bool> -> bool'.")
         ]
 
+    [<Fact>]
+    let ``optional and ParamArray parameter resolves correctly `` () =
+        Fsx """
+open System.Runtime.InteropServices
+    
+type Thing =
+    static member Do(
+        [<Optional; DefaultParameterValue "">] something: string, 
+        [<System.ParamArray>] args: obj[]) = something, args
+    static member Do2(
+        [<Optional; DefaultParameterValue "">] something: string, 
+        outvar: outref<int>,
+        [<System.ParamArray>] args: obj[]) = 
+        
+        outvar <- 1
+        something, args
+let _, _ = Thing.Do()
+let _, _ = Thing.Do("123")
+let _, _ = Thing.Do("123", 1, 2, 3, 4)
+
+let _, _ = Thing.Do2()
+let _, _ = Thing.Do2("123")
+let _ =
+    let mutable x = 0
+    Thing.Do2("123", &x)
+let _ =
+    let mutable x = 0
+    Thing.Do2("123", &x, 1, 2, 3, 4)
+    """
+        |> typecheck
+        |> shouldSucceed
