@@ -1,6 +1,7 @@
 namespace FSharp.Compiler.CodeAnalysis.TransparentCompiler
 
 open System
+open System.Linq
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open System.Diagnostics
@@ -407,6 +408,7 @@ type internal TransparentCompiler
                             | None -> ()
                             | Some stamp -> string stamp
                         |]
+                    |> Md5Hasher.addBytes (source.GetChecksum().ToArray())
                     |> Md5Hasher.addBool useFsiAuxLib
                     |> Md5Hasher.addBool useFsiAuxLib
                     |> Md5Hasher.addBool useSdkRefs
