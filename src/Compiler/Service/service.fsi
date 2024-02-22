@@ -264,6 +264,7 @@ type public FSharpChecker =
     /// <param name="sdkDirOverride">Override the .NET SDK used for default references.</param>
     /// <param name="optionsStamp">An optional unique stamp for the options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
     member GetProjectSnapshotFromScript:
         fileName: string *
         source: ISourceTextNew *
