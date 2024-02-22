@@ -377,7 +377,7 @@ type internal TransparentCompiler
 
     let ComputeScriptClosure
         (fileName: string)
-        (source: ISourceText)
+        (source: ISourceTextNew)
         (defaultFSharpBinariesDir: string)
         (useSimpleResolution: bool)
         (useFsiAuxLib: bool option)
@@ -401,8 +401,8 @@ type internal TransparentCompiler
                     Md5Hasher.empty
                     |> Md5Hasher.addStrings
                         [|
-                            fileName
-                            string (source.GetHashCode())
+                            yield! otherOptions
+                            System.Text.Encoding.UTF8.GetString(Seq.toArray (source.GetChecksum()))
                             match stamp with
                             | None -> ()
                             | Some stamp -> string stamp
@@ -1541,7 +1541,7 @@ type internal TransparentCompiler
                     let! loadClosure =
                         ComputeScriptClosure
                             fileName
-                            file.Source
+                            (SourceTextNew.ofISourceText file.Source)
                             tcConfig.fsharpBinariesDir
                             tcConfig.useSimpleResolution
                             (Some tcConfig.useFsiAuxLib)
