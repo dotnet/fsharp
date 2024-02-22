@@ -403,7 +403,6 @@ type internal TransparentCompiler
                     |> Md5Hasher.addStrings
                         [|
                             yield! otherOptions
-                            System.Text.Encoding.UTF8.GetString(Seq.toArray (source.GetChecksum()))
                             match stamp with
                             | None -> ()
                             | Some stamp -> string stamp
