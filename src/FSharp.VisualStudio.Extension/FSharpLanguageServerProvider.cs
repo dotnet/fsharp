@@ -45,42 +45,92 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
         var capabilities = new VSInternalServerCapabilities
         {
             TextDocumentSync = value.TextDocumentSync,
-            SupportsDiagnosticRequests = true
+            SupportsDiagnosticRequests = true,
+            ProjectContextProvider = true,
+            DiagnosticProvider = new()
+            {
+                SupportsMultipleContextsDiagnostics = true,
+                DiagnosticKinds = [
+                        // Support a specialized requests dedicated to task-list items.  This way the client can ask just
+                        // for these, independently of other diagnostics.  They can also throttle themselves to not ask if
+                        // the task list would not be visible.
+                        VSInternalDiagnosticKind.Task,
+                        // Dedicated request for workspace-diagnostics only.  We will only respond to these if FSA is on.
+                        VSInternalDiagnosticKind.Syntax,
+                        // Fine-grained diagnostics requests.  Importantly, this separates out syntactic vs semantic
+                        // requests, allowing the former to quickly reach the user without blocking on the latter.  In a
+                        // similar vein, compiler diagnostics are explicitly distinct from analyzer-diagnostics, allowing
+                        // the former to appear as soon as possible as they are much more critical for the user and should
+                        // not be delayed by a slow analyzer.
+                        new("Semantic"),
+                        //new(PullDiagnosticCategories.DocumentAnalyzerSyntax),
+                        //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
+                    ]
+            }
         };
         return capabilities;
     }
 }
 
 
-internal class VsDiagnosticsHandler : IRequestHandler<VSInternalDocumentDiagnosticsParams, VSInternalDiagnosticReport[], FSharpRequestContext>
+internal class VsDiagnosticsHandler
+    : IRequestHandler<VSInternalDocumentDiagnosticsParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
+      IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
 {
     public bool MutatesSolutionState => false;
 
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName)]
-    public Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
+    public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
+        var result = await context.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+
         var rep = new VSInternalDiagnosticReport
         {
             ResultId = "potato1", // Has to be present for diagnostic to show up
             //Identifier = 69,
             //Version = 1,
             Diagnostics =
-            [
-                new Diagnostic
-                {
-                    Range = new Microsoft.VisualStudio.LanguageServer.Protocol.Range
-                    {
-                        Start = new Position { Line = 0, Character = 0 },
-                        End = new Position { Line = 0, Character = 1 }
-                    },
-                    Severity = DiagnosticSeverity.Error,
-                    Message = "This is a test diagnostic",
-                    //Source = "Intellisense",
-                    Code = "1234"
-                }
-            ]
+                 result.Select(d =>
+
+                 new Diagnostic
+                 {
+                     Range = new Microsoft.VisualStudio.LanguageServer.Protocol.Range
+                     {
+                         Start = new Position { Line = d.StartLine, Character = d.StartColumn },
+                         End = new Position { Line = d.EndLine, Character = d.EndColumn }
+                     },
+                     Severity = DiagnosticSeverity.Error,
+                     Message = $"LSP: {d.Message}",
+                     //Source = "Intellisense",
+                     Code = d.ErrorNumberText
+                 }
+             ).ToArray()
         };
-        return Task.FromResult(new[] { rep });
+
+        return [rep];
+    }
+
+    [LanguageServerEndpoint("textDocument/_vs_getProjectContexts")]
+    public Task<VSProjectContextList> HandleRequestAsync(VSGetProjectContextsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(new VSProjectContextList()
+        {
+            DefaultIndex = 0,
+            ProjectContexts = [
+                new() {
+                    Id = "potato",
+                    Label = "Potato",
+                    // PR for F# project kind: https://devdiv.visualstudio.com/DevDiv/_git/VSLanguageServerClient/pullrequest/529882
+                    Kind = VSProjectKind.VisualBasic
+                },
+                new () {
+                    Id = "potato2",
+                    Label = "Potato2",
+                    Kind = VSProjectKind.VisualBasic
+                }
+
+            ]
+        });
     }
 }
 
@@ -106,9 +156,11 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     /// <inheritdoc/>
     public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
     {
-        var what = this.Extensibility.Workspaces();
+        var ws = this.Extensibility.Workspaces();
         //var result = what.QueryProjectsAsync(project => project.With(p => p.Kind == "6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705"), cancellationToken).Result;
-        IQueryResults<IProjectSnapshot>? result = await what.QueryProjectsAsync(project => project, cancellationToken);
+        IQueryResults<IProjectSnapshot>? result = await ws.QueryProjectsAsync(project => project.With(p => new { p.ActiveConfigurations, p.Id, p.Guid }), cancellationToken);
+
+        var x = await ws.QuerySolutionAsync(solution => solution.With(s => new { s.Path, s.Guid, s.ActiveConfiguration, s.ActivePlatform }), cancellationToken);
 
         foreach (var project in result)
         {
@@ -127,7 +179,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         try
         {
             // Some hardcoded projects before we create them from the ProjectQuery
-            var projectsRoot = @"D:\code\FS";
+            var projectsRoot = @"D:\code";
             var giraffe = FSharpProjectSnapshot.FromResponseFile(
                 new FileInfo(Path.Combine(projectsRoot, @"Giraffe\src\Giraffe\Giraffe.rsp")),
                 Path.Combine(projectsRoot, @"Giraffe\src\Giraffe\Giraffe.fsproj"));
@@ -158,6 +210,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         var references = project.ProjectReferences.Please();
 
         var properties = project.Properties.Please();
+        var id = project.Id;
 
         var configurationDimensions = project.ConfigurationDimensions.Please();
         var configurations = project.Configurations.Please();

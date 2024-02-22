@@ -1,5 +1,9 @@
 namespace FSharp.Compiler.LanguageServer
 
+open System.Runtime.CompilerServices
+
+#nowarn "57"
+
 open System
 open System.Threading.Tasks
 open System.Threading
@@ -13,27 +17,65 @@ open Nerdbank.Streams
 open System.Diagnostics
 open System.IO
 open Workspace
+open FSharp.Compiler.CodeAnalysis
 
 [<AutoOpen>]
 module Stuff =
     [<Literal>]
     let FSharpLanguageName = "F#"
 
-type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspace: FSharpWorkspace) =
+[<Extension>]
+type Extensions =
+
+    [<Extension>]
+    static member Please(this: Async<'t>, ct) =
+        Async.StartAsTask(this, cancellationToken = ct)
+
+type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspace: FSharpWorkspace, checker: FSharpChecker) =
     member _.LspServices = lspServices
     member _.Logger = logger
     member _.Workspace = workspace
+    member _.Checker = checker
+
+    // TODO: split to parse and check diagnostics
+    member _.GetDiagnosticsForFile(file: Uri) =
+
+        workspace.GetSnapshotForFile file
+        |> Option.map (fun snapshot ->
+            async {
+                let! parseResult, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot, "LSP Get diagnostics")
+
+                return
+                    match checkFileAnswer with
+                    | FSharpCheckFileAnswer.Succeeded result -> result.Diagnostics
+                    | FSharpCheckFileAnswer.Aborted -> parseResult.Diagnostics
+            })
+        |> Option.defaultValue (async.Return [||])
 
 type ContextHolder(intialWorkspace, lspServices: ILspServices) =
 
     let logger = lspServices.GetRequiredService<ILspLogger>()
 
-    let mutable context = FSharpRequestContext(lspServices, logger, intialWorkspace)
+    // TODO: We need to get configuration for this somehow. Also make it replaceable when configuration changes.
+    let checker =
+        FSharpChecker.Create(
+            keepAllBackgroundResolutions = true,
+            keepAllBackgroundSymbolUses = true,
+            enableBackgroundItemKeyStoreAndSemanticClassification = true,
+            enablePartialTypeChecking = true,
+            parallelReferenceResolution = true,
+            captureIdentifiersWhenParsing = true,
+            useSyntaxTreeCache = true,
+            useTransparentCompiler = true
+        )
+
+    let mutable context =
+        FSharpRequestContext(lspServices, logger, intialWorkspace, checker)
 
     member _.GetContext() = context
 
     member _.UpdateWorkspace(f) =
-        context <- FSharpRequestContext(lspServices, logger, f context.Workspace)
+        context <- FSharpRequestContext(lspServices, logger, f context.Workspace, checker)
 
 type FShapRequestContextFactory(lspServices: ILspServices) =
 
@@ -63,10 +105,7 @@ type DocumentStateHandler() =
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
-            contextHolder.UpdateWorkspace(fun w ->
-                { w with
-                    OpenFiles = Map.add request.TextDocument.Uri.AbsolutePath request.TextDocument.Text w.OpenFiles
-                })
+            contextHolder.UpdateWorkspace _.OpenFile(request.TextDocument.Uri, request.TextDocument.Text)
 
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
@@ -80,10 +119,7 @@ type DocumentStateHandler() =
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
-            contextHolder.UpdateWorkspace(fun w ->
-                { w with
-                    OpenFiles = Map.add request.TextDocument.Uri.AbsolutePath request.ContentChanges.[0].Text w.OpenFiles
-                })
+            contextHolder.UpdateWorkspace _.ChangeFile(request.TextDocument.Uri, request.ContentChanges.[0].Text)
 
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
@@ -97,10 +133,7 @@ type DocumentStateHandler() =
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
-            contextHolder.UpdateWorkspace(fun w ->
-                { w with
-                    OpenFiles = Map.remove request.TextDocument.Uri.AbsolutePath w.OpenFiles
-                })
+            contextHolder.UpdateWorkspace _.CloseFile(request.TextDocument.Uri)
 
             Task.CompletedTask
 
