@@ -16,7 +16,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_TailCallChecks" 50
+let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_TailCallChecks" 55
 
 [<return: Struct>]
 let (|ValUseAtApp|_|) e =

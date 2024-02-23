@@ -1030,7 +1030,7 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
 let unshadowScopes rootScope =
     // Avoid stack overflow when writing linearly nested scopes
     let UnshadowScopesStackGuardDepth =
-        GetEnvInteger "FSHARP_ILPdb_UnshadowScopes_StackGuardDepth" 100
+        GetEnvInteger "FSHARP_ILPdb_UnshadowScopes_StackGuardDepth" 110
 
     let stackGuard =
         StackGuard(UnshadowScopesStackGuardDepth, "ILPdbWriter.unshadowScopes")

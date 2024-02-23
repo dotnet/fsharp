@@ -877,9 +877,9 @@ type StackGuard(maxDepth: int, name: string) =
 
     static member val DefaultDepth =
 #if DEBUG
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 50
+        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 55
 #else
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 100
+        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 110
 #endif
 
     static member GetDepthOption(name: string) =
