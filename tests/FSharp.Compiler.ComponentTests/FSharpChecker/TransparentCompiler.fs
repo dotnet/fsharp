@@ -3,6 +3,7 @@
 open System.Collections.Concurrent
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open Internal.Utilities.Library.Extras
@@ -895,3 +896,19 @@ let ``LoadClosure for script is recomputed after changes`` () =
         |> Map
 
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
+
+[<Fact>]
+let ``Background compiler and Transparent compiler return the same options`` () =
+    async {
+        let backgroundChecker = FSharpChecker.Create(useTransparentCompiler = false)
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+
+        let! backgroundSnapshot, backgroundDiags = backgroundChecker.GetProjectSnapshotFromScript(scriptName, content)
+        let! transparentSnapshot, transparentDiags = transparentChecker.GetProjectSnapshotFromScript(scriptName, content)
+        Assert.Empty(backgroundDiags)
+        Assert.Empty(transparentDiags)
+        Assert.Equal<string list>(backgroundSnapshot.OtherOptions, transparentSnapshot.OtherOptions)
+        Assert.Equal<ProjectSnapshot.ReferenceOnDisk list>(backgroundSnapshot.ReferencesOnDisk, transparentSnapshot.ReferencesOnDisk)
+    }
