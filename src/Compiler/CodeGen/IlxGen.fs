@@ -10122,7 +10122,8 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
         let ilReturn = mkILReturn ILType.Void
 
         let method =
-            mkILNonGenericStaticMethod (eenv.staticInitializationName, access, [], ilReturn, ilBody)
+            (mkILNonGenericStaticMethod (eenv.staticInitializationName, access, [], ilReturn, ilBody))
+                .WithSpecialName
 
         cgbuf.mgbuf.AddMethodDef(tref, method)
         CountMethodDef()

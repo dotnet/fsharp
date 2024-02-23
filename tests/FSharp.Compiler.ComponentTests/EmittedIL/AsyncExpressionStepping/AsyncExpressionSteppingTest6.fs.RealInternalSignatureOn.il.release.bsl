@@ -721,7 +721,7 @@
       IL_000c:  ret
     } 
 
-    .method assembly static void  staticInitialization@() cil managed
+    .method assembly specialname static void staticInitialization@() cil managed
     {
       
       .maxstack  5
@@ -754,7 +754,7 @@
     IL_000c:  ret
   } 
 
-  .method assembly static void  staticInitialization@() cil managed
+  .method assembly specialname static void staticInitialization@() cil managed
   {
     
     .maxstack  8
