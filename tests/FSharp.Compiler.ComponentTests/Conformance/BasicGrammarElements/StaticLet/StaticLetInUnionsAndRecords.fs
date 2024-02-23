@@ -499,7 +499,7 @@ do Console.WriteLine("module after type")
       IL_000c:  ret
     } 
 
-    .method assembly static void  staticInitialization@() cil managed
+    .method assembly specialname static void staticInitialization@() cil managed
     {
       
       .maxstack  8
@@ -521,7 +521,7 @@ do Console.WriteLine("module after type")
     IL_000c:  ret
   } 
 
-  .method assembly static void  staticInitialization@() cil managed
+  .method assembly specialname static void staticInitialization@() cil managed
   {
     
     .maxstack  8
@@ -734,7 +734,7 @@ Console.Write(MyTypes.X.GetX)
     IL_000c:  ret
   } 
 
-  .method assembly static void  staticInitialization@() cil managed
+  .method assembly specialname static void staticInitialization@() cil managed
   {
     
     .maxstack  8
@@ -769,7 +769,7 @@ Console.Write(MyTypes.X.GetX)
     IL_000c:  ret
   } 
 
-  .method assembly static void  staticInitialization@() cil managed
+  .method assembly specialname static void staticInitialization@() cil managed
   {
     
     .maxstack  8
