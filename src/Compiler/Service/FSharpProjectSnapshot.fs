@@ -123,7 +123,7 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
 
 /// A source file snapshot with loaded source text.
 type internal FSharpFileSnapshotWithSource
-    (FileName: string, SourceHash: ImmutableArray<byte>, Source: ISourceText, IsLastCompiland: bool, IsExe: bool) =
+    (FileName: string, SourceHash: ImmutableArray<byte>, Source: ISourceTextNew, IsLastCompiland: bool, IsExe: bool) =
 
     let version = lazy (SourceHash.ToBuilder().ToArray())
     let stringVersion = lazy (version.Value |> BitConverter.ToString)

@@ -123,6 +123,20 @@ type internal IBackgroundCompiler =
         userOpName: string ->
             Async<FSharpProjectOptions * FSharp.Compiler.Diagnostics.FSharpDiagnostic list>
 
+    abstract GetProjectSnapshotFromScript:
+        fileName: string *
+        sourceText: ISourceTextNew *
+        previewEnabled: bool option *
+        loadedTimeStamp: System.DateTime option *
+        otherFlags: string array option *
+        useFsiAuxLib: bool option *
+        useSdkRefs: bool option *
+        sdkDirOverride: string option *
+        assumeDotNetFramework: bool option *
+        optionsStamp: int64 option *
+        userOpName: string ->
+            Async<FSharpProjectSnapshot * FSharpDiagnostic list>
+
     abstract member GetSemanticClassificationForFile:
         fileName: string * options: FSharpProjectOptions * userOpName: string ->
             NodeCode<FSharp.Compiler.EditorServices.SemanticClassificationView option>
@@ -1608,6 +1622,40 @@ type internal BackgroundCompiler
                 optionsStamp,
                 userOpName
             )
+
+        member _.GetProjectSnapshotFromScript
+            (
+                fileName: string,
+                sourceText: ISourceTextNew,
+                previewEnabled: bool option,
+                loadedTimeStamp: DateTime option,
+                otherFlags: string array option,
+                useFsiAuxLib: bool option,
+                useSdkRefs: bool option,
+                sdkDirOverride: string option,
+                assumeDotNetFramework: bool option,
+                optionsStamp: int64 option,
+                userOpName: string
+            ) : Async<FSharpProjectSnapshot * FSharpDiagnostic list> =
+            async {
+                let! options, diagnostics =
+                    self.GetProjectOptionsFromScript(
+                        fileName,
+                        sourceText,
+                        previewEnabled,
+                        loadedTimeStamp,
+                        otherFlags,
+                        useFsiAuxLib,
+                        useSdkRefs,
+                        sdkDirOverride,
+                        assumeDotNetFramework,
+                        optionsStamp,
+                        userOpName
+                    )
+
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem)
+                return snapshot, diagnostics
+            }
 
         member _.GetSemanticClassificationForFile
             (
