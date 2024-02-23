@@ -785,6 +785,51 @@ module CoreTests =
 #endif
 
 #if !NETCOREAPP
+    [<Test>]
+    let quotes () =
+        let cfg = testConfig "core/quotes"
+
+
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        fsc cfg "%s  -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+            exec cfg ("." ++ "test.exe") ""
+            testOkFile.CheckExists()
+        end
+
+        fsc cfg "%s -o:test-with-debug-data.exe --quotations-debug+ -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test-with-debug-data.exe"
+
+        fsc cfg "%s --optimize -o:test--optimize.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test--optimize.exe"
+
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsi cfg "%s -r cslib.dll" cfg.fsi_flags ["test.fsx"]
+
+            testOkFile.CheckExists()
+        end
+
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+            exec cfg ("." ++ "test-with-debug-data.exe") ""
+            testOkFile.CheckExists()
+        end
+
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+            exec cfg ("." ++ "test--optimize.exe") ""
+            testOkFile.CheckExists()
+        end
+
     [<Test; Category("parsing")>]
     let parsing () =
         let cfg = testConfig "core/parsing"
