@@ -5498,7 +5498,6 @@ type A(i:int) =
     | Some(fileResults, checkFileResults) -> ()
     | None -> failwith "no results from TryGetRecentCheckResultsForFile"
    
-    
     let fileSource1TextEdited = """
 type A(i:int) =
     member x.Value = i
