@@ -9,7 +9,7 @@ module ComputationExpressions =
 
     let withRealInternalSignature compilation =
         compilation
-        |> withOptions ["--realsig-"]
+        |> withOptions ["--realsig+"]
 
     let withoutRealInternalSignature compilation =
         compilation
