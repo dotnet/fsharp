@@ -4,13 +4,13 @@
     <LangVersion Condition="'$(FSharpLangVersion)' != ''">$(FSharpLangVersion)</LangVersion>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <FSharpNetCoreProductDefaultTargetFramework>net8.0</FSharpNetCoreProductDefaultTargetFramework>
   </PropertyGroup>
 
   <!--
    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
-   This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local
-   FSharp.Core project.
-   We also disable arcade and reset certain artifacts and compiler paths to use default ones
+   This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local FSharp.Core project.
+   We also disable arcade and reset certain artifacts and compiler paths to use default ones.
    All settings below can be overriden via CLI switches if needed. -->
 
   <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_USING_DOTNET)' != 'false'">
@@ -35,7 +35,7 @@
 
   </PropertyGroup>
 
-  <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition = "Exists('$(RepoRoot)/Directory.Build.props.user')" />
+  <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition="Exists('$(RepoRoot)/Directory.Build.props.user')" />
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
@@ -44,15 +44,40 @@
     <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
-    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/net8.0/fslex.dll</FsLexPath>
-    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/net8.0/fsyacc.dll</FsYaccPath>
+    <!-- Note, that default framework is used here (the one we use for development in the current cycle),
+         since it's a non-arcade and non-sourcebuild scenario -->
+    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/fslex.dll</FsLexPath>
+    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/fsyacc.dll</FsYaccPath>
     <DefineConstants>NO_CHECKNULLS;BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'" />
 
-  <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>
+  <Import Project="FSharpBuild.Directory.Build.props" Condition=" '$(FSharpTestCompilerVersion)' == '' " />
+  <!-- To support source-build for the "next" version of .NET without forcing this repo to use it,
+       we can utilize arcade's $(NetCurrent) property, and set it ourselves in the arcade-less scenarios.
+       For FCS solution, we set it to one for current dev cycle.
+       When used with arcade, and inserting/building for net8 branches, it will set it to net8.0, for net9 branches to net9.0 and so on. -->
+  <Choose>
+    <!-- Once we move to OOP in VS, and major dependants of FCS will move to netcore (not netstandard),
+         we should also support $(NetPrevious) for all releases.
+         This will likely include FCS and FSharp.Core as well as shipped products.
+         Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
+    <When Condition="'$(DotNetBuildFromSource)' == 'true' AND '$(DotNetBuildFromSourceFlavor)' == 'Product'">
+      <PropertyGroup>
+        <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <FSharpNetCoreProductTargetFramework>$(FSharpNetCoreProductDefaultTargetFramework)</FSharpNetCoreProductTargetFramework>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
-  <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
-  <Import Project="FSharpTests.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
+  <!-- It's important we set TFM before this, since FSharpTests.Directory.Build.props uses it.
+       TODO(vlza): this build props looks outdated, since we only use $(FSharpTestCompilerVersion) in TP tests or cambridge suite (which we slowly want to migrate to xUnit).
+                   We probably should remove or revisit it. -->
+  <Import Project="FSharpTests.Directory.Build.props" Condition=" '$(FSharpTestCompilerVersion)' != '' " />
 
   <ItemGroup>
     <!-- If there is a README.md next to a project file, include it (for easier access in the IDE) -->

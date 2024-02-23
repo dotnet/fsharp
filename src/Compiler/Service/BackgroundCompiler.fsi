@@ -102,6 +102,20 @@ type internal IBackgroundCompiler =
         userOpName: string ->
             Async<FSharpProjectOptions * FSharpDiagnostic list>
 
+    abstract GetProjectSnapshotFromScript:
+        fileName: string *
+        sourceText: ISourceTextNew *
+        previewEnabled: bool option *
+        loadedTimeStamp: System.DateTime option *
+        otherFlags: string array option *
+        useFsiAuxLib: bool option *
+        useSdkRefs: bool option *
+        sdkDirOverride: string option *
+        assumeDotNetFramework: bool option *
+        optionsStamp: int64 option *
+        userOpName: string ->
+            Async<FSharpProjectSnapshot * FSharpDiagnostic list>
+
     abstract GetSemanticClassificationForFile:
         fileName: string * snapshot: FSharpProjectSnapshot * userOpName: string ->
             NodeCode<FSharp.Compiler.EditorServices.SemanticClassificationView option>
