@@ -37,6 +37,19 @@ let testConfig = getTestsDirectory >> testConfig
 module CoreTests =
 
 #if !NETCOREAPP
+// This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
+    [<Test>]
+    let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
+
+    [<Test>]
+    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
+#endif
+
+
+#if !NETCOREAPP
 // This test has hardcoded expectations about current synchronization context
 // Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
     [<Test>]
