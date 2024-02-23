@@ -8232,24 +8232,19 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
         | true -> v.DeclaringEntity.Deref.Stamp
 
     let groupBinds =
-        let mutable bindings: Binding list list = [ [] ]
-
-        let rec loopAllBinds remainder =
+        let rec loopAllBinds bindings remainder =
             match remainder with
             | [] -> bindings |> List.rev
             | _ ->
                 let stamp = remainder |> List.head |> (fun (TBind(v, _, _)) -> getStampForVal v)
-
                 let taken =
                     remainder |> List.takeWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
-
                 let remainder =
                     remainder |> List.skipWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
+                
+                loopAllBinds (taken :: bindings) remainder
+        loopAllBinds [ [] ] allBinds
 
-                bindings <- taken :: bindings
-                loopAllBinds remainder
-
-        loopAllBinds allBinds
 
     let _ =
         (recursiveVars, groupBinds)
