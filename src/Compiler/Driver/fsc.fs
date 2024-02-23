@@ -749,7 +749,7 @@ let main2
 
         GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
-    let _holder = UseDiagnosticsLogger diagnosticsLogger
+    SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
     // Try to find an AssemblyVersion attribute
     let assemVerFromAttrib =
