@@ -1362,7 +1362,15 @@ type ProjectWorkflowBuilder
             let options = project.GetProjectOptions checker
             let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
             let r = checker.TryGetRecentCheckResultsForFile(fileName, snapshot)
-            expected r 
+            expected r
+            
+            match r with
+            | Some(parseFileResults, checkFileResults) ->
+                let signature = getSignature(parseFileResults, FSharpCheckFileAnswer.Succeeded(checkFileResults)) 
+                match ctx.Signatures.TryFind(fileId) with
+                | Some priorSignature -> Assert.Equal(priorSignature, signature)
+                | None -> ()
+            | None -> ()
             
             return ctx
         }
