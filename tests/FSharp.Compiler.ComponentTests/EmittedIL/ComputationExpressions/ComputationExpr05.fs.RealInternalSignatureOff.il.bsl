@@ -52,8 +52,7 @@
          implements [runtime]System.IDisposable
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -64,8 +63,7 @@
       IL_0008:  ret
     } 
 
-    .method private hidebysig newslot virtual final 
-            instance void  System.IDisposable.Dispose() cil managed
+    .method private hidebysig newslot virtual final instance void  System.IDisposable.Dispose() cil managed
     {
       .override [runtime]System.IDisposable::Dispose
       
@@ -85,8 +83,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -100,8 +97,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
-            Invoke(class [runtime]System.IDisposable _arg1) cil managed
+    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> Invoke(class [runtime]System.IDisposable _arg1) cil managed
     {
       
       .maxstack  6
@@ -134,8 +130,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -149,8 +144,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
       
       .maxstack  7
@@ -178,8 +172,7 @@
 
   } 
 
-  .method public specialname static class [ComputationExprLibrary]Library.Eventually`1<int32> 
-          get_res5() cil managed
+  .method public specialname static class [ComputationExprLibrary]Library.Eventually`1<int32> get_res5() cil managed
   {
     
     .maxstack  8

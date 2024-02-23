@@ -32,85 +32,85 @@ module ComputationExpressions =
         |> ignoreWarnings
         |> verifyILBaseline
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr01.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr01.fs"|])>]
     let ``ComputationExpr01_realsig=true`` compilation =
         compilation
         |> withRealInternalSignature
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr01.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr01.fs"|])>]
     let ``ComputationExpr01_realsig=false`` compilation =
         compilation
         |> withoutRealInternalSignature
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr02.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr02.fs"|])>]
     let ``ComputationExpr02_realsig=true`` compilation =
         compilation
         |> withRealInternalSignature
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr02.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr02.fs"|])>]
     let ``ComputationExpr02_realsig=false`` compilation =
         compilation
         |> withoutRealInternalSignature
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr03.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr03.fs"|])>]
     let ``ComputationExpr03_realsig=true`` compilation =
         compilation
         |> withRealInternalSignature
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr03.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr03.fs"|])>]
     let ``ComputationExpr03_realsig=false`` compilation =
         compilation
         |> withoutRealInternalSignature
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr04.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr04.fs"|])>]
     let ``ComputationExpr04_realsig=true`` compilation =
         compilation
         |> withRealInternalSignature
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr04.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr04.fs"|])>]
     let ``ComputationExpr04_realsig=false`` compilation =
         compilation
         |> withoutRealInternalSignature
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr05.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr05.fs"|])>]
     let ``ComputationExpr05_realsig=true`` compilation =
         compilation
         |> withRealInternalSignature
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr05.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr05.fs"|])>]
     let ``ComputationExpr05_realsig=false`` compilation =
         compilation
         |> withoutRealInternalSignature
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr06.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr06.fs"|])>]
     let ``ComputationExpr06_realsig=true`` compilation =
         compilation
         |> withRealInternalSignature
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr06.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr06.fs"|])>]
     let ``ComputationExpr06_realsig=false`` compilation =
         compilation
         |> withoutRealInternalSignature
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr07.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr07.fs"|])>]
     let ``ComputationExpr07_realsig=true`` compilation =
         compilation
         |> withRealInternalSignature
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr07.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr07.fs"|])>]
     let ``ComputationExpr07_realsig=false`` compilation =
         compilation
         |> withoutRealInternalSignature

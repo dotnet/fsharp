@@ -51,8 +51,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,bool>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -66,8 +65,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    .method public strict virtual instance bool Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
       
       .maxstack  8
@@ -108,8 +106,7 @@
       IL_0014:  ret
     } 
 
-    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
       
       .maxstack  7
@@ -157,8 +154,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -172,8 +168,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
       
       .maxstack  8
@@ -194,8 +189,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -209,8 +203,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
       
       .maxstack  10
@@ -248,8 +241,7 @@
 
   } 
 
-  .method public specialname static class [ComputationExprLibrary]Library.Eventually`1<int32> 
-          get_res6() cil managed
+  .method public specialname static class [ComputationExprLibrary]Library.Eventually`1<int32> get_res6() cil managed
   {
     
     .maxstack  8
