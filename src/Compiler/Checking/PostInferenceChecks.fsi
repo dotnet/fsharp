@@ -14,7 +14,6 @@ open FSharp.Compiler.TcGlobals
 val CheckImplFile:
     g: TcGlobals *
     amap: ImportMap *
-    realsig: bool *
     reportErrors: bool *
     infoReader: InfoReader *
     internalsVisibleToPaths: CompilationPath list *

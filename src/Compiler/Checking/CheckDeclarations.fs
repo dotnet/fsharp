@@ -5654,7 +5654,6 @@ let CheckOneImplFile
         thisCcu,
         openDecls0,
         checkForErrors,
-        realsig,
         conditionalDefines,
         tcSink,
         isInternalTestSpanStackReferring,
@@ -5675,7 +5674,6 @@ let CheckOneImplFile
                 |]
         let cenv =
             cenv.Create (g, isScript, amap, thisCcu, false, Option.isSome rootSigOpt,
-                realsig,
                 conditionalDefines,
                 tcSink,
                 LightweightTcValForUsingInBuildMethodCall g,
@@ -5772,7 +5770,7 @@ let CheckOneImplFile
                                 Activity.Tags.qualifiedNameOfFile, qualNameOfFile.Text
                             |]
                     PostTypeCheckSemanticChecks.CheckImplFile 
-                       (g, cenv.amap, cenv.realsig, reportErrors, cenv.infoReader, 
+                       (g, cenv.amap,  reportErrors, cenv.infoReader, 
                         env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 
                         implFileTy, implFileContents, extraAttribs, isLastCompiland, 
                         isInternalTestSpanStackReferring)
@@ -5809,7 +5807,7 @@ let CheckOneImplFile
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, amap, thisCcu, checkForErrors, realsig, conditionalDefines, tcSink, isInternalTestSpanStackReferring, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) =
+let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) =
  cancellable {     
     use _ =
         Activity.start "CheckDeclarations.CheckOneSigFile"
@@ -5818,7 +5816,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, realsig, conditionalDefin
                 Activity.Tags.qualifiedNameOfFile, sigFile.QualifiedName.Text
             |]
     let cenv =
-        cenv.Create(g, false, amap, thisCcu, true, false, realsig,
+        cenv.Create(g, false, amap, thisCcu, true, false,
             conditionalDefines,
             tcSink,
             LightweightTcValForUsingInBuildMethodCall g,
