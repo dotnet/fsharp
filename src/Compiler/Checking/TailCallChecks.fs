@@ -4,7 +4,6 @@ module internal FSharp.Compiler.TailCallChecks
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
@@ -17,8 +16,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
 let TailCallChecksStackGuardDepth =
-    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 55, 55, 50)
-    GetEnvInteger "FSHARP_TailCallChecks" defaultStackGuardDepth
+    StackGuard.GetOsDependentDepth(50, 55, 55, 50, "FSHARP_TailCallChecks")
 
 [<return: Struct>]
 let (|ValUseAtApp|_|) e =

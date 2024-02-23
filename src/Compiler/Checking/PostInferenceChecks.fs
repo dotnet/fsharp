@@ -57,8 +57,7 @@ open FSharp.Compiler.TypeRelations
 //     c) none of the above - rejected as when checking outmost expressions.
 
 let PostInferenceChecksStackGuardDepth =
-    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 55, 55, 50)
-    GetEnvInteger "FSHARP_PostInferenceChecks" defaultStackGuardDepth
+    StackGuard.GetOsDependentDepth(50, 55, 55, 50, "FSHARP_PostInferenceChecks")
 
 //--------------------------------------------------------------------------
 // check environment

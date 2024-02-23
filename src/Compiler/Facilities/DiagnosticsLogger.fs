@@ -879,20 +879,22 @@ type StackGuard(maxDepth: int, name: string) =
 #if DEBUG
         GetEnvInteger "FSHARP_DefaultStackGuardDepth" 55
 #else
-        let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(100, 110, 110, 100)
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" defaultStackGuardDepth
+        StackGuard.GetOsDependentDepth(100, 110, 110, 100, "FSHARP_DefaultStackGuardDepth")
 #endif
 
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
-    static member GetOsDependentDepth(mac: int, unix: int, win: int, other: int) : int =
-        let osPlatform = Environment.OSVersion.Platform
+    static member GetOsDependentDepth(mac: int, unix: int, win: int, other: int, envVar: string) : int =
+        let defaultStackGuardDepth =
+            let osPlatform = Environment.OSVersion.Platform
 
-        if osPlatform = PlatformID.Win32NT then win
-        elif osPlatform = PlatformID.Unix then unix
-        else if osPlatform = PlatformID.MacOSX then mac
-        else other
+            if osPlatform = PlatformID.Win32NT then win
+            elif osPlatform = PlatformID.Unix then unix
+            else if osPlatform = PlatformID.MacOSX then mac
+            else other
+
+        GetEnvInteger envVar defaultStackGuardDepth
 
 type CaptureDiagnosticsConcurrently() =
     let target = DiagnosticsThreadStatics.DiagnosticsLogger
