@@ -372,6 +372,11 @@
         <target state="translated">여러 제네릭 인스턴스화가 포함된 인터페이스</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowerInterpolatedStringToConcat">
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 특성이 있는 경우 소문자 DU 허용</target>

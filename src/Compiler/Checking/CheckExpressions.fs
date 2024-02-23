@@ -6,6 +6,7 @@ module internal FSharp.Compiler.CheckExpressions
 
 open System
 open System.Collections.Generic
+open System.Text.RegularExpressions
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -139,6 +140,43 @@ exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * Met
 exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
+
+//----------------------------------------------------------------------------------------------
+// Helpers for determining if/what specifiers a string has.
+// Used to decide if interpolated string can be lowered to a concat call.
+// We don't care about single- vs multi-$ strings here, because lexer took care of that already.
+//----------------------------------------------------------------------------------------------
+[<return: Struct>]
+let (|HasFormatSpecifier|_|) (s: string) =
+    if
+        Regex.IsMatch(
+            s,
+            // Regex pattern for something like: %[flags][width][.precision][type]
+            """
+            (^|[^%])                # Start with beginning of string or any char other than '%'
+            (%%)*%                  # followed by an odd number of '%' chars
+            [+-0 ]{0,3}             # optionally followed by flags
+            (\d+)?                  # optionally followed by width
+            (\.\d+)?                # optionally followed by .precision
+            [bscdiuxXoBeEfFgGMOAat] # and then a char that determines specifier's type
+            """,
+            RegexOptions.Compiled ||| RegexOptions.IgnorePatternWhitespace)
+    then
+        ValueSome HasFormatSpecifier
+    else
+        ValueNone
+
+// Removes trailing "%s" unless it was escaped by another '%' (checks for odd sequence of '%' before final "%s")
+let (|WithTrailingStringSpecifierRemoved|) (s: string) =
+    if s.EndsWith "%s" then
+        let i = s.AsSpan(0, s.Length - 2).LastIndexOfAnyExcept '%'
+        let diff = s.Length - 2 - i
+        if diff &&& 1 <> 0 then
+            s[..i]
+        else
+            s
+    else
+        s
 
 /// Compute the available access rights from a particular location in code
 let ComputeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType =
@@ -7336,25 +7374,68 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             // Type check the expressions filling the holes
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
-            let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
+            // Take all interpolated string parts and typed fill expressions
+            // and convert them to typed expressions that can be used as args to System.String.Concat
+            // return an empty list if there are some format specifiers that make lowering to not applicable
+            let rec concatenable acc fillExprs parts =
+                match fillExprs, parts with
+                | [], [] ->
+                    List.rev acc
+                | [], SynInterpolatedStringPart.FillExpr _ :: _
+                | _, [] ->
+                    // This should never happen, there will always be as many typed fill expressions
+                    // as there are FillExprs in the interpolated string parts
+                    error(InternalError("Mismatch in interpolation expression count", m))
+                | _, SynInterpolatedStringPart.String (WithTrailingStringSpecifierRemoved "", _) :: parts ->
+                    // If the string is empty (after trimming %s of the end), we skip it
+                    concatenable acc fillExprs parts
 
-            let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
-            let percentATysExpr =
-                if percentATys.Length = 0 then
-                    mkNull m (mkArrayType g g.system_Type_ty)
+                | _, SynInterpolatedStringPart.String (WithTrailingStringSpecifierRemoved HasFormatSpecifier, _) :: _
+                | _, SynInterpolatedStringPart.FillExpr (_, Some _) :: _
+                | _, SynInterpolatedStringPart.FillExpr (SynExpr.Tuple (isStruct = false; exprs = [_; SynExpr.Const (SynConst.Int32 _, _)]), _) :: _ ->
+                    // There was a format specifier like %20s{..} or {..,20} or {x:hh}, which means we cannot simply concat
+                    []
+
+                | _, SynInterpolatedStringPart.String (s & WithTrailingStringSpecifierRemoved trimmed, m) :: parts ->
+                    let finalStr = trimmed.Replace("%%", "%")
+                    concatenable (mkString g (shiftEnd 0 (finalStr.Length - s.Length) m) finalStr :: acc) fillExprs parts
+
+                | fillExpr :: fillExprs, SynInterpolatedStringPart.FillExpr _ :: parts ->
+                    concatenable (fillExpr :: acc) fillExprs parts
+
+            let canLower =
+                g.langVersion.SupportsFeature LanguageFeature.LowerInterpolatedStringToConcat
+                && isString
+                && argTys |> List.forall (isStringTy g)
+
+            let concatenableExprs = if canLower then concatenable [] fillExprs parts else []
+
+            match concatenableExprs with
+            | [p1; p2; p3; p4] -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv
+            | [p1; p2; p3] -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv
+            | [p1; p2] -> mkStaticCall_String_Concat2 g m p1 p2, tpenv
+            | [p1] -> p1, tpenv
+            | _ ->
+
+                let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
+
+                let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+                let percentATysExpr =
+                    if percentATys.Length = 0 then
+                        mkNull m (mkArrayType g g.system_Type_ty)
+                    else
+                        let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
+                        mkArray (g.system_Type_ty, tyExprs, m)
+
+                let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr] None
+
+                if isString then
+                    TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                        // Make the call to sprintf
+                        mkCall_sprintf g m printerTy fmtExpr [], tpenv
+                    )
                 else
-                    let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
-                    mkArray (g.system_Type_ty, tyExprs, m)
-
-            let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr] None
-
-            if isString then
-                TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
-                    // Make the call to sprintf
-                    mkCall_sprintf g m printerTy fmtExpr [], tpenv
-                )
-            else
-                fmtExpr, tpenv
+                    fmtExpr, tpenv
 
     // The case for $"..." used as type FormattableString or IFormattable
     | Choice2Of2 createFormattableStringMethod ->
