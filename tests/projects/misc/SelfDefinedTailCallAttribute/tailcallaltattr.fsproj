@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Debug/net8.0/fsc.dll</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Debug/$(FSharpNetCoreProductTargetFramework)/fsc.dll</DotnetFscCompilerPath>
   </PropertyGroup>
   
   <ItemGroup>
