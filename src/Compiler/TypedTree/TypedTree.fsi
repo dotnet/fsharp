@@ -2182,7 +2182,7 @@ type Val =
     /// a true body. These cases are often causes of bugs in the compiler.
     member MemberInfo: ValMemberInfo option
 
-    /// Indicates whether the inline declaration for the value indicate that the value should be inlined?
+    /// Indicates whether the inline declaration for the value indicates that the value should be inlined.
     member ShouldInline: bool
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
