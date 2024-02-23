@@ -156,6 +156,7 @@ while [[ $# > 0 ]]; do
       ;;
     --norealsig)
       realsig=false
+      ;;
     --tfm)
       tfm=$2
       shift
