@@ -31,7 +31,7 @@ open FSharp.Compiler.TypeProviders
 let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 40
 #else
 let TcStackGuardDepth =
-    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(80, 80, 80, 80)
+    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(80, 88, 88, 80)
     GetEnvInteger "FSHARP_TcStackGuardDepth" defaultStackGuardDepth
 #endif
 

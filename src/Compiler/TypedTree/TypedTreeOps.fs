@@ -35,13 +35,13 @@ open FSharp.Compiler.TypeProviders
 #endif
 
 let AccFreeVarsStackGuardDepth =
-    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(100, 100, 100, 100)
+    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(100, 110, 110, 100)
     GetEnvInteger "FSHARP_AccFreeVars" defaultStackGuardDepth
 let RemapExprStackGuardDepth =
-    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 50, 50, 50)
+    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 55, 55, 50)
     GetEnvInteger "FSHARP_RemapExpr" defaultStackGuardDepth
 let FoldExprStackGuardDepth =
-    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 50, 50, 50)
+    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 55, 55, 50)
     GetEnvInteger "FSHARP_FoldExpr" defaultStackGuardDepth
 
 //---------------------------------------------------------------------------

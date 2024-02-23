@@ -879,7 +879,8 @@ type StackGuard(maxDepth: int, name: string) =
 #if DEBUG
         GetEnvInteger "FSHARP_DefaultStackGuardDepth" 55
 #else
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 110
+        let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(100, 110, 110, 100)
+        GetEnvInteger "FSHARP_DefaultStackGuardDepth" defaultStackGuardDepth
 #endif
 
     static member GetDepthOption(name: string) =

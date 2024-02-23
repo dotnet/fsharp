@@ -35,7 +35,7 @@ open System.Collections.Generic
 open System.Collections.ObjectModel
 
 let OptimizerStackGuardDepth =
-    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 50, 50, 50)
+    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 55, 55, 50)
     GetEnvInteger "FSHARP_Optimizer" defaultStackGuardDepth
 
 let i_ldlen = [ I_ldlen; (AI_conv DT_I4) ] 

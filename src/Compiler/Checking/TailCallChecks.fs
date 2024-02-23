@@ -16,7 +16,9 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_TailCallChecks" 55
+let TailCallChecksStackGuardDepth =
+    let defaultStackGuardDepth = StackGuard.GetOsDependentDepth(50, 55, 55, 50)
+    GetEnvInteger "FSHARP_TailCallChecks" defaultStackGuardDepth
 
 [<return: Struct>]
 let (|ValUseAtApp|_|) e =
@@ -841,7 +843,7 @@ let CheckImplFile (g: TcGlobals, amap, reportErrors, implFileContents) =
         let cenv =
             {
                 g = g
-                stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
+                stackGuard = StackGuard(TailCallChecksStackGuardDepth, "CheckImplFile")
                 amap = amap
                 mustTailCall = Zset.empty valOrder
             }
