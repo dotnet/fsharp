@@ -28,5 +28,6 @@ targets.make text eol=lf
 *.sh text eol=lf
 
 *.bsl linguist-vendored=true
+*.xlf linguist-generated=true
 
 *.png binary

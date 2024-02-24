@@ -4,6 +4,16 @@ namespace Hello.Goodbye
 
 type A = A | B | C
 
+[<Sealed>]
+type UnionTypeHiddenWithDiscriminatorsPartlyRevealed =
+    member IsA1: bool
+
+[<Sealed>]
+type UnionTypeHiddenWithDiscriminatorsFullyRevealed =
+    member IsA1: bool
+    member IsB1: bool
+    member IsC1: bool
+
 module Utils = begin
   val failures : string list ref
   val report_failure : string -> unit

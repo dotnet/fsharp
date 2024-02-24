@@ -57,6 +57,20 @@ type MailboxProcessor<'Msg> =
     static member Start:
         body: (MailboxProcessor<'Msg> -> Async<unit>) * ?cancellationToken: CancellationToken -> MailboxProcessor<'Msg>
 
+    /// <summary>Creates and starts an agent immediately on the current operating system thread. The <c>body</c>
+    /// function is used to generate the asynchronous computation executed by the agent.</summary>
+    ///
+    /// <param name="body">The function to produce an asynchronous computation that will be executed
+    /// as the read loop for the MailboxProcessor when StartImmediately is called.</param>
+    /// <param name="cancellationToken">An optional cancellation token for the <c>body</c>.
+    /// Defaults to <c>Async.DefaultCancellationToken</c>.</param>
+    ///
+    /// <returns>The created MailboxProcessor.</returns>
+    ///
+    /// <example-tbd></example-tbd>
+    static member StartImmediate:
+        body: (MailboxProcessor<'Msg> -> Async<unit>) * ?cancellationToken: CancellationToken -> MailboxProcessor<'Msg>
+
     /// <summary>Posts a message to the message queue of the MailboxProcessor, asynchronously.</summary>
     ///
     /// <param name="message">The message to post.</param>
@@ -195,6 +209,11 @@ type MailboxProcessor<'Msg> =
     ///
     /// <example-tbd></example-tbd>
     member Start: unit -> unit
+
+    /// <summary>Starts the agent immediately on the current operating system thread.</summary>
+    ///
+    /// <example-tbd></example-tbd>
+    member StartImmediate: unit -> unit
 
     /// <summary>Raises a timeout exception if a message not received in this amount of time. By default
     /// no timeout is used.</summary>

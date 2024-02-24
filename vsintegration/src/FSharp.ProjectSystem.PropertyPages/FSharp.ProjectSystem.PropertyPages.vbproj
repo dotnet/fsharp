@@ -5,6 +5,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>
     </RootNamespace>
+    <LangVersion>latest</LangVersion>
     <AssemblyAttributeComVisible>true</AssemblyAttributeComVisible>
     <AssemblyName>FSharp.ProjectSystem.PropertyPages</AssemblyName>
     <UseVsVersion>true</UseVsVersion>

@@ -180,7 +180,8 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</value>
+Dash underline;
+Show remarks in Quick Info</value>
   </data>
   <data name="AddAssemblyReference" xml:space="preserve">
     <value>Add an assembly reference to '{0}'</value>
@@ -211,7 +212,7 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</value>
   </data>
   <data name="6012" xml:space="preserve">
@@ -225,9 +226,10 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</value>
+Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="6014" xml:space="preserve">
     <value>Formatting</value>
@@ -279,6 +281,12 @@ Use live (unsaved) buffers for checking</value>
   </data>
   <data name="UseUpcastOperator" xml:space="preserve">
     <value>Use ':&gt;' operator</value>
+  </data>
+  <data name="UnexpectedEqualsInFieldExpectedColon" xml:space="preserve">
+    <value>Unexpected symbol '=' in field declaration. Expected ':' or other token.</value>
+  </data>
+  <data name="ChangeEqualsInFieldTypeToColon" xml:space="preserve">
+    <value>Use ':' for type in field declaration</value>
   </data>
   <data name="AddMissingEqualsToTypeDefinition" xml:space="preserve">
     <value>Add missing '=' to type definition</value>
@@ -345,5 +353,17 @@ Use live (unsaved) buffers for checking</value>
   </data>
   <data name="ConvertCSharpUsingToFSharpOpen" xml:space="preserve">
     <value>Convert C# 'using' to F# 'open'</value>
+  </data>
+  <data name="AddReturnTypeAnnotation" xml:space="preserve">
+    <value>Add return type annotation</value>
+  </data>
+  <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
+    <value>Remove unnecessary parentheses</value>
+  </data>
+  <data name="RemarksHeader" xml:space="preserve">
+    <value>Remarks:</value>
+  </data>
+  <data name="ReturnsHeader" xml:space="preserve">
+    <value>Returns:</value>
   </data>
 </root>

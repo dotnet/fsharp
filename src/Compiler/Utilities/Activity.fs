@@ -7,10 +7,17 @@ open System.Diagnostics
 open System.IO
 open System.Text
 
+module ActivityNames =
+    [<Literal>]
+    let FscSourceName = "fsc"
+
+    [<Literal>]
+    let ProfiledSourceName = "fsc_with_env_stats"
+
+    let AllRelevantNames = [| FscSourceName; ProfiledSourceName |]
+
 [<RequireQualifiedAccess>]
 module internal Activity =
-
-    let FscSourceName = "fsc"
 
     module Tags =
         let fileName = "fileName"
@@ -26,6 +33,7 @@ module internal Activity =
         let gc2 = "gc2"
         let outputDllFile = "outputDllFile"
         let buildPhase = "buildPhase"
+        let version = "version"
 
         let AllKnownTags =
             [|
@@ -47,9 +55,6 @@ module internal Activity =
     module Events =
         let cacheHit = "cacheHit"
 
-    let private activitySourceName = FscSourceName
-    let private profiledSourceName = "fsc_with_env_stats"
-
     type System.Diagnostics.Activity with
 
         member this.RootId =
@@ -67,24 +72,24 @@ module internal Activity =
 
             depth this 0
 
-    let private activitySource = new ActivitySource(activitySourceName)
+    let private activitySource = new ActivitySource(ActivityNames.FscSourceName)
 
     let start (name: string) (tags: (string * string) seq) : IDisposable =
-        let activity = activitySource.StartActivity(name)
+        let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
 
         match activity with
-        | null -> ()
+        | null -> activity
         | activity ->
             for key, value in tags do
                 activity.AddTag(key, value) |> ignore
 
-        activity
+            activity.Start()
 
-    let startNoTags (name: string) : IDisposable = activitySource.StartActivity(name)
+    let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
 
     let addEvent name =
-        if Activity.Current <> null && Activity.Current.Source = activitySource then
-            Activity.Current.AddEvent(ActivityEvent(name)) |> ignore
+        if (not (isNull Activity.Current)) && Activity.Current.Source = activitySource then
+            Activity.Current.AddEvent(ActivityEvent name) |> ignore
 
     module Profiling =
 
@@ -98,7 +103,7 @@ module internal Activity =
 
             let profilingTags = [| workingSetMB; gc0; gc1; gc2; handles; threads |]
 
-        let private profiledSource = new ActivitySource(profiledSourceName)
+        let private profiledSource = new ActivitySource(ActivityNames.ProfiledSourceName)
 
         let startAndMeasureEnvironmentStats (name: string) : IDisposable = profiledSource.StartActivity(name)
 
@@ -112,7 +117,7 @@ module internal Activity =
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> a.Name = profiledSourceName),
+                    ShouldListenTo = (fun a -> a.Name = ActivityNames.ProfiledSourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStarted = (fun a -> a.AddTag(gcStatsInnerTag, collectGCStats ()) |> ignore),
                     ActivityStopped =
@@ -145,7 +150,7 @@ module internal Activity =
 
             let consoleWriterListener =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> a.Name = profiledSourceName),
+                    ShouldListenTo = (fun a -> a.Name = ActivityNames.ProfiledSourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped =
                         (fun a ->
@@ -210,7 +215,7 @@ module internal Activity =
             appendWithLeadingComma (a.RootId)
 
             Tags.AllKnownTags
-            |> Array.iter (fun t -> a.GetTagItem(t) |> escapeStringForCsv |> appendWithLeadingComma)
+            |> Array.iter (a.GetTagItem >> escapeStringForCsv >> appendWithLeadingComma)
 
             sb.ToString()
 
@@ -227,17 +232,16 @@ module internal Activity =
             let sw = new StreamWriter(path = pathToFile, append = true)
 
             let msgQueue =
-                MailboxProcessor<string>.Start
-                    (fun inbox ->
-                        async {
-                            while true do
-                                let! msg = inbox.Receive()
-                                do! sw.WriteLineAsync(msg) |> Async.AwaitTask
-                        })
+                MailboxProcessor<string>.Start(fun inbox ->
+                    async {
+                        while true do
+                            let! msg = inbox.Receive()
+                            do! sw.WriteLineAsync(msg) |> Async.AwaitTask
+                    })
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> a.Name = activitySourceName || a.Name = profiledSourceName),
+                    ShouldListenTo = (fun a -> ActivityNames.AllRelevantNames |> Array.contains a.Name),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
                 )

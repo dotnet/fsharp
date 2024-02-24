@@ -21,50 +21,11 @@ type DirectoryAttribute(dir: string) =
         if String.IsNullOrWhiteSpace(dir) then
             invalidArg "dir" "Directory cannot be null, empty or whitespace only."
 
-    let normalizePathSeparator (text:string) = text.Replace(@"\", "/")
-
-    let normalizeName name =
-        let invalidPathChars = Array.concat [Path.GetInvalidPathChars(); [| ':'; '\\'; '/'; ' '; '.' |]]
-        let result = invalidPathChars |> Array.fold(fun (acc:string) (c:char) -> acc.Replace(string(c), "_")) name
-        result
-
     let dirInfo = normalizePathSeparator (Path.GetFullPath(dir))
-    let outputDirectory methodName extraDirectory =
-        // If the executing assembly has 'artifacts\bin' in it's path then we are operating normally in the CI or dev tests
-        // Thus the output directory will be in a subdirectory below where we are executing.
-        // The subdirectory will be relative to the source directory containing the test source file,
-        // E.g
-        //    When the source code is in:
-        //        $(repo-root)\tests\FSharp.Compiler.ComponentTests\Conformance\PseudoCustomAttributes
-        //    and the test is running in the FSharp.Compiler.ComponentTeststest library
-        //    The output directory will be:
-        //        artifacts\bin\FSharp.Compiler.ComponentTests\$(Flavour)\$(TargetFramework)\tests\FSharp.Compiler.ComponentTests\Conformance\PseudoCustomAttributes
-        //
-        //    If we can't find anything then we execute in the directory containing the source
-        //
-        try
-            let testlibraryLocation = normalizePathSeparator (Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
-            let pos = testlibraryLocation.IndexOf("artifacts/bin",StringComparison.OrdinalIgnoreCase)
-            if pos > 0 then
-                // Running under CI or dev build
-                let testRoot = Path.Combine(testlibraryLocation.Substring(0, pos), @"tests/")
-                let testSourceDirectory =
-                    let testPaths = dirInfo.Replace(testRoot, "").Split('/')
-                    testPaths[0] <- "tests"
-                    Path.Combine(testPaths)
-                let n = Path.Combine(testlibraryLocation, testSourceDirectory.Trim('/'), normalizeName methodName, extraDirectory)
-                let outputDirectory = new DirectoryInfo(n)
-                Some outputDirectory
-            else
-                raise (new InvalidOperationException($"Failed to find the test output directory:\nTest Library Location: '{testlibraryLocation}'\n Pos: {pos}"))
-                None
-
-        with | e ->
-            raise (new InvalidOperationException($" '{e.Message}'.  Can't get the location of the executing assembly"))
-
+    let outputDirectory methodName extraDirectory = getTestOutputDirectory dir methodName extraDirectory 
     let mutable baselineSuffix = ""
     let mutable includes = Array.empty<string>
-
+    
     let readFileOrDefault (path: string) : string option =
         match FileSystem.FileExistsShim(path) with
         | true -> Some (File.ReadAllText path)
@@ -74,7 +35,8 @@ type DirectoryAttribute(dir: string) =
         // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
         let extraDirectory =
             if multipleFiles then
-                filename.Substring(0, filename.Length - 3) // remove .fs
+                let extension = Path.GetExtension(filename)
+                filename.Substring(0, filename.Length - extension.Length) // remove .fs/the extension
                 |> normalizeName
             else ""
         let outputDirectory = outputDirectory methodName extraDirectory
@@ -83,7 +45,7 @@ type DirectoryAttribute(dir: string) =
             | Some path -> path.FullName
             | None -> failwith "Can't set the output directory"
         let sourceFilePath = normalizePathSeparator (path ++ filename)
-        let fsBslFilePath = sourceFilePath + ".err.bsl"
+        let fsBslFilePath = sourceFilePath + baselineSuffix + ".err.bsl"
         let ilBslFilePath =
             let ilBslPaths = [|
 #if DEBUG
@@ -117,7 +79,7 @@ type DirectoryAttribute(dir: string) =
             | None -> sourceFilePath + baselineSuffix + ".il.bsl"
 
         let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
-        let ilOutFilePath = normalizePathSeparator ( Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
+        let ilOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".il.err"))
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
 
@@ -127,18 +89,21 @@ type DirectoryAttribute(dir: string) =
                 Some
                     {
                         SourceFilename = Some sourceFilePath
-                        FSBaseline = { FilePath = fsOutFilePath; BslSource=fsBslFilePath; Content = fsBslSource }
-                        ILBaseline = { FilePath = ilOutFilePath; BslSource=ilBslFilePath ; Content = ilBslSource  }
+                        FSBaseline = { FilePath = fsOutFilePath; BslSource = fsBslFilePath; Content = fsBslSource }
+                        ILBaseline = { FilePath = ilOutFilePath; BslSource = ilBslFilePath; Content = ilBslSource }
                     }
-            Options           = []
+            Options           = Compiler.defaultOptions
             OutputType        = Library
             Name              = Some filename
             IgnoreWarnings    = false
             References        = []
             OutputDirectory   = outputDirectory
             TargetFramework   = TargetFramework.Current
+            StaticLink        = false
             } |> FS
 
+    new([<ParamArray>] dirs: string[]) = DirectoryAttribute(Path.Combine(dirs) : string)
+    
     member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
     member _.Includes with get() = includes and set v = includes <- v
 

@@ -170,7 +170,7 @@ type SynConst =
     | UInt16s of uint16[]
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
-    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * synMeasure: SynMeasure * trivia: SynMeasureConstantTrivia
 
     /// Source Line, File, and Path Identifiers
     /// Containing both the original value as the evaluated value.
@@ -187,19 +187,19 @@ type SynMeasure =
     | Named of longId: LongIdent * range: range
 
     /// A product of two units of measure, e.g. 'kg * m'
-    | Product of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Product of measure1: SynMeasure * mAsterisk: range * measure2: SynMeasure * range: range
 
     /// A sequence of several units of measure, e.g. 'kg m m'
     | Seq of measures: SynMeasure list * range: range
 
     /// A division of two units of measure, e.g. 'kg / m'
-    | Divide of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * mSlash: range * measure2: SynMeasure * range: range
 
     /// A power of a unit of measure, e.g. 'kg ^ 2'
-    | Power of measure: SynMeasure * power: SynRationalConst * range: range
+    | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
 
     /// The '1' unit of measure
-    | One
+    | One of range: range
 
     /// An anonymous (inferred) unit of measure
     | Anon of range: range
@@ -214,11 +214,19 @@ type SynMeasure =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
 
-    | Integer of value: int32
+    | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * denominator: int32 * range: range
+    | Rational of
+        numerator: int32 *
+        numeratorRange: range *
+        divRange: range *
+        denominator: int32 *
+        denominatorRange: range *
+        range: range
 
-    | Negate of SynRationalConst
+    | Negate of rationalConst: SynRationalConst * range: range
+
+    | Paren of rationalConst: SynRationalConst * range: range
 
 /// Represents an accessibility modifier in F# syntax
 [<RequireQualifiedAccess>]
@@ -374,7 +382,12 @@ type SynBindingKind =
 
 /// Represents the explicit declaration of a type parameter
 [<NoEquality; NoComparison>]
-type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * SynTypar
+type SynTyparDecl =
+    | SynTyparDecl of
+        attributes: SynAttributes *
+        typar: SynTypar *
+        intersectionConstraints: SynType list *
+        trivia: SynTyparDeclTrivia
 
 /// The unchecked abstract syntax tree of F# type constraints
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -517,6 +530,14 @@ type SynType =
 
     /// F# syntax: ^a or ^b, used in trait calls
     | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
+
+    /// A type arising from a parse error
+    | FromParseError of range: range
+
+    /// F# syntax: x: #I1 & #I2
+    /// F# syntax: x: 't & #I1 & #I2
+    /// Shorthand for x: 't when 't :> I1 and 't :> I2
+    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTyparDeclTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -767,6 +788,9 @@ type SynExpr =
     /// F# syntax: expr.ident.ident
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
 
+    /// F# syntax: _.ident.ident
+    | DotLambda of expr: SynExpr * range: range * trivia: SynExprDotLambdaTrivia
+
     /// F# syntax: expr.ident...ident <- expr
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range
 
@@ -871,6 +895,9 @@ type SynExpr =
     /// F# syntax: do! expr
     /// Computation expressions only
     | DoBang of expr: SynExpr * range: range
+
+    /// F# syntax: 'while! ... do ...'
+    | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
 
     /// Only used in FSharp.Core
     | LibraryOnlyILAssembly of
@@ -1014,9 +1041,7 @@ type SynStaticOptimizationConstraint =
 /// "fun v -> match v with ..."
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-    | SimplePats of pats: SynSimplePat list * range: range
-
-    | Typed of pats: SynSimplePats * targetType: SynType * range: range
+    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range
 
     member Range: range
 
@@ -1025,7 +1050,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
+    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
@@ -1070,7 +1095,7 @@ type SynPat =
         range: range
 
     /// A tuple pattern
-    | Tuple of isStruct: bool * elementPats: SynPat list * range: range
+    | Tuple of isStruct: bool * elementPats: SynPat list * commaRanges: range list * range: range
 
     /// A parenthesized pattern
     | Paren of pat: SynPat * range: range
@@ -1079,7 +1104,7 @@ type SynPat =
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
     /// A record pattern
-    | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range
+    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
 
     /// The 'null' pattern
     | Null of range: range
@@ -1092,9 +1117,6 @@ type SynPat =
 
     /// &lt;@ expr @&gt;, used for active pattern arguments
     | QuoteExpr of expr: SynExpr * range: range
-
-    /// Deprecated character range: ranges
-    | DeprecatedCharRange of startChar: char * endChar: char * range: range
 
     /// Used internally in the type checker
     | InstanceMember of
@@ -1321,7 +1343,7 @@ type SynTypeDefnSimpleRepr =
         fields: SynField list *
         isConcrete: bool *
         isIncrClass: bool *
-        implicitCtorSynPats: SynSimplePats option *
+        implicitCtorSynPats: SynPat option *
         range: range
 
     /// A type defined by using an IL assembly representation. Only used in FSharp.Core.
@@ -1431,6 +1453,9 @@ type SynField =
         range: range *
         trivia: SynFieldTrivia
 
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents the syntax tree associated with the name of a type definition or module
 /// in signature or implementation.
 ///
@@ -1502,7 +1527,10 @@ type SynValTyparDecls = SynValTyparDecls of typars: SynTyparDecls option * canIn
 
 /// Represents the syntactic elements associated with the "return" of a function or method.
 [<NoEquality; NoComparison>]
-type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+type SynReturnInfo =
+    | SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+
+    member Range: range
 
 /// Represents the right hand side of an exception declaration 'exception E = ... '
 [<NoEquality; NoComparison>]
@@ -1586,7 +1614,7 @@ type SynMemberDefn =
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
-        ctorArgs: SynSimplePats *
+        ctorArgs: SynPat *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
         range: range *

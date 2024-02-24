@@ -78,10 +78,12 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
 
     interface ITaggedTextCollector with
         member _.Add taggedText =
-            // TODO: bail out early if line limit is already hit
-            match taggedText.Tag with
-            | TextTag.Text -> reportTextLines taggedText.Text
-            | _ -> addTaggedTextEntry taggedText
+            match lineLimit with
+            | Some lineLimit when lineLimit < count -> ()
+            | _ ->
+                match taggedText.Tag with
+                | TextTag.Text -> reportTextLines taggedText.Text
+                | _ -> addTaggedTextEntry taggedText
 
         member _.IsEmpty = isEmpty
         member _.EndsWithLineBreak = isEmpty || endsWithLineBreak
@@ -98,6 +100,7 @@ type internal IDocumentationBuilder =
         processedXml: string *
         showExceptions: bool *
         showParameters: bool *
+        showRemarks: bool *
         paramName: string option ->
             unit
 
@@ -109,6 +112,7 @@ type internal IDocumentationBuilder =
         signature: string *
         showExceptions: bool *
         showParameters: bool *
+        showRemarks: bool *
         paramName: string option ->
             unit
 
@@ -163,6 +167,7 @@ module internal XmlDocumentation =
             | "typeref" ->
                 for attr in el.Attributes() do
                     WriteAttribute collector attr "name" (tagParameter >> collector.Add)
+            | "br" -> AppendHardLine collector
             | _ -> WriteNodes collector (el.Nodes())
         | _ -> ()
 
@@ -208,12 +213,33 @@ module internal XmlDocumentation =
             with _ ->
                 None
 
-        member _.CollectSummary(collector: ITaggedTextCollector) =
+        member _.CollectSummary(collector: ITaggedTextCollector, showRemarks) =
             match Seq.tryHead (doc.Descendants(XName.op_Implicit "summary")) with
             | None -> ()
             | Some el ->
                 EnsureHardLine collector
                 WriteElement collector el
+
+            match Seq.tryHead (doc.Descendants(XName.op_Implicit "returns")) with
+            | None -> ()
+            | Some el ->
+                AppendHardLine collector
+                AppendHardLine collector
+                AppendOnNewLine collector (SR.ReturnsHeader())
+                AppendHardLine collector
+                collector.Add(tagSpace "    ")
+                WriteElement collector el
+
+            if showRemarks then
+                match Seq.tryHead (doc.Descendants(XName.op_Implicit "remarks")) with
+                | None -> ()
+                | Some el ->
+                    AppendHardLine collector
+                    AppendHardLine collector
+                    AppendOnNewLine collector (SR.RemarksHeader())
+                    AppendHardLine collector
+                    collector.Add(tagSpace "    ")
+                    WriteElement collector el
 
         member this.CollectParameter(collector: ITaggedTextCollector, paramName: string) =
             match tryFindParameter paramName with
@@ -292,11 +318,12 @@ module internal XmlDocumentation =
                 exnCollector: ITaggedTextCollector,
                 xmlDocReader: XmlDocReader,
                 showExceptions,
-                showParameters
+                showParameters,
+                showRemarks
             ) =
             AppendHardLine xmlCollector
             xmlCollector.StartXMLDoc()
-            xmlDocReader.CollectSummary(xmlCollector)
+            xmlDocReader.CollectSummary(xmlCollector, showRemarks)
 
             if (showParameters) then
                 xmlDocReader.CollectParameters xmlCollector
@@ -313,32 +340,34 @@ module internal XmlDocumentation =
                     processedXml,
                     showExceptions,
                     showParameters,
+                    showRemarks,
                     paramName
                 ) =
                 match XmlDocReader.TryCreate processedXml with
                 | Some xmlDocReader ->
                     match paramName with
                     | Some paramName -> xmlDocReader.CollectParameter(xmlCollector, paramName)
-                    | None -> AppendMemberData(xmlCollector, exnCollector, xmlDocReader, showExceptions, showParameters)
+                    | None -> AppendMemberData(xmlCollector, exnCollector, xmlDocReader, showExceptions, showParameters, showRemarks)
                 | None -> ()
 
             /// Append Xml documentation contents into the StringBuilder
             override this.AppendDocumentation
-                ( /// ITaggedTextCollector to add to
+                ( // ITaggedTextCollector to add to
                     xmlCollector: ITaggedTextCollector,
                     exnCollector: ITaggedTextCollector,
                     fileName: string,
                     signature: string,
                     showExceptions: bool,
                     showParameters: bool,
+                    showRemarks,
                     paramName: string option
                 ) =
                 try
                     match GetMemberIndexOfAssembly(fileName) with
-                    | Some (index) ->
-                        let _, idx = index.ParseMemberSignature(signature)
+                    | Some(index) ->
+                        let ok, idx = index.ParseMemberSignature(signature)
 
-                        if idx <> 0u then
+                        if Com.Succeeded(ok) then
                             let ok, xml = index.GetMemberXML(idx)
 
                             if Com.Succeeded(ok) then
@@ -349,6 +378,7 @@ module internal XmlDocumentation =
                                         xml,
                                         showExceptions,
                                         showParameters,
+                                        showRemarks,
                                         paramName
                                     )
                     | None -> ()
@@ -365,11 +395,12 @@ module internal XmlDocumentation =
             xml,
             showExceptions,
             showParameters,
+            showRemarks,
             paramName
         ) =
         match xml with
         | FSharpXmlDoc.None -> ()
-        | FSharpXmlDoc.FromXmlFile (fileName, signature) ->
+        | FSharpXmlDoc.FromXmlFile(fileName, signature) ->
             documentationProvider.AppendDocumentation(
                 xmlCollector,
                 exnCollector,
@@ -377,9 +408,10 @@ module internal XmlDocumentation =
                 signature,
                 showExceptions,
                 showParameters,
+                showRemarks,
                 paramName
             )
-        | FSharpXmlDoc.FromXmlText (xmlDoc) ->
+        | FSharpXmlDoc.FromXmlText(xmlDoc) ->
             let elaboratedXml = xmlDoc.GetElaboratedXmlLines()
             let processedXml = ProcessXml("\n\n" + String.concat "\n" elaboratedXml)
 
@@ -389,14 +421,114 @@ module internal XmlDocumentation =
                 processedXml,
                 showExceptions,
                 showParameters,
+                showRemarks,
                 paramName
             )
+
+    [<Literal>]
+    let separatorText = "-------------"
 
     let private AddSeparator (collector: ITaggedTextCollector) =
         if not collector.IsEmpty then
             EnsureHardLine collector
-            collector.Add(tagText "-------------")
+            collector.Add(tagText separatorText)
             AppendHardLine collector
+
+    type LineLimits =
+        {
+            LineLimit: int
+            TypeParameterLimit: int
+            OverLoadsLimit: int
+        }
+
+    let DefaultLineLimits =
+        {
+            LineLimit = 45
+            TypeParameterLimit = 6
+            OverLoadsLimit = 5
+        }
+
+    let BuildSingleTipText
+        (
+            documentationProvider: IDocumentationBuilder,
+            dataTipElement: ToolTipElement,
+            limits: LineLimits,
+            showRemarks: bool
+        ) =
+
+        let {
+                LineLimit = lineLimit
+                TypeParameterLimit = typeParameterLineLimit
+                OverLoadsLimit = overLoadsLimit
+            } =
+            limits
+
+        let mainDescription, documentation, typeParameterMap, exceptions, usage =
+            ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+
+        let textCollector: ITaggedTextCollector =
+            TextSanitizingCollector(mainDescription.Add, lineLimit = lineLimit)
+
+        let xmlCollector: ITaggedTextCollector =
+            TextSanitizingCollector(documentation.Add, lineLimit = lineLimit)
+
+        let typeParameterMapCollector: ITaggedTextCollector =
+            TextSanitizingCollector(typeParameterMap.Add, lineLimit = typeParameterLineLimit)
+
+        let exnCollector: ITaggedTextCollector =
+            TextSanitizingCollector(exceptions.Add, lineLimit = lineLimit)
+
+        let usageCollector: ITaggedTextCollector =
+            TextSanitizingCollector(usage.Add, lineLimit = lineLimit)
+
+        let ProcessGenericParameters (tps: TaggedText[] list) =
+            if not tps.IsEmpty then
+                AppendHardLine typeParameterMapCollector
+                AppendOnNewLine typeParameterMapCollector (SR.GenericParametersHeader())
+
+                for tp in tps do
+                    AppendHardLine typeParameterMapCollector
+                    typeParameterMapCollector.Add(tagSpace "    ")
+                    tp |> Array.iter typeParameterMapCollector.Add
+
+        let collectDocumentation () =
+            [ documentation; typeParameterMap; exceptions; usage ]
+            |> List.filter (Seq.isEmpty >> not)
+            |> List.map List.ofSeq
+            |> List.intersperse [ lineBreak ]
+            |> Seq.concat
+            |> List.ofSeq
+
+        match dataTipElement with
+        | ToolTipElement.Group overloads when not overloads.IsEmpty ->
+            overloads[.. overLoadsLimit - 1]
+            |> List.map (fun item -> item.MainDescription)
+            |> List.intersperse [| lineBreak |]
+            |> Seq.concat
+            |> Seq.iter textCollector.Add
+
+            if not overloads[overLoadsLimit..].IsEmpty then
+                AppendOnNewLine textCollector $"({(PrettyNaming.FormatAndOtherOverloadsString overloads[overLoadsLimit..].Length)})"
+
+            let item0 = overloads.Head
+
+            item0.Remarks
+            |> Option.iter (fun r ->
+                if TaggedText.toString r <> "" then
+                    AppendHardLine usageCollector
+                    r |> Seq.iter usageCollector.Add)
+
+            AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, true, false, showRemarks, item0.ParamName)
+
+            ProcessGenericParameters item0.TypeMapping
+
+            item0.Symbol, mainDescription |> List.ofSeq, collectDocumentation ()
+
+        | ToolTipElement.CompositionError(errText) ->
+            textCollector.Add(tagText errText)
+            None, mainDescription |> List.ofSeq, collectDocumentation ()
+
+        | _ -> None, [], []
 
     /// Build a data tip text string with xml comments injected.
     let BuildTipText
@@ -410,7 +542,8 @@ module internal XmlDocumentation =
             exnCollector,
             showText,
             showExceptions,
-            showParameters
+            showParameters,
+            showRemarks
         ) =
         let textCollector: ITaggedTextCollector =
             TextSanitizingCollector(textCollector, lineLimit = 45) :> _
@@ -447,7 +580,7 @@ module internal XmlDocumentation =
             match dataTipElement with
             | ToolTipElement.None -> false
 
-            | ToolTipElement.Group (overloads) ->
+            | ToolTipElement.Group(overloads) ->
                 let overloads = Array.ofList overloads
                 let len = overloads.Length
 
@@ -495,6 +628,7 @@ module internal XmlDocumentation =
                         item0.XmlDoc,
                         showExceptions,
                         showParameters,
+                        showRemarks,
                         item0.ParamName
                     )
 
@@ -505,7 +639,7 @@ module internal XmlDocumentation =
                 else
                     false
 
-            | ToolTipElement.CompositionError (errText) ->
+            | ToolTipElement.CompositionError(errText) ->
                 textCollector.Add(tagText errText)
                 true
 
@@ -519,7 +653,8 @@ module internal XmlDocumentation =
             typeParameterMapCollector,
             usageCollector,
             exnCollector,
-            ToolTipText (dataTipText)
+            ToolTipText(dataTipText),
+            showRemarks
         ) =
         BuildTipText(
             documentationProvider,
@@ -531,10 +666,11 @@ module internal XmlDocumentation =
             exnCollector,
             true,
             true,
-            false
+            false,
+            showRemarks
         )
 
-    let BuildMethodOverloadTipText (documentationProvider, textCollector, xmlCollector, ToolTipText (dataTipText), showParams) =
+    let BuildMethodOverloadTipText (documentationProvider, textCollector, xmlCollector, ToolTipText(dataTipText), showParams, showRemarks) =
         BuildTipText(
             documentationProvider,
             dataTipText,
@@ -545,10 +681,11 @@ module internal XmlDocumentation =
             ignore,
             false,
             false,
-            showParams
+            showParams,
+            showRemarks
         )
 
-    let BuildMethodParamText (documentationProvider, xmlCollector, xml, paramName) =
+    let BuildMethodParamText (documentationProvider, xmlCollector, xml, paramName, showRemarks) =
         AppendXmlComment(
             documentationProvider,
             TextSanitizingCollector(xmlCollector),
@@ -556,6 +693,7 @@ module internal XmlDocumentation =
             xml,
             false,
             true,
+            showRemarks,
             Some paramName
         )
 

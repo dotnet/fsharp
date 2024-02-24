@@ -16,6 +16,8 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Utilities
 open FSharp.Compiler.EditorServices
+open CancellableTasks.CancellableTaskBuilder
+open CancellableTasks
 
 type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, workspace: VisualStudioWorkspace) =
 
@@ -67,7 +69,12 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
                                 let! document = getLastDocument ()
                                 let! cancellationToken = Async.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! parseResults = document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter)) |> liftAsync
+
+                                let! parseResults =
+                                    document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter))
+                                    |> CancellableTask.start cancellationToken
+                                    |> Async.AwaitTask
+                                    |> liftAsync
 
                                 let xmlDocables =
                                     XmlDocParser.GetXmlDocables(sourceText.ToFSharpSourceText(), parseResults.ParseTree)
@@ -75,11 +82,11 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
                                 let xmlDocablesBelowThisLine =
                                     // +1 because looking below current line for e.g. a 'member' or 'let'
                                     xmlDocables
-                                    |> List.filter (fun (XmlDocable (line, _indent, _paramNames)) -> line = curEditorLineNum + 1)
+                                    |> List.filter (fun (XmlDocable(line, _indent, _paramNames)) -> line = curEditorLineNum + 1)
 
                                 match xmlDocablesBelowThisLine with
                                 | [] -> ()
-                                | XmlDocable (_line, indent, paramNames) :: _xs ->
+                                | XmlDocable(_line, indent, paramNames) :: _xs ->
                                     // delete the slashes the user typed (they may be indented wrong)
                                     let editorLineToDelete =
                                         wpfTextView.TextBuffer.CurrentSnapshot.GetLineFromLineNumber(
@@ -149,7 +156,8 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
-type internal XmlDocCommandFilterProvider [<ImportingConstructor>]
+type internal XmlDocCommandFilterProvider
+    [<ImportingConstructor>]
     (
         workspace: VisualStudioWorkspace,
         textDocumentFactoryService: ITextDocumentFactoryService,

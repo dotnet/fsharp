@@ -46,11 +46,7 @@ module ExtraTopLevelOperators =
     [<DebuggerDisplay("Count = {Count}")>]
     [<DebuggerTypeProxy(typedefof<DictDebugView<_, _, _>>)>]
     type DictImpl<'SafeKey, 'Key, 'T>
-        (
-            t: Dictionary<'SafeKey, 'T>,
-            makeSafeKey: 'Key -> 'SafeKey,
-            getKey: 'SafeKey -> 'Key
-        ) =
+        (t: Dictionary<'SafeKey, 'T>, makeSafeKey: 'Key -> 'SafeKey, getKey: 'SafeKey -> 'Key) =
 
         member _.Count = t.Count
 
@@ -105,11 +101,11 @@ module ExtraTopLevelOperators =
             member _.TryGetValue(k, r) =
                 let safeKey = makeSafeKey k
 
-                if t.ContainsKey(safeKey) then
-                    (r <- t.[safeKey]
+                match t.TryGetValue safeKey with
+                | true, tsafe ->
+                    (r <- tsafe
                      true)
-                else
-                    false
+                | false, _ -> false
 
             member _.Remove(_: 'Key) =
                 (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))): bool)
@@ -144,13 +140,13 @@ module ExtraTopLevelOperators =
             member _.Remove(_) =
                 raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
 
-            member _.Contains(KeyValue (k, v)) =
+            member _.Contains(KeyValue(k, v)) =
                 ICollection_Contains t (KeyValuePair<_, _>(makeSafeKey k, v))
 
             member _.CopyTo(arr, i) =
                 let mutable n = 0
 
-                for (KeyValue (k, v)) in t do
+                for (KeyValue(k, v)) in t do
                     arr.[i + n] <- KeyValuePair<_, _>(getKey k, v)
                     n <- n + 1
 
@@ -166,7 +162,7 @@ module ExtraTopLevelOperators =
             member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
-                let kvps = [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
+                let kvps = [| for (KeyValue(k, v)) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
                 kvps.GetEnumerator()
 
         interface System.Collections.IEnumerable with
@@ -174,7 +170,7 @@ module ExtraTopLevelOperators =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
                 let kvps =
-                    [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |] :> System.Collections.IEnumerable
+                    [| for (KeyValue(k, v)) in t -> KeyValuePair(getKey k, v) |] :> System.Collections.IEnumerable
 
                 kvps.GetEnumerator()
 
@@ -201,7 +197,7 @@ module ExtraTopLevelOperators =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let dictRefType (l: seq<'Key * 'T>) =
-        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
+        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (RuntimeHelpers.StructBox) (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs: seq<'Key * 'T>) : IDictionary<'Key, 'T> =
@@ -219,7 +215,7 @@ module ExtraTopLevelOperators =
 
     let getArray (vals: seq<'T>) =
         match vals with
-        | :? ('T[]) as arr -> arr
+        | :? ('T array) as arr -> arr
         | _ -> Seq.toArray vals
 
     [<CompiledName("CreateArray2D")>]
@@ -416,13 +412,10 @@ type TypeProviderTypeAttributes =
     | IsErased = 0x40000000
 
 type TypeProviderConfig
-    (
-        systemRuntimeContainsType: string -> bool,
-        getReferencedAssembliesOption: (unit -> string array) option
-    ) =
+    (systemRuntimeContainsType: string -> bool, getReferencedAssembliesOption: (unit -> string array) option) =
     let mutable resolutionFolder: string = null
     let mutable runtimeAssembly: string = null
-    let mutable referencedAssemblies: string[] = null
+    let mutable referencedAssemblies: string array = null
     let mutable temporaryFolder: string = null
     let mutable isInvalidationSupported: bool = false
     let mutable useResolutionFolderAtRuntime: bool = false
@@ -475,31 +468,31 @@ type IProvidedNamespace =
 
     abstract NamespaceName: string
 
-    abstract GetNestedNamespaces: unit -> IProvidedNamespace[]
+    abstract GetNestedNamespaces: unit -> IProvidedNamespace array
 
-    abstract GetTypes: unit -> Type[]
+    abstract GetTypes: unit -> Type array
 
     abstract ResolveTypeName: typeName: string -> Type
 
 type ITypeProvider =
     inherit System.IDisposable
 
-    abstract GetNamespaces: unit -> IProvidedNamespace[]
+    abstract GetNamespaces: unit -> IProvidedNamespace array
 
-    abstract GetStaticParameters: typeWithoutArguments: Type -> ParameterInfo[]
+    abstract GetStaticParameters: typeWithoutArguments: Type -> ParameterInfo array
 
     abstract ApplyStaticArguments:
-        typeWithoutArguments: Type * typePathWithArguments: string[] * staticArguments: obj[] -> Type
+        typeWithoutArguments: Type * typePathWithArguments: string array * staticArguments: obj array -> Type
 
-    abstract GetInvokerExpression: syntheticMethodBase: MethodBase * parameters: Expr[] -> Expr
+    abstract GetInvokerExpression: syntheticMethodBase: MethodBase * parameters: Expr array -> Expr
 
     [<CLIEvent>]
     abstract Invalidate: IEvent<System.EventHandler, System.EventArgs>
 
-    abstract GetGeneratedAssemblyContents: assembly: System.Reflection.Assembly -> byte[]
+    abstract GetGeneratedAssemblyContents: assembly: System.Reflection.Assembly -> byte array
 
 type ITypeProvider2 =
-    abstract GetStaticParametersForMethod: methodWithoutArguments: MethodBase -> ParameterInfo[]
+    abstract GetStaticParametersForMethod: methodWithoutArguments: MethodBase -> ParameterInfo array
 
     abstract ApplyStaticArgumentsForMethod:
-        methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: obj[] -> MethodBase
+        methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: obj array -> MethodBase

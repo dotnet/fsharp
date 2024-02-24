@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net7.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
+    <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
@@ -108,6 +108,8 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\shims\shims.csproj" Condition="'$(TargetFramework)' == 'net472'">
         <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscAnyCpuProject\fscAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'"/>
   </ItemGroup>
 
   <!-- Runtime dependencies. Beware. -->

@@ -23,6 +23,7 @@ open TestFramework
 let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
+let internal transparentCompilerChecker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10, useTransparentCompiler=true)
 
 /// Extract range info
 let internal tups (m:range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -67,9 +68,9 @@ type U =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 
@@ -95,9 +96,9 @@ let x =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 // A project referencing two sub-projects
@@ -120,19 +121,24 @@ let u = Case1 3
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
+            SourceFiles = fileNames
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project1A.dllName); ("-r:" + Project1B.dllName) |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project1A.dllName, Project1A.options);
-                                    FSharpReferencedProject.CreateFSharp(Project1B.dllName, Project1B.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project1A.dllName, Project1A.options);
+                                    FSharpReferencedProject.FSharpReference(Project1B.dllName, Project1B.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
-let ``Test multi project 1 basic`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 1 basic`` useTransparentCompiler =
 
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+    
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunImmediate
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["MultiProject1"]
@@ -144,7 +150,11 @@ let ``Test multi project 1 basic`` () =
         |> shouldEqual ["p"; "c"; "u"]
 
 [<Test>]
-let ``Test multi project 1 all symbols`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 1 all symbols`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunImmediate
     let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunImmediate
@@ -182,7 +192,11 @@ let ``Test multi project 1 all symbols`` () =
     usesOfx1FromProject1AInMultiProject1 |> shouldEqual usesOfx1FromMultiProject1InMultiProject1
 
 [<Test>]
-let ``Test multi project 1 xmldoc`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 1 xmldoc`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunImmediate
     let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunImmediate
@@ -284,9 +298,9 @@ let p = C.Print()
                 let baseName = tryCreateTemporaryFileName ()
                 let dllName = Path.ChangeExtension(baseName, ".dll")
                 let projFileName = Path.ChangeExtension(baseName, ".fsproj")
-                let fileNames = [fileName1 ]
+                let fileNames = [|fileName1|]
                 let args = mkProjectCommandLineArgs (dllName, fileNames)
-                let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+                let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
                 yield { ModuleName = moduleName; FileName=fileName1; Options = options; DllName=dllName } ]
 
     let jointProject =
@@ -305,13 +319,13 @@ let p = ("""
              + String.concat ",\r\n         " [ for p in projects -> p.ModuleName  + ".v" ] +  ")"
         FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
 
-        let fileNames = [fileName]
+        let fileNames = [|fileName|]
         let args = mkProjectCommandLineArgs (dllName, fileNames)
         let options =
-            let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+            let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
             { options with
                 OtherOptions = Array.append options.OtherOptions [| for p in  projects -> ("-r:" + p.DllName) |]
-                ReferencedProjects = [| for p in projects -> FSharpReferencedProject.CreateFSharp(p.DllName, p.Options); |] }
+                ReferencedProjects = [| for p in projects -> FSharpReferencedProject.FSharpReference(p.DllName, p.Options); |] }
         { ModuleName = "JointProject"; FileName=fileName; Options = options; DllName=dllName }
 
     let cleanFileName a =
@@ -319,14 +333,16 @@ let p = ("""
         |> function Some x -> x | None -> if a = jointProject.FileName then "fileN" else "??"
 
 
-    let makeCheckerForStressTest ensureBigEnough =
+    let makeCheckerForStressTest ensureBigEnough useTransparentCompiler =
         let size = (if ensureBigEnough then numProjectsForStressTest + 10 else numProjectsForStressTest / 2 )
-        FSharpChecker.Create(projectCacheSize=size)
+        FSharpChecker.Create(projectCacheSize=size, useTransparentCompiler=useTransparentCompiler)
 
 [<Test>]
-let ``Test ManyProjectsStressTest basic`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test ManyProjectsStressTest basic`` useTransparentCompiler =
 
-    let checker = ManyProjectsStressTest.makeCheckerForStressTest true
+    let checker = ManyProjectsStressTest.makeCheckerForStressTest true useTransparentCompiler
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunImmediate
 
@@ -338,9 +354,11 @@ let ``Test ManyProjectsStressTest basic`` () =
         |> shouldEqual ["p"]
 
 [<Test>]
-let ``Test ManyProjectsStressTest cache too small`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test ManyProjectsStressTest cache too small`` useTransparentCompiler =
 
-    let checker = ManyProjectsStressTest.makeCheckerForStressTest false
+    let checker = ManyProjectsStressTest.makeCheckerForStressTest false useTransparentCompiler
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunImmediate
 
@@ -352,9 +370,11 @@ let ``Test ManyProjectsStressTest cache too small`` () =
         |> shouldEqual ["p"]
 
 [<Test>]
-let ``Test ManyProjectsStressTest all symbols`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test ManyProjectsStressTest all symbols`` useTransparentCompiler =
 
-  let checker = ManyProjectsStressTest.makeCheckerForStressTest true
+  let checker = ManyProjectsStressTest.makeCheckerForStressTest true useTransparentCompiler
   for i in 1 .. 10 do
     printfn "stress test iteration %d (first may be slow, rest fast)" i
     let projectsResults = [ for p in ManyProjectsStressTest.projects -> p, checker.ParseAndCheckProject(p.Options) |> Async.RunImmediate ]
@@ -397,11 +417,11 @@ let x = "F#"
 
     let cleanFileName a = if a = fileName1 then "Project1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
 
     let getOptions() =
         let args = mkProjectCommandLineArgs (dllName, fileNames)
-        checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 module internal MultiProjectDirty2 =
 
@@ -422,17 +442,21 @@ let z = Project1.x
 
     let cleanFileName a = if a = fileName1 then "Project2" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
 
     let getOptions() =
         let args = mkProjectCommandLineArgs (dllName, fileNames)
-        let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + MultiProjectDirty1.dllName) |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
 
 [<Test>]
-let ``Test multi project symbols should pick up changes in dependent projects`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project symbols should pick up changes in dependent projects`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     //  register to count the file checks
     let count = ref 0
@@ -614,9 +638,9 @@ type C() =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 //Project2A.fileSource1
 // A project referencing Project2A
@@ -633,13 +657,13 @@ let v = Project2A.C().InternalMember // access an internal symbol
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [||])
     let options =
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project2A.dllName, Project2A.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project2A.dllName, Project2A.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 //Project2A.fileSource1
@@ -657,17 +681,21 @@ let v = Project2A.C().InternalMember // access an internal symbol
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [||])
     let options =
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project2A.dllName, Project2A.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project2A.dllName, Project2A.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
-let ``Test multi project2 errors`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project2 errors`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2B.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -680,9 +708,12 @@ let ``Test multi project2 errors`` () =
     wholeProjectResultsC.Diagnostics.Length |> shouldEqual 1
 
 
-
 [<Test>]
-let ``Test multi project 2 all symbols`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 2 all symbols`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let mpA = checker.ParseAndCheckProject(Project2A.options) |> Async.RunImmediate
     let mpB = checker.ParseAndCheckProject(Project2B.options) |> Async.RunImmediate
@@ -725,9 +756,9 @@ let (|DivisibleBy|_|) by n =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 // A project referencing a sub-project
@@ -750,17 +781,22 @@ let fizzBuzz = function
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [||])
     let options =
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
+            SourceFiles = fileNames
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project3A.dllName) |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project3A.dllName, Project3A.options) |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project3A.dllName, Project3A.options) |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
-let ``Test multi project 3 whole project errors`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 3 whole project errors`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -769,7 +805,11 @@ let ``Test multi project 3 whole project errors`` () =
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
-let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test active patterns' XmlDocSig declared in referenced projects`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
@@ -799,7 +839,12 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 
 
 [<Test>]
-let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` useTransparentCompiler =
+    
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+    
     // The type provider and its dependency are compiled as part of the solution build
 #if DEBUG
     let csDLL = __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestTP/Debug/netstandard2.0/CSharp_Analysis.dll"
@@ -880,7 +925,7 @@ let ``In-memory cross-project references to projects using generative type provi
              // NOTE TestProject may not actually have been compiled
               yield "-r:" + testProjectOutput|]
            ReferencedProjects =
-            [|FSharpReferencedProject.CreateFSharp(testProjectOutput, optionsTestProject )|]
+            [|FSharpReferencedProject.FSharpReference(testProjectOutput, optionsTestProject )|]
            IsIncompleteTypeCheckEnvironment = false
            UseScriptResolutionRules = false
            LoadTime = System.DateTime.Now

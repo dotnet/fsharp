@@ -72,11 +72,11 @@ module internal ParameterLocationsImpl =
         // we found it, dig out ident
         match synExpr with
         | SynExpr.Ident id -> Some([ id.idText ], id.idRange)
-        | SynExpr.LongIdent (_, SynLongIdent ([ id ], [], [ Some _ ]), _, _) -> Some([ id.idText ], id.idRange)
-        | SynExpr.LongIdent (_, SynLongIdent (lid, _, _), _, mLongId)
-        | SynExpr.DotGet (_, _, SynLongIdent (lid, _, _), mLongId) -> Some(pathOfLid lid, mLongId)
-        | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr
-        | SynExpr.Paren (expr = expr) -> digOutIdentFromFuncExpr expr
+        | SynExpr.LongIdent(_, SynLongIdent([ id ], [], [ Some _ ]), _, _) -> Some([ id.idText ], id.idRange)
+        | SynExpr.LongIdent(_, SynLongIdent(lid, _, _), _, mLongId)
+        | SynExpr.DotGet(_, _, SynLongIdent(lid, _, _), mLongId) -> Some(pathOfLid lid, mLongId)
+        | SynExpr.TypeApp(synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr
+        | SynExpr.Paren(expr = expr) -> digOutIdentFromFuncExpr expr
         | _ -> None
 
     type FindResult =
@@ -89,37 +89,37 @@ module internal ParameterLocationsImpl =
 
     let digOutIdentFromStaticArg (StripParenTypes synType) =
         match synType with
-        | SynType.StaticConstantNamed (SynType.LongIdent (SynLongIdent ([ id ], _, _)), _, _) -> Some id.idText
-        | SynType.LongIdent (SynLongIdent ([ id ], _, _)) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
+        | SynType.StaticConstantNamed(SynType.LongIdent(SynLongIdent([ id ], _, _)), _, _) -> Some id.idText
+        | SynType.LongIdent(SynLongIdent([ id ], _, _)) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
         | _ -> None
 
     let getNamedParamName e =
         match e with
         // f(x=4)
-        | SynExpr.App (ExprAtomicFlag.NonAtomic,
-                       _,
-                       SynExpr.App (ExprAtomicFlag.NonAtomic,
-                                    true,
-                                    SynExpr.LongIdent(longDotId = SynLongIdent(id = [ op ])),
-                                    SynExpr.Ident n,
-                                    _range),
-                       _,
-                       _) when op.idText = "op_Equality" -> Some n.idText
+        | SynExpr.App(ExprAtomicFlag.NonAtomic,
+                      _,
+                      SynExpr.App(ExprAtomicFlag.NonAtomic,
+                                  true,
+                                  SynExpr.LongIdent(longDotId = SynLongIdent(id = [ op ])),
+                                  SynExpr.Ident n,
+                                  _range),
+                      _,
+                      _) when op.idText = "op_Equality" -> Some n.idText
         // f(?x=4)
-        | SynExpr.App (ExprAtomicFlag.NonAtomic,
-                       _,
-                       SynExpr.App (ExprAtomicFlag.NonAtomic,
-                                    true,
-                                    SynExpr.LongIdent(longDotId = SynLongIdent(id = [ op ])),
-                                    SynExpr.LongIdent (true, SynLongIdent ([ n ], _, _), _ref, _lidrange),
-                                    _range),
-                       _,
-                       _) when op.idText = "op_Equality" -> Some n.idText
+        | SynExpr.App(ExprAtomicFlag.NonAtomic,
+                      _,
+                      SynExpr.App(ExprAtomicFlag.NonAtomic,
+                                  true,
+                                  SynExpr.LongIdent(longDotId = SynLongIdent(id = [ op ])),
+                                  SynExpr.LongIdent(true, SynLongIdent([ n ], _, _), _ref, _lidrange),
+                                  _range),
+                      _,
+                      _) when op.idText = "op_Equality" -> Some n.idText
         | _ -> None
 
     let getTypeName synType =
         match synType with
-        | SynType.LongIdent (SynLongIdent (ids, _, _)) -> ids |> pathOfLid
+        | SynType.LongIdent(SynLongIdent(ids, _, _)) -> ids |> pathOfLid
         | _ -> [ "" ] // TODO type name for other cases, see also unit test named "ParameterInfo.LocationOfParams.AfterQuicklyTyping.CallConstructorViaLongId.Bug94333"
 
     let handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt: _ option) =
@@ -148,7 +148,7 @@ module internal ParameterLocationsImpl =
     // see bug 345385.
     let rec searchSynArgExpr traverseSynExpr pos expr =
         match expr with
-        | SynExprParen (SynExpr.Tuple (false, synExprList, commaRanges, _tupleRange) as synExpr, _lpRange, rpRangeOpt, parenRange) -> // tuple argument
+        | SynExprParen(SynExpr.Tuple(false, synExprList, commaRanges, _tupleRange) as synExpr, _lpRange, rpRangeOpt, parenRange) -> // tuple argument
             let inner = traverseSynExpr synExpr
 
             match inner with
@@ -173,25 +173,25 @@ module internal ParameterLocationsImpl =
                     NotFound, None
             | _ -> NotFound, None
 
-        | SynExprParen (SynExprParen (SynExpr.Tuple (false, _, _, _), _, _, _) as synExpr, _, rpRangeOpt, parenRange) -> // f((x, y)) is special, single tuple arg
+        | SynExprParen(SynExprParen(SynExpr.Tuple(false, _, _, _), _, _, _) as synExpr, _, rpRangeOpt, parenRange) -> // f((x, y)) is special, single tuple arg
             handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt)
 
         // dig into multiple parens
-        | SynExprParen (SynExprParen (_, _, _, _) as synExpr, _, _, _parenRange) ->
+        | SynExprParen(SynExprParen _ as synExpr, _, _, _parenRange) ->
             let r, _cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr
             r, None
 
-        | SynExprParen (synExpr, _lpRange, rpRangeOpt, parenRange) -> // single argument
+        | SynExprParen(synExpr, _lpRange, rpRangeOpt, parenRange) -> // single argument
             handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt)
 
-        | SynExpr.ArbitraryAfterError (_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
+        | SynExpr.ArbitraryAfterError(_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
             if SyntaxTraversal.rangeContainsPosEdgesExclusive range pos then
                 let r = Found(range.Start, [], [ (range.End, None) ], false)
                 r, None
             else
                 NotFound, None
 
-        | SynExpr.Const (SynConst.Unit, unitRange) ->
+        | SynExpr.Const(SynConst.Unit, unitRange) ->
             if SyntaxTraversal.rangeContainsPosEdgesExclusive unitRange pos then
                 let r = Found(unitRange.Start, [], [ (unitRange.End, None) ], true)
                 r, None
@@ -212,15 +212,15 @@ module internal ParameterLocationsImpl =
 
     let (|StaticParameters|_|) pos (StripParenTypes synType) =
         match synType with
-        | SynType.App (StripParenTypes (SynType.LongIdent (SynLongIdent (lid, _, _) as lidwd)),
-                       Some mLess,
-                       args,
-                       commas,
-                       mGreaterOpt,
-                       _pf,
-                       wholem) ->
+        | SynType.App(StripParenTypes(SynType.LongIdent(SynLongIdent(lid, _, _) as lidwd)),
+                      Some mLess,
+                      args,
+                      commas,
+                      mGreaterOpt,
+                      _pf,
+                      wholem) ->
             let lidm = lidwd.Range
-            let betweenTheBrackets = mkRange wholem.FileName mLess.Start wholem.End
+            let betweenTheBrackets = withStart mLess.Start wholem
 
             if
                 SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos
@@ -254,11 +254,11 @@ module internal ParameterLocationsImpl =
                     match expr with
 
                     // new LID<tyarg1, ...., tyargN>(...)  and error recovery of these
-                    | SynExpr.New (_, synType, synExpr, _) ->
+                    | SynExpr.New(_, synType, synExpr, _) ->
                         let constrArgsResult, cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr
 
                         match constrArgsResult, cacheOpt with
-                        | Found (parenLoc, argRanges, commasAndCloseParen, isThereACloseParen), _ ->
+                        | Found(parenLoc, argRanges, commasAndCloseParen, isThereACloseParen), _ ->
                             let typeName = getTypeName synType
 
                             Some(
@@ -279,30 +279,30 @@ module internal ParameterLocationsImpl =
                             | _ -> traverseSynExpr synExpr
 
                     // EXPR<  = error recovery of a form of half-written TypeApp
-                    | SynExpr.App (_,
-                                   _,
-                                   SynExpr.App (_, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ op ])), synExpr, mLess),
-                                   SynExpr.ArbitraryAfterError _,
-                                   wholem) when op.idText = "op_LessThan" ->
+                    | SynExpr.App(_,
+                                  _,
+                                  SynExpr.App(_, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ op ])), synExpr, mLess),
+                                  SynExpr.ArbitraryAfterError _,
+                                  wholem) when op.idText = "op_LessThan" ->
                         // Look in the function expression
                         let fResult = traverseSynExpr synExpr
 
                         match fResult with
                         | Some _ -> fResult
                         | _ ->
-                            let typeArgsm = mkRange mLess.FileName mLess.Start wholem.End
+                            let typeArgsm = withEnd wholem.End mLess
 
                             if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
                                 // We found it, dig out ident
                                 match digOutIdentFromFuncExpr synExpr with
-                                | Some (lid, mLongId) ->
+                                | Some(lid, mLongId) ->
                                     Some(ParameterLocations(lid, mLongId, op.idRange.Start, [], [ wholem.End ], false, []))
                                 | None -> None
                             else
                                 None
 
                     // EXPR EXPR2
-                    | SynExpr.App (_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
+                    | SynExpr.App(_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
                         // Look in the function expression
                         let fResult = traverseSynExpr synExpr
 
@@ -313,10 +313,10 @@ module internal ParameterLocationsImpl =
                             let xResult, cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr2
 
                             match xResult, cacheOpt with
-                            | Found (parenLoc, argRanges, commasAndCloseParen, isThereACloseParen), _ ->
+                            | Found(parenLoc, argRanges, commasAndCloseParen, isThereACloseParen), _ ->
                                 // We found it, dig out ident
                                 match digOutIdentFromFuncExpr synExpr with
-                                | Some (lid, mLongId) ->
+                                | Some(lid, mLongId) ->
                                     assert (isInfix = (posLt parenLoc mLongId.End))
 
                                     if isInfix then
@@ -340,11 +340,11 @@ module internal ParameterLocationsImpl =
                             | _ -> traverseSynExpr synExpr2
 
                     // ID<tyarg1, ...., tyargN>  and error recovery of these
-                    | SynExpr.TypeApp (synExpr, mLess, tyArgs, commas, mGreaterOpt, _, wholem) ->
+                    | SynExpr.TypeApp(synExpr, mLess, tyArgs, commas, mGreaterOpt, _, wholem) ->
                         match traverseSynExpr synExpr with
                         | Some _ as r -> r
                         | None ->
-                            let typeArgsm = mkRange mLess.FileName mLess.Start wholem.End
+                            let typeArgsm = withEnd wholem.End mLess
 
                             if
                                 SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos
@@ -393,7 +393,7 @@ module internal ParameterLocationsImpl =
                             let xResult, _cacheOpt = searchSynArgExpr defaultTraverse pos expr
 
                             match xResult with
-                            | Found (parenLoc, argRanges, commasAndCloseParen, isThereACloseParen) ->
+                            | Found(parenLoc, argRanges, commasAndCloseParen, isThereACloseParen) ->
                                 // we found it, dig out ident
                                 let typeName = getTypeName ty
 
@@ -424,7 +424,8 @@ type ParameterLocations with
             let ranges =
                 nwpl.LongIdStartLocation
                 :: nwpl.LongIdEndLocation
-                   :: nwpl.OpenParenLocation :: (nwpl.TupleEndLocations |> Array.toList)
+                :: nwpl.OpenParenLocation
+                :: (nwpl.TupleEndLocations |> Array.toList)
 
             let sorted =
                 ranges |> List.sortWith (fun a b -> posOrder.Compare(a, b)) |> Seq.toList
@@ -439,9 +440,9 @@ type ParameterLocations with
 module internal SynExprAppLocationsImpl =
     let rec private searchSynArgExpr traverseSynExpr expr ranges =
         match expr with
-        | SynExpr.Const (SynConst.Unit, _) -> None, None
+        | SynExpr.Const(SynConst.Unit, _) -> None, None
 
-        | SynExpr.Paren (SynExpr.Tuple (_, exprs, _commas, _tupRange), _, _, _parenRange) ->
+        | SynExpr.Paren(SynExpr.Tuple(_, exprs, _commas, _tupRange), _, _, _parenRange) ->
             let rec loop (exprs: SynExpr list) ranges =
                 match exprs with
                 | [] -> ranges
@@ -450,11 +451,11 @@ module internal SynExprAppLocationsImpl =
             let res = loop exprs ranges
             Some res, None
 
-        | SynExpr.Paren (SynExpr.Paren _ as synExpr, _, _, _parenRange) ->
+        | SynExpr.Paren(SynExpr.Paren _ as synExpr, _, _, _parenRange) ->
             let r, _cacheOpt = searchSynArgExpr traverseSynExpr synExpr ranges
             r, None
 
-        | SynExpr.Paren (SynExpr.App (_, _isInfix, _, _, _range), _, _, parenRange) -> Some(parenRange :: ranges), None
+        | SynExpr.Paren(SynExpr.App(_, _isInfix, _, _, _range), _, _, parenRange) -> Some(parenRange :: ranges), None
 
         | e ->
             let inner = traverseSynExpr e
@@ -470,10 +471,10 @@ module internal SynExprAppLocationsImpl =
             { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                     match expr with
-                    | SynExpr.App (_exprAtomicFlag, _isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->
+                    | SynExpr.App(_exprAtomicFlag, _isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->
                         let isInfixFuncExpr =
                             match funcExpr with
-                            | SynExpr.App (_, isInfix, _, _, _) -> isInfix
+                            | SynExpr.App(_, isInfix, _, _, _) -> isInfix
                             | _ -> false
 
                         if isInfixFuncExpr then

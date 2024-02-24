@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckFormatStrings
 
+open System
 open System.Text
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -58,7 +59,7 @@ let escapeDotnetFormatString str =
 
 [<return: Struct>]
 let (|PrefixedBy|_|) (prefix: string) (str: string) =
-    if str.StartsWith prefix then
+    if str.StartsWithOrdinal(prefix) then
         ValueSome prefix.Length
     else
         ValueNone
@@ -72,6 +73,11 @@ let makeFmts (context: FormatStringCheckContext) (fragRanges: range list) (fmt: 
     let sourceText = context.SourceText
     let lineStartPositions = context.LineStartPositions
 
+    // Number of curly braces required to delimiter interpolation holes
+    // = Number of $ chars starting a (triple quoted) string literal
+    // Set when we process first fragment range, default = 1
+    let mutable delimLen = 1
+
     let mutable nQuotes = 1
     [ for i, r in List.indexed fragRanges do
         if r.StartLine - 1 < lineStartPositions.Length && r.EndLine - 1 < lineStartPositions.Length then
@@ -79,9 +85,16 @@ let makeFmts (context: FormatStringCheckContext) (fragRanges: range list) (fmt: 
             let rLength = lineStartPositions[r.EndLine - 1] + r.EndColumn - startIndex
             let offset =
                 if i = 0 then
-                    match sourceText.GetSubTextString(startIndex, rLength) with
-                    | PrefixedBy "$\"\"\"" len
-                    | PrefixedBy "\"\"\"" len ->
+                    let fullRangeText = sourceText.GetSubTextString(startIndex, rLength)
+                    delimLen <-
+                        fullRangeText
+                        |> Seq.takeWhile (fun c -> c = '$')
+                        |> Seq.length
+                    let tripleQuotePrefix =
+                        [String.replicate delimLen "$"; "\"\"\""]
+                        |> String.concat ""
+                    match fullRangeText with
+                    | PrefixedBy tripleQuotePrefix len ->
                         nQuotes <- 3
                         len
                     | PrefixedBy "$@\"" len
@@ -91,13 +104,13 @@ let makeFmts (context: FormatStringCheckContext) (fragRanges: range list) (fmt: 
                     | _ -> 1
                 else
                     1 // <- corresponds to '}' that's closing an interpolation hole
-            let fragLen = rLength - offset - (if i = numFrags - 1 then nQuotes else 1)
+            let fragLen = rLength - offset - (if i = numFrags - 1 then nQuotes else delimLen)
             (offset, sourceText.GetSubTextString(startIndex + offset, fragLen), r)
         else (1, fmt, r)
-    ]
+    ], delimLen
 
 
-module internal Parsing =
+module internal Parse =
 
     let flags (info: FormatInfoRegister) (fmt: string) (fmtPos: int) =
         let len = fmt.Length
@@ -175,7 +188,7 @@ module internal Parsing =
             if p = None then None, fmtPos else p, pos'
         | _ -> None, fmtPos
 
-    // Explicitly typed holes in interpolated strings "....%d{x}..." get additional '%P()' as a hole place marker
+    // Explicitly typed expression gaps in interpolated strings "....%d{x}..." get additional '%P()' as an expression gap place marker
     let skipPossibleInterpolationHole isInterpolated isFormattableString (fmt: string) i =
         let len = fmt.Length
         if isInterpolated then
@@ -231,10 +244,10 @@ let parseFormatStringInternal
     //
     let escapeFormatStringEnabled = g.langVersion.SupportsFeature Features.LanguageFeature.EscapeDotnetFormattableStrings
 
-    let fmt, fragments =
+    let fmt, fragments, delimLen =
         match context with
         | Some context when fragRanges.Length > 0 ->
-            let fmts = makeFmts context fragRanges fmt
+            let fmts, delimLen = makeFmts context fragRanges fmt
 
             // Join the fragments with holes. Note this join is only used on the IDE path,
             // the CheckExpressions.fs does its own joining with the right alignments etc. substituted
@@ -245,11 +258,11 @@ let parseFormatStringInternal
                 (0, fmts) ||> List.mapFold (fun i (offset, fmt, fragRange) ->
                     (i, offset, fragRange), i + fmt.Length + 4) // the '4' is the length of '%P()' joins
 
-            fmt, fragments
+            fmt, fragments, delimLen
         | _ ->
             // Don't muck with the fmt when there is no source code context to go get the original
             // source code (i.e. when compiling or background checking)
-            (if escapeFormatStringEnabled then escapeDotnetFormatString fmt else fmt), [ (0, 1, m) ]
+            (if escapeFormatStringEnabled then escapeDotnetFormatString fmt else fmt), [ (0, 1, m) ], 1
 
     let len = fmt.Length
 
@@ -299,32 +312,44 @@ let parseFormatStringInternal
 
     and parseSpecifier acc (i, fragLine, fragCol) fragments =
         let startFragCol = fragCol
-        let fragCol = fragCol+1
-        if fmt[i..(i+1)] = "%%" then
+        let nPercentSigns =
+            fmt[i..]
+            |> Seq.takeWhile (fun c -> c = '%')
+            |> Seq.length
+        if delimLen <= 1 && fmt[i..(i+1)] = "%%" then
             match context with
             | Some _ ->
                 specifierLocations.Add(
                     (Range.mkFileIndexRange m.FileIndex
-                        (Position.mkPos fragLine startFragCol)
-                        (Position.mkPos fragLine (fragCol + 1))), 0)
+                        (Position.mkPos fragLine fragCol)
+                        (Position.mkPos fragLine (fragCol+2))), 0)
             | None -> ()
             appendToDotnetFormatString "%"
-            parseLoop acc (i+2, fragLine, fragCol+1) fragments
+            parseLoop acc (i+2, fragLine, fragCol+2) fragments
+        elif delimLen > 1 && nPercentSigns < delimLen then
+            appendToDotnetFormatString fmt[i..(i+nPercentSigns-1)]
+            parseLoop acc (i + nPercentSigns, fragLine, fragCol + nPercentSigns) fragments
         else
-            let i = i+1
+            let fragCol, i =
+                if delimLen > 1 then
+                    if nPercentSigns > delimLen then
+                        "%" |> String.replicate (nPercentSigns - delimLen) |> appendToDotnetFormatString
+                    fragCol + nPercentSigns, i + nPercentSigns
+                else
+                    fragCol + 1, i + 1
             if i >= len then failwith (FSComp.SR.forMissingFormatSpecifier())
             let info = newInfo()
 
             let oldI = i
-            let posi, i = Parsing.position fmt i
+            let posi, i = Parse.position fmt i
             let fragCol = fragCol + i - oldI
 
             let oldI = i
-            let i = Parsing.flags info fmt i
+            let i = Parse.flags info fmt i
             let fragCol = fragCol + i - oldI
 
             let oldI = i
-            let widthArg,(widthValue, (precisionArg,i)) = Parsing.widthAndPrecision info fmt i
+            let widthArg,(widthValue, (precisionArg,i)) = Parse.widthAndPrecision info fmt i
             let fragCol = fragCol + i - oldI
 
             if i >= len then failwith (FSComp.SR.forBadPrecision())
@@ -340,18 +365,18 @@ let parseFormatStringInternal
                 | Some n -> failwith (FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), n.ToString()))
                 | None -> ()
 
-            let skipPossibleInterpolationHole pos = Parsing.skipPossibleInterpolationHole isInterpolated isFormattableString fmt pos
+            let skipPossibleInterpolationHole pos = Parse.skipPossibleInterpolationHole isInterpolated isFormattableString fmt pos
 
             // Implicitly typed holes in interpolated strings are translated to '... %P(...)...' in the
             // type checker.  They should always have '(...)' after for format string.
             let requireAndSkipInterpolationHoleFormat i =
                 if i < len && fmt[i] = '(' then
-                    let i2 = fmt.IndexOf(")", i+1)
+                    let i2 = fmt.IndexOfOrdinal(")", i+1)
                     if i2 = -1 then
                         failwith (FSComp.SR.forFormatInvalidForInterpolated3())
                     else
                         let dotnetAlignment = match widthValue with None -> "" | Some w -> "," + (if info.leftJustify then "-" else "") + string w
-                        let dotnetNumberFormat = match fmt[i+1..i2-1] with "" -> "" | s -> ":" + s
+                        let dotnetNumberFormat = match fmt[i+1..i2-1] with s when String.IsNullOrEmpty(s) -> "" | s -> ":" + s
                         appendToDotnetFormatString ("{" + string dotnetFormatStringInterpolationHoleCount + dotnetAlignment  + dotnetNumberFormat + "}")
                         dotnetFormatStringInterpolationHoleCount <- dotnetFormatStringInterpolationHoleCount + 1
                         i2+1
@@ -434,6 +459,8 @@ let parseFormatStringInternal
 
             // residue of hole "...{n}..." in interpolated strings become %P(...)
             | 'P' when isInterpolated ->
+                let (code, message) = FSComp.SR.alwaysUseTypedStringInterpolation()
+                warning(DiagnosticWithText(code, message, m))
                 checkOtherFlags ch
                 let i = requireAndSkipInterpolationHoleFormat (i+1)
                 // Note, the fragCol doesn't advance at all as these are magically inserted.

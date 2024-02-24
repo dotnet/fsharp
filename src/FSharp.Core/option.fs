@@ -185,55 +185,56 @@ module ValueOption =
         | ValueSome _ -> false
 
     [<CompiledName("DefaultValue")>]
-    let defaultValue value voption =
+    let inline defaultValue value voption =
         match voption with
         | ValueNone -> value
         | ValueSome v -> v
 
+    // We're deliberately not using InlineIfLambda, because benchmarked code ends up slightly slower at the time of writing (.NET 8 Preview)
     [<CompiledName("DefaultWith")>]
-    let defaultWith defThunk voption =
+    let inline defaultWith defThunk voption =
         match voption with
         | ValueNone -> defThunk ()
         | ValueSome v -> v
 
     [<CompiledName("OrElse")>]
-    let orElse ifNone voption =
+    let inline orElse ifNone voption =
         match voption with
         | ValueNone -> ifNone
         | ValueSome _ -> voption
 
     [<CompiledName("OrElseWith")>]
-    let orElseWith ifNoneThunk voption =
+    let inline orElseWith ([<InlineIfLambda>] ifNoneThunk) voption =
         match voption with
         | ValueNone -> ifNoneThunk ()
         | ValueSome _ -> voption
 
     [<CompiledName("Count")>]
-    let count voption =
+    let inline count voption =
         match voption with
         | ValueNone -> 0
         | ValueSome _ -> 1
 
     [<CompiledName("Fold")>]
-    let fold<'T, 'State> folder (state: 'State) (voption: voption<'T>) =
+    let inline fold<'T, 'State> ([<InlineIfLambda>] folder) (state: 'State) (voption: voption<'T>) =
         match voption with
         | ValueNone -> state
         | ValueSome x -> folder state x
 
     [<CompiledName("FoldBack")>]
-    let foldBack<'T, 'State> folder (voption: voption<'T>) (state: 'State) =
+    let inline foldBack<'T, 'State> ([<InlineIfLambda>] folder) (voption: voption<'T>) (state: 'State) =
         match voption with
         | ValueNone -> state
         | ValueSome x -> folder x state
 
     [<CompiledName("Exists")>]
-    let exists predicate voption =
+    let inline exists ([<InlineIfLambda>] predicate) voption =
         match voption with
         | ValueNone -> false
         | ValueSome x -> predicate x
 
     [<CompiledName("ForAll")>]
-    let forall predicate voption =
+    let inline forall ([<InlineIfLambda>] predicate) voption =
         match voption with
         | ValueNone -> true
         | ValueSome x -> predicate x
@@ -245,43 +246,43 @@ module ValueOption =
         | ValueSome v -> v = value
 
     [<CompiledName("Iterate")>]
-    let iter action voption =
+    let inline iter ([<InlineIfLambda>] action) voption =
         match voption with
         | ValueNone -> ()
         | ValueSome x -> action x
 
     [<CompiledName("Map")>]
-    let map mapping voption =
+    let inline map ([<InlineIfLambda>] mapping) voption =
         match voption with
         | ValueNone -> ValueNone
         | ValueSome x -> ValueSome(mapping x)
 
     [<CompiledName("Map2")>]
-    let map2 mapping voption1 voption2 =
+    let inline map2 ([<InlineIfLambda>] mapping) voption1 voption2 =
         match voption1, voption2 with
         | ValueSome x, ValueSome y -> ValueSome(mapping x y)
         | _ -> ValueNone
 
     [<CompiledName("Map3")>]
-    let map3 mapping voption1 voption2 voption3 =
+    let inline map3 ([<InlineIfLambda>] mapping) voption1 voption2 voption3 =
         match voption1, voption2, voption3 with
         | ValueSome x, ValueSome y, ValueSome z -> ValueSome(mapping x y z)
         | _ -> ValueNone
 
     [<CompiledName("Bind")>]
-    let bind binder voption =
+    let inline bind ([<InlineIfLambda>] binder) voption =
         match voption with
         | ValueNone -> ValueNone
         | ValueSome x -> binder x
 
     [<CompiledName("Flatten")>]
-    let flatten voption =
+    let inline flatten voption =
         match voption with
         | ValueNone -> ValueNone
         | ValueSome x -> x
 
     [<CompiledName("Filter")>]
-    let filter predicate voption =
+    let inline filter ([<InlineIfLambda>] predicate) voption =
         match voption with
         | ValueNone -> ValueNone
         | ValueSome x ->
@@ -291,38 +292,38 @@ module ValueOption =
                 ValueNone
 
     [<CompiledName("ToArray")>]
-    let toArray voption =
+    let inline toArray voption =
         match voption with
         | ValueNone -> [||]
         | ValueSome x -> [| x |]
 
     [<CompiledName("ToList")>]
-    let toList voption =
+    let inline toList voption =
         match voption with
         | ValueNone -> []
         | ValueSome x -> [ x ]
 
     [<CompiledName("ToNullable")>]
-    let toNullable voption =
+    let inline toNullable voption =
         match voption with
         | ValueNone -> System.Nullable()
         | ValueSome v -> System.Nullable(v)
 
     [<CompiledName("OfNullable")>]
-    let ofNullable (value: System.Nullable<'T>) =
+    let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
             ValueSome value.Value
         else
             ValueNone
 
     [<CompiledName("OfObj")>]
-    let ofObj value =
+    let inline ofObj value =
         match value with
         | null -> ValueNone
         | _ -> ValueSome value
 
     [<CompiledName("ToObj")>]
-    let toObj value =
+    let inline toObj value =
         match value with
         | ValueNone -> null
         | ValueSome x -> x

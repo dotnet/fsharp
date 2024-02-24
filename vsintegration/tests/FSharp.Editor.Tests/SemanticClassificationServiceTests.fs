@@ -10,16 +10,19 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type SemanticClassificationServiceTests() =
     let getRanges (source: string) : SemanticClassificationItem list =
         asyncMaybe {
+            let! ct = Async.CancellationToken |> liftAsync
+
             let document =
                 RoslynTestHelpers.CreateSolution(source) |> RoslynTestHelpers.GetSingleDocument
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")
-                |> liftAsync
+                |> CancellableTask.start ct
 
             return checkFileResults.GetSemanticClassification(None)
         }

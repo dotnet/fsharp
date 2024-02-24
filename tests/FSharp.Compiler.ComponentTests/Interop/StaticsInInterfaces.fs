@@ -1,5 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace FSharp.Compiler.ComponentTests.Interop
+namespace Interop
 
 open Xunit
 open FSharp.Test.Compiler
@@ -193,8 +193,7 @@ extends [runtime]System.Object
 implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>
     {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
           
         .maxstack  8
@@ -205,8 +204,7 @@ instance void  .ctor() cil managed
         IL_0008:  ret
     } 
     
-    .method public hidebysig static class StaticsTesting/MyRepeatSequence 
-'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence>.Next'(class StaticsTesting/MyRepeatSequence other) cil managed
+    .method public hidebysig static class StaticsTesting/MyRepeatSequence 'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence>.Next'(class StaticsTesting/MyRepeatSequence other) cil managed
     {
         .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>::Next(!0)
           
@@ -222,8 +220,7 @@ extends [runtime]System.Object
 implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence2>
     {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
           
         .maxstack  8
@@ -234,8 +231,7 @@ instance void  .ctor() cil managed
         IL_0008:  ret
     } 
     
-    .method public static class StaticsTesting/MyRepeatSequence2 
-Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
+    .method public static class StaticsTesting/MyRepeatSequence2 Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
     {
           
         .maxstack  8
@@ -243,8 +239,7 @@ Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
         IL_0001:  ret
     } 
     
-    .method public hidebysig static class StaticsTesting/MyRepeatSequence2 
-'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence2>.Next'(class StaticsTesting/MyRepeatSequence2 other) cil managed
+    .method public hidebysig static class StaticsTesting/MyRepeatSequence2 'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence2>.Next'(class StaticsTesting/MyRepeatSequence2 other) cil managed
     {
         .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence2>::Next(!0)
           

@@ -17,9 +17,9 @@ val morphILScopeRefsInILTypeRef: (ILScopeRef -> ILScopeRef) -> ILTypeRef -> ILTy
 val morphILTypeRefsInILType: (ILTypeRef -> ILTypeRef) -> ILType -> ILType
 
 /// Morph all type references throughout an entire module.
-val morphILTypeRefsInILModuleMemoized: (ILTypeRef -> ILTypeRef) -> ILModuleDef -> ILModuleDef
+val morphILTypeRefsInILModuleMemoized: (string -> bool) -> (ILTypeRef -> ILTypeRef) -> ILModuleDef -> ILModuleDef
 
-val morphILScopeRefsInILModuleMemoized: (ILScopeRef -> ILScopeRef) -> ILModuleDef -> ILModuleDef
+val morphILScopeRefsInILModuleMemoized: (string -> bool) -> (ILScopeRef -> ILScopeRef) -> ILModuleDef -> ILModuleDef
 
 val morphILInstrsInILCode: (ILInstr -> ILInstr list) -> ILCode -> ILCode
 

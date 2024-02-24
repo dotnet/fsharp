@@ -121,7 +121,7 @@ let CreateTypeProvider (
     let getReferencedAssemblies () =
         resolutionEnvironment.GetReferencedAssemblies() |> Array.distinct
 
-    if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
+    if not(isNull(typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]))) then
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
@@ -146,7 +146,7 @@ let CreateTypeProvider (
 #endif
         protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
 
-    elif typeProviderImplementationType.GetConstructor [| |] <> null then 
+    elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
         protect (fun () -> Activator.CreateInstance typeProviderImplementationType :?> ITypeProvider )
 
     else
@@ -230,9 +230,10 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
 let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
     match TryTypeMember(st, fullName, memberName, m, recover, f) with 
     | Tainted.Null -> 
-        errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); 
+        errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
         st.PApplyNoFailure(fun _ -> recover)
-    | Tainted.NonNull r -> r
+    | Tainted.NonNull r ->
+        r
 
 /// Try to access a property or method on a provided member, catching and reporting errors
 let TryMemberMember (mi: Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) = 
@@ -299,7 +300,7 @@ type ProvidedTypeComparer() =
 type ProvidedTypeContext = 
     | NoEntries
     // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
-    | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * Lazy<ConcurrentDictionary<ProvidedType, obj>>
+    | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * InterruptibleLazy<ConcurrentDictionary<ProvidedType, obj>>
 
     static member Empty = NoEntries
 
@@ -333,9 +334,11 @@ type ProvidedTypeContext =
         match ctxt with 
         | NoEntries -> NoEntries
         | Entries(d1, d2) ->
-            Entries(d1, lazy (let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
-                              for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
-                              dict))
+            Entries(d1, InterruptibleLazy(fun _ ->
+                let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
+                for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
+                dict
+            ))
 
 [<AllowNullLiteral; Sealed>]
 type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
@@ -346,7 +349,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
             x.CustomAttributes 
             |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     interface IProvidedCustomAttributeProvider with 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -366,13 +369,13 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.IsGenericType = x.IsGenericType
 
-    member _.Namespace = x.Namespace
+    member _.Namespace : string MaybeNull = x.Namespace
 
     member _.FullName = x.FullName
 
     member _.IsArray = x.IsArray
 
-    member _.Assembly: ProvidedAssembly = x.Assembly |> ProvidedAssembly.Create
+    member _.Assembly: ProvidedAssembly MaybeNull = x.Assembly |> ProvidedAssembly.Create
 
     member _.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
 
@@ -546,7 +549,7 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
 
 [<AllowNullLiteral; AbstractClass>] 
 type ProvidedMemberInfo (x: MemberInfo, ctxt) = 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = x.Name
 
@@ -568,7 +571,7 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
 
 [<AllowNullLiteral; Sealed>] 
 type ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = x.Name
 
@@ -1173,7 +1176,7 @@ let TryResolveProvidedType(resolver: Tainted<ITypeProvider>, m, moduleOrNamespac
         match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
         | Tainted.Null -> None
         | Tainted.NonNull ty -> Some ty
-    with e -> 
+    with RecoverableException e -> 
         errorRecovery e m
         None
 

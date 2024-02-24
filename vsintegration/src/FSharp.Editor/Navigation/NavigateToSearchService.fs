@@ -17,13 +17,12 @@ open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
 open FSharp.Compiler.EditorServices
+open CancellableTasks
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
-type internal FSharpNavigateToSearchService [<ImportingConstructor>]
-    (
-        patternMatcherFactory: IPatternMatcherFactory,
-        [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace
-    ) =
+type internal FSharpNavigateToSearchService
+    [<ImportingConstructor>]
+    (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
     let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
 
@@ -35,14 +34,15 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                     cache.Clear()
 
     let getNavigableItems (document: Document) =
-        async {
-            let! currentVersion = document.GetTextVersionAsync() |> Async.AwaitTask
+        cancellableTask {
+            let! ct = CancellableTask.getCancellationToken ()
+            let! currentVersion = document.GetTextVersionAsync(ct)
 
             match cache.TryGetValue document.Id with
             | true, (version, items) when version = currentVersion -> return items
             | _ ->
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
-                let items = parseResults.ParseTree |> NavigateTo.GetNavigableItems
+                let items = NavigateTo.GetNavigableItems parseResults.ParseTree
                 cache[document.Id] <- currentVersion, items
                 return items
         }
@@ -133,44 +133,58 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
             if item.NeedsBackticks then
                 match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
-                | i when i > 0 -> PatternMatch(PatternMatchKind.Substring, false, false) |> Some
-                | 0 when name.Length = searchPattern.Length -> PatternMatch(PatternMatchKind.Exact, false, false) |> Some
-                | 0 -> PatternMatch(PatternMatchKind.Prefix, false, false) |> Some
-                | _ -> None
+                | i when i > 0 -> ValueSome(PatternMatch(PatternMatchKind.Substring, false, false))
+                | 0 when name.Length = searchPattern.Length -> ValueSome(PatternMatch(PatternMatchKind.Exact, false, false))
+                | 0 -> ValueSome(PatternMatch(PatternMatchKind.Prefix, false, false))
+                | _ -> ValueNone
             else
                 // full name with dots allows for path matching, e.g.
                 // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
-                patternMatcher.TryMatch $"{item.Container.FullName}.{name}" |> Option.ofNullable
+                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
+                |> ValueOption.ofNullable
 
-    let processDocument (tryMatch: NavigableItem -> PatternMatch option) (kinds: IImmutableSet<string>) (document: Document) =
-        async {
-            let! ct = Async.CancellationToken
-            let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
+    let processDocument (tryMatch: NavigableItem -> PatternMatch voption) (kinds: IImmutableSet<string>) (document: Document) =
+        cancellableTask {
+            let! ct = CancellableTask.getCancellationToken ()
 
-            let processItem item =
-                asyncMaybe {
-                    do! Option.guard (kinds.Contains(navigateToItemKindToRoslynKind item.Kind))
-
-                    let! m = tryMatch item
-
-                    let! sourceSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range)
-                    let glyph = navigateToItemKindToGlyph item.Kind
-                    let kind = navigateToItemKindToRoslynKind item.Kind
-                    let additionalInfo = formatInfo item.Container document
-
-                    return
-                        FSharpNavigateToSearchResult(
-                            additionalInfo,
-                            kind,
-                            patternMatchKindToNavigateToMatchKind m.Kind,
-                            item.Name,
-                            FSharpNavigableItem(glyph, ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)), document, sourceSpan)
-                        )
-                }
+            let! sourceText = document.GetTextAsync ct
 
             let! items = getNavigableItems document
-            let! processed = items |> Seq.map processItem |> Async.Parallel
-            return processed |> Array.choose id
+
+            let processed =
+                [|
+                    for item in items do
+                        let contains = kinds.Contains(navigateToItemKindToRoslynKind item.Kind)
+                        let patternMatch = tryMatch item
+
+                        match contains, patternMatch with
+                        | true, ValueSome m ->
+                            let sourceSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range)
+
+                            match sourceSpan with
+                            | ValueNone -> ()
+                            | ValueSome sourceSpan ->
+                                let glyph = navigateToItemKindToGlyph item.Kind
+                                let kind = navigateToItemKindToRoslynKind item.Kind
+                                let additionalInfo = formatInfo item.Container document
+
+                                yield
+                                    FSharpNavigateToSearchResult(
+                                        additionalInfo,
+                                        kind,
+                                        patternMatchKindToNavigateToMatchKind m.Kind,
+                                        item.Name,
+                                        FSharpNavigableItem(
+                                            glyph,
+                                            ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)),
+                                            document,
+                                            sourceSpan
+                                        )
+                                    )
+                        | _ -> ()
+                |]
+
+            return processed
         }
 
     interface IFSharpNavigateToSearchService with
@@ -182,27 +196,34 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 kinds,
                 cancellationToken
             ) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
-            async {
+            cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
 
-                let! results = project.Documents |> Seq.map (processDocument tryMatch kinds) |> Async.Parallel
+                let tasks =
+                    [|
+                        for doc in project.Documents do
+                            yield processDocument tryMatch kinds doc
+                    |]
 
-                return results |> Array.concat |> Array.toImmutableArray
+                let! results = CancellableTask.whenAll tasks
+
+                let results' = ImmutableArray.CreateBuilder()
+
+                for navResults in results do
+                    for navResult in navResults do
+                        results'.Add navResult
+
+                return results'.ToImmutable()
+
             }
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> CancellableTask.start cancellationToken
 
-        member _.SearchDocumentAsync
-            (
-                document: Document,
-                searchPattern,
-                kinds,
-                cancellationToken
-            ) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
-            async {
+        member _.SearchDocumentAsync(document: Document, searchPattern, kinds, cancellationToken) =
+            cancellableTask {
                 let! result = processDocument (createMatcherFor searchPattern) kinds document
-                return result |> Array.toImmutableArray
+                return Array.toImmutableArray result
             }
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> CancellableTask.start cancellationToken
 
         member _.KindsProvided = kindsProvided
 

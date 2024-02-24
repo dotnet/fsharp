@@ -95,14 +95,28 @@ module internal CompletionUtils =
             documentId: DocumentId,
             filePath: string,
             defines: string list,
+            langVersion: string option,
+            strictIndentation: bool option,
             sourceText: SourceText,
-            triggerPosition: int
+            triggerPosition: int,
+            ct: CancellationToken
         ) : bool =
         let textLines = sourceText.Lines
         let triggerLine = textLines.GetLineFromPosition triggerPosition
 
-        let classifiedSpans =
-            Tokenizer.getClassifiedSpans (documentId, sourceText, triggerLine.Span, Some filePath, defines, CancellationToken.None)
+        let classifiedSpans = ResizeArray<_>()
+
+        Tokenizer.classifySpans (
+            documentId,
+            sourceText,
+            triggerLine.Span,
+            Some filePath,
+            defines,
+            langVersion,
+            strictIndentation,
+            classifiedSpans,
+            ct
+        )
 
         classifiedSpans.Count = 0
         || // we should provide completion at the start of empty line, where there are no tokens at all
@@ -117,10 +131,12 @@ module internal CompletionUtils =
                     | ClassificationTypeNames.NumericLiteral -> false
                     | _ -> true) // anything else is a valid classification type
             ) in
+
         result
 
     let inline getKindPriority kind =
         match kind with
+        | CompletionItemKind.SuggestedName
         | CompletionItemKind.CustomOperation -> 0
         | CompletionItemKind.Property -> 1
         | CompletionItemKind.Field -> 2
@@ -131,7 +147,17 @@ module internal CompletionUtils =
         | CompletionItemKind.Method(isExtension = true) -> 7
 
     /// Indicates the text span to be replaced by a committed completion list item.
-    let getDefaultCompletionListSpan (sourceText: SourceText, caretIndex, documentId, filePath, defines) =
+    let getDefaultCompletionListSpan
+        (
+            sourceText: SourceText,
+            caretIndex,
+            documentId,
+            filePath,
+            defines,
+            langVersion,
+            strictIndentation,
+            ct: CancellationToken
+        ) =
 
         // Gets connected identifier-part characters backward and forward from caret.
         let getIdentifierChars () =
@@ -159,8 +185,6 @@ module internal CompletionUtils =
             // If caret is at a backtick-identifier, then that is our span.
 
             // Else, check if we are after an unclosed ``, to support the common case of a manually typed leading ``.
-            // Tokenizer will not consider this an identifier, it will consider the bare `` a Keyword, followed by
-            // arbitrary tokens (Identifier, Operator, Text, etc.) depending on the trailing text.
 
             // Else, backticks are not involved in caret location, fall back to standard identifier character scan.
 
@@ -168,22 +192,33 @@ module internal CompletionUtils =
             // backticks before later valid backticks on a line, this is an acceptable compromise in order to support
             // the majority of common cases.
 
-            let classifiedSpans =
-                Tokenizer.getClassifiedSpans (documentId, sourceText, line.Span, Some filePath, defines, CancellationToken.None)
+            let classifiedSpans = ResizeArray<_>()
 
-            let isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
+            Tokenizer.classifySpans (
+                documentId,
+                sourceText,
+                line.Span,
+                Some filePath,
+                defines,
+                langVersion,
+                strictIndentation,
+                classifiedSpans,
+                ct
+            )
+
+            let inline isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
                 classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier
                 && Tokenizer.isDoubleBacktickIdent (sourceText.ToString(classifiedSpan.TextSpan))
 
-            let isUnclosedBacktick (classifiedSpan: ClassifiedSpan) =
-                classifiedSpan.ClassificationType = ClassificationTypeNames.Keyword
-                && sourceText.ToString(classifiedSpan.TextSpan) = "``"
+            let inline isUnclosedBacktick (classifiedSpan: ClassifiedSpan) =
+                classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier
+                && sourceText.ToString(classifiedSpan.TextSpan).StartsWith "``"
 
             match
                 classifiedSpans
-                |> Seq.tryFind (fun cs -> isBacktickIdentifier cs && cs.TextSpan.IntersectsWith caretIndex)
+                |> Seq.tryFindV (fun cs -> isBacktickIdentifier cs && cs.TextSpan.IntersectsWith caretIndex)
             with
-            | Some backtickIdentifier ->
+            | ValueSome backtickIdentifier ->
                 // Backtick enclosed identifier found intersecting with caret, use its span.
                 backtickIdentifier.TextSpan
             | _ ->

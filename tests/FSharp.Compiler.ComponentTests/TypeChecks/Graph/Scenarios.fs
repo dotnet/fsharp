@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.Scenarios
+﻿module TypeChecks.Scenarios
 
 open TestUtils
 
@@ -263,12 +263,12 @@ let c = 0
 """
                     (set [| 0 |])
             ]
-        // This is a very last resort measure to link C to all files that came before it.
-        // `open X` does exist but there is no file that is actively contributing to the X namespace
+        // `open X` does exist but there is no file that is actively contributing to the X namespace.
         // This is a trade-off scenario, if A.fs had a type or nested module we would consider it to contribute to the X namespace.
         // As it is empty, we don't include the file index in the trie.
+        // To satisfy the open statement we link it to the lowest file idx of the found namespace node X in the trie.
         scenario
-            "A open statement that leads nowhere should link to every file that came above it."
+            "An open statement that leads to a namespace node without any types, should link to the lowest file idx of that namespace node."
             [
                 sourceFile
                     "A.fs"
@@ -289,7 +289,7 @@ namespace Z
 
 open X
 """
-                    (set [| 0; 1 |])
+                    (set [| 0 |])
             ]
         // The nested module in this case adds content to the namespace
         // Similar if a namespace had a type.
@@ -574,6 +574,370 @@ type Bar() =
 
 let Foo () : unit = 
     Bar.Foo ()
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Ghost dependency takes file index into account"
+            [
+                sourceFile "X.fs" "module X" Set.empty
+                // opened namespace 'System.IO' will be found in the Trie.
+                // However, we should not link A.fs to X.fs (because of the ghost dependency mechanism)
+                // because B.fs introduces nodes `System` and `IO` and comes after A.fs.
+                sourceFile
+                    "A.fs"
+                    """
+module A
+
+open System.IO
+                    """
+                    Set.empty
+                sourceFile "B.fs" "namespace System.IO" Set.empty
+            ]
+        scenario
+            "Ghost dependency that is already linked via module"
+            [
+                sourceFile "X.fs" "module Foo.Bar.X" Set.empty
+                sourceFile "Y.fs" "module Foo.Bar.Y" Set.empty
+                // This file is linked to Y.fs due to opening the module `Foo.Bar.Y`
+                // The link to Y.fs should also satisfy the ghost dependency created after opening `Foo.Bar`.
+                // There is no need to add an additional link to the lowest index in node `Foo.Bar`.
+                sourceFile
+                    "Z.fs"
+                    """
+module Z
+
+open Foo.Bar // ghost dependency
+open Foo.Bar.Y // Y.fs
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "Identifier in type augmentation can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Identifier in type augmentation in signature file can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fsi"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase =
+        class
+            new: unit -> PoolingValueTaskBuilderBase
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "ColdTask.fsi"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+
+            member Source: a: int -> int
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0; 2 |])
+            ]
+        scenario
+            "ModuleSuffix clash"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "ModuleSuffix clash, module before namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Ghost dependency via top-level namespace"
+            [
+                sourceFile
+                    "Graph.fs"
+                    """
+namespace Graphoscope.Graph
+
+type UndirectedGraph = obj
+"""
+                    Set.empty
+                sourceFile
+                    "DiGraph.fs"
+                    """
+namespace Graphoscope
+
+open Graphoscope
+
+type DiGraph = obj
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Unused namespace should be detected"
+            [
+                sourceFile
+                    "File1.fs"
+                    """
+namespace My.Great.Namespace
+"""
+                    Set.empty
+
+                sourceFile
+                    "File2.fs"
+                    """
+namespace My.Great.Namespace
+
+open My.Great.Namespace
+
+type Foo = class end
+"""
+                    (set [| 0 |])
+                    
+                sourceFile
+                    "Program"
+                    """
+module Program
+
+printfn "Hello"
+"""
+                    Set.empty
+            ]
+        scenario
+            "Nameof module with namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace X.Y.Z
+
+module Foo =
+    let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace X.Y.Z
+
+module Point =
+    let y = nameof Foo
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Nameof module without namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module Foo
+
+let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Point
+
+let y = nameof Foo
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Single module name should always be checked, regardless of own namespace"
+            [
+                sourceFile "X.fs" "namespace X.Y" Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+module Foo
+
+let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace X.Y
+
+type T() =
+    let _ = nameof Foo
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof Foo -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "parentheses around module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof ((Foo)) -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+            
+        scenario
+            "parentheses around module name in nameof expression"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+let _ = nameof ((Foo))
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof expression"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+open System.ComponentModel
+
+[<Description(nameof X.Y.Z)>]
+let v = 2
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+do ignore (match "" with | nameof X.Y.Z -> () | _ -> ())
 """
                     (set [| 0 |])
             ]

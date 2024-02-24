@@ -6,9 +6,13 @@
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <NoWarn>$(NoWarn);FS3511</NoWarn> <!-- This state machine is not statically compilable. -->
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
+   
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
@@ -25,11 +29,51 @@
     <Compile Include="LanguageDebugInfoServiceTests.fs" />
     <Compile Include="IndentationServiceTests.fs" />
     <Compile Include="CompletionProviderTests.fs" />
+    <Compile Include="FindReferencesTests.fs" />
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
     <Compile Include="QuickInfoTests.fs" />
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
+    <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
+    <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
+    <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />
+    <Compile Include="CodeFixes\ChangeToUpcastTests.fs" />
+    <Compile Include="CodeFixes\AddMissingRecToMutuallyRecFunctionsTests.fs" />
+    <Compile Include="CodeFixes\WrapExpressionInParenthesesTests.fs" />
+    <Compile Include="CodeFixes\ConvertCSharpLambdaToFSharpLambdaTests.fs" />
+    <Compile Include="CodeFixes\RemoveReturnOrYieldTests.fs" />
+    <Compile Include="CodeFixes\MakeOuterBindingRecursiveTests.fs" />
+    <Compile Include="CodeFixes\AddMissingFunKeywordTests.fs" />
+    <Compile Include="CodeFixes\ProposeUppercaseLabelTests.fs" />
+    <Compile Include="CodeFixes\UseTripleQuotedInterpolationTests.fs" />
+    <Compile Include="CodeFixes\ConvertToNotEqualsEqualityExpressionTests.fs" />
+    <Compile Include="CodeFixes\ConvertToSingleEqualsEqualityExpressionTests.fs" />
+    <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinitionTests.fs" />
+    <Compile Include="CodeFixes\AddTypeAnnotationToObjectOfIndeterminateTypeTests.fs" />
+    <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpressionTests.fs" />
+    <Compile Include="CodeFixes\ChangePrefixNegationToInfixSubtractionTests.fs" />
+    <Compile Include="CodeFixes\AddNewKeywordToDisposableConstructorInvocationTests.fs" />
+    <Compile Include="CodeFixes\RemoveUnusedBindingTests.fs" />
+    <Compile Include="CodeFixes\RemoveSuperfluousCaptureForUnionCaseWithNoDataTests.fs" />
+    <Compile Include="CodeFixes\FixIndexerAccessLegacyTests.fs" />
+    <Compile Include="CodeFixes\FixIndexerAccessTests.fs" />
+    <Compile Include="CodeFixes\DiscardUnusedValueTests.fs" />
+    <Compile Include="CodeFixes\PrefixUnusedValueTests.fs" />
+    <Compile Include="CodeFixes\MakeDeclarationMutableTests.fs" />
+    <Compile Include="CodeFixes\UseMutationWhenValueIsMutableTests.fs" />
+    <Compile Include="CodeFixes\AddOpenOnTopOnTests.fs" />
+    <Compile Include="CodeFixes\AddOpenOnTopOffTests.fs" />
+    <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColonTests.fs" />
+    <Compile Include="CodeFixes\RemoveUnusedOpensTests.fs" />
+    <Compile Include="CodeFixes\SimplifyNameTests.fs" />
+    <Compile Include="CodeFixes\RenameParamToMatchSignatureTests.fs" />
+    <Compile Include="CodeFixes\ImplementInterfaceTests.fs" />
+    <Compile Include="CodeFixes\ConvertCSharpUsingToFSharpOpenTests.fs" />
+    <Compile Include="CodeFixes\ReplaceWithSuggestionTests.fs" />
+    <Compile Include="CodeFixes\RemoveUnnecessaryParenthesesTests.fs" />
+    <Compile Include="Refactors\RefactorTestFramework.fs" />
+    <Compile Include="Refactors\AddReturnTypeTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />
@@ -44,11 +88,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="System.Runtime.Caching" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" Version="$(MicrosoftVisualStudioPlatformVSEditorVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
+    <PackageReference Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" />
   </ItemGroup>
 
   <ItemGroup>

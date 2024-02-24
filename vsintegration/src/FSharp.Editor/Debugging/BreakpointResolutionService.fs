@@ -16,15 +16,16 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debuggin
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
+open CancellableTasks
 
 [<Export(typeof<IFSharpBreakpointResolutionService>)>]
 type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
 
     static member GetBreakpointLocation(document: Document, textSpan: TextSpan) =
-        async {
-            let! ct = Async.CancellationToken
+        cancellableTask {
+            let! ct = CancellableTask.getCancellationToken ()
 
-            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+            let! sourceText = document.GetTextAsync(ct)
 
             let textLinePos = sourceText.Lines.GetLinePosition(textSpan.Start)
 
@@ -32,36 +33,41 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
                 sourceText.GetSubText(sourceText.Lines.[textLinePos.Line].Span).ToString()
 
             if String.IsNullOrWhiteSpace textInLine then
-                return None
+                return ValueNone
             else
                 let textLineColumn = textLinePos.Character
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
 
-                let! parseResults =
-                    document.GetFSharpParseResultsAsync(nameof (FSharpBreakpointResolutionService))
-                    |> liftAsync
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpBreakpointResolutionService))
 
-                match parseResults with
-                | Some parseResults -> return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
-                | _ -> return None
+                let location =
+                    parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
+
+                return ValueOption.ofOption location
         }
 
     interface IFSharpBreakpointResolutionService with
-        member this.ResolveBreakpointAsync
+        member _.ResolveBreakpointAsync
             (
                 document: Document,
                 textSpan: TextSpan,
                 cancellationToken: CancellationToken
             ) : Task<FSharpBreakpointResolutionResult> =
-            asyncMaybe {
+            cancellableTask {
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(document, textSpan)
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
-                return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
+
+                match range with
+                | ValueNone -> return Unchecked.defaultof<_>
+                | ValueSome range ->
+                    let! sourceText = document.GetTextAsync(cancellationToken)
+                    let span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
+
+                    match span with
+                    | ValueNone -> return Unchecked.defaultof<_>
+                    | ValueSome span -> return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
             }
-            |> Async.map Option.toObj
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> CancellableTask.start cancellationToken
 
         // FSROSLYNTODO: enable placing breakpoints by when user supplies fully-qualified function names
-        member this.ResolveBreakpointsAsync(_, _, _) : Task<IEnumerable<FSharpBreakpointResolutionResult>> =
+        member _.ResolveBreakpointsAsync(_, _, _) : Task<IEnumerable<FSharpBreakpointResolutionResult>> =
             Task.FromResult(Enumerable.Empty<FSharpBreakpointResolutionResult>())

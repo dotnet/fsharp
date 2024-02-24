@@ -9,6 +9,7 @@
 module internal FSharp.Compiler.TcGlobals
 
 open System.Collections.Concurrent
+open System.Linq
 open System.Diagnostics
 
 open Internal.Utilities.Library
@@ -25,6 +26,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities
+open System.Reflection
 
 let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
@@ -88,21 +90,6 @@ module FSharpLib =
 // Access the initial environment: helpers to build references
 //-------------------------------------------------------------------------
 
-// empty flags
-let v_knownWithoutNull = 0uy
-
-let private mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
-
-let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
-
-let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
-let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
-let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
-let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
-let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
-let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
-let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
-
 type
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     BuiltinAttribInfo =
@@ -162,6 +149,8 @@ let tname_ValueType = "System.ValueType"
 [<Literal>]
 let tname_Enum = "System.Enum"
 [<Literal>]
+let tname_FlagsAttribute = "System.FlagsAttribute"
+[<Literal>]
 let tname_Array = "System.Array"
 [<Literal>]
 let tname_RuntimeArgumentHandle = "System.RuntimeArgumentHandle"
@@ -176,6 +165,8 @@ let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.Compiler
 [<Literal>]
 let tname_ReferenceAssemblyAttribute = "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
 [<Literal>]
+let tname_UnmanagedType = "System.Runtime.InteropServices.UnmanagedType"
+[<Literal>]
 let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 [<Literal>]
 let tname_AsyncCallback = "System.AsyncCallback"
@@ -183,7 +174,6 @@ let tname_AsyncCallback = "System.AsyncCallback"
 let tname_IAsyncResult = "System.IAsyncResult"
 [<Literal>]
 let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
-
 
 
 //-------------------------------------------------------------------------
@@ -204,6 +194,21 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion) =
+
+  // empty flags
+  let v_knownWithoutNull = 0uy
+
+  let mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
+
+  let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
+
+  let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
+  let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
+  let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
+  let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
+  let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
+  let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
+  let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
   let tryFindSysTypeCcu path nm =
     tryFindSysTypeCcuHelper path nm false
@@ -329,28 +334,40 @@ type TcGlobals(
       let tcref = mkNonLocalTyconRef2 ccu (Array.ofList path) typeName
       AttribInfo(tref, tcref)
 
-  let findOrEmbedSysPublicAttribute nm =
-        let sysAttrib = findPublicSysAttrib nm
-        if sysAttrib.TyconRef.CanDeref then
-            sysAttrib
-        else
-            let attrRef = ILTypeRef.Create(ILScopeRef.Local, [], nm)
-            let attrTycon =
-                Construct.NewTycon(
-                    Some (CompPath(ILScopeRef.Local, [])),
-                    attrRef.Name,
-                    range0,
-                    taccessInternal,
-                    taccessInternal,
-                    TyparKind.Type,
-                    LazyWithContext.NotLazy [],
-                    FSharp.Compiler.Xml.XmlDoc.Empty,
-                    false,
-                    false,
-                    false,
-                    MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
-                )
-            AttribInfo(attrRef, mkLocalTyconRef attrTycon)
+  // Well known set of generated embeddable attribute names
+  static let isInEmbeddableKnownSet name =
+      match name with
+      | "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+      | "System.Runtime.CompilerServices.IsUnmanagedAttribute"
+      | "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+      | "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" -> true
+      | _ -> false
+
+  let findOrEmbedSysPublicType nm =
+
+      assert (isInEmbeddableKnownSet nm)                        //Ensure that the named type is in known set of embedded types
+
+      let sysAttrib = findPublicSysAttrib nm
+      if sysAttrib.TyconRef.CanDeref then
+          sysAttrib
+      else
+          let attrRef = ILTypeRef.Create(ILScopeRef.Local, [], nm)
+          let attrTycon =
+             Construct.NewTycon(
+                 Some (CompPath(ILScopeRef.Local, [])),
+                 attrRef.Name,
+                 range0,
+                 taccessInternal,
+                  taccessInternal,
+                  TyparKind.Type,
+                  LazyWithContext.NotLazy [],
+                  FSharp.Compiler.Xml.XmlDoc.Empty,
+                  false,
+                  false,
+                  false,
+                  MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
+              )
+          AttribInfo(attrRef, mkLocalTyconRef attrTycon)
 
   let mkSysNonGenericTy path n = mkNonGenericTy(findSysTyconRef path n)
   let tryMkSysNonGenericTy path n = tryFindSysTyconRef path n |> Option.map mkNonGenericTy
@@ -442,7 +459,7 @@ type TcGlobals(
   let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argTys, retTy))  =
       let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argTys) retTy)
       let isMember = Option.isSome memberParentName
-      let argCount = if isMember then List.sum (List.map List.length argTys) else 0
+      let argCount = if isMember then List.sumBy List.length argTys else 0
       let linkageType = if isMember then Some ty else None
       let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, linkageType)
       let vref = IntrinsicValRef(enclosingEntity, logicalName, isMember, ty, key)
@@ -723,6 +740,7 @@ type TcGlobals(
   let v_bitwise_unary_not_info     = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LogicalNot"                        , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_bitwise_shift_left_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LeftShift"                         , None                 , None          , [vara],     mk_shiftop_ty varaTy)
   let v_bitwise_shift_right_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_RightShift"                        , None                 , None          , [vara],     mk_shiftop_ty varaTy)
+  let v_exponentiation_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Exponentiation"                    , None                 , None          , [vara;varb],     ([[varaTy];[varbTy]], varaTy))
   let v_unchecked_addition_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_unchecked_subtraction_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_unchecked_multiply_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Multiply"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
@@ -860,31 +878,41 @@ type TcGlobals(
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
 
-  let tref_DebuggableAttribute =         findSysILTypeRef tname_DebuggableAttribute
+  let tref_DebuggerNonUserCodeAttribute = findSysILTypeRef tname_DebuggerNonUserCodeAttribute
+  let v_DebuggerNonUserCodeAttribute_tcr = splitILTypeName tname_DebuggerNonUserCodeAttribute ||> findSysTyconRef
+
+  let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let v_CompilerGeneratedAttribute_tcr = splitILTypeName tname_CompilerGeneratedAttribute ||> findSysTyconRef
   let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
-  let mutable generatedAttribsCache = []
-  let mutable debuggerBrowsableNeverAttributeCache = None
-  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
-  let mkCompilerGeneratedAttribute () = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
+  let debuggerNonUserCodeAttribute = mkILCustomAttribute (tref_DebuggerNonUserCodeAttribute, [], [], [])
+  let compilerGeneratedAttribute = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
+  let generatedAttributes = if noDebugAttributes then [||] else [| compilerGeneratedAttribute; debuggerNonUserCodeAttribute |]
   let compilerGlobalState = CompilerGlobalState()
 
   // Requests attributes to be added to compiler generated methods.
   let addGeneratedAttrs (attrs: ILAttributes) =
-    let attribs =
-       match generatedAttribsCache with
-       | [] ->
-           let res =
-               [ if not noDebugAttributes then
-                   mkCompilerGeneratedAttribute()
-                   mkDebuggerNonUserCodeAttribute()]
-           generatedAttribsCache <- res
-           res
-       | res -> res
-    mkILCustomAttrs (attrs.AsList() @ attribs)
+      if Array.isEmpty generatedAttributes then
+          attrs
+      else
+          match attrs.AsArray() with
+          | [||] -> mkILCustomAttrsFromArray generatedAttributes
+          | attrs -> mkILCustomAttrsFromArray (Array.append attrs generatedAttributes)
 
-  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
+  let addValGeneratedAttrs (v: Val) m =
+      if not noDebugAttributes then
+          let attrs = [
+              Attrib(v_CompilerGeneratedAttribute_tcr, ILAttrib compilerGeneratedAttribute.Method.MethodRef, [], [], false, None, m)
+              Attrib(v_DebuggerNonUserCodeAttribute_tcr, ILAttrib debuggerNonUserCodeAttribute.Method.MethodRef, [], [], false, None, m)
+              Attrib(v_DebuggerNonUserCodeAttribute_tcr, ILAttrib debuggerNonUserCodeAttribute.Method.MethodRef, [], [], true, None, m)
+          ]
+
+          match v.Attribs with
+          | [] -> v.SetAttribs attrs
+          | _ -> v.SetAttribs (attrs @ v.Attribs)
+
+  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
 
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
 
@@ -896,48 +924,15 @@ type TcGlobals(
             ILType.Value (mkILNonGenericTySpec tref)
         mkILCustomAttribute (findSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
 
-  let mkDebuggerBrowsableNeverAttribute() =
-      match debuggerBrowsableNeverAttributeCache with
-      | None ->
-          let res = tref_DebuggerBrowsableAttribute 0
-          debuggerBrowsableNeverAttributeCache <- Some res
-          res
-      | Some res -> res
+  let debuggerBrowsableNeverAttribute = tref_DebuggerBrowsableAttribute 0
 
-  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList() @ [mkDebuggerBrowsableNeverAttribute()])
+  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrsFromArray (Array.append (attrs.AsArray()) [| debuggerBrowsableNeverAttribute |])
 
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
 
   let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
 
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
-
-  // Todo: Review mkILCustomAttribute throughout fsc/fsi/ fcs to ensure that we use embedable attributes where appropriate
-  let mkLocalPrivateAttributeWithDefaultConstructor (ilg: ILGlobals, name: string) =
-
-    let ctor = addMethodGeneratedAttrs (mkILNonGenericEmptyCtor (ilg.typ_Attribute, None, None))
-
-    mkILGenericClass (
-        name,
-        ILTypeDefAccess.Private,
-        ILGenericParameterDefs.Empty,
-        ilg.typ_Attribute,
-        ILTypes.Empty,
-        mkILMethods [ ctor ],
-        emptyILFields,
-        emptyILTypeDefs,
-        emptyILProperties,
-        emptyILEvents,
-        emptyILCustomAttrs,
-        ILTypeInit.BeforeField
-    )
- 
-  let addEmbeddableCustomAttribute (tref: ILTypeRef, argTys, argvs, propvs) =
-
-    if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
-        embeddedILTypeDefs.TryAdd(tref.Name, mkLocalPrivateAttributeWithDefaultConstructor (ilg, tref.Name)) |> ignore
-
-    mkILCustomAttribute (tref, argTys, argvs, propvs)
 
   let betterTyconEntries =
      [| "Int32"    , v_int_tcr
@@ -1074,7 +1069,16 @@ type TcGlobals(
 
   member _.ilg = ilg
 
+  static member IsInEmbeddableKnownSet name = isInEmbeddableKnownSet name
+
   member _.embeddedTypeDefs = embeddedILTypeDefs.Values |> Seq.toList
+
+  member _.tryRemoveEmbeddedILTypeDefs () = [
+      for key in embeddedILTypeDefs.Keys.OrderBy id do
+        match (embeddedILTypeDefs.TryRemove(key)) with
+        | true, ilTypeDef -> yield ilTypeDef
+        | false, _ -> ()
+      ]
 
   // A table of all intrinsics that the compiler cares about
   member _.knownIntrinsics = v_knownIntrinsics
@@ -1242,7 +1246,9 @@ type TcGlobals(
 
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
 
-  member g.AddEmbeddableSystemAttribute (tref: ILTypeRef, argTys, argvs, propvs) = addEmbeddableCustomAttribute (tref, argTys, argvs, propvs)
+  member _.TryEmbedILType(tref: ILTypeRef, mkEmbeddableType: unit -> ILTypeDef) =
+    if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
+        embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore
 
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy], v_knownWithoutNull)
 
@@ -1428,14 +1434,20 @@ type TcGlobals(
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
   member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
+  member val iltyp_UnmanagedType   = findSysILTypeRef tname_UnmanagedType |> mkILNonGenericValueTy  
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
   member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
   member val attrib_IDispatchConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
   member val attrib_IUnknownConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
+  member val attrib_RequiresLocationAttribute = findSysAttrib "System.Runtime.CompilerServices.RequiresLocationAttribute"
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
-  member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicAttribute "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
+  member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+  member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
+
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
   member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
@@ -1560,6 +1572,7 @@ type TcGlobals(
   member val bitwise_unary_not_vref     = ValRefForIntrinsic v_bitwise_unary_not_info
   member val bitwise_shift_left_vref    = ValRefForIntrinsic v_bitwise_shift_left_info
   member val bitwise_shift_right_vref   = ValRefForIntrinsic v_bitwise_shift_right_info
+  member val exponentiation_vref        = ValRefForIntrinsic v_exponentiation_info
   member val unchecked_addition_vref    = ValRefForIntrinsic v_unchecked_addition_info
   member val unchecked_unary_plus_vref  = ValRefForIntrinsic v_unchecked_unary_plus_info
   member val unchecked_unary_minus_vref = ValRefForIntrinsic v_unchecked_unary_minus_info
@@ -1819,6 +1832,10 @@ type TcGlobals(
 
   member _.TryFindSysAttrib nm = tryFindSysAttrib nm
 
+  member _.AddGeneratedAttributes attrs = addGeneratedAttrs attrs
+
+  member _.AddValGeneratedAttributes v = addValGeneratedAttrs v
+
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 
   member _.AddPropertyGeneratedAttributes mdef = addPropertyGeneratedAttrs mdef
@@ -1833,19 +1850,13 @@ type TcGlobals(
 
   member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
 
-  member _.DebuggerBrowsableNeverAttribute = mkDebuggerBrowsableNeverAttribute()
+  member _.DebuggerBrowsableNeverAttribute = debuggerBrowsableNeverAttribute
 
-  member _.mkDebuggerStepThroughAttribute() =
-      mkILCustomAttribute (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
-
-  member _.mkDebuggableAttribute jitOptimizerDisabled =
-      mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
-
-  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled, enableEnC) =
+  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled) =
         let debuggingMode =
+            0x3 (* Default ||| IgnoreSymbolStoreSequencePoints *) |||
             (if jitTracking then 1 else 0) |||
-            (if jitOptimizerDisabled then 256 else 0) |||
-            (if enableEnC then 4 else 0)
+            (if jitOptimizerDisabled then 256 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
         mkILCustomAttribute
           (tref_DebuggableAttribute, [mkILNonGenericValueTy tref_DebuggableAttribute_DebuggingModes],
@@ -1854,10 +1865,14 @@ type TcGlobals(
 
   member internal _.CompilerGlobalState = Some compilerGlobalState
 
-  member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
+  member _.CompilerGeneratedAttribute = compilerGeneratedAttribute
 
-  member _.DebuggerNonUserCodeAttribute = mkDebuggerNonUserCodeAttribute ()
+  member _.DebuggerNonUserCodeAttribute = debuggerNonUserCodeAttribute
 
+  member _.HasTailCallAttrib (attribs: Attribs) =
+    attribs
+    |> List.exists (fun a -> a.TyconRef.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.TailCallAttribute")
+  
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
@@ -1867,7 +1882,7 @@ type TcGlobals(
       let memberName =
           let nm = t.MemberLogicalName
           let coreName =
-              if nm.StartsWith "op_" then nm[3..]
+              if nm.StartsWithOrdinal "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm
@@ -1908,7 +1923,7 @@ type TcGlobals(
         Some (info, tyargs, argExprs)
     | "Pow", [aty;bty], _, [_;_] ->
         // Call Operators.(**)
-        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "op_Exponentiation", None, None, [vara; varb], ([[varaTy]; [varbTy]], varaTy))
+        let info = v_exponentiation_info
         let tyargs = [aty;bty]
         Some (info, tyargs, argExprs)
     | "Atan2", [aty;_], Some bty, [_;_] ->

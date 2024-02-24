@@ -1,5 +1,6 @@
 ﻿module FSharp.Compiler.Service.Tests.TooltipTests
 
+
 #nowarn "57"
 
 open FSharp.Compiler.CodeAnalysis
@@ -8,6 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
+open FSharp.Test
 open NUnit.Framework
 
 let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEndOfNames lineText names (expectedContent: string) =
@@ -20,7 +22,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
                "A.fs",
                SourceText.ofString implSource |]
 
-    let documentSource fileName = Map.tryFind fileName files
+    let documentSource fileName = Map.tryFind fileName files |> async.Return
 
     let projectOptions =
         let _, projectOptions = mkTestFileAndOptions "" Array.empty
@@ -29,7 +31,8 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
             SourceFiles = [| "A.fsi"; "A.fs" |] }
 
     let checker =
-        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource,
+            useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
@@ -189,7 +192,7 @@ type Bar = {
 }
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 9 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 13 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
 
 
 [<Test>]
@@ -267,7 +270,7 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
             [| "A.fs",
                SourceText.ofString source |]
     
-    let documentSource fileName = Map.tryFind fileName files
+    let documentSource fileName = Map.tryFind fileName files |> async.Return
 
     let projectOptions =
         let _, projectOptions = mkTestFileAndOptions "" Array.empty
@@ -276,7 +279,8 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
             SourceFiles = [| "A.fs" |] }
 
     let checker =
-        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource,
+            useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
@@ -385,3 +389,30 @@ c.Abc
 """
 
     testToolTipSquashing source 7 5 "c.Abc" [ "c"; "Abc" ] FSharpTokenTag.Identifier
+
+[<Test>]
+let ``Auto property should display a single tool tip`` () =
+    let source = """
+namespace Foo
+
+/// Some comment on class
+type Bar() =
+    /// Some comment on class member
+    member val Foo = "bla" with get, set
+"""
+    let fileName, options =
+        mkTestFileAndOptions
+            source
+            Array.empty
+    let _, checkResults = parseAndCheckFile fileName source options
+    let (ToolTipText(items)) = checkResults.GetToolTip(7, 18, "    member val Foo = \"bla\" with get, set", [ "Foo" ], FSharpTokenTag.Identifier)
+    Assert.True (items.Length = 1)
+    match items.[0] with
+    | ToolTipElement.Group [ { MainDescription = description } ] ->
+        let toolTipText =
+            description
+            |> Array.map (fun taggedText -> taggedText.Text)
+            |> String.concat ""
+
+        Assert.AreEqual("property Bar.Foo: string with get, set", toolTipText)
+    | _ -> Assert.Fail $"Expected group, got {items.[0]}"

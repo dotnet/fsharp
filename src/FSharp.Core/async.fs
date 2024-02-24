@@ -717,7 +717,7 @@ module AsyncPrimitives =
     ///   - Apply `catchFunction' to argument with exception protection (see TryWith)
     ///   - Hijack check before invoking the resulting computation or exception continuation
     let inline CreateTryWithAsync catchFunction computation =
-        MakeAsync(fun ctxt -> TryWith ctxt computation (fun exn -> Some(catchFunction exn)))
+        MakeAsync(fun ctxt -> TryWith ctxt computation (catchFunction >> Some))
 
     /// Call the finallyFunction if the computation results in a cancellation, and then continue with cancellation.
     /// If the finally function gives an exception then continue with cancellation regardless.
@@ -992,10 +992,9 @@ module AsyncPrimitives =
                     // Ignore multiple sets of the result. This can happen, e.g. for a race between a cancellation and a success
                     if x.ResultAvailable then
                         [] // invalidOp "multiple results registered for asynchronous operation"
-                    else
-                    // In this case the ResultCell has already been disposed, e.g. due to a timeout.
-                    // The result is dropped on the floor.
-                    if
+                    else if
+                        // In this case the ResultCell has already been disposed, e.g. due to a timeout.
+                        // The result is dropped on the floor.
                         disposed
                     then
                         []
@@ -1182,7 +1181,12 @@ module AsyncPrimitives =
 
         trampolineHolder.ExecuteWithTrampoline(fun () ->
             let ctxt =
-                AsyncActivation.Create cancellationToken trampolineHolder (cont >> fake) (econt >> fake) (ccont >> fake)
+                AsyncActivation.Create
+                    cancellationToken
+                    trampolineHolder
+                    (cont >> fake)
+                    (econt >> fake)
+                    (ccont >> fake)
 
             computation.Invoke ctxt)
         |> unfake
@@ -1199,7 +1203,7 @@ module AsyncPrimitives =
 
         QueueAsync
             cancellationToken
-            (fun r -> tcs.SetResult r |> fake)
+            (tcs.SetResult >> fake)
             (fun edi -> tcs.SetException edi.SourceException |> fake)
             (fun _ -> tcs.SetCanceled() |> fake)
             computation
@@ -1323,9 +1327,9 @@ module AsyncPrimitives =
 
         member s.GetResult() =
             match result.TryWaitForResultSynchronously(-1) with
-            | Some (AsyncResult.Ok v) -> v
-            | Some (AsyncResult.Error edi) -> edi.ThrowAny()
-            | Some (AsyncResult.Canceled err) -> raise err
+            | Some(AsyncResult.Ok v) -> v
+            | Some(AsyncResult.Error edi) -> edi.ThrowAny()
+            | Some(AsyncResult.Canceled err) -> raise err
             | None -> failwith "unreachable"
 
         member x.IsClosed = disposed
@@ -1495,7 +1499,7 @@ type Async =
             // Turn the success or exception into data
             let newCtxt =
                 ctxt.WithContinuations(
-                    cont = (fun res -> ctxt.cont (Choice1Of2 res)),
+                    cont = (Choice1Of2 >> ctxt.cont),
                     econt = (fun edi -> ctxt.cont (Choice2Of2(edi.GetAssociatedSourceException())))
                 )
 
@@ -1568,9 +1572,9 @@ type Async =
 
                             match firstExn with
                             | None -> ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.cont results)
-                            | Some (Choice1Of2 exn) ->
+                            | Some(Choice1Of2 exn) ->
                                 ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.econt exn)
-                            | Some (Choice2Of2 cexn) ->
+                            | Some(Choice2Of2 cexn) ->
                                 ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.ccont cexn)
                         else
                             fake ()
@@ -1616,9 +1620,9 @@ type Async =
                                 // on success, record the result
                                 (fun res -> recordSuccess i res)
                                 // on exception...
-                                (fun edi -> recordFailure (Choice1Of2 edi))
+                                (Choice1Of2 >> recordFailure)
                                 // on cancellation...
-                                (fun cexn -> recordFailure (Choice2Of2 cexn))
+                                (Choice2Of2 >> recordFailure)
                                 p
                             |> unfake)
                     | Some maxDegreeOfParallelism ->
@@ -1779,8 +1783,8 @@ type Async =
 
         Async.StartWithContinuations(
             computation,
-            (fun k -> ts.SetResult k),
-            (fun exn -> ts.SetException exn),
+            (ts.SetResult),
+            (ts.SetException),
             (fun _ -> ts.SetCanceled()),
             cancellationToken
         )
@@ -2059,7 +2063,10 @@ type Async =
     static member AsBeginEnd<'Arg, 'T>
         (computation: ('Arg -> Async<'T>))
         // The 'Begin' member
-        : ('Arg * System.AsyncCallback * obj -> System.IAsyncResult) * (System.IAsyncResult -> 'T) * (System.IAsyncResult -> unit) =
+        : ('Arg * System.AsyncCallback * obj -> System.IAsyncResult) *
+          (System.IAsyncResult -> 'T) *
+          (System.IAsyncResult -> unit)
+        =
         let beginAction =
             fun (a1, callback, state) -> AsBeginEndHelpers.beginAction ((computation a1), callback, state)
 
@@ -2242,7 +2249,7 @@ module CommonExtensions =
     type System.IO.Stream with
 
         [<CompiledName("AsyncRead")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-        member stream.AsyncRead(buffer: byte[], ?offset, ?count) =
+        member stream.AsyncRead(buffer: byte array, ?offset, ?count) =
             let offset = defaultArg offset 0
             let count = defaultArg count buffer.Length
             Async.FromBeginEnd(buffer, offset, count, stream.BeginRead, stream.EndRead)
@@ -2264,7 +2271,7 @@ module CommonExtensions =
             }
 
         [<CompiledName("AsyncWrite")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-        member stream.AsyncWrite(buffer: byte[], ?offset: int, ?count: int) =
+        member stream.AsyncWrite(buffer: byte array, ?offset: int, ?count: int) =
             let offset = defaultArg offset 0
             let count = defaultArg count buffer.Length
             Async.FromBeginEnd(buffer, offset, count, stream.BeginWrite, stream.EndWrite)
@@ -2354,7 +2361,7 @@ module WebExtensions =
             )
 
         [<CompiledName("AsyncDownloadData")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-        member this.AsyncDownloadData(address: Uri) : Async<byte[]> =
+        member this.AsyncDownloadData(address: Uri) : Async<byte array> =
             this.Download(
                 event = this.DownloadDataCompleted,
                 handler = (fun action -> Net.DownloadDataCompletedEventHandler action),

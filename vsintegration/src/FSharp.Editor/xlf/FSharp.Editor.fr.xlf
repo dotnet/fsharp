@@ -22,6 +22,11 @@
         <target state="translated">Ajouter le mot clé 'new'</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Ajouter une annotation de type</target>
@@ -35,19 +40,25 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Guides de structure de bloc ;
+Afficher les directives de structure pour le code F# ;
+Décrire ;
+Afficher les nœuds de plan et réductibles pour le code F# ;
+Conseils en ligne ;
+Afficher les conseils de type en ligne (aperçu) ;
+Afficher les conseils sur le type de retour (aperçu) ;
+Afficher les conseils sur le nom des paramètres en ligne (aperçu) ;
+Tampons en direct ;
+Utilisez des tampons en direct (non enregistrés) pour vérifier</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">Utilisez ':' pour saisir la déclaration de champ</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -56,16 +67,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">Simplifier les noms (supprimer les qualificateurs inutiles) ;
+Toujours placer les instructions ouvertes au niveau supérieur ;
+Supprimer les instructions open inutilisées ;
+Analyser et suggérer des correctifs pour les valeurs inutilisées ;
+Suggérer des noms pour les identificateurs non résolus ;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">Convertir 'using' C# en F# 'open'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -110,7 +121,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">Formater de nouveau la mise en retrait lors du collage (expérimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -132,14 +143,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">Listes de saisie semi-automatique ;
+ Afficher la liste de saisie semi-automatique après la suppression d’un caractère ;
+ Afficher la liste de saisie semi-automatique après la saisie d’un caractère ;
+ Afficher les symboles dans les espaces de noms non ouverts ;
+ Entrer le comportement de la clé ;
+ Ne jamais ajouter de nouvelle ligne lors de l’entrée ;
+ Ajouter uniquement une nouvelle ligne à l’entrée après la fin du mot entièrement typé ;
+ Toujours ajouter une nouvelle ligne lors de l’entrée ;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -162,19 +173,19 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
+        <target state="translated">Options relatives aux performances de la mise en cache et des projets F#; 
+Activer les références de projet croisé en mémoire; 
 Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+Options relatives aux performances d’IntelliSense; 
+Activer les données périmées pour les fonctionnalités IntelliSense; 
+Délai avant l’utilisation des résultats périmés (en millisecondes); 
+Parallélisation (Nécessite un redémarrage); 
+Activer la vérification de type parallèle avec les fichiers de signature; 
+Activer la résolution de référence parallèle; 
+Activer la recherche rapide de références et le renommage (redémarrage requis);
+Résultats de l’analyse du cache (expérimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -190,15 +201,22 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="translated">Mise en forme; 
+Largeur de description préférée en caractères; 
+Formatez la signature à la largeur donnée en ajoutant des sauts de ligne conformes aux règles de syntaxe F#; 
+Liens de navigation; 
+Afficher les liens de navigation en tant que; 
+Soulignement avec un trait uni; 
+Soulignement avec des points; 
+Soulignement avec des tirets; 
+Afficher les notes dans Info express</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="translated">Notes :</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -209,6 +227,11 @@ Dash underline;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Supprimer 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -229,6 +252,11 @@ Dash underline;</target>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">Renommer '{0}' en '_'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
@@ -261,6 +289,11 @@ Dash underline;</target>
         <target state="translated">Supprimer les déclarations open inutilisées</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">Symbole inattendu '=' dans la déclaration de champ. ':' attendu ou autre jeton.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnusedOpens">
         <source>Open declaration can be removed.</source>
         <target state="translated">La déclaration open peut être supprimée.</target>
@@ -268,7 +301,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">

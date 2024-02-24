@@ -3,24 +3,17 @@
   <PropertyGroup>
     <PreRelease>true</PreRelease>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Tools-$(FSProductVersionReleaseNotesVersion)</PackageReleaseNotes>
     <NoDefaultExcludes>true</NoDefaultExcludes>
-    <!-- Workaround to get rid of:
-        error NU1505: Duplicate 'PackageDownload' items found.
-        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
-        The duplicate 'PackageDownload' items are:
-          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
-    -->
-    <NoWarn>$(NoWarn);NU1505</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
-    <ArcadeSdkDir Condition="'$(ArcadeSdkDir)' == ''">$(NuGetPackageRoot)microsoft.dotnet.arcade.sdk\$(ArcadeSdkVersion)\</ArcadeSdkDir>
-    <_BuildReleasePackagesTargets>$(ArcadeSdkDir)tools\BuildReleasePackages.targets</_BuildReleasePackagesTargets>
+    <_ArcadeSdkMSBuildProjectDir>$([System.IO.Path]::GetDirectoryName('$(ArcadeSdkBuildTasksAssembly)'))\..\</_ArcadeSdkMSBuildProjectDir>
+    <_BuildReleasePackagesTargets>$(_ArcadeSdkMSBuildProjectDir)BuildReleasePackages.targets</_BuildReleasePackagesTargets>
   </PropertyGroup>
 
   <Import Project="$(_BuildReleasePackagesTargets)" />
@@ -31,17 +24,19 @@
     <NuspecProperty Include="fSharpCompilerServicePackagePreviewPackageVersion=$(FSharpCompilerServicePackageVersion)-$(VersionSuffix)" />
     <NuspecProperty Include="fSharpCompilerServicePackageVersion=$(FSharpCompilerServicePackageVersion)" />
     <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
+    <NuspecProperty Include="fSharpNetCoreProductTargetFramework=$(FSharpNetCoreProductTargetFramework)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj">
+        <AdditionalProperties>Configuration=ReleaseCompressed;CompressAllMetadata=true</AdditionalProperties>
+    </ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj">
+        <AdditionalProperties>Configuration=ReleaseCompressed;CompressAllMetadata=true</AdditionalProperties>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj">
-        <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
-    </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
@@ -50,6 +45,9 @@
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+    </DependentProjects>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj">
+        <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
@@ -60,13 +58,43 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
+  <!--
+     The targets below manages Arcade Release/Shipping nuget package manahement.
+     This is particularly tricky because we generate fsharp.core and fsharp.compiler.service 
+     nupkgs and embedd both the shipping and release nuget packages inside the final 
+     microsoft.fsharp.compiler.nupkg which we insert into the dotnet sdk
+  -->
+  <Target Name="PackageReleaseDependentPackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">
+    <Message Text="Building release versions of NuGet packages" Importance="high" />
+
+    <Error Text="PreReleaseVersionLabel must be non-empty when using NuGet Repack tool." Condition="'$(PreReleaseVersionLabel)' == ''" />
+    
+    <ItemGroup>
+      <_BuiltPackages Include="$(DependentPackagesDir)Shipping\*.nupkg" />
+    </ItemGroup>
+
+    <!-- Force references among packages to use exact versions (see https://github.com/NuGet/Home/issues/7213) -->
+    <Microsoft.DotNet.Tools.UpdatePackageVersionTask VersionKind="release" Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)Release" AllowPreReleaseDependencies="true" ExactVersions="true" />
+
+    <!-- Rewrite the version ranges of per-build pre-release packages (see https://github.com/NuGet/Home/issues/7213) -->
+    <Microsoft.DotNet.Tools.UpdatePackageVersionTask Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)Shipping" ExactVersions="true"/>
+  </Target>
+
+  <Target Name="PackageReleasePackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">
+    <!-- override sdk PackageReleasePackages to do nothing. -->
+  </Target>
+
+
   <Target Name="PackDependentProjectsCore">
-    <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;Pack=true;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <PropertyGroup>
+      <DependentPackagesDir>$([MSBuild]::NormalizeDirectory( '$(ArtifactsDir)', 'packages', '$(Configuration)', 'Dependency' ))</DependentPackagesDir>
+    </PropertyGroup>
+    <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);ArtifactsPackagesDir=$(DependentPackagesDir)" />
   </Target>
 
   <Target Name="PackDependentProjects"
     BeforeTargets="Build"
-    DependsOnTargets="PackDependentProjectsCore;PackageReleasePackages">
+    DependsOnTargets="PackDependentProjectsCore;PackageReleaseDependentPackages">
   </Target>
 
 </Project>

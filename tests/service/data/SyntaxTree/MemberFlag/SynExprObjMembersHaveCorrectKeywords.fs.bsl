@@ -100,7 +100,7 @@ ImplFile
                                 { LeadingKeyword = Member (7,8--7,14)
                                   InlineKeyword = None
                                   EqualsRange = Some (7,28--7,29) }),
-                             (7,8--7,32))], (6,6--7,34))], (3,6--3,19),
+                             (7,8--7,32))], (6,6--7,32))], (3,6--3,19),
                      (3,4--7,34)), (2,4--2,7), Yes (2,0--7,34),
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None

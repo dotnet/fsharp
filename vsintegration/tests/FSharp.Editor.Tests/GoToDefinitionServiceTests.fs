@@ -9,12 +9,21 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Editor.Tests.Helpers
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open System.Threading
 
 module GoToDefinitionServiceTests =
 
     let userOpName = "GoToDefinitionServiceTests"
 
-    let private findDefinition (document: Document, sourceText: SourceText, position: int, defines: string list) : range option =
+    let private findDefinition
+        (
+            document: Document,
+            sourceText: SourceText,
+            position: int,
+            defines: string list,
+            langVersion: string option
+        ) : range option =
         maybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
@@ -30,12 +39,14 @@ module GoToDefinitionServiceTests =
                     SymbolLookupKind.Greedy,
                     false,
                     false,
+                    langVersion,
+                    None,
                     System.Threading.CancellationToken.None
                 )
 
             let _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (userOpName))
-                |> Async.RunSynchronously
+                |> CancellableTask.runSynchronouslyWithoutCancellation
 
             let declarations =
                 checkFileResults.GetDeclarationLocation(
@@ -62,7 +73,7 @@ module GoToDefinitionServiceTests =
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
-            findDefinition (document, sourceText, caretPosition, [])
+            findDefinition (document, sourceText, caretPosition, [], None)
             |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then

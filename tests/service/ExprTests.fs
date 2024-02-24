@@ -364,8 +364,8 @@ let createOptionsAux fileSources extraArgs =
     Utils.createTempDir()
     for fileSource: string, fileName in List.zip fileSources fileNames do
          FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
-    let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, fileNames) |]
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, []) |]
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames |> List.toArray }
 
     Utils.cleanupTempFiles (fileNames @ [dllName; projFileName]), options
 
@@ -661,7 +661,9 @@ let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
     """
 
-    let createOptions() = createOptionsAux [fileSource1; fileSource2] []
+    let createOptionsWithArgs args = createOptionsAux [ fileSource1; fileSource2 ] args
+
+    let createOptions() = createOptionsWithArgs []
 
     let operatorTests = """
 module OperatorTests{0}
@@ -730,11 +732,13 @@ let ignoreTestIfStackOverflowExpected () =
 #endif
 
 /// This test is run in unison with its optimized counterpart below
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test Unoptimized Declarations Project1`` () =
-    let cleanup, options = Project1.createOptions()
+let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
+    let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -781,7 +785,11 @@ let ``Test Unoptimized Declarations Project1`` () =
          "let downwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (79,16--79,17)";
          "let quotationTest1(unitVar0) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),1,1)) @ (83,24--83,35)";
          "let quotationTest2(v) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),ExtraTopLevelOperators.SpliceExpression<Microsoft.FSharp.Core.int> (v),1)) @ (84,24--84,36)";
-         "type RecdType"; "type UnionType"; "type ClassWithEventsAndProperties";
+         "type RecdType"; "type UnionType";
+         "member get_IsCase1(this) (unitArg) = (if this.IsCase1 then True else False) @ (87,5--87,14)";
+         "member get_IsCase2(this) (unitArg) = (if this.IsCase2 then True else False) @ (87,5--87,14)";
+         "member get_IsCase3(this) (unitArg) = (if this.IsCase3 then True else False) @ (87,5--87,14)";
+         "type ClassWithEventsAndProperties";
          "member .ctor(unitVar0) = (new Object(); (this.ev <- new FSharpEvent`1(()); ())) @ (89,5--89,33)";
          "member .cctor(unitVar) = (sev <- new FSharpEvent`1(()); ()) @ (91,11--91,35)";
          "member get_InstanceProperty(x) (unitVar1) = (x.ev.Trigger(1); 1) @ (92,32--92,48)";
@@ -796,7 +804,7 @@ let ``Test Unoptimized Declarations Project1`` () =
          "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
          "member Method(x) (a,b) = 1 @ (106,37--106,38)";
          "member CurriedMethod(x) (a1,b1) (a2,b2) = 1 @ (107,63--107,64)";
-         "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),m.Method(7,8),fun tupledArg -> let arg00: Microsoft.FSharp.Core.int = tupledArg.Item0 in let arg01: Microsoft.FSharp.Core.int = tupledArg.Item1 in fun tupledArg -> let arg10: Microsoft.FSharp.Core.int = tupledArg.Item0 in let arg11: Microsoft.FSharp.Core.int = tupledArg.Item1 in m.CurriedMethod(arg00,arg01,arg10,arg11) (9,10) (11,12)) @ (110,8--110,9)";
+         "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),m.Method(7,8),fun tupledArg -> let a1: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b1: Microsoft.FSharp.Core.int = tupledArg.Item1 in fun tupledArg -> let a2: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b2: Microsoft.FSharp.Core.int = tupledArg.Item1 in m.CurriedMethod(a1,b1,a2,b2) (9,10) (11,12)) @ (110,8--110,9)";
          "let testFunctionThatUsesUnitsOfMeasure(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (arg0_0,arg1_0),x,y) @ (122,70--122,75)";
          "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.array = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress, false, ILArrayShape [(Some 0, None)], !0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
          "let testFunctionThatUsesStructs1(dt) = dt.AddDays(3) @ (139,57--139,72)";
@@ -865,11 +873,13 @@ let ``Test Unoptimized Declarations Project1`` () =
 
     ()
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test Optimized Declarations Project1`` () =
-    let cleanup, options = Project1.createOptions()
+let ``Test Optimized Declarations Project1`` useTransparentCompiler =
+    let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -916,7 +926,11 @@ let ``Test Optimized Declarations Project1`` () =
          "let downwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (79,16--79,17)";
          "let quotationTest1(unitVar0) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),1,1)) @ (83,24--83,35)";
          "let quotationTest2(v) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),ExtraTopLevelOperators.SpliceExpression<Microsoft.FSharp.Core.int> (v),1)) @ (84,24--84,36)";
-         "type RecdType"; "type UnionType"; "type ClassWithEventsAndProperties";
+         "type RecdType"; "type UnionType";
+         "member get_IsCase1(this) (unitArg) = (if this.IsCase1 then True else False) @ (87,5--87,14)";
+         "member get_IsCase2(this) (unitArg) = (if this.IsCase2 then True else False) @ (87,5--87,14)";
+         "member get_IsCase3(this) (unitArg) = (if this.IsCase3 then True else False) @ (87,5--87,14)";
+         "type ClassWithEventsAndProperties";
          "member .ctor(unitVar0) = (new Object(); (this.ev <- new FSharpEvent`1(()); ())) @ (89,5--89,33)";
          "member .cctor(unitVar) = (sev <- new FSharpEvent`1(()); ()) @ (91,11--91,35)";
          "member get_InstanceProperty(x) (unitVar1) = (x.ev.Trigger(1); 1) @ (92,32--92,48)";
@@ -931,7 +945,7 @@ let ``Test Optimized Declarations Project1`` () =
          "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
          "member Method(x) (a,b) = 1 @ (106,37--106,38)";
          "member CurriedMethod(x) (a1,b1) (a2,b2) = 1 @ (107,63--107,64)";
-         "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),m.Method(7,8),let arg00: Microsoft.FSharp.Core.int = 9 in let arg01: Microsoft.FSharp.Core.int = 10 in let arg10: Microsoft.FSharp.Core.int = 11 in let arg11: Microsoft.FSharp.Core.int = 12 in m.CurriedMethod(arg00,arg01,arg10,arg11)) @ (110,8--110,9)";
+         "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),m.Method(7,8),let a1: Microsoft.FSharp.Core.int = 9 in let b1: Microsoft.FSharp.Core.int = 10 in let a2: Microsoft.FSharp.Core.int = 11 in let b2: Microsoft.FSharp.Core.int = 12 in m.CurriedMethod(a1,b1,a2,b2)) @ (110,8--110,9)";
          "let testFunctionThatUsesUnitsOfMeasure(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (arg0_0,arg1_0),x,y) @ (122,70--122,75)";
          "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.array = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress, false, ILArrayShape [(Some 0, None)], !0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (arg0_0,arg1_0),Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
          "let testFunctionThatUsesStructs1(dt) = dt.AddDays(3) @ (139,57--139,72)";
@@ -1007,7 +1021,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
     let filePath = Utils.getTempFilePathChangeExt tempFileName ".fs"
     let dllPath =Utils.getTempFilePathChangeExt tempFileName ".dll"
     let projFilePath = Utils.getTempFilePathChangeExt tempFileName ".fsproj"
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=true)
 
     begin
         use _cleanup = Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
@@ -1017,9 +1031,9 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
         let fileSource = excludedTests |> List.fold replace source
         FileSystem.OpenFileForWriteShim(filePath).Write(fileSource)
 
-        let args = mkProjectCommandLineArgsSilent (dllPath, [filePath])
+        let args = mkProjectCommandLineArgsSilent (dllPath, [])
 
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFilePath, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFilePath, args) with SourceFiles = [|filePath|] }
 
         let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
         let referencedAssemblies = wholeProjectResults.ProjectContext.GetReferencedAssemblies()
@@ -3196,12 +3210,14 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
     let createOptions() = createOptionsAux [fileSource1] []
 
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test expressions of declarations stress big expressions`` () =
+let ``Test expressions of declarations stress big expressions`` useTransparentCompiler =
     ignoreTestIfStackOverflowExpected ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
@@ -3213,12 +3229,14 @@ let ``Test expressions of declarations stress big expressions`` () =
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test expressions of optimized declarations stress big expressions`` () =
+let ``Test expressions of optimized declarations stress big expressions`` useTransparentCompiler =
     ignoreTestIfStackOverflowExpected ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
@@ -3274,11 +3292,13 @@ let f8() = callXY (D()) (C())
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test ProjectForWitnesses1`` () =
+let ``Test ProjectForWitnesses1`` useTransparentCompiler =
     let cleanup, options = ProjectForWitnesses1.createOptions()
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3318,11 +3338,13 @@ let ``Test ProjectForWitnesses1`` () =
       |> shouldPairwiseEqual expected
 
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
+let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` useTransparentCompiler =
     let cleanup, options = ProjectForWitnesses1.createOptions()
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3398,11 +3420,13 @@ type MyNumberWrapper =
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test ProjectForWitnesses2`` () =
+let ``Test ProjectForWitnesses2`` useTransparentCompiler =
     let cleanup, options = ProjectForWitnesses2.createOptions()
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3417,7 +3441,8 @@ let ``Test ProjectForWitnesses2`` () =
          "member get_Zero(unitVar0) = {x = 0; y = 0} @ (6,25--6,37)";
          "member Neg(p) = {x = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.UnaryNegationDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0),p.x); y = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.UnaryNegationDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0),p.y)} @ (7,34--7,56)";
          "member op_Addition(p1,p2) = {x = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.x,p2.x); y = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.y,p2.y)} @ (8,33--8,68)";
-         "type MyNumber"; "member get_Zero(unitVar0) = MyNumber(0) @ (12,25--12,35)";
+         "type MyNumber";
+         "member get_Zero(unitVar0) = MyNumber(0) @ (12,25--12,35)";
          "member op_Addition(_arg1,_arg2) = let x: Microsoft.FSharp.Core.int = _arg1.Item in let y: Microsoft.FSharp.Core.int = _arg2.Item in MyNumber(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),x,y)) @ (13,23--13,33)";
          "member DivideByInt(_arg3,i) = let x: Microsoft.FSharp.Core.int = _arg3.Item in MyNumber(Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.DivisionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),x,i)) @ (15,31--15,41)";
          "type MyNumberWrapper"]
@@ -3453,11 +3478,13 @@ let s2 = sign p1
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test ProjectForWitnesses3`` () =
+let ``Test ProjectForWitnesses3`` useTransparentCompiler =
     let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3484,11 +3511,13 @@ let ``Test ProjectForWitnesses3`` () =
     actual
       |> shouldPairwiseEqual expected
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
+let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` useTransparentCompiler =
     let cleanup, options = ProjectForWitnesses3.createOptions()
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3547,11 +3576,13 @@ let isNullQuoted (ts : 't[]) =
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
+[<TestCase(false)>]
+[<TestCase(true)>]
 [<Test>]
-let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
+let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` useTransparentCompiler =
     let cleanup, options = ProjectForWitnesses4.createOptions()
     use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3574,3 +3605,27 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     printfn "actual:\n\n%A" actual
     actual
       |> shouldPairwiseEqual expected
+
+module internal ProjectForNoWarnHashDirective =
+
+    let fileSource1 = """
+module N.M
+#nowarn "40"
+let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
+"""
+    
+    let createOptions() = createOptionsAux [fileSource1] []
+    
+[<TestCase(false)>]
+[<TestCase(true)>]
+[<Test>]
+let ``Test NoWarn HashDirective`` useTransparentCompiler =
+    let cleanup, options = ProjectForNoWarnHashDirective.createOptions()
+    use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+
+    for e in wholeProjectResults.Diagnostics do
+        printfn "ProjectForNoWarnHashDirective error: <<<%s>>>" e.Message
+
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0

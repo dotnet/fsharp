@@ -10,7 +10,6 @@ open System.Collections.Concurrent
 open System.Globalization
 open System.Text
 
-open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
@@ -239,6 +238,7 @@ let keywordsWithDescription: (string * string) list =
         "void", FSComp.SR.keywordDescriptionVoid ()
         "when", FSComp.SR.keywordDescriptionWhen ()
         "while", FSComp.SR.keywordDescriptionWhile ()
+        "while!", FSComp.SR.keywordDescriptionWhileBang ()
         "with", FSComp.SR.keywordDescriptionWith ()
         "yield", FSComp.SR.keywordDescriptionYield ()
         "yield!", FSComp.SR.keywordDescriptionYieldBang ()
@@ -288,6 +288,7 @@ let IsIdentifierName (name: string) =
        && IsIdentifierFirstCharacter name[0]
        && let rec loop i =
            (i >= nameLen || (IsIdentifierPartCharacter(name[i]) && loop (i + 1))) in
+
           loop 1
 
 let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
@@ -484,7 +485,7 @@ let decompileCustomOpName =
                     | None ->
                         // Couldn't decompile, so just return the original 'opName'.
                         opName
-                    | Some (opChar, opCharName) ->
+                    | Some(opChar, opCharName) ->
                         // 'opCharName' matched the current position in 'opName'.
                         // Append the corresponding operator character to the StringBuilder
                         // and continue decompiling at the index following this instance of 'opCharName'.
@@ -569,7 +570,8 @@ let ConvertValLogicalNameToDisplayName isBaseVal name =
 let ConvertLogicalNameToDisplayLayout nonOpLayout name =
     if DoesIdentifierNeedBackticks name then
         leftL (TaggedText.tagPunctuation "``")
-        ^^ wordL (TaggedText.tagOperator name) ^^ rightL (TaggedText.tagPunctuation "``")
+        ^^ wordL (TaggedText.tagOperator name)
+        ^^ rightL (TaggedText.tagPunctuation "``")
     else
         nonOpLayout name
 
@@ -583,10 +585,12 @@ let ConvertValLogicalNameToDisplayLayout isBaseVal nonOpLayout name =
             ConvertLogicalNameToDisplayLayout nonOpLayout name
         elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             wordL (TaggedText.tagPunctuation "(")
-            ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
+            ^^ wordL (TaggedText.tagOperator nm)
+            ^^ wordL (TaggedText.tagPunctuation ")")
         else
             leftL (TaggedText.tagPunctuation "(")
-            ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
+            ^^ wordL (TaggedText.tagOperator nm)
+            ^^ rightL (TaggedText.tagPunctuation ")")
     elif name = "get_Zero" then
         ConvertLogicalNameToDisplayLayout nonOpLayout "Zero"
     else
@@ -949,13 +953,13 @@ let IllegalCharactersInTypeAndNamespaceNames =
 type ActivePatternInfo =
     | APInfo of bool * (string * range) list * range
 
-    member x.IsTotal = let (APInfo (p, _, _)) = x in p
+    member x.IsTotal = let (APInfo(p, _, _)) = x in p
 
-    member x.ActiveTags = let (APInfo (_, tags, _)) = x in List.map fst tags
+    member x.ActiveTags = let (APInfo(_, tags, _)) = x in List.map fst tags
 
-    member x.ActiveTagsWithRanges = let (APInfo (_, tags, _)) = x in tags
+    member x.ActiveTagsWithRanges = let (APInfo(_, tags, _)) = x in tags
 
-    member x.Range = let (APInfo (_, _, m)) = x in m
+    member x.Range = let (APInfo(_, _, m)) = x in m
 
 let ActivePatternInfoOfValName nm (m: range) =
     // Note: The approximate range calculations in this code assume the name is of the form "(|A|B|)" not "(|  A   |   B   |)"
@@ -965,16 +969,13 @@ let ActivePatternInfoOfValName nm (m: range) =
         let n = nm.IndexOf '|'
 
         if n > 0 then
-            let m1 =
-                Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + n))
+            let m1 = Range.withEnd (Position.mkPos mp.StartLine (mp.StartColumn + n)) mp
 
-            let m2 =
-                Range.mkRange mp.FileName (Position.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp.End
+            let m2 = Range.withStart (Position.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp
 
             (nm[0 .. n - 1], m1) :: loop nm[n + 1 ..] m2
         else
-            let m1 =
-                Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + nm.Length))
+            let m1 = Range.withEnd (Position.mkPos mp.StartLine (mp.StartColumn + nm.Length)) mp
 
             [ (nm, m1) ]
 
@@ -983,7 +984,7 @@ let ActivePatternInfoOfValName nm (m: range) =
     if IsActivePatternName nm then
         // Skip the '|' at each end when recovering ranges
         let m0 =
-            Range.mkRange m.FileName (Position.mkPos m.StartLine (m.StartColumn + 1)) (Position.mkPos m.EndLine (m.EndColumn - 1))
+            Range.withStartEnd (Position.mkPos m.StartLine (m.StartColumn + 1)) (Position.mkPos m.EndLine (m.EndColumn - 1)) m
 
         let names = loop nm[1 .. nm.Length - 2] m0
         let resH, resT = List.frontAndBack names
@@ -1004,7 +1005,7 @@ let tryDemangleStaticStringArg (mangledText: string) =
     match splitAroundQuotationWithCount mangledText '=' 2 with
     | [| nm; v |] ->
         if v.Length >= 2 then
-            Some(nm, v[ 1 .. v.Length - 2 ].Replace("\\\\", "\\").Replace("\\\"", "\""))
+            Some(nm, v[1 .. v.Length - 2].Replace("\\\\", "\\").Replace("\\\"", "\""))
         else
             Some(nm, v)
     | _ -> None
@@ -1033,7 +1034,7 @@ let MangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
     let nonDefaultArgsText =
         nonDefaultArgs |> Array.map mangleStaticStringArg |> String.concat ","
 
-    if nonDefaultArgsText = "" then
+    if String.IsNullOrEmpty(nonDefaultArgsText) then
         typeLogicalName
     else
         typeLogicalName + "," + nonDefaultArgsText
@@ -1093,6 +1094,7 @@ let GetLongNameFromString x = SplitNamesForILPath x
 
 // Uncompressed OptimizationData/SignatureData name for embedded resource
 let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
 // Compressed OptimizationData/SignatureData name for embedded resource

@@ -31,7 +31,7 @@ module private Atomic =
 type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() =
     let mutable multicast: System.Delegate = null
 
-    member x.Trigger(args: obj[]) =
+    member x.Trigger(args: obj array) =
         match multicast with
         | null -> ()
         | d -> d.DynamicInvoke(args) |> ignore
@@ -92,7 +92,7 @@ type Event<'Delegate, 'Args
             ||| BindingFlags.NonPublic
             ||| BindingFlags.DeclaredOnly
 
-        let mi = typeof<'Delegate>.GetMethod ("Invoke", instanceBindingFlags)
+        let mi = typeof<'Delegate>.GetMethod("Invoke", instanceBindingFlags)
         let actualTypes = mi.GetParameters() |> Array.map (fun p -> p.ParameterType)
         mi, actualTypes.[1..]
 
@@ -113,7 +113,7 @@ type Event<'Delegate, 'Args
             ||| BindingFlags.DeclaredOnly
 
         let mi =
-            typeof<EventDelegee<'Args>>.GetMethods (instanceBindingFlags)
+            typeof<EventDelegee<'Args>>.GetMethods(instanceBindingFlags)
             |> Seq.filter (fun mi -> mi.Name = "Invoke" && mi.GetParameters().Length = argTypes.Length + 1)
             |> Seq.exactlyOne
 

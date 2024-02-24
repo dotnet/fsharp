@@ -77,60 +77,6 @@ module CoreTests =
     let ``attributes-FSI`` () = singleTestBuildAndRun "core/attributes" FSI
 
     [<Test>]
-    let byrefs () =
-
-        let cfg = testConfig "core/byrefs"
-
-        begin
-            use testOkFile = fileguard cfg "test.ok"
-
-            fsc cfg "%s -o:test.exe -g --langversion:4.7" cfg.fsc_flags ["test.fsx"]
-
-            singleVersionedNegTest cfg "4.7" "test"
-            exec cfg ("." ++ "test.exe") ""
-
-            testOkFile.CheckExists()
-        end
-
-        begin
-            use testOkFile = fileguard cfg "test.ok"
-
-            fsc cfg "%s -o:test.exe -g --langversion:5.0" cfg.fsc_flags ["test.fsx"]
-
-            singleVersionedNegTest cfg "5.0" "test"
-
-            exec cfg ("." ++ "test.exe") ""
-
-            testOkFile.CheckExists()
-        end
-
-        begin
-            use testOkFile = fileguard cfg "test2.ok"
-
-            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
-
-            singleNegTest { cfg with fsc_flags = sprintf "%s --warnaserror-" cfg.fsc_flags } "test2"
-
-            exec cfg ("." ++ "test2.exe") ""
-
-            testOkFile.CheckExists()
-        end
-
-        begin
-            csc cfg """/langversion:7.2 /nologo /target:library /out:cslib3.dll""" ["cslib3.cs"]
-
-            use testOkFile = fileguard cfg "test3.ok"
-
-            fsc cfg "%s -r:cslib3.dll -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
-
-            singleNegTest { cfg with fsc_flags = sprintf "%s -r:cslib3.dll" cfg.fsc_flags } "test3"
-
-            exec cfg ("." ++ "test3.exe") ""
-
-            testOkFile.CheckExists()
-        end
-
-    [<Test>]
     let span () =
 
         let cfg = testConfig "core/span"
@@ -1663,13 +1609,10 @@ module VersionTests =
     let ``member-selfidentifier-version4_6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" (FSC_BUILDONLY true) "4.6"
 
     [<Test>]
-    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRun "core/members/self-identifier/version47" (FSC_BUILDONLY true)
+    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRunVersion "core/members/self-identifier/version47" (FSC_BUILDONLY true) "4.7"
 
     [<Test>]
-    let ``indent-version4_6``() = singleTestBuildAndRunVersion "core/indent/version46" (FSC_BUILDONLY true) "4.6"
-
-    [<Test>]
-    let ``indent-version4_7``() = singleTestBuildAndRun "core/indent/version47" (FSC_BUILDONLY true)
+    let ``indent-version4_7``() = singleTestBuildAndRunVersion "core/indent/version47" (FSC_BUILDONLY true) "4.7"
 
     [<Test>]
     let ``nameof-version4_6``() = singleTestBuildAndRunVersion "core/nameof/version46" (FSC_BUILDONLY true) "4.6"
@@ -2167,6 +2110,12 @@ module TypecheckTests =
         fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
+        
+    [<Test>]
+    let ``sigs pos41`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos41.dll --warnaserror --langversion:preview" cfg.fsc_flags ["pos41.fs"]
+        peverify cfg "pos41.dll"
 
     [<Test>]
     let ``sigs pos1281`` () =
@@ -2392,7 +2341,13 @@ module TypecheckTests =
     let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
 
     [<Test>]
-    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"     
+    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"        
+    
+    [<Test>]
+    let ``type check neg134`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg134"
+
+    [<Test>]
+    let ``type check neg135`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg135"  
 
 [<NonParallelizable>]
 module FscTests =

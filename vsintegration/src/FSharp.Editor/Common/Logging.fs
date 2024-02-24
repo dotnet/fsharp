@@ -44,7 +44,7 @@ type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] ser
 
     let getPane () =
         match outputWindow |> Option.map (fun x -> x.GetPane(ref fsharpOutputGuid)) with
-        | Some (0, pane) ->
+        | Some(0, pane) ->
             pane.Activate() |> ignore
             Some pane
         | _ -> None
@@ -71,19 +71,19 @@ type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] ser
         match self.FSharpLoggingPane, msgType with
         | None, _ -> ()
         | Some pane, LogType.Message ->
-            String.Format("[F#][{0}{1}] {2}{3}", "", time, msg, Environment.NewLine)
+            String.Format("[{0}{1}] {2}{3}", "", time, msg, Environment.NewLine)
             |> pane.OutputString
             |> ignore
         | Some pane, LogType.Info ->
-            String.Format("[F#][{0}{1}] {2}{3}", "INFO ", time, msg, Environment.NewLine)
+            String.Format("[{0}{1}] {2}{3}", "INFO ", time, msg, Environment.NewLine)
             |> pane.OutputString
             |> ignore
         | Some pane, LogType.Warn ->
-            String.Format("[F#][{0}{1}] {2}{3}", "WARN ", time, msg, Environment.NewLine)
+            String.Format("[{0}{1}] {2}{3}", "WARN ", time, msg, Environment.NewLine)
             |> pane.OutputString
             |> ignore
         | Some pane, LogType.Error ->
-            String.Format("[F#][{0}{1}] {2}{3}", "ERROR ", time, msg, Environment.NewLine)
+            String.Format("[{0}{1}] {2}{3}", "ERROR ", time, msg, Environment.NewLine)
             |> pane.OutputString
             |> ignore
 
@@ -93,7 +93,10 @@ module Logging =
     let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
     let private logger = lazy Logger(Logger.GlobalServiceProvider)
-    let private log logType msg = logger.Value.Log(logType, msg)
+
+    let private log logType msg =
+        logger.Value.Log(logType, msg)
+        System.Diagnostics.Trace.TraceInformation(msg)
 
     let logMsg msg = log LogType.Message msg
     let logInfo msg = log LogType.Info msg
@@ -112,3 +115,34 @@ module Logging =
 
     let logExceptionWithContext (ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
+
+module Activity =
+    let listen filter =
+        let indent (activity: Activity) =
+            let rec loop (activity: Activity) n =
+                if activity.Parent <> null then
+                    loop (activity.Parent) (n + 1)
+                else
+                    n
+
+            String.replicate (loop activity 0) "    "
+
+        let collectTags (activity: Activity) =
+            [ for tag in activity.Tags -> $"{tag.Key}: %A{tag.Value}" ]
+            |> String.concat ", "
+
+        let listener =
+            new ActivityListener(
+                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
+                Sample =
+                    (fun context ->
+                        if context.Name.Contains(filter) then
+                            ActivitySamplingResult.AllDataAndRecorded
+                        else
+                            ActivitySamplingResult.None),
+                ActivityStarted = (fun a -> logMsg $"{indent a}{a.OperationName}     {collectTags a}")
+            )
+
+        ActivitySource.AddActivityListener(listener)
+
+    let listenToAll () = listen ""

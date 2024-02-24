@@ -459,7 +459,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         new :  systemRuntimeContainsType : (string -> bool) -> TypeProviderConfig
 
         /// Create a configuration which calls the given functions for the corresponding operation.
-        new :  systemRuntimeContainsType : (string -> bool) * getReferencedAssemblies : (unit -> string[]) -> TypeProviderConfig
+        new :  systemRuntimeContainsType : (string -> bool) * getReferencedAssemblies : (unit -> string array) -> TypeProviderConfig
 
         /// Get the full path to use to resolve relative paths in any file name arguments given to the type provider instance.
         member ResolutionFolder : string with get,set
@@ -468,7 +468,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         member RuntimeAssembly : string with get,set
 
         /// Get the referenced assemblies for the type provider instance.
-        member ReferencedAssemblies : string[] with get,set
+        member ReferencedAssemblies : string array with get,set
 
         /// Get the full path to use for temporary files for the type provider instance.
         member TemporaryFolder : string with get,set
@@ -493,13 +493,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract NamespaceName : string
 
         /// The sub-namespaces in this namespace. An optional member to prevent generation of namespaces until an outer namespace is explored.
-        abstract GetNestedNamespaces : unit -> IProvidedNamespace[] 
+        abstract GetNestedNamespaces : unit -> IProvidedNamespace array 
 
         /// <summary>
         /// The top-level types
         /// </summary>
         /// <returns></returns>
-        abstract GetTypes : unit -> Type[] 
+        abstract GetTypes : unit -> Type array 
 
         /// <summary>
         /// Compilers call this method to query a type provider for a type <c>name</c>.
@@ -518,7 +518,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <summary>
         /// Gets the namespaces provided by the type provider.
         /// </summary>
-        abstract GetNamespaces : unit -> IProvidedNamespace[] 
+        abstract GetNamespaces : unit -> IProvidedNamespace array 
 
         /// <summary>
         /// Get the static parameters for a provided type. 
@@ -527,7 +527,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="typeWithoutArguments">A type returned by GetTypes or ResolveTypeName</param>
         ///
         /// <returns></returns>
-        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[]
+        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo array
 
         /// <summary>
         /// Apply static arguments to a provided type that accepts static arguments. 
@@ -540,7 +540,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="staticArguments">the static parameters, indexed by name</param>
         ///
         /// <returns></returns>
-        abstract ApplyStaticArguments : typeWithoutArguments:Type * typePathWithArguments:string[] * staticArguments:obj[] -> Type 
+        abstract ApplyStaticArguments : typeWithoutArguments:Type * typePathWithArguments:string array * staticArguments:obj array -> Type 
 
         /// <summary>
         /// Called by the compiler to ask for an Expression tree to replace the given MethodBase with.
@@ -550,7 +550,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="parameters">Expressions that represent the parameters to this call.</param>
         ///
         /// <returns>An expression that the compiler will use in place of the given method base.</returns>
-        abstract GetInvokerExpression : syntheticMethodBase:MethodBase * parameters:Expr[] -> Expr
+        abstract GetInvokerExpression : syntheticMethodBase:MethodBase * parameters:Expr array -> Expr
 
         /// <summary>
         /// Triggered when an assumption changes that invalidates the resolutions so far reported by the provider
@@ -561,7 +561,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <summary>
         /// Get the physical contents of the given logical provided assembly.
         /// </summary>
-        abstract GetGeneratedAssemblyContents : assembly:Assembly -> byte[]
+        abstract GetGeneratedAssemblyContents : assembly:Assembly -> byte array
 
     /// Represents additional, optional information for a type provider component
     type ITypeProvider2 =
@@ -573,7 +573,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="methodWithoutArguments">A method returned by GetMethod on a provided type</param>
         ///
         /// <returns>The static parameters of the provided method, if any</returns>
-        abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo[] 
+        abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo array 
 
         /// <summary>
         /// Apply static arguments to a provided method that accepts static arguments. 
@@ -584,4 +584,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="staticArguments">the values of the static parameters, indexed by name</param>
         ///
         /// <returns>The provided method definition corresponding to the given static parameter values</returns>
-        abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
+        abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj array -> MethodBase

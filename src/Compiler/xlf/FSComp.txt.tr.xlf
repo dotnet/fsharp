@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSComp.resx">
     <body>
+      <trans-unit id="alwaysUseTypedStringInterpolation">
+        <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
+        <target state="translated">İlişkilendirilmiş dize, türü belirsiz tanımlayıcılar içeriyor. Türü belirtilen biçim belirticiler eklenmesi önerilir.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Bir dizinin tüm öğeleri örtük olarak ilk öğenin türüne dönüştürülebilir olmalıdır. Burada ilk öğe {0} uzunluğunda türü\n {1} \nolan bir demet. Bu öğe ise {2} uzunluğunda türü\n {3} \nolan bir demet.</target>
@@ -24,7 +29,7 @@
       </trans-unit>
       <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <target state="translated">Bir tür hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanırsa bu statik olduğu anlamına gelir. Soyut üye bildirimlerine izin verilmez.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
@@ -34,12 +39,17 @@
       </trans-unit>
       <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
         <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
-        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
+        <target state="translated">FSharp.Core.AutoOpenAttribute diğer adlı olamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir.Bağımsız değişkenlere sahip oluşturucuya izin verilmez.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="translated">Bu ifade, anonim bir kayıt, {{...}} yerine {{|...|}} kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -49,7 +59,7 @@
       </trans-unit>
       <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <target state="translated">Bir tür hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanırsa bu statik olduğu anlamına gelir. Açık alan bildirimlerine izin verilmez.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -69,7 +79,12 @@
       </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir. Arabirim uygulamaya izin verilmez.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="translated">Dizini oluşturulmuş bir özelliğin alıcısı ve ayarlayıcısı aynı türde olmalıdır. '{0}' özelliği '{1}' türünde alıcıya ancak '{2}' türünde ayarlayıcıya sahip.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -94,12 +109,27 @@
       </trans-unit>
       <trans-unit id="chkInstanceLetBindingOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
+        <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir. Örnek let bağlamalarına izin verilmez.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
         <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir. Örnek üyelerine izin verilmez.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNotTailRecursive">
+        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
+        <target state="translated">Üye veya '{0}' işlevi, 'TailCallAttribute' özniteliğine sahip ancak kuyruk özyinelemeli bir şekilde kullanılmıyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="translated">Nesne ifadeleri, statik soyut üyeler içeren arabirimleri uygulayamaz veya statik üyeleri bildiremez.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="translated">TailCall özniteliği yalnızca özyinelemeli işlevlere uygulanmalıdır.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -115,6 +145,11 @@
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Kullanılabilir aşırı yüklemeler:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
+        <target state="translated">'{0}', gerekli (gerçek veya yerleşik) '{2}' üyesine sahip olmadığından '{1}' türünü desteklemiyor</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -157,6 +192,11 @@
         <target state="translated">'{0}' bağımsız değişkeni eşleşmiyor</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="translated">'unmanaged' ve 'not struct' kısıtlamaları tutarsız</target>
+        <note />
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Bir 'if' ifadesinin tüm dalları, örtük olarak ilk dalın türüne dönüştürülebilir değerler döndürmelidir. Burada ilk dal {0} uzunluğunda türü\n    {1} olan bir demet    \nBu dal {2} uzunluğunda türü\n    {3}    \nolan bir demet döndürüyor</target>
@@ -177,6 +217,11 @@
         <target state="translated">'{0}' bütünleştirilmiş kod özniteliği, yüklenemeyen veya mevcut olmayan '{1}' tasarımcı bütünleştirilmiş koduna başvuruyor. Bildirilen özel durum: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="translated">yalnızca erişimci işlevi için alt çizgi nokta kısaltma</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">ek tür ile yönlendirilen dönüştürmeler</target>
@@ -189,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
-        <target state="needs-review-translation">Sabit değerlerle aritmetik ve mantıksal işlemlere izin ver</target>
+        <target state="translated">Sabit değerler, sabit listesi tanımları ve öznitelikler olarak aritmetik ve mantıksal işlemler</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -202,9 +247,29 @@
         <target state="translated">'exception' bildirimleri için 'Message' özelliğinin otomatik olarak oluşturulması</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
+        <source>Boolean-returning and return-type-directed partial active patterns</source>
+        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">Türler, modüller bildirirken örtük Extension özniteliğine izin ver</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="translated">Üye veya işlevi, 'TailCallAttribute' özniteliğine sahip olmasına karşın kuyruk özyinelemeli bir şekilde kullanılmıyorsa uyarı verir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="translated">'TailCall' özniteliği özyinelemeli olmayan işlevlerde kullanılıyorsa uyarılar oluşturur.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="translated">Esnek türlerde kısıtlama kesişimi</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -252,6 +317,16 @@
         <target state="translated">tür daha ölçü birimlerini destekler</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="translated">byref ve GetPinnableReference için genişletilmiş sabit bağlamalar</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureExtendedStringInterpolation">
+        <source>Extended string interpolation similar to C# raw string literals.</source>
+        <target state="translated">C# ham sabit değerli dizeye benzer genişletilmiş dize ilişkilendirmesi.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">sabit dizinli dilim 3d/4d</target>
@@ -267,9 +342,19 @@
         <target state="translated">örtük yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNames">
+        <source>Improved implied argument names</source>
+        <target state="translated">Geliştirilmiş örtük bağımsız değişken adları</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">Dizin oluşturma ve dilimleme için expr[idx] gösterimi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInformationalObjInferenceDiagnostic">
+        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
+        <target state="translated">Tanılama 3559 (obj çıkarsanıldığında uyarı ver) bilgi düzeyinde, varsayılan olarak kapalı</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInitProperties">
@@ -285,6 +370,11 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">birden çok genel örnek oluşturma içeren arabirimler</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerInterpolatedStringToConcat">
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -309,12 +399,12 @@
       </trans-unit>
       <trans-unit id="featureNestedCopyAndUpdate">
         <source>Nested record field copy-and-update</source>
-        <target state="new">Nested record field copy-and-update</target>
+        <target state="translated">İç içe kayıt alanı kopyalama ve güncelleştirme</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
-        <target state="new">String values marked as literals and IL constants as printf format</target>
+        <target state="translated">Sabit değer olarak işaretlenen dize değerleri ve printf biçimi olarak IL sabitleri</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
@@ -340,6 +430,16 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">paket yönetimi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="translated">Basit özellik yerine genişletme yöntemini tercih edin</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="translated">sabit bağlamalarda String.GetPinnableReference tercih edin</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -377,6 +477,11 @@
         <target state="translated">sürdürülebilir durum makineleri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReuseSameFieldsInStructUnions">
+        <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
+        <target state="translated">Aynı ada ve türe sahip oldukları sürece temel alınan alanları [&lt;Struct&gt;] ayırt edici birleşim biçiminde paylaşın</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">kendi kendine tür kısıtlamaları</target>
@@ -387,9 +492,19 @@
         <target state="translated">tek alt çizgi deseni</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="translated">Birleşim, kayıt, yapı ve artımlı olmayan sınıf türlerinde statik let bağlamalarına izin ver</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
-        <target state="new">Static members in interfaces</target>
+        <target state="translated">Arabirimlerdeki statik üyeler</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="translated">Yanlış girinti üzerine hata verir ve düzenleme sırasında daha iyi kurtarma ve analize olanak sağlar</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -402,19 +517,44 @@
         <target state="translated">etkin desenler için yapı gösterimi</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>Union case test properties</source>
+        <target state="translated">Birleşim durumu test özellikleri</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
-        <target state="new">Support for try-with in sequence expressions</target>
+        <target state="translated">Dizi ifadelerinde try-with desteği</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="translated">C# ile F#' arasında yönetilmeyen genel kısıtlama (ek modreq yayın)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="translated">Dizini oluşturulmuş özelliklerin alıcısı ve ayarlayıcısı aynı türde olmalıdır</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
+        <target state="translated">Bir kopyalama ve güncelleştirme kayıt ifadesi bir kaydın tüm alanlarını değiştirdiğinde uyarı oluşturur.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">[&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] özniteliği ile birlikte 'let inline ... =' kullanıldığında uyarı verir. İşlev satır içine alınmıyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="translated">Çakışan alan adları nedeniyle, ad çözümlemesi sırasında birden çok kayıt türü eşleşmesi olduğunda uyarı verir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWhileBang">
+        <source>'while!' expression</source>
+        <target state="translated">'while!' ifadesi</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -439,7 +579,7 @@
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated2">
         <source>.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</source>
-        <target state="translated">'{{X,3}}' ya da '{{x:N5}}' gibi .NET stili biçim belirticileri '%' biçim belirticileriyle karışık kullanılamaz.</target>
+        <target state="translated">'{{x,3}}' ya da '{{x:N5}}' gibi .NET stili biçim belirticileri '%' biçim belirticileriyle karışık kullanılamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated3">
@@ -509,7 +649,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionSig">
         <source>Keyword reserved for ML-compatibility.</source>
-        <target state="new">Keyword reserved for ML-compatibility.</target>
+        <target state="translated">ML uyumluluğu için ayrılmış anahtar sözcük.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
@@ -517,14 +657,29 @@
         <target state="translated">Bir nesnenin desende veya bağlamada verilen türde olup olmadığını kontrol etmek için kullanılır.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionWhileBang">
+        <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
+        <target state="translated">Hesaplama ifadelerinde, koşulun başka bir hesaplama ifadesinin sonucu olduğu bir döngü yapısı eklemek için kullanılır.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">bir bayt dizesi, düz metin arasına kod eklenerek kullanılamaz</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexExtendedStringInterpolationNotSupported">
+        <source>Extended string interpolation is not supported in this version of F#.</source>
+        <target state="translated">Genişletilmiş dize ilişkilendirmesi bu F# sürümünde desteklenmiyor.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
         <target state="translated">IF-FSHARP/IF-CAML bölgeleri artık desteklenmiyor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="translated">Bu, geçerli bir tanımlayıcı değil</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -537,9 +692,24 @@
         <target state="translated">Geçersiz düz metin arasına kod eklenmiş dize. Tek tırnaklı veya düz metin dizesi sabitleri, tek tırnaklı veya düz metin dizelerinde düz metin arasına kod eklenmiş ifadelerde kullanılamaz. Düz metin arasına kod ekleme ifadesi için açık bir 'let' bağlaması kullanmayı düşünün veya dış dize sabiti olarak üç tırnaklı bir dize kullanın.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="translated">İlişkilendirilmiş, üçlü tırnak için alınmış dize sabit değerli dize, bu kadar çok ardışık açma küme ayracına içerik olarak izin verecek yeterli '$' karakterle başlamıyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyPercentsInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
+        <target state="translated">İlişkilendirilmiş, üçlü tırnak içine alınmış sabit değerli dize, bu kadar ardışık '%' karaktere izin verecek yeterli '$' karakterle başlayamaz.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Geçersiz düz metin arasına kod eklenmiş dize. Üç tırnaklı dize sabitleri, düz metin arasına kod eklenmiş ifadelerde kullanılamaz. Düz metin arasına kod ekleme ifadesi için açık bir 'let' bağlaması kullanmayı düşünün.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexUnmatchedRBracesInTripleQuote">
+        <source>The interpolated string contains unmatched closing braces.</source>
+        <target state="translated">İlişkilendirilmiş dize, eşleşmeyen kapatma küme ayraçları içeriyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -677,6 +847,11 @@
         <target state="translated">F# arabirim bilgilerini dahil edin; varsayılan değer dosyadır. Kitaplıkları dağıtmak için gereklidir.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="translated">Dil sürümü tarafından kapsanan girinti kurallarını geçersiz kıl</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Desteklenen dil sürümleri:</target>
@@ -712,6 +887,11 @@
         <target state="translated">‘Paket yönetimi’ özelliği, dil sürümü 5.0 veya üstünü gerektirir</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="translated">Kısıtlama kesişimi söz dizimi yalnızca esnek türlerle kullanılabilir. Ör. '#IDisposable &amp; #ISomeInterface'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">Düz metin arasına kod eklenmiş dize geçersiz. Bu düz metin arasına kod eklenmiş dize ifade dolgusu boş. İfade bekleniyordu.</target>
@@ -737,24 +917,29 @@
         <target state="translated">Tamamlanmamış düz metin arasına kod eklenmiş düz metin dizesi, burada veya daha önce başlıyordu</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">Tür tanımında beklenmeyen belirteç var. '{0}' türünden sonra '=' bekleniyordu.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
         <target state="translated">Bu noktadan sonra bir desen bekleniyordu</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
         <target state="translated">İfade bekleniyor</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingPatternInTuple">
+      <trans-unit id="parsExpectingField">
+        <source>Expecting record field</source>
+        <target state="translated">Kayıt alanı bekleniyor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">Desen bekleniyor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="translated">Tür bekleniyor</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -767,14 +952,39 @@
         <target state="translated">Eksik işleç ifadesi (örnek a^b) veya tam tür çağrısı (örnek: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="translated">Eksik '{0}' anahtar sözcüğü</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="translated">Üye gövdesi bekleniyor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="translated">Birleşim durumu adı eksik</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">Bu üye erişimi belirsiz. Lütfen nesne oluşturma etrafında parantez kullanın, örneğin '(yeni SomeType (args)).MemberName’</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
+        <source>Only simple patterns are allowed in primary constructors</source>
+        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
+        <target state="translated">Statik yapının bildirimi eksik. Bildirim için 'static let','static do','static member' veya 'static val' kullanın.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
-        <target state="new">Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
+        <target state="translated">Koşullu ifadenin 'else if' veya 'elif' dalında beklenmeyen giriş sonu. 'elif &lt;expr&gt; then &lt;expr&gt;' veya 'else if &lt;expr&gt; then &lt;expr&gt;' bekleniyordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -792,9 +1002,14 @@
         <target state="translated">{0}' algoritması desteklenmiyor</target>
         <note />
       </trans-unit>
+      <trans-unit id="pickleFsharpCoreBackwardsCompatible">
+        <source>Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </source>
+        <target state="translated">Yeni eklenen pickle durumu FSharp.Core'da kullanılamaz çünkü eski derleyicilerde ve araçlarda da çalışması gerekir. Zaman penceresi, özellik giriş tarihinden en az 3 yıl sonradır. İhlal: {0} . Bağlam: \n {1} </target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occured in the resumable code specification</source>
-        <target state="new">A constrained generic construct occured in the resumable code specification</target>
+        <target state="translated">Sürdürülebilir kod belirtiminde kısıtlanmış bir genel yapı oluştu</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -872,6 +1087,16 @@
         <target state="translated">Bu betik için .NET SDK belirlenemedi. Betik 'global.json' kullanan bir dizindeyse, ilgili .NET SDK'nın yüklü olduğundan emin olun. Beklenmeyen hata '{0}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="translated">(Önerilen ad)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="translated">_ öğesinin anlamı burada belirsiz. Aynı kapsamda, atılan bir değişken ve işlev kısaltması için kullanılamaz.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">Bu ifade '{0}' türüne sahip ve yalnızca belirsiz bir örtük dönüştürme aracılığıyla ’{1}' türüyle uyumlu hale getirilir. 'op_Implicit' için açık bir çağrı kullanmayı düşünün. Uygulanabilir örtük dönüştürmeler şunlardır: {2}</target>
@@ -887,24 +1112,54 @@
         <target state="translated">'{0}' alanı bu kayıt ifadesinde birden fazla yerde görünüyor.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameDifferent">
-        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">Bu anonim kayıt yanlış. Kayıt, {0} alanlarını içermelidir.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">Bu anonim kayıtta yeterli sayıda alan yok. Eksik {0} alanlarını ekleyin.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">Bu anonim kayıtta çok fazla alan var. Ek {0} alanlarını kaldırın.</target>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="translated">Bu anonim kayıt, beklenen şekille tam olarak eşleşmiyor. Eksik {0} alanlarını ekleyin ve ek {1} alanlarını kaldırın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Anonim Kayıt türü bildirimi geçersiz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
+        <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
+        <target state="translated">Bu anonim kayıtta {0} alanları olmalıdır ancak burada{1} alanları var.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
+        <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
+        <target state="translated">Bu anonim kayıtta {0} alanları olmalıdır ancak burada '{1}' alanı var.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
+        <source>This anonymous record is missing fields {0}.</source>
+        <target state="translated">Bu anonim kayıtta {0} alanları eksik.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
+        <source>This anonymous record has extra fields. Remove fields {0}.</source>
+        <target state="translated">Bu anonim kayıtta ekstra alanlar var. {0} alanlarını kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
+        <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
+        <target state="translated">Bu anonim kayıtta '{0}' alanı olmalıdır ancak burada '{1}' alanları var.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
+        <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
+        <target state="translated">Bu anonim kayıtta '{0}' alanı olmalıdır ancak burada '{1}' alanı var.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSubset">
+        <source>This anonymous record is missing field '{0}'.</source>
+        <target state="translated">Bu anonim kayıtta '{0}' alanı eksik.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
+        <source>This anonymous record has an extra field. Remove field '{0}'.</source>
+        <target state="translated">Bu anonim kayıtta fazladan bir alan var. '{0}' alanını kaldırın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -919,7 +1174,12 @@
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
-        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <target state="translated">Bu kopyalama ve güncelleştirme kayıt ifadesi, '{0}' kayıt türündeki tüm alanları değiştirir. Bunun yerine kayıt oluşturma söz dizimini kullanmayı deneyin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
+        <target state="translated">Toplu lambda söz dizimi yalnızca örtülü '_' bağımsız değişkeninde yöntem, özellik, alan veya dizin oluşturucu gibi atomik ifadeler için destekleniyor. Örnek: 'let f = _.Length'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -955,6 +1215,11 @@
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
         <target state="translated">Bu ifade '{1}' türünü '{2}' türüne dönüştürmek için '{0}' örtük dönüştürmesini kullanır. https://aka.ms/fsharp-implicit-convs adresine bakın. Bu uyarı '#nowarn \"3391\" kullanılarak devre dışı bırakılabilir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="translated">Bu, bir birleşim durumunu gizleyen bir işlev tanımıdır. Bunu istiyorsanız, bu uyarıyı yoksayın veya durdurun. Bunun bir birleşim durumu ayrıştırması olmasını istiyorsanız, parantezler ekleyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1037,9 +1302,29 @@
         <target state="translated">Aşağıdaki gerekli özelliklerin başlatılması gerekiyor:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="translated">'{0}' alanı bu kayıt ifadesinde veya deseninde birden fazla görünüyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="translated">Birden çok tür eşleşmesi bulundu:\n{0}\nTür '{1}' kullanıldı. Çakışan alan adları nedeniyle\n{2}\nek açıklamalar kullanmayı düşünün veya açık deyimlerin sırasını değiştirin.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">'NoEagerConstraintApplicationAttribute' içeren yöntemlerin kullanılması /langversion:6.0 veya üstünü gerektiriyor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticMemberFoundForOverride">
+        <source>No static abstract member was found that corresponds to this override</source>
+        <target state="translated">Bu geçersiz kılmaya karşılık gelen hiçbir statik soyut üye bulunamadı</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticPropertyFoundForOverride">
+        <source>No static abstract property was found that corresponds to this override</source>
+        <target state="translated">Bu geçersiz kılmaya karşılık gelen hiçbir statik soyut özellik bulunamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1072,6 +1357,11 @@
         <target state="translated">Söz dizimi “expr1[expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction expr1 [expr2]”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="translated">Bu geçersiz kılma, birden çok bağımsız değişken yerine bir tanımlama grubu alır. Metot tanımına ek bir parantez katmanı (ör. 'member _. Foo((x, y)')) eklemeyi deneyin veya soyut yöntem bildirimindeki parantezleri kaldırın (ör. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">Söz dizimi “(expr1)[expr2]” bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Dizin oluşturmayı veya dilimlemeyi düşünüyorsanız, bağımsız değişken konumunda “(expr1).[expr2]” kullanmalısınız. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction (expr1) [expr2]”.</target>
@@ -1083,8 +1373,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">'let! ... and! ...' yapısı, yalnızca hesaplama ifadesi oluşturucu bir '{0}' metodunu ya da uygun 'MergeSource' ve 'Bind' metotlarını tanımlarsa kullanılabilir</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="translated">'let! ... and! ...' yapısı, yalnızca hesaplama ifadesi oluşturucu bir '{0}' metodunu ya da uygun 'MergeSources' ve 'Bind' metotlarını tanımlarsa kullanılabilir</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1120,6 +1410,16 @@
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
         <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">Yalnızca başlatma özelliği için ayarlayıcı olan '{0}' çağrılamaz, lütfen bunun yerine nesne başlatmayı kullanın. bkz. https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="translated">Statik bağlamalar dış genişletmelere eklenemez. Bunun yerine 'static member' kullanmayı düşünün.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
+        <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
+        <target state="translated">Çok durumlu bir birleşim türü bir yapıysa, aynı ada sahip tüm alanların aynı türde olması gerekir. Bu kural adlandırılmamış alanlar olması durumunda oluşturulan ‘Öğe’ adı için de geçerlidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1162,6 +1462,11 @@
         <target state="translated">Geçersiz düz metin arasına kod eklenmiş dize. {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="translated">Birleşim durumu alan tanımında beklenmeyen işlev türü. Alanın bir işlev olmasını amaçlıyorsanız işlev imzasını parens ile sarmalamayı göz önünde bulundurun. Ör. | (a -&gt; b) durumunda | a -&gt; b durumu.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
         <target state="translated">'{0}' normalde genel kodda tür kısıtlaması olarak kullanılır, ör. \"'T when ISomeInterface&lt;'T&gt;\" veya \"let f (x: #ISomeInterface&lt;_&gt;)\". Rehber için bkz. https://aka.ms/fsharp-iwsams. '#nowarn \"3536\"' veya '--nowarn:3536' kullanarak bu uyarıyı devre dışı bırakabilirsiniz.</target>
@@ -1170,6 +1475,11 @@
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
         <target state="translated">\"interfaces with static abstract methods\" bildirimi gelişmiş bir özelliktir. Rehber için bkz. https://aka.ms/fsharp-iwsams. '#nowarn \"3535\"' veya '--nowarn:3535'. kullanarak bu uyarıyı devre dışı bırakabilirsiniz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="translated">'{0}' türü çok fazla yöntem içeriyor. Bulunan: '{1}', üst sınır: '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1189,7 +1499,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
+        <target state="translated">Tür örtük bir şekilde 'obj' olarak çıkarsandı. Bu, beklenmeyen bir durum olabilir. Açık tür ek açıklamaları eklemeyi deneyin. '#nowarn \"3559\"' veya '--nowarn:3559' kullanarak bu uyarıyı devre dışı bırakabilirsiniz.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1330,6 +1640,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">'return' yerine 'return!' kullanmayı deneyin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="translated">Parantezler kaldırılamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -1558,8 +1873,8 @@
         <note />
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
-        <source>Unrecognized option: '{0}'</source>
-        <target state="translated">Tanınmayan seçenek: '{0}'</target>
+        <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
+        <target state="translated">Tanınmayan seçenek: '{0}'. Tanınan komut satırı seçenekleri hakkında bilgi edinmek için '--help' komutunu kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3213,8 +3528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Özellik alıcı veya ayarlayıcı için birden çok erişilebilirlik verildi</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="translated">Bir özelliğin görünürlüğü belirtilirse, küme veya alma yönteminin görünürlüğünü ayarlamaya izin verilmez.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -3677,11 +3992,6 @@
         <target state="translated">Bu kayıt ifadesinin veya deseninin alan etiketleri ve beklenen türü, karşılık gelen bir kayıt türünü benzersiz olarak belirlemiyor</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">'{0}' alanı bu kayıt ifadesinde veya deseninde iki kez görünüyor</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnknownUnion">
         <source>Unknown union case</source>
         <target state="translated">Bilinmeyen birleşim durumu</target>
@@ -3985,11 +4295,6 @@
       <trans-unit id="tcInvalidPattern">
         <source>This is not a valid pattern</source>
         <target state="translated">Bu geçerli bir desen değil</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Karakter aralığı eşleştirmeler F# dilinde kaldırılmıştır. Onun yerine 'when' desen koruma kullanmayı düşünün.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -4659,7 +4964,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="needs-review-translation">Arabirimler somut üyelerin tanımlarını içeremez. Türün sınıf olduğunu belirtmek için türünüzde bir oluşturucu tanımlamanız gerekebilir.</target>
+        <target state="translated">Arabirimler somut üyelerin tanımlarını içeremez. Türün sınıf olduğunu belirtmek için türünüzde bir oluşturucu tanımlamanız gerekebilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
@@ -4818,8 +5123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">Statik değer tanımları yalnızca birincil oluşturucusu olan türlerde kullanılabilir. Tür tanımına bağımsız değişkenler eklemeyi düşünün, örn. 'type X(args) = ...'.</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="translated">F#7 ve altı için, 'let', 'do' ve 'member val' statik değer tanımları yalnızca birincil oluşturucu ('type X(args) = ...') içeren türlerde kullanılabilir. Bunları diğer tüm türlerde etkinleştirmek için dil sürümü '8' ve üstünü kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -5938,8 +6243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">Olası hatalı girinti: {0} konumundan başlatılan bu belirteç bağlam dışıdır. Bu belirteci daha fazla girintilemeyi veya standart biçimlendirme kurallarını kullanmayı deneyin.</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
+        <target state="translated">Beklenmeyen sözdizimi veya olası yanlış girinti: Bu belirteç, {0} konumunda başlayan bağlamın ofsaytıdır. Bunu daha fazla girintilemeyi deneyin.\nUygun olmayan girintiyi kullanmaya devam etmek için '--strict-indentation-' işaretini derleyiciye iletin veya dil sürümünü F# 7 olarak ayarlayın.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -7653,8 +7958,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">Geçersiz 'fixed' kullanımı. 'fixed' yalnızca 'use x = fixed expr' biçimindeki bir bildirimde kullanılabilir. Burada ifade bir dizi, bir alanın adresi, bir dizi öğesinin adresi veya bir dizedir</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="translated">'Sabit'in geçersiz kullanımı. 'sabit' yalnızca ifadenin aşağıdakilerden biri olduğu 'x = sabit ifade kullan' biçimindeki bir bildirimde kullanılabilir: bir dizi, bir dizi öğesinin adresi, bir dize, bir byref, bir inref veya bir GetPinnableReference()'ı uygulayan tür</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8087,11 +8392,6 @@
         <target state="translated">Bu değer bir işlev değil ve uygulanamaz. Bir bildirimi sonlandırmayı mı unuttunuz?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">{0}' imzası ve '{1}' uygulaması içindeki bağımsız değişken adları eşleşmiyor. İmza dosyasındaki bağımsız değişken adı kullanılacak. Bu, hata ayıklama veya profil oluşturma sırasında sorunlara neden olabilir.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">'{0}' bütünleştirilmiş kodunun F# meta verileri okunurken bir hata oluştu. Ayrılmış bir yapı kullanıldı. F# derleyicinizi yükseltmeniz veya bütünleştirilmiş kodun belirli bir yapıyı kullanmayan daha eski bir sürümünü kullanmanız gerekebilir.</target>
@@ -8227,14 +8527,9 @@
         <target state="translated">İki anonim kayıt türü, birbirinden farklı olan '{0}' ve '{1}' derlemelerinden</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="translated">Bu anonim kayıt, beklenen şekille tam olarak eşleşmiyor. Eksik {0} alanlarını ekleyin ve ek {1} alanlarını kaldırın.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">'{0}' byref genişletme metodu çağrılamıyor. İlk parametre, değerin değişebilir olmasını veya salt okunur olmayan bir byref türünde olmasını gerektiriyor.</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="translated">'{0}' byref genişletme metodu çağrılamıyor. ‘this’ parametresi, değerin değişebilir olmasını veya salt okunur olmayan bir byref türünde olmasını gerektiriyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8323,8 +8618,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">'{0}' paket yöneticisi anahtarı {1} içinde kayıtlı değil. Şu anda kayıtlı: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="translated">Paket yöneticisi anahtarı '{0}' {1} altında kayıtlı değil. Şu anda kayıtlı: {2}. Komut satırına '--compilertool:&lt;extensionsfolder&gt;' geçirerek ek yollar sağlayabilirsiniz. Uzantılar hakkında daha fazla bilgi edinmek için şu adresi ziyaret edin: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

@@ -38,7 +38,7 @@ type AssemblyLoader =
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
-    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
+    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly MaybeNull> -> bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
@@ -183,16 +183,24 @@ let rec ImportILType (env: ImportMap) m tinst ty =
         ImportTyconRefApp env tcref inst
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
+
     | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
+
     | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)
+
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
+
     | ILType.Modified(_, _, ty) -> 
          // All custom modifiers are ignored
          ImportILType env m tinst ty
+
     | ILType.TypeVar u16 -> 
-         try List.item (int u16) tinst
-         with _ -> 
-              error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
+        let ty = 
+            try 
+                List.item (int u16) tinst
+            with _ -> 
+                error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
+        ty
 
 /// Determines if an IL type can be imported as an F# type
 let rec CanImportILType (env: ImportMap) m ty =  
@@ -354,15 +362,15 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
 /// Import a provided method reference as an Abstract IL method reference
 let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Tainted<ProvidedMethodBase>) = 
-     let tref = GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType), m), m)
+     let tref = GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> nonNull<ProvidedType> mbase.DeclaringType), m), m)
 
      let mbase = 
          // Find the formal member corresponding to the called member
          match mbase.OfType<ProvidedMethodInfo>() with 
          | Some minfo when 
-                    minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| minfo.DeclaringType.IsGenericType), m) -> 
+                    minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| (nonNull<ProvidedType> minfo.DeclaringType).IsGenericType), m) -> 
 
-                let declaringType = minfo.PApply((fun minfo -> minfo.DeclaringType), m)
+                let declaringType = minfo.PApply((fun minfo -> nonNull<ProvidedType> minfo.DeclaringType), m)
 
                 let declaringGenericTypeDefn =  
                     if declaringType.PUntaint((fun t -> t.IsGenericType), m) then 
@@ -381,8 +389,8 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                     error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ -> 
          match mbase.OfType<ProvidedConstructorInfo>() with 
-         | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType), m) -> 
-                let declaringType = cinfo.PApply((fun x -> x.DeclaringType), m)
+         | Some cinfo when cinfo.PUntaint((fun x -> (nonNull<ProvidedType> x.DeclaringType).IsGenericType), m) -> 
+                let declaringType = cinfo.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m)
                 let declaringGenericTypeDefn =  declaringType.PApply((fun x -> x.GetGenericTypeDefinition()), m)
 
                 // We have to find the uninstantiated formal signature corresponding to this instantiated constructor.
@@ -451,16 +459,24 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
     match gps with 
     | [] -> []
     | _ -> 
-        let amap = amap()
+        let amap : ImportMap = amap()
         let tps = gps |> List.map (fun gp -> Construct.NewRigidTypar gp.Name m) 
 
         let tptys = tps |> List.map mkTyparTy
         let importInst = tinst@tptys
         (tps, gps) ||> List.iter2 (fun tp gp -> 
-            let constraints = gp.Constraints |> List.map (fun ilTy -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy), m) )
-            let constraints = if gp.HasReferenceTypeConstraint then (TyparConstraint.IsReferenceType(m) :: constraints) else constraints
-            let constraints = if gp.HasNotNullableValueTypeConstraint then (TyparConstraint.IsNonNullableStruct(m) :: constraints) else constraints
-            let constraints = if gp.HasDefaultConstructorConstraint then (TyparConstraint.RequiresDefaultConstructor(m) :: constraints) else constraints
+            let constraints = 
+                [ if gp.CustomAttrs |> TryFindILAttribute amap.g.attrib_IsUnmanagedAttribute then
+                    TyparConstraint.IsUnmanaged(m)
+                  if gp.HasDefaultConstructorConstraint then
+                    TyparConstraint.RequiresDefaultConstructor(m)
+                  if gp.HasNotNullableValueTypeConstraint then
+                    TyparConstraint.IsNonNullableStruct(m)
+                  if gp.HasReferenceTypeConstraint then
+                    TyparConstraint.IsReferenceType(m)
+                  for ilTy in gp.Constraints do
+                    TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy), m) ]            
+
             tp.SetConstraints constraints)
         tps
 
@@ -487,7 +503,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
                 buckets[key] <-
                     match buckets.TryGetValue key with
                     | true, b -> (rest, v) :: b
-                    | _ -> (rest, v) :: []
+                    | _ -> [rest, v]
 
         [ for KeyValue(key, items) in buckets -> nodef key items ]
 
@@ -496,9 +512,11 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
 /// Import an IL type definition as a new F# TAST Entity node.
 let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILTypeDef)  =
     let lazyModuleOrNamespaceTypeForNestedTypes = 
-        lazy 
+        InterruptibleLazy(fun _ ->
             let cpath = cpath.NestedCompPath nm ModuleOrType
             ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
+        )
+
     // Add the type itself. 
     Construct.NewILTycon 
         (Some cpath) 
@@ -525,9 +543,9 @@ and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
         items 
         |> multisetDiscriminateAndMap 
             (fun n tgs ->
-                let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n (Namespace true)) enc tgs)
+                let modty = InterruptibleLazy(fun _ -> ImportILTypeDefList amap m (cpath.NestedCompPath n (Namespace true)) enc tgs)
                 Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
-            (fun (n, info: Lazy<_>) -> 
+            (fun (n, info: InterruptibleLazy<_>) -> 
                 let (scoref2, lazyTypeDef: ILPreTypeDef) = info.Force()
                 ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
 
@@ -558,19 +576,21 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
         []
     else
         let ns, n = splitILTypeName exportedType.Name
-        let info = 
-            lazy (match 
+        let info =
+            InterruptibleLazy (fun _ ->
+                match 
                     (try 
                         let modul = auxModLoader exportedType.ScopeRef
                         let ptd = mkILPreTypeDefComputed (ns, n, (fun () -> modul.TypeDefs.FindByName exportedType.Name))
                         Some ptd
                      with :? KeyNotFoundException -> None)
-                    with 
-                  | None -> 
-                     error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(exportedType.ScopeRef.QualifiedName, scoref.QualifiedName, exportedType.Name), m))
-                  | Some preTypeDef -> 
-                     scoref, preTypeDef)
-              
+                with 
+                | None -> 
+                    error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(exportedType.ScopeRef.QualifiedName, scoref.QualifiedName, exportedType.Name), m))
+                | Some preTypeDef -> 
+                    scoref, preTypeDef
+            )
+
         [ ImportILTypeDefList amap m (CompPath(scoref, [])) [] [(ns, (n, info))]  ]
 
 /// Import the "exported types" table for multi-module assemblies. 

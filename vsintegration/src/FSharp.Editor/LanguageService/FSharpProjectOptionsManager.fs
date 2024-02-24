@@ -15,6 +15,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open System.Threading
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 open System.Runtime.CompilerServices
+open CancellableTasks
 
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
@@ -55,7 +56,7 @@ module private FSharpProjectOptionsHelpers =
                 and set (v) = errorReporter <- v
         }
 
-    let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
+    let inline hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
         oldProject.Version <> newProject.Version
 
     let hasDependentVersionChanged (oldProject: Project) (newProject: Project) (ct: CancellationToken) =
@@ -97,10 +98,10 @@ module private FSharpProjectOptionsHelpers =
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of
         Document *
-        AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> *
+        AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) voption> *
         CancellationToken *
         userOpName: string
-    | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken
+    | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) voption> * CancellationToken
     | ClearOptions of ProjectId
     | ClearSingleFileOptionsCache of DocumentId
 
@@ -183,18 +184,19 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             let getStamp = fun () -> stamp
 
             let fsRefProj =
-                FSharpReferencedProject.CreatePortableExecutable(referencedProject.OutputFilePath, getStamp, getStream)
+                FSharpReferencedProject.PEReference(getStamp, DelayedILModuleReader(referencedProject.OutputFilePath, getStream))
 
             weakPEReferences.Add(comp, fsRefProj)
             fsRefProj
 
-    let rec tryComputeOptionsBySingleScriptOrFile (document: Document) (ct: CancellationToken) userOpName =
-        async {
-            let! fileStamp = document.GetTextVersionAsync(ct) |> Async.AwaitTask
+    let rec tryComputeOptionsBySingleScriptOrFile (document: Document) userOpName =
+        cancellableTask {
+            let! ct = CancellableTask.getCancellationToken ()
+            let! fileStamp = document.GetTextVersionAsync(ct)
 
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(ct)
 
                 let! scriptProjectOptions, _ =
                     checker.GetProjectOptionsFromScript(
@@ -243,29 +245,30 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 singleFileCache.[document.Id] <- (document.Project, fileStamp, parsingOptions, projectOptions)
 
-                return Some(parsingOptions, projectOptions)
+                return ValueSome(parsingOptions, projectOptions)
 
             | true, (oldProject, oldFileStamp, parsingOptions, projectOptions) ->
                 if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
                     singleFileCache.TryRemove(document.Id) |> ignore
-                    return! tryComputeOptionsBySingleScriptOrFile document ct userOpName
+                    return! tryComputeOptionsBySingleScriptOrFile document userOpName
                 else
-                    return Some(parsingOptions, projectOptions)
+                    return ValueSome(parsingOptions, projectOptions)
         }
 
     let tryGetProjectSite (project: Project) =
         // Cps
         if commandLineOptions.ContainsKey project.Id then
-            Some(mapCpsProjectToSite (project, commandLineOptions))
+            ValueSome(mapCpsProjectToSite (project, commandLineOptions))
         else
             // Legacy
             match legacyProjectSites.TryGetValue project.Id with
-            | true, site -> Some site
-            | _ -> None
+            | true, site -> ValueSome site
+            | _ -> ValueNone
 
-    let rec tryComputeOptions (project: Project) ct =
-        async {
+    let rec tryComputeOptions (project: Project) =
+        cancellableTask {
             let projectId = project.Id
+            let! ct = CancellableTask.getCancellationToken ()
 
             match cache.TryGetValue(projectId) with
             | false, _ ->
@@ -281,24 +284,23 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
 
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
-                            match! tryComputeOptions referencedProject ct with
-                            | None -> canBail <- true
-                            | Some (_, projectOptions) ->
+                            match! tryComputeOptions referencedProject with
+                            | ValueNone -> canBail <- true
+                            | ValueSome(_, projectOptions) ->
                                 referencedProjects.Add(
-                                    FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions)
+                                    FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
                                 )
                         elif referencedProject.SupportsCompilation then
-                            let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
+                            let! comp = referencedProject.GetCompilationAsync(ct)
                             let peRef = createPEReference referencedProject comp
                             referencedProjects.Add(peRef)
 
                 if canBail then
-                    return None
+                    return ValueNone
                 else
-
                     match tryGetProjectSite project with
-                    | None -> return None
-                    | Some projectSite ->
+                    | ValueNone -> return ValueNone
+                    | ValueSome projectSite ->
 
                         let otherOptions =
                             [|
@@ -321,7 +323,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 "--ignorelinedirectives"
                             |]
 
-                        let! ver = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
+                        let! ver = project.GetDependentVersionAsync(ct)
 
                         let projectOptions =
                             {
@@ -340,7 +342,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                         // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
                         if Array.isEmpty projectOptions.SourceFiles then
-                            return None
+                            return ValueNone
                         else
                             // Clear any caches that need clearing and invalidate the project.
                             let currentSolution = project.Solution.Workspace.CurrentSolution
@@ -371,33 +373,36 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                             cache.[projectId] <- (project, parsingOptions, projectOptions)
 
-                            return Some(parsingOptions, projectOptions)
+                            return ValueSome(parsingOptions, projectOptions)
 
             | true, (oldProject, parsingOptions, projectOptions) ->
                 if isProjectInvalidated oldProject project ct then
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
-                    return Some(parsingOptions, projectOptions)
+                    return ValueSome(parsingOptions, projectOptions)
         }
 
     let loop (agent: MailboxProcessor<FSharpProjectOptionsMessage>) =
         async {
             while true do
                 match! agent.Receive() with
-                | FSharpProjectOptionsMessage.TryGetOptionsByDocument (document, reply, ct, userOpName) ->
+                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName) ->
                     if ct.IsCancellationRequested then
-                        reply.Reply None
+                        reply.Reply ValueNone
                     else
                         try
                             // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
-                                reply.Reply None
+                                reply.Reply ValueNone
                             elif document.Project.IsFSharpMiscellaneousOrMetadata then
-                                let! options = tryComputeOptionsBySingleScriptOrFile document ct userOpName
+                                let! options =
+                                    tryComputeOptionsBySingleScriptOrFile document userOpName
+                                    |> CancellableTask.start ct
+                                    |> Async.AwaitTask
 
                                 if ct.IsCancellationRequested then
-                                    reply.Reply None
+                                    reply.Reply ValueNone
                                 else
                                     reply.Reply options
                             else
@@ -407,45 +412,45 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                     document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
 
                                 if not (isNull project) then
-                                    let! options = tryComputeOptions project ct
+                                    let! options = tryComputeOptions project |> CancellableTask.start ct |> Async.AwaitTask
 
                                     if ct.IsCancellationRequested then
-                                        reply.Reply None
+                                        reply.Reply ValueNone
                                     else
                                         reply.Reply options
                                 else
-                                    reply.Reply None
+                                    reply.Reply ValueNone
                         with _ ->
-                            reply.Reply None
+                            reply.Reply ValueNone
 
-                | FSharpProjectOptionsMessage.TryGetOptionsByProject (project, reply, ct) ->
+                | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct) ->
                     if ct.IsCancellationRequested then
-                        reply.Reply None
+                        reply.Reply ValueNone
                     else
                         try
                             if
                                 project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles
                                 || project.IsFSharpMiscellaneousOrMetadata
                             then
-                                reply.Reply None
+                                reply.Reply ValueNone
                             else
                                 // We only care about the latest project in the workspace's solution.
                                 // We do this to prevent any possible cache thrashing in FCS.
                                 let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
 
                                 if not (isNull project) then
-                                    let! options = tryComputeOptions project ct
+                                    let! options = tryComputeOptions project |> CancellableTask.start ct |> Async.AwaitTask
 
                                     if ct.IsCancellationRequested then
-                                        reply.Reply None
+                                        reply.Reply ValueNone
                                     else
                                         reply.Reply options
                                 else
-                                    reply.Reply None
+                                    reply.Reply ValueNone
                         with _ ->
-                            reply.Reply None
+                            reply.Reply ValueNone
 
-                | FSharpProjectOptionsMessage.ClearOptions (projectId) ->
+                | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     match cache.TryRemove(projectId) with
                     | true, (_, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(projectId) |> ignore
@@ -453,7 +458,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     | _ -> ()
 
                     legacyProjectSites.TryRemove(projectId) |> ignore
-                | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache (documentId) ->
+                | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
                     | true, (_, _, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
@@ -533,20 +538,20 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
     member _.ClearSingleFileOptionsCache(documentId) =
         reactor.ClearSingleFileOptionsCache(documentId)
 
-    /// Get compilation defines relevant for syntax processing.
+    /// Get compilation defines and language version relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project
     /// options for a script.
-    member _.GetCompilationDefinesForEditingDocument(document: Document) =
+    member _.GetCompilationDefinesAndLangVersionForEditingDocument(document: Document) =
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
-            | Some (_, parsingOptions, _) -> parsingOptions
+            | Some(_, parsingOptions, _) -> parsingOptions
             | _ ->
                 { FSharpParsingOptions.Default with
                     ApplyLineDirectives = false
                     IsInteractive = CompilerEnvironment.IsScriptFile document.Name
                 }
 
-        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
+        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText, parsingOptions.StrictIndentation
 
     member _.TryGetOptionsByProject(project) =
         reactor.TryGetOptionsByProjectAsync(project)
@@ -563,7 +568,7 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
     /// Quicker it doesn't need to recompute the exact project options for a script.
     member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId: DocumentId, path: string) =
         match reactor.TryGetCachedOptionsByProjectId(documentId.ProjectId) with
-        | Some (_, parsingOptions, _) -> parsingOptions
+        | Some(_, parsingOptions, _) -> parsingOptions
         | _ ->
             { FSharpParsingOptions.Default with
                 IsInteractive = CompilerEnvironment.IsScriptFile path

@@ -1,6 +1,6 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.DependencyResolutionTests
+﻿module TypeChecks.DependencyResolutionTests
 
-open FSharp.Compiler.ComponentTests.TypeChecks.Graph.TestUtils
+open TypeChecks.TestUtils
 open NUnit.Framework
 open FSharp.Compiler.GraphChecking
 open Scenarios
@@ -11,7 +11,7 @@ let scenarios = codebases
 let ``Supported scenario`` (scenario: Scenario) =
     let files = scenario.Files |> Array.map (fun f -> TestFileWithAST.Map f.FileWithAST) 
     let filePairs = FilePairMap(files)
-    let graph = DependencyResolution.mkGraph false filePairs files
+    let graph, _trie = DependencyResolution.mkGraph filePairs files
 
     for file in scenario.Files do
         let expectedDeps = file.ExpectedDependencies

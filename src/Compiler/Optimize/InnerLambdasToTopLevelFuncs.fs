@@ -81,7 +81,7 @@ let showTyparSet tps = showL (commaListL (List.map typarL (Zset.elements tps)))
 // should never be needed
 let isDelayedRepr (f: Val) e =
     let _tps, vss, _b, _rty = stripTopLambda (e, f.Type)
-    List.length vss>0
+    not(List.isEmpty vss)
 
 
 // REVIEW: these should just be replaced by direct calls to mkLocal, mkCompGenLocal etc.
@@ -520,7 +520,7 @@ module Pass2_DetermineReqdItems =
              // occurrences contribute to env 
              let reqdVals0 = frees.FreeLocals |> Zset.elements
              // tlrBs are not reqdVals0 for themselves 
-             let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv)) 
+             let reqdVals0 = reqdVals0 |> List.filter (fclass.Contains >> not) 
              let reqdVals0 = reqdVals0 |> Zset.ofList valOrder 
              // collect into env over bodies 
              let z = PushFrame fclass (reqdTypars0, reqdVals0,m) z
@@ -817,7 +817,7 @@ let MakeSimpleArityInfo tps n = ValReprInfo (ValReprInfo.InferTyparInfo tps, Lis
 let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
 
     let createFHat (f: Val) =
-        let wf = Zmap.force f arityM ("createFHat - wf", (fun v -> showL (valL v)))
+        let wf = Zmap.force f arityM ("createFHat - wf", (valL >> showL))
         let fc = Zmap.force f fclassM ("createFHat - fc", nameOfVal)
         let envp = Zmap.force fc envPackM ("CreateNewValuesForTLR - envp", string)
         let name = f.LogicalName (* + "_TLR_" + string wf *)
@@ -1096,7 +1096,7 @@ module Pass4_RewriteAssembly =
         | Expr.Let    _ 
         | Expr.DebugPoint _
         | Expr.Sequential _ -> 
-             TransLinearExpr penv z expr (fun res -> res)
+             TransLinearExpr penv z expr id
 
         // app - call sites may require z.
         //     - match the app (collapsing reclinks and type instances).

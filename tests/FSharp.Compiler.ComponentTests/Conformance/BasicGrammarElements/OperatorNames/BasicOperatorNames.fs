@@ -14,3 +14,5 @@ if !10 <> 3628800 then failwith "Failed: : 1"
 // Binary
 let (<<<) x y = x - x * y 
 if 10 <<< 3 <> -20 then failwith "Failed: : 2"
+
+let (>:) x y = x + x * y

@@ -84,6 +84,7 @@ type FSharpSymbol =
     static member internal Create:
         g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: Item ->
             FSharpSymbol
+
     static member internal Create: cenv: SymbolEnv * item: Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
@@ -264,6 +265,10 @@ type FSharpEntity =
 
     /// Get the generic parameters, possibly including unit-of-measure parameters
     member GenericParameters: IList<FSharpGenericParameter>
+
+    /// Get the generic parameters, possibly including unit-of-measure parameters
+    member GenericArguments: IList<FSharpType>
+
 #if !NO_TYPEPROVIDERS
     /// Get the static parameters for a provided type
     member StaticParameters: IList<FSharpStaticParameter>
@@ -453,6 +458,9 @@ type FSharpUnionCase =
 
     /// Get the range of the name of the case
     member DeclarationLocation: range
+
+    /// Get the declaring entity of the case
+    member DeclaringEntity: FSharpEntity
 
     /// Indicates if the union case has field definitions
     member HasFields: bool
@@ -831,6 +839,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Get an associated setter method of the property
     member SetterMethod: FSharpMemberOrFunctionOrValue
 
+    /// Indicates if the property or getter method is part of a IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Get an associated add method of an event
     member EventAddMethod: FSharpMemberOrFunctionOrValue
 
@@ -945,6 +956,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicates if this is a ref cell
     member IsRefCell: bool
 
+    /// Indicates if this is a value that has been referenced
+    member IsReferencedValue: bool
+
     /// Indicated if this is a value
     member IsValue: bool
 
@@ -959,6 +973,9 @@ type FSharpMemberOrFunctionOrValue =
 
     /// Format the type using the rules of the given display context
     member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> TaggedText[] option
+
+    /// Get the signature text to include this Symbol into an existing signature file.
+    member GetValSignatureText: displayContext: FSharpDisplayContext * m: range -> string option
 
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
@@ -1053,6 +1070,7 @@ type FSharpType =
     internal new:
         g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * ty: TType ->
             FSharpType
+
     internal new: SymbolEnv * ty: TType -> FSharpType
 
     /// Indicates this is a named type in an unresolved assembly
@@ -1072,6 +1090,9 @@ type FSharpType =
 
     /// Get the generic arguments for a tuple type, a function type or a type constructed using a named entity
     member GenericArguments: IList<FSharpType>
+
+    /// Indicates if the type is a measure type.
+    member IsMeasureType: bool
 
     /// Indicates if the type is a tuple type (reference or struct). The GenericArguments property returns the elements of the tuple type.
     member IsTupleType: bool

@@ -1,0 +1,1 @@
+let myFunc = _.MyProperty.MyOtherProperty

@@ -142,9 +142,12 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
         tcConfig.outputFile
         |> Option.iter (fun outputFile ->
             let outputFile = FileSystem.GetFullPathShim(outputFile)
-            let signatureDataFile = FileSystem.ChangeExtensionShim(outputFile, ".signature-data.json")
+
+            let signatureDataFile =
+                FileSystem.ChangeExtensionShim(outputFile, ".signature-data.json")
+
             serializeEntity signatureDataFile mspec)
-    
+
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
     let rName, compress =
@@ -217,9 +220,7 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
             else
                 data
 
-        [
-            WriteOptimizationData(tcConfig, tcGlobals, outfile, isIncrementalBuild, ccu, optData)
-        ]
+        [ WriteOptimizationData(tcConfig, tcGlobals, outfile, isIncrementalBuild, ccu, optData) ]         
     else
         []
 
@@ -336,7 +337,7 @@ type ImportedAssembly =
         IsProviderGenerated: bool
         mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Optimizer.LazyModuleInfo option>
+        FSharpOptimizationData: InterruptibleLazy<Optimizer.LazyModuleInfo option>
     }
 
 type AvailableImportedAssembly =
@@ -375,6 +376,26 @@ let IsDLL fileName =
 let IsExe fileName =
     let ext = Path.GetExtension fileName
     String.Compare(ext, ".exe", StringComparison.OrdinalIgnoreCase) = 0
+
+let addConstraintSources(ia: ImportedAssembly) =
+    let contents = ia.FSharpViewOfMetadata.Contents
+    let addCxsToMember name (v: Val) =
+        for typar in fst v.GeneralizedType do
+            for cx in typar.Constraints do
+                match cx with
+                | TyparConstraint.MayResolveMember(TTrait(source=source), _) ->
+                    source.Value <- Some name
+                | _ -> ()
+    let rec addCxsToModule name (m: ModuleOrNamespaceType) =
+        for e in m.ModuleAndNamespaceDefinitions do
+            if e.IsModuleOrNamespace then
+                let mname =
+                    if String.length name > 0 then name + "." + e.DisplayName
+                    elif e.IsModule then e.DisplayName
+                    else ""
+                addCxsToModule mname e.ModuleOrNamespaceType
+        for memb in m.AllValsAndMembers do addCxsToMember (name + "." + memb.LogicalName) memb
+    addCxsToModule "" contents.ModuleOrNamespaceType
 
 type TcConfig with
 
@@ -507,7 +528,7 @@ type TcConfig with
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
 
-        if originalReferences = [] then
+        if List.isEmpty originalReferences then
             [], []
         else
             // Group references by name with range values in the grouped value list.
@@ -528,7 +549,7 @@ type TcConfig with
                 [|
                     for (_filename, maxIndexOfReference, references) in groupedReferences do
                         let assemblyResolution =
-                            references |> List.choose (fun r -> tcConfig.TryResolveLibWithDirectories r)
+                            references |> List.choose (tcConfig.TryResolveLibWithDirectories)
 
                         if not assemblyResolution.IsEmpty then
                             (maxIndexOfReference, assemblyResolution)
@@ -679,7 +700,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                                 tcConfig.ResolveLibWithDirectories(CcuLoadFailureAction.RaiseError, assemblyReference)
 
                             Choice1Of2 resolutionOpt.Value
-                        with e ->
+                        with RecoverableException e ->
                             errorRecovery e assemblyReference.Range
                             Choice2Of2 assemblyReference)
 
@@ -1103,7 +1124,7 @@ and [<Sealed>] TcImports
         initialResolutions: TcAssemblyResolutions,
         importsBase: TcImports option,
         dependencyProviderOpt: DependencyProvider option
-    )
+    ) 
 #if !NO_TYPEPROVIDERS
     as this
 #endif
@@ -1183,10 +1204,11 @@ and [<Sealed>] TcImports
                 if publicOnly then
                     match e.TypeReprInfo with
                     | TILObjectRepr data ->
-                        let (TILObjectReprData(_, _, tyDef)) = data
+                        let (TILObjectReprData (_, _, tyDef)) = data
                         tyDef.Access = ILTypeDefAccess.Public
                     | _ -> false
-                else  true
+                else
+                    true
             | None -> false
         | None -> false
 
@@ -1753,14 +1775,14 @@ and [<Sealed>] TcImports
                 assert (nameof (tcImports) = "tcImports")
 
                 let mutable systemRuntimeContainsTypeRef =
-                    (fun typeName -> tcImports.SystemRuntimeContainsType typeName)
+                    tcImports.SystemRuntimeContainsType
 
                 // When the tcImports is disposed the systemRuntimeContainsTypeRef thunk is replaced
                 // with one raising an exception.
                 tcImportsStrong.AttachDisposeTypeProviderAction(fun () ->
                     systemRuntimeContainsTypeRef <- fun _ -> raise (ObjectDisposedException("The type provider has been disposed")))
 
-                (fun arg -> systemRuntimeContainsTypeRef arg)
+                systemRuntimeContainsTypeRef
 
             // Note, this only captures tcImportsWeak
             let mutable getReferencedAssemblies =
@@ -1911,7 +1933,7 @@ and [<Sealed>] TcImports
 
                         for providedNamespace in providedNamespaces do
                             loop providedNamespace
-                    with e ->
+                    with RecoverableException e ->
                         errorRecovery e m
 
                 if startingErrorCount < DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount then
@@ -2005,6 +2027,9 @@ and [<Sealed>] TcImports
 
                 let minfo: PickledCcuInfo = data.RawData
                 let mspec = minfo.mspec
+                
+                if mspec.DisplayName = "FSharp.Core" then
+                    updateSeqTypeIsPrefix mspec
 
 #if !NO_TYPEPROVIDERS
                 let invalidateCcu = Event<_>()
@@ -2044,26 +2069,26 @@ and [<Sealed>] TcImports
                 let ccu = CcuThunk.Create(ccuName, ccuData)
 
                 let optdata =
-                    lazy
-                        (match Map.tryFind ccuName optDatas with
-                         | None -> None
-                         | Some info ->
-                             let data =
-                                 GetOptimizationData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), info)
+                    InterruptibleLazy(fun _ ->
+                        match Map.tryFind ccuName optDatas with
+                        | None -> None
+                        | Some info ->
+                            let data =
+                                GetOptimizationData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), info)
 
-                             let fixupThunk () =
-                                 data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
+                            let fixupThunk () =
+                                data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
 
-                             // Make a note of all ccuThunks that may still need to be fixed up when other dlls are loaded
-                             tciLock.AcquireLock(fun tcitok ->
-                                 RequireTcImportsLock(tcitok, ccuThunks)
+                            // Make a note of all ccuThunks that may still need to be fixed up when other dlls are loaded
+                            tciLock.AcquireLock(fun tcitok ->
+                                RequireTcImportsLock(tcitok, ccuThunks)
 
-                                 for ccuThunk in data.FixupThunks do
-                                     if ccuThunk.IsUnresolvedReference then
-                                         ccuThunks.Add(ccuThunk, (fun () -> fixupThunk () |> ignore)))
+                                for ccuThunk in data.FixupThunks do
+                                    if ccuThunk.IsUnresolvedReference then
+                                        ccuThunks.Add(ccuThunk, (fun () -> fixupThunk () |> ignore)))
 
-                             Some(fixupThunk ()))
-
+                            Some(fixupThunk ())
+                    )
                 let ccuinfo =
                     {
                         FSharpViewOfMetadata = ccu
@@ -2124,8 +2149,7 @@ and [<Sealed>] TcImports
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2 ())
 #endif
             ccuRawDataAndInfos
-            |> List.map p23
-            |> List.map (fun asm -> ResolvedImportedAssembly(asm, m))
+            |> List.map (p23 >> fun asm -> ResolvedImportedAssembly(asm, m))
 
         phase2
 
@@ -2229,6 +2253,9 @@ and [<Sealed>] TcImports
             let _dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
             fixupOrphanCcus ()
             let ccuinfos = List.collect (fun phase2 -> phase2 ()) phase2s
+            if importsBase.IsSome then
+                importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
+                ccuTable.Values |> Seq.iter addConstraintSources
             return ccuinfos
         }
 

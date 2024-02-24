@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSComp.resx">
     <body>
+      <trans-unit id="alwaysUseTypedStringInterpolation">
+        <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
+        <target state="translated">内插字符串包含非类型化标识符。建议添加类型化格式说明符。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">数组的所有元素必须可隐式转换为第一个元素的类型，这是一个长度为 {0} 的类型的元组\n    {1}    \n此元素是长度为 {2} 类型的元组\n    {3}    \n</target>
@@ -24,7 +29,7 @@
       </trans-unit>
       <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许抽象成员声明。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
@@ -34,12 +39,17 @@
       </trans-unit>
       <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
         <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
-        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
+        <target state="translated">FSharp.Core.AutoOpenAttribute 不应为别名。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许使用带参数的构造函数。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="translated">此表达式是匿名记录，请使用 {{|...|}} 而不是 {{...}}。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -49,7 +59,7 @@
       </trans-unit>
       <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许显式字段声明。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -69,7 +79,12 @@
       </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许实现接口。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="translated">索引属性的 Getter 和 Setter 的类型必须相同。属性“{0}”的 Getter 的类型为“{1}”，而 Setter 的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -94,12 +109,27 @@
       </trans-unit>
       <trans-unit id="chkInstanceLetBindingOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
+        <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许使用实例允许绑定。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
         <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许使用实例成员。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNotTailRecursive">
+        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
+        <target state="translated">成员或函数“{0}”具有 "TailCallAttribute" 属性，但未以尾递归方式使用。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="translated">对象表达式无法实现具有静态抽象成员或声明静态成员的接口。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="translated">TailCall 属性应仅应用于递归函数。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -115,6 +145,11 @@
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">可用重载:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
+        <target state="translated">“{0}”不支持类型“{1}”，因为后者缺少所需的(实际或内置)成员“{2}”</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -157,6 +192,11 @@
         <target state="translated">参数 "{0}" 不匹配</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="translated">约束 "unmanaged" 和 "not struct" 不一致</target>
+        <note />
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">“if” 表达式的所有分支必须返回可隐式转换为第一个分支类型的值，这是一个长度为 {0} 的类型的元组\n    {1}    \n此分支会返回长度为 {2} 的类型的元组\n    {3}    \n</target>
@@ -177,6 +217,11 @@
         <target state="translated">程序集属性“{0}”引用了无法加载或不存在的设计器程序集“{1}”。报告的异常是: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="translated">用于仅存取器函数的下划线点速记</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">附加类型定向转换</target>
@@ -189,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
-        <target state="needs-review-translation">允许在文本中进行算术和逻辑运算</target>
+        <target state="translated">文本、枚举定义和属性中的算术和逻辑运算</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -202,9 +247,29 @@
         <target state="translated">自动生成“异常”声明的“消息”属性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
+        <source>Boolean-returning and return-type-directed partial active patterns</source>
+        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">允许对声明类型、模块使用隐式扩展属性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="translated">如果成员或函数具有 "TailCall" 属性，但未以尾递归方式使用，则引发警告。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="translated">如果在非递归函数上使用“TailCall”属性，则引发警告。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="translated">灵活类型的约束交集</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -252,6 +317,16 @@
         <target state="translated">更多类型支持度量单位</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="translated">byref 和 GetPinnableReference 的扩展固定绑定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureExtendedStringInterpolation">
+        <source>Extended string interpolation similar to C# raw string literals.</source>
+        <target state="translated">扩展字符串内插类似于 C# 原始字符串字面量。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">固定索引切片 3d/4d</target>
@@ -267,9 +342,19 @@
         <target state="translated">隐式 yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNames">
+        <source>Improved implied argument names</source>
+        <target state="translated">改进了默示的参数名称</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">用于索引和切片的 expr[idx] 表示法</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInformationalObjInferenceDiagnostic">
+        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
+        <target state="translated">诊断 3559 (推断出 obj 时发出警告)，信息级别，默认关闭</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInitProperties">
@@ -285,6 +370,11 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">具有多个泛型实例化的接口</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerInterpolatedStringToConcat">
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -309,12 +399,12 @@
       </trans-unit>
       <trans-unit id="featureNestedCopyAndUpdate">
         <source>Nested record field copy-and-update</source>
-        <target state="new">Nested record field copy-and-update</target>
+        <target state="translated">嵌套记录字段复制和更新</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
-        <target state="new">String values marked as literals and IL constants as printf format</target>
+        <target state="translated">标记为文本和 IL 常量的字符串值为 printf 格式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
@@ -340,6 +430,16 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">包管理</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="translated">首选扩展方法而不是纯属性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="translated">在固定绑定中首选 String.GetPinnableReference</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -377,6 +477,11 @@
         <target state="translated">可恢复状态机</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReuseSameFieldsInStructUnions">
+        <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
+        <target state="translated">只要它们具有相同的名称和类型，即可在 [&lt;Struct&gt;] 中共享基础字段</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">自类型约束</target>
@@ -387,9 +492,19 @@
         <target state="translated">单下划线模式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="translated">允许在联合、记录、结构、非增量类类型中使用静态 let 绑定</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
-        <target state="new">Static members in interfaces</target>
+        <target state="translated">接口中的静态成员</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="translated">在缩进不准确时引发错误，以便在编辑期间更好地恢复和分析</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -402,19 +517,44 @@
         <target state="translated">活动模式的结构表示形式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>Union case test properties</source>
+        <target state="translated">联合用例测试属性</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
-        <target state="new">Support for try-with in sequence expressions</target>
+        <target state="translated">支持在序列表达式中试用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="translated">C# 和 F# 的非托管泛型约束之间的互操作(发出额外的 modreq)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="translated">索引属性 getter 和 setter 必须具有相同的类型</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
+        <target state="translated">复制和更新记录表达式更改记录的所有字段时引发警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">当 "let inline ... =" 与 [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 属性一起使用时引发警告。函数未内联。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="translated">在名称解析期间由于字段名称重叠而找到多个记录类型匹配项时引发警告。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWhileBang">
+        <source>'while!' expression</source>
+        <target state="translated">"while!" 表达式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -509,7 +649,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionSig">
         <source>Keyword reserved for ML-compatibility.</source>
-        <target state="new">Keyword reserved for ML-compatibility.</target>
+        <target state="translated">保留用于 ML 兼容性的关键字。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
@@ -517,14 +657,29 @@
         <target state="translated">用于检查对象是否属于模式或绑定中的给定类型。</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionWhileBang">
+        <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
+        <target state="translated">在计算表达式中用于引入循环构造，其中条件是另一个计算表达式的结果。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">不能内插字节字符串</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexExtendedStringInterpolationNotSupported">
+        <source>Extended string interpolation is not supported in this version of F#.</source>
+        <target state="translated">此版本的 F# 不支持扩展字符串内插。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
         <target state="translated">不再支持 IF-FSHARP/IF-CAML 区域</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="translated">这不是有效的标识符</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -537,9 +692,24 @@
         <target state="translated">内插字符串无效。在单引号字符串或逐字字符串的内插表达式中不能使用单引号或逐字字符串文本。请考虑对内插表达式使用显式 "let" 绑定，或使用三重引号字符串作为外部字符串文本。</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="translated">内插三引号字符串字面量的开头没有足够的 "$" 字符以允许将这么多连续的左大括号作为内容。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyPercentsInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
+        <target state="translated">内插三引号字符串字面量的开头没有足够的 "$" 字符来允许这么多连续的 "%" 字符。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">内插字符串无效。在内插表达式中不能使用三重引号字符串文字。请考虑对内插表达式使用显式的 "let" 绑定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexUnmatchedRBracesInTripleQuote">
+        <source>The interpolated string contains unmatched closing braces.</source>
+        <target state="translated">内插字符串包含不匹配的右大括号。</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -677,6 +847,11 @@
         <target state="translated">包括 F# 接口信息，默认值为文件。对于分发库必不可少。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="translated">替代语言版本隐含的缩进规则</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">支持的语言版本:</target>
@@ -712,6 +887,11 @@
         <target state="translated">“包管理”功能需要语言版本 5.0 或更高版本</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="translated">约束交集语法只能与灵活类型一起使用，例如 "#IDisposable &amp; #ISomeInterface"。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">内插字符串无效。此内插字符串表达式填充为空，应为表达式。</target>
@@ -737,24 +917,29 @@
         <target state="translated">在此处或之前开始的内插逐字字符串不完整</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">类型定义中出现意外标记。类型“{0}”后应为 "="。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
         <target state="translated">此点之后应有一个模式</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
         <target state="translated">应为表达式</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingPatternInTuple">
+      <trans-unit id="parsExpectingField">
+        <source>Expecting record field</source>
+        <target state="translated">应为记录字段</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">预期模式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="translated">预期类型</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -767,14 +952,39 @@
         <target state="translated">运算符表达式不完整(示例: a^b)或限定类型调用(示例: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="translated">缺少关键字“{0}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="translated">预期成员正文</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="translated">缺少联合用例名称</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">此成员访问权限不明确。请在对象创建周围使用括号，例如 “(new SomeType(args)).MemberName”</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
+        <source>Only simple patterns are allowed in primary constructors</source>
+        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
+        <target state="translated">静态构造的声明不完整。使用“static let”、“static do”、“static member”或“static val”进行声明。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
-        <target state="new">Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
+        <target state="translated">条件表达式的 "else if" 或 "elif" 分支中的输入意外结束。应为 "elif &lt;expr&gt; then &lt;expr&gt;" 或 "else if &lt;expr&gt; then &lt;expr&gt;"。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -792,9 +1002,14 @@
         <target state="translated">不支持算法“{0}”</target>
         <note />
       </trans-unit>
+      <trans-unit id="pickleFsharpCoreBackwardsCompatible">
+        <source>Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </source>
+        <target state="translated">新添加的泡菜状态不能在 FSharp.Core 中使用，因为它必须同时在较旧的编译器和工具中工作。时间窗口是在功能介绍后的至少 3 年内。冲突: {0}。上下文: \n {1} </target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occured in the resumable code specification</source>
-        <target state="new">A constrained generic construct occured in the resumable code specification</target>
+        <target state="translated">可恢复代码规范中发生受约束的泛型构造</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -872,6 +1087,16 @@
         <target state="translated">无法确定此脚本的 .NET SDK。如果脚本在使用 "global.json" 的目录中，请确保已安装相关的 .NET SDK。出现意外错误“{0}”。</target>
         <note />
       </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="translated">(建议名称)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="translated">此处的 _ 含义不明确。它不能用于同一范围内的已放弃变量和函数速记。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">此表达式的类型为“{0}”，仅可通过不明确的隐式转换使其与类型“{1}”兼容。请考虑使用显式调用“op_Implicit”。适用的隐式转换为: {2}</target>
@@ -887,24 +1112,54 @@
         <target state="translated">字段“{0}”在此记录表达式中多次出现。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameDifferent">
-        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">此匿名记录不正确。它应具有字段 {0}。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">此匿名记录没有足够的字段。请添加缺少的字段 {0}。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">此匿名记录的字段太多。请删除额外的字段 {0}。</target>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="translated">此匿名记录与预期的形状不完全匹配。请添加缺少的字段 {0} 并删除额外的字段 {1}。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">匿名记录类型声明无效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
+        <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
+        <target state="translated">此匿名记录应具有字段 {0}；但此处包含字段 {1}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
+        <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
+        <target state="translated">此匿名记录应具有字段 {0}；但此处包含字段“{1}”。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
+        <source>This anonymous record is missing fields {0}.</source>
+        <target state="translated">此匿名记录缺少字段 {0}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
+        <source>This anonymous record has extra fields. Remove fields {0}.</source>
+        <target state="translated">此匿名记录具有额外的字段。请删除字段 {0}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
+        <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
+        <target state="translated">此匿名记录应具有字段“{0}”，但此处具有字段 {1}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
+        <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
+        <target state="translated">此匿名记录应具有字段“{0}”，但此处具有字段“{1}”。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSubset">
+        <source>This anonymous record is missing field '{0}'.</source>
+        <target state="translated">此匿名记录缺少字段“{0}”。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
+        <source>This anonymous record has an extra field. Remove field '{0}'.</source>
+        <target state="translated">此匿名记录有一个额外的字段。删除字段“{0}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -919,7 +1174,12 @@
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
-        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <target state="translated">此复制和更新记录表达式更改记录类型“{0}”的所有字段。请考虑改用记录构造语法。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
+        <target state="translated">仅原子表达式支持速记 lambda 语法，例如隐含的“_”参数上的方法、属性、字段或索引器。例如:“let f = _.Length”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -955,6 +1215,11 @@
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
         <target state="translated">此表达式使用隐式转换“{0}”将类型“{1}”转换为类型“{2}”。请参阅 https://aka.ms/fsharp-implicit-convs。可使用 '#nowarn \"3391\" 禁用此警告。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="translated">这是一个隐藏联合事例的函数定义。如果这是你想要的，请忽略或取消此警告。如果希望它是联合大小写析构，请添加括号。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1037,9 +1302,29 @@
         <target state="translated">必须初始化以下必需属性: {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="translated">字段“{0}”在此记录表达式或模式中多次出现</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="translated">找到多个类型匹配项: \n{0}\n使用了类型“{1}”。由于字段名称重叠，\n{2}\n考虑使用类型注释或更改 open 语句的顺序。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">将方法与 “NoEagerConstraintApplicationAttribute” 配合使用需要 /langversion:6.0 或更高版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticMemberFoundForOverride">
+        <source>No static abstract member was found that corresponds to this override</source>
+        <target state="translated">找不到与此替代对应的静态抽象成员</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticPropertyFoundForOverride">
+        <source>No static abstract property was found that corresponds to this override</source>
+        <target state="translated">未找到与此重写对应的静态抽象属性</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1072,6 +1357,11 @@
         <target state="translated">语法“expr1[expr2]”现在保留用于索引，用作参数时不明确。请参见 https://aka.ms/fsharp-index-notation。如果使用多个扩充参数调用函数， 请在它们之间添加空格，例如“someFunction expr1 [expr2]”。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="translated">此重写采用元组而不是多个参数。请尝试在方法定义中添加额外的括号层(例如 'member _.Foo((x, y))')，或在抽象方法声明中删除括号 (例如 'abstract member Foo: 'a * 'b -&gt; 'c')。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">语法“(expr1)[expr2]”用作参数时不明确。请参阅 https://aka.ms/fsharp-index-notation。如果要索引或切片，则必须在参数位置使用“(expr1)[expr2]”。如果使用多个扩充参数调用函数，请在它们之间添加空格，例如“someFunction (expr1)[expr2]”。</target>
@@ -1083,8 +1373,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">仅当计算表达式生成器定义了 "{0}" 方法或适当的 "MergeSource" 和 "Bind" 方法时，才可以使用 "let! ... and! ..." 构造</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="translated">仅当计算表达式生成器定义了 "{0}" 方法或适当的 "MergeSources" 和 "Bind" 方法时，才可以使用 "let! ... and! ..." 构造</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1120,6 +1410,16 @@
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
         <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">无法调用 "{0}"，它是仅限 init 属性的资源库，请改用对象初始化。请参阅 https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="translated">无法将静态绑定添加到外部增强。请考虑改用 "static member"。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
+        <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
+        <target state="translated">如果多重联合类型是结构，则具有相同名称的所有字段必须具有相同的类型。对于未命名字段，此规则也适用于生成的“Item”名称。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1162,6 +1462,11 @@
         <target state="translated">内插字符串无效。{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="translated">联合用例字段定义中出现意外的函数类型。如果打算将字段作为函数，请考虑使用括号括起函数签名，例如 | Case of a -&gt; b into | Case of (a -&gt; b)。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
         <target state="translated">"{0}" 通常用作泛型代码中的类型约束，例如 \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\"。有关指南，请参阅 https://aka.ms/fsharp-iwsams。可以使用 '#nowarn \"3536\"' 或 '--nowarn:3536' 禁用此警告。</target>
@@ -1170,6 +1475,11 @@
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
         <target state="translated">声明“使用静态抽象方法的接口”是一项高级功能。有关指南，请参阅 https://aka.ms/fsharp-iwsams。可以使用 "#nowarn \"3535\"' 或 '--nowarn:3535' 禁用此警告。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="translated">类型“{0}”的方法太多。1️⃣找到:“{1}”，最大值:“{2}”</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1189,7 +1499,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
+        <target state="translated">类型已被隐式推断为 "obj"，这可能是意外的。请考虑添加显式类型注释。可以使用"#nowarn\"3559\" 或 "--nowarn:3559" 禁用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1330,6 +1640,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">考虑使用 "return!"，而非 "return"。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="translated">可以移除括号。</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -1558,8 +1873,8 @@
         <note />
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
-        <source>Unrecognized option: '{0}'</source>
-        <target state="translated">无法识别的选项:“{0}”</target>
+        <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
+        <target state="translated">无法识别的选项: "{0}"。使用 "--help" 了解可识别的命令行选项。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3213,8 +3528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">为属性 Getter 或 Setter 给定了多个可访问性</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="translated">指定属性的可见性时，不允许设置 set 或 get 方法的可见性。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -3677,11 +3992,6 @@
         <target state="translated">此记录表达式或模式的字段标签和预期类型没有唯一确定相应的记录类型</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">字段“{0}”在此记录表达式或模式中出现了两次</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnknownUnion">
         <source>Unknown union case</source>
         <target state="translated">未知的联合用例</target>
@@ -3985,11 +4295,6 @@
       <trans-unit id="tcInvalidPattern">
         <source>This is not a valid pattern</source>
         <target state="translated">这不是有效的模式</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">在 F# 中，已删除字符范围匹配。请考虑改用“when”模式保护。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -4659,7 +4964,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="needs-review-translation">接口不能包含具体成员的定义。您可能需要定义类型的构造函数来指示该类型是类。</target>
+        <target state="translated">接口不能包含具体实例成员的定义。可能需要定义类型的构造函数来指示该类型是类。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
@@ -4818,8 +5123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">静态值定义只能在具有主构造函数的类型中使用。请考虑向类型定义添加参数，例如“type X(args) = ...”。</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="translated">对于 F#7 及更低版本，静态“let”、“do”和“member val”定义只能用于具有主构造函数的类型 ("type X(args) = ...")。若要在所有其他类型中启用它们，请使用语言版本“8”或更高版本。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -5938,8 +6243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">缩进可能不正确: 此标记位于从位置 {0} 开始的上下文的右侧。请尝试进一步缩进此标记，或使用标准格式设置约定。</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
+        <target state="translated">意外语法或可能错误的缩进: 此令牌对于 {0} 处开始的上下文来说越位。尝试进一步缩进此内容。\n若要继续使用不符合条件的索引，请将 "--strict-indentation-" 传递给编译器，或者将语言版本设置为 F# 7。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -7653,8 +7958,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">无效的 "fixed" 使用。"fixed" 只能用在 "use x = fixed expr" 形式的声明中，其中表达式为数组、字段的地址、数组元素或字符串的地址</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="translated">"fixed" 的使用无效。"fixed" 只能在 "use x = fixed expr" 形式的声明中使用，其中表达式为以下项之一: 数组、数组元素的地址、字符串、byref、inref 或实现 GetPinnableReference() 的类型</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8087,11 +8392,6 @@
         <target state="translated">此值不是一个函数，无法应用。您是否忘记结束某个声明?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">签名“{0}”和实现“{1}”中的参数名称不匹配。将使用签名文件中的参数名称。在进行调试或分析时这可能会导致问题。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">读取程序集“{0}”的 F# 元数据时出错。使用了保留的构造。可能需要升级 F# 编译器或使用不用特定构造的较早版本的程序集。</target>
@@ -8227,14 +8527,9 @@
         <target state="translated">两个匿名记录类型来自不同的程序集“{0}”和“{1}”</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="translated">此匿名记录与预期的形状不完全匹配。请添加缺少的字段 {0} 并删除额外的字段 {1}。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">无法调用 byref 扩展方法 "{0}"。第一个参数要求该值是可变的或非只读的 byref 类型。</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="translated">无法调用 byref 扩展方法 "{0}"。“'this”参数要求该值是可变的或非只读的 byref 类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8323,8 +8618,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">未在 {1} 中注册包管理器密钥“{0}”。当前注册: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="translated">未在 {1} 中注册包管理器密钥“{0}”。当前已注册: {2}。可以通过将“--compilertool:&lt;extensionsfolder&gt;”传递到命令行来提供额外的路径。若要了解有关扩展的详细信息，请访问: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

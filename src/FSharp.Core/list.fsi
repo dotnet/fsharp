@@ -206,7 +206,7 @@ module List =
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
-    /// <summary>Divides the input list into lists (chunks) with at a positive number of at most <c>chunkSize</c> elements.
+    /// <summary>Divides the input list into lists (chunks) of size at most <c>chunkSize</c>.
     /// Returns a new list containing the generated lists (chunks) as its elements.
     /// 
     /// Returns an empty list when the input list is empty.</summary>
@@ -243,7 +243,7 @@ module List =
     [<CompiledName("ChunkBySize")>]
     val chunkBySize: chunkSize:int -> list:'T list -> 'T list list
 
-    /// <summary>For each element of the list, applies the given function. Concatenates all the results and return the combined list.</summary>
+    /// <summary>For each element of the list, applies the given function. Concatenates all the results and returns the combined list.</summary>
     ///
     /// <param name="mapping">The function to transform each input element into a sublist to be concatenated.</param>
     /// <param name="list">The input list.</param>
@@ -339,7 +339,7 @@ module List =
     [<CompiledName("CompareWith")>]
     val inline compareWith: comparer:('T -> 'T -> int) -> list1:'T list -> list2:'T list -> int
 
-    /// <summary>Returns a new list that contains the elements of each the lists in order.</summary>
+    /// <summary>Returns a new list that contains the elements of each of the lists in order.</summary>
     ///
     /// <param name="lists">The input sequence of lists.</param>
     ///
@@ -739,6 +739,8 @@ module List =
     /// <code lang="fsharp">
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Kenobi"; 4, "Spock"]
     ///
+    /// let isEven x = 0 = x % 2
+    ///
     /// let isComingFromStarTrek (x,_) = isEven x
     /// 
     /// input |> List.filter isComingFromStarTrek
@@ -817,7 +819,7 @@ module List =
     ///     match (input1, input2) with
     ///     | Head, Head -> acc + 1
     ///     | Tails, Tails -> acc + 1
-    ///     | _ -> acc - 1)
+    ///     | _ -> acc)
     /// </code>
     /// Evaluates to <c>1</c>. Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
@@ -1146,7 +1148,7 @@ module List =
     val inline iter: action:('T -> unit) -> list:'T list -> unit
 
     /// <summary>Applies the given function to two collections simultaneously. The
-    /// collections must have identical size.</summary>
+    /// collections must have identical sizes.</summary>
     ///
     /// <param name="action">The function to apply to pairs of elements from the input lists.</param>
     /// <param name="list1">The first input list.</param>
@@ -1171,7 +1173,7 @@ module List =
     val iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
     /// <summary>Applies the given function to each element of the collection. The integer passed to the
-    /// function indicates the index of element.</summary>
+    /// function indicates the index of the element.</summary>
     ///
     /// <param name="action">The function to apply to the elements of the list along with their index.</param>
     /// <param name="list">The input list.</param>
@@ -1194,8 +1196,8 @@ module List =
     val inline iteri: action:(int -> 'T -> unit) -> list:'T list -> unit
 
     /// <summary>Applies the given function to two collections simultaneously. The
-    /// collections must have identical size. The integer passed to the
-    /// function indicates the index of element.</summary>
+    /// collections must have identical sizes. The integer passed to the
+    /// function indicates the index of the element.</summary>
     ///
     /// <param name="action">The function to apply to a pair of elements from the input lists along with their index.</param>
     /// <param name="list1">The first input list.</param>
@@ -1206,7 +1208,7 @@ module List =
     /// let inputs1 = [ "a"; "b"; "c" ]
     /// let inputs2 = [ "banana"; "pear"; "apple" ]
     ///
-    /// (inputs1, inputs2) ||> List.iteri2 (fun i s1 s2 -> printfn "Index {i}: {s1} - {s2}")
+    /// (inputs1, inputs2) ||> List.iteri2 (fun i s1 s2 -> printfn "Index %d: %s - %s" i s1 s2)
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code lang="fsharp">
@@ -1358,8 +1360,8 @@ module List =
     ///
     /// <returns>The list of transformed elements, and the final accumulated value.</returns>
     ///
-    /// <example id="mapfold-1">
-    /// <code lang="fsharp">Accumulate the charges, and double them as well
+    /// <example id="mapfold-1">Accumulate the charges, and double them as well
+    /// <code lang="fsharp">
     /// type Charge =
     ///     | In of int
     ///     | Out of int
@@ -1409,7 +1411,7 @@ module List =
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
     /// to each of the elements of the collection. The integer index passed to the
-    /// function indicates the index (from 0) of element being transformed.</summary>
+    /// function indicates the index (from 0) of the element being transformed.</summary>
     ///
     /// <param name="mapping">The function to transform elements and their indices.</param>
     /// <param name="list">The input list.</param>
@@ -1592,7 +1594,7 @@ module List =
     /// Evaluates to <c>[ 1; 2; 5 ]</c>.
     /// </example>
     [<CompiledName("OfArray")>]
-    val ofArray : array:'T[] -> 'T list
+    val ofArray : array:'T array -> 'T list
 
     /// <summary>Builds a new list from the given enumerable object.</summary>
     ///
@@ -2174,7 +2176,7 @@ module List =
     /// Evaluates to <c>[| 1; 2; 5 |]</c>.
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: list:'T list -> 'T[]
+    val toArray: list:'T list -> 'T array
 
     /// <summary>Views the given list as a sequence.</summary>
     ///
@@ -2455,7 +2457,7 @@ module List =
     val tryFindIndexBack: predicate:('T -> bool) -> list:'T list -> int option
 
     /// <summary>Returns a list that contains the elements generated by the given computation.
-    /// The generator is repeatedly called to build the list until it returns `None`.
+    /// The generator is repeatedly called to build the list until it returns <c>None</c>.
     /// The given initial <c>state</c> argument is passed to the element generator. </summary>
     ///
     /// <param name="generator">A function that takes in the current state and returns an option tuple of the next
@@ -2582,7 +2584,7 @@ module List =
     /// let names = ["one"; "two"]
     /// let roman = ["I"; "II"]
     ///
-    /// Array.zip3 numbers names roman
+    /// List.zip3 numbers names roman
     /// </code>
     /// Evaluates to <c>[(1, "one", "I"); (2, "two", "II")]</c>.
     /// </example>

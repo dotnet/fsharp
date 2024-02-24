@@ -22,6 +22,17 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
+open Internal.Utilities.Collections
+
+type internal FrameworkImportsCacheKey =
+    | FrameworkImportsCacheKey of
+        resolvedpath: string list *
+        assemblyName: string *
+        targetFrameworkDirectories: string list *
+        fsharpBinaries: string *
+        langVersion: decimal
+
+    interface ICacheKey<string, FrameworkImportsCacheKey>
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache =
@@ -132,6 +143,20 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime
 
+[<Sealed>]
+type internal RawFSharpAssemblyDataBackedByLanguageService =
+    new:
+        tcConfig: TcConfig *
+        tcGlobals: TcGlobals *
+        generatedCcu: CcuThunk *
+        outfile: string *
+        topAttrs: TopAttribs *
+        assemblyName: string *
+        ilAssemRef: FSharp.Compiler.AbstractIL.IL.ILAssemblyRef ->
+            RawFSharpAssemblyDataBackedByLanguageService
+
+    interface IRawFSharpAssemblyData
+
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
 type internal IncrementalBuilder =
@@ -185,6 +210,8 @@ type internal IncrementalBuilder =
     /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
     member GetCheckResultsForFileInProjectEvenIfStale: fileName: string -> PartialCheckResults option
 
+    // TODO: Looks like the following doc does not match the actual method or it's signature.
+
     /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
     /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
     /// This is a relatively quick operation.
@@ -192,8 +219,9 @@ type internal IncrementalBuilder =
     /// This is safe for use from non-compiler threads
     member AreCheckResultsBeforeFileInProjectReady: fileName: string -> bool
 
-    /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. However, files will not be parsed or checked.
-    /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available or if it is not up-to-date.
+    /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. the timestamps of files and referenced DLLs prior to this one.
+    /// However, files will not be parsed or checked.
+    /// Return None if the result is not available or if it is not up-to-date.
     ///
     /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
     member TryGetCheckResultsBeforeFileInProject: fileName: string -> PartialCheckResults option
@@ -233,7 +261,7 @@ type internal IncrementalBuilder =
         unit ->
             NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
-    /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
+    /// Get the logical time stamp that is associated with the output of the project if it were fully built immediately
     member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
 
     /// Does the given file exist in the builder's pipeline?
@@ -268,7 +296,7 @@ type internal IncrementalBuilder =
         dependencyProvider: DependencyProvider option *
         parallelReferenceResolution: ParallelReferenceResolution *
         captureIdentifiersWhenParsing: bool *
-        getSource: (string -> ISourceText option) option *
+        getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool *
         useSyntaxTreeCache: bool ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>

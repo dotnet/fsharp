@@ -225,9 +225,6 @@
   <data name="Parallelization" xml:space="preserve">
     <value>Parallelization (requires restart)</value>
   </data>
-  <data name="Enable_Parallel_Checking_With_Signature_Files" xml:space="preserve">
-    <value>Enable parallel type checking with signature files</value>
-  </data>
   <data name="Enable_Parallel_Reference_Resolution" xml:space="preserve">
     <value>Enable parallel reference resolution</value>
   </data>
@@ -240,11 +237,29 @@
   <data name="Find_References_Performance" xml:space="preserve">
     <value>Find References Performance Options</value>
   </data>
+  <data name="Language_Service_Settings" xml:space="preserve">
+    <value>Language service settings (advanced)</value>
+  </data>
+  <data name="Keep_All_Background_Resolutions" xml:space="preserve">
+    <value>Keep all background intermediate resolutions (increases memory usage)</value>
+  </data>
+  <data name="Keep_All_Background_Symbol_Uses" xml:space="preserve">
+    <value>Keep all background symbol uses (increases memory usage)</value>
+  </data>
+  <data name="Enable_Background_ItemKeyStore_And_Semantic_Classification" xml:space="preserve">
+    <value>Keep background symbol keys</value>
+  </data>
   <data name="Enable_Live_Buffers" xml:space="preserve">
-    <value>Use live (unsaved) buffers for checking (restart required)</value>
+    <value>Use live (unsaved) buffers for analysis (restart required)</value>
   </data>
   <data name="LiveBuffers" xml:space="preserve">
-    <value>Live Buffers (experimental)</value>
+    <value>Live Buffers</value>
+  </data>
+  <data name="AdditionalTelemetry" xml:space="preserve">
+    <value>Additional performance telemetry (experimental)</value>
+  </data>
+  <data name="Send_Additional_Telemetry" xml:space="preserve">
+    <value>Send additional performance telemetry</value>
   </data>
   <data name="Use_syntax_tree_cache" xml:space="preserve">
     <value>Cache parsing results (experimental)</value>
@@ -263,5 +278,41 @@
   </data>
   <data name="Show_Return_Type_Hints" xml:space="preserve">
     <value>Display return type hints (preview)</value>
+  </data>
+  <data name="TransparentCompiler" xml:space="preserve">
+    <value>Transparent Compiler (experimental)</value>
+  </data>
+  <data name="Use_Transparent_Compiler" xml:space="preserve">
+    <value>Use Transparent Compiler (restart required)</value>
+  </data>
+  <data name="Analyze_full_solution_on_background" xml:space="preserve">
+    <value>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</value>
+  </data>
+  <data name="Background_analysis" xml:space="preserve">
+    <value>Background analysis</value>
+  </data>
+  <data name="Transparent_Compiler_Cache_Factor" xml:space="preserve">
+    <value>Transparent Compiler Cache Factor</value>
+  </data>
+  <data name="Transparent_Compiler_Cache_Factor_Tooltip" xml:space="preserve">
+    <value>Higher number means more memory will be used for caching. Changing the value wipes cache.</value>
+  </data>
+  <data name="Remove_parens_code_fix" xml:space="preserve">
+    <value>Remove unnecessary parentheses (experimental, might affect typing performance)</value>
+  </data>
+  <data name="Show_remarks_in_Quick_Info" xml:space="preserve">
+    <value>Show remarks in Quick Info</value>
+  </data>
+  <data name="Transparent_Compiler_Snapshot_Reuse" xml:space="preserve">
+    <value>Create new project snapshots from existing ones</value>
+  </data>
+  <data name="TransparentCompiler_Discalimer1" xml:space="preserve">
+    <value>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</value>
+  </data>
+  <data name="TransparentCompiler_Discalimer2" xml:space="preserve">
+    <value>Use at your own risk!</value>
+  </data>
+  <data name="TransparentCompiler_Discalimer3" xml:space="preserve">
+    <value>By checking this you also opt-in for additional performance telemetry</value>
   </data>
 </root>

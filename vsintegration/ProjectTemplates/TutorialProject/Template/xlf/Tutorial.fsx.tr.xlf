@@ -1414,7 +1414,7 @@
       </trans-unit>
       <trans-unit id="Classes-Line4">
         <source>To learn more about Members, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/members</source>
-        <target state="translated">Üyeler hakkında daha fazla bilgi için bkz. https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/members</target>
+        <target state="translated">Sınıflar hakkında daha fazla bilgi için bkz. https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/members</target>
         <note />
       </trans-unit>
       <trans-unit id="Vector-Line1">

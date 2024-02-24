@@ -12,15 +12,13 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
-open Symbols
+open CancellableTasks
 
 type internal InlineRenameReplacementInfo(newSolution: Solution, replacementTextValid: bool, documentIds: IEnumerable<DocumentId>) =
     inherit FSharpInlineRenameReplacementInfo()
@@ -31,32 +29,36 @@ type internal InlineRenameReplacementInfo(newSolution: Solution, replacementText
     override _.GetReplacements _ = Seq.empty
 
 type internal InlineRenameLocationSet
-    (
-        locations: FSharpInlineRenameLocation[],
-        originalSolution: Solution,
-        symbolKind: LexerSymbolKind,
-        symbol: FSharpSymbol
-    ) =
+    (locations: FSharpInlineRenameLocation[], originalSolution: Solution, symbolKind: LexerSymbolKind, symbol: FSharpSymbol) =
+
     inherit FSharpInlineRenameLocationSet()
+
+    static let rec applyChanges
+        replacementText
+        (solution: Solution)
+        (locationsByDocument: (Document * FSharpInlineRenameLocation list) list)
+        =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCancellationToken ()
+
+            match locationsByDocument with
+            | [] -> return solution
+            | (document, locations) :: rest ->
+                let! oldSource = document.GetTextAsync(cancellationToken)
+
+                let newSource =
+                    oldSource.WithChanges(locations |> List.map (fun l -> TextChange(l.TextSpan, replacementText)))
+
+                return! applyChanges replacementText (solution.WithDocumentText(document.Id, newSource)) rest
+        }
 
     override _.Locations = upcast locations.ToList()
 
     override _.GetReplacementsAsync(replacementText, cancellationToken) : Task<FSharpInlineRenameReplacementInfo> =
-        let rec applyChanges (solution: Solution) (locationsByDocument: (Document * FSharpInlineRenameLocation list) list) =
-            async {
-                match locationsByDocument with
-                | [] -> return solution
-                | (document, locations) :: rest ->
-                    let! oldSource = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
 
-                    let newSource =
-                        oldSource.WithChanges(locations |> List.map (fun l -> TextChange(l.TextSpan, replacementText)))
-
-                    return! applyChanges (solution.WithDocumentText(document.Id, newSource)) rest
-            }
-
-        async {
-            let! newSolution = applyChanges originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
+        cancellableTask {
+            let! newSolution =
+                applyChanges replacementText originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
 
             let replacementText =
                 match symbolKind with
@@ -70,27 +72,32 @@ type internal InlineRenameLocationSet
             let documentIds = locations |> Seq.map (fun doc -> doc.Document.Id) |> Seq.distinct
             return new InlineRenameReplacementInfo(newSolution, replacementTextValid, documentIds) :> FSharpInlineRenameReplacementInfo
         }
-        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+        |> CancellableTask.start cancellationToken
 
 type internal InlineRenameInfo
     (
         document: Document,
         triggerSpan: TextSpan,
+        sourceText: SourceText,
         lexerSymbol: LexerSymbol,
         symbolUse: FSharpSymbolUse,
-        declLoc: SymbolDeclarationLocation,
-        checkFileResults: FSharpCheckFileResults
+        checkFileResults: FSharpCheckFileResults,
+        ct: CancellationToken
     ) =
 
     inherit FSharpInlineRenameInfo()
 
-    let getDocumentText (document: Document) cancellationToken =
+    let getDocumentText (document: Document) =
         match document.TryGetText() with
-        | true, text -> text
-        | _ -> document.GetTextAsync(cancellationToken).Result
+        | true, text -> CancellableTask.singleton text
+        | _ ->
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCancellationToken ()
+                return! document.GetTextAsync(cancellationToken)
+            }
 
-    let symbolUses ct =
-        SymbolHelpers.getSymbolUsesInSolution (symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution, ct)
+    let symbolUses =
+        SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document) ct
 
     override _.CanRename = true
     override _.LocalizedErrorMessage = null
@@ -112,11 +119,24 @@ type internal InlineRenameInfo
         ImmutableArray.Create(new FSharpInlineRenameLocation(document, triggerSpan))
 
     override _.GetReferenceEditSpan(location, cancellationToken) =
-        let text = getDocumentText location.Document cancellationToken
+
+        let text =
+            if location.Document = document then
+                sourceText
+            else
+                let textTask = getDocumentText location.Document
+                CancellableTask.runSynchronously cancellationToken textTask
+
         Tokenizer.fixupSpan (text, location.TextSpan)
 
     override _.GetConflictEditSpan(location, replacementText, cancellationToken) =
-        let text = getDocumentText location.Document cancellationToken
+        let text =
+            if location.Document = document then
+                sourceText
+            else
+                let textTask = getDocumentText location.Document
+                CancellableTask.runSynchronously cancellationToken textTask
+
         let spanText = text.ToString(location.TextSpan)
         let position = spanText.LastIndexOf(replacementText, StringComparison.Ordinal)
 
@@ -126,43 +146,47 @@ type internal InlineRenameInfo
             Nullable(TextSpan(location.TextSpan.Start + position, replacementText.Length))
 
     override _.FindRenameLocationsAsync(_, _, cancellationToken) =
-        async {
-            let! symbolUsesByDocumentId = symbolUses cancellationToken
+        cancellableTask {
+            let! symbolUsesByDocumentId = symbolUses
 
-            let! locations =
-                symbolUsesByDocumentId
-                |> Seq.map (fun (KeyValue (documentId, symbolUses)) ->
-                    async {
-                        let document = document.Project.Solution.GetDocument(documentId)
-                        let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! results =
+                seq {
+                    for (KeyValue(documentId, symbolUses)) in symbolUsesByDocumentId do
 
-                        return
-                            [|
-                                for symbolUse in symbolUses do
-                                    match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
-                                    | Some span ->
-                                        let textSpan = Tokenizer.fixupSpan (sourceText, span)
-                                        yield FSharpInlineRenameLocation(document, textSpan)
-                                    | None -> ()
-                            |]
-                    })
-                |> Async.Parallel
-                |> Async.map Array.concat
+                        cancellableTask {
+                            let! cancellationToken = CancellableTask.getCancellationToken ()
+                            let document = document.Project.Solution.GetDocument(documentId)
+                            let! sourceText = document.GetTextAsync(cancellationToken)
+
+                            return
+                                [|
+                                    for symbolUse in symbolUses do
+                                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
+                                        | ValueSome span ->
+                                            let textSpan = Tokenizer.fixupSpan (sourceText, span)
+                                            yield FSharpInlineRenameLocation(document, textSpan)
+                                        | ValueNone -> ()
+                                |]
+                        }
+                }
+                |> CancellableTask.whenAll
+
+            let locations = Array.concat results
 
             return
                 InlineRenameLocationSet(locations, document.Project.Solution, lexerSymbol.Kind, symbolUse.Symbol)
                 :> FSharpInlineRenameLocationSet
         }
-        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+        |> CancellableTask.start cancellationToken
 
 [<Export(typeof<FSharpInlineRenameServiceImplementation>); Shared>]
 type internal InlineRenameService [<ImportingConstructor>] () =
 
     inherit FSharpInlineRenameServiceImplementation()
 
-    static member GetInlineRenameInfo(document: Document, position: int) : Async<FSharpInlineRenameInfo option> =
-        asyncMaybe {
-            let! ct = Async.CancellationToken |> liftAsync
+    override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =
+        cancellableTask {
+            let! ct = CancellableTask.getCancellationToken ()
             let! sourceText = document.GetTextAsync(ct)
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
@@ -171,27 +195,33 @@ type internal InlineRenameService [<ImportingConstructor>] () =
             let! symbol =
                 document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof (InlineRenameService))
 
-            let! _, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (InlineRenameService))
-                |> liftAsync
+            // TODO: Rewrite to less nested variant after everything works.
+            match symbol with
+            | None -> return Unchecked.defaultof<_>
+            | Some symbol ->
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof (InlineRenameService))
 
-            let! symbolUse =
-                checkFileResults.GetSymbolUseAtLocation(
-                    fcsTextLineNumber,
-                    symbol.Ident.idRange.EndColumn,
-                    textLine.Text.ToString(),
-                    symbol.FullIsland
-                )
+                let symbolUse =
+                    checkFileResults.GetSymbolUseAtLocation(
+                        fcsTextLineNumber,
+                        symbol.Ident.idRange.EndColumn,
+                        textLine.Text.ToString(),
+                        symbol.FullIsland
+                    )
 
-            let! declLoc = symbolUse.GetDeclarationLocation(document)
+                match symbolUse with
+                | None -> return Unchecked.defaultof<_>
+                | Some symbolUse ->
+                    let span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
 
-            let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
-            let triggerSpan = Tokenizer.fixupSpan (sourceText, span)
+                    match span with
+                    | ValueNone -> return Unchecked.defaultof<_>
+                    | ValueSome span ->
+                        let triggerSpan = Tokenizer.fixupSpan (sourceText, span)
 
-            return InlineRenameInfo(document, triggerSpan, symbol, symbolUse, declLoc, checkFileResults) :> FSharpInlineRenameInfo
+                        let result =
+                            InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
+
+                        return result :> FSharpInlineRenameInfo
         }
-
-    override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =
-        asyncMaybe { return! InlineRenameService.GetInlineRenameInfo(document, position) }
-        |> Async.map (Option.defaultValue null)
-        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+        |> CancellableTask.start cancellationToken

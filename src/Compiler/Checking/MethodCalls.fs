@@ -538,7 +538,7 @@ type CalledMeth<'T>
     // Detect the special case where an indexer setter using param aray takes 'value' argument after ParamArray arguments
     let isIndexerSetter =
         match pinfoOpt with
-        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWith "set_"  && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
+        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWithOrdinal("set_") && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
         | _ -> false
 
     let argSetInfos = 
@@ -556,6 +556,12 @@ type CalledMeth<'T>
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
+
+                    // take the last ParamArray arg out, make it not break the optional/out params check
+                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs =
+                        match List.rev unnamedCalledOptOrOutArgs with
+                        | h :: t when h.IsParamArray -> unnamedCalledArgsTrimmed @ [h], List.rev t
+                        | _ -> unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs
                     
                     let isOpt x = x.OptArgInfo.IsOptional
                     let isOut x = x.IsOutArg && isByrefTy g x.CalledArgumentType
@@ -841,6 +847,7 @@ let InferLambdaArgsForLambdaPropagation origRhsExpr =
         match e with 
         | SynExpr.Lambda (body = rest) -> 1 + loop rest
         | SynExpr.MatchLambda _ -> 1
+        | SynExpr.DotLambda (expr = body) -> 1 + loop body
         | _ -> 0
     loop origRhsExpr
 
@@ -1067,7 +1074,7 @@ let MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOp
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
         let isConstructor = mi.PUntaint((fun c -> c.IsConstructor), m)
-        let isStruct = mi.PUntaint((fun c -> c.DeclaringType.IsValueType), m)
+        let isStruct = mi.PUntaint((fun c -> (nonNull<ProvidedType> c.DeclaringType).IsValueType), m)
         let actualTypeInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
         let actualMethInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
         let ilReturnTys = Option.toList (minfo.GetCompiledReturnType(amap, m, []))  // GENERIC TYPE PROVIDERS: for generics, we would have more here
@@ -1080,7 +1087,7 @@ let MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOp
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
-    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType), m))
+    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
     match tryTcrefOfAppTy amap.g declaringType with
     | ValueSome declaringEntity ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
@@ -1266,8 +1273,23 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             if List.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(delArgTys.Length), m)) 
 
+            let delFuncArgNamesIfFeatureEnabled =
+                match delFuncExpr with
+                | Expr.Val (valRef = vref) when g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames ->
+                    match vref.ValReprInfo with
+                    | Some repr when repr.ArgNames.Length = delArgTys.Length -> Some repr.ArgNames
+                    | _ -> None
+                | _ -> None
+
             let delArgVals =
-                delArgTys |> List.mapi (fun i argTy -> fst (mkCompGenLocal m ("delegateArg" + string i) argTy)) 
+                delArgTys
+                |> List.mapi (fun i argTy ->
+                    let argName =
+                        match delFuncArgNamesIfFeatureEnabled with
+                        | Some argNames -> argNames[i]
+                        | None -> "delegateArg" + string i
+
+                    fst (mkCompGenLocal m argName argTy)) 
 
             let expr = 
                 let args = 
@@ -2042,7 +2064,7 @@ module ProvidedMethodCalls =
         let thisArg, paramVars = 
             match objArgs with
             | [objArg] -> 
-                let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> mi.DeclaringType), m))
+                let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
                 let thisVar = erasedThisTy.PApply((fun ty -> ty.AsProvidedVar("this")), m)
                 Some objArg, Array.append [| thisVar |] paramVars
             | [] -> None, paramVars
@@ -2062,7 +2084,7 @@ module ProvidedMethodCalls =
             methInfoOpt, expr, exprTy
         with
             | :? TypeProviderError as tpe ->
-                let typeName = mi.PUntaint((fun mb -> mb.DeclaringType.FullName), m)
+                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName), m)
                 let methName = mi.PUntaint((fun mb -> mb.Name), m)
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif

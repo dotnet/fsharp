@@ -501,7 +501,7 @@ let private p_lazy_impl p v st =
     st.os.FixupInt32 fixupPos7 ovalsIdx2
 
 let p_lazy p x st =
-    p_lazy_impl p (Lazy.force x) st
+    p_lazy_impl p (InterruptibleLazy.force x) st
 
 let p_maybe_lazy p (x: MaybeLazy<_>) st =
     p_lazy_impl p x.Value st
@@ -560,7 +560,7 @@ let u_list_revi f st =
          yield f st (n-1-i) ]
 
 
-let u_wrap (f: 'U -> 'T) (u : 'U unpickler) : 'T unpickler = (fun st -> f (u st))
+let u_wrap (f: 'U -> 'T) (u : 'U unpickler) : 'T unpickler = (u >> f)
 
 let u_option f st =
     let tag = u_byte st
@@ -604,7 +604,7 @@ let u_lazy u st =
     res
 #else
     ignore (len, otyconsIdx1, otyconsIdx2, otyparsIdx1, otyparsIdx2, ovalsIdx1, ovalsIdx2)
-    Lazy.CreateFromValue(u st)
+    InterruptibleLazy.FromValue(u st)
 #endif
 
 
@@ -701,7 +701,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
         otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
         ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), id , "ovals")
-        oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
+        oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.IlTypeName), (fun _ -> range0), id, "oanoninfos")
         ostrings=Table<_>.Create "ostrings"
         onlerefs=Table<_>.Create "onlerefs"
         opubpaths=Table<_>.Create "opubpaths"
@@ -726,7 +726,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
-       oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
+       oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.IlTypeName), (fun _ -> range0), id, "oanoninfos")
        ostrings=Table<_>.Create "ostrings (fake)"
        opubpaths=Table<_>.Create "opubpaths (fake)"
        onlerefs=Table<_>.Create "onlerefs (fake)"
@@ -754,11 +754,10 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         st2
     st2.os
 
-  let finalBytes = phase2bytes
   (st1.os :> System.IDisposable).Dispose()
-  finalBytes
+  phase2bytes
 
-let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
+let check (ilscope: ILScopeRef) (inMap: NodeInTable<_, _>) =
     for i = 0 to inMap.Count - 1 do
       let n = inMap.Get i
       if not (inMap.IsLinked n) then
@@ -951,7 +950,7 @@ let u_ILHasThis st =
 
 let u_ILCallConv st = let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st in Callconv(a, b)
 let u_ILTypeRef st = let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st in ILTypeRef.Create(a, b, c)
-let u_ILArrayShape = u_wrap (fun x -> ILArrayShape x) (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
+let u_ILArrayShape = u_wrap (ILArrayShape) (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
 
 
 let rec u_ILType st =
@@ -1156,30 +1155,30 @@ let decoders =
      itag_call, u_ILMethodSpec                      >> (fun a -> I_call (Normalcall, a, None))
      itag_callvirt, u_ILMethodSpec                      >> (fun a -> I_callvirt (Normalcall, a, None))
      itag_ldvirtftn, u_ILMethodSpec                      >> I_ldvirtftn
-     itag_conv, u_ILBasicType                       >> (fun a -> (AI_conv a))
-     itag_conv_ovf, u_ILBasicType                       >> (fun a -> (AI_conv_ovf a))
-     itag_conv_ovf_un, u_ILBasicType                       >> (fun a -> (AI_conv_ovf_un a))
+     itag_conv, u_ILBasicType                       >> AI_conv
+     itag_conv_ovf, u_ILBasicType                       >> AI_conv_ovf
+     itag_conv_ovf_un, u_ILBasicType                       >> AI_conv_ovf_un
      itag_ldfld, u_tup2 u_ILVolatility u_ILFieldSpec >> (fun (b, c) -> I_ldfld (Aligned, b, c))
      itag_ldflda, u_ILFieldSpec                       >> I_ldflda
-     itag_ldsfld, u_tup2 u_ILVolatility u_ILFieldSpec >> (fun (a, b) -> I_ldsfld (a, b))
+     itag_ldsfld, u_tup2 u_ILVolatility u_ILFieldSpec >> I_ldsfld
      itag_ldsflda, u_ILFieldSpec                       >> I_ldsflda
      itag_stfld, u_tup2 u_ILVolatility u_ILFieldSpec >> (fun (b, c) -> I_stfld (Aligned, b, c))
-     itag_stsfld, u_tup2 u_ILVolatility u_ILFieldSpec >> (fun (a, b) -> I_stsfld (a, b))
-     itag_ldtoken, u_ILType                            >> (fun a -> I_ldtoken (ILToken.ILType a))
+     itag_stsfld, u_tup2 u_ILVolatility u_ILFieldSpec >> I_stsfld
+     itag_ldtoken, u_ILType                            >> (ILToken.ILType >> I_ldtoken)
      itag_ldstr, u_string                            >> I_ldstr
      itag_box, u_ILType                            >> I_box
      itag_unbox, u_ILType                            >> I_unbox
      itag_unbox_any, u_ILType                            >> I_unbox_any
-     itag_newarr, u_tup2 u_ILArrayShape u_ILType      >> (fun (a, b) -> I_newarr(a, b))
-     itag_stelem_any, u_tup2 u_ILArrayShape u_ILType      >> (fun (a, b) -> I_stelem_any(a, b))
-     itag_ldelem_any, u_tup2 u_ILArrayShape u_ILType      >> (fun (a, b) -> I_ldelem_any(a, b))
+     itag_newarr, u_tup2 u_ILArrayShape u_ILType      >> I_newarr
+     itag_stelem_any, u_tup2 u_ILArrayShape u_ILType      >> I_stelem_any
+     itag_ldelem_any, u_tup2 u_ILArrayShape u_ILType      >> I_ldelem_any
      itag_ldelema, u_tup3 u_ILReadonly u_ILArrayShape u_ILType >> (fun (a, b, c) -> I_ldelema(a, false, b, c))
      itag_castclass, u_ILType                            >> I_castclass
      itag_isinst, u_ILType                            >> I_isinst
      itag_ldobj, u_ILType                            >> (fun c -> I_ldobj (Aligned, Nonvolatile, c))
      itag_stobj, u_ILType                            >> (fun c -> I_stobj (Aligned, Nonvolatile, c))
      itag_sizeof, u_ILType                            >> I_sizeof
-     itag_ldlen_multi, u_tup2 u_int32 u_int32              >> (fun (a, b) -> EI_ldlen_multi (a, b))
+     itag_ldlen_multi, u_tup2 u_int32 u_int32              >> EI_ldlen_multi
      itag_ilzero, u_ILType                            >> EI_ilzero
      itag_ilzero, u_ILType                            >> EI_ilzero
      itag_initobj, u_ILType                            >> I_initobj
@@ -1357,8 +1356,8 @@ let u_nonlocal_val_ref st : NonLocalValOrMemberRef =
 let u_vref st =
     let tag = u_byte st
     match tag with
-    | 0 -> u_local_item_ref st.ivals st |> (fun x -> VRefLocal x)
-    | 1 -> u_nonlocal_val_ref st |> (fun x -> VRefNonLocal x)
+    | 0 -> u_local_item_ref st.ivals st |> VRefLocal
+    | 1 -> u_nonlocal_val_ref st |> VRefNonLocal
     | _ -> ufailwith st "u_item_ref"
 
 let u_vrefs = u_list u_vref
@@ -1438,7 +1437,7 @@ let p_trait_sln sln st =
          p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
 
-let p_trait (TTrait(a, b, c, d, e, f)) st  =
+let p_trait (TTrait(a, b, c, d, e, _, f)) st  =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
@@ -1478,7 +1477,7 @@ let u_trait_sln st =
 
 let u_trait st =
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
-    TTrait (a, b, c, d, e, ref f)
+    TTrait (a, b, c, d, e, ref None, ref f)
 
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
@@ -1661,16 +1660,20 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
         p_ty2 isStructThisArgPos r st
 
     | TType_measure unt ->
-        p_byte 6 st; p_measure_expr unt st
+        p_byte 6 st
+        p_measure_expr unt st
 
     | TType_ucase (uc, tinst) ->
-        p_byte 7 st; p_tup2 p_ucref p_tys (uc, tinst) st
+        p_byte 7 st
+        p_ucref uc st
+        p_tys tinst st
 
     // p_byte 8 taken by TType_tuple above
     | TType_anon (anonInfo, l) ->
          p_byte 9 st
          p_anonInfo anonInfo st
-         p_tys l st)
+         p_tys l st
+    )
 
 let _ = fill_u_ty (fun st ->
     let tag = u_byte st
@@ -1752,7 +1755,7 @@ let u_ArgReprInfo st =
     let b = u_option u_ident st
     match a, b with
     | [], None -> ValReprInfo.unnamedTopArg1
-    | _ -> { Attribs = a; Name = b }
+    | _ -> { Attribs = a; Name = b; OtherRange = None }
 
 let u_TyparReprInfo st =
     let a = u_ident st
@@ -1787,32 +1790,88 @@ let u_istype st =
     | 2 -> Namespace true
     | _ -> ufailwith st "u_istype"
 
-let u_cpath  st = let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st in (CompPath(a, b))
+let u_cpath st =
+    let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st 
+    CompPath(a, b)
 
 let rec p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
+
     match x with
-    | TFSharpRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
-    | TFSharpUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
-    | TAsmRepr ilTy        -> p_byte 1 st; p_byte 2 st; p_ILType ilTy st; false
-    | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
-    | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
-    | TNoRepr              -> p_byte 0 st; false
+    // Records
+    | TFSharpTyconRepr { fsobjmodel_rfields = fs; fsobjmodel_kind = TFSharpRecord } ->
+        p_byte 1 st
+        p_byte 0 st
+        p_rfield_table fs st
+        false
+
+    // Unions without static fields
+    | TFSharpTyconRepr { fsobjmodel_cases = x; fsobjmodel_kind = TFSharpUnion; fsobjmodel_rfields = fs } when fs.FieldsByIndex.Length = 0 ->
+        p_byte 1 st
+        p_byte 1 st
+        p_array p_unioncase_spec x.CasesTable.CasesByIndex st
+        false
+
+    // Unions with static fields, added to format
+    | TFSharpTyconRepr ({ fsobjmodel_cases = cases; fsobjmodel_kind = TFSharpUnion } as r) ->
+        if st.oglobals.compilingFSharpCore then
+            let fields = r.fsobjmodel_rfields.FieldsByIndex
+            let firstFieldRange = fields[0].DefinitionRange
+            let allFieldsText = fields |> Array.map (fun f -> f.LogicalName) |> String.concat System.Environment.NewLine
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("fields in union",allFieldsText), firstFieldRange))
+           
+        p_byte 2 st
+        p_array p_unioncase_spec cases.CasesTable.CasesByIndex st
+        p_tycon_objmodel_data r st
+        false
+
+    | TAsmRepr ilTy ->
+        p_byte 1 st
+        p_byte 2 st
+        p_ILType ilTy st
+        false
+
+    | TFSharpTyconRepr r  ->
+        p_byte 1 st
+        p_byte 3 st
+        p_tycon_objmodel_data r st
+        false
+
+    | TMeasureableRepr ty  ->
+        p_byte 1 st
+        p_byte 4 st
+        p_ty ty st
+        false
+
+    | TNoRepr ->
+        p_byte 0 st
+        false
+
 #if !NO_TYPEPROVIDERS
     | TProvidedTypeRepr info ->
         if info.IsErased then
             // Pickle erased type definitions as a NoRepr
-            p_byte 0 st; false
+            p_byte 0 st
+            false
         else
             // Pickle generated type definitions as a TAsmRepr
-            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(TypeProviders.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
-    | TProvidedNamespaceRepr _ -> p_byte 0 st; false
+            p_byte 1 st
+            p_byte 2 st
+            p_ILType (mkILBoxedType(ILTypeSpec.Create(TypeProviders.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st
+            true
+
+    | TProvidedNamespaceRepr _ ->
+        p_byte 0 st
+        false
 #endif
-    | TILObjectRepr (TILObjectReprData (_, _, td)) -> error (Failure("Unexpected IL type definition"+td.Name))
+
+    | TILObjectRepr (TILObjectReprData (_, _, td)) ->
+        error (Failure("Unexpected IL type definition"+td.Name))
 
 and p_tycon_objmodel_data x st =
-  p_tup3 p_tycon_objmodel_kind (p_vrefs "vslots") p_rfield_table
-    (x.fsobjmodel_kind, x.fsobjmodel_vslots, x.fsobjmodel_rfields) st
+  p_tycon_objmodel_kind x.fsobjmodel_kind st
+  p_vrefs "vslots" x.fsobjmodel_vslots st
+  p_rfield_table x.fsobjmodel_rfields st
 
 and p_attribs_ext f x st = p_list_ext f p_attrib x st
 
@@ -1937,6 +1996,14 @@ and p_tycon_objmodel_kind x st =
     | TFSharpStruct      -> p_byte 2 st
     | TFSharpDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TFSharpEnum        -> p_byte 4 st
+    | TFSharpUnion       -> 
+        if st.oglobals.compilingFSharpCore then
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("union as FSharpTyconKind ",st.ofile), range.Zero))
+        p_byte 5 st
+    | TFSharpRecord      -> 
+        if st.oglobals.compilingFSharpCore then
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("record as FSharpTyconKind ",st.ofile), range.Zero))
+        p_byte 6 st
 
 and p_vrefFlags x st =
     match x with
@@ -1986,12 +2053,23 @@ and u_tycon_repr st =
     | 1 ->
         let tag2 = u_byte st
         match tag2 with
+        // Records historically use a different format to other FSharpTyconRepr
         | 0 ->
             let v = u_rfield_table st
-            (fun _flagBit -> TFSharpRecdRepr v)
+            (fun _flagBit ->
+                TFSharpTyconRepr
+                    {
+                        fsobjmodel_cases = Construct.MakeUnionCases []
+                        fsobjmodel_kind=TFSharpRecord
+                        fsobjmodel_vslots=[]
+                        fsobjmodel_rfields=v
+                    })
+
+        // Unions  without static fields historically use a different format to other FSharpTyconRepr
         | 1 ->
             let v = u_list u_unioncase_spec  st
             (fun _flagBit -> Construct.MakeUnionRepr v)
+
         | 2 ->
             let v = u_ILType st
             // This is the F# 3.0 extension to the format used for F# provider-generated types, which record an ILTypeRef in the format
@@ -2017,18 +2095,32 @@ and u_tycon_repr st =
                         TNoRepr
                 else
                     TAsmRepr v)
+
         | 3 ->
             let v = u_tycon_objmodel_data  st
-            (fun _flagBit -> TFSharpObjectRepr v)
+            (fun _flagBit -> TFSharpTyconRepr v)
+
         | 4 ->
             let v = u_ty st
             (fun _flagBit -> TMeasureableRepr v)
+
         | _ -> ufailwith st "u_tycon_repr"
+
+    // Unions with static fields use a different format to other FSharpTyconRepr
+    | 2 ->
+        let cases = u_array u_unioncase_spec st
+        let data = u_tycon_objmodel_data st
+        fun _flagBit -> TFSharpTyconRepr { data with fsobjmodel_cases = Construct.MakeUnionCases (Array.toList cases) }
     | _ -> ufailwith st "u_tycon_repr"
 
 and u_tycon_objmodel_data st =
     let x1, x2, x3 = u_tup3 u_tycon_objmodel_kind u_vrefs u_rfield_table st
-    {fsobjmodel_kind=x1; fsobjmodel_vslots=x2; fsobjmodel_rfields=x3 }
+    {
+        fsobjmodel_cases = Construct.MakeUnionCases []
+        fsobjmodel_kind=x1
+        fsobjmodel_vslots=x2
+        fsobjmodel_rfields=x3
+    }
 
 and u_attribs_ext extraf st = u_list_ext extraf u_attrib st
 and u_unioncase_spec st =
@@ -2220,6 +2312,8 @@ and u_tycon_objmodel_kind st =
     | 2 -> TFSharpStruct
     | 3 -> u_slotsig st |> TFSharpDelegate
     | 4 -> TFSharpEnum
+    | 5 -> TFSharpUnion
+    | 6 -> TFSharpRecord
     | _ -> ufailwith st "u_tycon_objmodel_kind"
 
 and u_vrefFlags st =
@@ -2263,6 +2357,7 @@ and u_ValData st =
                      val_defn             = None
                      val_repr_info        = x10
                      val_repr_info_for_display = None
+                     arg_repr_info_for_display = None
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty
@@ -2330,7 +2425,7 @@ and u_const st =
     | 14 -> u_string st        |> Const.String
     | 15 -> Const.Unit
     | 16 -> Const.Zero
-    | 17 -> u_array u_int32 st |> (fun bits -> Const.Decimal (System.Decimal bits))
+    | 17 -> u_array u_int32 st |> (System.Decimal >> Const.Decimal)
     | _ -> ufailwith st "u_const"
 
 

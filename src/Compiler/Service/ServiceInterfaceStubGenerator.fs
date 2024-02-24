@@ -96,27 +96,28 @@ type InterfaceData =
 
     member x.Range =
         match x with
-        | InterfaceData.Interface (ty, _) -> ty.Range
-        | InterfaceData.ObjExpr (ty, _) -> ty.Range
+        | InterfaceData.Interface(ty, _) -> ty.Range
+        | InterfaceData.ObjExpr(ty, _) -> ty.Range
 
     member x.TypeParameters =
         match x with
-        | InterfaceData.Interface (StripParenTypes ty, _)
-        | InterfaceData.ObjExpr (StripParenTypes ty, _) ->
+        | InterfaceData.Interface(StripParenTypes ty, _)
+        | InterfaceData.ObjExpr(StripParenTypes ty, _) ->
             let rec (|RationalConst|) =
                 function
-                | SynRationalConst.Integer i -> string i
-                | SynRationalConst.Rational (numerator, denominator, _) -> sprintf "(%i/%i)" numerator denominator
-                | SynRationalConst.Negate (RationalConst s) -> sprintf "- %s" s
+                | SynRationalConst.Integer(value = i) -> string i
+                | SynRationalConst.Rational(numerator = numerator; denominator = denominator) -> sprintf "%i/%i" numerator denominator
+                | SynRationalConst.Negate(rationalConst = (RationalConst s)) -> sprintf "- %s" s
+                | SynRationalConst.Paren(rationalConst = (RationalConst s)) -> sprintf "(%s)" s
 
             let rec (|TypeIdent|_|) =
                 function
-                | SynType.Var (SynTypar (s, req, _), _) ->
+                | SynType.Var(SynTypar(s, req, _), _) ->
                     match req with
                     | TyparStaticReq.None -> Some("'" + s.idText)
                     | TyparStaticReq.HeadType -> Some("^" + s.idText)
-                | SynType.LongIdent (SynLongIdent (xs, _, _)) -> xs |> Seq.map (fun x -> x.idText) |> String.concat "." |> Some
-                | SynType.App (t, _, ts, _, _, isPostfix, _) ->
+                | SynType.LongIdent(SynLongIdent(xs, _, _)) -> xs |> Seq.map (fun x -> x.idText) |> String.concat "." |> Some
+                | SynType.App(t, _, ts, _, _, isPostfix, _) ->
                     match t, ts with
                     | TypeIdent typeName, [] -> Some typeName
                     | TypeIdent typeName, [ TypeIdent typeArg ] ->
@@ -135,15 +136,15 @@ type InterfaceData =
                         //debug "Unsupported case with %A and %A" t ts
                         None
                 | SynType.Anon _ -> Some "_"
-                | SynType.AnonRecd (_, ts, _) -> Some(ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
-                | SynType.Array (dimension, TypeIdent typeName, _) -> Some(sprintf "%s [%s]" typeName (String(',', dimension - 1)))
-                | SynType.MeasurePower (TypeIdent typeName, RationalConst power, _) -> Some(sprintf "%s^%s" typeName power)
-                | SynType.Paren (TypeIdent typeName, _) -> Some typeName
+                | SynType.AnonRecd(_, ts, _) -> Some(ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
+                | SynType.Array(dimension, TypeIdent typeName, _) -> Some(sprintf "%s [%s]" typeName (String(',', dimension - 1)))
+                | SynType.MeasurePower(TypeIdent typeName, RationalConst power, _) -> Some(sprintf "%s^%s" typeName power)
+                | SynType.Paren(TypeIdent typeName, _) -> Some typeName
                 | _ -> None
 
             match ty with
-            | SynType.App (_, _, ts, _, _, _, _)
-            | SynType.LongIdentApp (_, _, _, ts, _, _, _) -> ts |> Seq.choose (|TypeIdent|_|) |> Seq.toArray
+            | SynType.App(_, _, ts, _, _, _, _)
+            | SynType.LongIdentApp(_, _, _, ts, _, _, _) -> ts |> Seq.choose (|TypeIdent|_|) |> Seq.toArray
             | _ -> [||]
 
 module InterfaceStubGenerator =
@@ -265,7 +266,7 @@ module InterfaceStubGenerator =
 
         let argInfos, retType =
             match argInfos, v.IsPropertyGetterMethod, v.IsPropertySetterMethod with
-            | [ AllAndLast (args, last) ], _, true -> [ args ], Some last.Type
+            | [ AllAndLast(args, last) ], _, true -> [ args ], Some last.Type
             | [ [] ], true, _ -> [], Some retType
             | _, _, _ -> argInfos, Some retType
 
@@ -389,7 +390,7 @@ module InterfaceStubGenerator =
                 writer.Unindent ctx.Indentation
 
         match m with
-        | MemberInfo.PropertyGetSet (getter, setter) ->
+        | MemberInfo.PropertyGetSet(getter, setter) ->
             let usage, modifiers, getterArgInfos, retType = preprocess ctx getter
             let closeDeclaration = closeDeclaration retType
             let writeImplementation = writeImplementation ctx
@@ -512,7 +513,7 @@ module InterfaceStubGenerator =
 
     let internal (|TypeOfMember|_|) (m: FSharpMemberOrFunctionOrValue) =
         match m.FullTypeSafe with
-        | Some (MemberFunctionType ty) when m.IsProperty && m.DeclaringEntity.IsSome && m.DeclaringEntity.Value.IsFSharp -> Some ty
+        | Some(MemberFunctionType ty) when m.IsProperty && m.DeclaringEntity.IsSome && m.DeclaringEntity.Value.IsFSharp -> Some ty
         | Some ty -> Some ty
         | None -> None
 
@@ -548,7 +549,7 @@ module InterfaceStubGenerator =
 
     let internal (|LongIdentPattern|_|) =
         function
-        | SynPat.LongIdent(longDotId = SynLongIdent (xs, _, _)) ->
+        | SynPat.LongIdent(longDotId = SynLongIdent(xs, _, _)) ->
             //            let (name, range) = xs |> List.map (fun x -> x.idText, x.idRange) |> List.last
             let last = List.last xs
             Some(last.idText, last.idRange)
@@ -559,21 +560,21 @@ module InterfaceStubGenerator =
     // so we use 'get_' and 'set_' prefix to ensure corresponding symbols are retrieved correctly.
     let internal (|MemberNameAndRange|_|) =
         function
-        | SynBinding (valData = SynValData(memberFlags = Some mf); headPat = LongIdentPattern (name, range)) when
+        | SynBinding(valData = SynValData(memberFlags = Some mf); headPat = LongIdentPattern(name, range)) when
             mf.MemberKind = SynMemberKind.PropertyGet
             ->
             if name.StartsWithOrdinal("get_") then
                 Some(name, range)
             else
                 Some("get_" + name, range)
-        | SynBinding (valData = SynValData(memberFlags = Some mf); headPat = LongIdentPattern (name, range)) when
+        | SynBinding(valData = SynValData(memberFlags = Some mf); headPat = LongIdentPattern(name, range)) when
             mf.MemberKind = SynMemberKind.PropertySet
             ->
             if name.StartsWithOrdinal("set_") then
                 Some(name, range)
             else
                 Some("set_" + name, range)
-        | SynBinding(headPat = LongIdentPattern (name, range)) -> Some(name, range)
+        | SynBinding(headPat = LongIdentPattern(name, range)) -> Some(name, range)
         | _ -> None
 
     /// Get associated member names and ranges
@@ -581,18 +582,18 @@ module InterfaceStubGenerator =
     /// positions of 'member', which indicate the indentation for generating new members
     let GetMemberNameAndRanges interfaceData =
         match interfaceData with
-        | InterfaceData.Interface (_, None) -> []
-        | InterfaceData.Interface (_, Some memberDefns) ->
+        | InterfaceData.Interface(_, None) -> []
+        | InterfaceData.Interface(_, Some memberDefns) ->
             memberDefns
             |> Seq.collect (function
-                | SynMemberDefn.Member (binding, _) -> [ binding ]
-                | SynMemberDefn.GetSetMember (Some getBinding, Some setBinding, _, _) -> [ getBinding; setBinding ]
-                | SynMemberDefn.GetSetMember (Some binding, None, _, _)
-                | SynMemberDefn.GetSetMember (None, Some binding, _, _) -> [ binding ]
+                | SynMemberDefn.Member(binding, _) -> [ binding ]
+                | SynMemberDefn.GetSetMember(Some getBinding, Some setBinding, _, _) -> [ getBinding; setBinding ]
+                | SynMemberDefn.GetSetMember(Some binding, None, _, _)
+                | SynMemberDefn.GetSetMember(None, Some binding, _, _) -> [ binding ]
                 | _ -> [])
             |> Seq.choose (|MemberNameAndRange|_|)
             |> Seq.toList
-        | InterfaceData.ObjExpr (_, bindings) -> List.choose (|MemberNameAndRange|_|) bindings
+        | InterfaceData.ObjExpr(_, bindings) -> List.choose (|MemberNameAndRange|_|) bindings
 
     let internal normalizeEventName (m: FSharpMemberOrFunctionOrValue) =
         let name = m.DisplayName
@@ -761,7 +762,7 @@ module InterfaceStubGenerator =
         let rec walkImplFileInput (file: ParsedImplFileInput) =
             List.tryPick walkSynModuleOrNamespace file.Contents
 
-        and walkSynModuleOrNamespace (SynModuleOrNamespace (decls = decls; range = range)) =
+        and walkSynModuleOrNamespace (SynModuleOrNamespace(decls = decls; range = range)) =
             if not <| rangeContainsPos range pos then
                 None
             else
@@ -772,18 +773,18 @@ module InterfaceStubGenerator =
                 None
             else
                 match decl with
-                | SynModuleDecl.Exception (SynExceptionDefn (_, _, synMembers, _), _) -> List.tryPick walkSynMemberDefn synMembers
-                | SynModuleDecl.Let (_isRecursive, bindings, _range) -> List.tryPick walkBinding bindings
-                | SynModuleDecl.ModuleAbbrev (_lhs, _rhs, _range) -> None
-                | SynModuleDecl.NamespaceFragment (fragment) -> walkSynModuleOrNamespace fragment
-                | SynModuleDecl.NestedModule (decls = modules) -> List.tryPick walkSynModuleDecl modules
-                | SynModuleDecl.Types (typeDefs, _range) -> List.tryPick walkSynTypeDefn typeDefs
-                | SynModuleDecl.Expr (expr, _) -> walkExpr expr
+                | SynModuleDecl.Exception(SynExceptionDefn(_, _, synMembers, _), _) -> List.tryPick walkSynMemberDefn synMembers
+                | SynModuleDecl.Let(_isRecursive, bindings, _range) -> List.tryPick walkBinding bindings
+                | SynModuleDecl.ModuleAbbrev(_lhs, _rhs, _range) -> None
+                | SynModuleDecl.NamespaceFragment(fragment) -> walkSynModuleOrNamespace fragment
+                | SynModuleDecl.NestedModule(decls = modules) -> List.tryPick walkSynModuleDecl modules
+                | SynModuleDecl.Types(typeDefs, _range) -> List.tryPick walkSynTypeDefn typeDefs
+                | SynModuleDecl.Expr(expr, _) -> walkExpr expr
                 | SynModuleDecl.Attributes _
                 | SynModuleDecl.HashDirective _
                 | SynModuleDecl.Open _ -> None
 
-        and walkSynTypeDefn (SynTypeDefn (typeRepr = representation; members = members; range = range)) =
+        and walkSynTypeDefn (SynTypeDefn(typeRepr = representation; members = members; range = range)) =
             if not <| rangeContainsPos range pos then
                 None
             else
@@ -795,8 +796,8 @@ module InterfaceStubGenerator =
                 None
             else
                 match typeDefnRepr with
-                | SynTypeDefnRepr.ObjectModel (_kind, members, _range) -> List.tryPick walkSynMemberDefn members
-                | SynTypeDefnRepr.Simple (_repr, _range) -> None
+                | SynTypeDefnRepr.ObjectModel(_kind, members, _range) -> List.tryPick walkSynMemberDefn members
+                | SynTypeDefnRepr.Simple(_repr, _range) -> None
                 | SynTypeDefnRepr.Exception _ -> None
 
         and walkSynMemberDefn (memberDefn: SynMemberDefn) =
@@ -805,50 +806,50 @@ module InterfaceStubGenerator =
             else
                 match memberDefn with
                 | SynMemberDefn.AbstractSlot _ -> None
-                | SynMemberDefn.AutoProperty (synExpr = expr) -> walkExpr expr
-                | SynMemberDefn.Interface (interfaceType = interfaceType; members = members) ->
+                | SynMemberDefn.AutoProperty(synExpr = expr) -> walkExpr expr
+                | SynMemberDefn.Interface(interfaceType = interfaceType; members = members) ->
                     if rangeContainsPos interfaceType.Range pos then
                         Some(InterfaceData.Interface(interfaceType, members))
                     else
                         Option.bind (List.tryPick walkSynMemberDefn) members
-                | SynMemberDefn.Member (binding, _range) -> walkBinding binding
-                | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
+                | SynMemberDefn.Member(binding, _range) -> walkBinding binding
+                | SynMemberDefn.GetSetMember(getBinding, setBinding, _, _) ->
                     match getBinding, setBinding with
                     | None, None -> None
                     | Some binding, None
                     | None, Some binding -> walkBinding binding
                     | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
-                | SynMemberDefn.NestedType (typeDef, _access, _range) -> walkSynTypeDefn typeDef
+                | SynMemberDefn.NestedType(typeDef, _access, _range) -> walkSynTypeDefn typeDef
                 | SynMemberDefn.ValField _ -> None
-                | SynMemberDefn.LetBindings (bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings
+                | SynMemberDefn.LetBindings(bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _
                 | SynMemberDefn.Inherit _ -> None
-                | SynMemberDefn.ImplicitInherit (_, expr, _, _) -> walkExpr expr
+                | SynMemberDefn.ImplicitInherit(_, expr, _, _) -> walkExpr expr
 
-        and walkBinding (SynBinding (expr = expr)) = walkExpr expr
+        and walkBinding (SynBinding(expr = expr)) = walkExpr expr
 
         and walkExpr expr =
             if not <| rangeContainsPos expr.Range pos then
                 None
             else
                 match expr with
-                | SynExpr.Quote (synExpr1, _, synExpr2, _, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
+                | SynExpr.Quote(synExpr1, _, synExpr2, _, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
-                | SynExpr.Const (_synConst, _range) -> None
+                | SynExpr.Const(_synConst, _range) -> None
 
-                | SynExpr.Paren (synExpr, _, _, _parenRange) -> walkExpr synExpr
-                | SynExpr.Typed (synExpr, _synType, _range) -> walkExpr synExpr
+                | SynExpr.Paren(synExpr, _, _, _parenRange) -> walkExpr synExpr
+                | SynExpr.Typed(synExpr, _synType, _range) -> walkExpr synExpr
 
-                | SynExpr.Tuple (_, synExprList, _, _range)
-                | SynExpr.ArrayOrList (_, synExprList, _range) -> List.tryPick walkExpr synExprList
+                | SynExpr.Tuple(_, synExprList, _, _range)
+                | SynExpr.ArrayOrList(_, synExprList, _range) -> List.tryPick walkExpr synExprList
 
-                | SynExpr.Record (_inheritOpt, _copyOpt, fields, _range) ->
-                    List.tryPick (fun (SynExprRecordField (expr = e)) -> Option.bind walkExpr e) fields
+                | SynExpr.Record(_inheritOpt, _copyOpt, fields, _range) ->
+                    List.tryPick (fun (SynExprRecordField(expr = e)) -> Option.bind walkExpr e) fields
 
-                | SynExpr.New (_, _synType, synExpr, _range) -> walkExpr synExpr
+                | SynExpr.New(_, _synType, synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.ObjExpr (objType = ty; argOptions = baseCallOpt; bindings = binds; members = ms; extraImpls = ifaces) ->
+                | SynExpr.ObjExpr(objType = ty; argOptions = baseCallOpt; bindings = binds; members = ms; extraImpls = ifaces) ->
                     let binds = unionBindingAndMembers binds ms
 
                     match baseCallOpt with
@@ -857,7 +858,7 @@ module InterfaceStubGenerator =
                             Some(InterfaceData.ObjExpr(ty, binds))
                         else
                             ifaces
-                            |> List.tryPick (fun (SynInterfaceImpl (interfaceTy = ty; bindings = binds; range = range)) ->
+                            |> List.tryPick (fun (SynInterfaceImpl(interfaceTy = ty; bindings = binds; range = range)) ->
                                 if rangeContainsPos range pos then
                                     Some(InterfaceData.ObjExpr(ty, binds))
                                 else
@@ -866,97 +867,99 @@ module InterfaceStubGenerator =
                         // Ignore object expressions of normal objects
                         None
 
-                | SynExpr.While (_spWhile, synExpr1, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
+                | SynExpr.While(_spWhile, synExpr1, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
-                | SynExpr.ForEach (_spFor, _spIn, _seqExprOnly, _isFromSource, _synPat, synExpr1, synExpr2, _range) ->
+                | SynExpr.ForEach(_spFor, _spIn, _seqExprOnly, _isFromSource, _synPat, synExpr1, synExpr2, _range) ->
                     List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
-                | SynExpr.For (identBody = synExpr1; toBody = synExpr2; doBody = synExpr3) ->
+                | SynExpr.For(identBody = synExpr1; toBody = synExpr2; doBody = synExpr3) ->
                     List.tryPick walkExpr [ synExpr1; synExpr2; synExpr3 ]
 
-                | SynExpr.ArrayOrListComputed (_, synExpr, _range) -> walkExpr synExpr
+                | SynExpr.ArrayOrListComputed(_, synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.ComputationExpr (_, synExpr, _range) -> walkExpr synExpr
+                | SynExpr.ComputationExpr(_, synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.Lambda (body = synExpr) -> walkExpr synExpr
+                | SynExpr.Lambda(body = synExpr) -> walkExpr synExpr
 
-                | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
+                | SynExpr.DotLambda(expr = synExpr) -> walkExpr synExpr
+
+                | SynExpr.MatchLambda(_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
                     synMatchClauseList
-                    |> List.tryPick (fun (SynMatchClause (resultExpr = e)) -> walkExpr e)
+                    |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e)
 
-                | SynExpr.Match (expr = synExpr; clauses = synMatchClauseList) ->
+                | SynExpr.Match(expr = synExpr; clauses = synMatchClauseList) ->
                     walkExpr synExpr
                     |> Option.orElse (
                         synMatchClauseList
-                        |> List.tryPick (fun (SynMatchClause (resultExpr = e)) -> walkExpr e)
+                        |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e)
                     )
 
-                | SynExpr.Lazy (synExpr, _range) -> walkExpr synExpr
+                | SynExpr.Lazy(synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.Do (synExpr, _range) -> walkExpr synExpr
+                | SynExpr.Do(synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.Assert (synExpr, _range) -> walkExpr synExpr
+                | SynExpr.Assert(synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.App (_exprAtomicFlag, _isInfix, synExpr1, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
+                | SynExpr.App(_exprAtomicFlag, _isInfix, synExpr1, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
-                | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> walkExpr synExpr
+                | SynExpr.TypeApp(synExpr, _, _synTypeList, _commas, _, _, _range) -> walkExpr synExpr
 
-                | SynExpr.LetOrUse (bindings = synBindingList; body = synExpr) ->
+                | SynExpr.LetOrUse(bindings = synBindingList; body = synExpr) ->
                     Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
 
-                | SynExpr.TryWith (tryExpr = synExpr) -> walkExpr synExpr
+                | SynExpr.TryWith(tryExpr = synExpr) -> walkExpr synExpr
 
-                | SynExpr.TryFinally (tryExpr = synExpr1; finallyExpr = synExpr2) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
+                | SynExpr.TryFinally(tryExpr = synExpr1; finallyExpr = synExpr2) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
                 | Sequentials exprs -> List.tryPick walkExpr exprs
 
-                | SynExpr.IfThenElse (ifExpr = synExpr1; thenExpr = synExpr2; elseExpr = synExprOpt) ->
+                | SynExpr.IfThenElse(ifExpr = synExpr1; thenExpr = synExpr2; elseExpr = synExprOpt) ->
                     match synExprOpt with
                     | Some synExpr3 -> List.tryPick walkExpr [ synExpr1; synExpr2; synExpr3 ]
                     | None -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
                 | SynExpr.Ident _ident -> None
 
-                | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> None
+                | SynExpr.LongIdent(_, _longIdent, _altNameRefCell, _range) -> None
 
-                | SynExpr.LongIdentSet (_longIdent, synExpr, _range) -> walkExpr synExpr
+                | SynExpr.LongIdentSet(_longIdent, synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.DotGet (synExpr, _dotm, _longIdent, _range) -> walkExpr synExpr
+                | SynExpr.DotGet(synExpr, _dotm, _longIdent, _range) -> walkExpr synExpr
 
-                | SynExpr.DotSet (synExpr1, _longIdent, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
+                | SynExpr.DotSet(synExpr1, _longIdent, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
-                | SynExpr.Set (synExpr1, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
+                | SynExpr.Set(synExpr1, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
-                | SynExpr.DotIndexedGet (synExpr, indexArgs, _range, _range2) -> Option.orElse (walkExpr synExpr) (walkExpr indexArgs)
+                | SynExpr.DotIndexedGet(synExpr, indexArgs, _range, _range2) -> Option.orElse (walkExpr synExpr) (walkExpr indexArgs)
 
-                | SynExpr.DotIndexedSet (synExpr1, indexArgs, synExpr2, _, _range, _range2) ->
+                | SynExpr.DotIndexedSet(synExpr1, indexArgs, synExpr2, _, _range, _range2) ->
                     [ synExpr1; indexArgs; synExpr2 ] |> List.tryPick walkExpr
 
-                | SynExpr.JoinIn (synExpr1, _range, synExpr2, _range2) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
-                | SynExpr.NamedIndexedPropertySet (_longIdent, synExpr1, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
+                | SynExpr.JoinIn(synExpr1, _range, synExpr2, _range2) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
+                | SynExpr.NamedIndexedPropertySet(_longIdent, synExpr1, synExpr2, _range) -> List.tryPick walkExpr [ synExpr1; synExpr2 ]
 
-                | SynExpr.DotNamedIndexedPropertySet (synExpr1, _longIdent, synExpr2, synExpr3, _range) ->
+                | SynExpr.DotNamedIndexedPropertySet(synExpr1, _longIdent, synExpr2, synExpr3, _range) ->
                     List.tryPick walkExpr [ synExpr1; synExpr2; synExpr3 ]
 
-                | SynExpr.TypeTest (synExpr, _synType, _range)
-                | SynExpr.Upcast (synExpr, _synType, _range)
-                | SynExpr.Downcast (synExpr, _synType, _range) -> walkExpr synExpr
-                | SynExpr.InferredUpcast (synExpr, _range)
-                | SynExpr.InferredDowncast (synExpr, _range) -> walkExpr synExpr
-                | SynExpr.AddressOf (_, synExpr, _range, _range2) -> walkExpr synExpr
-                | SynExpr.TraitCall (_synTyparList, _synMemberSig, synExpr, _range) -> walkExpr synExpr
+                | SynExpr.TypeTest(synExpr, _synType, _range)
+                | SynExpr.Upcast(synExpr, _synType, _range)
+                | SynExpr.Downcast(synExpr, _synType, _range) -> walkExpr synExpr
+                | SynExpr.InferredUpcast(synExpr, _range)
+                | SynExpr.InferredDowncast(synExpr, _range) -> walkExpr synExpr
+                | SynExpr.AddressOf(_, synExpr, _range, _range2) -> walkExpr synExpr
+                | SynExpr.TraitCall(_synTyparList, _synMemberSig, synExpr, _range) -> walkExpr synExpr
 
                 | SynExpr.Null _range
                 | SynExpr.ImplicitZero _range -> None
 
-                | SynExpr.YieldOrReturn (_, synExpr, _range)
-                | SynExpr.YieldOrReturnFrom (_, synExpr, _range)
-                | SynExpr.DoBang (synExpr, _range) -> walkExpr synExpr
+                | SynExpr.YieldOrReturn(_, synExpr, _range)
+                | SynExpr.YieldOrReturnFrom(_, synExpr, _range)
+                | SynExpr.DoBang(synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.LetOrUseBang (rhs = synExpr1; andBangs = synExprAndBangs; body = synExpr2) ->
+                | SynExpr.LetOrUseBang(rhs = synExpr1; andBangs = synExprAndBangs; body = synExpr2) ->
                     [
                         yield synExpr1
-                        for SynExprAndBang (body = eAndBang) in synExprAndBangs do
+                        for SynExprAndBang(body = eAndBang) in synExprAndBangs do
                             yield eAndBang
                         yield synExpr2
                     ]
@@ -966,10 +969,10 @@ module InterfaceStubGenerator =
                 | SynExpr.LibraryOnlyStaticOptimization _
                 | SynExpr.LibraryOnlyUnionCaseFieldGet _
                 | SynExpr.LibraryOnlyUnionCaseFieldSet _ -> None
-                | SynExpr.ArbitraryAfterError (_debugStr, _range) -> None
+                | SynExpr.ArbitraryAfterError(_debugStr, _range) -> None
 
-                | SynExpr.FromParseError (synExpr, _range)
-                | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _, _range) -> walkExpr synExpr
+                | SynExpr.FromParseError(synExpr, _range)
+                | SynExpr.DiscardAfterMissingQualificationAfterDot(synExpr, _, _range) -> walkExpr synExpr
 
                 | _ -> None
 

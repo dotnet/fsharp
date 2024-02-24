@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../FSComp.resx">
     <body>
+      <trans-unit id="alwaysUseTypedStringInterpolation">
+        <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
+        <target state="translated">挿入文字列には、型指定されていない識別子が含まれています。型指定された書式指定子を追加することをお勧めします。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">配列のすべての要素は、最初の要素の型に暗黙的に変換できる必要があります。これは、型の長さ {0} のタプルです\n    {1}    \nこの要素は、型の長さ {2} のタプルです\n    {3}    \n</target>
@@ -24,7 +29,7 @@
       </trans-unit>
       <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。抽象メンバー宣言は許可されません。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
@@ -34,12 +39,17 @@
       </trans-unit>
       <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
         <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
-        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
+        <target state="translated">FSharp.Core.AutoOpenAttribute にエイリアスを設定することはできません。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。引数を持つコンストラクターは許可されていません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="translated">この式は匿名レコードであり、{{...}} の代わりに {{|...|}} を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -49,7 +59,7 @@
       </trans-unit>
       <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。明示的フィールド宣言は許可されません。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -69,7 +79,12 @@
       </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。インターフェイスの実装は許可されません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="translated">インデックスの付いたプロパティのゲッターとセッターは同じ型でなければなりません。プロパティ '{0}' は、ゲッターの型が '{1}' ですが、セッターの型は '{2}' です。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -94,12 +109,27 @@
       </trans-unit>
       <trans-unit id="chkInstanceLetBindingOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
+        <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。インスタンス let バインドは許可されません。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
         <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。インスタンス メンバーは許可されません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNotTailRecursive">
+        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
+        <target state="translated">メンバーまたは関数 '{0}' には 'TailCallAttribute' 属性がありますが、末尾の再帰的な方法では使用されていません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="translated">オブジェクト式は、静的抽象メンバーを持つインターフェイスを実装したり、静的メンバーを宣言したりすることはできません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="translated">TailCall 属性は再帰関数にのみ適用する必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -115,6 +145,11 @@
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">使用可能なオーバーロード:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
+        <target state="translated">型 '{1}' には必要な (実数または組み込み) メンバー '{2}' がないため、'{0}' ではサポートされません</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -157,6 +192,11 @@
         <target state="translated">引数 '{0}' が一致しません</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="translated">制約 'unmanaged' と 'not struct' が矛盾しています</target>
+        <note />
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">'if' 式のすべての分岐は、最初の分岐の型に暗黙的に変換できる値を返す必要があります。これは、型の長さ {0} のタプルです\n    {1}    \nこの分岐は、型の長さ {2} のタプルを返します\n    {3}    \n</target>
@@ -177,6 +217,11 @@
         <target state="translated">アセンブリ属性 '{0}' は、デザイナー アセンブリ '{1}' を参照していますが、これは読み込むことができないか、存在していません。報告された例外: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="translated">アクセサー専用関数のアンダースコア ドット短縮形</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">その他の型指定された変換</target>
@@ -189,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
-        <target state="needs-review-translation">リテラルで算術演算と論理演算を許可する</target>
+        <target state="translated">リテラル、列挙型の定義と属性の算術演算と論理演算</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -202,9 +247,29 @@
         <target state="translated">`exception` 宣言の `Message` プロパティの自動生成</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
+        <source>Boolean-returning and return-type-directed partial active patterns</source>
+        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">型、モジュールの宣言で暗黙的な拡張属性を許可する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="translated">メンバーまたは関数に 'TailCall' 属性があるが、末尾の再帰的な方法で使用されていない場合に警告を発生させます。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="translated">'TailCall' 属性が再帰関数以外で使用されている場合、警告が発せられます。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="translated">フレキシブル型の制約積集合</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -252,6 +317,16 @@
         <target state="translated">単位をサポートするその他の型</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="translated">byref と GetPinnableReference の拡張固定バインド</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureExtendedStringInterpolation">
+        <source>Extended string interpolation similar to C# raw string literals.</source>
+        <target state="translated">C# の生文字列リテラルに似た拡張文字列補間。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">固定インデックス スライス 3d/4d</target>
@@ -267,19 +342,29 @@
         <target state="translated">暗黙的な yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNames">
+        <source>Improved implied argument names</source>
+        <target state="translated">暗黙的な引数名の改善</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">インデックス作成とスライス用の expr[idx] 表記</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureInformationalObjInferenceDiagnostic">
+        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
+        <target state="translated">情報レベルでの診断 3559 (obj 推論時に警告)、既定ではオフ</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
-        <target state="new">support for consuming init properties</target>
+        <target state="translated">init プロパティの使用のサポート</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
-        <target state="new">static abstract interface members</target>
+        <target state="translated">静的抽象インターフェイス メンバー</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -287,9 +372,14 @@
         <target state="translated">複数のジェネリックのインスタンス化を含むインターフェイス</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowerInterpolatedStringToConcat">
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
-        <target state="new">Allow lowercase DU when RequireQualifiedAccess attribute</target>
+        <target state="translated">RequireQualifiedAccess 属性の場合に小文字 DU を許可する</target>
         <note />
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
@@ -309,12 +399,12 @@
       </trans-unit>
       <trans-unit id="featureNestedCopyAndUpdate">
         <source>Nested record field copy-and-update</source>
-        <target state="new">Nested record field copy-and-update</target>
+        <target state="translated">入れ子になったレコード フィールドの copy-and-update</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
-        <target state="new">String values marked as literals and IL constants as printf format</target>
+        <target state="translated">リテラルとしてマークされた文字列値およびprintf 形式としてマークされた IL 定数</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
@@ -340,6 +430,16 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">パッケージの管理</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="translated">plain プロパティよりも拡張メソッドを優先する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="translated">固定バインドで String.GetPinnableReference を優先する</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -369,7 +469,7 @@
       </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
-        <target state="new">support for required properties</target>
+        <target state="translated">必要なプロパティのサポート</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -377,9 +477,14 @@
         <target state="translated">再開可能なステート マシン</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReuseSameFieldsInStructUnions">
+        <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
+        <target state="translated">名前と型が同じである限り、[&lt;Struct&gt;] 判別可能な共用体で基になるフィールドを共有する</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
-        <target state="new">self type constraints</target>
+        <target state="translated">自己型制約</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -387,9 +492,19 @@
         <target state="translated">単一のアンダースコア パターン</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="translated">共用体型、レコード型、構造体型、非増分クラス型の静的 let バインドを許可する</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
-        <target state="new">Static members in interfaces</target>
+        <target state="translated">インターフェイス内の静的メンバー</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="translated">不適切なインデントでエラーが発生し、編集中の回復と分析が向上します</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -402,19 +517,44 @@
         <target state="translated">アクティブなパターンの構造体表現</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>Union case test properties</source>
+        <target state="translated">ユニオン ケースのテスト プロパティ</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
-        <target state="new">Support for try-with in sequence expressions</target>
+        <target state="translated">シーケンス式内の try-with のサポート</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="translated">C# と F# のアンマネージド ジェネリック制約の間の相互運用 (追加の modreq を出力)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="translated">インデックス付きプロパティのゲッターとセッターの型は同じである必要があります</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
+        <target state="translated">copy-and-update レコード式によってレコードのすべてのフィールドが変更されたときに警告を表示します。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">'let inline ... =' が [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 属性と一緒に使用されるときに警告を生成します。関数はインライン化されていません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="translated">フィールド名が重複しているため、名前解決中に複数のレコードの種類の一致が見つかった場合に警告を生成します。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWhileBang">
+        <source>'while!' expression</source>
+        <target state="translated">'while!' 式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -454,7 +594,7 @@
       </trans-unit>
       <trans-unit id="forPercentAInReflectionFreeCode">
         <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
-        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <target state="translated">'%A' 書式指定子は、オプション '--reflectionfree' でコンパイルされるアセンブリでは使用できません。このコンストラクトは暗黙的にリフレクションを使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -509,12 +649,17 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionSig">
         <source>Keyword reserved for ML-compatibility.</source>
-        <target state="new">Keyword reserved for ML-compatibility.</target>
+        <target state="translated">ML 互換性のために予約されているキーワードです。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
-        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
+        <target state="translated">オブジェクトがパターンまたはバインディング内の指定された型であるかどうかを確認するために使用されます。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionWhileBang">
+        <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
+        <target state="translated">条件が別の計算式の結果であるループ構造を導入するために、計算式で使用されます。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -522,9 +667,19 @@
         <target state="translated">バイト文字列は補間されていない可能性があります</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexExtendedStringInterpolationNotSupported">
+        <source>Extended string interpolation is not supported in this version of F#.</source>
+        <target state="translated">拡張文字列補間は、このバージョンの F# ではサポートされていません。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
         <target state="translated">IF-FSHARP/IF-CAML リージョンは現在サポートされていません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="translated">これは有効な識別子ではありません</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -537,9 +692,24 @@
         <target state="translated">補間された文字列が無効です。単一引用符または逐語的文字列リテラルは、単一引用符または逐語的文字列内の補間された式では使用できません。補間式に対して明示的な 'let' バインドを使用するか、外部文字列リテラルとして三重引用符文字列を使用することをご検討ください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="translated">挿入されたトリプル 引用符で囲まれた文字列リテラルは、連続する多数の開きかっこをコンテンツとして使用するのに十分な '$' 文字で始まっていません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyPercentsInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
+        <target state="translated">挿入されたトリプル 引用符で囲まれた文字列リテラルは、連続する '%' 文字を多数許可するのに十分な '$' 文字で始まっていません。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">補間された文字列が無効です。三重引用符文字列リテラルは、補間された式では使用できません。補間式に対して明示的な 'let' バインドを使用することをご検討ください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexUnmatchedRBracesInTripleQuote">
+        <source>The interpolated string contains unmatched closing braces.</source>
+        <target state="translated">補間された文字列には、一致しない閉じかっこが含まれています。</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -624,12 +794,12 @@
       </trans-unit>
       <trans-unit id="optsCompressMetadata">
         <source>Compress interface and optimization data files</source>
-        <target state="new">Compress interface and optimization data files</target>
+        <target state="translated">インターフェイスと最適化データ ファイルを圧縮する</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">
         <source>Display the allowed values for language version.</source>
-        <target state="new">Display the allowed values for language version.</target>
+        <target state="translated">言語バージョンで許可されている値を表示します。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
@@ -644,12 +814,12 @@
       </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
-        <target state="new">Specify included optimization information, the default is file. Important for distributed libraries.</target>
+        <target state="translated">含まれる最適化情報を指定します。既定値は file です。分散ライブラリの場合は重要です。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPdbMatchesOutputFileName">
         <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
-        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
+        <target state="translated">PDB 出力ファイル名がビルド出力ファイル名と一致しません - --pdb:filename.pdb を使用してください</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -664,17 +834,22 @@
       </trans-unit>
       <trans-unit id="optsReflectionFree">
         <source>Disable implicit generation of constructs using reflection</source>
-        <target state="new">Disable implicit generation of constructs using reflection</target>
+        <target state="translated">リフレクションを使用してコンストラクトの暗黙的な生成を無効にする</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSetLangVersion">
         <source>Specify language version such as 'latest' or 'preview'.</source>
-        <target state="new">Specify language version such as 'latest' or 'preview'.</target>
+        <target state="translated">'latest' や 'preview' などの言語バージョンを指定します。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSignatureData">
         <source>Include F# interface information, the default is file. Essential for distributing libraries.</source>
-        <target state="new">Include F# interface information, the default is file. Essential for distributing libraries.</target>
+        <target state="translated">F# インターフェイス情報を含めます。既定値は file です。ライブラリの配布に不可欠です。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="translated">言語バージョンによって暗黙的に指定されたインデント規則をオーバーライドする</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -684,12 +859,12 @@
       </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
         <source>Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</source>
-        <target state="new">Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</target>
+        <target state="translated">--optimizationdata の値 '{0}' が無効です。有効な値は none、file、compress です。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownSignatureData">
         <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</source>
-        <target state="new">Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</target>
+        <target state="translated">--interfacedata の値 '{0}' が無効です。有効な値は none、file、compress です。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -710,6 +885,11 @@
       <trans-unit id="packageManagementRequiresVFive">
         <source>The 'package management' feature requires language version 5.0 or above</source>
         <target state="translated">'package management' (パッケージ管理) 機能には、言語バージョン 5.0 以降が必要です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="translated">制約交差構文は、"#IDisposable &amp; #ISomeInterface" など、柔軟な型でのみ使用できます。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -737,34 +917,54 @@
         <target state="translated">この位置以前に始まった補間された逐語的文字列が不完全です</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">型定義に予期しないトークンがあります。型 '{0}' の後には '=' が必要です。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
         <target state="translated">このポイントの後にパターンが必要です</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
         <target state="translated">式を指定してください</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingPatternInTuple">
+      <trans-unit id="parsExpectingField">
+        <source>Expecting record field</source>
+        <target state="translated">レコード フィールドが必要です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">必要なパターン</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="translated">型が必要です</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
-        <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
+        <target state="translated">不完全な文字リテラル (例: 'Q') または修飾型の呼び出し (例: 'T.Name)</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
-        <target state="new">Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</target>
+        <target state="translated">不完全な演算子式 (例 a^b) または修飾型の呼び出し (例: ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="translated">キーワード '{0}' がありません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="translated">メンバー本体が必要です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="translated">共用体のケース名がありません</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -772,9 +972,19 @@
         <target state="translated">このメンバーへのアクセスはあいまいです。オブジェクト作成の前後にはかっこを使用してください。例: '(new SomeType(args)).MemberName'</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
+        <source>Only simple patterns are allowed in primary constructors</source>
+        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
+        <target state="translated">静的コンストラクトの不完全な宣言。宣言には、'static let'、'static do'、'static member'、または 'static val' を使用します。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
-        <target state="new">Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
+        <target state="translated">条件式の 'else if' または 'elif' 分岐の入力が予期しない形式で終了しています。'elif &lt;expr&gt; then &lt;expr&gt;' または 'else if &lt;expr&gt; then &lt;expr&gt;' が必要でした。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -792,9 +1002,14 @@
         <target state="translated">アルゴリズム '{0}' はサポートされていません</target>
         <note />
       </trans-unit>
+      <trans-unit id="pickleFsharpCoreBackwardsCompatible">
+        <source>Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </source>
+        <target state="translated">新しく追加された pickle 状態は、古いコンパイラとツールでも動作している必要があるため、FSharp.Core では使用できません。時間枠は、機能の導入から少なくとも 3 年経っています。違反: {0}。コンテキスト: \n {1} </target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occured in the resumable code specification</source>
-        <target state="new">A constrained generic construct occured in the resumable code specification</target>
+        <target state="translated">再開可能なコード指定で制約付きジェネリック コンストラクトが発生しました</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -872,6 +1087,16 @@
         <target state="translated">このスクリプトの .NET SDK を特定できませんでした。このスクリプトが、'global.json' が使用されているディレクトリにある場合は、関連する .NET SDK がインストールされていることを確認してください。予期しないエラー '{0}'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="translated">(推奨される名前)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="translated">ここでは _ の意味はあいまいです。破棄された変数と、同じスコープ内の関数の短縮形には使用できません。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">この式の型は '{0}' であり、あいまいで暗黙的な変換によってのみ、型 '{1}' と互換性を持たせることが可能です。' op_Implicit' の明示的な呼び出しを使用することを検討してください。該当する暗黙的な変換は次のとおりです: {2}</target>
@@ -887,24 +1112,54 @@
         <target state="translated">このレコード式に、フィールド '{0}' が複数回出現します。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameDifferent">
-        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">この匿名レコードは正しくありません。フィールド {0} を含んでいる必要があります。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">この匿名レコードには十分なフィールドがありません。不足しているフィールド {0} を追加してください。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">この匿名レコードはフィールドが多すぎます。不要なフィールド {0} を削除してください。</target>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="translated">この匿名レコードは、予期された形状と完全には一致していません。不足しているフィールド {0} を追加し、不要なフィールド {1} を削除してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">匿名レコードの型宣言が無効です。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
+        <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
+        <target state="translated">この匿名レコードにはフィールド {0} が必要ですが、ここにはフィールド {1} があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
+        <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
+        <target state="translated">この匿名レコードにはフィールド {0}が必要ですが、ここにフィールド '{1}'があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
+        <source>This anonymous record is missing fields {0}.</source>
+        <target state="translated">この匿名レコードにはフィールド {0} がありません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
+        <source>This anonymous record has extra fields. Remove fields {0}.</source>
+        <target state="translated">この匿名レコードには、追加のフィールドがあります。フィールド {0} を削除します。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
+        <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
+        <target state="translated">この匿名レコードにはフィールド '{0}' が必要ですが、ここにフィールド {1} があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
+        <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
+        <target state="translated">この匿名レコードにはフィールド '{0}' が必要ですが、ここにはフィールド '{1}' があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSubset">
+        <source>This anonymous record is missing field '{0}'.</source>
+        <target state="translated">この匿名レコードにフィールド '{0}'がありません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
+        <source>This anonymous record has an extra field. Remove field '{0}'.</source>
+        <target state="translated">この匿名レコードには、追加のフィールドがあります。フィールド '{0}' を削除します。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -919,7 +1174,12 @@
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
-        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <target state="translated">この copy-and-update レコード式は、レコードの種類が '{0}' であるすべてのフィールドを変更します。代わりにレコード構築構文を使用することを検討してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
+        <target state="translated">短縮ラムダ構文は、暗黙的な '_' 引数のメソッド、プロパティ、フィールド、インデクサーなどのアトミック式でのみサポートされています。例: 'let f = _.Length'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -957,9 +1217,14 @@
         <target state="translated">この式では、暗黙的な変換 '{0}' を使用して、型 '{1}' を型 '{2}' に変換しています。https://aka.ms/fsharp-implicit-convs をご確認ください。'#nowarn\"3391\" を使用して、この警告を無効にできる可能性があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="translated">これは、共用体のケースをシャドウする関数定義です。これが必要な場合は、この警告を無視するか、非表示にしてください。共用体のケース分解にする場合は、かっこを追加します。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
-        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <target state="translated">初期化コードの外部で init 専用プロパティ '{0}' を設定することはできません。https://aka.ms/fsharp-assigning-values-to-properties-at-initialization を参照してください</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -989,7 +1254,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSelfConstraint">
         <source>Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</source>
-        <target state="new">Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</target>
+        <target state="translated">制約が無効です。有効な制約フォームには、インターフェイス制約の場合は \"'T :&gt; ISomeInterface\"、自己制約の場合には \"SomeConstrainingType&lt;'T&gt;\" があります。https://aka.ms/fsharp-type-constraints を参照してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -1034,12 +1299,32 @@
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
         <source>The following required properties have to be initalized:{0}</source>
-        <target state="new">The following required properties have to be initalized:{0}</target>
+        <target state="translated">次の必須プロパティを初期化する必要があります:{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="translated">フィールド '{0}' は、このレコード式またはパターンに複数回出現します</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="translated">複数の型の一致が見つかりました:\n{0}\n型 '{1}' が使用されました。フィールド名が重複しているため、\n{2}\n型注釈を使用するか、オープン ステートメントの順序を変更してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">'NoEagerConstraintApplicationAttribute' を指定してメソッドを使用するには、/langversion:6.0 以降が必要です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticMemberFoundForOverride">
+        <source>No static abstract member was found that corresponds to this override</source>
+        <target state="translated">このオーバーライドに対応する静的抽象メンバーが見つかりませんでした</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticPropertyFoundForOverride">
+        <source>No static abstract property was found that corresponds to this override</source>
+        <target state="translated">このオーバーライドに対応する抽象プロパティが見つかりませんでした</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1072,6 +1357,11 @@
         <target state="translated">構文 'expr1[expr2]' は引数として使用されている場合、あいまいです。https://aka.ms/fsharp-index-notation を参照してください。複数のカリー化された引数を持つ関数を呼び出す場合には、'someFunction expr1 [expr2]' のように間にスペースを追加します。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="translated">このオーバーライドは、複数の引数ではなくタプルを受け取ります。メソッド定義にかっこのレイヤーを追加してみるか (例: 'member _.Foo((x, y))')、または抽象メソッド宣言でかっこを削除します (例: 'abstract member Foo: 'a * 'b -&gt; 'c')。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">構文 '(expr1)[expr2]' は引数として使用されている場合、あいまいです。https://aka.ms/fsharp-index-notation を参照してください。インデックス作成またはスライスを行う場合は、'(expr1).[expr2]' を引数の位置に使用する必要があります。複数のカリー化された引数を持つ関数を呼び出す場合は、'someFunction (expr1) [expr2]' のように間にスペースを追加します。</target>
@@ -1083,7 +1373,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
         <target state="translated">'let! ... and! ...' コンストラクトは、コンピュテーション式ビルダーが '{0}' メソッドまたは適切な 'MergeSource' および 'Bind' メソッドのいずれかを定義している場合にのみ使用できます</target>
         <note />
       </trans-unit>
@@ -1119,7 +1409,17 @@
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
         <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
-        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <target state="translated">'{0}' を呼び出すことはできません。これは init のみのプロパティのセッターなので、代わりにオブジェクトの初期化を使用してください。https://aka.ms/fsharp-assigning-values-to-properties-at-initialization を参照してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="translated">静的バインディングを外部拡張に追加することはできません。代わりに'静的メンバー' を使用することを検討してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
+        <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
+        <target state="translated">マルチケース共用体型が構造体の場合、同じ名前を持つすべてのフィールドが同じ型である必要があります。このルールは、名前のないフィールドの場合に生成された 'Item' 名にも適用されます。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1134,27 +1434,27 @@
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
         <source>The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</source>
-        <target state="new">The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</target>
+        <target state="translated">この呼び出しによって呼び出された特性 '{0}' には、複数のサポート型があります。このような特性では、この呼び出し構文は許可されていません。ガイダンスについては https://aka.ms/fsharp-srtp を参照してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitInvocationShouldUseTick">
         <source>Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</source>
-        <target state="new">Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</target>
+        <target state="translated">静的制約の呼び出しでは、静的に解決されたジェネリック型パラメーターの場合でも \"^T.Ident\" ではなく、\"'T.Ident\" を使用する必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitIsNotStatic">
         <source>Trait '{0}' is not static</source>
-        <target state="new">Trait '{0}' is not static</target>
+        <target state="translated">特性 '{0}' は静的ではありません</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitIsStatic">
         <source>Trait '{0}' is static</source>
-        <target state="new">Trait '{0}' is static</target>
+        <target state="translated">特性 '{0}' は静的です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
-        <target state="new">A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</target>
+        <target state="translated">特性では、オプションの、in 引数、out 引数、ParamArray 引数、CallerInfo 引数、または Quote 引数を指定することはできません</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -1162,14 +1462,24 @@
         <target state="translated">補間された文字列が無効です。{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="translated">共用体ケースのフィールド定義で予期しない関数型が発生しました。フィールドを関数にする場合は、関数シグネチャを parens でラップすることを検討してください、例えば、 | Case of a -&gt; b into | Case of (a -&gt; b)。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
-        <target state="new">'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</target>
+        <target state="translated">'{0}' は通常、ジェネリック コードの型制約として使用されます (例: \"'T when ISomeInterface&lt;'T&gt;\" または \"let f (x: #ISomeInterface&lt;_&gt;)\")。ガイダンスについては https://aka.ms/fsharp-iwsams を参照してください。この警告は、'#nowarn \"3536\"' または '--nowarn:3536' を使用して無効にできます。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
-        <target state="new">Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</target>
+        <target state="translated">\"interfaces with static abstract method\" の宣言は高度な機能です。ガイダンスについては https://aka.ms/fsharp-iwsams を参照してください。この警告は、'#nowarn \"3535\"' または '--nowarn:3535' を使用して無効にできます。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="translated">型 '{0}' に含まれるメソッドが多すぎます。検出した内容: '{1}'、最大値: '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1189,7 +1499,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
+        <target state="translated">型が暗黙的に 'obj' として推論されました。これは意図していない可能性があります。明示的な型の注釈を追加することを検討してください。この警告は、'#nowarn \"3559\"' または '--nowarn:3559' を使用して無効にできます。</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1330,6 +1640,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">'return' の代わりに 'return!' を使うことを検討してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="translated">かっこは削除できます。</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -1558,8 +1873,8 @@
         <note />
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
-        <source>Unrecognized option: '{0}'</source>
-        <target state="translated">認識されないオプション:'{0}'</target>
+        <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
+        <target state="translated">認識されないオプション: '{0}'。 '--help' を使用して、認識されたコマンド ライン オプションについて学習します。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3213,8 +3528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">プロパティのゲッターまたはセッターに指定されたアクセシビリティが複数あります</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="translated">プロパティの可視性を指定した場合、set メソッドまたは get メソッドの可視性の設定は許可されません。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -3677,11 +3992,6 @@
         <target state="translated">フィールド ラベルとこのレコード式またはパターンの型だけでは、対応するレコード型を一意に決定できません</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">のレコード式またはパターンに、フィールド '{0}' が 2 回出現します</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnknownUnion">
         <source>Unknown union case</source>
         <target state="translated">不明な共用体ケースです</target>
@@ -3985,11 +4295,6 @@
       <trans-unit id="tcInvalidPattern">
         <source>This is not a valid pattern</source>
         <target state="translated">これは有効なパターンではありません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">F# では文字範囲の一致が削除されました。代わりに 'when' パターン ガードを使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -4659,7 +4964,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="needs-review-translation">インターフェイスに具象メンバーの定義を含めることはできません。必要に応じて、型にコンストラクターを定義して、型がクラスであることを示してください。</target>
+        <target state="translated">インターフェイスに具象インスタンス メンバーの定義を含めることはできません。必要に応じて、型にコンストラクターを定義して、型がクラスであることを示してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
@@ -4818,8 +5123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">静的な値の定義は、プライマリ コンストラクターを含む型でのみ使用できます。型定義に引数を追加してください ( たとえば、'type X(args) = ...')。</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="translated">F#7 以前の場合、静的な 'let'、'do'、'member val' の定義は、プライマリ コンストラクター ('type X(args) = ...') を持つ型でのみ使用できます。他のすべての型で有効にするには、言語バージョン '8' 以降を使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -5938,8 +6243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">インデントが正しくない可能性があります。このトークンは位置 {0} から開始されるコンテキストのオフサイドになります。このトークンのインデントを増やすか、標準的な書式規則を使用してください。</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
+        <target state="translated">予期しない構文またはインデントが正しくない可能性: このトークンは位置 {0} から開始されるコンテキストのオフサイドになります。このトークンのインデントを増やしてみてください。\n非準拠のインデントを引き続き使用するには、'--strict-indent-' フラグをコンパイラに渡すか、言語バージョンを F# 7 に設定してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -7653,8 +7958,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">'fixed' の使い方が正しくありません。'fixed' を使用できるのは書式 'use x = fixed expr' の宣言内だけで、この式は配列、フィールドのアドレス、配列要素のアドレス、または文字列です</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="translated">'fixed' の使用が無効です。'fixed' は、'use x = fixed expr' という形式の宣言でのみ使用でき、式は配列、配列要素のアドレス、文字列、byref、inref、または GetPinnableReference() を実装する型のいずれかです。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8087,11 +8392,6 @@
         <target state="translated">この値は関数ではないため、適用できません。宣言を終結しましたか?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">シグネチャ '{0}' と実装 '{1}' の引数の名前が一致しません。シグネチャ ファイルの引数の名前が使用されます。デバッグまたはプロファイルするときに問題が生じる原因となる可能性があります。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">アセンブリ '{0}' の F# メタデータ の読み取り中にエラーが発生しました。予約済みのコンストラクトが使用されました。F# コンパイラをアップグレードするか、特定のコンストラクトを使用しない以前のバージョンのアセンブリを使用しなければならない場合があります。</target>
@@ -8227,14 +8527,9 @@
         <target state="translated">2 つの匿名レコードの種類は、'{0}' と '{1}' の異なるアセンブリからのものです</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="translated">この匿名レコードは、予期された形状と完全には一致していません。不足しているフィールド {0} を追加し、不要なフィールド {1} を削除してください。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">byref 拡張メソッド '{0} を呼び出すことはできません。最初のパラメーターでは、値を変更可能な byref 型または読み取り専用以外の byref 型にする必要があります。</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="translated">byref 拡張メソッド '{0}を呼び出すことはできません。'this' パラメーターには、値を変更可能にするか、読み取り専用以外の byref 型を指定する必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8323,8 +8618,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されていませんでした。現在登録済み: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されませんでした。現在登録されているもの: {2}。'--compilertool:&lt;extensionsfolder&gt;' をコマンド ラインに渡すことで、追加のパスを指定できます。拡張機能の詳細については、次を参照してください: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

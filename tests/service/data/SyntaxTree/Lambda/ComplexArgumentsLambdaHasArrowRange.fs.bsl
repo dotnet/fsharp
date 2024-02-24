@@ -10,22 +10,22 @@ ImplFile
                  SimplePats
                    ([Id (x, None, false, false, false, (2,5--2,6));
                      Id (_arg3, None, true, false, false, (2,8--2,9))],
-                    (2,4--2,10)),
+                    [(2,6--2,7)], (2,4--2,10)),
                  Lambda
                    (false, true,
                     SimplePats
-                      ([Id (_arg2, None, true, false, false, (3,5--3,17))],
+                      ([Id (_arg2, None, true, false, false, (3,5--3,17))], [],
                        (3,4--3,18)),
                     Lambda
                       (false, true,
                        SimplePats
                          ([Id (_arg1, None, true, false, false, (4,5--4,19))],
-                          (4,4--4,20)),
+                          [], (4,4--4,20)),
                        Match
                          (NoneAtInvisible, Ident _arg2,
                           [SynMatchClause
                              (Record
-                                ([(([], Y), (3,9--3,10),
+                                ([(([], Y), Some (3,9--3,10),
                                    ListCons
                                      (Named
                                         (SynIdent (h, None), false, None,
@@ -84,10 +84,11 @@ ImplFile
                        (Tuple
                           (false,
                            [Named (SynIdent (x, None), false, None, (2,5--2,6));
-                            Wild (2,8--2,9)], (2,5--2,9)), (2,4--2,10));
+                            Wild (2,8--2,9)], [(2,6--2,7)], (2,5--2,9)),
+                        (2,4--2,10));
                      Paren
                        (Record
-                          ([(([], Y), (3,9--3,10),
+                          ([(([], Y), Some (3,9--3,10),
                              ListCons
                                (Named
                                   (SynIdent (h, None), false, None, (3,11--3,12)),
@@ -107,7 +108,7 @@ ImplFile
                       (NoneAtInvisible, Ident _arg2,
                        [SynMatchClause
                           (Record
-                             ([(([], Y), (3,9--3,10),
+                             ([(([], Y), Some (3,9--3,10),
                                 ListCons
                                   (Named
                                      (SynIdent (h, None), false, None,

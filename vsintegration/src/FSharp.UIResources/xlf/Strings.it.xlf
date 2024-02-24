@@ -2,9 +2,29 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="translated">Dati di telemetria aggiuntivi per le prestazioni (sperimentale)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">Inserisci sempre le istruzioni OPEN al primo livello</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Analyze_full_solution_on_background">
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
+        <target state="translated">Continua ad analizzare l'intera soluzione per la diagnostica come attività in background a priorità bassa (richiede il riavvio)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Background_analysis">
+        <source>Background analysis</source>
+        <target state="translated">Analisi in background</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
+        <source>Keep background symbol keys</source>
+        <target state="translated">Mantieni le chiavi dei simboli in background</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -13,13 +33,13 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="translated">Usa buffer in tempo reale (non salvati) per l’analisi (riavvio necessario)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
         <source>Enable partial type checking</source>
-        <target state="new">Enable partial type checking</target>
+        <target state="translated">Abilita il controllo parziale dei tipi</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
@@ -29,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Formatting">
         <source>Formatting</source>
-        <target state="new">Formatting</target>
+        <target state="translated">Formattazione</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
@@ -52,14 +72,19 @@
         <target state="translated">Diagnostica</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="translated">Abilitare il controllo dei tipi paralleli con i file di firma</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
         <target state="translated">Abilitare risoluzione riferimenti paralleli</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Resolutions">
+        <source>Keep all background intermediate resolutions (increases memory usage)</source>
+        <target state="translated">Mantieni tutte le risoluzioni intermedie in background (aumenta l'utilizzo della memoria)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Symbol_Uses">
+        <source>Keep all background symbol uses (increases memory usage)</source>
+        <target state="translated">Mantieni tutti gli utilizzi dei simboli in background (aumenta l'utilizzo della memoria)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -77,9 +102,14 @@
         <target state="translated">Sottolineatura _punteggiata</target>
         <note />
       </trans-unit>
+      <trans-unit id="Language_Service_Settings">
+        <source>Language service settings (advanced)</source>
+        <target state="translated">Impostazioni del servizio di linguaggio (avanzate)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="new">Live Buffers (experimental)</target>
+        <source>Live Buffers</source>
+        <target state="translated">Buffer in tempo reale</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -94,22 +124,32 @@
       </trans-unit>
       <trans-unit id="Preferred_description_width_in_characters">
         <source>Preferred description width in characters</source>
-        <target state="new">Preferred description width in characters</target>
+        <target state="translated">Larghezza descrizione preferita in caratteri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="translated">Rimuovi le parentesi non necessarie (sperimentale, potrebbe influire sulle prestazioni di digitazione)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="translated">Invia dati di telemetria aggiuntivi per le prestazioni</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="needs-review-translation">Visualizza suggerimenti per i nomi di parametro inline (sperimentale)</target>
+        <target state="translated">Visualizza suggerimenti per i nomi di parametro inline (anteprima)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="needs-review-translation">Visualizzare suggerimenti di tipo inline (sperimentale)</target>
+        <target state="translated">Visualizza suggerimenti di tipo inline (anteprima)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
         <source>Display return type hints (preview)</source>
-        <target state="new">Display return type hints (preview)</target>
+        <target state="translated">Visualizza suggerimenti di tipo restituito (anteprima)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -137,6 +177,11 @@
         <target state="translated">M_ostra collegamenti di navigazione come</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="translated">Mostra i commenti in Informazioni rapide</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
         <source>Simplify names (remove unnecessary qualifiers)</source>
         <target state="translated">Semplifica nomi (rimuovi qualificatori non necessari)</target>
@@ -154,7 +199,42 @@
       </trans-unit>
       <trans-unit id="Tooltip_preferred_description_width_in_characters">
         <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
-        <target state="new">Format signature to the given width by adding line breaks conforming with F# syntax rules. </target>
+        <target state="translated">Consente di formattare la firma in base alla larghezza specificata aggiungendo interruzioni di riga conformi alle regole di sintassi F#. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="new">Transparent Compiler (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="new">Use at your own risk!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor">
+        <source>Transparent Compiler Cache Factor</source>
+        <target state="new">Transparent Compiler Cache Factor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
+        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
+        <target state="new">Higher number means more memory will be used for caching. Changing the value wipes cache.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="new">Create new project snapshots from existing ones</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -242,9 +322,14 @@
         <target state="translated">Suggerisci nomi per gli identificatori non risolti</target>
         <note />
       </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="new">Use Transparent Compiler (restart required)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
         <source>Cache parsing results (experimental)</source>
-        <target state="new">Cache parsing results (experimental)</target>
+        <target state="translated">Risultati dell'analisi della cache (sperimentale)</target>
         <note />
       </trans-unit>
     </body>

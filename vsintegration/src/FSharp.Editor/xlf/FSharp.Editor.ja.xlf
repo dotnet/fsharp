@@ -22,6 +22,11 @@
         <target state="translated">'new' キーワードを追加する</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">型の注釈の追加</target>
@@ -35,19 +40,25 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">ブロック構造ガイド;
+F# コードの構造ガイドラインを表示する;
+アウトラインを表示する;
+アウトラインと折りたたみ可能なノードを F# コードに表示する;
+インライン ヒント;
+インライン型ヒントを表示する (プレビュー);
+戻り値の型ヒントを表示する (プレビュー);
+インライン パラメーター名のヒントを表示する (プレビュー);
+ライブ バッファー;
+ライブ (保存されていない) バッファーを使用してチェックする</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">フィールド宣言の型に ':' を使用する</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -56,16 +67,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">名前を簡略化します (不要な修飾子を削除する);
+常に open ステートメントを最上位レベルに配置します。
+未使用の open ステートメントを削除します。
+未使用の値の修正を分析して提案します。
+未解決の識別子の名前を提案します;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">C# 'using' を F# 'open' に変換する</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -110,7 +121,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">貼り付け時にインデントを再フォーマットする (試験段階)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -132,14 +143,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">入力候補リスト;
+文字が削除された後に完了リストを表示します。
+文字が入力された後に入力候補一覧を表示します。
+開かれていない名前空間にシンボルを表示します。
+キーの動作を入力します。
+Enter キーで改行を追加しないでください。
+完全に入力された単語の末尾の後に Enter キーで改行を追加します。
+常に Enter キーを押して新しい行を追加します。</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -162,19 +173,19 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
+        <target state="translated">F# プロジェクトとキャッシュのパフォーマンス オプション;
+メモリ内のプロジェクト間参照を有効にする;
 Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+IntelliSense のパフォーマンス オプション;
+IntelliSense 機能に対して古いデータを有効にする;
+古い結果が使用されるまでの時間 (ミリ秒);
+並列化 (再起動が必要);
+署名ファイルを使用して並列型チェックを有効にする;
+並列参照解決を有効にする;
+高速検索参照と名前の変更を有効にする (再起動が必要);
+キャッシュ解析の結果 (試験段階)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -190,15 +201,22 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="translated">書式設定;
+優先する説明の文字幅;
+F# 構文規則に準拠した改行を追加して、署名を指定された幅に書式設定する;
+ナビゲーション リンク;
+次としてナビゲーション リンクを表示;
+実線の下線;
+ドットの下線;
+破線の下線;
+クイック ヒントに注釈を表示する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="translated">注釈:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -209,6 +227,11 @@ Dash underline;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' の削除</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -229,6 +252,11 @@ Dash underline;</target>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">'{0}' から '_' に名前を変更する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
@@ -261,6 +289,11 @@ Dash underline;</target>
         <target state="translated">未使用の Open 宣言を削除する</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">フィールド宣言で予期しないシンボル '=' が発生しました。':' またはその他のトークンが必要です。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnusedOpens">
         <source>Open declaration can be removed.</source>
         <target state="translated">Open 宣言は削除できます。</target>
@@ -268,7 +301,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">

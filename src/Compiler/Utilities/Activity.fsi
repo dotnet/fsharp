@@ -1,5 +1,4 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-
 namespace FSharp.Compiler.Diagnostics
 
 open System
@@ -7,9 +6,19 @@ open System
 /// For activities following the dotnet distributed tracing concept
 /// https://learn.microsoft.com/dotnet/core/diagnostics/distributed-tracing-concepts?source=recommendations
 [<RequireQualifiedAccess>]
-module internal Activity =
+module ActivityNames =
+    [<Literal>]
+    val FscSourceName: string = "fsc"
 
-    val FscSourceName: string
+    [<Literal>]
+    val ProfiledSourceName: string = "fsc_with_env_stats"
+
+    val AllRelevantNames: string[]
+
+/// For activities following the dotnet distributed tracing concept
+/// https://learn.microsoft.com/dotnet/core/diagnostics/distributed-tracing-concepts?source=recommendations
+[<RequireQualifiedAccess>]
+module internal Activity =
 
     module Tags =
         val fileName: string
@@ -19,6 +28,7 @@ module internal Activity =
         val length: string
         val cache: string
         val buildPhase: string
+        val version: string
 
     module Events =
         val cacheHit: string

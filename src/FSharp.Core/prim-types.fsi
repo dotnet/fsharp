@@ -420,6 +420,10 @@ namespace Microsoft.FSharp.Core
         /// <returns>CustomOperationAttribute</returns>
         new: name:string -> CustomOperationAttribute
 
+        /// <summary>Create an instance of attribute with empty name</summary>
+        /// <returns>CustomOperationAttribute</returns>
+        new: unit -> CustomOperationAttribute
+
         /// <summary>Get the name of the custom operation when used in a query or other computation expression</summary>
         member Name: string
 
@@ -687,7 +691,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="resourceName">The name of the resource needed to resolve the source construct.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
-        new: resourceName:string * typeDefinitions:System.Type[] -> CompilationMappingAttribute
+        new: resourceName:string * typeDefinitions:System.Type array -> CompilationMappingAttribute
 
         /// <summary>Indicates the relationship between the compiled entity and F# source code</summary>
         member SourceConstructFlags: SourceConstructFlags
@@ -702,7 +706,7 @@ namespace Microsoft.FSharp.Core
         member ResourceName: string
 
         /// <summary>Indicates the type definitions needed to resolve the source construct</summary>
-        member TypeDefinitions: System.Type[]
+        member TypeDefinitions: System.Type array
 
     /// <summary>This attribute is inserted automatically by the F# compiler to tag 
     /// methods which are given the 'CompiledName' attribute.</summary>
@@ -805,7 +809,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="counts">Indicates the number of arguments in each argument group.</param>
         ///
         /// <returns>CompilationArgumentCountsAttribute</returns>
-        new: counts:int[] -> CompilationArgumentCountsAttribute
+        new: counts:int array -> CompilationArgumentCountsAttribute
 
         /// <summary>Indicates the number of arguments in each argument group </summary>
         member Counts: System.Collections.Generic.IEnumerable<int>
@@ -950,6 +954,27 @@ namespace Microsoft.FSharp.Core
         /// <returns>NoCompilerInliningAttribute</returns>
         new: unit -> NoCompilerInliningAttribute
 
+    /// <summary>Indicates a function that should be called in a tail recursive way inside its recursive scope.
+    /// A warning is emitted if the function is analyzed as not tail recursive after the optimization phase.</summary> 
+    ///
+    /// <category>Attributes</category>
+    /// 
+    /// <example id="tailcall-attribute-example-1">
+    /// <code lang="fsharp">
+    /// let mul x y = x * y
+    /// [&lt;TailCall&gt;]
+    /// let rec fact n acc =
+    ///     if n = 0
+    ///     then acc
+    ///     else (fact (n - 1) (mul n acc)) + 23 // warning because of the addition after the call to fact
+    /// </code>
+    /// </example>
+    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<Sealed>]
+    type TailCallAttribute =
+        inherit System.Attribute
+        new : unit -> TailCallAttribute
+
 namespace System.Diagnostics.CodeAnalysis
 
     open System
@@ -962,7 +987,7 @@ namespace System.Diagnostics.CodeAnalysis
     /// bitwise combination of its member values.
     /// </summary>
     [<Flags; RequireQualifiedAccessAttribute>]
-    type internal DynamicallyAccessedMemberTypes = (*
+    type internal DynamicallyAccessedMemberTypes =
         | None = 0
         | PublicParameterlessConstructor = 0x0001
         | PublicConstructors = 0x0003
@@ -976,7 +1001,8 @@ namespace System.Diagnostics.CodeAnalysis
         | PublicProperties = 0x0200
         | NonPublicProperties = 0x0400
         | PublicEvents = 0x0800
-        | NonPublicEvents = 0x1000 *)
+        | NonPublicEvents = 0x1000
+        | Interfaces = 0x2000
         | All = 0xffffffff
 
     [<AttributeUsage(
@@ -987,7 +1013,6 @@ namespace System.Diagnostics.CodeAnalysis
         inherit Attribute
         new: DynamicallyAccessedMemberTypes -> DynamicallyAccessedMembersAttribute
         member MemberTypes: DynamicallyAccessedMemberTypes
-        member DynamicallyAccessedMembersAttribute: DynamicallyAccessedMemberTypes -> unit
 
 namespace Microsoft.FSharp.Core
 
@@ -1760,7 +1785,7 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>The standard overloaded associative (indexed) lookup operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline GetArray: source: 'T[] -> index: int -> 'T                           
+            val inline GetArray: source: 'T array -> index: int -> 'T                           
             
             /// <summary>The standard overloaded associative (2-indexed) lookup operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -1776,7 +1801,7 @@ namespace Microsoft.FSharp.Core
             
             /// <summary>The standard overloaded associative (indexed) mutation operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline SetArray: target: 'T[] -> index: int -> value: 'T -> unit      
+            val inline SetArray: target: 'T array -> index: int -> value: 'T -> unit      
             
             /// <summary>The standard overloaded associative (2-indexed) mutation operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -3456,8 +3481,8 @@ namespace Microsoft.FSharp.Core
         /// <example id="nullarg-example">
         /// <code lang="fsharp">
         /// let fullName firstName lastName = 
-        ///     nullArg (nameof(firstName))
-        ///     nullArg (nameof(lastName))
+        ///     if isNull firstName then nullArg (nameof(firstName))
+        ///     if isNull lastName then nullArg (nameof(lastName))
         ///     firstName + " " + lastName
         ///   
         ///   fullName null "Jones"  // Throws System.ArgumentNullException: Value cannot be null. (Parameter 'firstName')
@@ -4719,7 +4744,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish">The end index.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice: source:'T[] -> start:int option -> finish:int option -> 'T[] 
+            val inline GetArraySlice: source:'T array -> start:int option -> finish:int option -> 'T array 
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -4727,7 +4752,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start">The start index.</param>
             /// <param name="finish">The end index.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice: target:'T[] -> start:int option -> finish:int option -> source:'T[] -> unit
+            val inline SetArraySlice: target:'T array -> start:int option -> finish:int option -> source:'T array -> unit
 
             /// <summary>Gets a region slice of an array</summary>
             ///
@@ -4748,7 +4773,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish2">The end index of the second dimension.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice2DFixed1: source:'T[,] -> index1:int -> start2:int option -> finish2:int option -> 'T[]
+            val inline GetArraySlice2DFixed1: source:'T[,] -> index1:int -> start2:int option -> finish2:int option -> 'T array
 
             /// <summary>Gets a vector slice of a 2D array. The index of the second dimension is fixed.</summary>
             ///
@@ -4758,7 +4783,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index2">The fixed index of the second dimension.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice2DFixed2: source:'T[,] -> start1:int option -> finish1:int option -> index2: int -> 'T[]
+            val inline GetArraySlice2DFixed2: source:'T[,] -> start1:int option -> finish1:int option -> index2: int -> 'T array
 
             /// <summary>Sets a region slice of an array</summary>
             ///
@@ -4777,7 +4802,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice2DFixed1: target:'T[,] -> index1:int -> start2:int option -> finish2:int option -> source:'T[] -> unit
+            val inline SetArraySlice2DFixed1: target:'T[,] -> index1:int -> start2:int option -> finish2:int option -> source:'T array -> unit
 
             /// <summary>Sets a vector slice of a 2D array. The index of the second dimension is fixed.</summary>
             ///
@@ -4786,7 +4811,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish1">The end index of the first dimension.</param>
             /// <param name="index2">The index of the second dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice2DFixed2: target:'T[,] -> start1:int option -> finish1:int option -> index2:int -> source:'T[] -> unit
+            val inline SetArraySlice2DFixed2: target:'T[,] -> start1:int option -> finish1:int option -> index2:int -> source:'T array -> unit
 
             /// <summary>Gets a slice of an array</summary>
             ///
@@ -4846,7 +4871,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble1: source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
+            val inline GetArraySlice3DFixedDouble1: source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T array
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4857,7 +4882,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble2: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
+            val inline GetArraySlice3DFixedDouble2: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T array
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4868,7 +4893,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble3: source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
+            val inline GetArraySlice3DFixedDouble3: source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T array
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -4931,7 +4956,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble1: target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble1: target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T array -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4943,7 +4968,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble2: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble2: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T array -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4955,7 +4980,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble3: target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble3: target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T array -> unit
 
             /// <summary>Gets a slice of an array</summary>
             ///
@@ -5116,7 +5141,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple4: source: 'T[,,,] -> index1: int -> index2: int -> index3: int -> start4: int option -> finish4: int option -> 'T[]
+            val inline GetArraySlice4DFixedTriple4: source: 'T[,,,] -> index1: int -> index2: int -> index3: int -> start4: int option -> finish4: int option -> 'T array
 
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5128,7 +5153,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple3: source: 'T[,,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> index4: int -> 'T[]
+            val inline GetArraySlice4DFixedTriple3: source: 'T[,,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> index4: int -> 'T array
             
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5140,7 +5165,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple2: source:'T[,,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> index4: int -> 'T[]
+            val inline GetArraySlice4DFixedTriple2: source:'T[,,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> index4: int -> 'T array
 
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5152,7 +5177,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple1: source: 'T[,,,] -> start1: int option -> finish1: int option -> index2: int -> index3: int -> index4: int -> 'T[]
+            val inline GetArraySlice4DFixedTriple1: source: 'T[,,,] -> start1: int option -> finish1: int option -> index2: int -> index3: int -> index4: int -> 'T array
             
             /// <summary>Sets a 3D slice of a 4D array</summary>
             ///
@@ -5287,7 +5312,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple4: target:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple4: target:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T array -> unit
 
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5298,7 +5323,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple3: target:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple3: target:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T array -> unit
             
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5309,7 +5334,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple2: target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple2: target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T array -> unit
 
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5320,7 +5345,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple1: target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple1: target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> source: 'T array -> unit
 
             /// <summary>Sets a slice of an array</summary>
             ///

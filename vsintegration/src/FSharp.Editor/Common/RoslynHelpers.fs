@@ -46,12 +46,12 @@ module internal RoslynHelpers =
 
         TextSpan(startPosition, endPosition - startPosition)
 
-    let TryFSharpRangeToTextSpan (sourceText: SourceText, range: range) : TextSpan option =
+    let TryFSharpRangeToTextSpan (sourceText: SourceText, range: range) : TextSpan voption =
         try
-            Some(FSharpRangeToTextSpan(sourceText, range))
+            ValueSome(FSharpRangeToTextSpan(sourceText, range))
         with e ->
             //Assert.Exception(e)
-            None
+            ValueNone
 
     let TextSpanToFSharpRange (fileName: string, textSpan: TextSpan, sourceText: SourceText) : range =
         let startLine = sourceText.Lines.GetLineFromPosition textSpan.Start
@@ -61,13 +61,6 @@ module internal RoslynHelpers =
             fileName
             (Position.fromZ startLine.LineNumber (textSpan.Start - startLine.Start))
             (Position.fromZ endLine.LineNumber (textSpan.End - endLine.Start))
-
-    let GetCompletedTaskResult (task: Task<'TResult>) =
-        if task.Status = TaskStatus.RanToCompletion then
-            task.Result
-        else
-            Assert.Exception(task.Exception.GetBaseException())
-            raise (task.Exception.GetBaseException())
 
     /// maps from `TextTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
     let roslynTag =
@@ -298,3 +291,16 @@ module internal OpenDeclarationHelper =
 module internal TaggedText =
     let toString (tts: TaggedText[]) =
         tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
+
+// http://www.fssnip.net/7S3/title/Intersperse-a-list
+module List =
+    /// The intersperse function takes an element and a list and
+    /// 'intersperses' that element between the elements of the list.
+    let intersperse sep ls =
+        List.foldBack
+            (fun x ->
+                function
+                | [] -> [ x ]
+                | xs -> x :: sep :: xs)
+            ls
+            []

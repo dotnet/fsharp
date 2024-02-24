@@ -576,17 +576,20 @@ let s3 = $"abc %d{s.Length}
     typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
-    |> shouldEqual
-        [|(3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
-          (8, 11, 8, 14, 1); (10, 12, 10, 15, 1); (13, 12, 13, 15, 1);
-          (14, 38, 14, 40, 1); (16, 12, 16, 18, 1); (17, 11, 17, 13, 1);
-          (17, 18, 17, 22, 1); (18, 10, 18, 12, 0); (19, 15, 19, 17, 1);
-          (19, 32, 19, 34, 1); (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)|]
+    |> shouldEqual [|
+        (3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
+        (8, 11, 8, 14, 1); (13, 12, 13, 15, 1); (14, 38, 14, 40, 1);
+        (16, 12, 16, 18, 1); (17, 11, 17, 13, 1); (17, 18, 17, 22, 1);
+        (18, 10, 18, 12, 0); (19, 15, 19, 17, 1); (19, 32, 19, 34, 1);
+        (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)
+    |]
 
 [<Test>]
 let ``Printf specifiers for triple quote interpolated strings`` () =
     let input =
-      "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"  "
+      "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"
+let _ = $$\"\"\"abc %%d{{1}} and %%d{{2}}def\"\"\"
+let _ = $$$\"\"\"%% %%%d{{{4}}} % %%%d{{{5}}}\"\"\" "
 
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |])
@@ -595,7 +598,9 @@ let ``Printf specifiers for triple quote interpolated strings`` () =
     typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
-        [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)|]
+        [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)
+          (2, 17, 2, 20, 1); (2, 30, 2, 33, 1)
+          (3, 17, 3, 21, 1); (3, 31, 3, 35, 1)|]
 #endif // ASSUME_PREVIEW_FSHARP_CORE
 
 
@@ -776,7 +781,6 @@ type Class1() =
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual
         [|("LiteralAttribute", (3, 10, 3, 17))
-          ("LiteralAttribute", (3, 10, 3, 17))
           ("member .ctor", (3, 10, 3, 17))
           ("val ModuleValue", (3, 20, 3, 31))
           ("val op_Addition", (6, 26, 6, 27))
@@ -788,10 +792,8 @@ type Class1() =
           ("Class1", (10, 5, 10, 11))
           ("member .ctor", (10, 5, 10, 11))
           ("LiteralAttribute", (11, 10, 11, 17))
-          ("LiteralAttribute", (11, 10, 11, 17))
           ("member .ctor", (11, 10, 11, 17))
           ("val ClassValue", (11, 20, 11, 30))
-          ("LiteralAttribute", (12, 17, 12, 24))
           ("LiteralAttribute", (12, 17, 12, 24))
           ("member .ctor", (12, 17, 12, 24))
           ("val StaticClassValue", (12, 27, 12, 43))
@@ -1572,7 +1574,7 @@ let _ = Threading.Buzz = null
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
     |> shouldEqual
-        // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
+        // note: these "System" and "Threading" symbol uses are not duplications because each of them corresponds to different namespaces
         [|("System", (2, 5, 2, 11))
           ("Threading", (2, 12, 2, 21))
           ("System", (3, 5, 3, 11))
@@ -1580,7 +1582,6 @@ let _ = Threading.Buzz = null
           ("Threading", (5, 14, 5, 23))
           ("Tasks", (5, 24, 5, 29))
           ("val op_Equality", (6, 23, 6, 24))
-          ("Threading", (6, 8, 6, 17))
           ("Test", (1, 0, 1, 0))|]
 
 [<Test>]
@@ -1921,3 +1922,228 @@ do let x = 1 in ()
         data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
 
+let hasRecordField (fieldName:string) (symbolUses: FSharpSymbolUse list) =
+    symbolUses
+    |> List.exists (fun symbolUse ->
+        match symbolUse.Symbol with
+        | :? FSharpField as field -> field.DisplayName = fieldName
+        | _ -> false
+    )
+    |> fun exists -> Assert.True(exists, $"Field {fieldName} not found.")
+
+let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
+    symbolUses
+    |> List.exists (fun symbolUse ->
+        match symbolUse.Symbol with
+        | :? FSharpEntity as recordType -> recordType.IsFSharpRecord && recordType.DisplayName = recordTypeName
+        | _ -> false
+    )
+    |> fun exists -> Assert.True(exists, $"Record type {recordTypeName} not found.")
+
+[<Test>]
+let ``Record fields are completed via type name usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+type Entry =
+    {
+        Idx: int
+        FileName: string
+        /// Own deps
+        DependencyCount: int
+        /// Being depended on
+        DependentCount: int
+        LineCount: int
+    }
+
+let x =
+    {
+        Entry.
+    }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            14,
+            "        Entry.",
+            {
+                EndColumn = 13
+                LastDotPos = Some 13
+                PartialIdent = ""
+                QualifyingIdents = [ "Entry" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Idx" declarations
+    hasRecordField "FileName" declarations
+    hasRecordField "DependentCount" declarations
+    hasRecordField "LineCount" declarations
+
+[<Test>]
+let ``Record fields and types are completed via type name usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+
+    { Module1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            11,
+            "    { Module1. }",
+            {
+                EndColumn = 13
+                LastDotPos = Some 13
+                PartialIdent = ""
+                QualifyingIdents = [ "Module1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
+    hasRecordType "R1" declarations
+    hasRecordType "R2" declarations
+
+[<Test>]
+let ``Record fields are completed via type name usage with open statement`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+    open Module1
+
+    { R1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            12,
+            "    { R1. }",
+            {
+                EndColumn = 8
+                LastDotPos = Some 8
+                PartialIdent = ""
+                QualifyingIdents = [ "R1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+
+[<Test>]
+let ``Record fields are completed via type name with module usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+    { Module1.R1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            10,
+            "    { Module1.R1. }",
+            {
+                EndColumn = 16
+                LastDotPos = Some 16
+                PartialIdent = ""
+                QualifyingIdents = [ "Module1"; "R1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+
+[<Test>]
+let ``Record fields are completed in update record`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate = { r1 with  }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let rUpdate = { r1 with  }",
+            {
+                EndColumn = 24
+                LastDotPos = None
+                PartialIdent = ""
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
+
+[<Test>]
+[<Ignore "Current fails to suggest any record fields">]
+let ``Record fields are completed in update record with partial field name`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate = { r1 with Fi }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let rUpdate = { r1 with Fi }",
+            {
+                EndColumn = 26
+                LastDotPos = None
+                PartialIdent = "Fi"
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations

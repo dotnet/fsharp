@@ -19,7 +19,7 @@ open LanguagePrimitives.IntrinsicOperators
 
 type PrintfFormat<'Printer, 'State, 'Residue, 'Result>
         [<DebuggerStepThrough>]
-        (value:string, captures: obj[], captureTys: Type[]) =
+        (value:string, captures: obj array, captureTys: Type array) =
         
     [<DebuggerStepThrough>]
     new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, null, null) 
@@ -34,7 +34,7 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result>
     
 type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>
          [<DebuggerStepThrough>]
-         (value:string, captures, captureTys: Type[]) = 
+         (value:string, captures, captureTys: Type array) = 
 
     inherit PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, captures, captureTys)
 
@@ -274,7 +274,7 @@ module internal PrintfImpl =
         | StepPercentStar2 of prefix: string
 
         // Count the number of string fragments in a sequence of steps
-        static member BlockCount(steps: Step[]) =
+        static member BlockCount(steps: Step array) =
             let mutable count = 0
             for step in steps do 
                 match step with 
@@ -323,7 +323,7 @@ module internal PrintfImpl =
             if not (String.IsNullOrEmpty s) then 
                 env.Write s
     
-        member env.RunSteps (args: obj[], argTys: Type[], steps: Step[]) =
+        member env.RunSteps (args: obj array, argTys: Type array, steps: Step array) =
             let mutable argIndex = 0
             let mutable tyIndex = 0
 
@@ -599,12 +599,12 @@ module internal PrintfImpl =
                 let fmt = getFormat prec
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
-                    ValueConverter.Make (fun v -> 
-                        pad fmt spec.Width v)
+                    ValueConverter.Make ( 
+                        pad fmt spec.Width)
                 else
                     // width=X, prec=*
-                    ValueConverter.Make (fun v -> 
-                        basic fmt v)
+                    ValueConverter.Make ( 
+                        basic fmt)
 
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
@@ -617,12 +617,12 @@ module internal PrintfImpl =
             else
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
-                    ValueConverter.Make (fun v -> 
-                        pad spec.Width v)
+                    ValueConverter.Make ( 
+                        pad spec.Width)
                 else
                     // width=X, prec=*
-                    ValueConverter.Make (fun v -> 
-                        basic v)
+                    ValueConverter.Make ( 
+                        basic)
 
         let withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  obj -> string) left right : ValueConverter =
             if not (spec.IsWidthSpecified || spec.IsPrecisionSpecified) then
@@ -1029,7 +1029,7 @@ module internal PrintfImpl =
 
     type LargeStringPrintfEnv<'Result>(continuation, blockSize) = 
         inherit PrintfEnv<unit, string, 'Result>(())
-        let buf: string[] = Array.zeroCreate blockSize
+        let buf: string array = Array.zeroCreate blockSize
         let mutable ptr = 0
 
         override _.Finish() : 'Result = continuation (String.Concat buf)
@@ -1089,8 +1089,8 @@ module internal PrintfImpl =
     [<AllowNullLiteral>]
     type FormatParser<'Printer, 'State, 'Residue, 'Result>(fmt: string) =
     
-        let buildCaptureFunc (spec: FormatSpecifier, allSteps, argTys: Type[], retTy, nextInfo) = 
-            let (next:obj, nextCanCombine: bool, nextArgTys: Type[], nextRetTy, nextNextOpt) = nextInfo
+        let buildCaptureFunc (spec: FormatSpecifier, allSteps, argTys: Type array, retTy, nextInfo) = 
+            let (next:obj, nextCanCombine: bool, nextArgTys: Type array, nextRetTy, nextNextOpt) = nextInfo
             assert (argTys.Length > 0)
 
             // See if we can compress a capture to a multi-capture
@@ -1133,7 +1133,7 @@ module internal PrintfImpl =
                 let factoryObj = mi.Invoke(null, [| next  |])
                 factoryObj, true, argTys, retTy, Some next
 
-        let buildStep (spec: FormatSpecifier) (argTys: Type[]) prefix = 
+        let buildStep (spec: FormatSpecifier) (argTys: Type array) prefix = 
             if spec.TypeChar = 'a' then
                 StepLittleA prefix
             elif spec.TypeChar = 't' then

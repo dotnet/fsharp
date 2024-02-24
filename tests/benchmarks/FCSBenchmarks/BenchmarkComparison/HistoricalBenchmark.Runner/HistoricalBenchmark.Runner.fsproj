@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RootNamespace>HistoricalBenchmark.Utilities</RootNamespace>
+        <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,7 +16,7 @@
       <PackageReference Include="LibGit2Sharp" Version="0.26.2" />
       <PackageReference Include="Microsoft.Data.Analysis" Version="0.19.1" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
-      <PackageReference Include="NuGet.Protocol" Version="6.2.2" />
+      <PackageReference Include="NuGet.Protocol" Version="6.2.4" />
       <PackageReference Include="Plotly.NET" Version="3.0.0" />
     </ItemGroup>
 

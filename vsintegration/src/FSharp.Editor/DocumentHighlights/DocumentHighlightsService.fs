@@ -11,9 +11,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.DocumentHighlighting
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
+open CancellableTasks
 
 type internal FSharpHighlightSpan =
     {
@@ -57,8 +56,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
         |> Seq.distinctBy (fun span -> span.TextSpan.Start)
         |> Seq.toArray
 
-    static member GetDocumentHighlights(document: Document, position: int) : Async<FSharpHighlightSpan[] option> =
-        asyncMaybe {
+    static member GetDocumentHighlights(document: Document, position: int) : CancellableTask<FSharpHighlightSpan[]> =
+        cancellableTask {
             let! symbol =
                 document.TryFindFSharpLexerSymbolAsync(
                     position,
@@ -68,39 +67,45 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
                     nameof (FSharpDocumentHighlightsService.GetDocumentHighlights)
                 )
 
-            let! ct = Async.CancellationToken |> liftAsync
-            let! sourceText = document.GetTextAsync(ct)
-            let textLine = sourceText.Lines.GetLineFromPosition(position)
-            let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            match symbol with
+            | None -> return Array.empty
+            | Some symbol ->
+                let! ct = CancellableTask.getCancellationToken ()
 
-            let! _, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpDocumentHighlightsService))
-                |> liftAsync
+                let! sourceText = document.GetTextAsync(ct)
+                let textLine = sourceText.Lines.GetLineFromPosition(position)
+                let textLinePos = sourceText.Lines.GetLinePosition(position)
+                let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
-            let! symbolUse =
-                checkFileResults.GetSymbolUseAtLocation(
-                    fcsTextLineNumber,
-                    symbol.Ident.idRange.EndColumn,
-                    textLine.ToString(),
-                    symbol.FullIsland
-                )
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpDocumentHighlightsService))
 
-            let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                let symbolUse =
+                    checkFileResults.GetSymbolUseAtLocation(
+                        fcsTextLineNumber,
+                        symbol.Ident.idRange.EndColumn,
+                        textLine.ToString(),
+                        symbol.FullIsland
+                    )
 
-            return
-                [|
-                    for symbolUse in symbolUses do
-                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
-                        | None -> ()
-                        | Some span ->
-                            yield
-                                {
-                                    IsDefinition = symbolUse.IsFromDefinition
-                                    TextSpan = span
-                                }
-                |]
-                |> fixInvalidSymbolSpans sourceText symbol.Ident.idText
+                match symbolUse with
+                | None -> return Array.empty
+                | Some symbolUse ->
+
+                    let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, ct)
+
+                    return
+                        [|
+                            for symbolUse in symbolUses do
+                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
+                                | ValueNone -> ()
+                                | ValueSome span ->
+                                    yield
+                                        {
+                                            IsDefinition = symbolUse.IsFromDefinition
+                                            TextSpan = span
+                                        }
+                        |]
+                        |> fixInvalidSymbolSpans sourceText symbol.Ident.idText
         }
 
     interface IFSharpDocumentHighlightsService with
@@ -111,7 +116,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
                 _documentsToSearch,
                 cancellationToken
             ) : Task<ImmutableArray<FSharpDocumentHighlights>> =
-            asyncMaybe {
+            cancellableTask {
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(document, position)
 
                 let highlightSpans =
@@ -128,5 +133,4 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
 
                 return ImmutableArray.Create(FSharpDocumentHighlights(document, highlightSpans))
             }
-            |> Async.map (Option.defaultValue ImmutableArray<FSharpDocumentHighlights>.Empty)
-            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> CancellableTask.start cancellationToken

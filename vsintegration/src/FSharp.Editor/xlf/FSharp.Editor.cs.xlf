@@ -22,6 +22,11 @@
         <target state="translated">Přidejte klíčové slovo new.</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Přidat anotaci typu</target>
@@ -35,19 +40,25 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Vodítka struktury bloků;
+Zobrazit pokyny ke struktuře pro kód F#;
+Osnova;
+Zobrazit osnovu a sbalitelné uzly kódu F#;
+Vložené tipy;
+Zobrazit tipy pro vložený typ (náhled);
+Zobrazení tipů pro návratový typ (náhled);
+Zobrazit nápovědy k názvům vložených parametrů (náhled);
+Živé vyrovnávací paměti;
+Použití živých (neuložených) vyrovnávacích pamětí pro kontrolu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">Pro typ v deklaraci pole použijte „:“</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -56,16 +67,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">Zjednodušení názvů (odebrání nepotřebných kvalifikátorů);
+Vždy umístit otevřené příkazy na nejvyšší úrovni;
+Odebrat nepoužívané otevřené příkazy;
+Analyzovat a navrhovat opravy pro nepoužívané hodnoty;
+Navrhnout názvy pro nerozpoznané identifikátory;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">Převést C# „using“ na F# „open“</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -110,7 +121,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">Znovu naformátovat odsazení při vložení (experimentální)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -132,14 +143,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">Seznamy pro doplňování;
+Zobrazit seznam pro doplňování po odstranění znaku;
+Zobrazit seznam pro doplňování po zadání znaku;
+Zobrazit symboly v neotevřených názvových prostorech;
+Zadejte chování kláves;
+Nikdy nepřidávat nový řádek při stisknutí klávesy Enter;
+Přidat nový řádek pouze po zadání za konec plně zadaného slova;
+Vždy přidat nový řádek při stisknutí klávesy Enter;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -162,19 +173,19 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
+        <target state="needs-review-translation">Možnosti výkonu projektu F# a ukládání do mezipaměti;
+Povolit odkazy mezi projekty v paměti;
 Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+Možnosti výkonu IntelliSense;
+Povolit zastaralá data pro funkce IntelliSense;
+Doba, než se použijí zastaralé výsledky (v milisekundách);
+Paralelizace (vyžaduje restartování);
+Povolit paralelní kontrolu typů pomocí souborů podpisu;
+Povolit paralelní referenční rozlišení;
+Povolit odkazy rychlého hledání a přejmenování (experimentální)
+Výsledky analýzy mezipaměti (experimentální)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -190,15 +201,21 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Formátování;
+Upřednostňovaná šířka popisu ve znacích;
+Formátování podpisu na danou šířku přidáním konců řádků podle pravidel syntaxe F#;
+Navigační odkazy;
+Zobrazit navigační odkazy jako;
+Plné podtržení;
+Tečkované podtržení;
+Přerušované podtržení;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="new">Remarks:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -209,6 +226,11 @@ Dash underline;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Odebrat return!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -229,6 +251,11 @@ Dash underline;</target>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">Přejmenujte {0} na _.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
@@ -261,6 +288,11 @@ Dash underline;</target>
         <target state="translated">Odeberte nepoužité otevřené deklarace.</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">Neočekávaný symbol „=“ v deklaraci pole. Očekával se token „:“ nebo nějaký jiný.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnusedOpens">
         <source>Open declaration can be removed.</source>
         <target state="translated">Otevřenou deklaraci nelze odebrat.</target>
@@ -268,7 +300,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">

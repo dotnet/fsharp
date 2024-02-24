@@ -23,6 +23,28 @@
                                   IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
                                   Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"
                                   ToolTip="{x:Static local:Strings.Tooltip_in_memory_cross_project_references}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="70" />
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0"
+                               x:Name="transparentCompilerCacheFactor"
+                               Content="{x:Static local:Strings.Transparent_Compiler_Cache_Factor}"
+                               Margin="15 0 0 0"/>
+                               <TextBox Grid.Column="1"
+                                 ToolTip="{x:Static local:Strings.Transparent_Compiler_Cache_Factor_Tooltip}"
+                                 HorizontalContentAlignment="Right"
+                                 VerticalContentAlignment="Center">
+                                <TextBox.Text>
+                                    <Binding UpdateSourceTrigger="PropertyChanged" Path="TransparentCompilerCacheFactor">
+                                        <Binding.ValidationRules>
+                                            <local:IntegerRangeValidationRule Min="1" Max="10000"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+                        </Grid>
                         <CheckBox x:Name="enablePartialTypeChecking"
                                   IsChecked="{Binding EnablePartialTypeChecking}"
                                   Content="{x:Static local:Strings.Enable_partial_type_checking}" />
@@ -46,7 +68,7 @@
                                    Content="{x:Static local:Strings.Time_until_stale_completion}"
                                    Margin="15 0 0 0"/>
                                 <TextBox Grid.Column="1"
-                                     HorizontalContentAlignment="Right" 
+                                     HorizontalContentAlignment="Right"
                                      VerticalContentAlignment="Center">
                                     <TextBox.Text>
                                         <Binding UpdateSourceTrigger="PropertyChanged" Path="TimeUntilStaleCompletion">
@@ -62,9 +84,6 @@
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Parallelization}">
                     <StackPanel>
-                        <CheckBox x:Name="enableParallelCheckingWithSignatureFiles"
-                                  IsChecked="{Binding EnableParallelCheckingWithSignatureFiles}"
-                                  Content="{x:Static local:Strings.Enable_Parallel_Checking_With_Signature_Files}"/>
                         <CheckBox x:Name="enableParallelReferenceResolution"
                                   IsChecked="{Binding EnableParallelReferenceResolution}"
                                   Content="{x:Static local:Strings.Enable_Parallel_Reference_Resolution}"/>
@@ -72,11 +91,25 @@
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Find_References_Performance}">
                     <StackPanel>
-                        <CheckBox x:Name="enableFastFindReferences"
-                                  IsChecked="{Binding EnableFastFindReferences}"
+                        <CheckBox x:Name="enableFastFindReferencesAndRename"
+                                  IsChecked="{Binding EnableFastFindReferencesAndRename}"
                                   Content="{x:Static local:Strings.Enable_Fast_Find_References}"/>
                     </StackPanel>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Language_Service_Settings}">
+                    <StackPanel>
+                        <CheckBox x:Name="keepAllBackgroundResolutions"
+                                  IsChecked="{Binding KeepAllBackgroundResolutions}"
+                                  Content="{x:Static local:Strings.Keep_All_Background_Resolutions}"/>
+                        <CheckBox x:Name="keepAllBackgroundSymbolUses"
+                                  IsChecked="{Binding KeepAllBackgroundSymbolUses}"
+                                  Content="{x:Static local:Strings.Keep_All_Background_Symbol_Uses}"/>
+                        <CheckBox x:Name="enableBackgroundItemKeyStoreAndSemanticClassification"
+                                  IsChecked="{Binding EnableBackgroundItemKeyStoreAndSemanticClassification}"
+                                  Content="{x:Static local:Strings.Enable_Background_ItemKeyStore_And_Semantic_Classification}"/>
+                    </StackPanel>
+                </GroupBox>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

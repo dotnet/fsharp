@@ -4,7 +4,7 @@ open FSharp.Compiler.EditorServices
 open NUnit.Framework
 
 let getCompletionInfo lineText (line, column) source =
-    let parseResults, checkResults = getParseAndCheckResults source
+    let parseResults, checkResults = getParseAndCheckResultsPreview source
     let plid = QuickParse.GetPartialLongNameEx(lineText, column)
     checkResults.GetDeclarationListInfo(Some parseResults, line, lineText, plid)
 
@@ -15,14 +15,7 @@ let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
     let itemNames = getCompletionItemNames completionInfo |> set
 
     for name in names do
-        Assert.That(Set.contains name itemNames, name)
-
-let assertHasExactlyNamesAndNothingElse names (completionInfo: DeclarationListInfo) =
-    let itemNames = getCompletionItemNames completionInfo |> set
-    let expectedNames = Set.ofList names
-
-    Assert.That(itemNames, Is.EqualTo expectedNames)
-
+        Assert.That(Set.contains name itemNames, $"{name} not found in {itemNames}")
 
 [<Test>]
 let ``Expr - record - field 01 - anon module`` () =
@@ -65,9 +58,17 @@ let record = { Field = 1 }
     assertHasItemWithNames ["Field"; "record"] info
 
 [<Test>]
-let ``Expr - array of anonymous records`` () =
-    let info = getCompletionInfo "x[0]." (3, 6) """
-let x = [ {| Name = "foo" |} ]
-x[0].
-"""  
-    assertHasExactlyNamesAndNothingElse ["Name"; "Equals"; "GetHashCode"; "GetType"; "ToString"] info
+let ``Underscore dot lambda - completion`` () =
+    let info = getCompletionInfo "    |> _.Len" (4, 11) """
+let myFancyFunc (x:string) = 
+    x 
+    |> _.Len"""
+    assertHasItemWithNames ["Length"] info
+
+[<Test>]
+let ``Underscore dot lambda - method completion`` () =
+    let info = getCompletionInfo "    |> _.ToL" (4, 11) """
+let myFancyFunc (x:string) = 
+    x 
+    |> _.ToL"""
+    assertHasItemWithNames ["ToLower"] info

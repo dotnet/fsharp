@@ -8,8 +8,9 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 
 [<RequireQualifiedAccess; NoComparison>]
-type SymbolDeclarationLocation =
+type SymbolScope =
     | CurrentDocument
+    | SignatureAndImplementation
     | Projects of Project list * isLocalForProject: bool
 
 [<NoComparison>]
@@ -23,20 +24,24 @@ type SymbolUse =
 type FSharpSymbol with
 
     member this.IsInternalToProject =
+        let publicOrInternal = this.Accessibility.IsPublic || this.Accessibility.IsInternal
+
         match this with
         | :? FSharpParameter -> true
-        | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || not m.Accessibility.IsPublic
-        | :? FSharpEntity as m -> not m.Accessibility.IsPublic
+        | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || not publicOrInternal
+        | :? FSharpEntity -> not publicOrInternal
         | :? FSharpGenericParameter -> true
-        | :? FSharpUnionCase as m -> not m.Accessibility.IsPublic
-        | :? FSharpField as m -> not m.Accessibility.IsPublic
+        | :? FSharpUnionCase -> not publicOrInternal
+        | :? FSharpField -> not publicOrInternal
         | _ -> false
 
 type FSharpSymbolUse with
 
-    member this.GetDeclarationLocation(currentDocument: Document) : SymbolDeclarationLocation option =
+    member this.GetSymbolScope(currentDocument: Document) : SymbolScope option =
         if this.IsPrivateToFile then
-            Some SymbolDeclarationLocation.CurrentDocument
+            Some SymbolScope.CurrentDocument
+        elif this.IsPrivateToFileAndSignatureFile then
+            Some SymbolScope.SignatureAndImplementation
         else
             let isSymbolLocalForProject = this.Symbol.IsInternalToProject
 
@@ -51,12 +56,12 @@ type FSharpSymbolUse with
                 let isScript = isScriptFile filePath
 
                 if isScript && filePath = currentDocument.FilePath then
-                    Some SymbolDeclarationLocation.CurrentDocument
+                    Some SymbolScope.CurrentDocument
                 elif isScript then
                     // The standalone script might include other files via '#load'
                     // These files appear in project options and the standalone file
                     // should be treated as an individual project
-                    Some(SymbolDeclarationLocation.Projects([ currentDocument.Project ], isSymbolLocalForProject))
+                    Some(SymbolScope.Projects([ currentDocument.Project ], isSymbolLocalForProject))
                 else
                     let projects =
                         currentDocument.Project.Solution.GetDocumentIdsWithFilePath(filePath)
@@ -67,7 +72,7 @@ type FSharpSymbolUse with
 
                     match projects with
                     | [] -> None
-                    | projects -> Some(SymbolDeclarationLocation.Projects(projects, isSymbolLocalForProject))
+                    | projects -> Some(SymbolScope.Projects(projects, isSymbolLocalForProject))
             | None -> None
 
 type FSharpEntity with

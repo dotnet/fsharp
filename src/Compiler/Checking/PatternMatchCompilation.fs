@@ -23,6 +23,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
+open type System.MemoryExtensions
 
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
@@ -42,13 +43,12 @@ type Pattern =
     | TPat_as of  Pattern * PatternValBinding * range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
     | TPat_disjs of  Pattern list * range
     | TPat_conjs of  Pattern list * range
-    | TPat_query of (Expr * TType list * bool * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
+    | TPat_query of (Expr * TType list * ActivePatternReturnKind * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
     | TPat_exnconstr of TyconRef * Pattern list * range
     | TPat_tuple of  TupInfo * Pattern list * TType list * range
     | TPat_array of  Pattern list * TType * range
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
-    | TPat_range of char * char * range
     | TPat_null of range
     | TPat_isinst of TType * TType * Pattern option * range
     | TPat_error of range
@@ -66,7 +66,6 @@ type Pattern =
         | TPat_tuple(_, _, _, m) -> m
         | TPat_array(_, _, m) -> m
         | TPat_recd(_, _, _, m) -> m
-        | TPat_range(_, _, m) -> m
         | TPat_null m -> m
         | TPat_isinst(_, _, _, m) -> m
         | TPat_error m -> m
@@ -194,7 +193,17 @@ let ilFieldToTastConst lit =
     | ILFieldInit.Double f -> Const.Double f
 
 exception CannotRefute
-let RefuteDiscrimSet g m path discrims =
+
+[<Struct>]
+[<RequireQualifiedAccess>]
+type CounterExampleType = 
+    /// Maps to EnumMatchIncomplete exn
+    | EnumCoversKnown 
+    /// Maps to MatchIncomplete exn
+    | WithoutEnum 
+    with member x.Combine(other) = match other with EnumCoversKnown -> other | _ -> x
+
+let RefuteDiscrimSet g m path discrims : Expr * CounterExampleType =
     let mkUnknown ty = snd(mkCompGenLocal m "_" ty)
     let rec go path tm =
         match path with
@@ -221,37 +230,37 @@ let RefuteDiscrimSet g m path discrims =
         | PathEmpty ty -> tm ty
 
     and mkOneKnown tm n tys =
-        let flds = List.mapi (fun i ty -> if i = n then tm ty else (mkUnknown ty, false)) tys
-        List.map fst flds, List.fold (fun acc (_, eCoversVals) -> eCoversVals || acc) false flds
-    and mkUnknowns tys = List.map (fun x -> mkUnknown x) tys
+        let flds = List.mapi (fun i ty -> if i = n then tm ty else (mkUnknown ty, CounterExampleType.WithoutEnum)) tys
+        List.map fst flds, List.fold (fun acc (_, eCoversVals) -> acc.Combine(eCoversVals)) CounterExampleType.WithoutEnum flds
+    and mkUnknowns tys = List.map mkUnknown tys
 
     let tm ty =
         match discrims with
         | [DecisionTreeTest.IsNull] ->
-            snd(mkCompGenLocal m notNullText ty), false
+            snd(mkCompGenLocal m notNullText ty), CounterExampleType.WithoutEnum
         | DecisionTreeTest.IsInst _ :: _ ->
-            snd(mkCompGenLocal m otherSubtypeText ty), false
+            snd(mkCompGenLocal m otherSubtypeText ty), CounterExampleType.WithoutEnum
         | DecisionTreeTest.Const c :: rest ->
             let consts = Set.ofList (c :: List.choose (function DecisionTreeTest.Const c -> Some c | _ -> None) rest)
             let c' =
-                Seq.tryFind (fun c -> not (consts.Contains c))
+                Seq.tryFind (consts.Contains >> not)
                    (match c with
-                    | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map (fun v -> Const.Bool v)
-                    | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map (fun v -> Const.SByte v)
-                    | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map (fun v -> Const.Int16 v)
-                    | Const.Int32 _ ->  Seq.append (seq { 0 .. System.Int32.MaxValue }) (seq { System.Int32.MinValue .. 0 })|> Seq.map (fun v -> Const.Int32 v)
-                    | Const.Int64 _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.Int64 v)
-                    | Const.IntPtr _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.IntPtr v)
-                    | Const.Byte _ -> seq { 0uy .. System.Byte.MaxValue } |> Seq.map (fun v -> Const.Byte v)
-                    | Const.UInt16 _ -> seq { 0us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.UInt16 v)
-                    | Const.UInt32 _ -> seq { 0u .. System.UInt32.MaxValue } |> Seq.map (fun v -> Const.UInt32 v)
-                    | Const.UInt64 _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UInt64 v)
-                    | Const.UIntPtr _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UIntPtr v)
-                    | Const.Double _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Double(float v))
-                    | Const.Single _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Single(float32 v))
-                    | Const.Char _ -> seq { 32us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.Char(char v))
+                    | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map Const.Bool
+                    | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map Const.SByte
+                    | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map Const.Int16
+                    | Const.Int32 _ ->  Seq.append (seq { 0 .. System.Int32.MaxValue }) (seq { System.Int32.MinValue .. 0 })|> Seq.map Const.Int32
+                    | Const.Int64 _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map Const.Int64
+                    | Const.IntPtr _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map Const.IntPtr
+                    | Const.Byte _ -> seq { 0uy .. System.Byte.MaxValue } |> Seq.map Const.Byte
+                    | Const.UInt16 _ -> seq { 0us .. System.UInt16.MaxValue } |> Seq.map Const.UInt16
+                    | Const.UInt32 _ -> seq { 0u .. System.UInt32.MaxValue } |> Seq.map Const.UInt32
+                    | Const.UInt64 _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map Const.UInt64
+                    | Const.UIntPtr _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map Const.UIntPtr
+                    | Const.Double _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (float >> Const.Double)
+                    | Const.Single _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (float32 >> Const.Single)
+                    | Const.Char _ -> seq { 32us .. System.UInt16.MaxValue } |> Seq.map (char >> Const.Char)
                     | Const.String _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.String(System.String('a', v)))
-                    | Const.Decimal _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Decimal(decimal v))
+                    | Const.Decimal _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (decimal >> Const.Decimal)
                     | _ ->
                         raise CannotRefute)
 
@@ -279,11 +288,11 @@ let RefuteDiscrimSet g m path discrims =
                     let nonCoveredEnumValues = Seq.tryFind (fun (_, fldValue) -> not (consts.Contains fldValue)) enumValues
 
                     match nonCoveredEnumValues with
-                    | None -> Expr.Const (c, m, ty), true
+                    | None -> Expr.Const (c, m, ty), CounterExampleType.EnumCoversKnown
                     | Some (fldName, _) ->
                         let v = RecdFieldRef.RecdFieldRef(tcref, fldName)
-                        Expr.Op (TOp.ValFieldGet v, [ty], [], m), false
-                | _ -> Expr.Const (c, m, ty), false
+                        Expr.Op (TOp.ValFieldGet v, [ty], [], m), CounterExampleType.WithoutEnum
+                | _ -> Expr.Const (c, m, ty), CounterExampleType.WithoutEnum
 
         | DecisionTreeTest.UnionCase (ucref1, tinst) :: rest ->
             let ucrefs = ucref1 :: List.choose (function DecisionTreeTest.UnionCase(ucref, _) -> Some ucref | _ -> None) rest
@@ -297,10 +306,10 @@ let RefuteDiscrimSet g m path discrims =
             | [] -> raise CannotRefute
             | ucref2 :: _ ->
                 let flds = ucref2 |> actualTysOfUnionCaseFields (mkTyconRefInst tcref tinst) |> mkUnknowns
-                Expr.Op (TOp.UnionCase ucref2, tinst, flds, m), false
+                Expr.Op (TOp.UnionCase ucref2, tinst, flds, m), CounterExampleType.WithoutEnum
 
         | [DecisionTreeTest.ArrayLength (n, ty)] ->
-            Expr.Op (TOp.Array, [ty], mkUnknowns (List.replicate (n+1) ty), m), false
+            Expr.Op (TOp.Array, [ty], mkUnknowns (List.replicate (n+1) ty), m), CounterExampleType.WithoutEnum
 
         | _ ->
             raise CannotRefute
@@ -356,7 +365,7 @@ let ShowCounterExample g denv m refuted =
             | [] -> raise CannotRefute
             | (r, eck) :: t ->
                 ((r, eck), t) ||> List.fold (fun (rAcc, eckAcc) (r, eck) ->
-                    CombineRefutations g rAcc r, eckAcc || eck) 
+                    CombineRefutations g rAcc r, eckAcc.Combine(eck)) 
         let text = LayoutRender.showL (NicePrint.dataExprL denv counterExample)
         let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
         Some(text, failingWhenClause, enumCoversKnown)
@@ -609,8 +618,8 @@ let getDiscrimOfPattern (g: TcGlobals) tpinst t =
         Some(DecisionTreeTest.UnionCase (c, instTypes tpinst tyargs'))
     | TPat_array (args, ty, _m) ->
         Some(DecisionTreeTest.ArrayLength (args.Length, ty))
-    | TPat_query ((activePatExpr, resTys, isStructRetTy, apatVrefOpt, idx, apinfo), _, _m) ->
-        Some (DecisionTreeTest.ActivePatternCase (activePatExpr, instTypes tpinst resTys, isStructRetTy, apatVrefOpt, idx, apinfo))
+    | TPat_query ((activePatExpr, resTys, retKind, apatVrefOpt, idx, apinfo), _, _m) ->
+        Some (DecisionTreeTest.ActivePatternCase (activePatExpr, instTypes tpinst resTys, retKind, apatVrefOpt, idx, apinfo))
 
     | TPat_error range ->
         Some (DecisionTreeTest.Error range)
@@ -710,7 +719,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
 let canInvestigate (pat: Pattern) =
     match pat with
     | TPat_null _ | TPat_isinst _ | TPat_exnconstr _ | TPat_unioncase _
-    | TPat_array _ | TPat_const _ | TPat_query _ | TPat_range _ | TPat_error _ -> true
+    | TPat_array _ | TPat_const _ | TPat_query _ | TPat_error _ -> true
     | _ -> false
 
 /// Decide the next pattern to investigate
@@ -731,19 +740,22 @@ let ChooseInvestigationPointLeftToRight frontiers =
 // This is an initial attempt to remove extra typetests/castclass for simple list pattern matching "match x with h :: t -> ... | [] -> ..."
 // The problem with this technique is that it creates extra locals which inhibit the process of converting pattern matches into linear let bindings.
 
+[<return: Struct>]
 let (|ListConsDiscrim|_|) g = function
      | (DecisionTreeTest.UnionCase (ucref, tinst))
                 (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_ColonColon" -> Some tinst
-     | _ -> None
+                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_ColonColon" -> ValueSome tinst
+     | _ -> ValueNone
 
+[<return: Struct>]
 let (|ListEmptyDiscrim|_|) g = function
      | (DecisionTreeTest.UnionCase (ucref, tinst))
                 (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_Nil" -> Some tinst
-     | _ -> None
+                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_Nil" -> ValueSome tinst
+     | _ -> ValueNone
 #endif
 
+[<return: Struct>]
 let (|ConstNeedsDefaultCase|_|) c =
     match c with
     | Const.Decimal _
@@ -758,8 +770,8 @@ let (|ConstNeedsDefaultCase|_|) c =
     | Const.UInt64 _
     | Const.IntPtr _
     | Const.UIntPtr _
-    | Const.Char _ -> Some ()
-    | _ -> None
+    | Const.Char _ -> ValueSome ()
+    | _ -> ValueNone
 
 /// Build a dtree, equivalent to: TDSwitch("expr", edges, default, m)
 ///
@@ -895,48 +907,42 @@ let rec layoutPat pat =
 let mkFrontiers investigations clauseNumber =
      investigations |> List.map (fun (actives, valMap) -> Frontier(clauseNumber, actives, valMap))
 
+let singleFalseInvestigationPoint = [| false |]
+
 // Search for pattern decision points that are decided "one at a time" - i.e. where there is no
 // multi-way switching. For example partial active patterns
 let rec investigationPoints inpPat =
-    seq { 
-        match inpPat with
-        | TPat_query ((_, _, _, _, _, apinfo), subPat, _) ->
-            yield not apinfo.IsTotal
-            yield! investigationPoints subPat
-        | TPat_isinst (_, _tgtTy, subPatOpt, _) -> 
-            yield false
-            match subPatOpt with 
-            | None -> ()
-            | Some subPat ->
-                yield! investigationPoints subPat
-        | TPat_as (subPat, _, _) -> 
-            yield! investigationPoints subPat
-        | TPat_disjs (subPats, _)
-        | TPat_conjs(subPats, _)
-        | TPat_tuple (_, subPats, _, _)
-        | TPat_recd (_, _, subPats, _) -> 
-            for subPat in subPats do 
-                yield! investigationPoints subPat
-        | TPat_exnconstr(_, subPats, _) ->
-            for subPat in subPats do 
-                yield! investigationPoints subPat
-        | TPat_array (subPats, _, _)
-        | TPat_unioncase (_, _, subPats, _) ->
-            yield false
-            for subPat in subPats do 
-                yield! investigationPoints subPat
-        | TPat_range _
-        | TPat_null _ 
-        | TPat_const _ ->
-            yield false
-        | TPat_wild _
-        | TPat_error _ -> ()
-    }
+    match inpPat with
+    | TPat_query((_, _, _, _, _, apinfo), subPat, _) ->
+        Array.prepend (not apinfo.IsTotal) (investigationPoints subPat)
+    | TPat_isinst(_, _tgtTy, subPatOpt, _) -> 
+        match subPatOpt with 
+        | None -> singleFalseInvestigationPoint
+        | Some subPat -> Array.prepend false (investigationPoints subPat)
+    | TPat_as(subPat, _, _) -> investigationPoints subPat
+    | TPat_disjs(subPats, _)
+    | TPat_conjs(subPats, _)
+    | TPat_tuple(_, subPats, _, _)
+    | TPat_exnconstr(_, subPats, _)
+    | TPat_recd(_, _, subPats, _) ->
+        subPats
+        |> Seq.collect investigationPoints
+        |> Seq.toArray
+    | TPat_array (subPats, _, _)
+    | TPat_unioncase (_, _, subPats, _) ->
+        subPats
+        |> Seq.collect investigationPoints
+        |> Seq.toArray
+        |> Array.prepend false
+    | TPat_null _ 
+    | TPat_const _ -> singleFalseInvestigationPoint
+    | TPat_wild _
+    | TPat_error _ -> [||]
 
 let rec erasePartialPatterns inpPat =
     match inpPat with
-    | TPat_query ((expr, resTys, isStructRetTy, apatVrefOpt, idx, apinfo), p, m) ->
-         if apinfo.IsTotal then TPat_query ((expr, resTys, isStructRetTy, apatVrefOpt, idx, apinfo), erasePartialPatterns p, m)
+    | TPat_query ((expr, resTys, retKind, apatVrefOpt, idx, apinfo), p, m) ->
+         if apinfo.IsTotal then TPat_query ((expr, resTys, retKind, apatVrefOpt, idx, apinfo), erasePartialPatterns p, m)
          else TPat_disjs ([], m) (* always fail *)
     | TPat_as (p, x, m) -> TPat_as (erasePartialPatterns p, x, m)
     | TPat_disjs (subPats, m) -> TPat_disjs(erasePartials subPats, m)
@@ -949,12 +955,33 @@ let rec erasePartialPatterns inpPat =
     | TPat_isinst (x, y, subPatOpt, m) -> TPat_isinst (x, y, Option.map erasePartialPatterns subPatOpt, m)
     | TPat_const _
     | TPat_wild _
-    | TPat_range _
     | TPat_null _
     | TPat_error _ -> inpPat
 
 and erasePartials inps =
     List.map erasePartialPatterns inps
+    
+let ReportUnusedTargets (clauses: MatchClause list) dtree =
+    match dtree, clauses with
+    | TDSuccess _, [ _ ] -> ()
+    | _ ->
+        let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
+        clauses |> List.iteri (fun i c ->
+            if not (used.Contains i) then
+                let m =
+                    match c.BoundVals, c.GuardExpr with
+                    | [], Some guard -> guard.Range
+                    | [ bound ], None -> bound.Id.idRange
+                    | [ _ ], Some guard -> guard.Range
+                    | rest, None ->
+                        match rest with
+                        | [ head ] -> head.Id.idRange
+                        | _ -> c.Pattern.Range
+                    | _, Some guard -> guard.Range
+                    
+                withStartEnd c.Range.Start m.End m
+                |> RuleNeverMatched
+                |> warning)
 
 let rec isPatternDisjunctive inpPat =
     match inpPat with
@@ -970,7 +997,6 @@ let rec isPatternDisjunctive inpPat =
     | TPat_isinst (_, _, subPatOpt, _) -> Option.exists isPatternDisjunctive subPatOpt
     | TPat_const _ -> false
     | TPat_wild _ -> false
-    | TPat_range _ -> false
     | TPat_null _ -> false
     | TPat_error _ -> false
 
@@ -995,101 +1021,106 @@ let CompilePatternBasic
 
     // Add the incomplete or rethrow match clause on demand,
     // printing a warning if necessary (only if it is ever exercised).
-    let mutable incompleteMatchClauseOnce = None
+    let mutable firstIncompleteMatchClauseWithThrowExpr = None
+    let warningsGenerated = new ResizeArray<CounterExampleType>(2)
     let getIncompleteMatchClause refuted =
-        // This is lazy because emit a warning when the lazy thunk gets evaluated.
-        match incompleteMatchClauseOnce with
-        | None ->
-            // Emit the incomplete match warning. 
-            if warnOnIncomplete then
-                match actionOnFailure with
-                | ThrowIncompleteMatchException | IgnoreWithWarning ->
-                    let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
-                    match ShowCounterExample g denv mMatch refuted with
-                    | Some(text, failingWhenClause, true) ->
-                        warning (EnumMatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch))
-                    | Some(text, failingWhenClause, false) ->
-                        warning (MatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch))
-                    | None ->
-                        warning (MatchIncomplete(ignoreWithWarning, None, mMatch))
-                | _ ->
-                     ()
+        // Emit the incomplete match warning. 
+        if warnOnIncomplete then
+            match actionOnFailure with
+            | ThrowIncompleteMatchException 
+            | IgnoreWithWarning ->
+                let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
+                let counterExample = ShowCounterExample g denv mMatch refuted
+                match counterExample with
+                | Some(text, failingWhenClause, CounterExampleType.EnumCoversKnown) when not(warningsGenerated.Contains(CounterExampleType.EnumCoversKnown)) ->
+                    warning (EnumMatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch))
+                    warningsGenerated.Add CounterExampleType.EnumCoversKnown
+                | Some(text, failingWhenClause, CounterExampleType.WithoutEnum) when not(warningsGenerated.Contains(CounterExampleType.WithoutEnum))  ->
+                    warning (MatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch))
+                    warningsGenerated.Add CounterExampleType.WithoutEnum
+                | None when not(warningsGenerated.Contains(CounterExampleType.WithoutEnum)) ->
+                    warning (MatchIncomplete(ignoreWithWarning, None, mMatch))
+                    warningsGenerated.Add CounterExampleType.WithoutEnum
+                | _ -> ()
+            | _ ->
+                    ()
 
-            let throwExpr =
-                match actionOnFailure with
-                | FailFilter  ->
-                    // Return 0 from the .NET exception filter.
-                    mkInt g mMatch 0
+        let throwExpr() =
+            match actionOnFailure with
+            | FailFilter  ->
+                // Return 0 from the .NET exception filter.
+                mkInt g mMatch 0
 
-                | Rethrow ->
-                    // Rethrow unmatched try-with exn. No sequence point at the target since its not real code.
-                    mkReraise mMatch resultTy
+            | Rethrow ->
+                // Rethrow unmatched try-with exn. No sequence point at the target since its not real code.
+                mkReraise mMatch resultTy
 
-                | Throw ->
-                    let findMethInfo ty isInstance name (sigTys: TType list) =
-                        TryFindIntrinsicMethInfo infoReader mMatch AccessorDomain.AccessibleFromEverywhere name ty
-                        |> List.tryFind (fun methInfo ->
-                            methInfo.IsInstance = isInstance &&
-                            (
-                                match methInfo.GetParamTypes(amap, mMatch, []) with
-                                | [] -> false
-                                | argTysList ->
-                                    let argTys = (argTysList |> List.reduce (@)) @ [ methInfo.GetFSharpReturnType (amap, mMatch, []) ]
-                                    if argTys.Length <> sigTys.Length then
-                                        false
-                                    else
-                                        (argTys, sigTys)
-                                        ||> List.forall2 (typeEquiv g)
-                            )
+            | Throw ->
+                let findMethInfo ty isInstance name (sigTys: TType list) =
+                    TryFindIntrinsicMethInfo infoReader mMatch AccessorDomain.AccessibleFromEverywhere name ty
+                    |> List.tryFind (fun methInfo ->
+                        methInfo.IsInstance = isInstance &&
+                        (
+                            match methInfo.GetParamTypes(amap, mMatch, []) with
+                            | [] -> false
+                            | argTysList ->
+                                let argTys = (argTysList |> List.reduce (@)) @ [ methInfo.GetFSharpReturnType (amap, mMatch, []) ]
+                                if argTys.Length <> sigTys.Length then
+                                    false
+                                else
+                                    (argTys, sigTys)
+                                    ||> List.forall2 (typeEquiv g)
                         )
+                    )
 
-                    // We use throw, or EDI.Capture(exn).Throw() when EDI is supported, instead of rethrow on unmatched try-with in a computation expression.
-                    // But why? Because this isn't a real .NET exception filter/handler but just a function we're passing
-                    // to a computation expression builder to simulate one.
-                    let ediCaptureMethInfo, ediThrowMethInfo =
-                        // EDI.Capture: exn -> EDI
-                        g.system_ExceptionDispatchInfo_ty
-                        |> Option.bind (fun ty -> findMethInfo ty false "Capture" [ g.exn_ty; ty ]),
-                        // edi.Throw: unit -> unit
-                        g.system_ExceptionDispatchInfo_ty
-                        |> Option.bind (fun ty -> findMethInfo ty true "Throw" [ g.unit_ty ])
+                // We use throw, or EDI.Capture(exn).Throw() when EDI is supported, instead of rethrow on unmatched try-with in a computation expression.
+                // But why? Because this isn't a real .NET exception filter/handler but just a function we're passing
+                // to a computation expression builder to simulate one.
+                let ediCaptureMethInfo, ediThrowMethInfo =
+                    // EDI.Capture: exn -> EDI
+                    g.system_ExceptionDispatchInfo_ty
+                    |> Option.bind (fun ty -> findMethInfo ty false "Capture" [ g.exn_ty; ty ]),
+                    // edi.Throw: unit -> unit
+                    g.system_ExceptionDispatchInfo_ty
+                    |> Option.bind (fun ty -> findMethInfo ty true "Throw" [ g.unit_ty ])
 
-                    match Option.map2 (fun x y -> x,y) ediCaptureMethInfo ediThrowMethInfo with
-                    | None ->
-                        mkThrow mMatch resultTy (exprForVal mMatch origInputVal)
-                    | Some (ediCaptureMethInfo, ediThrowMethInfo) ->
-                        let edi, _ =
-                            BuildMethodCall tcVal g amap NeverMutates mMatch false
-                               ediCaptureMethInfo ValUseFlag.NormalValUse [] [] [ (exprForVal mMatch origInputVal) ] None
+                match Option.map2 (fun x y -> x,y) ediCaptureMethInfo ediThrowMethInfo with
+                | None ->
+                    mkThrow mMatch resultTy (exprForVal mMatch origInputVal)
+                | Some (ediCaptureMethInfo, ediThrowMethInfo) ->
+                    let edi, _ =
+                        BuildMethodCall tcVal g amap NeverMutates mMatch false
+                            ediCaptureMethInfo ValUseFlag.NormalValUse [] [] [ (exprForVal mMatch origInputVal) ] None
 
-                        let e, _ =
-                            BuildMethodCall tcVal g amap NeverMutates mMatch false
-                                ediThrowMethInfo ValUseFlag.NormalValUse [] [edi] [ ] None
+                    let e, _ =
+                        BuildMethodCall tcVal g amap NeverMutates mMatch false
+                            ediThrowMethInfo ValUseFlag.NormalValUse [] [edi] [ ] None
 
-                        mkCompGenSequential mMatch e (mkDefault (mMatch, resultTy))
+                    mkCompGenSequential mMatch e (mkDefault (mMatch, resultTy))
 
-                | ThrowIncompleteMatchException ->
-                    mkThrow mMatch resultTy
-                        (mkExnExpr(g.MatchFailureException_tcr, 
-                                   [ mkString g mMatch mMatch.FileName
-                                     mkInt g mMatch mMatch.StartLine
-                                     mkInt g mMatch mMatch.StartColumn], mMatch))
+            | ThrowIncompleteMatchException ->
+                mkThrow mMatch resultTy
+                    (mkExnExpr(g.MatchFailureException_tcr, 
+                                [ mkString g mMatch mMatch.FileName
+                                  mkInt g mMatch mMatch.StartLine
+                                  mkInt g mMatch mMatch.StartColumn], mMatch))
 
-                | IgnoreWithWarning ->
-                    mkUnit g mMatch
+            | IgnoreWithWarning ->
+                mkUnit g mMatch
 
+        match firstIncompleteMatchClauseWithThrowExpr with
+        | Some c -> c
+        | None ->
             // We don't emit a sequence point at any of the above cases because they don't correspond to user code.
             //
             // Note we don't emit sequence points at either the succeeding or failing targets of filters since if
             // the exception is filtered successfully then we will run the handler and hit the sequence point there.
             // That sequence point will have the pattern variables bound, which is exactly what we want.
-            let tg = TTarget([], throwExpr, None)
+            let tg = TTarget([], throwExpr(), None)
             let _ = matchBuilder.AddTarget tg
             let clause = MatchClause(TPat_wild mMatch, None, tg, mMatch)
-            incompleteMatchClauseOnce <- Some clause
+            firstIncompleteMatchClauseWithThrowExpr <- Some clause
             clause
-
-        | Some c -> c
 
     // Helpers to get the variables bound at a target.
     // We conceptually add a dummy clause that will always succeed with a "throw".
@@ -1118,6 +1149,8 @@ let CompilePatternBasic
 
     // The main recursive loop of the pattern match compiler.
     let rec InvestigateFrontiers refuted frontiers =
+        Cancellable.CheckAndThrow()
+
         match frontiers with
         | [] -> failwith "CompilePattern: compile - empty clauses: at least the final clause should always succeed"
         | Frontier (i, active, valMap) :: rest ->
@@ -1260,15 +1293,20 @@ let CompilePatternBasic
 
          // Active pattern matches: create a variable to hold the results of executing the active pattern.
          // If a struct return we continue with an expression for taking the address of that location.
-         | EdgeDiscrim(_, DecisionTreeTest.ActivePatternCase(activePatExpr, resTys, isStructRetTy, _apatVrefOpt, _, apinfo), m) :: _ ->
+         | EdgeDiscrim(_, DecisionTreeTest.ActivePatternCase(activePatExpr, resTys, retKind, _apatVrefOpt, _, apinfo), m) :: _ ->
 
              if not (isNil origInputValTypars) then error(InternalError("Unexpected generalized type variables when compiling an active pattern", m))
 
-             let resTy = apinfo.ResultType g m resTys isStructRetTy
+             let resTy = apinfo.ResultType g m resTys retKind
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkApps g ((activePatExpr, tyOfExpr g activePatExpr), [], [argExpr], m)
 
-             let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g isStructRetTy false NeverMutates appExpr None mMatch
+             let mustTakeAddress =
+                match retKind with
+                | ActivePatternReturnKind.StructTypeWrapper -> true
+                | ActivePatternReturnKind.RefTypeWrapper
+                | ActivePatternReturnKind.Boolean -> false
+             let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g mustTakeAddress false NeverMutates appExpr None mMatch
              match vOpt with
              | None -> 
                 let v, vExpr = mkCompGenLocal m ("activePatternResult" + string (newUnique())) resTy
@@ -1324,13 +1362,17 @@ let CompilePatternBasic
                  // Convert active pattern edges to tests on results data
                  let discrim' =
                      match discrim with
-                     | DecisionTreeTest.ActivePatternCase(_pexp, resTys, isStructRetTy, _apatVrefOpt, idx, apinfo) ->
+                     | DecisionTreeTest.ActivePatternCase(_pexp, resTys, retKind, _apatVrefOpt, idx, apinfo) ->
                          let aparity = apinfo.ActiveTags.Length
                          let total = apinfo.IsTotal
                          if not total && aparity > 1 then
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(), m))
 
-                         if not total then DecisionTreeTest.UnionCase(mkAnySomeCase g isStructRetTy, resTys)
+                         if not total then 
+                            match retKind with
+                            | ActivePatternReturnKind.Boolean -> DecisionTreeTest.Const(Const.Bool true)
+                            | ActivePatternReturnKind.RefTypeWrapper -> DecisionTreeTest.UnionCase(mkAnySomeCase g false, resTys)
+                            | ActivePatternReturnKind.StructTypeWrapper -> DecisionTreeTest.UnionCase(mkAnySomeCase g true, resTys)
                          elif aparity <= 1 then DecisionTreeTest.Const(Const.Unit)
                          else DecisionTreeTest.UnionCase(mkChoiceCaseRef g m aparity idx, resTys)
                      | _ -> discrim
@@ -1402,7 +1444,7 @@ let CompilePatternBasic
             let newActives = removeActive path actives
             match patAtActive with
             | TPat_wild _ | TPat_as _ | TPat_tuple _ | TPat_disjs _ | TPat_conjs _ | TPat_recd _ -> failwith "Unexpected projection pattern"
-            | TPat_query ((_, resTys, isStructRetTy, apatVrefOpt, idx, apinfo), p, m) ->
+            | TPat_query ((_, resTys, retKind, apatVrefOpt, idx, apinfo), p, m) ->
                 if apinfo.IsTotal then
                     // Total active patterns always return choice values
                     let hasParam = (match apatVrefOpt with None -> true | Some (vref, _) -> doesActivePatternHaveFreeTypars g vref)
@@ -1430,10 +1472,12 @@ let CompilePatternBasic
                     if i = iInvestigated then
                         let subAccess _j tpinst _ =
                             let expr = Option.get inpExprOpt
-                            if isStructRetTy then 
+                            match retKind with
+                            | ActivePatternReturnKind.Boolean -> expr
+                            | ActivePatternReturnKind.StructTypeWrapper ->
                                 // In this case, the inpExprOpt is already an address-of expression
                                 mkUnionCaseFieldGetProvenViaExprAddr (expr, mkValueSomeCase g, instTypes tpinst resTys, 0, mExpr)
-                            else
+                            | ActivePatternReturnKind.RefTypeWrapper ->
                                 mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, instTypes tpinst resTys, 0, mExpr)
                         mkSubFrontiers path subAccess newActives [p] (fun path j -> PathQuery(path, int64 j))
                     else
@@ -1568,8 +1612,6 @@ let CompilePatternBasic
                 | _ ->
                     [frontier]
 
-            | _ -> failwith "pattern compilation: GenerateNewFrontiersAfterSuccessfulInvestigation"
-
         else
             [frontier]
 
@@ -1609,12 +1651,6 @@ let CompilePatternBasic
             let newActives = List.mapi (mkSubActive (fun path _j -> path) (fun _j -> inpAccess)) subPats
             BindProjectionPatterns newActives activeState
 
-        | TPat_range (c1, c2, m) ->
-            let mutable res = []
-            for i = int c1 to int c2 do
-                res <- BindProjectionPattern (Active(inpPath, inpExpr, TPat_const(Const.Char(char i), m))) activeState @ res
-            res
-
         // Assign an identifier to each TPat_query based on our knowledge of the 'identity' of the active pattern, if any
         | TPat_query ((_, _, _, apatVrefOpt, _, _), _, _) ->
             let uniqId =
@@ -1641,22 +1677,13 @@ let CompilePatternBasic
           @
           mkFrontiers [([], ValMap<_>.Empty)] nClauses)
 
-    let dtree =
-      InvestigateFrontiers
-        []
-        frontiers
-
-    let targets = matchBuilder.CloseTargets()
-
+    let dtree = InvestigateFrontiers [] frontiers
 
     // Report unused targets
     if warnOnUnused then
-        let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
+        ReportUnusedTargets clauses dtree
 
-        clauses |> List.iteri (fun i c ->
-            if not (used.Contains i) then warning (RuleNeverMatched c.Range))
-
-    dtree, targets
+    dtree, matchBuilder.CloseTargets()
 
 // Three pattern constructs can cause significant code expansion in various combinations
 //   - Partial active patterns
@@ -1712,16 +1739,13 @@ let CompilePatternBasic
 // So disjunction alone isn't considered problematic, but in combination with 'when' patterns
 
 let isProblematicClause (clause: MatchClause) =
-    let ips = 
-        seq { 
-             yield! investigationPoints clause.Pattern
-             if clause.GuardExpr.IsSome then
-                 yield true
-        } |> Seq.toArray
-    let ips = if isPatternDisjunctive clause.Pattern then Array.append ips ips else ips
-    // Look for multiple decision points.
-    // We don't mind about the last logical decision point
-    ips.Length > 0 && Array.exists id ips[0..ips.Length-2] 
+    if clause.GuardExpr.IsSome then
+        isPatternDisjunctive clause.Pattern || Array.exists id (investigationPoints clause.Pattern)
+    else
+        // Look for multiple decision points.
+        // We don't mind about the last logical decision point
+        let ips = investigationPoints clause.Pattern
+        ips.Length > 0 && Span.exists id (ips.AsSpan (0, ips.Length - 1))
 
 let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
     match clausesL with

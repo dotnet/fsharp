@@ -64,6 +64,8 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
 --mlcompatibility                        Ignore ML compatibility warnings
+--strict-indentation[+|-]                Override indentation rules implied
+                                         by the language version
 
 
                 - MISCELLANEOUS -
@@ -96,8 +98,6 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          Default - mscorlib
 --clearResultsCache                      Clear the package manager results
                                          cache
---noframework                            Do not reference the default CLI
-                                         assemblies by default
 --exec                                   Exit fsi after loading the files or
                                          running the .fsx script given on the
                                          command line

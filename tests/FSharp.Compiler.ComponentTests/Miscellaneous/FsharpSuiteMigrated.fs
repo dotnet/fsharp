@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Miscellaneous.FsharpSuiteMigrated
+namespace Miscellaneous.FsharpSuiteMigrated
 
 open System
 open System.IO
@@ -79,6 +79,7 @@ module TestFrameworkAdapter =
         | LangVersion.V50 -> "5.0",bonusArgs
         | LangVersion.V60 -> "6.0",bonusArgs
         | LangVersion.V70 -> "7.0",bonusArgs
+        | LangVersion.V80 -> "8.0",bonusArgs
         | LangVersion.Preview -> "preview",bonusArgs
         | LangVersion.Latest  -> "latest", bonusArgs
         | LangVersion.SupportsMl -> "5.0",  "--mlcompatibility" :: bonusArgs       

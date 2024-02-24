@@ -188,7 +188,7 @@ type internal ProjectSitesAndFiles() =
                    match tryGetOptionsForReferencedProject projectFileName with 
                    | None -> getProjectOptionsForProjectSite (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSiteProvider.GetProjectSite(), serviceProvider, projectFileName, useUniqueStamp) |> snd
                    | Some options -> options
-               yield projectFileName, FSharpReferencedProject.CreateFSharp(outputPath, referencedProjectOptions) |]
+               yield projectFileName, FSharpReferencedProject.FSharpReference(outputPath, referencedProjectOptions) |]
 
     and getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, fileName, useUniqueStamp) =
         let referencedProjectFileNames, referencedProjectOptions = 
@@ -250,17 +250,17 @@ type internal ProjectSitesAndFiles() =
 
 
     member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, fileName : string, checker:FSharpChecker) =
-        // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.  
+        // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.
         if CompilerEnvironment.MustBeSingleFileProject(fileName) then
             let parsingOptions = { FSharpParsingOptions.Default with IsInteractive = true}
             CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
-        else 
-            let siteOpt = 
-                match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,fileName) with 
-                | Some(hier,_) -> tryGetProjectSite(hier) 
+        else
+            let siteOpt =
+                match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,fileName) with
+                | Some(hier,_) -> tryGetProjectSite(hier)
                 | None -> None
 
-            let site = 
+            let site =
                match siteOpt with
                | Some site -> site
                | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)

@@ -4444,7 +4444,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let file3 = OpenFile(project,"File3.fs")
         TakeCoffeeBreak(this.VS)
 
-        gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
+        gpatcc.AssertExactly(notAA[file2], notAA[file2;file3])
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]
@@ -6492,7 +6492,7 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 namespace NS1
-                module  MyModule =
+                module MyModule =
                     [<System.ObsoleteAttribute>]
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
@@ -6524,7 +6524,7 @@ let rec f l =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
                 namespace NS1
-                module  MyModule =
+                module MyModule =
                     [<System.ObsoleteAttribute>]
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
@@ -6556,7 +6556,7 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 namespace NS1
-                module  MyModule =
+                module MyModule =
                     [<System.ObsoleteAttribute>]
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
@@ -6575,13 +6575,14 @@ let rec f l =
                         member this.VisibleMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023)>]
                         member this.VisibleMethod2() = 10
+
                 namespace NS2
                 module m2 =
-                type x = NS1.MyModule(*MarkerType*)
-                let b = (new NS1.MyModule.TestType())(*MarkerMethod*)
+                    type x = NS1.MyModule(*MarkerType*)
+                    let b = (new NS1.MyModule.TestType())(*MarkerMethod*)
                 """,
             marker = "(*MarkerMethod*)",
-            list = ["TestMethod";"VisibleMethod";"VisibleMethod2"])
+            list = ["TestMethod"; "VisibleMethod";"VisibleMethod2"])
 
     [<Test>]
     member this.``Method.DefInDiffNameSpace.WithAttributes.Negative``() =

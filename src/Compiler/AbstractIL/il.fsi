@@ -7,6 +7,7 @@ module rec FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
+open Internal.Utilities.Library
 
 /// Represents the target primary assembly
 [<RequireQualifiedAccess>]
@@ -40,6 +41,7 @@ type ILPlatform =
 type ILSourceDocument =
     static member Create:
         language: ILGuid option * vendor: ILGuid option * documentType: ILGuid option * file: string -> ILSourceDocument
+
     member Language: ILGuid option
     member Vendor: ILGuid option
     member DocumentType: ILGuid option
@@ -49,6 +51,7 @@ type ILSourceDocument =
 type internal ILDebugPoint =
     static member Create:
         document: ILSourceDocument * line: int * column: int * endLine: int * endColumn: int -> ILDebugPoint
+
     member Document: ILSourceDocument
     member Line: int
     member Column: int
@@ -354,7 +357,7 @@ type ILMethodRef =
 
     member ReturnType: ILType
 
-    member CallingSignature: ILCallingSignature
+    member GetCallingSignature: unit -> ILCallingSignature
 
     interface System.IComparable
 
@@ -983,7 +986,7 @@ type internal ILOverridesSpec =
 
 [<RequireQualifiedAccess>]
 type MethodBody =
-    | IL of Lazy<ILMethodBody>
+    | IL of InterruptibleLazy<ILMethodBody>
     | PInvoke of Lazy<PInvokeMethod>
     | Abstract
     | Native
@@ -1032,7 +1035,7 @@ type ILMethodDef =
         callingConv: ILCallingConv *
         parameters: ILParameters *
         ret: ILReturn *
-        body: Lazy<MethodBody> *
+        body: InterruptibleLazy<MethodBody> *
         isEntryPoint: bool *
         genericParams: ILGenericParameterDefs *
         securityDeclsStored: ILSecurityDeclsStored *
@@ -1048,7 +1051,7 @@ type ILMethodDef =
         callingConv: ILCallingConv *
         parameters: ILParameters *
         ret: ILReturn *
-        body: Lazy<MethodBody> *
+        body: InterruptibleLazy<MethodBody> *
         isEntryPoint: bool *
         genericParams: ILGenericParameterDefs *
         securityDecls: ILSecurityDecls *
@@ -1089,27 +1092,43 @@ type ILMethodDef =
     member IsVirtual: bool
 
     member IsFinal: bool
+
     member IsNewSlot: bool
+
     member IsCheckAccessOnOverride: bool
+
     member IsAbstract: bool
+
     member MethodBody: ILMethodBody
-    member CallingSignature: ILCallingSignature
+
+    member GetCallingSignature: unit -> ILCallingSignature
+
     member Access: ILMemberAccess
+
     member IsHideBySig: bool
+
     member IsSpecialName: bool
 
     /// The method is exported to unmanaged code using COM interop.
     member IsUnmanagedExport: bool
+
     member IsReqSecObj: bool
 
     /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute
     member HasSecurity: bool
+
     member IsManaged: bool
+
     member IsForwardRef: bool
+
     member IsInternalCall: bool
+
     member IsPreserveSig: bool
+
     member IsSynchronized: bool
+
     member IsNoInline: bool
+
     member IsAggressiveInline: bool
 
     /// SafeHandle finalizer must be run.
@@ -1123,37 +1142,58 @@ type ILMethodDef =
         ?callingConv: ILCallingConv *
         ?parameters: ILParameters *
         ?ret: ILReturn *
-        ?body: Lazy<MethodBody> *
+        ?body: InterruptibleLazy<MethodBody> *
         ?securityDecls: ILSecurityDecls *
         ?isEntryPoint: bool *
         ?genericParams: ILGenericParameterDefs *
         ?customAttrs: ILAttributes ->
             ILMethodDef
+
     member internal WithSpecialName: ILMethodDef
+
     member internal WithHideBySig: unit -> ILMethodDef
+
     member internal WithHideBySig: bool -> ILMethodDef
+
     member internal WithFinal: bool -> ILMethodDef
+
     member internal WithAbstract: bool -> ILMethodDef
+
     member internal WithVirtual: bool -> ILMethodDef
+
     member internal WithAccess: ILMemberAccess -> ILMethodDef
+
     member internal WithNewSlot: ILMethodDef
+
     member internal WithSecurity: bool -> ILMethodDef
+
     member internal WithPInvoke: bool -> ILMethodDef
+
     member internal WithPreserveSig: bool -> ILMethodDef
+
     member internal WithSynchronized: bool -> ILMethodDef
+
     member internal WithNoInlining: bool -> ILMethodDef
+
     member internal WithAggressiveInlining: bool -> ILMethodDef
+
     member internal WithRuntime: bool -> ILMethodDef
 
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by
 /// name and arity.
-[<NoEquality; NoComparison; Sealed>]
+[<NoEquality; NoComparison; Class; Sealed>]
 type ILMethodDefs =
+    inherit DelayInitArrayMap<ILMethodDef, string, ILMethodDef list>
+
     interface IEnumerable<ILMethodDef>
+
     member AsArray: unit -> ILMethodDef[]
+
     member AsList: unit -> ILMethodDef list
+
     member FindByName: string -> ILMethodDef list
+
     member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
 /// Field definitions.
@@ -1186,20 +1226,32 @@ type ILFieldDef =
             ILFieldDef
 
     member Name: string
+
     member FieldType: ILType
+
     member Attributes: FieldAttributes
+
     member Data: byte[] option
+
     member LiteralValue: ILFieldInit option
 
     /// The explicit offset in bytes when explicit layout is used.
     member Offset: int32 option
+
     member Marshal: ILNativeType option
+
     member CustomAttrs: ILAttributes
+
     member IsStatic: bool
+
     member IsSpecialName: bool
+
     member IsLiteral: bool
+
     member NotSerialized: bool
+
     member IsInitOnly: bool
+
     member Access: ILMemberAccess
 
     /// Functional update of the value
@@ -1213,12 +1265,19 @@ type ILFieldDef =
         ?marshal: ILNativeType option *
         ?customAttrs: ILAttributes ->
             ILFieldDef
+
     member internal WithAccess: ILMemberAccess -> ILFieldDef
+
     member internal WithInitOnly: bool -> ILFieldDef
+
     member internal WithStatic: bool -> ILFieldDef
+
     member internal WithSpecialName: bool -> ILFieldDef
+
     member internal WithNotSerialized: bool -> ILFieldDef
+
     member internal WithLiteralDefaultValue: ILFieldInit option -> ILFieldDef
+
     member internal WithFieldMarshal: ILNativeType option -> ILFieldDef
 
 /// Tables of fields.  Logically equivalent to a list of fields but the table is kept in
@@ -1403,8 +1462,10 @@ type ILTypeDefKind =
     | Delegate
 
 /// Tables of named type definitions.
-[<NoEquality; NoComparison; Sealed>]
+[<NoEquality; NoComparison; Class; Sealed>]
 type ILTypeDefs =
+    inherit DelayInitArrayMap<ILPreTypeDef, string list * string, ILPreTypeDef>
+
     interface IEnumerable<ILTypeDef>
 
     member internal AsArray: unit -> ILTypeDef[]
@@ -1815,7 +1876,10 @@ type internal ILGlobals =
     member primaryAssemblyScopeRef: ILScopeRef
     member primaryAssemblyRef: ILAssemblyRef
     member primaryAssemblyName: string
+    member fsharpCoreAssemblyScopeRef: ILScopeRef
+
     member typ_Attribute: ILType
+    member typ_Enum: ILType
     member typ_Object: ILType
     member typ_String: ILType
     member typ_Type: ILType
@@ -1834,9 +1898,8 @@ type internal ILGlobals =
     member typ_Double: ILType
     member typ_Bool: ILType
     member typ_Char: ILType
+    member typ_SealedAttribute: ILType
     member typ_TypedReference: ILType
-
-    member fsharpCoreAssemblyScopeRef: ILScopeRef
 
     /// Is the given assembly possibly a primary assembly?
     /// In practice, a primary assembly is an assembly that contains the System.Object type definition
@@ -1927,6 +1990,7 @@ val internal mkILNonGenericStaticMethSpecInTy: ILType * string * ILType list * I
 
 /// Construct references to constructors.
 val internal mkILCtorMethSpecForTy: ILType * ILType list -> ILMethodSpec
+val internal mkILNonGenericCtorMethSpec: ILTypeRef * ILType list -> ILMethodSpec
 
 /// Construct references to fields.
 val internal mkILFieldRef: ILTypeRef * string * ILType -> ILFieldRef
@@ -2014,11 +2078,11 @@ val internal mkILMethodBody:
 
 val internal mkMethodBody: bool * ILLocals * int * ILCode * ILDebugPoint option * ILDebugImports option -> MethodBody
 
-val internal methBodyNotAvailable: Lazy<MethodBody>
+val internal methBodyNotAvailable: InterruptibleLazy<MethodBody>
 
-val internal methBodyAbstract: Lazy<MethodBody>
+val internal methBodyAbstract: InterruptibleLazy<MethodBody>
 
-val internal methBodyNative: Lazy<MethodBody>
+val internal methBodyNative: InterruptibleLazy<MethodBody>
 
 val internal mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
 
@@ -2051,6 +2115,7 @@ val internal mkILNonGenericInstanceMethod:
 /// Make field definitions.
 val internal mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
 val internal mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
+val internal mkILStaticLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 val internal mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 
 /// Make a type definition.
@@ -2097,8 +2162,9 @@ val internal mkRawDataValueTypeDef: ILType -> string * size: int32 * pack: uint1
 /// the code, and the first instruction will be the new entry
 /// of the method.  The instructions should be non-branching.
 
+val internal appendInstrsToCode: ILInstr list -> ILCode -> ILCode
+val internal appendInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 val internal prependInstrsToCode: ILInstr list -> ILCode -> ILCode
-
 val internal prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 
 /// Injecting initialization code into a class.
@@ -2155,11 +2221,11 @@ val storeILSecurityDecls: ILSecurityDecls -> ILSecurityDeclsStored
 val internal mkILSecurityDeclsReader: (int32 -> ILSecurityDecl[]) -> ILSecurityDeclsStored
 
 val mkILEvents: ILEventDef list -> ILEventDefs
-val mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs
+val mkILEventsLazy: InterruptibleLazy<ILEventDef list> -> ILEventDefs
 val emptyILEvents: ILEventDefs
 
 val mkILProperties: ILPropertyDef list -> ILPropertyDefs
-val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
+val mkILPropertiesLazy: InterruptibleLazy<ILPropertyDef list> -> ILPropertyDefs
 val emptyILProperties: ILPropertyDefs
 
 val mkILMethods: ILMethodDef list -> ILMethodDefs
@@ -2168,7 +2234,7 @@ val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
 val emptyILMethods: ILMethodDefs
 
 val mkILFields: ILFieldDef list -> ILFieldDefs
-val mkILFieldsLazy: Lazy<ILFieldDef list> -> ILFieldDefs
+val mkILFieldsLazy: InterruptibleLazy<ILFieldDef list> -> ILFieldDefs
 val emptyILFields: ILFieldDefs
 
 val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs

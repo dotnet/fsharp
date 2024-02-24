@@ -5,15 +5,35 @@
 // Nesting for loops instead...
 let test1 =
     seq {
-        for a in 0 .. 0 do for b in 0 .. 0 do for c in 0 .. 0 do for d in 0 .. 0 do for e in 0 .. 0 do
-        for f in 0 .. 0 do for g in 0 .. 0 do for h in 0 .. 0 do for i in 0 .. 0 do for j in 0 .. 0 do
-        for k in 0 .. 0 do for l in 0 .. 0 do for m in 0 .. 0 do for n in 0 .. 0 do for o in 0 .. 0 do
-        for p in 0 .. 0 do for q in 0 .. 0 do for r in 0 .. 0 do for s in 0 .. 0 do for t in 0 .. 0 do
-        for u in 0 .. 0 do for v in 0 .. 0 do for w in 0 .. 0 do for x in 0 .. 0 do for y in 0 .. 0 do
-        for z in 0 .. 0 do 
+        for a in 0 .. 0 do
+        for b in 0 .. 0 do
+        for c in 0 .. 0 do
+        for d in 0 .. 0 do
+        for e in 0 .. 0 do
+        for f in 0 .. 0 do
+        for g in 0 .. 0 do
+        for h in 0 .. 0 do
+        for i in 0 .. 0 do
+        for j in 0 .. 0 do
+        for k in 0 .. 0 do
+        for l in 0 .. 0 do
+        for m in 0 .. 0 do
+        for n in 0 .. 0 do
+        for o in 0 .. 0 do
+        for p in 0 .. 0 do
+        for q in 0 .. 0 do
+        for r in 0 .. 0 do
+        for s in 0 .. 0 do
+        for t in 0 .. 0 do
+        for u in 0 .. 0 do
+        for v in 0 .. 0 do
+        for w in 0 .. 0 do
+        for x in 0 .. 0 do
+        for y in 0 .. 0 do
+        for z in 0 .. 0 do
             yield (a, b, c, d, e, f, g, j, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z)
     }
-    
+
 // Main test is to see if this compiles
 if Seq.length test1 <> 1 then exit 1
 

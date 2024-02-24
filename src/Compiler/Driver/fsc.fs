@@ -40,6 +40,7 @@ open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
@@ -88,7 +89,7 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
             errors <- errors + 1
 
             match diagnostic.Exception, tcConfigB.simulateException with
-            | InternalError (msg, _), None
+            | InternalError(msg, _), None
             | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (diagnostic.Exception.ToString()))
             | :? KeyNotFoundException, None ->
                 Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.Exception.ToString()))
@@ -303,7 +304,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     (* step - get dll references *)
     let dllFiles, sourceFiles =
         inputFiles
-        |> List.map (fun p -> FileSystemUtils.trimQuotes p)
+        |> List.map FileSystemUtils.trimQuotes
         |> List.partition FileSystemUtils.isDll
 
     match dllFiles with
@@ -329,7 +330,7 @@ module InterfaceFileWriter =
                 printVerboseSignatures = true
             }
 
-        let writeToFile os (CheckedImplFile (contents = mexpr)) =
+        let writeToFile os (CheckedImplFile(contents = mexpr)) =
             let text =
                 NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader AccessibleFromSomewhere range0 mexpr
                 |> Display.squashTo 80
@@ -348,7 +349,7 @@ module InterfaceFileWriter =
         let writeAllToSameFile declaredImpls =
             /// Use a UTF-8 Encoding with no Byte Order Mark
             let os =
-                if tcConfig.printSignatureFile = "" then
+                if String.IsNullOrEmpty(tcConfig.printSignatureFile) then
                     Console.Out
                 else
                     FileSystem
@@ -370,7 +371,7 @@ module InterfaceFileWriter =
                 ".fsi"
 
         let writeToSeparateFiles (declaredImpls: CheckedImplFile list) =
-            for CheckedImplFile (qualifiedNameOfFile = name) as impl in declaredImpls do
+            for CheckedImplFile(qualifiedNameOfFile = name) as impl in declaredImpls do
                 let fileName =
                     Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
 
@@ -480,14 +481,15 @@ let main1
 
     // See Bug 735819
     let lcidFromCodePage =
+        let thread = Thread.CurrentThread
+
         if
             (Console.OutputEncoding.CodePage <> 65001)
-            && (Console.OutputEncoding.CodePage
-                <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage)
-            && (Console.OutputEncoding.CodePage
-                <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage)
+            && (Console.OutputEncoding.CodePage <> thread.CurrentUICulture.TextInfo.OEMCodePage)
+            && (Console.OutputEncoding.CodePage <> thread.CurrentUICulture.TextInfo.ANSICodePage)
+            && (CultureInfo.InvariantCulture <> thread.CurrentUICulture)
         then
-            Thread.CurrentThread.CurrentUICulture <- CultureInfo("en-US")
+            thread.CurrentUICulture <- CultureInfo("en-US")
             Some 1033
         else
             None
@@ -709,20 +711,20 @@ let main1
 /// Second phase of compilation.
 ///   - Write the signature file, check some attributes
 let main2
-    (Args (ctok,
-           tcGlobals,
-           tcImports: TcImports,
-           frameworkTcImports,
-           generatedCcu: CcuThunk,
-           typedImplFiles,
-           topAttrs,
-           tcConfig: TcConfig,
-           outfile,
-           pdbfile,
-           assemblyName,
-           diagnosticsLogger,
-           exiter: Exiter,
-           ilSourceDocs))
+    (Args(ctok,
+          tcGlobals,
+          tcImports: TcImports,
+          frameworkTcImports,
+          generatedCcu: CcuThunk,
+          typedImplFiles,
+          topAttrs,
+          tcConfig: TcConfig,
+          outfile,
+          pdbfile,
+          assemblyName,
+          diagnosticsLogger,
+          exiter: Exiter,
+          ilSourceDocs))
     =
     if tcConfig.typeCheckOnly then
         exiter.Exit 0
@@ -741,7 +743,7 @@ let main2
     let diagnosticsLogger =
         let scopedPragmas =
             [
-                for CheckedImplFile (pragmas = pragmas) in typedImplFiles do
+                for CheckedImplFile(pragmas = pragmas) in typedImplFiles do
                     yield! pragmas
             ]
 
@@ -814,22 +816,22 @@ let main2
 ///   - optimize
 ///   - encode optimization data
 let main3
-    (Args (ctok,
-           tcConfig,
-           tcImports,
-           frameworkTcImports: TcImports,
-           tcGlobals,
-           diagnosticsLogger: DiagnosticsLogger,
-           generatedCcu: CcuThunk,
-           outfile,
-           typedImplFiles,
-           topAttrs,
-           pdbfile,
-           assemblyName,
-           assemVerFromAttrib,
-           signingInfo,
-           exiter: Exiter,
-           ilSourceDocs))
+    (Args(ctok,
+          tcConfig,
+          tcImports,
+          frameworkTcImports: TcImports,
+          tcGlobals,
+          diagnosticsLogger: DiagnosticsLogger,
+          generatedCcu: CcuThunk,
+          outfile,
+          typedImplFiles,
+          topAttrs,
+          pdbfile,
+          assemblyName,
+          assemVerFromAttrib,
+          signingInfo,
+          exiter: Exiter,
+          ilSourceDocs))
     =
     // Encode the signature data
     ReportTime tcConfig "Encode Interface Data"
@@ -878,6 +880,47 @@ let main3
 
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
+    if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
+        match optimizedImpls with
+        | CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations ->
+            ReportTime tcConfig ("TailCall Checks")
+
+            for f in checkedImplFileAfterOptimizations do
+                TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), true, f.ImplFile.Contents)
+
+    let refAssemblySignatureHash =
+        match tcConfig.emitMetadataAssembly with
+        | MetadataAssemblyGeneration.None -> None
+        | MetadataAssemblyGeneration.ReferenceOnly
+        | MetadataAssemblyGeneration.ReferenceOut _ ->
+            let hasIvt =
+                TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
+                |> Option.isSome
+
+            let observer =
+                if hasIvt then
+                    Fsharp.Compiler.SignatureHash.PublicAndInternal
+                else
+                    Fsharp.Compiler.SignatureHash.PublicOnly
+
+            let optDataHash =
+                optDataResources
+                |> List.map (fun ilResource ->
+                    use s = ilResource.GetBytes().AsStream()
+                    let sha256 = System.Security.Cryptography.SHA256.Create()
+                    sha256.ComputeHash s)
+                |> List.sumBy (hash >> int64)
+                |> hash
+
+            try
+                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
+                + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform
+                + optDataHash
+                |> Some
+            with e ->
+                printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
+                None
+
     // Pass on only the minimum information required for the next phase
     Args(
         ctok,
@@ -898,7 +941,8 @@ let main3
         signingInfo,
         metadataVersion,
         exiter,
-        ilSourceDocs
+        ilSourceDocs,
+        refAssemblySignatureHash
     )
 
 /// Fourth phase of compilation.
@@ -906,37 +950,36 @@ let main3
 ///   -  IL code generation
 let main4
     (tcImportsCapture, dynamicAssemblyCreator)
-    (Args (ctok,
-           tcConfig: TcConfig,
-           tcImports,
-           tcGlobals: TcGlobals,
-           diagnosticsLogger,
-           generatedCcu: CcuThunk,
-           outfile,
-           optimizedImpls,
-           topAttrs,
-           pdbfile,
-           assemblyName,
-           sigDataAttributes,
-           sigDataResources,
-           optDataResources,
-           assemVerFromAttrib,
-           signingInfo,
-           metadataVersion,
-           exiter: Exiter,
-           ilSourceDocs))
+    (Args(ctok,
+          tcConfig: TcConfig,
+          tcImports,
+          tcGlobals: TcGlobals,
+          diagnosticsLogger,
+          generatedCcu: CcuThunk,
+          outfile,
+          optimizedImpls,
+          topAttrs,
+          pdbfile,
+          assemblyName,
+          sigDataAttributes,
+          sigDataResources,
+          optDataResources,
+          assemVerFromAttrib,
+          signingInfo,
+          metadataVersion,
+          exiter: Exiter,
+          ilSourceDocs,
+          refAssemblySignatureHash))
     =
     match tcImportsCapture with
     | None -> ()
     | Some f -> f tcImports
 
-    // Compute a static linker, it gets called later.
-    let ilGlobals = tcGlobals.ilg
-
     if tcConfig.standalone && generatedCcu.UsesFSharp20PlusQuotations then
         error (Error(FSComp.SR.fscQuotationLiteralsStaticLinking0 (), rangeStartup))
 
-    let staticLinker = StaticLink(ctok, tcConfig, tcImports, ilGlobals)
+    // Compute a static linker, it gets called later.
+    let staticLinker = StaticLink(ctok, tcConfig, tcImports, tcGlobals)
 
     ReportTime tcConfig "TAST -> IL"
     use _ = UseBuildPhase BuildPhase.IlxGen
@@ -1009,24 +1052,26 @@ let main4
         ilxMainModule,
         signingInfo,
         exiter,
-        ilSourceDocs
+        ilSourceDocs,
+        refAssemblySignatureHash
     )
 
 /// Fifth phase of compilation.
 ///   -  static linking
 let main5
-    (Args (ctok,
-           tcConfig,
-           tcImports,
-           tcGlobals,
-           diagnosticsLogger: DiagnosticsLogger,
-           staticLinker,
-           outfile,
-           pdbfile,
-           ilxMainModule,
-           signingInfo,
-           exiter: Exiter,
-           ilSourceDocs))
+    (Args(ctok,
+          tcConfig,
+          tcImports,
+          tcGlobals,
+          diagnosticsLogger: DiagnosticsLogger,
+          staticLinker,
+          outfile,
+          pdbfile,
+          ilxMainModule,
+          signingInfo,
+          exiter: Exiter,
+          ilSourceDocs,
+          refAssemblySignatureHash))
     =
 
     use _ = UseBuildPhase BuildPhase.Output
@@ -1042,23 +1087,37 @@ let main5
     AbortOnError(diagnosticsLogger, exiter)
 
     // Pass on only the minimum information required for the next phase
-    Args(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter, ilSourceDocs)
+    Args(
+        ctok,
+        tcConfig,
+        tcImports,
+        tcGlobals,
+        diagnosticsLogger,
+        ilxMainModule,
+        outfile,
+        pdbfile,
+        signingInfo,
+        exiter,
+        ilSourceDocs,
+        refAssemblySignatureHash
+    )
 
 /// Sixth phase of compilation.
 ///   -  write the binaries
 let main6
     dynamicAssemblyCreator
-    (Args (ctok,
-           tcConfig,
-           tcImports: TcImports,
-           tcGlobals: TcGlobals,
-           diagnosticsLogger: DiagnosticsLogger,
-           ilxMainModule,
-           outfile,
-           pdbfile,
-           signingInfo,
-           exiter: Exiter,
-           ilSourceDocs))
+    (Args(ctok,
+          tcConfig,
+          tcImports: TcImports,
+          tcGlobals: TcGlobals,
+          diagnosticsLogger: DiagnosticsLogger,
+          ilxMainModule,
+          outfile,
+          pdbfile,
+          signingInfo,
+          exiter: Exiter,
+          ilSourceDocs,
+          refAssemblySignatureHash))
     =
     ReportTime tcConfig "Write .NET Binary"
 
@@ -1113,6 +1172,7 @@ let main6
                             dumpDebugInfo = tcConfig.dumpDebugInfo
                             referenceAssemblyOnly = true
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
+                            referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
                         },
                         ilxMainModule,
@@ -1143,6 +1203,7 @@ let main6
                             dumpDebugInfo = tcConfig.dumpDebugInfo
                             referenceAssemblyOnly = false
                             referenceAssemblyAttribOpt = None
+                            referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
                         },
                         ilxMainModule,

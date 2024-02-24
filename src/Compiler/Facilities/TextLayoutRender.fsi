@@ -98,6 +98,10 @@ module internal WordL =
     val keywordAbstract: Layout
     val keywordOverride: Layout
     val keywordEnum: Layout
+    val keywordInline: Layout
+    val leftAngle: Layout
+    val keywordModule: Layout
+    val keywordNamespace: Layout
 
 module internal LeftL =
     val leftParen: Layout
@@ -116,3 +120,4 @@ module internal RightL =
     val rightAngle: Layout
     val rightBracketAngle: Layout
     val rightBracketBar: Layout
+    val semicolon: Layout

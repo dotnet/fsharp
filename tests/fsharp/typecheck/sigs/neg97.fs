@@ -20,16 +20,6 @@ let pinAnyNotAllowed(x: 'T) =
     use p = fixed x
     ()
 
-let pinStackAddressNotAllowed(x: 'T) = 
-    let mutable v = 0
-    use p = fixed &v
-    ()
-
-let pinStructAddressNotAllowed(x: 'T) = 
-    let mutable v = { X = 1.0; Y = 1.0 }
-    use p = fixed &v.Y
-    ()
-
 
 module Example1 = 
     type X<'T> = Y of 'T

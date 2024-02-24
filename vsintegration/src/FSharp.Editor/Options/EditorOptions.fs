@@ -46,6 +46,7 @@ type QuickInfoOptions =
         DisplayLinks: bool
         UnderlineStyle: QuickInfoUnderlineStyle
         DescriptionWidth: int option
+        ShowRemarks: bool
     }
 
     static member Default =
@@ -53,6 +54,7 @@ type QuickInfoOptions =
             DisplayLinks = true
             UnderlineStyle = QuickInfoUnderlineStyle.Solid
             DescriptionWidth = None
+            ShowRemarks = true
         }
 
 [<CLIMutable>]
@@ -63,6 +65,7 @@ type CodeFixesOptions =
         UnusedOpens: bool
         UnusedDeclarations: bool
         SuggestNamesForErrors: bool
+        RemoveParens: bool
     }
 
     static member Default =
@@ -73,29 +76,38 @@ type CodeFixesOptions =
             UnusedOpens = true
             UnusedDeclarations = true
             SuggestNamesForErrors = true
+            RemoveParens = false
         }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions =
     {
         EnableInMemoryCrossProjectReferences: bool
+        TransparentCompilerCacheFactor: int
         AllowStaleCompletionResults: bool
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
-        EnableFastFindReferences: bool
+        EnableFastFindReferencesAndRename: bool
         EnablePartialTypeChecking: bool
         UseSyntaxTreeCache: bool
+        KeepAllBackgroundResolutions: bool
+        KeepAllBackgroundSymbolUses: bool
+        EnableBackgroundItemKeyStoreAndSemanticClassification: bool
     }
 
     static member Default =
         {
             EnableInMemoryCrossProjectReferences = true
+            TransparentCompilerCacheFactor = 100
             AllowStaleCompletionResults = true
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
-            EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically
+            EnableFastFindReferencesAndRename = true
             EnablePartialTypeChecking = true
             UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically
+            KeepAllBackgroundResolutions = false
+            KeepAllBackgroundSymbolUses = false
+            EnableBackgroundItemKeyStoreAndSemanticClassification = true
         }
 
 [<CLIMutable>]
@@ -106,7 +118,11 @@ type AdvancedOptions =
         IsInlineTypeHintsEnabled: bool
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
-        IsLiveBuffersEnabled: bool
+        IsUseLiveBuffersEnabled: bool
+        UseTransparentCompiler: bool
+        TransparentCompilerSnapshotReuse: bool
+        SendAdditionalTelemetry: bool
+        SolutionBackgroundAnalysis: bool
     }
 
     static member Default =
@@ -116,7 +132,11 @@ type AdvancedOptions =
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
-            IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
+            UseTransparentCompiler = false
+            TransparentCompilerSnapshotReuse = false
+            IsUseLiveBuffersEnabled = true
+            SendAdditionalTelemetry = true
+            SolutionBackgroundAnalysis = false
         }
 
 [<CLIMutable>]
@@ -149,6 +169,8 @@ type EditorOptions() =
 
     [<Export(typeof<SettingsStore.ISettingsStore>)>]
     member private _.SettingsStore = store
+
+    member _.With value = store.Register value
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
@@ -185,6 +207,7 @@ module internal OptionsUI =
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks (nameof QuickInfoOptions.Default.DisplayLinks)
             bindDescriptionWidthTextBox view.descriptionWidth (nameof QuickInfoOptions.Default.DescriptionWidth)
+            bindCheckBox view.showRemarks (nameof QuickInfoOptions.Default.ShowRemarks)
             upcast view
 
     [<Guid(Guids.codeFixesOptionPageIdString)>]
@@ -238,8 +261,21 @@ module EditorOptionsExtensions =
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
 
+        member this.IsFsharpRemoveParensEnabled = this.EditorOptions.CodeFixes.RemoveParens
+
+        member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
+            this.EditorOptions.CodeFixes.SuggestNamesForErrors
+
         member this.IsFSharpBlockStructureEnabled =
             this.EditorOptions.Advanced.IsBlockStructureEnabled
 
         member this.IsFastFindReferencesEnabled =
-            this.EditorOptions.LanguageServicePerformance.EnableFastFindReferences
+            this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
+
+        member this.UseTransparentCompiler = this.EditorOptions.Advanced.UseTransparentCompiler
+
+        member this.IsTransparentCompilerSnapshotReuseEnabled =
+            this.EditorOptions.Advanced.TransparentCompilerSnapshotReuse
+
+        member this.TransparentCompilerCacheFactor =
+            this.EditorOptions.LanguageServicePerformance.TransparentCompilerCacheFactor

@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../FSComp.resx">
     <body>
+      <trans-unit id="alwaysUseTypedStringInterpolation">
+        <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
+        <target state="translated">Интерполированная строка содержит нетипизированные идентификаторы. Рекомендуется добавить типизированные описатели формата.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Все элементы массива должны поддерживать неявное преобразование в тип первого элемента, который здесь является кортежем длиной {0} типа\n    {1}    \nЭтот элемент является кортежем длиной {2} типа\n    {3}    \n</target>
@@ -24,7 +29,7 @@
       </trans-unit>
       <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <target state="translated">Если тип использует атрибуты [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Абстрактные элементы экземпляра не допускаются.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
@@ -34,12 +39,17 @@
       </trans-unit>
       <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
         <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
-        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
+        <target state="translated">FSharp.Core.AutoOpenAttribute не должен быть псевдонимом.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">Если тип использует атрибуты [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Конструктор с аргументами не разрешен.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="translated">Это выражение является анонимной записью. Используйте {{|...|}} вместо {{...}}.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -49,7 +59,7 @@
       </trans-unit>
       <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <target state="translated">Если тип одновременно использует атрибуты [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Явные объявления полей не допускаются.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -69,7 +79,12 @@
       </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <target state="translated">Если тип использует оба атрибута [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Реализация интерфейсов не допускается.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="translated">Методы получения и установки индексированного свойства должны иметь один и тот же тип. Свойство "{0}" имеет метод получения типа "{1}" и метод задания типа "{2}".</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -94,12 +109,27 @@
       </trans-unit>
       <trans-unit id="chkInstanceLetBindingOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
+        <target state="translated">Если тип использует оба атрибута [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Привязки экземпляра let не разрешены.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
         <target state="translated">Если тип использует атрибуты [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Элементы экземпляра не разрешены.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNotTailRecursive">
+        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
+        <target state="translated">Элемент или функция "{0}" содержит атрибут "TailCallAttribute", но не используется в рекурсивном хвостовом режиме.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="translated">Выражения объектов не могут реализовывать интерфейсы со статическими абстрактными членами или объявлять статические члены.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="translated">Атрибут TailCall следует применять только к рекурсивным функциям.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -115,6 +145,11 @@
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Доступные перегрузки:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
+        <target state="translated">'{0}' не поддерживает тип '{1}', поскольку у последнего отсутствует необходимый (реальный или встроенный) член '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -157,6 +192,11 @@
         <target state="translated">Аргумент "{0}" не соответствует</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="translated">Ограничения "unmanaged" и "not struct" несовместимы</target>
+        <note />
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Все ветви выражения "if" должны возвращать значения, поддерживающие неявное преобразование в тип первой ветви, которым здесь является кортеж длиной {0} типа\n    {1}    \nЭта ветвь возвращает кортеж длиной {2} типа\n    {3}    \n</target>
@@ -177,6 +217,11 @@
         <target state="translated">Атрибут сборки "{0}" ссылается на сборку конструктора "{1}", которая не может быть загружена или не существует. Получено исключение: {2} — {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="translated">символ подчеркивания, сокращение точки для функции только для метода доступа</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">дополнительные преобразования на основе типа</target>
@@ -189,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
-        <target state="needs-review-translation">Разрешить арифметические и логические операции в литералах</target>
+        <target state="translated">Арифметические и логические операции в литералах, определениях перечислений и атрибутах</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -202,9 +247,29 @@
         <target state="translated">автоматическое создание свойства “Message” для объявлений “exception”</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
+        <source>Boolean-returning and return-type-directed partial active patterns</source>
+        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">Разрешить атрибут неявного расширения для объявляющих типов, модулей</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="translated">Выдает предупреждения, если элемент или функция имеет атрибут "TailCall", но не используется в рекурсивном хвостовом режиме.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="translated">Выдает предупреждения, если атрибут TailCall используется в нерекурсивных функциях.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="translated">Пересечение ограничений на гибких типах</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -252,6 +317,16 @@
         <target state="translated">другие типы поддерживают единицы измерения</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="translated">расширенные фиксированные привязки для byref и GetPinnableReference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureExtendedStringInterpolation">
+        <source>Extended string interpolation similar to C# raw string literals.</source>
+        <target state="translated">Расширенная интерполяция строк, аналогичная литералам необработанных строк C#.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">срез с фиксированным индексом 3d/4d</target>
@@ -267,9 +342,19 @@
         <target state="translated">неявное использование yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNames">
+        <source>Improved implied argument names</source>
+        <target state="translated">Улучшенные имена подразумеваемых аргументов</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">expr[idx] для индексации и среза</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInformationalObjInferenceDiagnostic">
+        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
+        <target state="translated">Diagnostic 3559 (предупреждать при выводе obj) на информационном уровне, отключено по умолчанию</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInitProperties">
@@ -285,6 +370,11 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">интерфейсы с множественным универсальным созданием экземпляра</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerInterpolatedStringToConcat">
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -309,12 +399,12 @@
       </trans-unit>
       <trans-unit id="featureNestedCopyAndUpdate">
         <source>Nested record field copy-and-update</source>
-        <target state="new">Nested record field copy-and-update</target>
+        <target state="translated">Копирование и обновление вложенного поля записи</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
-        <target state="new">String values marked as literals and IL constants as printf format</target>
+        <target state="translated">Значения строк, помеченные как литералы, и константы IL в формате printf</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
@@ -340,6 +430,16 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">управление пакетами</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="translated">предпочитать метод расширения вместо простого свойства</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="translated">рекомендуется использовать String.GetPinnableReference в фиксированных привязках</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -377,6 +477,11 @@
         <target state="translated">возобновляемые конечные автоматы</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReuseSameFieldsInStructUnions">
+        <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
+        <target state="translated">Совместное использование базовых полей в дискриминируемом объединении [&lt;Struct&gt;], если они имеют одинаковое имя и тип.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">ограничения самостоятельного типа</target>
@@ -387,9 +492,19 @@
         <target state="translated">шаблон с одним подчеркиванием</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="translated">Разрешить статические привязки "let" в типах union, record, struct, non-incremental-class</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
-        <target state="new">Static members in interfaces</target>
+        <target state="translated">Статические элементы в интерфейсах</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="translated">Выдает ошибки при неправильном отступе, обеспечивает более эффективное восстановление и анализ во время редактирования</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -402,19 +517,44 @@
         <target state="translated">представление структуры для активных шаблонов</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>Union case test properties</source>
+        <target state="translated">Свойства теста союзного случая</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
-        <target state="new">Support for try-with in sequence expressions</target>
+        <target state="translated">Поддержка try-with в выражениях последовательности</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="translated">Взаимодействие между универсальным ограничением "unmanaged" C# и F#(создание дополнительного modreq)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="translated">Методы получения и установки индексированных свойств должны иметь один и тот же тип.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
+        <target state="translated">Создает предупреждения, когда выражение копирования и обновления записи изменяет все поля записи.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">Выдает предупреждения, когда используется параметр "let inline ... =" вместе с атрибутом [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. Функция не встраивается.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="translated">Выдает предупреждения, когда при разрешении имен обнаружено несколько совпадений типов записи из-за перекрывающихся имен полей.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWhileBang">
+        <source>'while!' expression</source>
+        <target state="translated">выражение "while!"</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -509,7 +649,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionSig">
         <source>Keyword reserved for ML-compatibility.</source>
-        <target state="new">Keyword reserved for ML-compatibility.</target>
+        <target state="translated">Ключевое слово зарезервировано для совместимости с ML.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
@@ -517,14 +657,29 @@
         <target state="translated">Используется для проверки принадлежности объекта заданному типу в шаблоне или привязке.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionWhileBang">
+        <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
+        <target state="translated">Используется в вычислительных выражениях для введения циклической конструкции, в которой условие является результатом другого вычислительного выражения.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">невозможно выполнить интерполяцию для строки байтов</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexExtendedStringInterpolationNotSupported">
+        <source>Extended string interpolation is not supported in this version of F#.</source>
+        <target state="translated">Расширенная интерполяция строк не поддерживается в этой версии F#.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
         <target state="translated">Регионы IF-FSHARP/IF-CAML больше не поддерживаются</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="translated">Это недопустимый идентификатор</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -537,9 +692,24 @@
         <target state="translated">Недопустимая интерполированная строка. Строковые литералы с одинарными кавычками или буквальные строковые литералы запрещено использовать в интерполированных выражениях в строках с одинарными кавычками или буквальных строках. Рекомендуется использовать явную привязку "let" для выражения интерполяции или использовать строку с тройными кавычками как внешний строковый литерал.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="translated">Интерполированный литерал строки в тройных кавычках не начинается с достаточного количества символов "$", чтобы разрешить использовать такое же количество последовательных открывающих фигурных скобок в качестве содержимого.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyPercentsInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
+        <target state="translated">Интерполированный литерал строки в тройных кавычках не начинается с достаточного количества символов "$", чтобы разрешить использование такого же количества последовательных символов "%".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Недопустимая интерполированная строка. Строковые литералы с тройными кавычками запрещено использовать в интерполированных выражениях. Рекомендуется использовать явную привязку "let" для выражения интерполяции.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexUnmatchedRBracesInTripleQuote">
+        <source>The interpolated string contains unmatched closing braces.</source>
+        <target state="translated">Интерполированная строка содержит непарные закрывающие фигурные скобки.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -677,6 +847,11 @@
         <target state="translated">Включить сведения об интерфейсе F#, по умолчанию используется файл. Необходимо для распространения библиотек.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="translated">Переопределить правила отступов, предусмотренные версией языка</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Поддерживаемые языковые версии:</target>
@@ -712,6 +887,11 @@
         <target state="translated">Для функции управления пакетами требуется версия языка 5.0 или более поздняя</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="translated">Синтаксис пересечения ограничений можно использовать только с гибкими типами, например. "#IDisposable &amp; #ISomeInterface".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">Недопустимая интерполированная строка. Выражение этой интерполированной строки является пустым. Ожидается выражение.</target>
@@ -737,24 +917,29 @@
         <target state="translated">Неполная интерполированная буквальная строка, начатая в этой позиции или до нее</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">Неожиданный токен в определении типа. После типа "{0}" ожидается "=".</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
         <target state="translated">После этой точки ожидался шаблон</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
         <target state="translated">Ожидается выражение</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingPatternInTuple">
+      <trans-unit id="parsExpectingField">
+        <source>Expecting record field</source>
+        <target state="translated">Ожидается поле записи</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">Ожидается шаблон</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="translated">Требуется тип</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -767,14 +952,39 @@
         <target state="translated">Неполное выражение оператора (например, a^b) или вызов квалифицированного типа (например, ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="translated">Отсутствует ключевое слово "{0}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="translated">Требуется текст сообщения элемента</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="translated">Отсутствует имя случая объединения</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">Неоднозначный доступ к этому элементу. Заключите операцию создания объекта в круглые скобки, например (new Объект(аргументы)).Элемент</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
+        <source>Only simple patterns are allowed in primary constructors</source>
+        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
+        <target state="translated">Неполное объявление статической конструкции. Для объявления используйте «static let», «static do», «staticmember» или «static val».</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
-        <target state="new">Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
+        <target state="translated">Неожиданное завершение входных данных ветви "else if" или "elif" условного выражения. Ожидается "elif &lt;expr&gt; then &lt;expr&gt; " или "else if &lt;expr&gt; then &lt;expr&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -792,9 +1002,14 @@
         <target state="translated">Алгоритм "{0}" не поддерживается</target>
         <note />
       </trans-unit>
+      <trans-unit id="pickleFsharpCoreBackwardsCompatible">
+        <source>Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </source>
+        <target state="translated">Недавно добавленное состояние "Pickle" нельзя использовать в FSharp.Core, поскольку оно должно работать и в старых компиляторах+инструментах. Временной промежуток составляет не менее 3 лет после введения функции. Нарушение: {0}. Контекст: \n {1} </target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occured in the resumable code specification</source>
-        <target state="new">A constrained generic construct occured in the resumable code specification</target>
+        <target state="translated">В спецификации возобновляемого кода возникла ограниченная универсальная конструкция</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -872,6 +1087,16 @@
         <target state="translated">Не удалось определить пакет SDK .NET для этого скрипта. Если сценарий находится в каталоге с использованием файла "global.json", убедитесь, что установлен соответствующий пакет SDK .NET. Непредвиденная ошибка "{0}".</target>
         <note />
       </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="translated">(предложенное имя)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="translated">Неоднозначное значение символа _ здесь. Его нельзя использовать для пустой переменной и сокращенной функции в одной области.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">Это выражение имеет тип "{0}" и совместимо только с типом "{1}" посредством неоднозначного неявного преобразования. Рассмотрите возможность использования явного вызова "op_Implicit". Применимые неявные преобразования: {2}</target>
@@ -887,24 +1112,54 @@
         <target state="translated">Поле "{0}" появляется несколько раз в данном выражении записи.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameDifferent">
-        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">Неправильная анонимная запись. Она должна содержать поля {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">В этой анонимной записи недостаточно полей. Добавьте недостающие поля {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">Эта анонимная запись содержит слишком много полей. Удалите лишние поля {0}.</target>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="translated">Эта анонимная запись не соответствует ожидаемой форме. Добавьте недостающие поля {0} и удалите лишние поля {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Недопустимое объявление типа анонимной записи.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
+        <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
+        <target state="translated">Эта анонимная запись должна содержать поля {0}; но содержит поля {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
+        <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
+        <target state="translated">Эта анонимная запись должна содержать поля {0}; но содержит поле "{1}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
+        <source>This anonymous record is missing fields {0}.</source>
+        <target state="translated">В этой анонимной записи отсутствуют поля {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
+        <source>This anonymous record has extra fields. Remove fields {0}.</source>
+        <target state="translated">Эта анонимная запись содержит дополнительные поля. Удалите поля {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
+        <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
+        <target state="translated">Эта анонимная запись должна содержать поле "{0}", но содержит поля {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
+        <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
+        <target state="translated">Эта анонимная запись должна содержать поле "{0}", но содержит поле "{1}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSubset">
+        <source>This anonymous record is missing field '{0}'.</source>
+        <target state="translated">В этой анонимной записи отсутствует поле "{0}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
+        <source>This anonymous record has an extra field. Remove field '{0}'.</source>
+        <target state="translated">Эта анонимная запись содержит дополнительное поле. Удалите поле "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -919,7 +1174,12 @@
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
-        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <target state="translated">Это выражение записи копирования и обновления изменяет все поля типа записи "{0}". Вместо этого можно использовать синтаксис конструкции записи.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
+        <target state="translated">Сокращенный синтаксис лямбда-выражений поддерживается только для атомарных выражений, таких как метод, свойство, поле или индексатор подразумеваемого аргумента «_». Например: 'let f = _.Length'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -955,6 +1215,11 @@
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
         <target state="translated">Это выражение использует неявное преобразование "{0}" для преобразования типа "{1}" в тип "{2}". См. сведения на странице https://aka.ms/fsharp-implicit-convs. Это предупреждение можно отключить, используя параметр '#nowarn \"3391\"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="translated">Это определение функции, которое отражает случай объединения. Если это то, что вы хотите, игнорируйте или подавляйте это предупреждение. Если вы хотите, чтобы это была деконструкция регистра объединения, добавьте круглые скобки.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1037,9 +1302,29 @@
         <target state="translated">Необходимо инициализировать следующие обязательные свойства:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="translated">Поле "{0}" появляется несколько раз в данном выражении записи или шаблона</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="translated">Найдено несколько совпадений типов:\n{0}\nИспользован тип "{1}". Из-за перекрывающихся имен полей\n{2}\nрекомендуется использовать заметки типов или изменить порядок открытых операторов.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">Для использования методов с "NoEagerConstraintApplicationAttribute" требуется /langversion:6.0 или более поздняя версия</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticMemberFoundForOverride">
+        <source>No static abstract member was found that corresponds to this override</source>
+        <target state="translated">Не найден статический абстрактный элемент, соответствующий этому переопределению.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticPropertyFoundForOverride">
+        <source>No static abstract property was found that corresponds to this override</source>
+        <target state="translated">Не найдено статическое абстрактное свойство, соответствующее этому переопределению.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1072,6 +1357,11 @@
         <target state="translated">Синтаксис "expr1[expr2]" теперь зарезервирован для индексирования и неоднозначен при использовании в качестве аргумента. См. https://aka.ms/fsharp-index-notation. При вызове функции с несколькими каррированными аргументами добавьте между ними пробел, например "someFunction expr1 [expr2]".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="translated">Это переопределение принимает кортеж вместо нескольких аргументов. Попробуйте добавить дополнительный слой круглых скобок в определении метода (например, "member _.Foo((x, y))") или удалить круглые скобки в объявлении абстрактного метода (например, "abstract member Foo: "a * "b -&gt; "c").</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">Синтаксис "(expr1)[expr2]" неоднозначен при использовании в качестве аргумента. См. https://aka.ms/fsharp-index-notation. Если вы намереваетесь индексировать или разрезать, необходимо использовать "(expr1).[expr2]" в позиции аргумента. При вызове функции с несколькими каррированными аргументами добавьте пробел между ними, например "someFunction (expr1) [expr2]".</target>
@@ -1083,8 +1373,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">Конструкцию "let! ... and! ..." можно использовать только в том случае, если построитель выражений с вычислениями определяет либо метод "{0}", либо соответствующие методы "MergeSource" и "Bind"</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="translated">Конструкцию "let! ... and! ..." можно использовать только в том случае, если построитель выражений с вычислениями определяет либо метод "{0}", либо соответствующие методы "MergeSources" и "Bind"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1120,6 +1410,16 @@
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
         <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">Не удается вызвать '{0}' — установщик для свойства только для инициализации, вместо этого используйте инициализацию объекта. См. https://aka.ms/fsharp-assigning-values-to-properties-at-initialization.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="translated">Статические привязки нельзя добавлять к внешним расширениям. Вместо этого рекомендуется использовать "static member".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
+        <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
+        <target state="translated">Если тип объединения нескольких регистров является структурой, то все поля с одинаковым именем должны быть одного типа. Это правило также применяется к сгенерированному имени «Элемент» в случае безымянных полей.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1162,6 +1462,11 @@
         <target state="translated">Недопустимая интерполированная строка. {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="translated">Неожиданный тип функции в определении поля регистра объединения. Если предполагается, что поле будет представлять собой функцию, следует обернуть сигнатуру функции родительными падежами, например, | Case of a -&gt; b в | Case of (a -&gt; b).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
         <target state="translated">"{0}" обычно используется в качестве ограничения типа в универсальном коде, например \"'T when ISomeInterface&lt;"T&gt;\" или \"let f (x: #ISomeInterface&lt;_&gt;)\". См. руководство на https://aka.ms/fsharp-iwsams. Это предупреждение можно отключить с помощью "#nowarn \"3536\"" или "--nowarn:3536".</target>
@@ -1170,6 +1475,11 @@
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
         <target state="translated">Объявление \"интерфейсов со статическими абстрактными методами\" является расширенной функцией. См. руководство на https://aka.ms/fsharp-iwsams. Это предупреждение можно отключить с помощью используя "#nowarn \"3535\"" or "--nowarn:3535".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="translated">Тип '{0}' имеет слишком много методов. Найдено: '{1}', максимально: '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1189,7 +1499,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
+        <target state="translated">Тип неявно определен как "obj", что может быть непреднамеренными. Рекомендуется добавить явные аннотации к типу. Это предупреждение можно отключить с помощью "#nowarn \"3559\"" или "--nowarn:3559".</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1330,6 +1640,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Рекомендуется использовать "return!" вместо "return".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="translated">Круглые скобки можно убрать.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -1558,8 +1873,8 @@
         <note />
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
-        <source>Unrecognized option: '{0}'</source>
-        <target state="translated">Нераспознанный параметр: '{0}'</target>
+        <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
+        <target state="translated">Нераспознанный параметр: "{0}". Используйте "--help", чтобы узнать о распознанных параметрах командной строки.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3213,8 +3528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Задано несколько модификаторов доступности для метода получения или задания свойства</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="translated">Если указана видимость для свойства, настройка видимости для задания или получения метода не разрешена.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -3677,11 +3992,6 @@
         <target state="translated">Метки поля и требуемый тип данного выражения записи или шаблона не определяют уникально соответствующий тип записи</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">Поле "{0}" появляется дважды в данном выражении записи или шаблоне</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnknownUnion">
         <source>Unknown union case</source>
         <target state="translated">Неизвестная ветвь объединения</target>
@@ -3987,11 +4297,6 @@
         <target state="translated">Недопустимый шаблон.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Совпадения диапазона символов были убраны из F#. Вместо этого рекомендуется использовать шаблон условия "when".</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalPattern">
         <source>Illegal pattern</source>
         <target state="translated">Недопустимый шаблон</target>
@@ -4069,7 +4374,7 @@
       </trans-unit>
       <trans-unit id="tcConstructRequiresListArrayOrSequence">
         <source>This construct may only be used within list, array and sequence expressions, e.g. expressions of the form 'seq {{ ... }}', '[ ... ]' or '[| ... |]'. These use the syntax 'for ... in ... do ... yield...' to generate elements</source>
-        <target state="translated">Использовать эту конструкцию можно только в выражениях списка, массива и последовательности, например в выражениях формы "seq {{ … }}", "[ … ]" или "[| … |]". Они создают элементы с помощью синтаксиса "for … in … do … yield…"</target>
+        <target state="translated">Использовать эту конструкцию можно только в выражениях списка, массива и последовательности, например в выражениях формы "seq {{ ... }}", "[ ... ]" или "[| ... |]". Они создают элементы с помощью синтаксиса "for ... in ... do ... yield..."</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructRequiresComputationExpressions">
@@ -4659,7 +4964,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="needs-review-translation">Интерфейсы не могут содержать определений конкретных элементов. Чтобы указать, что тип является классом, возможно, потребуется определить конструктор для типа.</target>
+        <target state="translated">Интерфейсы не могут содержать определения конкретных элементов экземпляра. Чтобы указать, что тип является классом, может быть необходимо определить конструктор для типа.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
@@ -4818,8 +5123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">Статические определения значений можно использовать только в типах с первичными конструкторами. Попробуйте добавить в определение типа аргументы, напр. "type X(args) = ...".</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="translated">Определения статических значений "let","do" и "member val" для F#7 и ниже можно использовать только в типах с первичным конструктором ("type X(args) = ..."). Чтобы включить их во всех других типах, используйте версию языка "8" или выше.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -5938,8 +6243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">Возможно, неправильные отступы: этот токен находится вне контекста, начиная с позиции {0}. Попробуйте увеличить отступ токена или использовать стандартные соглашения о форматировании.</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
+        <target state="translated">Неожиданный синтаксис или, возможно, неправильный отступ: этот токен находится вне контекста, начатого в позиции {0}. Попробуйте увеличить отступ.\nЧтобы продолжить использование несоответствующего отступа, передайте компилятору флаг '--strict-indentation-' или установите версию языка F# 7.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -7653,8 +7958,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">Недопустимое использование выражения "fixed". Выражение "fixed" можно использовать только в объявлении формы "use x = fixed expr", где выражение является массивом, адресом поля, адресом элемента массива или строки.</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="translated">Недопустимое использование выражения "fixed". Выражение "fixed" можно использовать только в объявлении формы "use x = fixed expr", где выражение является одним из следующих объектов: массивом, адресом элемента массива, строкой, функцией byref, inref или типом, реализующим GetPinnableReference()</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8087,11 +8392,6 @@
         <target state="translated">Данное значение не является функцией и не может быть применено. Забыли завершить объявление?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">Имена аргументов в сигнатуре "{0}" и реализации "{1}" не совпадают. Будет использоваться имя аргумента из файла сигнатуры. Это может вызвать проблемы при отладке или профилировании.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Произошла ошибка при чтении метаданных F# сборки "{0}". Использовалась зарезервированная конструкция. Попробуйте обновить компилятор F# или применить более раннюю версию сборки, где конкретная конструкция не используется.</target>
@@ -8227,14 +8527,9 @@
         <target state="translated">Два типа анонимных записей принадлежат различным сборкам '{0}' и '{1}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="translated">Эта анонимная запись не соответствует ожидаемой форме. Добавьте недостающие поля {0} и удалите лишние поля {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">Не удается вызвать метод расширения byref "{0}". В качестве первого параметра необходимо указать изменяемое значение или значение типа byref, доступное не только для чтения.</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="translated">Не удается вызвать метод расширения byref "{0}". В качестве параметра "this" необходимо указать изменяемое значение или значение типа byref, доступное не только для чтения.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8323,8 +8618,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">Ключ "{0}" диспетчера пакетов не был зарегистрирован в {1}. Текущий зарегистрированный ключ: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="translated">Ключ диспетчера пакетов "{0}" не зарегистрирован в {1}. Сейчас зарегистрировано: {2}. Чтобы указать дополнительные пути, передайте в командную строку "--compilertool:&lt;extensionsfolder&gt;". Дополнительные сведения о расширениях см. на странице https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
