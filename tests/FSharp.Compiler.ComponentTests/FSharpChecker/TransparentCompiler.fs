@@ -3,6 +3,7 @@
 open System.Collections.Concurrent
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open Internal.Utilities.Library.Extras
@@ -895,3 +896,65 @@ let ``LoadClosure for script is recomputed after changes`` () =
         |> Map
 
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        clearCache
+        tryGetRecentCheckResults "First" expectNone
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [] )
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First" expectNone
+        checkFile "First" expectOk
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" ["First"])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        tryGetRecentCheckResults "Second" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First"  expectNone
+        tryGetRecentCheckResults "Second" expectSome // file didn't change so we still want to get the recent result
+    } |> ignore
+
+[<Fact>]
+let ``Background compiler and Transparent compiler return the same options`` () =
+    async {
+        let backgroundChecker = FSharpChecker.Create(useTransparentCompiler = false)
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+
+        let! backgroundSnapshot, backgroundDiags = backgroundChecker.GetProjectSnapshotFromScript(scriptName, content)
+        let! transparentSnapshot, transparentDiags = transparentChecker.GetProjectSnapshotFromScript(scriptName, content)
+        Assert.Empty(backgroundDiags)
+        Assert.Empty(transparentDiags)
+        Assert.Equal<string list>(backgroundSnapshot.OtherOptions, transparentSnapshot.OtherOptions)
+        Assert.Equal<ProjectSnapshot.ReferenceOnDisk list>(backgroundSnapshot.ReferencesOnDisk, transparentSnapshot.ReferencesOnDisk)
+    }
