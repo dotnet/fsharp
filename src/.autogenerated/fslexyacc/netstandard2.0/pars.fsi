@@ -2,6 +2,7 @@
 module internal FSharp.Compiler.Parser
 open FSharp.Compiler
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 type token = 
   | HASH_IF of (range * string * ParseHelpers.LexerContinuation)
   | HASH_ELSE of (range * string * ParseHelpers.LexerContinuation)
@@ -18,11 +19,11 @@ type token =
   | ODUMMY of (token)
   | FIXED
   | OINTERFACE_MEMBER
-  | OBLOCKEND
   | OBLOCKEND_COMING_SOON
   | OBLOCKEND_IS_HERE
-  | ORIGHT_BLOCK_END
-  | ODECLEND
+  | OBLOCKEND of (range)
+  | ORIGHT_BLOCK_END of (range)
+  | ODECLEND of (range)
   | OEND
   | OBLOCKSEP
   | OBLOCKBEGIN
@@ -89,6 +90,7 @@ type token =
   | SEMICOLON
   | WHEN
   | WHILE
+  | WHILE_BANG
   | WITH
   | HASH
   | AMP
@@ -221,9 +223,9 @@ type tokenId =
     | TOKEN_ODUMMY
     | TOKEN_FIXED
     | TOKEN_OINTERFACE_MEMBER
-    | TOKEN_OBLOCKEND
     | TOKEN_OBLOCKEND_COMING_SOON
     | TOKEN_OBLOCKEND_IS_HERE
+    | TOKEN_OBLOCKEND
     | TOKEN_ORIGHT_BLOCK_END
     | TOKEN_ODECLEND
     | TOKEN_OEND
@@ -292,6 +294,7 @@ type tokenId =
     | TOKEN_SEMICOLON
     | TOKEN_WHEN
     | TOKEN_WHILE
+    | TOKEN_WHILE_BANG
     | TOKEN_WITH
     | TOKEN_HASH
     | TOKEN_AMP
@@ -528,6 +531,7 @@ type nonTerminalId =
     | NONTERM_opt_explicitValTyparDecls
     | NONTERM_opt_typeConstraints
     | NONTERM_typeConstraints
+    | NONTERM_intersectionConstraints
     | NONTERM_typeConstraint
     | NONTERM_typeAlts
     | NONTERM_unionTypeRepr
@@ -575,8 +579,7 @@ type nonTerminalId =
     | NONTERM_atomicRationalConstant
     | NONTERM_constant
     | NONTERM_bindingPattern
-    | NONTERM_simplePattern
-    | NONTERM_simplePatternCommaList
+    | NONTERM_opt_simplePatterns
     | NONTERM_simplePatterns
     | NONTERM_headBindingPattern
     | NONTERM_tuplePatternElements
@@ -603,6 +606,7 @@ type nonTerminalId =
     | NONTERM_recover
     | NONTERM_moreBinders
     | NONTERM_declExpr
+    | NONTERM_whileExprCore
     | NONTERM_dynamicArg
     | NONTERM_withClauses
     | NONTERM_withPatternClauses
@@ -666,10 +670,12 @@ type nonTerminalId =
     | NONTERM_topTupleType
     | NONTERM_topTupleTypeElements
     | NONTERM_topAppType
+    | NONTERM_invalidUseOfAppTypeFunction
     | NONTERM_typ
     | NONTERM_typEOF
     | NONTERM_tupleType
     | NONTERM_tupleOrQuotTypeElements
+    | NONTERM_intersectionType
     | NONTERM_appTypeCon
     | NONTERM_appTypeConPower
     | NONTERM_appType
@@ -747,8 +753,8 @@ val prodIdxToNonTerminal: int -> nonTerminalId
 
 /// This function gets the name of a token as a string
 val token_to_string: token -> string
-val signatureFile : (Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> (ParsedSigFile) 
-val implementationFile : (Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> (ParsedImplFile) 
-val interaction : (Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> (ParsedScriptInteraction) 
-val typedSequentialExprEOF : (Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> (SynExpr) 
-val typEOF : (Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<'cty> -> (SynType) 
+val signatureFile : (Internal.Utilities.Text.Lexing.LexBuffer<char> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<char> -> (ParsedSigFile) 
+val implementationFile : (Internal.Utilities.Text.Lexing.LexBuffer<char> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<char> -> (ParsedImplFile) 
+val interaction : (Internal.Utilities.Text.Lexing.LexBuffer<char> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<char> -> (ParsedScriptInteraction) 
+val typedSequentialExprEOF : (Internal.Utilities.Text.Lexing.LexBuffer<char> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<char> -> (SynExpr) 
+val typEOF : (Internal.Utilities.Text.Lexing.LexBuffer<char> -> token) -> Internal.Utilities.Text.Lexing.LexBuffer<char> -> (SynType) 
