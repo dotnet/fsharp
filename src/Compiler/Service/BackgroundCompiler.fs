@@ -179,6 +179,10 @@ type internal IBackgroundCompiler =
         fileName: string * options: FSharpProjectOptions * sourceText: ISourceText option * userOpName: string ->
             (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option
 
+    abstract member TryGetRecentCheckResultsForFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
+            (FSharpParseFileResults * FSharpCheckFileResults) option
+
     abstract member BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions>
 
     abstract member FileChecked: IEvent<string * FSharpProjectOptions>
@@ -1174,6 +1178,16 @@ type internal BackgroundCompiler
             | None -> None
         | None -> None
 
+    member _.TryGetRecentCheckResultsForFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
+        projectSnapshot.ProjectSnapshot.SourceFiles
+        |> List.tryFind (fun f -> f.FileName = fileName)
+        |> Option.bind (fun (f: FSharpFileSnapshot) ->
+            let options = projectSnapshot.ToOptions()
+            let sourceText = f.GetSource() |> Async.AwaitTask |> Async.RunSynchronously
+
+            self.TryGetRecentCheckResultsForFile(fileName, options, Some sourceText, userOpName)
+            |> Option.map (fun (parseFileResults, checkFileResults, _hash) -> (parseFileResults, checkFileResults)))
+
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private _.ParseAndCheckProjectImpl(options, userOpName) =
         node {
@@ -1732,3 +1746,11 @@ type internal BackgroundCompiler
                 userOpName: string
             ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
             self.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
+
+        member _.TryGetRecentCheckResultsForFile
+            (
+                fileName: string,
+                projectSnapshot: FSharpProjectSnapshot,
+                userOpName: string
+            ) : (FSharpParseFileResults * FSharpCheckFileResults) option =
+            self.TryGetRecentCheckResultsForFile(fileName, projectSnapshot, userOpName)

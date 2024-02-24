@@ -896,6 +896,52 @@ let ``LoadClosure for script is recomputed after changes`` () =
         |> Map
 
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        clearCache
+        tryGetRecentCheckResults "First" expectNone
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [] )
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First" expectNone
+        checkFile "First" expectOk
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" ["First"])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        tryGetRecentCheckResults "Second" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First"  expectNone
+        tryGetRecentCheckResults "Second" expectSome // file didn't change so we still want to get the recent result
+    } |> ignore
 
 [<Fact>]
 let ``Background compiler and Transparent compiler return the same options`` () =
