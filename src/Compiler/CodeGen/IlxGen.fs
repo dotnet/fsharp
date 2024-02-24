@@ -8237,14 +8237,16 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
             | [] -> bindings |> List.rev
             | _ ->
                 let stamp = remainder |> List.head |> (fun (TBind(v, _, _)) -> getStampForVal v)
+
                 let taken =
                     remainder |> List.takeWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
+
                 let remainder =
                     remainder |> List.skipWhile (fun (TBind(v, _, _)) -> stamp = getStampForVal v)
-                
-                loopAllBinds (taken :: bindings) remainder
-        loopAllBinds [ [] ] allBinds
 
+                loopAllBinds (taken :: bindings) remainder
+
+        loopAllBinds [ [] ] allBinds
 
     let _ =
         (recursiveVars, groupBinds)
