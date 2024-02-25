@@ -372,6 +372,11 @@
         <target state="translated">интерфейсы с множественным универсальным созданием экземпляра</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowerInterpolatedStringToConcat">
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
         <target state="translated">Разрешить du в нижнем регистре, если атрибут RequireQualifiedAccess</target>
