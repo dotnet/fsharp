@@ -9,7 +9,7 @@ function Run {
 
     dotnet run `
         --project $path `
-        -c release `
+        -c Release `
         --no-build `
         --job Dry `
         --allCategories short `

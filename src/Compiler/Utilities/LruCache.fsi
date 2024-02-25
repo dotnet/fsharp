@@ -33,6 +33,9 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
     /// Returns an option of a value for given key and version, and also a list of all other versions for given key
     member GetAll: key: 'TKey * version: 'TVersion -> 'TValue option * ('TVersion * 'TValue) list
 
+    /// Returns a list of version * value pairs for a given key. The strongly held value is first in the list.
+    member GetAll: key: 'TKey -> ('TVersion * 'TValue) seq
+
     member GetValues: unit -> (string * 'TVersion * 'TValue) seq
 
     member Remove: key: 'TKey -> unit

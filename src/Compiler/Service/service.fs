@@ -338,6 +338,10 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
 
+    member _.TryGetRecentCheckResultsForFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.TryGetRecentCheckResultsForFile(fileName, projectSnapshot, userOpName)
+
     member _.Compile(argv: string[], ?userOpName: string) =
         let _userOpName = defaultArg userOpName "Unknown"
         use _ = Activity.start "FSharpChecker.Compile" [| Activity.Tags.userOpName, _userOpName |]
@@ -371,6 +375,10 @@ type FSharpChecker
     member _.InvalidateConfiguration(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, userOpName)
+
+    member _.InvalidateConfiguration(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.InvalidateConfiguration(projectSnapshot, userOpName)
 
     /// Clear the internal cache of the given projects.
     member _.ClearCache(options: seq<FSharpProjectOptions>, ?userOpName: string) =
@@ -540,6 +548,37 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.GetProjectOptionsFromScript(
+            fileName,
+            source,
+            previewEnabled,
+            loadedTimeStamp,
+            otherFlags,
+            useFsiAuxLib,
+            useSdkRefs,
+            sdkDirOverride,
+            assumeDotNetFramework,
+            optionsStamp,
+            userOpName
+        )
+
+    /// For a given script file, get the ProjectSnapshot implied by the #load closure
+    member _.GetProjectSnapshotFromScript
+        (
+            fileName,
+            source,
+            ?previewEnabled,
+            ?loadedTimeStamp,
+            ?otherFlags,
+            ?useFsiAuxLib,
+            ?useSdkRefs,
+            ?assumeDotNetFramework,
+            ?sdkDirOverride,
+            ?optionsStamp: int64,
+            ?userOpName: string
+        ) =
+        let userOpName = defaultArg userOpName "Unknown"
+
+        backgroundCompiler.GetProjectSnapshotFromScript(
             fileName,
             source,
             previewEnabled,
