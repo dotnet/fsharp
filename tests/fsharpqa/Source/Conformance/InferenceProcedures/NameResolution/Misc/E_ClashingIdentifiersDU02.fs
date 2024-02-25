@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:2364
 // Clashing union case label and property
 //<Expects id="FS0023" span="(14,17-14,27)" status="notin">The member 'ClashingID' can not be defined because the name 'ClashingID' clashes with the union case 'ClashingID' in this type or module</Expects>
-//<Expects id="FS0023" span="(17,24-17,34)" status="error">The member 'ClashingID' can not be defined because the name 'ClashingID' clashes with the union case 'ClashingID' in this type or module</Expects>
+//<Expects id="FS0023" span="(17,13-17,34)" status="error">The member 'ClashingID' can not be defined because the name 'ClashingID' clashes with the union case 'ClashingID' in this type or module</Expects>
 
 module M=
  type Suit =
