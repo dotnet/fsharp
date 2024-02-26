@@ -511,7 +511,14 @@ module TcRecdUnionAndEnumDeclarations =
                 
     let TcUnionCaseDecl (cenv: cenv) env parent thisTy thisTyInst tpenv hasRQAAttribute (SynUnionCase(Attributes synAttrs, SynIdent(id, _), args, xmldoc, vis, m, _)) =
         let g = cenv.g
-        let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
+        let attrs =
+            // The attributes of a union case decl get attached to the generated "static factory" method
+            // Enforce that the union-cases can only be targeted by attributes with AttributeTargets.Method
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) then
+                TcAttributes cenv env AttributeTargets.Method synAttrs
+            else
+                TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
+            
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
 
