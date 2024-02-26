@@ -1269,7 +1269,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     static member Deserialize:
-        qualifyingType: Type * spliceTypes: Type list * spliceExprs: Expr list * bytes: byte[] -> Expr
+        qualifyingType: Type * spliceTypes: Type list * spliceExprs: Expr list * bytes: byte array -> Expr
 
     /// <summary>This function is called automatically when quotation syntax (&lt;@ @&gt;) and other sources of
     /// quotations are used. </summary>
@@ -1282,7 +1282,11 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     static member Deserialize40:
-        qualifyingType: Type * referencedTypes: Type[] * spliceTypes: Type[] * spliceExprs: Expr[] * bytes: byte[] ->
+        qualifyingType: Type *
+        referencedTypes: Type array *
+        spliceTypes: Type array *
+        spliceExprs: Expr array *
+        bytes: byte array ->
             Expr
 
     /// <summary>Permits interactive environments such as F# Interactive
@@ -1293,7 +1297,8 @@ type Expr =
     /// <param name="resource">The unique name for the resources being added.</param>
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
     ///
-    static member RegisterReflectedDefinitions: assembly: Assembly * resource: string * serializedValue: byte[] -> unit
+    static member RegisterReflectedDefinitions:
+        assembly: Assembly * resource: string * serializedValue: byte array -> unit
 
     /// <summary>Permits interactive environments such as F# Interactive
     /// to explicitly register new pickled resources that represent persisted
@@ -1305,7 +1310,7 @@ type Expr =
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
     ///
     static member RegisterReflectedDefinitions:
-        assembly: Assembly * resource: string * serializedValue: byte[] * referencedTypes: Type[] -> unit
+        assembly: Assembly * resource: string * serializedValue: byte array * referencedTypes: Type array -> unit
 
     /// <summary>Fetches or creates a new variable with the given name and type from a global pool of shared variables
     /// indexed by name and type. The type is given by the explicit or inferred type parameter</summary>

@@ -428,7 +428,7 @@ namespace Microsoft.FSharp.Control
         /// </code>
         /// This will print "3", "5", "7", "11" (in any order) in 1-2 seconds and then [| false; true; true; true; false; true |].
         /// </example>
-        static member Parallel : computations:seq<Async<'T>> -> Async<'T[]>
+        static member Parallel : computations:seq<Async<'T>> -> Async<'T array>
 
         /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations,
         /// initially queueing each as work items and using a fork/join pattern.</summary>
@@ -475,7 +475,7 @@ namespace Microsoft.FSharp.Control
         /// This will print "3", "5" (in any order) in 1-2 seconds, and then "7", "11" (in any order) in 1-2 more seconds and then
         /// [| false; true; true; true; false; true |].
         /// </example>
-        static member Parallel : computations:seq<Async<'T>> * ?maxDegreeOfParallelism : int -> Async<'T[]>
+        static member Parallel : computations:seq<Async<'T>> * ?maxDegreeOfParallelism : int -> Async<'T array>
 
         /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations sequentially.</summary>
         ///
@@ -520,7 +520,7 @@ namespace Microsoft.FSharp.Control
         /// This will print "3", "5", "7", "11" with ~1-2 seconds between them except for pauses where even numbers would be and then
         /// prints [| false; true; true; true; false; true |].
         /// </example>
-        static member Sequential : computations:seq<Async<'T>> -> Async<'T[]>
+        static member Sequential : computations:seq<Async<'T>> -> Async<'T array>
 
         /// <summary>
         /// Creates an asynchronous computation that executes all given asynchronous computations in parallel, 
@@ -1409,17 +1409,17 @@ namespace Microsoft.FSharp.Control
             /// 
             /// <example-tbd></example-tbd>
             [<CompiledName("AsyncRead")>] // give the extension member a nice, unmangled compiled name, unique within this module
-            member AsyncRead : buffer:byte[] * ?offset:int * ?count:int -> Async<int>
+            member AsyncRead : buffer:byte array * ?offset:int * ?count:int -> Async<int>
             
             /// <summary>Returns an asynchronous computation that will read the given number of bytes from the stream.</summary>
             ///
             /// <param name="count">The number of bytes to read.</param>
             ///
-            /// <returns>An asynchronous computation that returns the read byte[] when run.</returns> 
+            /// <returns>An asynchronous computation that returns the read byte array when run.</returns> 
             /// 
             /// <example-tbd></example-tbd>
             [<CompiledName("AsyncReadBytes")>] // give the extension member a nice, unmangled compiled name, unique within this module
-            member AsyncRead : count:int -> Async<byte[]>
+            member AsyncRead : count:int -> Async<byte array>
             
             /// <summary>Returns an asynchronous computation that will write the given bytes to the stream.</summary>
             ///
@@ -1435,7 +1435,7 @@ namespace Microsoft.FSharp.Control
             /// 
             /// <example-tbd></example-tbd>
             [<CompiledName("AsyncWrite")>] // give the extension member a nice, unmangled compiled name, unique within this module
-            member AsyncWrite : buffer:byte[] * ?offset:int * ?count:int -> Async<unit>
+            member AsyncWrite : buffer:byte array * ?offset:int * ?count:int -> Async<unit>
 
 
         ///<summary>The family of first class event values for delegate types that satisfy the F# delegate constraint.</summary>
@@ -1522,7 +1522,7 @@ namespace Microsoft.FSharp.Control
             /// </example>
             /// Downloads the data in bytes and decodes it to a string.
             [<CompiledName("AsyncDownloadData")>] // give the extension member a nice, unmangled compiled name, unique within this module
-            member AsyncDownloadData : address:System.Uri -> Async<byte[]>
+            member AsyncDownloadData : address:System.Uri -> Async<byte array>
 
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI to specified file.</summary>
             ///

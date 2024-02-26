@@ -129,3 +129,48 @@ type Foo () =
         """
         |> compile
         |> shouldSucceed
+
+    [<Theory>]
+    // Test different number of interpolated string parts
+    [<InlineData("$\"\"\"abc{\"d\"}e\"\"\"")>]
+    [<InlineData("$\"\"\"abc{\"d\"}{\"e\"}\"\"\"")>]
+    [<InlineData("$\"\"\"a{\"b\"}c{\"d\"}e\"\"\"")>]
+    let ``Interpolated expressions are strings`` (strToPrint: string) =
+        Fsx $"""
+let x = {strToPrint}
+printfn "%%s" x
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "abcde"
+
+    let ``Multiline interpolated expression is a string`` () =
+        let strToPrint = String.Join(Environment.NewLine, "$\"\"\"a", "b", "c", "{\"d\"}", "e\"\"\"")
+        Fsx $"""
+let x = {strToPrint}
+printfn "%%s" x
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains """a
+b
+c
+d
+e"""
+
+    [<Theory>]
+    [<InlineData("$\"\"\"abc{\"d\"}e\"\"\"", 1)>]
+    [<InlineData("$\"\"\"abc{\"d\"}{\"e\"}\"\"\"", 2)>]
+    [<InlineData("$\"\"\"a{\"b\"}c{\"d\"}e\"\"\"", 2)>]
+    let ``In FormattableString, interpolated expressions are strings`` (formattableStr: string, argCount: int) =
+        Fsx $"""
+let x = {formattableStr} : System.FormattableString
+assert(x.ArgumentCount = {argCount})
+printfn "%%s" (System.Globalization.CultureInfo "en-US" |> x.ToString)
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "abcde"

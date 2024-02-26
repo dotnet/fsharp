@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
@@ -14,6 +14,7 @@
     <Compile Include="FileCascadeBenchmarks.fs" />
     <Compile Include="GraphTypeCheckingBenchmarks.fs" />
     <Compile Include="BackgroundCompilerBenchmarks.fs" />
+    <Compile Include="ComputationExpressionBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -24,7 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\..\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
-    <ProjectReference Include="..\BenchmarkComparison\HistoricalBenchmark.fsproj" />
+    <ProjectReference Include="..\..\FSharp.Benchmarks.Common\FSharp.Benchmarks.Common.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">

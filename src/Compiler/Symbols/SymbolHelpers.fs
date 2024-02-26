@@ -284,7 +284,7 @@ module internal SymbolHelpers =
         | Item.DelegateCtor ty
         | Item.Types(_, ty :: _) ->
             match ty with
-            | AbbrevOrAppTy tcref ->
+            | AbbrevOrAppTy(tcref, _) ->
                 mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
             | _ -> FSharpXmlDoc.None
 
@@ -462,8 +462,8 @@ module internal SymbolHelpers =
               | Item.UnqualifiedType tcrefs1, Item.UnqualifiedType tcrefs2 ->
                   (tcrefs1, tcrefs2)
                   ||> List.forall2 (fun tcref1 tcref2 -> tyconRefEq g tcref1 tcref2)
-              | Item.Types(_, [AbbrevOrAppTy tcref1]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
-              | Item.UnqualifiedType([tcref1]), Item.Types(_, [AbbrevOrAppTy tcref2]) -> tyconRefEq g tcref1 tcref2
+              | Item.Types(_, [AbbrevOrAppTy(tcref1, _)]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
+              | Item.UnqualifiedType([tcref1]), Item.Types(_, [AbbrevOrAppTy(tcref2, _)]) -> tyconRefEq g tcref1 tcref2
               | _ -> false)
               
           member x.GetHashCode item =
@@ -648,7 +648,7 @@ module internal SymbolHelpers =
         | Item.Types(_, tys) ->
             let doc =
                 match tys with
-                | AbbrevOrAppTy tcref :: _ ->
+                | AbbrevOrAppTy(tcref, _) :: _ ->
                     if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty then
                         Some tcref.XmlDoc
                     else
