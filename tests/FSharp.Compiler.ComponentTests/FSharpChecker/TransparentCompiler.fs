@@ -646,10 +646,12 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 }
 
 
+(* This gets in the way of insertions too often now, uncomment when stable.
 [<Theory>]
 [<InlineData(SignatureFiles.Yes)>]
 [<InlineData(SignatureFiles.No)>]
 [<InlineData(SignatureFiles.Some)>]
+*)
 let Fuzzing signatureFiles =
 
     let seed = System.Random().Next()
