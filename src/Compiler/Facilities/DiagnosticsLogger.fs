@@ -15,6 +15,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open System.Collections.Concurrent
 open System.Threading
+open System.Threading.Tasks
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -882,16 +883,49 @@ type StackGuard(maxDepth: int, name: string) =
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
-type CaptureDiagnosticsConcurrently() =
-    let target = DiagnosticsThreadStatics.DiagnosticsLogger
-    let loggers = ResizeArray()
+type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerFormat) =
+    let mutable errorCount = 0
 
-    member _.GetLoggerForTask(name) : DiagnosticsLogger =
-        let logger = CapturingDiagnosticsLogger(name)
-        loggers.Add logger
-        logger
+    let injected, diags = [
+        for i, computation in computations |> Seq.indexed do
+            let tcs = TaskCompletionSource<_>()
+            let logger =
+                { new CapturingDiagnosticsLogger($"CaptureDiagnosticsConcurrently {i}", ?eagerFormat = eagerFormat) with
+                    override _.DiagnosticSink(d, severity) =
+                        base.DiagnosticSink(d, severity)
+                        if severity = FSharpDiagnosticSeverity.Error then
+                            Interlocked.Increment &errorCount |> ignore
+                    override _.ErrorCount = errorCount
+                }
+            let injected = 
+                async {
+                    try
+                        SetThreadDiagnosticsLoggerNoUnwind logger
+                        return! computation
+                    finally
+                        tcs.SetResult logger
+                }
+            injected, tcs ] |> List.unzip
 
-    interface IDisposable with
-        member _.Dispose() =
-            for logger in loggers do
-                logger.CommitDelayedDiagnostics target
+    let replayDiagnostics = backgroundTask {
+        let target = DiagnosticsThreadStatics.DiagnosticsLogger
+        for tcs in diags do
+            let! finishedLogger = tcs.Task
+            finishedLogger.CommitDelayedDiagnostics target
+    }
+
+    member val Computations = injected |> Seq.ofList
+    member val ReplayDiagnostics = replayDiagnostics
+
+module MultipleDiagnosticsLoggers =
+    let run method (computations: Async<'T> seq) =
+        let c = CaptureDiagnosticsConcurrently(computations)
+        async {
+            try
+                return! c.Computations |> method
+            finally
+                c.ReplayDiagnostics.Result             
+        }
+
+    let Parallel computations = run Async.Parallel computations
+    let Sequential computations = run Async.Sequential computations

@@ -465,9 +465,8 @@ type CompilationGlobalsScope =
 
     member BuildPhase: BuildPhase
 
-type CaptureDiagnosticsConcurrently =
-    new: unit -> CaptureDiagnosticsConcurrently
+module MultipleDiagnosticsLoggers =
 
-    member GetLoggerForTask: string -> DiagnosticsLogger
+    val Parallel: computations: Async<'T> seq -> Async<'T array>
 
-    interface IDisposable
+    val Sequential: computations: Async<'T> seq -> Async<'T array>
