@@ -5462,6 +5462,65 @@ type A(i:int) =
     | Some decl -> failwithf "unexpected declaration %A" decl
     | None -> failwith "declaration list is empty"
 
+[<Test>]
+[<TestCase true>]
+[<TestCase false>]
+let ``TryGetRecentCheckResultsForFile called with snapshot returns cached result after ParseAndCheckFile`` useTransparentCompiler =
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let base2 = tryCreateTemporaryFileName ()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1Text = """
+type A(i:int) =
+    member x.Value = i
+"""
+    let fileSource1 = SourceText.ofString fileSource1Text
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
+
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let checker = FSharpChecker.Create(useTransparentCompiler=useTransparentCompiler)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
+    let snapshot = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
+
+    let rbefore = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot)
+    match rbefore with
+    | Some(fileResults, checkFileResults) -> failwith "cached results before ParseAndCheckFileInProject was called"
+    | None -> ()
+    
+    checker.ParseAndCheckFileInProject(fileName1, snapshot)  |> Async.RunImmediate
+    |> function
+        | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
+        | _ -> failwithf "Parsing aborted unexpectedly..."
+            
+    let rafterCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot)
+    match rafterCheckResults with
+    | Some(fileResults, checkFileResults) -> ()
+    | None -> failwith "no results from TryGetRecentCheckResultsForFile"
+   
+    let fileSource1TextEdited = """
+type A(i:int) =
+    member x.Value = i
+    member x.Value2 = 23
+"""
+    let fileSource1Edited = SourceText.ofString fileSource1TextEdited
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1TextEdited)
+    let snapshotAfterFileEdit = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
+
+    let rafterEditBefore2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit)
+    match rafterEditBefore2ndCheckResults with
+    | Some(fileResults, checkFileResults) -> failwith "stale cache results from TryGetRecentCheckResultsForFile after edit"
+    | None -> ()
+    
+    checker.ParseAndCheckFileInProject(fileName1, snapshotAfterFileEdit)  |> Async.RunImmediate
+    |> function
+        | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
+        | _ -> failwithf "Parsing aborted unexpectedly..."
+        
+    let rafterEditAfter2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit)
+    match rafterEditAfter2ndCheckResults with
+    | Some(fileResults, checkFileResults) -> ()
+    | None -> failwith "no results from TryGetRecentCheckResultsForFile"
 
 [<TestCase(([||]: string[]), ([||]: bool[]))>]
 [<TestCase([| "--times" |], [| false |])>]
