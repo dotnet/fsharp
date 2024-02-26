@@ -14,6 +14,7 @@ open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open System.Collections.Concurrent
+open System.Threading
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -375,29 +376,25 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
+let buildPhase = AsyncLocal<_>()
+let diagnosticsLogger = AsyncLocal<_>()
+
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private buildPhase: BuildPhase
 
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private diagnosticsLogger: DiagnosticsLogger
+    static member Init() =
+        buildPhase.Value <- BuildPhase.DefaultPhase
+        diagnosticsLogger.Value <- AssertFalseDiagnosticsLogger
 
-    static member BuildPhaseUnchecked = DiagnosticsThreadStatics.buildPhase
+    static member BuildPhaseUnchecked = buildPhase.Value
 
     static member BuildPhase
-        with get () =
-            match box DiagnosticsThreadStatics.buildPhase with
-            | Null -> BuildPhase.DefaultPhase
-            | _ -> DiagnosticsThreadStatics.buildPhase
-        and set v = DiagnosticsThreadStatics.buildPhase <- v
+        with get () = buildPhase.Value
+        and set v = buildPhase.Value <- v
 
     static member DiagnosticsLogger
-        with get () =
-            match box DiagnosticsThreadStatics.diagnosticsLogger with
-            | Null -> AssertFalseDiagnosticsLogger
-            | _ -> DiagnosticsThreadStatics.diagnosticsLogger
-        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
+        with get () = diagnosticsLogger.Value
+        and set v = diagnosticsLogger.Value <- v
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =

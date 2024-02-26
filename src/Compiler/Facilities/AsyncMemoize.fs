@@ -50,11 +50,11 @@ type internal MemoizeReply<'TValue> =
     | New of CancellationToken
     | Existing of Task<'TValue>
 
-type internal MemoizeRequest<'TValue> = GetOrCompute of NodeCode<'TValue> * CancellationToken
+type internal MemoizeRequest<'TValue> = GetOrCompute of Async<'TValue> * CancellationToken
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal Job<'TValue> =
-    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * NodeCode<'TValue> * DateTime * ResizeArray<DiagnosticsLogger>
+    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * Async<'TValue> * DateTime * ResizeArray<DiagnosticsLogger>
     | Completed of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
     | Canceled of DateTime
     | Failed of DateTime * exn // TODO: probably we don't need to keep this
@@ -358,7 +358,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                                 DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
 
                                                 try
-                                                    let! result = computation |> Async.AwaitNodeCode
+                                                    let! result = computation
                                                     post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
                                                     return ()
                                                 finally
@@ -481,14 +481,13 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 Version = key.GetVersion()
             }
 
-        node {
-            let! ct = NodeCode.CancellationToken
+        async {
+            let! ct = Async.CancellationToken
 
             let callerDiagnosticLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
             match!
-                processRequest post (key, GetOrCompute(computation, ct)) callerDiagnosticLogger
-                |> NodeCode.AwaitTask
+                processRequest post (key, GetOrCompute(computation, ct)) callerDiagnosticLogger |> Async.AwaitTask
             with
             | New internalCt ->
 
@@ -496,8 +495,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 let cachingLogger = new CachingDiagnosticsLogger(Some callerDiagnosticLogger)
 
                 try
-                    return!
-                        Async.StartAsTask(
+                    return
+                        Async.RunSynchronously(
                             async {
                                 // TODO: Should unify starting and restarting
                                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -506,7 +505,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 log (Started, key)
 
                                 try
-                                    let! result = computation |> Async.AwaitNodeCode
+                                    let! result = computation
                                     post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
                                     return result
                                 finally
@@ -514,7 +513,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             },
                             cancellationToken = linkedCtSource.Token
                         )
-                        |> NodeCode.AwaitTask
                 with
                 | TaskCancelled ex ->
                     // TODO: do we need to do anything else here? Presumably it should be done by the registration on
@@ -530,7 +528,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                     post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
                     return raise ex
 
-            | Existing job -> return! job |> NodeCode.AwaitTask
+            | Existing job -> return! job |> Async.AwaitTask
 
         }
 

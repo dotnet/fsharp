@@ -38,7 +38,7 @@ type internal FrameworkImportsCacheKey =
 type internal FrameworkImportsCache =
     new: size: int -> FrameworkImportsCache
 
-    member Get: TcConfig -> NodeCode<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
+    member Get: TcConfig -> Async<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
 
     member Clear: unit -> unit
 
@@ -121,25 +121,25 @@ type internal PartialCheckResults =
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
-    member GetOrComputeTcInfo: unit -> NodeCode<TcInfo>
+    member GetOrComputeTcInfo: unit -> Async<TcInfo>
 
     /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetOrComputeTcInfoWithExtras: unit -> NodeCode<TcInfo * TcInfoExtras>
+    member GetOrComputeTcInfoWithExtras: unit -> Async<TcInfo * TcInfoExtras>
 
     /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
     ///
     /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
-    member GetOrComputeItemKeyStoreIfEnabled: unit -> NodeCode<ItemKeyStore option>
+    member GetOrComputeItemKeyStoreIfEnabled: unit -> Async<ItemKeyStore option>
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
     ///
     /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
-    member GetOrComputeSemanticClassificationIfEnabled: unit -> NodeCode<SemanticClassificationKeyStore option>
+    member GetOrComputeSemanticClassificationIfEnabled: unit -> Async<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime
 
@@ -194,7 +194,7 @@ type internal IncrementalBuilder =
     member AllDependenciesDeprecated: string[]
 
     /// The project build. Return true if the background work is finished.
-    member PopulatePartialCheckingResults: unit -> NodeCode<unit>
+    member PopulatePartialCheckingResults: unit -> Async<unit>
 
     /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
     /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
@@ -228,38 +228,38 @@ type internal IncrementalBuilder =
 
     /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
-    member GetCheckResultsBeforeFileInProject: fileName: string -> NodeCode<PartialCheckResults>
+    member GetCheckResultsBeforeFileInProject: fileName: string -> Async<PartialCheckResults>
 
     /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
     /// This will get full type-check info for the file, meaning no partial type-checking.
-    member GetFullCheckResultsBeforeFileInProject: fileName: string -> NodeCode<PartialCheckResults>
+    member GetFullCheckResultsBeforeFileInProject: fileName: string -> Async<PartialCheckResults>
 
     /// Get the typecheck state after checking a file. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
-    member GetCheckResultsAfterFileInProject: fileName: string -> NodeCode<PartialCheckResults>
+    member GetCheckResultsAfterFileInProject: fileName: string -> Async<PartialCheckResults>
 
     /// Get the typecheck state after checking a file. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
     /// This will get full type-check info for the file, meaning no partial type-checking.
-    member GetFullCheckResultsAfterFileInProject: fileName: string -> NodeCode<PartialCheckResults>
+    member GetFullCheckResultsAfterFileInProject: fileName: string -> Async<PartialCheckResults>
 
     /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
     /// This may be a long-running operation.
-    member GetCheckResultsAfterLastFileInProject: unit -> NodeCode<PartialCheckResults>
+    member GetCheckResultsAfterLastFileInProject: unit -> Async<PartialCheckResults>
 
     /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.
     member GetCheckResultsAndImplementationsForProject:
         unit ->
-            NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
+            Async<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
     /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.
     /// This will get full type-check info for the project, meaning no partial type-checking.
     member GetFullCheckResultsAndImplementationsForProject:
         unit ->
-            NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
+            Async<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
     /// Get the logical time stamp that is associated with the output of the project if it were fully built immediately
     member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
@@ -273,7 +273,7 @@ type internal IncrementalBuilder =
     member GetParseResultsForFile:
         fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
-    member NotifyFileChanged: fileName: string * timeStamp: DateTime -> NodeCode<unit>
+    member NotifyFileChanged: fileName: string * timeStamp: DateTime -> Async<unit>
 
     /// Create the incremental builder
     static member TryCreateIncrementalBuilderForProjectOptions:
@@ -299,7 +299,7 @@ type internal IncrementalBuilder =
         getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool *
         useSyntaxTreeCache: bool ->
-            NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
+            Async<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =

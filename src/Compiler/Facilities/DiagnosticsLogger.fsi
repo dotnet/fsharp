@@ -229,6 +229,7 @@ type CapturingDiagnosticsLogger =
 /// Thread statics for the installed diagnostic logger
 [<Class>]
 type DiagnosticsThreadStatics =
+    static member Init: unit -> unit
 
     static member BuildPhase: BuildPhase with get, set
 
