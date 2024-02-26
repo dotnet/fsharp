@@ -409,7 +409,7 @@ module MainModuleBuilder =
                     yield! codegenResults.ilAssemAttrs
 
                     if Option.isSome pdbfile then
-                        tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, disableJitOptimizations, false (* enableEnC *) )
+                        tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, disableJitOptimizations)
                     yield! reflectedDefinitionAttrs
                 ]
 

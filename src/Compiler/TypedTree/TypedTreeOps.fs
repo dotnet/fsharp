@@ -3597,7 +3597,7 @@ let isSpanTyconRef g m tcref =
 let isSpanTy g m ty =
     ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isSpanTyconRef g m tcref | _ -> false)
 
-let rec tryDestSpanTy g m ty =
+let tryDestSpanTy g m ty =
     match tryAppTy g ty with
     | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> Some(tcref, ty)
     | _ -> None
@@ -3671,6 +3671,13 @@ let mkValueOptionTy (g: TcGlobals) ty = TType_app (g.valueoption_tcr_nice, [ty],
 let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty], g.knownWithoutNull)
 
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty], g.knownWithoutNull)
+
+let isBoolTy (g: TcGlobals) ty = 
+    match tryTcrefOfAppTy g ty with 
+    | ValueNone -> false
+    | ValueSome tcref -> 
+        tyconRefEq g g.system_Bool_tcref tcref ||
+        tyconRefEq g g.bool_tcr tcref
 
 let isValueOptionTy (g: TcGlobals) ty = 
     match tryTcrefOfAppTy g ty with 
@@ -4626,11 +4633,11 @@ module DebugPrint =
         let body = moduleOrNamespaceTypeL ms.ModuleOrNamespaceType
         (header @@-- body) @@ footer
 
-    let rec implFilesL implFiles =
-        aboveListL (List.map implFileL implFiles)
-
-    and implFileL (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
+    let implFileL (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
         aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL implFileTy implFileContents]
+        
+    let implFilesL implFiles =
+        aboveListL (List.map implFileL implFiles)
 
     let showType x = showL (typeL x)
 
@@ -5097,6 +5104,33 @@ let tryGetFreeVarsCacheValue opts cache =
     if opts.canCache then tryGetCacheValue cache
     else ValueNone
 
+let accFreeLocalVal opts v fvs =
+    if not opts.includeLocals then fvs else
+    if Zset.contains v fvs.FreeLocals then fvs 
+    else 
+        let fvs = accFreevarsInVal opts v fvs
+        {fvs with FreeLocals=Zset.add v fvs.FreeLocals}
+
+let accFreeInValFlags opts flag acc =
+    let isMethLocal = 
+        match flag with 
+        | VSlotDirectCall 
+        | CtorValUsedAsSelfInit 
+        | CtorValUsedAsSuperInit -> true 
+        | PossibleConstrainedCall _
+        | NormalValUse -> false
+    let acc = accUsesFunctionLocalConstructs isMethLocal acc
+    match flag with 
+    | PossibleConstrainedCall ty -> accFreeTyvars opts accFreeInType ty acc
+    | _ -> acc
+    
+let accLocalTyconRepr opts b fvs = 
+    if not opts.includeLocalTyconReprs then fvs else
+    if Zset.contains b fvs.FreeLocalTyconReprs then fvs
+    else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs }
+
+let inline accFreeExnRef _exnc fvs = fvs // Note: this exnc (TyconRef) should be collected the surround types, e.g. tinst of Expr.Op
+
 let rec accBindRhs opts (TBind(_, repr, _)) acc = accFreeInExpr opts repr acc
           
 and accFreeInSwitchCases opts csl dflt (acc: FreeVars) =
@@ -5123,31 +5157,6 @@ and accFreeInDecisionTree opts x (acc: FreeVars) =
     | TDSwitch(e1, csl, dflt, _) -> accFreeInExpr opts e1 (accFreeInSwitchCases opts csl dflt acc)
     | TDSuccess (es, _) -> accFreeInFlatExprs opts es acc
     | TDBind (bind, body) -> unionFreeVars (bindLhs opts bind (accBindRhs opts bind (freeInDecisionTree opts body))) acc
-  
-and accFreeInValFlags opts flag acc =
-    let isMethLocal = 
-        match flag with 
-        | VSlotDirectCall 
-        | CtorValUsedAsSelfInit 
-        | CtorValUsedAsSuperInit -> true 
-        | PossibleConstrainedCall _
-        | NormalValUse -> false
-    let acc = accUsesFunctionLocalConstructs isMethLocal acc
-    match flag with 
-    | PossibleConstrainedCall ty -> accFreeTyvars opts accFreeInType ty acc
-    | _ -> acc
-
-and accFreeLocalVal opts v fvs =
-    if not opts.includeLocals then fvs else
-    if Zset.contains v fvs.FreeLocals then fvs 
-    else 
-        let fvs = accFreevarsInVal opts v fvs
-        {fvs with FreeLocals=Zset.add v fvs.FreeLocals}
-  
-and accLocalTyconRepr opts b fvs = 
-    if not opts.includeLocalTyconReprs then fvs else
-    if Zset.contains b fvs.FreeLocalTyconReprs then fvs
-    else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs } 
 
 and accUsedRecdOrUnionTyconRepr opts (tc: Tycon) fvs =
     if (match tc.TypeReprInfo with TFSharpTyconRepr _ -> true | _ -> false) then
@@ -5170,8 +5179,7 @@ and accFreeRecdFieldRef opts rfref fvs =
         let fvs = fvs |> accUsedRecdOrUnionTyconRepr opts rfref.Tycon
         let fvs = fvs |> accFreevarsInTycon opts rfref.TyconRef 
         { fvs with FreeRecdFields = Zset.add rfref fvs.FreeRecdFields } 
-  
-and accFreeExnRef _exnc fvs = fvs // Note: this exnc (TyconRef) should be collected the surround types, e.g. tinst of Expr.Op 
+
 and accFreeValRef opts (vref: ValRef) fvs = 
     match vref.IsLocalRef with 
     | true -> accFreeLocalVal opts vref.ResolvedTarget fvs
@@ -6609,7 +6617,7 @@ let isExpansiveUnderInstantiation g fty0 tyargs pargs argsl =
          | _ :: t -> not (isFunTy g fty) || loop (rangeOfFunTy g fty) t
      loop fty1 argsl)
     
-let rec mkExprAppAux g f fty argsl m =
+let mkExprAppAux g f fty argsl m =
     match argsl with 
     | [] -> f
     | _ -> 
@@ -6780,7 +6788,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
             treeR, targetsR
 
 // Simplify a little as we go, including dead target elimination 
-let rec simplifyTrivialMatch spBind mExpr mMatch ty tree (targets : _[]) = 
+let simplifyTrivialMatch spBind mExpr mMatch ty tree (targets : _[]) = 
     match tree with 
     | TDSuccess(es, n) -> 
         if n >= targets.Length then failwith "simplifyTrivialMatch: target out of range"
@@ -9227,14 +9235,17 @@ type ActivePatternInfo with
 
     member x.DisplayNameByIdx idx = x.ActiveTags[idx] |> ConvertLogicalNameToDisplayName
 
-    member apinfo.ResultType g m retTys isStruct = 
+    member apinfo.ResultType g m retTys retKind = 
         let choicety = mkChoiceTy g m retTys
         if apinfo.IsTotal then choicety 
-        elif isStruct then mkValueOptionTy g choicety
-        else mkOptionTy g choicety
+        else
+            match retKind with
+            | ActivePatternReturnKind.RefTypeWrapper -> mkOptionTy g choicety
+            | ActivePatternReturnKind.StructTypeWrapper -> mkValueOptionTy g choicety
+            | ActivePatternReturnKind.Boolean -> g.bool_ty
     
-    member apinfo.OverallType g m argTy retTys isStruct = 
-        mkFunTy g argTy (apinfo.ResultType g m retTys isStruct)
+    member apinfo.OverallType g m argTy retTys retKind = 
+        mkFunTy g argTy (apinfo.ResultType g m retTys retKind)
 
 //---------------------------------------------------------------------------
 // Active pattern validation
@@ -10722,7 +10733,7 @@ let rec serializeNode (writer: IndentedTextWriter) (addTrailingComma:bool) (node
     else
         writer.WriteLine("}")
  
-let rec serializeEntity path (entity: Entity) =
+let serializeEntity path (entity: Entity) =
     let root = visitEntity entity
     use sw = new System.IO.StringWriter()
     use writer = new IndentedTextWriter(sw)

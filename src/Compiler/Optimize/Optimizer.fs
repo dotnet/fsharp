@@ -230,20 +230,23 @@ type Summary<'Info> =
 // Note, this is a different notion of "size" to the one used for inlining heuristics
 //------------------------------------------------------------------------- 
 
-let rec SizeOfValueInfos (arr:_[]) =
-    if arr.Length <= 0 then 0 else max 0 (SizeOfValueInfo arr[0])
+let SizeOfValueInfo valueInfo =
+    let rec loop acc valueInfo =
+        match valueInfo with
+        | SizeValue (vdepth, _v) -> assert (vdepth >= 0); acc + vdepth // terminate recursion at CACHED size nodes
+        | CurriedLambdaValue _
+        | ConstExprValue _
+        | ConstValue _
+        | UnknownValue -> acc + 1
+        | TupleValue vinfos
+        | RecdValue (_, vinfos)
+        | UnionCaseValue (_, vinfos) when vinfos.Length = 0 -> acc + 1
+        | TupleValue vinfos
+        | RecdValue (_, vinfos)
+        | UnionCaseValue (_, vinfos) -> loop (acc + 1) vinfos[0]
+        | ValValue (_vr, vinfo) -> loop (acc + 1) vinfo
 
-and SizeOfValueInfo x =
-    match x with
-    | SizeValue (vdepth, _v) -> vdepth // terminate recursion at CACHED size nodes
-    | ConstValue (_x, _) -> 1
-    | UnknownValue -> 1
-    | ValValue (_vr, vinfo) -> SizeOfValueInfo vinfo + 1
-    | TupleValue vinfos
-    | RecdValue (_, vinfos)
-    | UnionCaseValue (_, vinfos) -> 1 + SizeOfValueInfos vinfos
-    | CurriedLambdaValue _ -> 1
-    | ConstExprValue (_size, _) -> 1
+    loop 0 valueInfo
 
 let [<Literal>] minDepthForASizeNode = 5  // for small vinfos do not record size info, save space
 
@@ -700,15 +703,17 @@ let rec stripValue = function
   | SizeValue(_, details) -> stripValue details (* step through SizeValue "aliases" *) 
   | vinfo -> vinfo
 
+[<return: Struct>]
 let (|StripConstValue|_|) ev = 
   match stripValue ev with
-  | ConstValue(c, _) -> Some c
-  | _ -> None
+  | ConstValue(c, _) -> ValueSome c
+  | _ -> ValueNone
 
+[<return: Struct>]
 let (|StripLambdaValue|_|) ev = 
   match stripValue ev with 
-  | CurriedLambdaValue (id, arity, sz, expr, ty) -> Some (id, arity, sz, expr, ty)
-  | _ -> None
+  | CurriedLambdaValue (id, arity, sz, expr, ty) -> ValueSome (id, arity, sz, expr, ty)
+  | _ -> ValueNone
 
 let destTupleValue ev = 
   match stripValue ev with 
@@ -720,10 +725,11 @@ let destRecdValue ev =
   | RecdValue (_tcref, info) -> Some info
   | _ -> None
 
+[<return: Struct>]
 let (|StripUnionCaseValue|_|) ev = 
   match stripValue ev with 
-  | UnionCaseValue (c, info) -> Some (c, info)
-  | _ -> None
+  | UnionCaseValue (c, info) -> ValueSome (c, info)
+  | _ -> ValueNone
 
 let mkBoolVal (g: TcGlobals) n = ConstValue(Const.Bool n, g.bool_ty)
 
@@ -1454,11 +1460,11 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
           | UnknownValue -> ivalue
           | SizeValue (_vdepth, vinfo) -> MakeSizedValueInfo (abstractExprInfo vinfo)
 
-      and abstractValInfo v = 
+      let abstractValInfo v = 
           { ValExprInfo=abstractExprInfo v.ValExprInfo 
             ValMakesNoCriticalTailcalls=v.ValMakesNoCriticalTailcalls }
 
-      and abstractModulInfo ss =
+      let rec abstractModulInfo ss =
          { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
            ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
                check vref (abstractValInfo e) ) }
@@ -1589,7 +1595,7 @@ let ValueIsUsedOrHasEffect cenv fvs (b: Binding, binfo) =
     // No discarding for things that are used
     Zset.contains v (fvs())
 
-let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 
+let SplitValuesByIsUsedOrHasEffect cenv fvs x = 
     x |> List.filter (ValueIsUsedOrHasEffect cenv fvs) |> List.unzip
 
 let IlAssemblyCodeInstrHasEffect i = 
@@ -1761,26 +1767,29 @@ let TryEliminateLet cenv env bind e2 m =
     | None -> mkLetBind m bind e2, 0
 
 /// Detect the application of a value to an arbitrary number of arguments
+[<return: Struct>]
 let rec (|KnownValApp|_|) expr = 
     match stripDebugPoints expr with
-    | Expr.Val (vref, _, _) -> Some(vref, [], [])
-    | Expr.App (KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> Some(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
-    | _ -> None
+    | Expr.Val (vref, _, _) -> ValueSome(vref, [], [])
+    | Expr.App (KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> ValueSome(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
+    | _ -> ValueNone
 
 /// Matches boolean decision tree:
 /// check single case with bool const.
+[<return: Struct>]
 let (|TDBoolSwitch|_|) dtree =
     match dtree with
     | TDSwitch(expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
-        Some (expr, testBool, caseTree, defaultTree, range)
+        ValueSome (expr, testBool, caseTree, defaultTree, range)
     | _ -> 
-        None
+        ValueNone
 
 /// Check target that have a constant bool value
+[<return: Struct>]
 let (|ConstantBoolTarget|_|) target =
     match target with
-    | TTarget([], Expr.Const (Const.Bool b, _, _), _) -> Some b
-    | _ -> None
+    | TTarget([], Expr.Const (Const.Bool b, _, _), _) -> ValueSome b
+    | _ -> ValueNone
 
 /// Is this a tree, where each decision is a two-way switch (to prevent later duplication of trees), and each branch returns or true/false,
 /// apart from one branch which defers to another expression
@@ -2013,7 +2022,7 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
         mkLetsBind m binds rhsAndTupleBinding |> Some
     | _ -> None
 
-let rec ExpandStructuralBinding cenv expr =
+let ExpandStructuralBinding cenv expr =
     let g = cenv.g
 
     assert cenv.settings.ExpandStructuralValues()
@@ -2050,50 +2059,59 @@ let rec ExpandStructuralBinding cenv expr =
         ExpandStructuralBindingRaw cenv e
 
 /// Detect a query { ... }
+[<return: Struct>]
 let (|QueryRun|_|) g expr = 
     match expr with
     | Expr.App (Expr.Val (vref, _, _), _, _, [_builder; arg], _) when valRefEq g vref g.query_run_value_vref ->  
-        Some (arg, None)
+        ValueSome (arg, None)
     | Expr.App (Expr.Val (vref, _, _), _, [ elemTy ], [_builder; arg], _) when valRefEq g vref g.query_run_enumerable_vref ->  
-        Some (arg, Some elemTy)
+        ValueSome (arg, Some elemTy)
     | _ -> 
-        None
+        ValueNone
 
 let (|MaybeRefTupled|) e = tryDestRefTupleExpr e 
 
+[<return: Struct>]
 let (|AnyInstanceMethodApp|_|) e = 
     match e with 
-    | Expr.App (Expr.Val (vref, _, _), _, tyargs, [obj; MaybeRefTupled args], _) -> Some (vref, tyargs, obj, args)
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, tyargs, [obj; MaybeRefTupled args], _) -> ValueSome (vref, tyargs, obj, args)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|InstanceMethodApp|_|) g (expectedValRef: ValRef) e = 
     match e with 
-    | AnyInstanceMethodApp (vref, tyargs, obj, args) when valRefEq g vref expectedValRef -> Some (tyargs, obj, args)
-    | _ -> None
+    | AnyInstanceMethodApp (vref, tyargs, obj, args) when valRefEq g vref expectedValRef -> ValueSome (tyargs, obj, args)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QuerySourceEnumerable|_|) g = function
-    | InstanceMethodApp g g.query_source_vref ([resTy], _builder, [res]) -> Some (resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_source_vref ([resTy], _builder, [res]) -> ValueSome (resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryFor|_|) g = function
-    | InstanceMethodApp g g.query_for_vref ([srcTy;qTy;resTy;_qInnerTy], _builder, [src;selector]) -> Some (qTy, srcTy, resTy, src, selector)
-    | _ -> None
+    | InstanceMethodApp g g.query_for_vref ([srcTy;qTy;resTy;_qInnerTy], _builder, [src;selector]) -> ValueSome (qTy, srcTy, resTy, src, selector)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryYield|_|) g = function
-    | InstanceMethodApp g g.query_yield_vref ([resTy;qTy], _builder, [res]) -> Some (qTy, resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_yield_vref ([resTy;qTy], _builder, [res]) -> ValueSome (qTy, resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryYieldFrom|_|) g = function
-    | InstanceMethodApp g g.query_yield_from_vref ([resTy;qTy], _builder, [res]) -> Some (qTy, resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_yield_from_vref ([resTy;qTy], _builder, [res]) -> ValueSome (qTy, resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QuerySelect|_|) g = function
-    | InstanceMethodApp g g.query_select_vref ([srcTy;qTy;resTy], _builder, [src;selector]) -> Some (qTy, srcTy, resTy, src, selector)
-    | _ -> None
+    | InstanceMethodApp g g.query_select_vref ([srcTy;qTy;resTy], _builder, [src;selector]) -> ValueSome (qTy, srcTy, resTy, src, selector)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryZero|_|) g = function
-    | InstanceMethodApp g g.query_zero_vref ([resTy;qTy], _builder, _) -> Some (qTy, resTy)
-    | _ -> None
+    | InstanceMethodApp g g.query_zero_vref ([resTy;qTy], _builder, _) -> ValueSome (qTy, resTy)
+    | _ -> ValueNone
 
 /// Look for a possible tuple and transform
 let (|AnyRefTupleTrans|) e = 
@@ -2102,11 +2120,12 @@ let (|AnyRefTupleTrans|) e =
     | _ -> [e], (function [e] -> e | _ -> assert false; failwith "unreachable")
 
 /// Look for any QueryBuilder.* operation and transform
+[<return: Struct>]
 let (|AnyQueryBuilderOpTrans|_|) g = function
     | Expr.App (Expr.Val (vref, _, _) as v, vty, tyargs, [builder; AnyRefTupleTrans( src :: rest, replaceArgs) ], m) when 
           (match vref.ApparentEnclosingEntity with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
-         Some (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
-    | _ -> None
+         ValueSome (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
+    | _ -> ValueNone
 
 /// If this returns "Some" then the source is not IQueryable.
 //  <qexprInner> := 

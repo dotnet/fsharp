@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="translated">Dönüş türü ek açıklaması ekle</target>
+        <target state="new">Add return type annotation</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -41,18 +41,19 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="translated">Blok Yapısı Kılavuzları;
+        <target state="needs-review-translation">Blok Yapısı Kılavuzları;
 F# kodu için yapı yönergelerini göster;
-Ana hat oluşturma;
+Anahat oluşturma;
 F# kodu için ana hattı ve daraltılabilir düğümleri göster;
 Satır içi ipuçları;
 Satır içi tür ipuçlarını görüntüle (önizleme);
 Dönüş türü ipuçlarını görüntüle (önizleme);
 Satır içi parametre adı ipuçlarını görüntüle (önizleme);
 Canlı Arabellekler;
-Analiz için canlı (kaydedilmemiş) arabellekleri kullan</target>
+Denetim için canlı (kaydedilmemiş) arabellekler kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -230,7 +231,7 @@ Açıklamaları Hızlı Bilgide göster</target>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="translated">Gereksiz parantezleri kaldır</target>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -255,7 +256,7 @@ Açıklamaları Hızlı Bilgide göster</target>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="translated">Şunu döndürür:</target>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">

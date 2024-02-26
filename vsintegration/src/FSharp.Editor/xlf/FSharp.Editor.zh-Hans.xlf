@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="translated">添加返回类型批注</target>
+        <target state="new">Add return type annotation</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -41,6 +41,7 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
         <target state="translated">块结构指南；
@@ -230,7 +231,7 @@ Show remarks in Quick Info</source>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="translated">移除不必要的括号</target>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -255,7 +256,7 @@ Show remarks in Quick Info</source>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="translated">返回:</target>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">

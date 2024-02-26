@@ -1107,6 +1107,16 @@ module CancellableTasks =
                 return! Task.WhenAll (tasks)
             }
 
+        let inline sequential (tasks: CancellableTask<'a> seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                let results = ResizeArray()
+                for task in tasks do
+                    let! result = start ct task
+                    results.Add(result)
+                return results
+            }
+
         let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask
 
     /// <exclude />

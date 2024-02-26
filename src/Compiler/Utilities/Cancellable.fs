@@ -2,32 +2,47 @@ namespace FSharp.Compiler
 
 open System
 open System.Threading
+open Internal.Utilities.Library
 
 [<Sealed>]
 type Cancellable =
     [<ThreadStatic; DefaultValue>]
-    static val mutable private token: CancellationToken
+    static val mutable private tokens: CancellationToken list
 
-    static member UsingToken(ct) =
-        let oldCt = Cancellable.token
-
-        Cancellable.token <- ct
-
+    static let disposable =
         { new IDisposable with
-            member this.Dispose() = Cancellable.token <- oldCt
+            member this.Dispose() =
+                Cancellable.Tokens <- Cancellable.Tokens |> List.tail
         }
 
-    static member Token
-        with get () = Cancellable.token
-        and internal set v = Cancellable.token <- v
+    static member Tokens
+        with private get () =
+            match box Cancellable.tokens with
+            | Null -> []
+            | _ -> Cancellable.tokens
+        and private set v = Cancellable.tokens <- v
 
+    static member UsingToken(ct) =
+        Cancellable.Tokens <- ct :: Cancellable.Tokens
+        disposable
+
+    static member Token =
+        match Cancellable.Tokens with
+        | [] -> CancellationToken.None
+        | token :: _ -> token
+
+    /// There may be multiple tokens if `UsingToken` is called multiple times, producing scoped structure.
+    /// We're interested in the current, i.e. the most recent, one.
     static member CheckAndThrow() =
-        Cancellable.token.ThrowIfCancellationRequested()
+        match Cancellable.Tokens with
+        | [] -> ()
+        | token :: _ -> token.ThrowIfCancellationRequested()
 
 namespace Internal.Utilities.Library
 
 open System
 open System.Threading
+open FSharp.Compiler
 
 #if !FSHARPCORE_USE_PACKAGE
 open FSharp.Core.CompilerServices.StateMachineHelpers
@@ -48,6 +63,7 @@ module Cancellable =
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
             try
+                use _ = Cancellable.UsingToken(ct)
                 oper ct
             with :? OperationCanceledException as e ->
                 ValueOrCancelled.Cancelled(OperationCanceledException e.CancellationToken)

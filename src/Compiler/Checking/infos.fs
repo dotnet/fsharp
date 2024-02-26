@@ -702,7 +702,7 @@ type MethInfo =
     member x.DebuggerDisplayName =
         match x with
         | ILMeth(_, y, _) -> y.DeclaringTyconRef.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + y.ILName
-        | FSMeth(_, AbbrevOrAppTy tcref, vref, _) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + vref.LogicalName
+        | FSMeth(_, AbbrevOrAppTy(tcref, _), vref, _) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + vref.LogicalName
         | FSMeth(_, _, vref, _) -> "??::" + vref.LogicalName
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name), m)
@@ -2391,18 +2391,19 @@ let SettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinf
 
 let GettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod, Some pinfo) else None)
 
+[<return: Struct>]
 let (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
     if not (pinfo.HasGetter && pinfo.HasSetter) then
-        None
+        ValueNone
     else
         match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
         | Some getValRef, Some setValRef ->
             if getValRef.Accessibility <> setValRef.Accessibility then
-                Some (getValRef, setValRef)
+                ValueSome (getValRef, setValRef)
             else
                 match getValRef.ValReprInfo with
                 | Some getValReprInfo when
                     // Getter has an index parameter
-                    getValReprInfo.TotalArgCount > 1  -> Some (getValRef, setValRef)
-                | _ -> None 
-        | _ -> None
+                    getValReprInfo.TotalArgCount > 1  -> ValueSome (getValRef, setValRef)
+                | _ -> ValueNone 
+        | _ -> ValueNone
