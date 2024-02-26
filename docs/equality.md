@@ -1,4 +1,4 @@
-# Compiling Equality and Comparison
+# Compiling Equality
 
 This spec covers how equality is compiled and executed by the F# compiler and library, based mainly on the types involved in the equality operation after all inlining, type specialization and other optimizations have been applied.
 
@@ -58,7 +58,7 @@ These only result in naked generic equality if themselves used from a non-inline
 
 ### Non-inlined constructs always resulting in naked generic equality
 
-* `Array.groupBy<'Key, 'T> f array`, EQTYPE is non-inlined 'Key, results in naked generic equality
+* `Array.groupBy<'Key, 'T> f array`, EQTYPE is non-inlined `'Key`, results in naked generic equality
 * `Array.countBy array` likewise for `'T`
 * `Array.distinct<'T> array` likewise
 * `Array.distinctBy array` likewise
@@ -128,10 +128,9 @@ This very much depends on the `EQTYPE` involved in the equality as known by the 
 Aim here is to flesh these all out with:
 * **Semantics**: what semantics the user expects, and what the semantics actually is
 * **Perf expectation**: what perf the user expects
-* **Compilation today**: How we actually compile today, with sharplab.io link
+* **Compilation today**: How we actually compile today
 * **Perf today**: What is the perf we achieve today
-* **Test**: An IL baseline test case that pins down how we compile things today and allows us to measure changes 
-* **sharplab**: sharplab.io link to how things are in whatever version is selected in sharplab
+* **Sharplab**: sharplab.io link to how things are in whatever version is selected in sharplab
 
 ### primitive integer types (`int32`, `int64`, ...)
 
@@ -166,7 +165,7 @@ let f (x: float32) (y: float32) = (x = y)
 * [sharplab decimal](https://sharplab.io/#v2:DYLgZgzgNALiCWwoBMQGoA+wCmMAEYeAFAB4h7LYDG8AtgIbACUxAnuZTQ83gLzEk+eVkwCwAKCA)
 * [sharplab string](https://sharplab.io/#v2:DYLgZgzgNALiCWwoBMQGoA+wCmMAEYeAFAB4h4QwBO8AdgOYCUxAnuZTQ8wLzEl68WjALAAoIA==)
 
-### tuple type (size <= 5)
+### reference tuple type (size <= 5)
 
 * Semantics: User expects structural
 * Perf: User expects flattening to constituent checks
@@ -174,7 +173,7 @@ let f (x: float32) (y: float32) = (x = y)
 * Perf today: good ✅
 * [sharplab (int * double * 'T), with example reductions/optimizations noted](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQCgB4iwSwDs0AqVAEwHsBXAIyVTIHIAVASjdQE9UBeLbH25t48TCVFxB/LpIC0cosCJEA5goB8kgOKJCiAE74AxgFEAjtQCGy5D0Gy48BUpWF1crU7gAJKxAALAGFKAFsABysDRAA6XX0jM0sbfDsAMX80B1R5RUJlQjVNHT1DEwtrWy4ASWIjQggTAB4WAEZGVBYAJg6WAGYNVAdcgHlw5HxQ/AAvQ00sckQAN3wDNHiypMrUmrqiRuMRbwyIZAqbCBZqcKQ+1AAZK3drVUQABSMpiaXECDjSxIhCJRQwCVoAGmwXUhfU4mC4EK40K4sNyrkK7mK3iQaGMYUi0QMQkezysrw+k1S+B+fw2gPxIIM8Dp5WSVQA6qlggzCSdcTzQdh2gjUAAyUXMgGs7Z2TnIbnA3mZVB4xWCnpIsUSuAsrYpWVcoEEwx8lUConYO4o3KDSQ4s1qon8EmqF7vT5Umn/BImI2M+DGRDmIbC9rigNBoYanrhnVSvUcw3m2rIeoHB3Gi1WvqSEhHeBAA==)
 
-### tuple type (size > 5)
+### reference tuple type (size > 5)
 
 * Semantics: User expects structural
 * Perf: User expects flattening to constituent checks
@@ -205,8 +204,9 @@ let f (x: float32) (y: float32) = (x = y)
 * Compilation today: `GenericEqualityIntrinsic<SomeStructType>`
 * Perf today: always boxes (❌, Problem3)
 * [sharplab](https://sharplab.io/#v2:DYLgZgzgNALiCWwA+BYAUMApjABGHAFAB4g4DKAnhDJgLYB0AIgIY0Aq8tmA8mJNgEocFHAF5CRMcIHogA==)
+* Note: ([#5112](https://github.com/dotnet/fsharp/pull/5112) will improve things here since will start avoiding boxing
 
-### F# struct type (with compiler-generated structural equality)
+### F# struct type (records, tuples - with compiler-generated structural equality)
 
 * Semantics: User expects field-by-field structural equality with no boxing
 * Compilation today: `GenericEqualityIntrinsic<SomeStructType>`
@@ -264,7 +264,7 @@ Effect of implementing ([#5112](https://github.com/dotnet/fsharp/pull/5112)):
 * NOTE: Proposed adjustment to [#5112](https://github.com/dotnet/fsharp/pull/5112) noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
 * Perf after [#5112](https://github.com/dotnet/fsharp/pull/5112): ❔
 
-### F# large ref record/union type
+### F# large reference record/union type
 
 Here "large" means the compiler-generated structural equality is NOT inlined.
 
@@ -273,7 +273,7 @@ Here "large" means the compiler-generated structural equality is NOT inlined.
 * Compilation today: direct call to `Equals(T)`
 * Perf today: the call to `Equals(T)` has specialized code but boxes fields if struct or generic, see Problem3, Problem4 ❌
 
-### F# tiny ref record/union type
+### F# tiny reference record/union type
 
 Here "tiny" means the compiler-generated structural equality IS inlined.
 
