@@ -1440,7 +1440,7 @@ namespace N
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Warn about attribute on non-recursive let-bound value`` () =
+    let ``Error about attribute on non-recursive let-bound value`` () =
         """
 namespace N
 
@@ -1453,18 +1453,10 @@ namespace N
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withResults [
-            { Error = Warning 3861
-              Range = { StartLine = 7
-                        StartColumn = 13
-                        EndLine = 7
-                        EndColumn = 18 }
-              Message =
-                           "The TailCall attribute should only be applied to recursive functions." }
-        ]
+        |> withSingleDiagnostic (Error 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Warn about attribute on recursive let-bound value`` () =
+    let ``Error about attribute on recursive let-bound value`` () =
         """
 namespace N
 
@@ -1477,15 +1469,7 @@ namespace N
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withResults [
-            { Error = Warning 3861
-              Range = { StartLine = 7
-                        StartColumn = 17
-                        EndLine = 7
-                        EndColumn = 37 }
-              Message =
-                           "The TailCall attribute should only be applied to recursive functions." }
-        ]
+        |> withSingleDiagnostic (Error 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn about self-defined attribute`` () = // is the analysis available for users of older FSharp.Core versions
