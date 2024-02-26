@@ -204,7 +204,7 @@ let f (x: float32) (y: float32) = (x = y)
 * Compilation today: `GenericEqualityIntrinsic<SomeStructType>`
 * Perf today: always boxes (❌, Problem3)
 * [sharplab](https://sharplab.io/#v2:DYLgZgzgNALiCWwA+BYAUMApjABGHAFAB4g4DKAnhDJgLYB0AIgIY0Aq8tmA8mJNgEocFHAF5CRMcIHogA==)
-* Note: ([#5112](https://github.com/dotnet/fsharp/pull/5112) will improve things here since will start avoiding boxing
+* Note: ([#16615](https://github.com/dotnet/fsharp/pull/16615) will improve things here since will start avoiding boxing
 
 ### F# struct type (records, tuples - with compiler-generated structural equality)
 
@@ -259,10 +259,9 @@ If we did, the devirtualizing optimization should reduce to this directly, which
 * Perf today:  this is hand-optimized ([here](https://github.com/dotnet/fsharp/blob/611e4f350e119a4173a2b235eac65539ac2b61b6/src/FSharp.Core/prim-types.fs#L1562)) for some primitive element types ✅ but boxes each element if "other" is struct or generic, see Problem3, Problem4 ❌ 
 * [sharplab for `byte[]`](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQCgB4lQIwE9lEBtAXQEpVDUBeLbemy+IA=)
 
-Effect of implementing ([#5112](https://github.com/dotnet/fsharp/pull/5112)):
-* Compilation after [#5112](https://github.com/dotnet/fsharp/pull/5112), either ``FSharpEqualityComparer_PER`1<uint8[]>::get_EqualityComparer().Equals(...)`` or ``FSharpEqualityComparer_PER`1<T[]>::get_EqualityComparer().Equals(...)``
-* NOTE: Proposed adjustment to [#5112](https://github.com/dotnet/fsharp/pull/5112) noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
-* Perf after [#5112](https://github.com/dotnet/fsharp/pull/5112): ❔
+Effect of implementing ([#16615](https://github.com/dotnet/fsharp/pull/16615)):
+* Compilation after [#16615](https://github.com/dotnet/fsharp/pull/16615), either ``FSharpEqualityComparer_PER`1<uint8[]>::get_EqualityComparer().Equals(...)`` or ``FSharpEqualityComparer_PER`1<T[]>::get_EqualityComparer().Equals(...)``
+* Perf after [#16615](https://github.com/dotnet/fsharp/pull/16615): ❔
 
 ### F# large reference record/union type
 
@@ -282,9 +281,8 @@ Here "tiny" means the compiler-generated structural equality IS inlined.
 * Compilation today: flattened, calling `GenericEqualityERIntrinsic` on struct and generic fields
 * Perf today: boxes on struct and generic fields, see Problem3, Problem4 ❌
 
-Effect of [#5112](https://github.com/dotnet/fsharp/pull/5112):
-* [#5112](https://github.com/dotnet/fsharp/pull/5112): ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)`` on struct and generic fields
-* NOTE: Proposed adjustment to [#5112](https://github.com/dotnet/fsharp/pull/5112) noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
+Effect of [#16615](https://github.com/dotnet/fsharp/pull/16615):
+* [#16615](https://github.com/dotnet/fsharp/pull/16615): ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)`` on struct and generic fields
 * NOTE: The test for this is Equals06.fsx
        
 ### Any ref type supporting `IEquatable<T>`
@@ -306,9 +304,8 @@ Effect of [#5112](https://github.com/dotnet/fsharp/pull/5112):
 * Test: Equals06.fsx acts as a proxy because equals on small single-case union is inlined
 * Compilation today: GenericEqualityERIntrinsic (❌, boxes)
 
-Effect of [#5112](https://github.com/dotnet/fsharp/pull/5112):
-* Compilation after [#5112](https://github.com/dotnet/fsharp/pull/5112): ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
-* NOTE: Proposed adjustment to [#5112](https://github.com/dotnet/fsharp/pull/5112) noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityIntrinsic` calls are internally optimized
+Effect of [#16615](https://github.com/dotnet/fsharp/pull/16615):
+* Compilation after [#16615](https://github.com/dotnet/fsharp/pull/16615): ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
 
 ### Generic `'T` in inlined generic code
 
@@ -325,10 +322,9 @@ For example see [this sharplab](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQC
 * Compilation today: `GenericEqualityWithComparerIntrinsic LanguagePrimitives.GenericComparer` 
 * Perf today: boxes
 
-Effect of [#5112](https://github.com/dotnet/fsharp/pull/5112):
-* Compilation after [#5112](https://github.com/dotnet/fsharp/pull/5112): ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
-* Perf after [#5112](https://github.com/dotnet/fsharp/pull/5112): TBD, but much better, no boxing in many cases
-* NOTE: Proposed adjustment to [#5112](https://github.com/dotnet/fsharp/pull/5112) noted at end of this doc would mean compilation is not changed, and instead `GenericEqualityWithComparerIntrinsic` calls are internally optimized
+Effect of [#16615](https://github.com/dotnet/fsharp/pull/16615):
+* Compilation after [#16615](https://github.com/dotnet/fsharp/pull/16615): ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
+* Perf after [#16615](https://github.com/dotnet/fsharp/pull/16615): TBD, but much better, no boxing in many cases
 
 ## Techniques available to us
  
