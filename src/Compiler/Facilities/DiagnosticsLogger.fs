@@ -377,6 +377,13 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
+let trace prefix (dl: DiagnosticsLogger) =
+    let name =
+        if box dl |> isNull then "NULL"
+        else dl.DebugDisplay()
+    Trace.WriteLine $"t:{Thread.CurrentThread.ManagedThreadId} {prefix} {name}"
+    dl
+
 let buildPhase = AsyncLocal<_>()
 let diagnosticsLogger = AsyncLocal<_>()
 
@@ -426,6 +433,7 @@ module DiagnosticsLoggerExtensions =
     type DiagnosticsLogger with
 
         member x.EmitDiagnostic(exn, severity) =
+            trace "error emitted to " x |> ignore
             match exn with
             | InternalError(s, _)
             | InternalException(_, s, _)
@@ -507,12 +515,14 @@ let UseBuildPhase (phase: BuildPhase) =
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
-    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
+    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger |> trace "old"
+    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger  |> trace "new"
+    Trace.Indent()
 
     { new IDisposable with
         member _.Dispose() =
-            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
+            DiagnosticsThreadStatics.DiagnosticsLogger <-oldLogger |> trace "restore"
+            Trace.Unindent()
     }
 
 let UseDiagnosticsLogger newLogger =
@@ -522,6 +532,7 @@ let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
 
 let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
+    //trace "no unwind"
     DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
 
 /// This represents the thread-local state established as each task function runs as part of the build.
@@ -530,6 +541,8 @@ let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
 type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: BuildPhase) =
     let unwindEL = UseDiagnosticsLogger diagnosticsLogger
     let unwindBP = UseBuildPhase buildPhase
+
+    new() = new CompilationGlobalsScope(diagnosticsLogger.Value, buildPhase.Value)
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase
@@ -899,8 +912,8 @@ type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerForma
                 }
             let injected = 
                 async {
+                    SetThreadDiagnosticsLoggerNoUnwind logger
                     try
-                        SetThreadDiagnosticsLoggerNoUnwind logger
                         return! computation
                     finally
                         tcs.SetResult logger
@@ -912,6 +925,7 @@ type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerForma
         for tcs in diags do
             let! finishedLogger = tcs.Task
             finishedLogger.CommitDelayedDiagnostics target
+        return target
     }
 
     member val Computations = injected |> Seq.ofList
@@ -919,12 +933,13 @@ type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerForma
 
 module MultipleDiagnosticsLoggers =
     let run method (computations: Async<'T> seq) =
-        let c = CaptureDiagnosticsConcurrently(computations)
+        let forks = CaptureDiagnosticsConcurrently(computations)
         async {
             try
-                return! c.Computations |> method
+                use _ = new CompilationGlobalsScope()
+                return! forks.Computations |> method
             finally
-                c.ReplayDiagnostics.Result             
+                forks.ReplayDiagnostics.Wait()             
         }
 
     let Parallel computations = run Async.Parallel computations

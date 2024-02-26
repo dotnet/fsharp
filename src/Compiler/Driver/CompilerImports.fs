@@ -2243,6 +2243,7 @@ and [<Sealed>] TcImports
                 |> List.map (fun nm ->
                     async {
                         try
+                            use _ = new CompilationGlobalsScope()
                             return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
                         with e ->
                             errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))

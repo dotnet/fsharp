@@ -459,6 +459,8 @@ type StackGuard =
 type CompilationGlobalsScope =
     new: diagnosticsLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
 
+    new: unit -> CompilationGlobalsScope
+
     interface IDisposable
 
     member DiagnosticsLogger: DiagnosticsLogger
