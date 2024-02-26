@@ -347,8 +347,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
             FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
         | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
-        | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations ->
-            FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
+        | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations -> FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
 
     /// Get a version string associated with the given feature.
