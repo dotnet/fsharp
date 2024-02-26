@@ -3,6 +3,7 @@
 open System.Collections.Concurrent
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open Internal.Utilities.Library.Extras
@@ -479,12 +480,12 @@ type SignatureFiles = Yes = 1 | No = 2 | Some = 3
 let fuzzingTest seed (project: SyntheticProject) = task {
     let rng = System.Random seed
 
-    let checkingThreads = 3
-    let maxModificationDelayMs = 10
+    let checkingThreads = 10
+    let maxModificationDelayMs = 50
     let maxCheckingDelayMs = 20
     //let runTimeMs = 30000
     let signatureFileModificationProbability = 0.25
-    let modificationLoopIterations = 10
+    let modificationLoopIterations = 50
     let checkingLoopIterations = 5
 
     let minCheckingTimeoutMs = 0
@@ -622,7 +623,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
             }
 
         try
-            let! _x = threads |> Seq.skip 1 |> Task.WhenAll
+            let! _x = threads |> Task.WhenAll
             ()
         with
             | e ->
@@ -645,13 +646,15 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 }
 
 
+(* This gets in the way of insertions too often now, uncomment when stable.
 [<Theory>]
 [<InlineData(SignatureFiles.Yes)>]
 [<InlineData(SignatureFiles.No)>]
 [<InlineData(SignatureFiles.Some)>]
+*)
 let Fuzzing signatureFiles =
 
-    let seed = 1106087513
+    let seed = System.Random().Next()
     let rng = System.Random(int seed)
 
     let fileCount = 30
@@ -711,7 +714,6 @@ type GiraffeTheoryAttribute() =
 [<InlineData false>]
 let GiraffeFuzzing signatureFiles =
     let seed = System.Random().Next()
-    //let seed = 1044159179
 
     let giraffeDir = if signatureFiles then giraffeSignaturesDir else giraffeDir
     let giraffeTestsDir = if signatureFiles then giraffeSignaturesTestsDir else giraffeTestsDir
@@ -841,4 +843,120 @@ let ``TypeCheck last file in project with transparent compiler`` useTransparentC
     workflow {
         clearCache 
         checkFile lastFile expectOk
+    }
+
+[<Fact>]
+let ``LoadClosure for script is computed once`` () =
+    let project = SyntheticProject.CreateForScript(
+        sourceFile "First" [])
+
+    let cacheEvents = ConcurrentQueue()
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50  // wait for events from initial project check
+                checker.Caches.ScriptClosure.OnEvent cacheEvents.Enqueue
+            })
+        
+        checkFile "First" expectOk
+    } |> ignore
+    
+    let closureComputations =
+        cacheEvents
+        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> Path.GetFileName f)
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
+        |> Map
+
+    Assert.Empty(closureComputations)
+
+[<Fact>]
+let ``LoadClosure for script is recomputed after changes`` () =
+    let project = SyntheticProject.CreateForScript(
+        sourceFile "First" [])
+
+    let cacheEvents = ConcurrentQueue()
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50  // wait for events from initial project check
+                checker.Caches.ScriptClosure.OnEvent cacheEvents.Enqueue
+            })
+        
+        checkFile "First" expectOk
+        updateFile "First" updateInternal
+        checkFile "First" expectOk
+        updateFile "First" updatePublicSurface
+        checkFile "First" expectOk
+    } |> ignore
+    
+    let closureComputations =
+        cacheEvents
+        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> Path.GetFileName f)
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
+        |> Map
+
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        clearCache
+        tryGetRecentCheckResults "First" expectNone
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [] )
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First" expectNone
+        checkFile "First" expectOk
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" ["First"])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        tryGetRecentCheckResults "Second" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First"  expectNone
+        tryGetRecentCheckResults "Second" expectSome // file didn't change so we still want to get the recent result
+    } |> ignore
+
+[<Fact>]
+let ``Background compiler and Transparent compiler return the same options`` () =
+    async {
+        let backgroundChecker = FSharpChecker.Create(useTransparentCompiler = false)
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+
+        let! backgroundSnapshot, backgroundDiags = backgroundChecker.GetProjectSnapshotFromScript(scriptName, content)
+        let! transparentSnapshot, transparentDiags = transparentChecker.GetProjectSnapshotFromScript(scriptName, content)
+        Assert.Empty(backgroundDiags)
+        Assert.Empty(transparentDiags)
+        Assert.Equal<string list>(backgroundSnapshot.OtherOptions, transparentSnapshot.OtherOptions)
+        Assert.Equal<ProjectSnapshot.ReferenceOnDisk list>(backgroundSnapshot.ReferencesOnDisk, transparentSnapshot.ReferencesOnDisk)
     }

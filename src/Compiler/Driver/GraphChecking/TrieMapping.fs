@@ -123,7 +123,7 @@ let processSynModuleOrNamespace<'Decl>
         // Only the last node can be a module, depending on the SynModuleOrNamespaceKind.
         let rec visit continuation (xs: LongIdent) =
             match xs with
-            | [] -> failwith "should not be empty"
+            | [] -> ImmutableDictionary.Empty |> continuation
             | [ finalPart ] ->
                 let name = finalPart.idText
 

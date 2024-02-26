@@ -539,12 +539,10 @@ and CheckExprOp cenv (op, tyargs, args, m) ctxt : unit =
     | TOp.ValFieldSet _rf, _, [ _arg1; _arg2 ] -> ()
 
     | TOp.Coerce, [ tgtTy; srcTy ], [ x ] ->
-        let tailCall = TailCall.YesFromExpr cenv.g x
-
         if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
-            CheckExpr cenv x ctxt tailCall
+            CheckExpr cenv x ctxt TailCall.No
         else
-            CheckExprNoByrefs cenv tailCall x
+            CheckExprNoByrefs cenv TailCall.No x
 
     | TOp.Reraise, [ _ty1 ], [] -> ()
 
@@ -727,12 +725,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
 
     // warn for non-rec functions which have the attribute
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailCallAttrOnNonRec then
-        let isNotAFunction =
-            match bind.Var.ValReprInfo with
-            | Some info -> info.HasNoArgs
-            | _ -> false
-
-        if (not isRec || isNotAFunction) && cenv.g.HasTailCallAttrib bind.Var.Attribs then
+        if not isRec && cenv.g.HasTailCallAttrib bind.Var.Attribs then
             warning (Error(FSComp.SR.chkTailCallAttrOnNonRec (), bind.Var.Range))
 
     // Check if a let binding to the result of a rec expression is not inside the rec expression

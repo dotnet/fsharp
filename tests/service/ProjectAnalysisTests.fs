@@ -7,6 +7,8 @@
 module Tests.Service.ProjectAnalysisTests
 #endif
 
+#nowarn "57" // Experimental stuff
+
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
 open NUnit.Framework
@@ -4593,8 +4595,13 @@ let ``Test project35b Dependency files for ParseAndCheckFileInProject`` () =
     for d in checkFileResults.DependencyFiles do
         printfn "ParseAndCheckFileInProject dependency: %s" d
     checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
-    // The file itself is not a dependency since it is never read from the file system when using ParseAndCheckFileInProject
-    checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual false
+
+    if not checker.UsesTransparentCompiler then
+        // The file itself is not a dependency since it is never read from the file system when using ParseAndCheckFileInProject
+        checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual false
+    else
+        // Transparent compiler doesn't differentiate between foreground and background requests. All files have to be present in the input snapshot so the filesystem doesn't have to be watched for those. Maybe source files shouldn't be included in the dependency list at all. But they show the dependencies gathered from graph-based checking which could be useful?
+        ()
 
 [<Test>]
 let ``Test project35b Dependency files for GetBackgroundCheckResultsForFileInProject`` () =
@@ -4602,8 +4609,13 @@ let ``Test project35b Dependency files for GetBackgroundCheckResultsForFileInPro
     for d in checkFileResults.DependencyFiles do
         printfn "GetBackgroundCheckResultsForFileInProject dependency: %s" d
     checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
-    // The file is a dependency since it is read from the file system when using GetBackgroundCheckResultsForFileInProject
-    checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual true
+
+    if not checker.UsesTransparentCompiler then
+        // The file is a dependency since it is read from the file system when using GetBackgroundCheckResultsForFileInProject
+        checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual true
+    else
+        // Transparent compiler doesn't differentiate between foreground and background requests. All files have to be present in the input snapshot so the filesystem doesn't have to be watched for those. Maybe source files shouldn't be included in the dependency list at all. But they show the dependencies gathered from graph-based checking which could be useful?
+        ()
 
 [<Test>]
 let ``Test project35b Dependency files for check of project`` () =
@@ -4739,17 +4751,17 @@ type TestRecord = { B : int }
 
 module Test =
     [<AttrTest(typeof<int>)>]
-    let withType = 0
+    let withType() = 0
     [<AttrTest(typeof<list<int>>)>]
-    let withGenericType = 0
+    let withGenericType() = 0
     [<AttrTest(typeof<int * int>)>]
-    let withTupleType = 0
+    let withTupleType() = 0
     [<AttrTest(typeof<int -> int>)>]
-    let withFuncType = 0
+    let withFuncType() = 0
     [<AttrTest([| typeof<TestUnion>; typeof<TestRecord> |])>]
-    let withTypeArray = 0
+    let withTypeArray() = 0
     [<AttrTest([| 0; 1; 2 |])>]
-    let withIntArray = 0
+    let withIntArray() = 0
     module NestedModule =
         type NestedRecordType = { B : int }
 
@@ -5450,6 +5462,65 @@ type A(i:int) =
     | Some decl -> failwithf "unexpected declaration %A" decl
     | None -> failwith "declaration list is empty"
 
+[<Test>]
+[<TestCase true>]
+[<TestCase false>]
+let ``TryGetRecentCheckResultsForFile called with snapshot returns cached result after ParseAndCheckFile`` useTransparentCompiler =
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let base2 = tryCreateTemporaryFileName ()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1Text = """
+type A(i:int) =
+    member x.Value = i
+"""
+    let fileSource1 = SourceText.ofString fileSource1Text
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
+
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let checker = FSharpChecker.Create(useTransparentCompiler=useTransparentCompiler)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
+    let snapshot = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
+
+    let rbefore = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot)
+    match rbefore with
+    | Some(fileResults, checkFileResults) -> failwith "cached results before ParseAndCheckFileInProject was called"
+    | None -> ()
+    
+    checker.ParseAndCheckFileInProject(fileName1, snapshot)  |> Async.RunImmediate
+    |> function
+        | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
+        | _ -> failwithf "Parsing aborted unexpectedly..."
+            
+    let rafterCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot)
+    match rafterCheckResults with
+    | Some(fileResults, checkFileResults) -> ()
+    | None -> failwith "no results from TryGetRecentCheckResultsForFile"
+   
+    let fileSource1TextEdited = """
+type A(i:int) =
+    member x.Value = i
+    member x.Value2 = 23
+"""
+    let fileSource1Edited = SourceText.ofString fileSource1TextEdited
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1TextEdited)
+    let snapshotAfterFileEdit = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
+
+    let rafterEditBefore2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit)
+    match rafterEditBefore2ndCheckResults with
+    | Some(fileResults, checkFileResults) -> failwith "stale cache results from TryGetRecentCheckResultsForFile after edit"
+    | None -> ()
+    
+    checker.ParseAndCheckFileInProject(fileName1, snapshotAfterFileEdit)  |> Async.RunImmediate
+    |> function
+        | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
+        | _ -> failwithf "Parsing aborted unexpectedly..."
+        
+    let rafterEditAfter2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit)
+    match rafterEditAfter2ndCheckResults with
+    | Some(fileResults, checkFileResults) -> ()
+    | None -> failwith "no results from TryGetRecentCheckResultsForFile"
 
 [<TestCase(([||]: string[]), ([||]: bool[]))>]
 [<TestCase([| "--times" |], [| false |])>]

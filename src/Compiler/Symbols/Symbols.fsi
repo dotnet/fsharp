@@ -265,6 +265,10 @@ type FSharpEntity =
 
     /// Get the generic parameters, possibly including unit-of-measure parameters
     member GenericParameters: IList<FSharpGenericParameter>
+
+    /// Get the generic parameters, possibly including unit-of-measure parameters
+    member GenericArguments: IList<FSharpType>
+
 #if !NO_TYPEPROVIDERS
     /// Get the static parameters for a provided type
     member StaticParameters: IList<FSharpStaticParameter>

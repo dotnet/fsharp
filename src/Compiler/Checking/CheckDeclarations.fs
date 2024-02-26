@@ -1140,11 +1140,11 @@ module MutRecBindingChecking =
                     for b1, b2 in List.pairwise defnAs do
                         match b1, b2 with
                         | TyconBindingPhase2A.Phase2AMember {
-                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = getIdent)); valSynData = SynValData(memberFlags = Some mf))
+                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = Get_OrSet_Ident & getIdent)); valSynData = SynValData(memberFlags = Some mf))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vGet)
                           },
                           TyconBindingPhase2A.Phase2AMember {
-                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = setIdent)))
+                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = Get_OrSet_Ident & setIdent)))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
                           } when Range.equals getIdent.idRange setIdent.idRange ->
                             match  vGet.ApparentEnclosingEntity with
@@ -4727,7 +4727,6 @@ module TcDeclarations =
                 let env = List.foldBack (AddLocalVal g cenv.tcSink scopem) idvs envForDecls
                 env)
 
-
     /// Bind a collection of mutually recursive declarations in a signature file
     let TcMutRecSignatureDecls (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecSigs: MutRecSigsInitialData) =
         let mutRecSigsAfterSplit = mutRecSigs |> MutRecShapes.mapTycons SplitTyconSignature
@@ -4739,6 +4738,18 @@ module TcDeclarations =
         // Updates the types of the modules to contain the contents so far, which now includes values and members
         MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterCore
 
+        // Generate the union augmentation values for all tycons.
+        let mutable vals = List.empty
+        (envMutRec, mutRecDefnsAfterCore)
+        ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls ((tyconCore, _, _), tyconOpt, _, _, _) ->
+            let (MutRecDefnsPhase1DataForTycon (isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = tyconCore
+            match tyconOpt with
+            | Some tycon when isAtOriginalTyconDefn -> 
+                if tycon.IsUnionTycon && AddAugmentationDeclarations.ShouldAugmentUnion cenv.g tycon then
+                    let vspecs = AddAugmentationDeclarations.AddUnionAugmentationValues cenv envForDecls tycon
+                    vals <- vspecs @ vals
+            | _ -> ())
+
         // By now we've established the full contents of type definitions apart from their
         // members and any fields determined by implicit construction. We know the kinds and 
         // representations of types and have established them as valid.
@@ -4747,27 +4758,18 @@ module TcDeclarations =
         //
         // Note: This environment reconstruction doesn't seem necessary. We're about to create Val's for all members, 
         // which does require type checking, but no more information than is already available.
-        let envMutRecPrelimWithReprs, withEnvs =  
+
+        let envMutRecPrelimWithReprs, withEnvs =
             (envInitial, MutRecShapes.dropEnvs mutRecDefnsAfterCore) 
-                ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs 
-                       (fun (_, tyconOpt, _, _, _) -> tyconOpt)  
-                       (fun _binds -> [ (* no values are available yet *) ]) 
-                       cenv true scopem m 
+            ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs 
+                (fun (_, tyconOpt, _, _, _) -> tyconOpt)  
+                (fun _binds -> vals) 
+                cenv true scopem m 
 
         let mutRecDefnsAfterVals = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
 
         // Updates the types of the modules to contain the contents so far, which now includes values and members
         MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterVals
-
-        // Generate the union augmentation values for all tycons.
-        (envMutRec, mutRecDefnsAfterCore) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls ((tyconCore, _, _), tyconOpt, _, _, _) -> 
-            let (MutRecDefnsPhase1DataForTycon (isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = tyconCore
-            match tyconOpt with 
-            | Some tycon when isAtOriginalTyconDefn -> 
-                if tycon.IsUnionTycon && AddAugmentationDeclarations.ShouldAugmentUnion cenv.g tycon then
-                    let vspecs = AddAugmentationDeclarations.AddUnionAugmentationValues cenv envForDecls tycon
-                    ignore vspecs
-            | _ -> ())
 
         envMutRec
 
