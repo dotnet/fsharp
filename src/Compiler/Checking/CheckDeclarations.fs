@@ -514,7 +514,7 @@ module TcRecdUnionAndEnumDeclarations =
         let attrs =
             // The attributes of a union case decl get attached to the generated "static factory" method
             // Enforce that the union-cases can only be targeted by attributes with AttributeTargets.Method
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) then
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations) then
                 TcAttributes cenv env AttributeTargets.Method synAttrs
             else
                 TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
