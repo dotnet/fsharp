@@ -9422,7 +9422,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             info.TyconRef.MembersOfFSharpTyconSorted |> List.tryFind (fun mem -> mem.DisplayNameCore = info.DisplayNameCore)
 
         match clashingName with
-        | None -> PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr) objExprTy ExprAtomicFlag.Atomic delayed
+        | None -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
         | Some value ->
             let kind = (if value.IsMember then "member" else "value")
             error(NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, mItem, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, mItem))
