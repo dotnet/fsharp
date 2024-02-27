@@ -1924,6 +1924,7 @@ type internal TransparentCompiler
             //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
             // TODO: might need to deal with exceptions here:
+            use _ = new CompilationGlobalsScope(DiscardErrorsLogger, BuildPhase.Parse)
             let! tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
 
             let tcConfig = TcConfig.Create(tcConfigB, validate = true)
