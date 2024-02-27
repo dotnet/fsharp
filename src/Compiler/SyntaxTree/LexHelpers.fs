@@ -190,7 +190,7 @@ type LexerStringFinisher =
                 else if isPart then
                     INTERP_STRING_PART(s, cont)
                 else
-                    INTERP_STRING_END(s, cont)
+                    INTERP_STRING_END(s, None, cont)
             elif kind.IsByteString then
                 let synByteStringKind =
                     if isVerbatim then

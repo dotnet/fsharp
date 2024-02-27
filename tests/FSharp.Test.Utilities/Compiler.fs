@@ -366,6 +366,10 @@ module rec Compiler =
     let FSharp (source: string) : CompilationUnit =
         Fs source
 
+    let FSharpWithFileName name (source: string) : CompilationUnit =
+        fsFromString (SourceCodeFileKind.Fs({FileName=name; SourceText=Some source }))
+        |> FS
+
     let FsFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path)
         |> FS
@@ -1362,12 +1366,13 @@ Actual:
         if documents <> expectedDocuments then
             failwith $"Expected documents are different from PDB.\nExpected: %A{expectedDocuments}\nActual: %A{documents}"
 
-    let private verifyPdbOptions reader options =
+    let private verifyPdbOptions optOutputPath reader options =
+        let outputPath = Path.GetDirectoryName(optOutputPath |> Option.defaultValue ".")
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
-            | VerifyDocuments docs -> verifyDocuments reader docs
+            | VerifyDocuments docs -> verifyDocuments reader (docs |> List.map(fun doc -> Path.Combine(outputPath, doc)))
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
@@ -1386,7 +1391,7 @@ Actual:
                 | _ -> failwith "Only F# compilations are supported when verifying PDBs."
 
             verifyPdbFormat reader compilationType
-            verifyPdbOptions reader options
+            verifyPdbOptions result.OutputPath reader options
         | _ -> failwith "Output path is not set, please make sure compilation was successfull."
 
         ()
