@@ -487,7 +487,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             let callerDiagnosticLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
             match!
-                processRequest post (key, GetOrCompute(computation, ct)) callerDiagnosticLogger |> Async.AwaitTask
+                processRequest post (key, GetOrCompute(computation, ct)) callerDiagnosticLogger
+                |> Async.AwaitTask
             with
             | New internalCt ->
 
@@ -512,7 +513,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                     DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
                             },
                             cancellationToken = linkedCtSource.Token
-                        ) |> Async.AwaitTask
+                        )
+                        |> Async.AwaitTask
                 with
                 | TaskCancelled ex ->
                     // TODO: do we need to do anything else here? Presumably it should be done by the registration on

@@ -1554,12 +1554,7 @@ type internal BackgroundCompiler
 
         member _.FrameworkImportsCache: FrameworkImportsCache = self.FrameworkImportsCache
 
-        member _.GetAssemblyData
-            (
-                options: FSharpProjectOptions,
-                _fileName: string,
-                userOpName: string
-            ) : Async<ProjectAssemblyDataResult> =
+        member _.GetAssemblyData(options: FSharpProjectOptions, _fileName: string, userOpName: string) : Async<ProjectAssemblyDataResult> =
             self.GetAssemblyData(options, userOpName)
 
         member _.GetAssemblyData

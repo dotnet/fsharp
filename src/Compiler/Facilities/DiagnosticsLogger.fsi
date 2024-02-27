@@ -208,9 +208,6 @@ type DiagnosticsLogger =
 /// Represents a DiagnosticsLogger that discards diagnostics
 val DiscardErrorsLogger: DiagnosticsLogger
 
-/// Represents a DiagnosticsLogger that ignores diagnostics and asserts
-val AssertFalseDiagnosticsLogger: DiagnosticsLogger
-
 /// Represents a DiagnosticsLogger that captures all diagnostics, optionally formatting them
 /// eagerly.
 type CapturingDiagnosticsLogger =
@@ -229,7 +226,6 @@ type CapturingDiagnosticsLogger =
 /// Thread statics for the installed diagnostic logger
 [<Class>]
 type DiagnosticsThreadStatics =
-    static member Init: unit -> unit
 
     static member BuildPhase: BuildPhase with get, set
 

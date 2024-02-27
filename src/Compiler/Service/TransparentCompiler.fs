@@ -1299,8 +1299,7 @@ type internal TransparentCompiler
             match fileNode with
             | NodeToTypeCheck.PhysicalFile index ->
 
-                let! tcIntermediate =
-                    ComputeTcIntermediate projectSnapshot dependencyFiles index fileNode bootstrapInfo tcInfo
+                let! tcIntermediate = ComputeTcIntermediate projectSnapshot dependencyFiles index fileNode bootstrapInfo tcInfo
 
                 let (Finisher(node = node; finisher = finisher)) = tcIntermediate.finisher
 
@@ -1977,8 +1976,7 @@ type internal TransparentCompiler
                 userOpName: string
             ) : Async<FSharpCheckFileAnswer> =
             async {
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
 
                 ignore parseResults
 
@@ -1997,8 +1995,7 @@ type internal TransparentCompiler
                 userOpName: string
             ) : Async<FSharpCheckFileAnswer option> =
             async {
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
 
                 ignore parseResults
 
@@ -2050,8 +2047,7 @@ type internal TransparentCompiler
             async {
                 ignore canInvalidateProject
 
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
                 return! this.FindReferencesInFile(fileName, snapshot.ProjectSnapshot, symbol, userOpName)
             }
@@ -2064,8 +2060,7 @@ type internal TransparentCompiler
 
         member this.GetAssemblyData(options: FSharpProjectOptions, fileName, userOpName: string) : Async<ProjectAssemblyDataResult> =
             async {
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
                 return! this.GetAssemblyData(snapshot.ProjectSnapshot, fileName, userOpName)
             }
@@ -2085,8 +2080,7 @@ type internal TransparentCompiler
                 userOpName: string
             ) : Async<FSharpParseFileResults * FSharpCheckFileResults> =
             async {
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
                 match! this.ParseAndCheckFileInProject(fileName, snapshot.ProjectSnapshot, userOpName) with
                 | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return parseResult, checkResult
@@ -2100,8 +2094,7 @@ type internal TransparentCompiler
                 userOpName: string
             ) : Async<FSharpParseFileResults> =
             async {
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
                 return! this.ParseFile(fileName, snapshot.ProjectSnapshot, userOpName)
             }
@@ -2116,8 +2109,7 @@ type internal TransparentCompiler
             async {
                 ignore builder
 
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText, documentSource)
 
                 match! this.ParseAndCheckFileInProject(fileName, snapshot.ProjectSnapshot, "GetCachedCheckFileResult") with
                 | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return Some(parseResult, checkResult)
@@ -2285,8 +2277,7 @@ type internal TransparentCompiler
             async {
                 ignore userOpName
 
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
                 return! ComputeSemanticClassification(fileName, snapshot.ProjectSnapshot)
             }
@@ -2315,8 +2306,7 @@ type internal TransparentCompiler
                 userOpName: string
             ) : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
             async {
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
 
                 return! this.ParseAndCheckFileInProject(fileName, snapshot.ProjectSnapshot, userOpName)
             }
@@ -2328,8 +2318,7 @@ type internal TransparentCompiler
             async {
                 ignore userOpName
 
-                let! snapshot =
-                    FSharpProjectSnapshot.FromOptions(options, documentSource)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
                 return! ComputeParseAndCheckProject snapshot.ProjectSnapshot
             }

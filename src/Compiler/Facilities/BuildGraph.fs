@@ -10,7 +10,6 @@ open System.Globalization
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 
-
 [<RequireQualifiedAccess>]
 module GraphNode =
 

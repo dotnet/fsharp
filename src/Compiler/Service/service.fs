@@ -494,8 +494,7 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         async {
-            let! parseResults =
-                backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
+            let! parseResults = backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
 
             if
                 parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayNameCore

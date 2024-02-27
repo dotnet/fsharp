@@ -72,8 +72,7 @@ type internal IBackgroundCompiler =
             Async<ProjectAssemblyDataResult>
 
     abstract GetAssemblyData:
-        options: FSharpProjectOptions * outputFileName: string * userOpName: string ->
-            Async<ProjectAssemblyDataResult>
+        options: FSharpProjectOptions * outputFileName: string * userOpName: string -> Async<ProjectAssemblyDataResult>
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     abstract GetBackgroundCheckResultsForFileInProject:

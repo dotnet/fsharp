@@ -251,15 +251,13 @@ type internal IncrementalBuilder =
     /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.
     member GetCheckResultsAndImplementationsForProject:
-        unit ->
-            Async<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
+        unit -> Async<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
     /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.
     /// This will get full type-check info for the project, meaning no partial type-checking.
     member GetFullCheckResultsAndImplementationsForProject:
-        unit ->
-            Async<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
+        unit -> Async<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
     /// Get the logical time stamp that is associated with the output of the project if it were fully built immediately
     member GetLogicalTimeStampForProject: TimeStampCache -> DateTime

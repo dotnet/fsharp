@@ -345,13 +345,6 @@ let DiscardErrorsLogger =
         member _.ErrorCount = 0
     }
 
-let AssertFalseDiagnosticsLogger =
-    { new DiagnosticsLogger("AssertFalseDiagnosticsLogger") with
-        // TODO: reenable these asserts in the compiler service
-        member _.DiagnosticSink(diagnostic, severity) = (* assert false; *) ()
-        member _.ErrorCount = (* assert false; *) 0
-    }
-
 type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
     inherit DiagnosticsLogger(nm)
     let mutable errorCount = 0
@@ -378,9 +371,7 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
 let trace prefix (dl: DiagnosticsLogger) =
-    let name =
-        if box dl |> isNull then "NULL"
-        else dl.DebugDisplay()
+    let name = if box dl |> isNull then "NULL" else dl.DebugDisplay()
     Trace.WriteLine $"t:{Thread.CurrentThread.ManagedThreadId} {prefix} {name}"
     dl
 
@@ -389,10 +380,6 @@ let diagnosticsLogger = AsyncLocal<_>()
 
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
-
-    static member Init() =
-        buildPhase.Value <- BuildPhase.DefaultPhase
-        diagnosticsLogger.Value <- AssertFalseDiagnosticsLogger
 
     static member BuildPhaseUnchecked = buildPhase.Value
 
@@ -434,6 +421,7 @@ module DiagnosticsLoggerExtensions =
 
         member x.EmitDiagnostic(exn, severity) =
             trace "error emitted to " x |> ignore
+
             match exn with
             | InternalError(s, _)
             | InternalException(_, s, _)
@@ -516,12 +504,12 @@ let UseBuildPhase (phase: BuildPhase) =
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
     let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger |> trace "old"
-    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger  |> trace "new"
+    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger |> trace "new"
     Trace.Indent()
 
     { new IDisposable with
         member _.Dispose() =
-            DiagnosticsThreadStatics.DiagnosticsLogger <-oldLogger |> trace "restore"
+            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger |> trace "restore"
             Trace.Unindent()
     }
 
@@ -899,34 +887,46 @@ type StackGuard(maxDepth: int, name: string) =
 type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerFormat) =
     let mutable errorCount = 0
 
-    let injected, diags = [
-        for i, computation in computations |> Seq.indexed do
-            let tcs = TaskCompletionSource<_>()
-            let logger =
-                { new CapturingDiagnosticsLogger($"CaptureDiagnosticsConcurrently {i}", ?eagerFormat = eagerFormat) with
-                    override _.DiagnosticSink(d, severity) =
-                        base.DiagnosticSink(d, severity)
-                        if severity = FSharpDiagnosticSeverity.Error then
-                            Interlocked.Increment &errorCount |> ignore
-                    override _.ErrorCount = errorCount
-                }
-            let injected = 
-                async {
-                    SetThreadDiagnosticsLoggerNoUnwind logger
-                    try
-                        return! computation
-                    finally
-                        tcs.SetResult logger
-                }
-            injected, tcs ] |> List.unzip
+    let injected, diags =
+        [
+            for i, computation in computations |> Seq.indexed do
+                let tcs = TaskCompletionSource<_>()
 
-    let replayDiagnostics = backgroundTask {
-        let target = DiagnosticsThreadStatics.DiagnosticsLogger
-        for tcs in diags do
-            let! finishedLogger = tcs.Task
-            finishedLogger.CommitDelayedDiagnostics target
-        return target
-    }
+                let logger =
+                    { new CapturingDiagnosticsLogger($"CaptureDiagnosticsConcurrently {i}", ?eagerFormat = eagerFormat) with
+                        override _.DiagnosticSink(d, severity) =
+                            base.DiagnosticSink(d, severity)
+
+                            if severity = FSharpDiagnosticSeverity.Error then
+                                Interlocked.Increment &errorCount |> ignore
+
+                        override _.ErrorCount = errorCount
+                    }
+
+                let injected =
+                    async {
+                        SetThreadDiagnosticsLoggerNoUnwind logger
+
+                        try
+                            return! computation
+                        finally
+                            tcs.SetResult logger
+                    }
+
+                injected, tcs
+        ]
+        |> List.unzip
+
+    let replayDiagnostics =
+        backgroundTask {
+            let target = DiagnosticsThreadStatics.DiagnosticsLogger
+
+            for tcs in diags do
+                let! finishedLogger = tcs.Task
+                finishedLogger.CommitDelayedDiagnostics target
+
+            return target
+        }
 
     member val Computations = injected |> Seq.ofList
     member val ReplayDiagnostics = replayDiagnostics
@@ -934,12 +934,13 @@ type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerForma
 module MultipleDiagnosticsLoggers =
     let run method (computations: Async<'T> seq) =
         let forks = CaptureDiagnosticsConcurrently(computations)
+
         async {
             try
                 use _ = new CompilationGlobalsScope()
                 return! forks.Computations |> method
             finally
-                forks.ReplayDiagnostics.Wait()             
+                forks.ReplayDiagnostics.Wait()
         }
 
     let Parallel computations = run Async.Parallel computations
