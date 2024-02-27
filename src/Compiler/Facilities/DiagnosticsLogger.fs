@@ -551,6 +551,8 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
     let unwindEL = UseDiagnosticsLogger diagnosticsLogger
     let unwindBP = UseBuildPhase buildPhase
 
+    new() = CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
+
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase
 
