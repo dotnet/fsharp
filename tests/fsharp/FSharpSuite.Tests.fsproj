@@ -72,7 +72,6 @@
     <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
     <Compile Include="Compiler\Language\StructActivePatternTests.fs" />
     <Compile Include="Compiler\Language\TypeDirectedConversionTests.fs" />
-    <Compile Include="Compiler\Language\ComputedCollectionRangeLoweringTests.Int32.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\NullableOptionalRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
