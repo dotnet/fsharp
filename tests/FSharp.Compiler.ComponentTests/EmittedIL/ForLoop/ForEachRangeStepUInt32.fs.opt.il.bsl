@@ -164,41 +164,40 @@
     IL_0005:  ldc.i4.0
     IL_0006:  conv.i8
     IL_0007:  nop
-    IL_0008:  br.s       IL_0014
+    IL_0008:  br.s       IL_0013
 
     IL_000a:  ldc.i4.s   10
-    IL_000c:  conv.i8
-    IL_000d:  ldarg.0
-    IL_000e:  conv.i8
-    IL_000f:  sub
-    IL_0010:  ldc.i4.1
-    IL_0011:  conv.i8
-    IL_0012:  add.ovf.un
-    IL_0013:  nop
-    IL_0014:  stloc.0
-    IL_0015:  ldc.i4.0
-    IL_0016:  conv.i8
-    IL_0017:  stloc.1
-    IL_0018:  ldarg.0
-    IL_0019:  stloc.2
-    IL_001a:  br.s       IL_002b
+    IL_000c:  ldarg.0
+    IL_000d:  sub
+    IL_000e:  conv.u8
+    IL_000f:  ldc.i4.1
+    IL_0010:  conv.i8
+    IL_0011:  add
+    IL_0012:  nop
+    IL_0013:  stloc.0
+    IL_0014:  ldc.i4.0
+    IL_0015:  conv.i8
+    IL_0016:  stloc.1
+    IL_0017:  ldarg.0
+    IL_0018:  stloc.2
+    IL_0019:  br.s       IL_002a
 
-    IL_001c:  ldloc.2
-    IL_001d:  call       void assembly::set_c(uint32)
-    IL_0022:  ldloc.2
-    IL_0023:  ldc.i4.1
-    IL_0024:  add
-    IL_0025:  stloc.2
-    IL_0026:  ldloc.1
-    IL_0027:  ldc.i4.1
-    IL_0028:  conv.i8
-    IL_0029:  add
-    IL_002a:  stloc.1
-    IL_002b:  ldloc.1
-    IL_002c:  ldloc.0
-    IL_002d:  blt.un.s   IL_001c
+    IL_001b:  ldloc.2
+    IL_001c:  call       void assembly::set_c(uint32)
+    IL_0021:  ldloc.2
+    IL_0022:  ldc.i4.1
+    IL_0023:  add
+    IL_0024:  stloc.2
+    IL_0025:  ldloc.1
+    IL_0026:  ldc.i4.1
+    IL_0027:  conv.i8
+    IL_0028:  add
+    IL_0029:  stloc.1
+    IL_002a:  ldloc.1
+    IL_002b:  ldloc.0
+    IL_002c:  blt.un.s   IL_001b
 
-    IL_002f:  ret
+    IL_002e:  ret
   } 
 
   .method public static void  f3(uint32 finish) cil managed
@@ -215,41 +214,40 @@
     IL_0004:  ldc.i4.0
     IL_0005:  conv.i8
     IL_0006:  nop
-    IL_0007:  br.s       IL_0012
+    IL_0007:  br.s       IL_0011
 
     IL_0009:  ldarg.0
-    IL_000a:  conv.i8
-    IL_000b:  ldc.i4.1
-    IL_000c:  conv.i8
-    IL_000d:  sub
-    IL_000e:  ldc.i4.1
-    IL_000f:  conv.i8
-    IL_0010:  add.ovf.un
-    IL_0011:  nop
-    IL_0012:  stloc.0
-    IL_0013:  ldc.i4.0
-    IL_0014:  conv.i8
-    IL_0015:  stloc.1
-    IL_0016:  ldc.i4.1
-    IL_0017:  stloc.2
-    IL_0018:  br.s       IL_0029
+    IL_000a:  ldc.i4.1
+    IL_000b:  sub
+    IL_000c:  conv.u8
+    IL_000d:  ldc.i4.1
+    IL_000e:  conv.i8
+    IL_000f:  add
+    IL_0010:  nop
+    IL_0011:  stloc.0
+    IL_0012:  ldc.i4.0
+    IL_0013:  conv.i8
+    IL_0014:  stloc.1
+    IL_0015:  ldc.i4.1
+    IL_0016:  stloc.2
+    IL_0017:  br.s       IL_0028
 
-    IL_001a:  ldloc.2
-    IL_001b:  call       void assembly::set_c(uint32)
-    IL_0020:  ldloc.2
-    IL_0021:  ldc.i4.1
-    IL_0022:  add
-    IL_0023:  stloc.2
-    IL_0024:  ldloc.1
-    IL_0025:  ldc.i4.1
-    IL_0026:  conv.i8
-    IL_0027:  add
-    IL_0028:  stloc.1
-    IL_0029:  ldloc.1
-    IL_002a:  ldloc.0
-    IL_002b:  blt.un.s   IL_001a
+    IL_0019:  ldloc.2
+    IL_001a:  call       void assembly::set_c(uint32)
+    IL_001f:  ldloc.2
+    IL_0020:  ldc.i4.1
+    IL_0021:  add
+    IL_0022:  stloc.2
+    IL_0023:  ldloc.1
+    IL_0024:  ldc.i4.1
+    IL_0025:  conv.i8
+    IL_0026:  add
+    IL_0027:  stloc.1
+    IL_0028:  ldloc.1
+    IL_0029:  ldloc.0
+    IL_002a:  blt.un.s   IL_0019
 
-    IL_002d:  ret
+    IL_002c:  ret
   } 
 
   .method public static void  f4(uint32 start,
@@ -268,41 +266,40 @@
     IL_0004:  ldc.i4.0
     IL_0005:  conv.i8
     IL_0006:  nop
-    IL_0007:  br.s       IL_0012
+    IL_0007:  br.s       IL_0011
 
     IL_0009:  ldarg.1
-    IL_000a:  conv.i8
-    IL_000b:  ldarg.0
-    IL_000c:  conv.i8
-    IL_000d:  sub
-    IL_000e:  ldc.i4.1
-    IL_000f:  conv.i8
-    IL_0010:  add.ovf.un
-    IL_0011:  nop
-    IL_0012:  stloc.0
-    IL_0013:  ldc.i4.0
-    IL_0014:  conv.i8
-    IL_0015:  stloc.1
-    IL_0016:  ldarg.0
-    IL_0017:  stloc.2
-    IL_0018:  br.s       IL_0029
+    IL_000a:  ldarg.0
+    IL_000b:  sub
+    IL_000c:  conv.u8
+    IL_000d:  ldc.i4.1
+    IL_000e:  conv.i8
+    IL_000f:  add
+    IL_0010:  nop
+    IL_0011:  stloc.0
+    IL_0012:  ldc.i4.0
+    IL_0013:  conv.i8
+    IL_0014:  stloc.1
+    IL_0015:  ldarg.0
+    IL_0016:  stloc.2
+    IL_0017:  br.s       IL_0028
 
-    IL_001a:  ldloc.2
-    IL_001b:  call       void assembly::set_c(uint32)
-    IL_0020:  ldloc.2
-    IL_0021:  ldc.i4.1
-    IL_0022:  add
-    IL_0023:  stloc.2
-    IL_0024:  ldloc.1
-    IL_0025:  ldc.i4.1
-    IL_0026:  conv.i8
-    IL_0027:  add
-    IL_0028:  stloc.1
-    IL_0029:  ldloc.1
-    IL_002a:  ldloc.0
-    IL_002b:  blt.un.s   IL_001a
+    IL_0019:  ldloc.2
+    IL_001a:  call       void assembly::set_c(uint32)
+    IL_001f:  ldloc.2
+    IL_0020:  ldc.i4.1
+    IL_0021:  add
+    IL_0022:  stloc.2
+    IL_0023:  ldloc.1
+    IL_0024:  ldc.i4.1
+    IL_0025:  conv.i8
+    IL_0026:  add
+    IL_0027:  stloc.1
+    IL_0028:  ldloc.1
+    IL_0029:  ldloc.0
+    IL_002a:  blt.un.s   IL_0019
 
-    IL_002d:  ret
+    IL_002c:  ret
   } 
 
   .method public static void  f5() cil managed
@@ -383,44 +380,42 @@
     IL_0005:  ldc.i4.0
     IL_0006:  conv.i8
     IL_0007:  nop
-    IL_0008:  br.s       IL_0017
+    IL_0008:  br.s       IL_0015
 
     IL_000a:  ldc.i4.s   10
-    IL_000c:  conv.i8
-    IL_000d:  ldarg.0
-    IL_000e:  conv.i8
-    IL_000f:  sub
-    IL_0010:  ldc.i4.2
-    IL_0011:  conv.i8
-    IL_0012:  div.un
-    IL_0013:  ldc.i4.1
-    IL_0014:  conv.i8
-    IL_0015:  add.ovf.un
-    IL_0016:  nop
-    IL_0017:  stloc.0
-    IL_0018:  ldc.i4.0
-    IL_0019:  conv.i8
-    IL_001a:  stloc.1
-    IL_001b:  ldarg.0
-    IL_001c:  stloc.2
-    IL_001d:  br.s       IL_002e
+    IL_000c:  ldarg.0
+    IL_000d:  sub
+    IL_000e:  ldc.i4.2
+    IL_000f:  div.un
+    IL_0010:  conv.u8
+    IL_0011:  ldc.i4.1
+    IL_0012:  conv.i8
+    IL_0013:  add
+    IL_0014:  nop
+    IL_0015:  stloc.0
+    IL_0016:  ldc.i4.0
+    IL_0017:  conv.i8
+    IL_0018:  stloc.1
+    IL_0019:  ldarg.0
+    IL_001a:  stloc.2
+    IL_001b:  br.s       IL_002c
 
-    IL_001f:  ldloc.2
-    IL_0020:  call       void assembly::set_c(uint32)
-    IL_0025:  ldloc.2
-    IL_0026:  ldc.i4.2
-    IL_0027:  add
-    IL_0028:  stloc.2
-    IL_0029:  ldloc.1
-    IL_002a:  ldc.i4.1
-    IL_002b:  conv.i8
-    IL_002c:  add
-    IL_002d:  stloc.1
-    IL_002e:  ldloc.1
-    IL_002f:  ldloc.0
-    IL_0030:  blt.un.s   IL_001f
+    IL_001d:  ldloc.2
+    IL_001e:  call       void assembly::set_c(uint32)
+    IL_0023:  ldloc.2
+    IL_0024:  ldc.i4.2
+    IL_0025:  add
+    IL_0026:  stloc.2
+    IL_0027:  ldloc.1
+    IL_0028:  ldc.i4.1
+    IL_0029:  conv.i8
+    IL_002a:  add
+    IL_002b:  stloc.1
+    IL_002c:  ldloc.1
+    IL_002d:  ldloc.0
+    IL_002e:  blt.un.s   IL_001d
 
-    IL_0032:  ret
+    IL_0030:  ret
   } 
 
   .method public static void  f8(uint32 step) cil managed
@@ -444,41 +439,37 @@
     IL_000e:  br.s       IL_0011
 
     IL_0010:  nop
-    IL_0011:  ldc.i4.s   10
-    IL_0013:  conv.i8
-    IL_0014:  ldc.i4.1
-    IL_0015:  conv.i8
-    IL_0016:  sub
-    IL_0017:  ldarg.0
-    IL_0018:  conv.i8
-    IL_0019:  div.un
-    IL_001a:  ldc.i4.1
+    IL_0011:  ldc.i4.s   9
+    IL_0013:  ldarg.0
+    IL_0014:  div.un
+    IL_0015:  conv.u8
+    IL_0016:  ldc.i4.1
+    IL_0017:  conv.i8
+    IL_0018:  add
+    IL_0019:  stloc.0
+    IL_001a:  ldc.i4.0
     IL_001b:  conv.i8
-    IL_001c:  add.ovf.un
-    IL_001d:  stloc.0
-    IL_001e:  ldc.i4.0
-    IL_001f:  conv.i8
-    IL_0020:  stloc.1
-    IL_0021:  ldc.i4.1
-    IL_0022:  stloc.2
-    IL_0023:  br.s       IL_0034
+    IL_001c:  stloc.1
+    IL_001d:  ldc.i4.1
+    IL_001e:  stloc.2
+    IL_001f:  br.s       IL_0030
 
-    IL_0025:  ldloc.2
-    IL_0026:  call       void assembly::set_c(uint32)
-    IL_002b:  ldloc.2
-    IL_002c:  ldarg.0
-    IL_002d:  add
-    IL_002e:  stloc.2
-    IL_002f:  ldloc.1
-    IL_0030:  ldc.i4.1
-    IL_0031:  conv.i8
-    IL_0032:  add
-    IL_0033:  stloc.1
-    IL_0034:  ldloc.1
-    IL_0035:  ldloc.0
-    IL_0036:  blt.un.s   IL_0025
+    IL_0021:  ldloc.2
+    IL_0022:  call       void assembly::set_c(uint32)
+    IL_0027:  ldloc.2
+    IL_0028:  ldarg.0
+    IL_0029:  add
+    IL_002a:  stloc.2
+    IL_002b:  ldloc.1
+    IL_002c:  ldc.i4.1
+    IL_002d:  conv.i8
+    IL_002e:  add
+    IL_002f:  stloc.1
+    IL_0030:  ldloc.1
+    IL_0031:  ldloc.0
+    IL_0032:  blt.un.s   IL_0021
 
-    IL_0038:  ret
+    IL_0034:  ret
   } 
 
   .method public static void  f9(uint32 finish) cil managed
@@ -495,44 +486,42 @@
     IL_0004:  ldc.i4.0
     IL_0005:  conv.i8
     IL_0006:  nop
-    IL_0007:  br.s       IL_0015
+    IL_0007:  br.s       IL_0013
 
     IL_0009:  ldarg.0
-    IL_000a:  conv.i8
-    IL_000b:  ldc.i4.1
-    IL_000c:  conv.i8
-    IL_000d:  sub
-    IL_000e:  ldc.i4.2
-    IL_000f:  conv.i8
-    IL_0010:  div.un
-    IL_0011:  ldc.i4.1
-    IL_0012:  conv.i8
-    IL_0013:  add.ovf.un
-    IL_0014:  nop
-    IL_0015:  stloc.0
-    IL_0016:  ldc.i4.0
-    IL_0017:  conv.i8
-    IL_0018:  stloc.1
-    IL_0019:  ldc.i4.1
-    IL_001a:  stloc.2
-    IL_001b:  br.s       IL_002c
+    IL_000a:  ldc.i4.1
+    IL_000b:  sub
+    IL_000c:  ldc.i4.2
+    IL_000d:  div.un
+    IL_000e:  conv.u8
+    IL_000f:  ldc.i4.1
+    IL_0010:  conv.i8
+    IL_0011:  add
+    IL_0012:  nop
+    IL_0013:  stloc.0
+    IL_0014:  ldc.i4.0
+    IL_0015:  conv.i8
+    IL_0016:  stloc.1
+    IL_0017:  ldc.i4.1
+    IL_0018:  stloc.2
+    IL_0019:  br.s       IL_002a
 
-    IL_001d:  ldloc.2
-    IL_001e:  call       void assembly::set_c(uint32)
-    IL_0023:  ldloc.2
-    IL_0024:  ldc.i4.2
-    IL_0025:  add
-    IL_0026:  stloc.2
-    IL_0027:  ldloc.1
-    IL_0028:  ldc.i4.1
-    IL_0029:  conv.i8
-    IL_002a:  add
-    IL_002b:  stloc.1
-    IL_002c:  ldloc.1
-    IL_002d:  ldloc.0
-    IL_002e:  blt.un.s   IL_001d
+    IL_001b:  ldloc.2
+    IL_001c:  call       void assembly::set_c(uint32)
+    IL_0021:  ldloc.2
+    IL_0022:  ldc.i4.2
+    IL_0023:  add
+    IL_0024:  stloc.2
+    IL_0025:  ldloc.1
+    IL_0026:  ldc.i4.1
+    IL_0027:  conv.i8
+    IL_0028:  add
+    IL_0029:  stloc.1
+    IL_002a:  ldloc.1
+    IL_002b:  ldloc.0
+    IL_002c:  blt.un.s   IL_001b
 
-    IL_0030:  ret
+    IL_002e:  ret
   } 
 
   .method public static void  f10(uint32 start,
@@ -567,44 +556,42 @@
     IL_0014:  ldc.i4.0
     IL_0015:  conv.i8
     IL_0016:  nop
-    IL_0017:  br.s       IL_0025
+    IL_0017:  br.s       IL_0023
 
     IL_0019:  ldarg.2
-    IL_001a:  conv.i8
-    IL_001b:  ldarg.2
-    IL_001c:  conv.i8
-    IL_001d:  sub
-    IL_001e:  ldarg.1
-    IL_001f:  conv.i8
-    IL_0020:  div.un
-    IL_0021:  ldc.i4.1
-    IL_0022:  conv.i8
-    IL_0023:  add.ovf.un
-    IL_0024:  nop
-    IL_0025:  stloc.0
-    IL_0026:  ldc.i4.0
-    IL_0027:  conv.i8
-    IL_0028:  stloc.1
-    IL_0029:  ldarg.2
-    IL_002a:  stloc.2
-    IL_002b:  br.s       IL_003c
+    IL_001a:  ldarg.2
+    IL_001b:  sub
+    IL_001c:  ldarg.1
+    IL_001d:  div.un
+    IL_001e:  conv.u8
+    IL_001f:  ldc.i4.1
+    IL_0020:  conv.i8
+    IL_0021:  add
+    IL_0022:  nop
+    IL_0023:  stloc.0
+    IL_0024:  ldc.i4.0
+    IL_0025:  conv.i8
+    IL_0026:  stloc.1
+    IL_0027:  ldarg.2
+    IL_0028:  stloc.2
+    IL_0029:  br.s       IL_003a
 
-    IL_002d:  ldloc.2
-    IL_002e:  call       void assembly::set_c(uint32)
-    IL_0033:  ldloc.2
-    IL_0034:  ldarg.1
-    IL_0035:  add
-    IL_0036:  stloc.2
-    IL_0037:  ldloc.1
-    IL_0038:  ldc.i4.1
-    IL_0039:  conv.i8
-    IL_003a:  add
-    IL_003b:  stloc.1
-    IL_003c:  ldloc.1
-    IL_003d:  ldloc.0
-    IL_003e:  blt.un.s   IL_002d
+    IL_002b:  ldloc.2
+    IL_002c:  call       void assembly::set_c(uint32)
+    IL_0031:  ldloc.2
+    IL_0032:  ldarg.1
+    IL_0033:  add
+    IL_0034:  stloc.2
+    IL_0035:  ldloc.1
+    IL_0036:  ldc.i4.1
+    IL_0037:  conv.i8
+    IL_0038:  add
+    IL_0039:  stloc.1
+    IL_003a:  ldloc.1
+    IL_003b:  ldloc.0
+    IL_003c:  blt.un.s   IL_002b
 
-    IL_0040:  ret
+    IL_003e:  ret
   } 
 
   .method public static void  f11(uint32 start,

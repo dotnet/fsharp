@@ -432,46 +432,45 @@
     IL_0004:  ldc.i4.0
     IL_0005:  conv.i8
     IL_0006:  nop
-    IL_0007:  br.s       IL_0012
+    IL_0007:  br.s       IL_0011
 
     IL_0009:  ldarg.0
-    IL_000a:  conv.i8
-    IL_000b:  ldarg.1
+    IL_000a:  ldarg.1
+    IL_000b:  sub
     IL_000c:  conv.i8
-    IL_000d:  sub
-    IL_000e:  ldc.i4.1
-    IL_000f:  conv.i8
-    IL_0010:  add.ovf.un
-    IL_0011:  nop
-    IL_0012:  stloc.0
-    IL_0013:  ldc.i4.0
-    IL_0014:  conv.i8
-    IL_0015:  stloc.1
-    IL_0016:  ldarg.0
-    IL_0017:  stloc.2
-    IL_0018:  br.s       IL_0035
+    IL_000d:  ldc.i4.1
+    IL_000e:  conv.i8
+    IL_000f:  add
+    IL_0010:  nop
+    IL_0011:  stloc.0
+    IL_0012:  ldc.i4.0
+    IL_0013:  conv.i8
+    IL_0014:  stloc.1
+    IL_0015:  ldarg.0
+    IL_0016:  stloc.2
+    IL_0017:  br.s       IL_0034
 
-    IL_001a:  ldloc.2
-    IL_001b:  stloc.3
-    IL_001c:  ldstr      "{0}"
-    IL_0021:  ldloc.3
-    IL_0022:  box        [runtime]System.Int32
-    IL_0027:  call       void [runtime]System.Console::WriteLine(string,
+    IL_0019:  ldloc.2
+    IL_001a:  stloc.3
+    IL_001b:  ldstr      "{0}"
+    IL_0020:  ldloc.3
+    IL_0021:  box        [runtime]System.Int32
+    IL_0026:  call       void [runtime]System.Console::WriteLine(string,
                                                                         object)
-    IL_002c:  ldloc.2
-    IL_002d:  ldc.i4.m1
-    IL_002e:  add
-    IL_002f:  stloc.2
-    IL_0030:  ldloc.1
-    IL_0031:  ldc.i4.1
-    IL_0032:  conv.i8
-    IL_0033:  add
-    IL_0034:  stloc.1
-    IL_0035:  ldloc.1
-    IL_0036:  ldloc.0
-    IL_0037:  blt.un.s   IL_001a
+    IL_002b:  ldloc.2
+    IL_002c:  ldc.i4.m1
+    IL_002d:  add
+    IL_002e:  stloc.2
+    IL_002f:  ldloc.1
+    IL_0030:  ldc.i4.1
+    IL_0031:  conv.i8
+    IL_0032:  add
+    IL_0033:  stloc.1
+    IL_0034:  ldloc.1
+    IL_0035:  ldloc.0
+    IL_0036:  blt.un.s   IL_0019
 
-    IL_0039:  ret
+    IL_0038:  ret
   } 
 
   .method public static void  testSimpleForEachIntRangeLoopDownWithTwoStatements(int32 start,
@@ -490,51 +489,50 @@
     IL_0004:  ldc.i4.0
     IL_0005:  conv.i8
     IL_0006:  nop
-    IL_0007:  br.s       IL_0012
+    IL_0007:  br.s       IL_0011
 
     IL_0009:  ldarg.0
-    IL_000a:  conv.i8
-    IL_000b:  ldarg.1
+    IL_000a:  ldarg.1
+    IL_000b:  sub
     IL_000c:  conv.i8
-    IL_000d:  sub
-    IL_000e:  ldc.i4.1
-    IL_000f:  conv.i8
-    IL_0010:  add.ovf.un
-    IL_0011:  nop
-    IL_0012:  stloc.0
-    IL_0013:  ldc.i4.0
-    IL_0014:  conv.i8
-    IL_0015:  stloc.1
-    IL_0016:  ldarg.0
-    IL_0017:  stloc.2
-    IL_0018:  br.s       IL_0045
+    IL_000d:  ldc.i4.1
+    IL_000e:  conv.i8
+    IL_000f:  add
+    IL_0010:  nop
+    IL_0011:  stloc.0
+    IL_0012:  ldc.i4.0
+    IL_0013:  conv.i8
+    IL_0014:  stloc.1
+    IL_0015:  ldarg.0
+    IL_0016:  stloc.2
+    IL_0017:  br.s       IL_0044
 
-    IL_001a:  ldloc.2
-    IL_001b:  stloc.3
-    IL_001c:  ldstr      "{0}"
-    IL_0021:  ldloc.3
-    IL_0022:  box        [runtime]System.Int32
-    IL_0027:  call       void [runtime]System.Console::WriteLine(string,
+    IL_0019:  ldloc.2
+    IL_001a:  stloc.3
+    IL_001b:  ldstr      "{0}"
+    IL_0020:  ldloc.3
+    IL_0021:  box        [runtime]System.Int32
+    IL_0026:  call       void [runtime]System.Console::WriteLine(string,
                                                                         object)
-    IL_002c:  ldstr      "{0}"
-    IL_0031:  ldloc.3
-    IL_0032:  box        [runtime]System.Int32
-    IL_0037:  call       void [runtime]System.Console::WriteLine(string,
+    IL_002b:  ldstr      "{0}"
+    IL_0030:  ldloc.3
+    IL_0031:  box        [runtime]System.Int32
+    IL_0036:  call       void [runtime]System.Console::WriteLine(string,
                                                                         object)
-    IL_003c:  ldloc.2
-    IL_003d:  ldc.i4.m1
-    IL_003e:  add
-    IL_003f:  stloc.2
-    IL_0040:  ldloc.1
-    IL_0041:  ldc.i4.1
-    IL_0042:  conv.i8
-    IL_0043:  add
-    IL_0044:  stloc.1
-    IL_0045:  ldloc.1
-    IL_0046:  ldloc.0
-    IL_0047:  blt.un.s   IL_001a
+    IL_003b:  ldloc.2
+    IL_003c:  ldc.i4.m1
+    IL_003d:  add
+    IL_003e:  stloc.2
+    IL_003f:  ldloc.1
+    IL_0040:  ldc.i4.1
+    IL_0041:  conv.i8
+    IL_0042:  add
+    IL_0043:  stloc.1
+    IL_0044:  ldloc.1
+    IL_0045:  ldloc.0
+    IL_0046:  blt.un.s   IL_0019
 
-    IL_0049:  ret
+    IL_0048:  ret
   } 
 
   .method public static void  testSimpleForEachIntLoopWithOneStatement(int32 start,

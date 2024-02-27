@@ -212,88 +212,87 @@
     IL_0051:  ldc.i4.0
     IL_0052:  conv.i8
     IL_0053:  nop
-    IL_0054:  br.s       IL_005f
+    IL_0054:  br.s       IL_005e
 
     IL_0056:  ldloc.0
-    IL_0057:  conv.i8
-    IL_0058:  ldc.i4.0
+    IL_0057:  ldc.i4.0
+    IL_0058:  sub
     IL_0059:  conv.i8
-    IL_005a:  sub
-    IL_005b:  ldc.i4.1
-    IL_005c:  conv.i8
-    IL_005d:  add.ovf.un
-    IL_005e:  nop
-    IL_005f:  stloc.1
-    IL_0060:  ldc.i4.0
-    IL_0061:  conv.i8
-    IL_0062:  stloc.3
-    IL_0063:  ldc.i4.0
-    IL_0064:  stloc.s    V_4
-    IL_0066:  br.s       IL_007d
+    IL_005a:  ldc.i4.1
+    IL_005b:  conv.i8
+    IL_005c:  add
+    IL_005d:  nop
+    IL_005e:  stloc.1
+    IL_005f:  ldc.i4.0
+    IL_0060:  conv.i8
+    IL_0061:  stloc.3
+    IL_0062:  ldc.i4.0
+    IL_0063:  stloc.s    V_4
+    IL_0065:  br.s       IL_007c
 
-    IL_0068:  ldloca.s   V_2
-    IL_006a:  ldloc.s    V_4
-    IL_006c:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_0071:  nop
-    IL_0072:  ldloc.s    V_4
-    IL_0074:  ldc.i4.1
-    IL_0075:  add
-    IL_0076:  stloc.s    V_4
-    IL_0078:  ldloc.3
-    IL_0079:  ldc.i4.1
-    IL_007a:  conv.i8
-    IL_007b:  add
-    IL_007c:  stloc.3
-    IL_007d:  ldloc.3
-    IL_007e:  ldloc.1
-    IL_007f:  blt.un.s   IL_0068
+    IL_0067:  ldloca.s   V_2
+    IL_0069:  ldloc.s    V_4
+    IL_006b:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0070:  nop
+    IL_0071:  ldloc.s    V_4
+    IL_0073:  ldc.i4.1
+    IL_0074:  add
+    IL_0075:  stloc.s    V_4
+    IL_0077:  ldloc.3
+    IL_0078:  ldc.i4.1
+    IL_0079:  conv.i8
+    IL_007a:  add
+    IL_007b:  stloc.3
+    IL_007c:  ldloc.3
+    IL_007d:  ldloc.1
+    IL_007e:  blt.un.s   IL_0067
 
-    IL_0081:  ldloca.s   V_2
-    IL_0083:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_0088:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::current@9
-    IL_008d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_current@9()
-    IL_0092:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0097:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::next@9
-    IL_009c:  br.s       IL_00e4
+    IL_0080:  ldloca.s   V_2
+    IL_0082:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0087:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::current@9
+    IL_008c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_current@9()
+    IL_0091:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0096:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::next@9
+    IL_009b:  br.s       IL_00e3
 
-    IL_009e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_current@9()
-    IL_00a3:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_00a8:  stloc.0
-    IL_00a9:  call       int32[] assembly::get_r()
-    IL_00ae:  ldloc.0
-    IL_00af:  call       int32[] assembly::get_r()
-    IL_00b4:  ldloc.0
-    IL_00b5:  ldelem     [runtime]System.Int32
-    IL_00ba:  call       int32[] assembly::get_w()
-    IL_00bf:  ldloc.0
-    IL_00c0:  ldelem     [runtime]System.Int32
-    IL_00c5:  add
-    IL_00c6:  stelem     [runtime]System.Int32
-    IL_00cb:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_next@9()
-    IL_00d0:  call       void assembly::set_current@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
-    IL_00d5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_current@9()
-    IL_00da:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00df:  call       void assembly::set_next@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
-    IL_00e4:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_next@9()
-    IL_00e9:  brtrue.s   IL_009e
+    IL_009d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_current@9()
+    IL_00a2:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_00a7:  stloc.0
+    IL_00a8:  call       int32[] assembly::get_r()
+    IL_00ad:  ldloc.0
+    IL_00ae:  call       int32[] assembly::get_r()
+    IL_00b3:  ldloc.0
+    IL_00b4:  ldelem     [runtime]System.Int32
+    IL_00b9:  call       int32[] assembly::get_w()
+    IL_00be:  ldloc.0
+    IL_00bf:  ldelem     [runtime]System.Int32
+    IL_00c4:  add
+    IL_00c5:  stelem     [runtime]System.Int32
+    IL_00ca:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_next@9()
+    IL_00cf:  call       void assembly::set_current@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
+    IL_00d4:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_current@9()
+    IL_00d9:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00de:  call       void assembly::set_next@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
+    IL_00e3:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_next@9()
+    IL_00e8:  brtrue.s   IL_009d
 
+    IL_00ea:  nop
     IL_00eb:  nop
-    IL_00ec:  nop
-    IL_00ed:  call       int32[] assembly::get_r()
-    IL_00f2:  ldc.i4.0
-    IL_00f3:  ldelem     [runtime]System.Int32
-    IL_00f8:  ldc.i4.3
-    IL_00f9:  bne.un.s   IL_00ff
+    IL_00ec:  call       int32[] assembly::get_r()
+    IL_00f1:  ldc.i4.0
+    IL_00f2:  ldelem     [runtime]System.Int32
+    IL_00f7:  ldc.i4.3
+    IL_00f8:  bne.un.s   IL_00fe
 
-    IL_00fb:  ldc.i4.0
-    IL_00fc:  nop
-    IL_00fd:  br.s       IL_0101
+    IL_00fa:  ldc.i4.0
+    IL_00fb:  nop
+    IL_00fc:  br.s       IL_0100
 
-    IL_00ff:  ldc.i4.1
-    IL_0100:  nop
-    IL_0101:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_0106:  pop
-    IL_0107:  ret
+    IL_00fe:  ldc.i4.1
+    IL_00ff:  nop
+    IL_0100:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_0105:  pop
+    IL_0106:  ret
   } 
 
 } 
