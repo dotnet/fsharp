@@ -375,6 +375,15 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
+
+let currentDiagnosticsLogger = AsyncLocal<DiagnosticsLogger>()
+
+let checkIfSame v =
+    match currentDiagnosticsLogger.Value, v with
+    | c, _ when box c |> isNull -> v
+    | c, v when c = v -> v
+    | _ -> failwith "AsyncLocal does not match ThreadStatic."
+
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
     [<ThreadStatic; DefaultValue>]
@@ -393,6 +402,15 @@ type internal DiagnosticsThreadStatics =
         and set v = DiagnosticsThreadStatics.buildPhase <- v
 
     static member DiagnosticsLogger
+        with get () =
+            match box DiagnosticsThreadStatics.diagnosticsLogger with
+            | Null -> AssertFalseDiagnosticsLogger
+            | _ -> checkIfSame DiagnosticsThreadStatics.diagnosticsLogger
+        and set v =
+            currentDiagnosticsLogger.Value <- v
+            DiagnosticsThreadStatics.diagnosticsLogger <- v
+
+    static member DiagnosticsLoggerNodeCode
         with get () =
             match box DiagnosticsThreadStatics.diagnosticsLogger with
             | Null -> AssertFalseDiagnosticsLogger

@@ -236,6 +236,8 @@ type DiagnosticsThreadStatics =
 
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
+    static member DiagnosticsLoggerNodeCode: DiagnosticsLogger with get, set
+
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
 
