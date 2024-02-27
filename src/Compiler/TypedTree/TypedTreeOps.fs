@@ -10403,7 +10403,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             // Type-specific range op (RangeInt32, etc.).
             | Expr.App (funcExpr, formalType, tyargs, [_start; _step; _finish], m) -> Expr.App (funcExpr, formalType, tyargs, [start; step; finish], m)
             // Generic range–step op (RangeStepGeneric).
-            | Expr.App (funcExpr, formalType, tyargs, [zero; add; _start; _ste; _finish], m) -> Expr.App (funcExpr, formalType, tyargs, [zero; add; start; step; finish], m)
+            | Expr.App (funcExpr, formalType, tyargs, [zero; add; _start; _step; _finish], m) -> Expr.App (funcExpr, formalType, tyargs, [zero; add; start; step; finish], m)
             | _ -> error (InternalError ($"Unrecognized range function application '{rangeExpr}'.", m))
 
         mkSequential
@@ -10416,6 +10416,13 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             mkILAsmClt g m e1 e2
         else
             mkAsmExpr ([AI_clt_un], [], [e1; e2], [g.bool_ty], m)
+
+    let unsignedEquivalent ty =
+        if typeEquiv g ty g.int64_ty then g.uint64_ty
+        elif typeEquiv g ty g.int32_ty then g.uint32_ty
+        elif typeEquiv g ty g.int16_ty then g.uint16_ty
+        elif typeEquiv g ty g.sbyte_ty then g.byte_ty
+        else ty
 
     /// Find the unsigned type with twice the width of the given type, if available.
     let nextWidestUnsignedTy ty =
@@ -10433,33 +10440,28 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     /// Convert the value to the next-widest unsigned type.
     /// We do this so that adding one won't result in overflow.
     let mkWiden e =
-        let ty = stripMeasuresFromTy g (tyOfExpr g e)
+        let ty = stripMeasuresFromTy g rangeTy
 
-        if typeEquiv g ty g.int64_ty || typeEquiv g ty g.int32_ty || typeEquiv g ty g.uint32_ty then
+        if typeEquiv g ty g.int32_ty then
             mkAsmExpr ([AI_conv DT_I8], [], [e], [g.uint64_ty], m)
-        elif typeEquiv g ty g.int16_ty || typeEquiv g ty g.uint16_ty || typeEquiv g ty g.char_ty then
+        elif typeEquiv g ty g.uint32_ty then
+            mkAsmExpr ([AI_conv DT_U8], [], [e], [g.uint64_ty], m)
+        elif typeEquiv g ty g.int16_ty then
             mkAsmExpr ([AI_conv DT_I4], [], [e], [g.uint32_ty], m)
-        elif typeEquiv g ty g.sbyte_ty || typeEquiv g ty g.byte_ty then
+        elif typeEquiv g ty g.uint16_ty || typeEquiv g ty g.char_ty then
+            mkAsmExpr ([AI_conv DT_U4], [], [e], [g.uint32_ty], m)
+        elif typeEquiv g ty g.sbyte_ty then
             mkAsmExpr ([AI_conv DT_I2], [], [e], [g.uint16_ty], m)
+        elif typeEquiv g ty g.byte_ty then
+            mkAsmExpr ([AI_conv DT_U2], [], [e], [g.uint16_ty], m)
         else
             e
 
-    /// Unsigned, widened diff.
     /// Expects that |e1| ≥ |e2|.
-    let mkDiff e1 e2 =
-        let e1 = mkWiden e1
-        let e2 = mkWiden e2
-        mkAsmExpr ([AI_sub], [], [e1; e2], [tyOfExpr g e1], m)
+    let mkDiff e1 e2 = mkAsmExpr ([AI_sub], [], [e1; e2], [unsignedEquivalent (tyOfExpr g e1)], m)
 
     /// diff / step
-    let mkQuotient diff step =
-        let step =
-            if typeEquiv g (tyOfExpr g diff) g.uint64_ty then
-                mkAsmExpr ([AI_conv DT_I8], [], [step], [g.uint64_ty], m)
-            else
-                step
-
-        mkAsmExpr ([AI_div_un], [], [diff; step], [tyOfExpr g diff], m)
+    let mkQuotient diff step = mkAsmExpr ([AI_div_un], [], [diff; step], [tyOfExpr g diff], m)
 
     /// Whether the total count might not fit in 64 bits.
     let couldBeTooBig ty =
@@ -10472,9 +10474,10 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
 
     /// pseudoCount + 1
     let mkAddOne pseudoCount =
+        let pseudoCount = mkWiden pseudoCount
         let ty = tyOfExpr g pseudoCount
 
-        if couldBeTooBig ty then
+        if couldBeTooBig rangeTy then
             mkAsmExpr ([AI_add_ovf_un], [], [pseudoCount; mkTypedOne g m ty], [ty], m)
         else
             mkAsmExpr ([AI_add], [], [pseudoCount; mkTypedOne g m ty], [ty], m)
@@ -10523,17 +10526,17 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     //
     //     if finish < start then 0 else finish - start + 1
     | _, Expr.Const (value = IntegralConst.One), _ ->
-        let diff = mkDiff finish start
-        let diffTy = tyOfExpr g diff
-
         let mkCount mkAddOne =
+            let count = mkAddOne (mkDiff finish start)
+            let countTy = tyOfExpr g count
+
             mkCond
                 DebugPointAtBinding.NoneAtInvisible
                 m
-                diffTy
+                countTy
                 (mkSignednessAppropriateClt rangeTy finish start)
-                (mkTypedZero g m diffTy)
-                (mkAddOne diff)
+                (mkTypedZero g m countTy)
+                count
 
         match start, finish with
         // The total count could exceed 2⁶⁴.
@@ -10554,17 +10557,17 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     //
     //     if start < finish then 0 else start - finish + 1
     | _, Expr.Const (value = IntegralConst.MinusOne), _ ->
-        let diff = mkDiff start finish
-        let diffTy = tyOfExpr g diff
-
         let mkCount mkAddOne =
+            let count = mkAddOne (mkDiff start finish)
+            let countTy = tyOfExpr g count
+
             mkCond
                 DebugPointAtBinding.NoneAtInvisible
                 m
-                diffTy
+                countTy
                 (mkSignednessAppropriateClt rangeTy start finish)
-                (mkTypedZero g m diffTy)
-                (mkAddOne diff)
+                (mkTypedZero g m countTy)
+                count
 
         match start, finish with
         // The total count could exceed 2⁶⁴.
@@ -10581,17 +10584,17 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     //
     //     if finish < start then 0 else (finish - start) / step + 1
     | _, Expr.Const (value = IntegralConst.Positive), _ ->
-        let diff = mkDiff finish start
-        let diffTy = tyOfExpr g diff
-
         let count =
+            let count = mkAddOne (mkQuotient (mkDiff finish start) step)
+            let countTy = tyOfExpr g count
+
             mkCond
                 DebugPointAtBinding.NoneAtInvisible
                 m
-                diffTy
+                countTy
                 (mkSignednessAppropriateClt rangeTy finish start)
-                (mkTypedZero g m diffTy)
-                (mkAddOne (mkQuotient diff step))
+                (mkTypedZero g m countTy)
+                count
 
         // We know that the magnitude of step is greater than one,
         // so we know that the total count won't overflow.
@@ -10603,17 +10606,17 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     //
     //     if start < finish then 0 else (start - finish) / abs step + 1
     | _, Expr.Const (value = IntegralConst.Negative as negativeStep), _ ->
-        let diff = mkDiff start finish
-        let diffTy = tyOfExpr g diff
-
         let count =
+            let count = mkAddOne (mkQuotient (mkDiff start finish) (Expr.Const (IntegralConst.abs negativeStep, m, unsignedEquivalent rangeTy)))
+            let countTy = tyOfExpr g count
+
             mkCond
                 DebugPointAtBinding.NoneAtInvisible
                 m
-                diffTy
+                countTy
                 (mkSignednessAppropriateClt rangeTy start finish)
-                (mkTypedZero g m diffTy)
-                (mkAddOne (mkQuotient diff (Expr.Const (IntegralConst.abs negativeStep, m, diffTy))))
+                (mkTypedZero g m countTy)
+                count
 
         // We know that the magnitude of step is greater than one,
         // so we know that the total count won't overflow.
@@ -10645,29 +10648,29 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             let count =
                 if isSignedIntegerTy g rangeTy then
                     let positiveStep =
-                        let diff = mkDiff finish start
-                        let diffTy = tyOfExpr g diff
+                        let count = mkAddOne (mkQuotient (mkDiff finish start) step)
+                        let countTy = tyOfExpr g count
 
                         mkCond
                             DebugPointAtBinding.NoneAtInvisible
                             m
-                            diffTy
+                            countTy
                             (mkSignednessAppropriateClt rangeTy finish start)
-                            (mkTypedZero g m diffTy)
-                            (mkAddOne (mkQuotient diff step))
+                            (mkTypedZero g m countTy)
+                            count
 
                     let negativeStep =
-                        let diff = mkDiff start finish
-                        let diffTy = tyOfExpr g diff
-                        let absStep = mkAsmExpr ([AI_add], [], [mkWiden (mkAsmExpr ([AI_not], [], [step], [rangeTy], m)); mkTypedOne g m diffTy], [diffTy], m)
+                        let absStep = mkAsmExpr ([AI_add], [], [mkAsmExpr ([AI_not], [], [step], [rangeTy], m); mkTypedOne g m rangeTy], [rangeTy], m)
+                        let count = mkAddOne (mkQuotient (mkDiff start finish) absStep)
+                        let countTy = tyOfExpr g count
 
                         mkCond
                             DebugPointAtBinding.NoneAtInvisible
                             m
-                            diffTy
+                            countTy
                             (mkSignednessAppropriateClt rangeTy start finish)
-                            (mkTypedZero g m diffTy)
-                            (mkAddOne (mkQuotient diff absStep))
+                            (mkTypedZero g m countTy)
+                            count
 
                     mkCond
                         DebugPointAtBinding.NoneAtInvisible
@@ -10677,16 +10680,16 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                         positiveStep
                         negativeStep
                 else // Unsigned.
-                    let diff = mkDiff finish start
-                    let diffTy = tyOfExpr g diff
+                    let count = mkAddOne (mkQuotient (mkDiff finish start) step)
+                    let countTy = tyOfExpr g count
 
                     mkCond
                         DebugPointAtBinding.NoneAtInvisible
                         m
-                        diffTy
+                        countTy
                         (mkSignednessAppropriateClt rangeTy finish start)
-                        (mkTypedZero g m diffTy)
-                        (mkAddOne (mkQuotient diff step))
+                        (mkTypedZero g m countTy)
+                        count
 
             mkSequential m throwIfStepIsZero count
 
