@@ -375,7 +375,6 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
-
 let currentDiagnosticsLogger = AsyncLocal<DiagnosticsLogger voption>()
 
 let checkIfSame v =
