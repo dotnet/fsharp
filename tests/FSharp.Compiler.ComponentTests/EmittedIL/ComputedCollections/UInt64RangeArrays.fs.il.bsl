@@ -196,9 +196,10 @@
     
     .maxstack  5
     .locals init (uint64 V_0,
-             uint64[] V_1,
-             uint64 V_2,
-             uint64 V_3)
+             uint64 V_1,
+             uint64[] V_2,
+             uint64 V_3,
+             uint64 V_4)
     IL_0000:  nop
     IL_0001:  ldc.i4.s   10
     IL_0003:  conv.i8
@@ -220,45 +221,47 @@
     IL_0014:  nop
     IL_0015:  stloc.0
     IL_0016:  ldloc.0
-    IL_0017:  ldc.i4.1
-    IL_0018:  conv.i8
-    IL_0019:  bge.un.s   IL_0021
+    IL_0017:  stloc.1
+    IL_0018:  ldloc.1
+    IL_0019:  ldc.i4.1
+    IL_001a:  conv.i8
+    IL_001b:  bge.un.s   IL_0023
 
-    IL_001b:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0020:  ret
+    IL_001d:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0022:  ret
 
-    IL_0021:  ldloc.0
-    IL_0022:  conv.ovf.i.un
-    IL_0023:  newarr     [runtime]System.UInt64
-    IL_0028:  stloc.1
-    IL_0029:  ldc.i4.0
-    IL_002a:  conv.i8
-    IL_002b:  stloc.2
-    IL_002c:  ldarg.0
+    IL_0023:  ldloc.1
+    IL_0024:  conv.ovf.i.un
+    IL_0025:  newarr     [runtime]System.UInt64
+    IL_002a:  stloc.2
+    IL_002b:  ldc.i4.0
+    IL_002c:  conv.i8
     IL_002d:  stloc.3
-    IL_002e:  br.s       IL_003f
+    IL_002e:  ldarg.0
+    IL_002f:  stloc.s    V_4
+    IL_0031:  br.s       IL_0045
 
-    IL_0030:  ldloc.1
-    IL_0031:  ldloc.2
-    IL_0032:  conv.i
-    IL_0033:  ldloc.3
-    IL_0034:  stelem.i8
-    IL_0035:  ldloc.3
-    IL_0036:  ldc.i4.1
-    IL_0037:  conv.i8
-    IL_0038:  add
-    IL_0039:  stloc.3
-    IL_003a:  ldloc.2
+    IL_0033:  ldloc.2
+    IL_0034:  ldloc.3
+    IL_0035:  conv.i
+    IL_0036:  ldloc.s    V_4
+    IL_0038:  stelem.i8
+    IL_0039:  ldloc.s    V_4
     IL_003b:  ldc.i4.1
     IL_003c:  conv.i8
     IL_003d:  add
-    IL_003e:  stloc.2
-    IL_003f:  ldloc.2
-    IL_0040:  ldloc.0
-    IL_0041:  blt.un.s   IL_0030
+    IL_003e:  stloc.s    V_4
+    IL_0040:  ldloc.3
+    IL_0041:  ldc.i4.1
+    IL_0042:  conv.i8
+    IL_0043:  add
+    IL_0044:  stloc.3
+    IL_0045:  ldloc.3
+    IL_0046:  ldloc.0
+    IL_0047:  blt.un.s   IL_0033
 
-    IL_0043:  ldloc.1
-    IL_0044:  ret
+    IL_0049:  ldloc.2
+    IL_004a:  ret
   } 
 
   .method public static uint64[]  f7(uint64 finish) cil managed
@@ -266,9 +269,10 @@
     
     .maxstack  5
     .locals init (uint64 V_0,
-             uint64[] V_1,
-             uint64 V_2,
-             uint64 V_3)
+             uint64 V_1,
+             uint64[] V_2,
+             uint64 V_3,
+             uint64 V_4)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldc.i4.1
@@ -290,46 +294,48 @@
     IL_0012:  nop
     IL_0013:  stloc.0
     IL_0014:  ldloc.0
-    IL_0015:  ldc.i4.1
-    IL_0016:  conv.i8
-    IL_0017:  bge.un.s   IL_001f
+    IL_0015:  stloc.1
+    IL_0016:  ldloc.1
+    IL_0017:  ldc.i4.1
+    IL_0018:  conv.i8
+    IL_0019:  bge.un.s   IL_0021
 
-    IL_0019:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_001e:  ret
+    IL_001b:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0020:  ret
 
-    IL_001f:  ldloc.0
-    IL_0020:  conv.ovf.i.un
-    IL_0021:  newarr     [runtime]System.UInt64
-    IL_0026:  stloc.1
-    IL_0027:  ldc.i4.0
-    IL_0028:  conv.i8
-    IL_0029:  stloc.2
-    IL_002a:  ldc.i4.1
-    IL_002b:  conv.i8
-    IL_002c:  stloc.3
-    IL_002d:  br.s       IL_003e
+    IL_0021:  ldloc.1
+    IL_0022:  conv.ovf.i.un
+    IL_0023:  newarr     [runtime]System.UInt64
+    IL_0028:  stloc.2
+    IL_0029:  ldc.i4.0
+    IL_002a:  conv.i8
+    IL_002b:  stloc.3
+    IL_002c:  ldc.i4.1
+    IL_002d:  conv.i8
+    IL_002e:  stloc.s    V_4
+    IL_0030:  br.s       IL_0044
 
-    IL_002f:  ldloc.1
-    IL_0030:  ldloc.2
-    IL_0031:  conv.i
-    IL_0032:  ldloc.3
-    IL_0033:  stelem.i8
-    IL_0034:  ldloc.3
-    IL_0035:  ldc.i4.1
-    IL_0036:  conv.i8
-    IL_0037:  add
-    IL_0038:  stloc.3
-    IL_0039:  ldloc.2
+    IL_0032:  ldloc.2
+    IL_0033:  ldloc.3
+    IL_0034:  conv.i
+    IL_0035:  ldloc.s    V_4
+    IL_0037:  stelem.i8
+    IL_0038:  ldloc.s    V_4
     IL_003a:  ldc.i4.1
     IL_003b:  conv.i8
     IL_003c:  add
-    IL_003d:  stloc.2
-    IL_003e:  ldloc.2
-    IL_003f:  ldloc.0
-    IL_0040:  blt.un.s   IL_002f
+    IL_003d:  stloc.s    V_4
+    IL_003f:  ldloc.3
+    IL_0040:  ldc.i4.1
+    IL_0041:  conv.i8
+    IL_0042:  add
+    IL_0043:  stloc.3
+    IL_0044:  ldloc.3
+    IL_0045:  ldloc.0
+    IL_0046:  blt.un.s   IL_0032
 
-    IL_0042:  ldloc.1
-    IL_0043:  ret
+    IL_0048:  ldloc.2
+    IL_0049:  ret
   } 
 
   .method public static uint64[]  f8(uint64 start,
@@ -340,10 +346,11 @@
     .maxstack  5
     .locals init (uint64 V_0,
              bool V_1,
-             uint64[] V_2,
-             uint64 V_3,
+             uint64 V_2,
+             uint64[] V_3,
              uint64 V_4,
-             uint64 V_5)
+             uint64 V_5,
+             uint64 V_6)
     IL_0000:  nop
     IL_0001:  ldarg.1
     IL_0002:  ldarg.0
@@ -364,106 +371,129 @@
     IL_0011:  conv.i8
     IL_0012:  ceq
     IL_0014:  stloc.1
-    IL_0015:  ldloc.0
-    IL_0016:  ldc.i4.1
-    IL_0017:  conv.i8
-    IL_0018:  add.ovf.un
-    IL_0019:  ldc.i4.1
+    IL_0015:  ldarg.1
+    IL_0016:  ldarg.0
+    IL_0017:  bge.un.s   IL_001e
+
+    IL_0019:  ldc.i4.0
     IL_001a:  conv.i8
-    IL_001b:  bge.un.s   IL_0023
+    IL_001b:  nop
+    IL_001c:  br.s       IL_0025
 
-    IL_001d:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0022:  ret
+    IL_001e:  ldarg.1
+    IL_001f:  ldarg.0
+    IL_0020:  sub
+    IL_0021:  ldc.i4.1
+    IL_0022:  conv.i8
+    IL_0023:  add.ovf.un
+    IL_0024:  nop
+    IL_0025:  stloc.2
+    IL_0026:  ldloc.2
+    IL_0027:  ldc.i4.1
+    IL_0028:  conv.i8
+    IL_0029:  bge.un.s   IL_0031
 
-    IL_0023:  ldloc.0
-    IL_0024:  ldc.i4.1
-    IL_0025:  conv.i8
-    IL_0026:  add.ovf.un
-    IL_0027:  conv.ovf.i.un
-    IL_0028:  newarr     [runtime]System.UInt64
-    IL_002d:  stloc.2
-    IL_002e:  ldloc.1
-    IL_002f:  brfalse.s  IL_0065
+    IL_002b:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0030:  ret
 
-    IL_0031:  ldc.i4.0
-    IL_0032:  conv.i8
-    IL_0033:  stloc.3
-    IL_0034:  ldarg.0
-    IL_0035:  stloc.s    V_4
-    IL_0037:  ldloc.2
-    IL_0038:  ldloc.3
-    IL_0039:  conv.i
-    IL_003a:  ldloc.s    V_4
-    IL_003c:  stelem.i8
-    IL_003d:  ldloc.s    V_4
-    IL_003f:  ldc.i4.1
-    IL_0040:  conv.i8
-    IL_0041:  add
-    IL_0042:  stloc.s    V_4
-    IL_0044:  ldloc.3
-    IL_0045:  ldc.i4.1
-    IL_0046:  conv.i8
-    IL_0047:  add
-    IL_0048:  stloc.3
-    IL_0049:  br.s       IL_005d
+    IL_0031:  ldloc.2
+    IL_0032:  conv.ovf.i.un
+    IL_0033:  newarr     [runtime]System.UInt64
+    IL_0038:  stloc.3
+    IL_0039:  ldloc.1
+    IL_003a:  brfalse.s  IL_0078
 
-    IL_004b:  ldloc.2
-    IL_004c:  ldloc.3
-    IL_004d:  conv.i
-    IL_004e:  ldloc.s    V_4
-    IL_0050:  stelem.i8
+    IL_003c:  ldc.i4.0
+    IL_003d:  conv.i8
+    IL_003e:  stloc.s    V_4
+    IL_0040:  ldarg.0
+    IL_0041:  stloc.s    V_5
+    IL_0043:  ldloc.3
+    IL_0044:  ldloc.s    V_4
+    IL_0046:  conv.i
+    IL_0047:  ldloc.s    V_5
+    IL_0049:  stelem.i8
+    IL_004a:  ldloc.s    V_5
+    IL_004c:  ldc.i4.1
+    IL_004d:  conv.i8
+    IL_004e:  add
+    IL_004f:  stloc.s    V_5
     IL_0051:  ldloc.s    V_4
     IL_0053:  ldc.i4.1
     IL_0054:  conv.i8
     IL_0055:  add
     IL_0056:  stloc.s    V_4
-    IL_0058:  ldloc.3
-    IL_0059:  ldc.i4.1
-    IL_005a:  conv.i8
-    IL_005b:  add
-    IL_005c:  stloc.3
-    IL_005d:  ldloc.3
-    IL_005e:  ldc.i4.0
-    IL_005f:  conv.i8
-    IL_0060:  bgt.un.s   IL_004b
+    IL_0058:  br.s       IL_006f
 
-    IL_0062:  nop
-    IL_0063:  br.s       IL_008e
-
-    IL_0065:  ldloc.0
-    IL_0066:  ldc.i4.1
-    IL_0067:  conv.i8
-    IL_0068:  add.ovf.un
-    IL_0069:  stloc.3
-    IL_006a:  ldc.i4.0
+    IL_005a:  ldloc.3
+    IL_005b:  ldloc.s    V_4
+    IL_005d:  conv.i
+    IL_005e:  ldloc.s    V_5
+    IL_0060:  stelem.i8
+    IL_0061:  ldloc.s    V_5
+    IL_0063:  ldc.i4.1
+    IL_0064:  conv.i8
+    IL_0065:  add
+    IL_0066:  stloc.s    V_5
+    IL_0068:  ldloc.s    V_4
+    IL_006a:  ldc.i4.1
     IL_006b:  conv.i8
-    IL_006c:  stloc.s    V_4
-    IL_006e:  ldarg.0
-    IL_006f:  stloc.s    V_5
-    IL_0071:  br.s       IL_0088
+    IL_006c:  add
+    IL_006d:  stloc.s    V_4
+    IL_006f:  ldloc.s    V_4
+    IL_0071:  ldc.i4.0
+    IL_0072:  conv.i8
+    IL_0073:  bgt.un.s   IL_005a
 
-    IL_0073:  ldloc.2
-    IL_0074:  ldloc.s    V_4
-    IL_0076:  conv.i
-    IL_0077:  ldloc.s    V_5
-    IL_0079:  stelem.i8
-    IL_007a:  ldloc.s    V_5
-    IL_007c:  ldc.i4.1
+    IL_0075:  nop
+    IL_0076:  br.s       IL_00af
+
+    IL_0078:  ldarg.1
+    IL_0079:  ldarg.0
+    IL_007a:  bge.un.s   IL_0081
+
+    IL_007c:  ldc.i4.0
     IL_007d:  conv.i8
-    IL_007e:  add
-    IL_007f:  stloc.s    V_5
-    IL_0081:  ldloc.s    V_4
-    IL_0083:  ldc.i4.1
-    IL_0084:  conv.i8
-    IL_0085:  add
-    IL_0086:  stloc.s    V_4
-    IL_0088:  ldloc.s    V_4
-    IL_008a:  ldloc.3
-    IL_008b:  blt.un.s   IL_0073
+    IL_007e:  nop
+    IL_007f:  br.s       IL_0088
 
-    IL_008d:  nop
-    IL_008e:  ldloc.2
-    IL_008f:  ret
+    IL_0081:  ldarg.1
+    IL_0082:  ldarg.0
+    IL_0083:  sub
+    IL_0084:  ldc.i4.1
+    IL_0085:  conv.i8
+    IL_0086:  add.ovf.un
+    IL_0087:  nop
+    IL_0088:  stloc.s    V_4
+    IL_008a:  ldc.i4.0
+    IL_008b:  conv.i8
+    IL_008c:  stloc.s    V_5
+    IL_008e:  ldarg.0
+    IL_008f:  stloc.s    V_6
+    IL_0091:  br.s       IL_00a8
+
+    IL_0093:  ldloc.3
+    IL_0094:  ldloc.s    V_5
+    IL_0096:  conv.i
+    IL_0097:  ldloc.s    V_6
+    IL_0099:  stelem.i8
+    IL_009a:  ldloc.s    V_6
+    IL_009c:  ldc.i4.1
+    IL_009d:  conv.i8
+    IL_009e:  add
+    IL_009f:  stloc.s    V_6
+    IL_00a1:  ldloc.s    V_5
+    IL_00a3:  ldc.i4.1
+    IL_00a4:  conv.i8
+    IL_00a5:  add
+    IL_00a6:  stloc.s    V_5
+    IL_00a8:  ldloc.s    V_5
+    IL_00aa:  ldloc.s    V_4
+    IL_00ac:  blt.un.s   IL_0093
+
+    IL_00ae:  nop
+    IL_00af:  ldloc.3
+    IL_00b0:  ret
   } 
 
   .method public static uint64[]  f9(uint64 start) cil managed
@@ -471,9 +501,10 @@
     
     .maxstack  5
     .locals init (uint64 V_0,
-             uint64[] V_1,
-             uint64 V_2,
-             uint64 V_3)
+             uint64 V_1,
+             uint64[] V_2,
+             uint64 V_3,
+             uint64 V_4)
     IL_0000:  nop
     IL_0001:  ldc.i4.s   10
     IL_0003:  conv.i8
@@ -495,45 +526,47 @@
     IL_0014:  nop
     IL_0015:  stloc.0
     IL_0016:  ldloc.0
-    IL_0017:  ldc.i4.1
-    IL_0018:  conv.i8
-    IL_0019:  bge.un.s   IL_0021
+    IL_0017:  stloc.1
+    IL_0018:  ldloc.1
+    IL_0019:  ldc.i4.1
+    IL_001a:  conv.i8
+    IL_001b:  bge.un.s   IL_0023
 
-    IL_001b:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0020:  ret
+    IL_001d:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0022:  ret
 
-    IL_0021:  ldloc.0
-    IL_0022:  conv.ovf.i.un
-    IL_0023:  newarr     [runtime]System.UInt64
-    IL_0028:  stloc.1
-    IL_0029:  ldc.i4.0
-    IL_002a:  conv.i8
-    IL_002b:  stloc.2
-    IL_002c:  ldarg.0
+    IL_0023:  ldloc.1
+    IL_0024:  conv.ovf.i.un
+    IL_0025:  newarr     [runtime]System.UInt64
+    IL_002a:  stloc.2
+    IL_002b:  ldc.i4.0
+    IL_002c:  conv.i8
     IL_002d:  stloc.3
-    IL_002e:  br.s       IL_003f
+    IL_002e:  ldarg.0
+    IL_002f:  stloc.s    V_4
+    IL_0031:  br.s       IL_0045
 
-    IL_0030:  ldloc.1
-    IL_0031:  ldloc.2
-    IL_0032:  conv.i
-    IL_0033:  ldloc.3
-    IL_0034:  stelem.i8
-    IL_0035:  ldloc.3
-    IL_0036:  ldc.i4.1
-    IL_0037:  conv.i8
-    IL_0038:  add
-    IL_0039:  stloc.3
-    IL_003a:  ldloc.2
+    IL_0033:  ldloc.2
+    IL_0034:  ldloc.3
+    IL_0035:  conv.i
+    IL_0036:  ldloc.s    V_4
+    IL_0038:  stelem.i8
+    IL_0039:  ldloc.s    V_4
     IL_003b:  ldc.i4.1
     IL_003c:  conv.i8
     IL_003d:  add
-    IL_003e:  stloc.2
-    IL_003f:  ldloc.2
-    IL_0040:  ldloc.0
-    IL_0041:  blt.un.s   IL_0030
+    IL_003e:  stloc.s    V_4
+    IL_0040:  ldloc.3
+    IL_0041:  ldc.i4.1
+    IL_0042:  conv.i8
+    IL_0043:  add
+    IL_0044:  stloc.3
+    IL_0045:  ldloc.3
+    IL_0046:  ldloc.0
+    IL_0047:  blt.un.s   IL_0033
 
-    IL_0043:  ldloc.1
-    IL_0044:  ret
+    IL_0049:  ldloc.2
+    IL_004a:  ret
   } 
 
   .method public static uint64[]  f10(uint64 step) cil managed
@@ -541,11 +574,10 @@
     
     .maxstack  5
     .locals init (uint64 V_0,
-             bool V_1,
+             uint64 V_1,
              uint64[] V_2,
              uint64 V_3,
-             uint64 V_4,
-             uint64 V_5)
+             uint64 V_4)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  brtrue.s   IL_0013
@@ -572,7 +604,7 @@
     IL_001b:  ldc.i4.0
     IL_001c:  conv.i8
     IL_001d:  nop
-    IL_001e:  br.s       IL_002a
+    IL_001e:  br.s       IL_002d
 
     IL_0020:  ldc.i4.s   10
     IL_0022:  conv.i8
@@ -582,112 +614,53 @@
     IL_0026:  ldarg.0
     IL_0027:  conv.i8
     IL_0028:  div.un
-    IL_0029:  nop
-    IL_002a:  stloc.0
-    IL_002b:  ldloc.0
-    IL_002c:  ldc.i4.m1
-    IL_002d:  conv.i8
-    IL_002e:  ceq
-    IL_0030:  stloc.1
-    IL_0031:  ldloc.0
-    IL_0032:  ldc.i4.1
-    IL_0033:  conv.i8
-    IL_0034:  add.ovf.un
-    IL_0035:  ldc.i4.1
-    IL_0036:  conv.i8
-    IL_0037:  bge.un.s   IL_003f
+    IL_0029:  ldc.i4.1
+    IL_002a:  conv.i8
+    IL_002b:  add.ovf.un
+    IL_002c:  nop
+    IL_002d:  stloc.0
+    IL_002e:  ldloc.0
+    IL_002f:  stloc.1
+    IL_0030:  ldloc.1
+    IL_0031:  ldc.i4.1
+    IL_0032:  conv.i8
+    IL_0033:  bge.un.s   IL_003b
 
-    IL_0039:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_003e:  ret
+    IL_0035:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_003a:  ret
 
-    IL_003f:  ldloc.0
-    IL_0040:  ldc.i4.1
-    IL_0041:  conv.i8
-    IL_0042:  add.ovf.un
-    IL_0043:  conv.ovf.i.un
-    IL_0044:  newarr     [runtime]System.UInt64
-    IL_0049:  stloc.2
-    IL_004a:  ldloc.1
-    IL_004b:  brfalse.s  IL_0080
+    IL_003b:  ldloc.1
+    IL_003c:  conv.ovf.i.un
+    IL_003d:  newarr     [runtime]System.UInt64
+    IL_0042:  stloc.2
+    IL_0043:  ldc.i4.0
+    IL_0044:  conv.i8
+    IL_0045:  stloc.3
+    IL_0046:  ldc.i4.1
+    IL_0047:  conv.i8
+    IL_0048:  stloc.s    V_4
+    IL_004a:  br.s       IL_005d
 
-    IL_004d:  ldc.i4.0
-    IL_004e:  conv.i8
-    IL_004f:  stloc.3
-    IL_0050:  ldc.i4.1
-    IL_0051:  conv.i8
-    IL_0052:  stloc.s    V_4
-    IL_0054:  ldloc.2
-    IL_0055:  ldloc.3
-    IL_0056:  conv.i
-    IL_0057:  ldloc.s    V_4
-    IL_0059:  stelem.i8
-    IL_005a:  ldloc.s    V_4
-    IL_005c:  ldarg.0
-    IL_005d:  add
-    IL_005e:  stloc.s    V_4
-    IL_0060:  ldloc.3
-    IL_0061:  ldc.i4.1
-    IL_0062:  conv.i8
-    IL_0063:  add
-    IL_0064:  stloc.3
-    IL_0065:  br.s       IL_0078
+    IL_004c:  ldloc.2
+    IL_004d:  ldloc.3
+    IL_004e:  conv.i
+    IL_004f:  ldloc.s    V_4
+    IL_0051:  stelem.i8
+    IL_0052:  ldloc.s    V_4
+    IL_0054:  ldarg.0
+    IL_0055:  add
+    IL_0056:  stloc.s    V_4
+    IL_0058:  ldloc.3
+    IL_0059:  ldc.i4.1
+    IL_005a:  conv.i8
+    IL_005b:  add
+    IL_005c:  stloc.3
+    IL_005d:  ldloc.3
+    IL_005e:  ldloc.0
+    IL_005f:  blt.un.s   IL_004c
 
-    IL_0067:  ldloc.2
-    IL_0068:  ldloc.3
-    IL_0069:  conv.i
-    IL_006a:  ldloc.s    V_4
-    IL_006c:  stelem.i8
-    IL_006d:  ldloc.s    V_4
-    IL_006f:  ldarg.0
-    IL_0070:  add
-    IL_0071:  stloc.s    V_4
-    IL_0073:  ldloc.3
-    IL_0074:  ldc.i4.1
-    IL_0075:  conv.i8
-    IL_0076:  add
-    IL_0077:  stloc.3
-    IL_0078:  ldloc.3
-    IL_0079:  ldc.i4.0
-    IL_007a:  conv.i8
-    IL_007b:  bgt.un.s   IL_0067
-
-    IL_007d:  nop
-    IL_007e:  br.s       IL_00a9
-
-    IL_0080:  ldloc.0
-    IL_0081:  ldc.i4.1
-    IL_0082:  conv.i8
-    IL_0083:  add.ovf.un
-    IL_0084:  stloc.3
-    IL_0085:  ldc.i4.0
-    IL_0086:  conv.i8
-    IL_0087:  stloc.s    V_4
-    IL_0089:  ldc.i4.1
-    IL_008a:  conv.i8
-    IL_008b:  stloc.s    V_5
-    IL_008d:  br.s       IL_00a3
-
-    IL_008f:  ldloc.2
-    IL_0090:  ldloc.s    V_4
-    IL_0092:  conv.i
-    IL_0093:  ldloc.s    V_5
-    IL_0095:  stelem.i8
-    IL_0096:  ldloc.s    V_5
-    IL_0098:  ldarg.0
-    IL_0099:  add
-    IL_009a:  stloc.s    V_5
-    IL_009c:  ldloc.s    V_4
-    IL_009e:  ldc.i4.1
-    IL_009f:  conv.i8
-    IL_00a0:  add
-    IL_00a1:  stloc.s    V_4
-    IL_00a3:  ldloc.s    V_4
-    IL_00a5:  ldloc.3
-    IL_00a6:  blt.un.s   IL_008f
-
-    IL_00a8:  nop
-    IL_00a9:  ldloc.2
-    IL_00aa:  ret
+    IL_0061:  ldloc.2
+    IL_0062:  ret
   } 
 
   .method public static uint64[]  f11(uint64 finish) cil managed
@@ -695,9 +668,10 @@
     
     .maxstack  5
     .locals init (uint64 V_0,
-             uint64[] V_1,
-             uint64 V_2,
-             uint64 V_3)
+             uint64 V_1,
+             uint64[] V_2,
+             uint64 V_3,
+             uint64 V_4)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldc.i4.1
@@ -719,46 +693,48 @@
     IL_0012:  nop
     IL_0013:  stloc.0
     IL_0014:  ldloc.0
-    IL_0015:  ldc.i4.1
-    IL_0016:  conv.i8
-    IL_0017:  bge.un.s   IL_001f
+    IL_0015:  stloc.1
+    IL_0016:  ldloc.1
+    IL_0017:  ldc.i4.1
+    IL_0018:  conv.i8
+    IL_0019:  bge.un.s   IL_0021
 
-    IL_0019:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_001e:  ret
+    IL_001b:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0020:  ret
 
-    IL_001f:  ldloc.0
-    IL_0020:  conv.ovf.i.un
-    IL_0021:  newarr     [runtime]System.UInt64
-    IL_0026:  stloc.1
-    IL_0027:  ldc.i4.0
-    IL_0028:  conv.i8
-    IL_0029:  stloc.2
-    IL_002a:  ldc.i4.1
-    IL_002b:  conv.i8
-    IL_002c:  stloc.3
-    IL_002d:  br.s       IL_003e
+    IL_0021:  ldloc.1
+    IL_0022:  conv.ovf.i.un
+    IL_0023:  newarr     [runtime]System.UInt64
+    IL_0028:  stloc.2
+    IL_0029:  ldc.i4.0
+    IL_002a:  conv.i8
+    IL_002b:  stloc.3
+    IL_002c:  ldc.i4.1
+    IL_002d:  conv.i8
+    IL_002e:  stloc.s    V_4
+    IL_0030:  br.s       IL_0044
 
-    IL_002f:  ldloc.1
-    IL_0030:  ldloc.2
-    IL_0031:  conv.i
-    IL_0032:  ldloc.3
-    IL_0033:  stelem.i8
-    IL_0034:  ldloc.3
-    IL_0035:  ldc.i4.1
-    IL_0036:  conv.i8
-    IL_0037:  add
-    IL_0038:  stloc.3
-    IL_0039:  ldloc.2
+    IL_0032:  ldloc.2
+    IL_0033:  ldloc.3
+    IL_0034:  conv.i
+    IL_0035:  ldloc.s    V_4
+    IL_0037:  stelem.i8
+    IL_0038:  ldloc.s    V_4
     IL_003a:  ldc.i4.1
     IL_003b:  conv.i8
     IL_003c:  add
-    IL_003d:  stloc.2
-    IL_003e:  ldloc.2
-    IL_003f:  ldloc.0
-    IL_0040:  blt.un.s   IL_002f
+    IL_003d:  stloc.s    V_4
+    IL_003f:  ldloc.3
+    IL_0040:  ldc.i4.1
+    IL_0041:  conv.i8
+    IL_0042:  add
+    IL_0043:  stloc.3
+    IL_0044:  ldloc.3
+    IL_0045:  ldloc.0
+    IL_0046:  blt.un.s   IL_0032
 
-    IL_0042:  ldloc.1
-    IL_0043:  ret
+    IL_0048:  ldloc.2
+    IL_0049:  ret
   } 
 
   .method public static uint64[]  f12(uint64 start,
@@ -768,11 +744,10 @@
     
     .maxstack  5
     .locals init (uint64 V_0,
-             bool V_1,
+             uint64 V_1,
              uint64[] V_2,
              uint64 V_3,
-             uint64 V_4,
-             uint64 V_5)
+             uint64 V_4)
     IL_0000:  nop
     IL_0001:  ldarg.1
     IL_0002:  brtrue.s   IL_0012
@@ -797,7 +772,7 @@
     IL_0019:  ldc.i4.0
     IL_001a:  conv.i8
     IL_001b:  nop
-    IL_001c:  br.s       IL_0027
+    IL_001c:  br.s       IL_002a
 
     IL_001e:  ldc.i4.s   10
     IL_0020:  conv.i8
@@ -806,110 +781,52 @@
     IL_0023:  ldarg.1
     IL_0024:  conv.i8
     IL_0025:  div.un
-    IL_0026:  nop
-    IL_0027:  stloc.0
-    IL_0028:  ldloc.0
-    IL_0029:  ldc.i4.m1
-    IL_002a:  conv.i8
-    IL_002b:  ceq
-    IL_002d:  stloc.1
-    IL_002e:  ldloc.0
-    IL_002f:  ldc.i4.1
-    IL_0030:  conv.i8
-    IL_0031:  add.ovf.un
-    IL_0032:  ldc.i4.1
-    IL_0033:  conv.i8
-    IL_0034:  bge.un.s   IL_003c
+    IL_0026:  ldc.i4.1
+    IL_0027:  conv.i8
+    IL_0028:  add.ovf.un
+    IL_0029:  nop
+    IL_002a:  stloc.0
+    IL_002b:  ldloc.0
+    IL_002c:  stloc.1
+    IL_002d:  ldloc.1
+    IL_002e:  ldc.i4.1
+    IL_002f:  conv.i8
+    IL_0030:  bge.un.s   IL_0038
 
-    IL_0036:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_003b:  ret
+    IL_0032:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0037:  ret
 
-    IL_003c:  ldloc.0
-    IL_003d:  ldc.i4.1
-    IL_003e:  conv.i8
-    IL_003f:  add.ovf.un
-    IL_0040:  conv.ovf.i.un
-    IL_0041:  newarr     [runtime]System.UInt64
-    IL_0046:  stloc.2
-    IL_0047:  ldloc.1
-    IL_0048:  brfalse.s  IL_007c
+    IL_0038:  ldloc.1
+    IL_0039:  conv.ovf.i.un
+    IL_003a:  newarr     [runtime]System.UInt64
+    IL_003f:  stloc.2
+    IL_0040:  ldc.i4.0
+    IL_0041:  conv.i8
+    IL_0042:  stloc.3
+    IL_0043:  ldarg.0
+    IL_0044:  stloc.s    V_4
+    IL_0046:  br.s       IL_0059
 
-    IL_004a:  ldc.i4.0
-    IL_004b:  conv.i8
-    IL_004c:  stloc.3
-    IL_004d:  ldarg.0
-    IL_004e:  stloc.s    V_4
-    IL_0050:  ldloc.2
-    IL_0051:  ldloc.3
-    IL_0052:  conv.i
-    IL_0053:  ldloc.s    V_4
-    IL_0055:  stelem.i8
-    IL_0056:  ldloc.s    V_4
-    IL_0058:  ldarg.1
-    IL_0059:  add
-    IL_005a:  stloc.s    V_4
-    IL_005c:  ldloc.3
-    IL_005d:  ldc.i4.1
-    IL_005e:  conv.i8
-    IL_005f:  add
-    IL_0060:  stloc.3
-    IL_0061:  br.s       IL_0074
+    IL_0048:  ldloc.2
+    IL_0049:  ldloc.3
+    IL_004a:  conv.i
+    IL_004b:  ldloc.s    V_4
+    IL_004d:  stelem.i8
+    IL_004e:  ldloc.s    V_4
+    IL_0050:  ldarg.1
+    IL_0051:  add
+    IL_0052:  stloc.s    V_4
+    IL_0054:  ldloc.3
+    IL_0055:  ldc.i4.1
+    IL_0056:  conv.i8
+    IL_0057:  add
+    IL_0058:  stloc.3
+    IL_0059:  ldloc.3
+    IL_005a:  ldloc.0
+    IL_005b:  blt.un.s   IL_0048
 
-    IL_0063:  ldloc.2
-    IL_0064:  ldloc.3
-    IL_0065:  conv.i
-    IL_0066:  ldloc.s    V_4
-    IL_0068:  stelem.i8
-    IL_0069:  ldloc.s    V_4
-    IL_006b:  ldarg.1
-    IL_006c:  add
-    IL_006d:  stloc.s    V_4
-    IL_006f:  ldloc.3
-    IL_0070:  ldc.i4.1
-    IL_0071:  conv.i8
-    IL_0072:  add
-    IL_0073:  stloc.3
-    IL_0074:  ldloc.3
-    IL_0075:  ldc.i4.0
-    IL_0076:  conv.i8
-    IL_0077:  bgt.un.s   IL_0063
-
-    IL_0079:  nop
-    IL_007a:  br.s       IL_00a4
-
-    IL_007c:  ldloc.0
-    IL_007d:  ldc.i4.1
-    IL_007e:  conv.i8
-    IL_007f:  add.ovf.un
-    IL_0080:  stloc.3
-    IL_0081:  ldc.i4.0
-    IL_0082:  conv.i8
-    IL_0083:  stloc.s    V_4
-    IL_0085:  ldarg.0
-    IL_0086:  stloc.s    V_5
-    IL_0088:  br.s       IL_009e
-
-    IL_008a:  ldloc.2
-    IL_008b:  ldloc.s    V_4
-    IL_008d:  conv.i
-    IL_008e:  ldloc.s    V_5
-    IL_0090:  stelem.i8
-    IL_0091:  ldloc.s    V_5
-    IL_0093:  ldarg.1
-    IL_0094:  add
-    IL_0095:  stloc.s    V_5
-    IL_0097:  ldloc.s    V_4
-    IL_0099:  ldc.i4.1
-    IL_009a:  conv.i8
-    IL_009b:  add
-    IL_009c:  stloc.s    V_4
-    IL_009e:  ldloc.s    V_4
-    IL_00a0:  ldloc.3
-    IL_00a1:  blt.un.s   IL_008a
-
-    IL_00a3:  nop
-    IL_00a4:  ldloc.2
-    IL_00a5:  ret
+    IL_005d:  ldloc.2
+    IL_005e:  ret
   } 
 
   .method public static uint64[]  f13(uint64 start,
@@ -920,10 +837,11 @@
     .maxstack  5
     .locals init (uint64 V_0,
              bool V_1,
-             uint64[] V_2,
-             uint64 V_3,
+             uint64 V_2,
+             uint64[] V_3,
              uint64 V_4,
-             uint64 V_5)
+             uint64 V_5,
+             uint64 V_6)
     IL_0000:  nop
     IL_0001:  ldarg.1
     IL_0002:  ldarg.0
@@ -944,106 +862,129 @@
     IL_0011:  conv.i8
     IL_0012:  ceq
     IL_0014:  stloc.1
-    IL_0015:  ldloc.0
-    IL_0016:  ldc.i4.1
-    IL_0017:  conv.i8
-    IL_0018:  add.ovf.un
-    IL_0019:  ldc.i4.1
+    IL_0015:  ldarg.1
+    IL_0016:  ldarg.0
+    IL_0017:  bge.un.s   IL_001e
+
+    IL_0019:  ldc.i4.0
     IL_001a:  conv.i8
-    IL_001b:  bge.un.s   IL_0023
+    IL_001b:  nop
+    IL_001c:  br.s       IL_0025
 
-    IL_001d:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0022:  ret
+    IL_001e:  ldarg.1
+    IL_001f:  ldarg.0
+    IL_0020:  sub
+    IL_0021:  ldc.i4.1
+    IL_0022:  conv.i8
+    IL_0023:  add.ovf.un
+    IL_0024:  nop
+    IL_0025:  stloc.2
+    IL_0026:  ldloc.2
+    IL_0027:  ldc.i4.1
+    IL_0028:  conv.i8
+    IL_0029:  bge.un.s   IL_0031
 
-    IL_0023:  ldloc.0
-    IL_0024:  ldc.i4.1
-    IL_0025:  conv.i8
-    IL_0026:  add.ovf.un
-    IL_0027:  conv.ovf.i.un
-    IL_0028:  newarr     [runtime]System.UInt64
-    IL_002d:  stloc.2
-    IL_002e:  ldloc.1
-    IL_002f:  brfalse.s  IL_0065
+    IL_002b:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0030:  ret
 
-    IL_0031:  ldc.i4.0
-    IL_0032:  conv.i8
-    IL_0033:  stloc.3
-    IL_0034:  ldarg.0
-    IL_0035:  stloc.s    V_4
-    IL_0037:  ldloc.2
-    IL_0038:  ldloc.3
-    IL_0039:  conv.i
-    IL_003a:  ldloc.s    V_4
-    IL_003c:  stelem.i8
-    IL_003d:  ldloc.s    V_4
-    IL_003f:  ldc.i4.1
-    IL_0040:  conv.i8
-    IL_0041:  add
-    IL_0042:  stloc.s    V_4
-    IL_0044:  ldloc.3
-    IL_0045:  ldc.i4.1
-    IL_0046:  conv.i8
-    IL_0047:  add
-    IL_0048:  stloc.3
-    IL_0049:  br.s       IL_005d
+    IL_0031:  ldloc.2
+    IL_0032:  conv.ovf.i.un
+    IL_0033:  newarr     [runtime]System.UInt64
+    IL_0038:  stloc.3
+    IL_0039:  ldloc.1
+    IL_003a:  brfalse.s  IL_0078
 
-    IL_004b:  ldloc.2
-    IL_004c:  ldloc.3
-    IL_004d:  conv.i
-    IL_004e:  ldloc.s    V_4
-    IL_0050:  stelem.i8
+    IL_003c:  ldc.i4.0
+    IL_003d:  conv.i8
+    IL_003e:  stloc.s    V_4
+    IL_0040:  ldarg.0
+    IL_0041:  stloc.s    V_5
+    IL_0043:  ldloc.3
+    IL_0044:  ldloc.s    V_4
+    IL_0046:  conv.i
+    IL_0047:  ldloc.s    V_5
+    IL_0049:  stelem.i8
+    IL_004a:  ldloc.s    V_5
+    IL_004c:  ldc.i4.1
+    IL_004d:  conv.i8
+    IL_004e:  add
+    IL_004f:  stloc.s    V_5
     IL_0051:  ldloc.s    V_4
     IL_0053:  ldc.i4.1
     IL_0054:  conv.i8
     IL_0055:  add
     IL_0056:  stloc.s    V_4
-    IL_0058:  ldloc.3
-    IL_0059:  ldc.i4.1
-    IL_005a:  conv.i8
-    IL_005b:  add
-    IL_005c:  stloc.3
-    IL_005d:  ldloc.3
-    IL_005e:  ldc.i4.0
-    IL_005f:  conv.i8
-    IL_0060:  bgt.un.s   IL_004b
+    IL_0058:  br.s       IL_006f
 
-    IL_0062:  nop
-    IL_0063:  br.s       IL_008e
-
-    IL_0065:  ldloc.0
-    IL_0066:  ldc.i4.1
-    IL_0067:  conv.i8
-    IL_0068:  add.ovf.un
-    IL_0069:  stloc.3
-    IL_006a:  ldc.i4.0
+    IL_005a:  ldloc.3
+    IL_005b:  ldloc.s    V_4
+    IL_005d:  conv.i
+    IL_005e:  ldloc.s    V_5
+    IL_0060:  stelem.i8
+    IL_0061:  ldloc.s    V_5
+    IL_0063:  ldc.i4.1
+    IL_0064:  conv.i8
+    IL_0065:  add
+    IL_0066:  stloc.s    V_5
+    IL_0068:  ldloc.s    V_4
+    IL_006a:  ldc.i4.1
     IL_006b:  conv.i8
-    IL_006c:  stloc.s    V_4
-    IL_006e:  ldarg.0
-    IL_006f:  stloc.s    V_5
-    IL_0071:  br.s       IL_0088
+    IL_006c:  add
+    IL_006d:  stloc.s    V_4
+    IL_006f:  ldloc.s    V_4
+    IL_0071:  ldc.i4.0
+    IL_0072:  conv.i8
+    IL_0073:  bgt.un.s   IL_005a
 
-    IL_0073:  ldloc.2
-    IL_0074:  ldloc.s    V_4
-    IL_0076:  conv.i
-    IL_0077:  ldloc.s    V_5
-    IL_0079:  stelem.i8
-    IL_007a:  ldloc.s    V_5
-    IL_007c:  ldc.i4.1
+    IL_0075:  nop
+    IL_0076:  br.s       IL_00af
+
+    IL_0078:  ldarg.1
+    IL_0079:  ldarg.0
+    IL_007a:  bge.un.s   IL_0081
+
+    IL_007c:  ldc.i4.0
     IL_007d:  conv.i8
-    IL_007e:  add
-    IL_007f:  stloc.s    V_5
-    IL_0081:  ldloc.s    V_4
-    IL_0083:  ldc.i4.1
-    IL_0084:  conv.i8
-    IL_0085:  add
-    IL_0086:  stloc.s    V_4
-    IL_0088:  ldloc.s    V_4
-    IL_008a:  ldloc.3
-    IL_008b:  blt.un.s   IL_0073
+    IL_007e:  nop
+    IL_007f:  br.s       IL_0088
 
-    IL_008d:  nop
-    IL_008e:  ldloc.2
-    IL_008f:  ret
+    IL_0081:  ldarg.1
+    IL_0082:  ldarg.0
+    IL_0083:  sub
+    IL_0084:  ldc.i4.1
+    IL_0085:  conv.i8
+    IL_0086:  add.ovf.un
+    IL_0087:  nop
+    IL_0088:  stloc.s    V_4
+    IL_008a:  ldc.i4.0
+    IL_008b:  conv.i8
+    IL_008c:  stloc.s    V_5
+    IL_008e:  ldarg.0
+    IL_008f:  stloc.s    V_6
+    IL_0091:  br.s       IL_00a8
+
+    IL_0093:  ldloc.3
+    IL_0094:  ldloc.s    V_5
+    IL_0096:  conv.i
+    IL_0097:  ldloc.s    V_6
+    IL_0099:  stelem.i8
+    IL_009a:  ldloc.s    V_6
+    IL_009c:  ldc.i4.1
+    IL_009d:  conv.i8
+    IL_009e:  add
+    IL_009f:  stloc.s    V_6
+    IL_00a1:  ldloc.s    V_5
+    IL_00a3:  ldc.i4.1
+    IL_00a4:  conv.i8
+    IL_00a5:  add
+    IL_00a6:  stloc.s    V_5
+    IL_00a8:  ldloc.s    V_5
+    IL_00aa:  ldloc.s    V_4
+    IL_00ac:  blt.un.s   IL_0093
+
+    IL_00ae:  nop
+    IL_00af:  ldloc.3
+    IL_00b0:  ret
   } 
 
   .method public static uint64[]  f14(uint64 step,
@@ -1053,11 +994,10 @@
     
     .maxstack  5
     .locals init (uint64 V_0,
-             bool V_1,
+             uint64 V_1,
              uint64[] V_2,
              uint64 V_3,
-             uint64 V_4,
-             uint64 V_5)
+             uint64 V_4)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  brtrue.s   IL_0011
@@ -1082,7 +1022,7 @@
     IL_0017:  ldc.i4.0
     IL_0018:  conv.i8
     IL_0019:  nop
-    IL_001a:  br.s       IL_0024
+    IL_001a:  br.s       IL_0027
 
     IL_001c:  ldarg.1
     IL_001d:  ldc.i4.1
@@ -1091,112 +1031,53 @@
     IL_0020:  ldarg.0
     IL_0021:  conv.i8
     IL_0022:  div.un
-    IL_0023:  nop
-    IL_0024:  stloc.0
-    IL_0025:  ldloc.0
-    IL_0026:  ldc.i4.m1
-    IL_0027:  conv.i8
-    IL_0028:  ceq
-    IL_002a:  stloc.1
-    IL_002b:  ldloc.0
-    IL_002c:  ldc.i4.1
-    IL_002d:  conv.i8
-    IL_002e:  add.ovf.un
-    IL_002f:  ldc.i4.1
-    IL_0030:  conv.i8
-    IL_0031:  bge.un.s   IL_0039
+    IL_0023:  ldc.i4.1
+    IL_0024:  conv.i8
+    IL_0025:  add.ovf.un
+    IL_0026:  nop
+    IL_0027:  stloc.0
+    IL_0028:  ldloc.0
+    IL_0029:  stloc.1
+    IL_002a:  ldloc.1
+    IL_002b:  ldc.i4.1
+    IL_002c:  conv.i8
+    IL_002d:  bge.un.s   IL_0035
 
-    IL_0033:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0038:  ret
+    IL_002f:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0034:  ret
 
-    IL_0039:  ldloc.0
-    IL_003a:  ldc.i4.1
-    IL_003b:  conv.i8
-    IL_003c:  add.ovf.un
-    IL_003d:  conv.ovf.i.un
-    IL_003e:  newarr     [runtime]System.UInt64
-    IL_0043:  stloc.2
-    IL_0044:  ldloc.1
-    IL_0045:  brfalse.s  IL_007a
+    IL_0035:  ldloc.1
+    IL_0036:  conv.ovf.i.un
+    IL_0037:  newarr     [runtime]System.UInt64
+    IL_003c:  stloc.2
+    IL_003d:  ldc.i4.0
+    IL_003e:  conv.i8
+    IL_003f:  stloc.3
+    IL_0040:  ldc.i4.1
+    IL_0041:  conv.i8
+    IL_0042:  stloc.s    V_4
+    IL_0044:  br.s       IL_0057
 
-    IL_0047:  ldc.i4.0
-    IL_0048:  conv.i8
-    IL_0049:  stloc.3
-    IL_004a:  ldc.i4.1
-    IL_004b:  conv.i8
-    IL_004c:  stloc.s    V_4
-    IL_004e:  ldloc.2
-    IL_004f:  ldloc.3
-    IL_0050:  conv.i
-    IL_0051:  ldloc.s    V_4
-    IL_0053:  stelem.i8
-    IL_0054:  ldloc.s    V_4
-    IL_0056:  ldarg.0
-    IL_0057:  add
-    IL_0058:  stloc.s    V_4
-    IL_005a:  ldloc.3
-    IL_005b:  ldc.i4.1
-    IL_005c:  conv.i8
-    IL_005d:  add
-    IL_005e:  stloc.3
-    IL_005f:  br.s       IL_0072
+    IL_0046:  ldloc.2
+    IL_0047:  ldloc.3
+    IL_0048:  conv.i
+    IL_0049:  ldloc.s    V_4
+    IL_004b:  stelem.i8
+    IL_004c:  ldloc.s    V_4
+    IL_004e:  ldarg.0
+    IL_004f:  add
+    IL_0050:  stloc.s    V_4
+    IL_0052:  ldloc.3
+    IL_0053:  ldc.i4.1
+    IL_0054:  conv.i8
+    IL_0055:  add
+    IL_0056:  stloc.3
+    IL_0057:  ldloc.3
+    IL_0058:  ldloc.0
+    IL_0059:  blt.un.s   IL_0046
 
-    IL_0061:  ldloc.2
-    IL_0062:  ldloc.3
-    IL_0063:  conv.i
-    IL_0064:  ldloc.s    V_4
-    IL_0066:  stelem.i8
-    IL_0067:  ldloc.s    V_4
-    IL_0069:  ldarg.0
-    IL_006a:  add
-    IL_006b:  stloc.s    V_4
-    IL_006d:  ldloc.3
-    IL_006e:  ldc.i4.1
-    IL_006f:  conv.i8
-    IL_0070:  add
-    IL_0071:  stloc.3
-    IL_0072:  ldloc.3
-    IL_0073:  ldc.i4.0
-    IL_0074:  conv.i8
-    IL_0075:  bgt.un.s   IL_0061
-
-    IL_0077:  nop
-    IL_0078:  br.s       IL_00a3
-
-    IL_007a:  ldloc.0
-    IL_007b:  ldc.i4.1
-    IL_007c:  conv.i8
-    IL_007d:  add.ovf.un
-    IL_007e:  stloc.3
-    IL_007f:  ldc.i4.0
-    IL_0080:  conv.i8
-    IL_0081:  stloc.s    V_4
-    IL_0083:  ldc.i4.1
-    IL_0084:  conv.i8
-    IL_0085:  stloc.s    V_5
-    IL_0087:  br.s       IL_009d
-
-    IL_0089:  ldloc.2
-    IL_008a:  ldloc.s    V_4
-    IL_008c:  conv.i
-    IL_008d:  ldloc.s    V_5
-    IL_008f:  stelem.i8
-    IL_0090:  ldloc.s    V_5
-    IL_0092:  ldarg.0
-    IL_0093:  add
-    IL_0094:  stloc.s    V_5
-    IL_0096:  ldloc.s    V_4
-    IL_0098:  ldc.i4.1
-    IL_0099:  conv.i8
-    IL_009a:  add
-    IL_009b:  stloc.s    V_4
-    IL_009d:  ldloc.s    V_4
-    IL_009f:  ldloc.3
-    IL_00a0:  blt.un.s   IL_0089
-
-    IL_00a2:  nop
-    IL_00a3:  ldloc.2
-    IL_00a4:  ret
+    IL_005b:  ldloc.2
+    IL_005c:  ret
   } 
 
   .method public static uint64[]  f15(uint64 start,
@@ -1209,10 +1090,11 @@
     .maxstack  5
     .locals init (uint64 V_0,
              bool V_1,
-             uint64[] V_2,
-             uint64 V_3,
+             uint64 V_2,
+             uint64[] V_3,
              uint64 V_4,
-             uint64 V_5)
+             uint64 V_5,
+             uint64 V_6)
     IL_0000:  nop
     IL_0001:  ldarg.1
     IL_0002:  brtrue.s   IL_0010
@@ -1250,103 +1132,160 @@
     IL_0024:  conv.i8
     IL_0025:  ceq
     IL_0027:  stloc.1
-    IL_0028:  ldloc.0
-    IL_0029:  ldc.i4.1
-    IL_002a:  conv.i8
-    IL_002b:  add.ovf.un
-    IL_002c:  ldc.i4.1
-    IL_002d:  conv.i8
-    IL_002e:  bge.un.s   IL_0036
+    IL_0028:  ldarg.1
+    IL_0029:  brtrue.s   IL_0037
 
-    IL_0030:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0035:  ret
+    IL_002b:  ldarg.0
+    IL_002c:  ldarg.1
+    IL_002d:  ldarg.2
+    IL_002e:  call       class [runtime]System.Collections.Generic.IEnumerable`1<uint64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeUInt64(uint64,
+                                                                                                                                                                             uint64,
+                                                                                                                                                                             uint64)
+    IL_0033:  pop
+    IL_0034:  nop
+    IL_0035:  br.s       IL_0038
 
-    IL_0036:  ldloc.0
-    IL_0037:  ldc.i4.1
-    IL_0038:  conv.i8
-    IL_0039:  add.ovf.un
-    IL_003a:  conv.ovf.i.un
-    IL_003b:  newarr     [runtime]System.UInt64
-    IL_0040:  stloc.2
-    IL_0041:  ldloc.1
-    IL_0042:  brfalse.s  IL_0076
+    IL_0037:  nop
+    IL_0038:  ldarg.2
+    IL_0039:  ldarg.0
+    IL_003a:  bge.un.s   IL_0041
 
-    IL_0044:  ldc.i4.0
+    IL_003c:  ldc.i4.0
+    IL_003d:  conv.i8
+    IL_003e:  nop
+    IL_003f:  br.s       IL_004b
+
+    IL_0041:  ldarg.2
+    IL_0042:  ldarg.0
+    IL_0043:  sub
+    IL_0044:  ldarg.1
     IL_0045:  conv.i8
-    IL_0046:  stloc.3
-    IL_0047:  ldarg.0
-    IL_0048:  stloc.s    V_4
-    IL_004a:  ldloc.2
-    IL_004b:  ldloc.3
-    IL_004c:  conv.i
-    IL_004d:  ldloc.s    V_4
-    IL_004f:  stelem.i8
-    IL_0050:  ldloc.s    V_4
-    IL_0052:  ldarg.1
-    IL_0053:  add
-    IL_0054:  stloc.s    V_4
-    IL_0056:  ldloc.3
-    IL_0057:  ldc.i4.1
-    IL_0058:  conv.i8
-    IL_0059:  add
-    IL_005a:  stloc.3
-    IL_005b:  br.s       IL_006e
+    IL_0046:  div.un
+    IL_0047:  ldc.i4.1
+    IL_0048:  conv.i8
+    IL_0049:  add.ovf.un
+    IL_004a:  nop
+    IL_004b:  stloc.2
+    IL_004c:  ldloc.2
+    IL_004d:  ldc.i4.1
+    IL_004e:  conv.i8
+    IL_004f:  bge.un.s   IL_0057
 
-    IL_005d:  ldloc.2
-    IL_005e:  ldloc.3
-    IL_005f:  conv.i
-    IL_0060:  ldloc.s    V_4
-    IL_0062:  stelem.i8
-    IL_0063:  ldloc.s    V_4
-    IL_0065:  ldarg.1
-    IL_0066:  add
-    IL_0067:  stloc.s    V_4
+    IL_0051:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0056:  ret
+
+    IL_0057:  ldloc.2
+    IL_0058:  conv.ovf.i.un
+    IL_0059:  newarr     [runtime]System.UInt64
+    IL_005e:  stloc.3
+    IL_005f:  ldloc.1
+    IL_0060:  brfalse.s  IL_009c
+
+    IL_0062:  ldc.i4.0
+    IL_0063:  conv.i8
+    IL_0064:  stloc.s    V_4
+    IL_0066:  ldarg.0
+    IL_0067:  stloc.s    V_5
     IL_0069:  ldloc.3
-    IL_006a:  ldc.i4.1
-    IL_006b:  conv.i8
-    IL_006c:  add
-    IL_006d:  stloc.3
-    IL_006e:  ldloc.3
-    IL_006f:  ldc.i4.0
-    IL_0070:  conv.i8
-    IL_0071:  bgt.un.s   IL_005d
+    IL_006a:  ldloc.s    V_4
+    IL_006c:  conv.i
+    IL_006d:  ldloc.s    V_5
+    IL_006f:  stelem.i8
+    IL_0070:  ldloc.s    V_5
+    IL_0072:  ldarg.1
+    IL_0073:  add
+    IL_0074:  stloc.s    V_5
+    IL_0076:  ldloc.s    V_4
+    IL_0078:  ldc.i4.1
+    IL_0079:  conv.i8
+    IL_007a:  add
+    IL_007b:  stloc.s    V_4
+    IL_007d:  br.s       IL_0093
 
-    IL_0073:  nop
-    IL_0074:  br.s       IL_009e
+    IL_007f:  ldloc.3
+    IL_0080:  ldloc.s    V_4
+    IL_0082:  conv.i
+    IL_0083:  ldloc.s    V_5
+    IL_0085:  stelem.i8
+    IL_0086:  ldloc.s    V_5
+    IL_0088:  ldarg.1
+    IL_0089:  add
+    IL_008a:  stloc.s    V_5
+    IL_008c:  ldloc.s    V_4
+    IL_008e:  ldc.i4.1
+    IL_008f:  conv.i8
+    IL_0090:  add
+    IL_0091:  stloc.s    V_4
+    IL_0093:  ldloc.s    V_4
+    IL_0095:  ldc.i4.0
+    IL_0096:  conv.i8
+    IL_0097:  bgt.un.s   IL_007f
 
-    IL_0076:  ldloc.0
-    IL_0077:  ldc.i4.1
-    IL_0078:  conv.i8
-    IL_0079:  add.ovf.un
-    IL_007a:  stloc.3
-    IL_007b:  ldc.i4.0
-    IL_007c:  conv.i8
-    IL_007d:  stloc.s    V_4
-    IL_007f:  ldarg.0
-    IL_0080:  stloc.s    V_5
-    IL_0082:  br.s       IL_0098
+    IL_0099:  nop
+    IL_009a:  br.s       IL_00e5
 
-    IL_0084:  ldloc.2
-    IL_0085:  ldloc.s    V_4
-    IL_0087:  conv.i
-    IL_0088:  ldloc.s    V_5
-    IL_008a:  stelem.i8
-    IL_008b:  ldloc.s    V_5
-    IL_008d:  ldarg.1
-    IL_008e:  add
-    IL_008f:  stloc.s    V_5
-    IL_0091:  ldloc.s    V_4
-    IL_0093:  ldc.i4.1
-    IL_0094:  conv.i8
-    IL_0095:  add
-    IL_0096:  stloc.s    V_4
-    IL_0098:  ldloc.s    V_4
-    IL_009a:  ldloc.3
-    IL_009b:  blt.un.s   IL_0084
+    IL_009c:  ldarg.1
+    IL_009d:  brtrue.s   IL_00ab
 
-    IL_009d:  nop
-    IL_009e:  ldloc.2
-    IL_009f:  ret
+    IL_009f:  ldarg.0
+    IL_00a0:  ldarg.1
+    IL_00a1:  ldarg.2
+    IL_00a2:  call       class [runtime]System.Collections.Generic.IEnumerable`1<uint64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeUInt64(uint64,
+                                                                                                                                                                             uint64,
+                                                                                                                                                                             uint64)
+    IL_00a7:  pop
+    IL_00a8:  nop
+    IL_00a9:  br.s       IL_00ac
+
+    IL_00ab:  nop
+    IL_00ac:  ldarg.2
+    IL_00ad:  ldarg.0
+    IL_00ae:  bge.un.s   IL_00b5
+
+    IL_00b0:  ldc.i4.0
+    IL_00b1:  conv.i8
+    IL_00b2:  nop
+    IL_00b3:  br.s       IL_00bf
+
+    IL_00b5:  ldarg.2
+    IL_00b6:  ldarg.0
+    IL_00b7:  sub
+    IL_00b8:  ldarg.1
+    IL_00b9:  conv.i8
+    IL_00ba:  div.un
+    IL_00bb:  ldc.i4.1
+    IL_00bc:  conv.i8
+    IL_00bd:  add.ovf.un
+    IL_00be:  nop
+    IL_00bf:  stloc.s    V_4
+    IL_00c1:  ldc.i4.0
+    IL_00c2:  conv.i8
+    IL_00c3:  stloc.s    V_5
+    IL_00c5:  ldarg.0
+    IL_00c6:  stloc.s    V_6
+    IL_00c8:  br.s       IL_00de
+
+    IL_00ca:  ldloc.3
+    IL_00cb:  ldloc.s    V_5
+    IL_00cd:  conv.i
+    IL_00ce:  ldloc.s    V_6
+    IL_00d0:  stelem.i8
+    IL_00d1:  ldloc.s    V_6
+    IL_00d3:  ldarg.1
+    IL_00d4:  add
+    IL_00d5:  stloc.s    V_6
+    IL_00d7:  ldloc.s    V_5
+    IL_00d9:  ldc.i4.1
+    IL_00da:  conv.i8
+    IL_00db:  add
+    IL_00dc:  stloc.s    V_5
+    IL_00de:  ldloc.s    V_5
+    IL_00e0:  ldloc.s    V_4
+    IL_00e2:  blt.un.s   IL_00ca
+
+    IL_00e4:  nop
+    IL_00e5:  ldloc.3
+    IL_00e6:  ret
   } 
 
   .method public static uint64[]  f16(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f) cil managed
@@ -1355,9 +1294,10 @@
     .maxstack  5
     .locals init (uint64 V_0,
              uint64 V_1,
-             uint64[] V_2,
-             uint64 V_3,
-             uint64 V_4)
+             uint64 V_2,
+             uint64[] V_3,
+             uint64 V_4,
+             uint64 V_5)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -1382,45 +1322,47 @@
     IL_001b:  nop
     IL_001c:  stloc.1
     IL_001d:  ldloc.1
-    IL_001e:  ldc.i4.1
-    IL_001f:  conv.i8
-    IL_0020:  bge.un.s   IL_0028
+    IL_001e:  stloc.2
+    IL_001f:  ldloc.2
+    IL_0020:  ldc.i4.1
+    IL_0021:  conv.i8
+    IL_0022:  bge.un.s   IL_002a
 
-    IL_0022:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0027:  ret
+    IL_0024:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0029:  ret
 
-    IL_0028:  ldloc.1
-    IL_0029:  conv.ovf.i.un
-    IL_002a:  newarr     [runtime]System.UInt64
-    IL_002f:  stloc.2
-    IL_0030:  ldc.i4.0
-    IL_0031:  conv.i8
-    IL_0032:  stloc.3
-    IL_0033:  ldloc.0
+    IL_002a:  ldloc.2
+    IL_002b:  conv.ovf.i.un
+    IL_002c:  newarr     [runtime]System.UInt64
+    IL_0031:  stloc.3
+    IL_0032:  ldc.i4.0
+    IL_0033:  conv.i8
     IL_0034:  stloc.s    V_4
-    IL_0036:  br.s       IL_004a
+    IL_0036:  ldloc.0
+    IL_0037:  stloc.s    V_5
+    IL_0039:  br.s       IL_0050
 
-    IL_0038:  ldloc.2
-    IL_0039:  ldloc.3
-    IL_003a:  conv.i
-    IL_003b:  ldloc.s    V_4
-    IL_003d:  stelem.i8
-    IL_003e:  ldloc.s    V_4
-    IL_0040:  ldc.i4.1
-    IL_0041:  conv.i8
-    IL_0042:  add
-    IL_0043:  stloc.s    V_4
-    IL_0045:  ldloc.3
-    IL_0046:  ldc.i4.1
-    IL_0047:  conv.i8
-    IL_0048:  add
-    IL_0049:  stloc.3
-    IL_004a:  ldloc.3
-    IL_004b:  ldloc.1
-    IL_004c:  blt.un.s   IL_0038
+    IL_003b:  ldloc.3
+    IL_003c:  ldloc.s    V_4
+    IL_003e:  conv.i
+    IL_003f:  ldloc.s    V_5
+    IL_0041:  stelem.i8
+    IL_0042:  ldloc.s    V_5
+    IL_0044:  ldc.i4.1
+    IL_0045:  conv.i8
+    IL_0046:  add
+    IL_0047:  stloc.s    V_5
+    IL_0049:  ldloc.s    V_4
+    IL_004b:  ldc.i4.1
+    IL_004c:  conv.i8
+    IL_004d:  add
+    IL_004e:  stloc.s    V_4
+    IL_0050:  ldloc.s    V_4
+    IL_0052:  ldloc.1
+    IL_0053:  blt.un.s   IL_003b
 
-    IL_004e:  ldloc.2
-    IL_004f:  ret
+    IL_0055:  ldloc.3
+    IL_0056:  ret
   } 
 
   .method public static uint64[]  f17(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f) cil managed
@@ -1429,9 +1371,10 @@
     .maxstack  5
     .locals init (uint64 V_0,
              uint64 V_1,
-             uint64[] V_2,
-             uint64 V_3,
-             uint64 V_4)
+             uint64 V_2,
+             uint64[] V_3,
+             uint64 V_4,
+             uint64 V_5)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -1456,46 +1399,48 @@
     IL_0019:  nop
     IL_001a:  stloc.1
     IL_001b:  ldloc.1
-    IL_001c:  ldc.i4.1
-    IL_001d:  conv.i8
-    IL_001e:  bge.un.s   IL_0026
+    IL_001c:  stloc.2
+    IL_001d:  ldloc.2
+    IL_001e:  ldc.i4.1
+    IL_001f:  conv.i8
+    IL_0020:  bge.un.s   IL_0028
 
-    IL_0020:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0025:  ret
+    IL_0022:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0027:  ret
 
-    IL_0026:  ldloc.1
-    IL_0027:  conv.ovf.i.un
-    IL_0028:  newarr     [runtime]System.UInt64
-    IL_002d:  stloc.2
-    IL_002e:  ldc.i4.0
-    IL_002f:  conv.i8
-    IL_0030:  stloc.3
-    IL_0031:  ldc.i4.1
-    IL_0032:  conv.i8
-    IL_0033:  stloc.s    V_4
-    IL_0035:  br.s       IL_0049
+    IL_0028:  ldloc.2
+    IL_0029:  conv.ovf.i.un
+    IL_002a:  newarr     [runtime]System.UInt64
+    IL_002f:  stloc.3
+    IL_0030:  ldc.i4.0
+    IL_0031:  conv.i8
+    IL_0032:  stloc.s    V_4
+    IL_0034:  ldc.i4.1
+    IL_0035:  conv.i8
+    IL_0036:  stloc.s    V_5
+    IL_0038:  br.s       IL_004f
 
-    IL_0037:  ldloc.2
-    IL_0038:  ldloc.3
-    IL_0039:  conv.i
-    IL_003a:  ldloc.s    V_4
-    IL_003c:  stelem.i8
-    IL_003d:  ldloc.s    V_4
-    IL_003f:  ldc.i4.1
-    IL_0040:  conv.i8
-    IL_0041:  add
-    IL_0042:  stloc.s    V_4
-    IL_0044:  ldloc.3
-    IL_0045:  ldc.i4.1
-    IL_0046:  conv.i8
-    IL_0047:  add
-    IL_0048:  stloc.3
-    IL_0049:  ldloc.3
-    IL_004a:  ldloc.1
-    IL_004b:  blt.un.s   IL_0037
+    IL_003a:  ldloc.3
+    IL_003b:  ldloc.s    V_4
+    IL_003d:  conv.i
+    IL_003e:  ldloc.s    V_5
+    IL_0040:  stelem.i8
+    IL_0041:  ldloc.s    V_5
+    IL_0043:  ldc.i4.1
+    IL_0044:  conv.i8
+    IL_0045:  add
+    IL_0046:  stloc.s    V_5
+    IL_0048:  ldloc.s    V_4
+    IL_004a:  ldc.i4.1
+    IL_004b:  conv.i8
+    IL_004c:  add
+    IL_004d:  stloc.s    V_4
+    IL_004f:  ldloc.s    V_4
+    IL_0051:  ldloc.1
+    IL_0052:  blt.un.s   IL_003a
 
-    IL_004d:  ldloc.2
-    IL_004e:  ret
+    IL_0054:  ldloc.3
+    IL_0055:  ret
   } 
 
   .method public static uint64[]  f18(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f,
@@ -1508,10 +1453,11 @@
              uint64 V_1,
              uint64 V_2,
              bool V_3,
-             uint64[] V_4,
-             uint64 V_5,
+             uint64 V_4,
+             uint64[] V_5,
              uint64 V_6,
-             uint64 V_7)
+             uint64 V_7,
+             uint64 V_8)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -1539,106 +1485,129 @@
     IL_0020:  conv.i8
     IL_0021:  ceq
     IL_0023:  stloc.3
-    IL_0024:  ldloc.2
-    IL_0025:  ldc.i4.1
-    IL_0026:  conv.i8
-    IL_0027:  add.ovf.un
-    IL_0028:  ldc.i4.1
+    IL_0024:  ldloc.1
+    IL_0025:  ldloc.0
+    IL_0026:  bge.un.s   IL_002d
+
+    IL_0028:  ldc.i4.0
     IL_0029:  conv.i8
-    IL_002a:  bge.un.s   IL_0032
+    IL_002a:  nop
+    IL_002b:  br.s       IL_0034
 
-    IL_002c:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0031:  ret
+    IL_002d:  ldloc.1
+    IL_002e:  ldloc.0
+    IL_002f:  sub
+    IL_0030:  ldc.i4.1
+    IL_0031:  conv.i8
+    IL_0032:  add.ovf.un
+    IL_0033:  nop
+    IL_0034:  stloc.s    V_4
+    IL_0036:  ldloc.s    V_4
+    IL_0038:  ldc.i4.1
+    IL_0039:  conv.i8
+    IL_003a:  bge.un.s   IL_0042
 
-    IL_0032:  ldloc.2
-    IL_0033:  ldc.i4.1
-    IL_0034:  conv.i8
-    IL_0035:  add.ovf.un
-    IL_0036:  conv.ovf.i.un
-    IL_0037:  newarr     [runtime]System.UInt64
-    IL_003c:  stloc.s    V_4
-    IL_003e:  ldloc.3
-    IL_003f:  brfalse.s  IL_007f
+    IL_003c:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0041:  ret
 
-    IL_0041:  ldc.i4.0
-    IL_0042:  conv.i8
-    IL_0043:  stloc.s    V_5
-    IL_0045:  ldloc.0
-    IL_0046:  stloc.s    V_6
-    IL_0048:  ldloc.s    V_4
-    IL_004a:  ldloc.s    V_5
-    IL_004c:  conv.i
-    IL_004d:  ldloc.s    V_6
-    IL_004f:  stelem.i8
-    IL_0050:  ldloc.s    V_6
-    IL_0052:  ldc.i4.1
-    IL_0053:  conv.i8
-    IL_0054:  add
-    IL_0055:  stloc.s    V_6
-    IL_0057:  ldloc.s    V_5
-    IL_0059:  ldc.i4.1
-    IL_005a:  conv.i8
-    IL_005b:  add
-    IL_005c:  stloc.s    V_5
-    IL_005e:  br.s       IL_0076
+    IL_0042:  ldloc.s    V_4
+    IL_0044:  conv.ovf.i.un
+    IL_0045:  newarr     [runtime]System.UInt64
+    IL_004a:  stloc.s    V_5
+    IL_004c:  ldloc.3
+    IL_004d:  brfalse.s  IL_008d
 
-    IL_0060:  ldloc.s    V_4
-    IL_0062:  ldloc.s    V_5
-    IL_0064:  conv.i
+    IL_004f:  ldc.i4.0
+    IL_0050:  conv.i8
+    IL_0051:  stloc.s    V_6
+    IL_0053:  ldloc.0
+    IL_0054:  stloc.s    V_7
+    IL_0056:  ldloc.s    V_5
+    IL_0058:  ldloc.s    V_6
+    IL_005a:  conv.i
+    IL_005b:  ldloc.s    V_7
+    IL_005d:  stelem.i8
+    IL_005e:  ldloc.s    V_7
+    IL_0060:  ldc.i4.1
+    IL_0061:  conv.i8
+    IL_0062:  add
+    IL_0063:  stloc.s    V_7
     IL_0065:  ldloc.s    V_6
-    IL_0067:  stelem.i8
-    IL_0068:  ldloc.s    V_6
-    IL_006a:  ldc.i4.1
-    IL_006b:  conv.i8
-    IL_006c:  add
-    IL_006d:  stloc.s    V_6
-    IL_006f:  ldloc.s    V_5
-    IL_0071:  ldc.i4.1
-    IL_0072:  conv.i8
-    IL_0073:  add
-    IL_0074:  stloc.s    V_5
-    IL_0076:  ldloc.s    V_5
-    IL_0078:  ldc.i4.0
+    IL_0067:  ldc.i4.1
+    IL_0068:  conv.i8
+    IL_0069:  add
+    IL_006a:  stloc.s    V_6
+    IL_006c:  br.s       IL_0084
+
+    IL_006e:  ldloc.s    V_5
+    IL_0070:  ldloc.s    V_6
+    IL_0072:  conv.i
+    IL_0073:  ldloc.s    V_7
+    IL_0075:  stelem.i8
+    IL_0076:  ldloc.s    V_7
+    IL_0078:  ldc.i4.1
     IL_0079:  conv.i8
-    IL_007a:  bgt.un.s   IL_0060
+    IL_007a:  add
+    IL_007b:  stloc.s    V_7
+    IL_007d:  ldloc.s    V_6
+    IL_007f:  ldc.i4.1
+    IL_0080:  conv.i8
+    IL_0081:  add
+    IL_0082:  stloc.s    V_6
+    IL_0084:  ldloc.s    V_6
+    IL_0086:  ldc.i4.0
+    IL_0087:  conv.i8
+    IL_0088:  bgt.un.s   IL_006e
 
-    IL_007c:  nop
-    IL_007d:  br.s       IL_00ab
+    IL_008a:  nop
+    IL_008b:  br.s       IL_00c5
 
-    IL_007f:  ldloc.2
-    IL_0080:  ldc.i4.1
-    IL_0081:  conv.i8
-    IL_0082:  add.ovf.un
-    IL_0083:  stloc.s    V_5
-    IL_0085:  ldc.i4.0
-    IL_0086:  conv.i8
-    IL_0087:  stloc.s    V_6
-    IL_0089:  ldloc.0
-    IL_008a:  stloc.s    V_7
-    IL_008c:  br.s       IL_00a4
+    IL_008d:  ldloc.1
+    IL_008e:  ldloc.0
+    IL_008f:  bge.un.s   IL_0096
 
-    IL_008e:  ldloc.s    V_4
-    IL_0090:  ldloc.s    V_6
-    IL_0092:  conv.i
-    IL_0093:  ldloc.s    V_7
-    IL_0095:  stelem.i8
-    IL_0096:  ldloc.s    V_7
-    IL_0098:  ldc.i4.1
-    IL_0099:  conv.i8
-    IL_009a:  add
-    IL_009b:  stloc.s    V_7
-    IL_009d:  ldloc.s    V_6
-    IL_009f:  ldc.i4.1
+    IL_0091:  ldc.i4.0
+    IL_0092:  conv.i8
+    IL_0093:  nop
+    IL_0094:  br.s       IL_009d
+
+    IL_0096:  ldloc.1
+    IL_0097:  ldloc.0
+    IL_0098:  sub
+    IL_0099:  ldc.i4.1
+    IL_009a:  conv.i8
+    IL_009b:  add.ovf.un
+    IL_009c:  nop
+    IL_009d:  stloc.s    V_6
+    IL_009f:  ldc.i4.0
     IL_00a0:  conv.i8
-    IL_00a1:  add
-    IL_00a2:  stloc.s    V_6
-    IL_00a4:  ldloc.s    V_6
-    IL_00a6:  ldloc.s    V_5
-    IL_00a8:  blt.un.s   IL_008e
+    IL_00a1:  stloc.s    V_7
+    IL_00a3:  ldloc.0
+    IL_00a4:  stloc.s    V_8
+    IL_00a6:  br.s       IL_00be
 
-    IL_00aa:  nop
-    IL_00ab:  ldloc.s    V_4
-    IL_00ad:  ret
+    IL_00a8:  ldloc.s    V_5
+    IL_00aa:  ldloc.s    V_7
+    IL_00ac:  conv.i
+    IL_00ad:  ldloc.s    V_8
+    IL_00af:  stelem.i8
+    IL_00b0:  ldloc.s    V_8
+    IL_00b2:  ldc.i4.1
+    IL_00b3:  conv.i8
+    IL_00b4:  add
+    IL_00b5:  stloc.s    V_8
+    IL_00b7:  ldloc.s    V_7
+    IL_00b9:  ldc.i4.1
+    IL_00ba:  conv.i8
+    IL_00bb:  add
+    IL_00bc:  stloc.s    V_7
+    IL_00be:  ldloc.s    V_7
+    IL_00c0:  ldloc.s    V_6
+    IL_00c2:  blt.un.s   IL_00a8
+
+    IL_00c4:  nop
+    IL_00c5:  ldloc.s    V_5
+    IL_00c7:  ret
   } 
 
   .method public static uint64[]  f19(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f) cil managed
@@ -1647,9 +1616,10 @@
     .maxstack  5
     .locals init (uint64 V_0,
              uint64 V_1,
-             uint64[] V_2,
-             uint64 V_3,
-             uint64 V_4)
+             uint64 V_2,
+             uint64[] V_3,
+             uint64 V_4,
+             uint64 V_5)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -1674,45 +1644,47 @@
     IL_001b:  nop
     IL_001c:  stloc.1
     IL_001d:  ldloc.1
-    IL_001e:  ldc.i4.1
-    IL_001f:  conv.i8
-    IL_0020:  bge.un.s   IL_0028
+    IL_001e:  stloc.2
+    IL_001f:  ldloc.2
+    IL_0020:  ldc.i4.1
+    IL_0021:  conv.i8
+    IL_0022:  bge.un.s   IL_002a
 
-    IL_0022:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0027:  ret
+    IL_0024:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0029:  ret
 
-    IL_0028:  ldloc.1
-    IL_0029:  conv.ovf.i.un
-    IL_002a:  newarr     [runtime]System.UInt64
-    IL_002f:  stloc.2
-    IL_0030:  ldc.i4.0
-    IL_0031:  conv.i8
-    IL_0032:  stloc.3
-    IL_0033:  ldloc.0
+    IL_002a:  ldloc.2
+    IL_002b:  conv.ovf.i.un
+    IL_002c:  newarr     [runtime]System.UInt64
+    IL_0031:  stloc.3
+    IL_0032:  ldc.i4.0
+    IL_0033:  conv.i8
     IL_0034:  stloc.s    V_4
-    IL_0036:  br.s       IL_004a
+    IL_0036:  ldloc.0
+    IL_0037:  stloc.s    V_5
+    IL_0039:  br.s       IL_0050
 
-    IL_0038:  ldloc.2
-    IL_0039:  ldloc.3
-    IL_003a:  conv.i
-    IL_003b:  ldloc.s    V_4
-    IL_003d:  stelem.i8
-    IL_003e:  ldloc.s    V_4
-    IL_0040:  ldc.i4.1
-    IL_0041:  conv.i8
-    IL_0042:  add
-    IL_0043:  stloc.s    V_4
-    IL_0045:  ldloc.3
-    IL_0046:  ldc.i4.1
-    IL_0047:  conv.i8
-    IL_0048:  add
-    IL_0049:  stloc.3
-    IL_004a:  ldloc.3
-    IL_004b:  ldloc.1
-    IL_004c:  blt.un.s   IL_0038
+    IL_003b:  ldloc.3
+    IL_003c:  ldloc.s    V_4
+    IL_003e:  conv.i
+    IL_003f:  ldloc.s    V_5
+    IL_0041:  stelem.i8
+    IL_0042:  ldloc.s    V_5
+    IL_0044:  ldc.i4.1
+    IL_0045:  conv.i8
+    IL_0046:  add
+    IL_0047:  stloc.s    V_5
+    IL_0049:  ldloc.s    V_4
+    IL_004b:  ldc.i4.1
+    IL_004c:  conv.i8
+    IL_004d:  add
+    IL_004e:  stloc.s    V_4
+    IL_0050:  ldloc.s    V_4
+    IL_0052:  ldloc.1
+    IL_0053:  blt.un.s   IL_003b
 
-    IL_004e:  ldloc.2
-    IL_004f:  ret
+    IL_0055:  ldloc.3
+    IL_0056:  ret
   } 
 
   .method public static uint64[]  f20(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f) cil managed
@@ -1721,11 +1693,10 @@
     .maxstack  5
     .locals init (uint64 V_0,
              uint64 V_1,
-             bool V_2,
+             uint64 V_2,
              uint64[] V_3,
              uint64 V_4,
-             uint64 V_5,
-             uint64 V_6)
+             uint64 V_5)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -1755,7 +1726,7 @@
     IL_0022:  ldc.i4.0
     IL_0023:  conv.i8
     IL_0024:  nop
-    IL_0025:  br.s       IL_0031
+    IL_0025:  br.s       IL_0034
 
     IL_0027:  ldc.i4.s   10
     IL_0029:  conv.i8
@@ -1765,112 +1736,53 @@
     IL_002d:  ldloc.0
     IL_002e:  conv.i8
     IL_002f:  div.un
-    IL_0030:  nop
-    IL_0031:  stloc.1
-    IL_0032:  ldloc.1
-    IL_0033:  ldc.i4.m1
-    IL_0034:  conv.i8
-    IL_0035:  ceq
-    IL_0037:  stloc.2
-    IL_0038:  ldloc.1
-    IL_0039:  ldc.i4.1
-    IL_003a:  conv.i8
-    IL_003b:  add.ovf.un
-    IL_003c:  ldc.i4.1
-    IL_003d:  conv.i8
-    IL_003e:  bge.un.s   IL_0046
+    IL_0030:  ldc.i4.1
+    IL_0031:  conv.i8
+    IL_0032:  add.ovf.un
+    IL_0033:  nop
+    IL_0034:  stloc.1
+    IL_0035:  ldloc.1
+    IL_0036:  stloc.2
+    IL_0037:  ldloc.2
+    IL_0038:  ldc.i4.1
+    IL_0039:  conv.i8
+    IL_003a:  bge.un.s   IL_0042
 
-    IL_0040:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0045:  ret
+    IL_003c:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0041:  ret
 
-    IL_0046:  ldloc.1
-    IL_0047:  ldc.i4.1
-    IL_0048:  conv.i8
-    IL_0049:  add.ovf.un
-    IL_004a:  conv.ovf.i.un
-    IL_004b:  newarr     [runtime]System.UInt64
-    IL_0050:  stloc.3
-    IL_0051:  ldloc.2
-    IL_0052:  brfalse.s  IL_008f
+    IL_0042:  ldloc.2
+    IL_0043:  conv.ovf.i.un
+    IL_0044:  newarr     [runtime]System.UInt64
+    IL_0049:  stloc.3
+    IL_004a:  ldc.i4.0
+    IL_004b:  conv.i8
+    IL_004c:  stloc.s    V_4
+    IL_004e:  ldc.i4.1
+    IL_004f:  conv.i8
+    IL_0050:  stloc.s    V_5
+    IL_0052:  br.s       IL_0068
 
-    IL_0054:  ldc.i4.0
-    IL_0055:  conv.i8
-    IL_0056:  stloc.s    V_4
-    IL_0058:  ldc.i4.1
-    IL_0059:  conv.i8
-    IL_005a:  stloc.s    V_5
-    IL_005c:  ldloc.3
-    IL_005d:  ldloc.s    V_4
-    IL_005f:  conv.i
-    IL_0060:  ldloc.s    V_5
-    IL_0062:  stelem.i8
-    IL_0063:  ldloc.s    V_5
-    IL_0065:  ldloc.0
-    IL_0066:  add
-    IL_0067:  stloc.s    V_5
-    IL_0069:  ldloc.s    V_4
-    IL_006b:  ldc.i4.1
-    IL_006c:  conv.i8
-    IL_006d:  add
-    IL_006e:  stloc.s    V_4
-    IL_0070:  br.s       IL_0086
+    IL_0054:  ldloc.3
+    IL_0055:  ldloc.s    V_4
+    IL_0057:  conv.i
+    IL_0058:  ldloc.s    V_5
+    IL_005a:  stelem.i8
+    IL_005b:  ldloc.s    V_5
+    IL_005d:  ldloc.0
+    IL_005e:  add
+    IL_005f:  stloc.s    V_5
+    IL_0061:  ldloc.s    V_4
+    IL_0063:  ldc.i4.1
+    IL_0064:  conv.i8
+    IL_0065:  add
+    IL_0066:  stloc.s    V_4
+    IL_0068:  ldloc.s    V_4
+    IL_006a:  ldloc.1
+    IL_006b:  blt.un.s   IL_0054
 
-    IL_0072:  ldloc.3
-    IL_0073:  ldloc.s    V_4
-    IL_0075:  conv.i
-    IL_0076:  ldloc.s    V_5
-    IL_0078:  stelem.i8
-    IL_0079:  ldloc.s    V_5
-    IL_007b:  ldloc.0
-    IL_007c:  add
-    IL_007d:  stloc.s    V_5
-    IL_007f:  ldloc.s    V_4
-    IL_0081:  ldc.i4.1
-    IL_0082:  conv.i8
-    IL_0083:  add
-    IL_0084:  stloc.s    V_4
-    IL_0086:  ldloc.s    V_4
-    IL_0088:  ldc.i4.0
-    IL_0089:  conv.i8
-    IL_008a:  bgt.un.s   IL_0072
-
-    IL_008c:  nop
-    IL_008d:  br.s       IL_00ba
-
-    IL_008f:  ldloc.1
-    IL_0090:  ldc.i4.1
-    IL_0091:  conv.i8
-    IL_0092:  add.ovf.un
-    IL_0093:  stloc.s    V_4
-    IL_0095:  ldc.i4.0
-    IL_0096:  conv.i8
-    IL_0097:  stloc.s    V_5
-    IL_0099:  ldc.i4.1
-    IL_009a:  conv.i8
-    IL_009b:  stloc.s    V_6
-    IL_009d:  br.s       IL_00b3
-
-    IL_009f:  ldloc.3
-    IL_00a0:  ldloc.s    V_5
-    IL_00a2:  conv.i
-    IL_00a3:  ldloc.s    V_6
-    IL_00a5:  stelem.i8
-    IL_00a6:  ldloc.s    V_6
-    IL_00a8:  ldloc.0
-    IL_00a9:  add
-    IL_00aa:  stloc.s    V_6
-    IL_00ac:  ldloc.s    V_5
-    IL_00ae:  ldc.i4.1
-    IL_00af:  conv.i8
-    IL_00b0:  add
-    IL_00b1:  stloc.s    V_5
-    IL_00b3:  ldloc.s    V_5
-    IL_00b5:  ldloc.s    V_4
-    IL_00b7:  blt.un.s   IL_009f
-
-    IL_00b9:  nop
-    IL_00ba:  ldloc.3
-    IL_00bb:  ret
+    IL_006d:  ldloc.3
+    IL_006e:  ret
   } 
 
   .method public static uint64[]  f21(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f) cil managed
@@ -1879,9 +1791,10 @@
     .maxstack  5
     .locals init (uint64 V_0,
              uint64 V_1,
-             uint64[] V_2,
-             uint64 V_3,
-             uint64 V_4)
+             uint64 V_2,
+             uint64[] V_3,
+             uint64 V_4,
+             uint64 V_5)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -1906,46 +1819,48 @@
     IL_0019:  nop
     IL_001a:  stloc.1
     IL_001b:  ldloc.1
-    IL_001c:  ldc.i4.1
-    IL_001d:  conv.i8
-    IL_001e:  bge.un.s   IL_0026
+    IL_001c:  stloc.2
+    IL_001d:  ldloc.2
+    IL_001e:  ldc.i4.1
+    IL_001f:  conv.i8
+    IL_0020:  bge.un.s   IL_0028
 
-    IL_0020:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_0025:  ret
+    IL_0022:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0027:  ret
 
-    IL_0026:  ldloc.1
-    IL_0027:  conv.ovf.i.un
-    IL_0028:  newarr     [runtime]System.UInt64
-    IL_002d:  stloc.2
-    IL_002e:  ldc.i4.0
-    IL_002f:  conv.i8
-    IL_0030:  stloc.3
-    IL_0031:  ldc.i4.1
-    IL_0032:  conv.i8
-    IL_0033:  stloc.s    V_4
-    IL_0035:  br.s       IL_0049
+    IL_0028:  ldloc.2
+    IL_0029:  conv.ovf.i.un
+    IL_002a:  newarr     [runtime]System.UInt64
+    IL_002f:  stloc.3
+    IL_0030:  ldc.i4.0
+    IL_0031:  conv.i8
+    IL_0032:  stloc.s    V_4
+    IL_0034:  ldc.i4.1
+    IL_0035:  conv.i8
+    IL_0036:  stloc.s    V_5
+    IL_0038:  br.s       IL_004f
 
-    IL_0037:  ldloc.2
-    IL_0038:  ldloc.3
-    IL_0039:  conv.i
-    IL_003a:  ldloc.s    V_4
-    IL_003c:  stelem.i8
-    IL_003d:  ldloc.s    V_4
-    IL_003f:  ldc.i4.1
-    IL_0040:  conv.i8
-    IL_0041:  add
-    IL_0042:  stloc.s    V_4
-    IL_0044:  ldloc.3
-    IL_0045:  ldc.i4.1
-    IL_0046:  conv.i8
-    IL_0047:  add
-    IL_0048:  stloc.3
-    IL_0049:  ldloc.3
-    IL_004a:  ldloc.1
-    IL_004b:  blt.un.s   IL_0037
+    IL_003a:  ldloc.3
+    IL_003b:  ldloc.s    V_4
+    IL_003d:  conv.i
+    IL_003e:  ldloc.s    V_5
+    IL_0040:  stelem.i8
+    IL_0041:  ldloc.s    V_5
+    IL_0043:  ldc.i4.1
+    IL_0044:  conv.i8
+    IL_0045:  add
+    IL_0046:  stloc.s    V_5
+    IL_0048:  ldloc.s    V_4
+    IL_004a:  ldc.i4.1
+    IL_004b:  conv.i8
+    IL_004c:  add
+    IL_004d:  stloc.s    V_4
+    IL_004f:  ldloc.s    V_4
+    IL_0051:  ldloc.1
+    IL_0052:  blt.un.s   IL_003a
 
-    IL_004d:  ldloc.2
-    IL_004e:  ret
+    IL_0054:  ldloc.3
+    IL_0055:  ret
   } 
 
   .method public static uint64[]  f22(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f,
@@ -1961,10 +1876,11 @@
              uint64 V_2,
              uint64 V_3,
              bool V_4,
-             uint64[] V_5,
-             uint64 V_6,
+             uint64 V_5,
+             uint64[] V_6,
              uint64 V_7,
-             uint64 V_8)
+             uint64 V_8,
+             uint64 V_9)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -2013,103 +1929,160 @@
     IL_003b:  conv.i8
     IL_003c:  ceq
     IL_003e:  stloc.s    V_4
-    IL_0040:  ldloc.3
-    IL_0041:  ldc.i4.1
-    IL_0042:  conv.i8
-    IL_0043:  add.ovf.un
-    IL_0044:  ldc.i4.1
-    IL_0045:  conv.i8
-    IL_0046:  bge.un.s   IL_004e
+    IL_0040:  ldloc.1
+    IL_0041:  brtrue.s   IL_004f
 
-    IL_0048:  call       !!0[] [runtime]System.Array::Empty<uint64>()
-    IL_004d:  ret
+    IL_0043:  ldloc.0
+    IL_0044:  ldloc.1
+    IL_0045:  ldloc.2
+    IL_0046:  call       class [runtime]System.Collections.Generic.IEnumerable`1<uint64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeUInt64(uint64,
+                                                                                                                                                                             uint64,
+                                                                                                                                                                             uint64)
+    IL_004b:  pop
+    IL_004c:  nop
+    IL_004d:  br.s       IL_0050
 
-    IL_004e:  ldloc.3
-    IL_004f:  ldc.i4.1
-    IL_0050:  conv.i8
-    IL_0051:  add.ovf.un
-    IL_0052:  conv.ovf.i.un
-    IL_0053:  newarr     [runtime]System.UInt64
-    IL_0058:  stloc.s    V_5
-    IL_005a:  ldloc.s    V_4
-    IL_005c:  brfalse.s  IL_009a
+    IL_004f:  nop
+    IL_0050:  ldloc.2
+    IL_0051:  ldloc.0
+    IL_0052:  bge.un.s   IL_0059
 
-    IL_005e:  ldc.i4.0
-    IL_005f:  conv.i8
-    IL_0060:  stloc.s    V_6
-    IL_0062:  ldloc.0
-    IL_0063:  stloc.s    V_7
+    IL_0054:  ldc.i4.0
+    IL_0055:  conv.i8
+    IL_0056:  nop
+    IL_0057:  br.s       IL_0063
+
+    IL_0059:  ldloc.2
+    IL_005a:  ldloc.0
+    IL_005b:  sub
+    IL_005c:  ldloc.1
+    IL_005d:  conv.i8
+    IL_005e:  div.un
+    IL_005f:  ldc.i4.1
+    IL_0060:  conv.i8
+    IL_0061:  add.ovf.un
+    IL_0062:  nop
+    IL_0063:  stloc.s    V_5
     IL_0065:  ldloc.s    V_5
-    IL_0067:  ldloc.s    V_6
-    IL_0069:  conv.i
-    IL_006a:  ldloc.s    V_7
-    IL_006c:  stelem.i8
-    IL_006d:  ldloc.s    V_7
-    IL_006f:  ldloc.1
-    IL_0070:  add
-    IL_0071:  stloc.s    V_7
-    IL_0073:  ldloc.s    V_6
-    IL_0075:  ldc.i4.1
-    IL_0076:  conv.i8
-    IL_0077:  add
-    IL_0078:  stloc.s    V_6
-    IL_007a:  br.s       IL_0091
+    IL_0067:  ldc.i4.1
+    IL_0068:  conv.i8
+    IL_0069:  bge.un.s   IL_0071
 
-    IL_007c:  ldloc.s    V_5
-    IL_007e:  ldloc.s    V_6
-    IL_0080:  conv.i
-    IL_0081:  ldloc.s    V_7
-    IL_0083:  stelem.i8
-    IL_0084:  ldloc.s    V_7
-    IL_0086:  ldloc.1
-    IL_0087:  add
-    IL_0088:  stloc.s    V_7
-    IL_008a:  ldloc.s    V_6
-    IL_008c:  ldc.i4.1
-    IL_008d:  conv.i8
-    IL_008e:  add
-    IL_008f:  stloc.s    V_6
-    IL_0091:  ldloc.s    V_6
-    IL_0093:  ldc.i4.0
-    IL_0094:  conv.i8
-    IL_0095:  bgt.un.s   IL_007c
+    IL_006b:  call       !!0[] [runtime]System.Array::Empty<uint64>()
+    IL_0070:  ret
 
-    IL_0097:  nop
-    IL_0098:  br.s       IL_00c5
+    IL_0071:  ldloc.s    V_5
+    IL_0073:  conv.ovf.i.un
+    IL_0074:  newarr     [runtime]System.UInt64
+    IL_0079:  stloc.s    V_6
+    IL_007b:  ldloc.s    V_4
+    IL_007d:  brfalse.s  IL_00bb
 
-    IL_009a:  ldloc.3
-    IL_009b:  ldc.i4.1
-    IL_009c:  conv.i8
-    IL_009d:  add.ovf.un
-    IL_009e:  stloc.s    V_6
-    IL_00a0:  ldc.i4.0
-    IL_00a1:  conv.i8
-    IL_00a2:  stloc.s    V_7
-    IL_00a4:  ldloc.0
-    IL_00a5:  stloc.s    V_8
-    IL_00a7:  br.s       IL_00be
+    IL_007f:  ldc.i4.0
+    IL_0080:  conv.i8
+    IL_0081:  stloc.s    V_7
+    IL_0083:  ldloc.0
+    IL_0084:  stloc.s    V_8
+    IL_0086:  ldloc.s    V_6
+    IL_0088:  ldloc.s    V_7
+    IL_008a:  conv.i
+    IL_008b:  ldloc.s    V_8
+    IL_008d:  stelem.i8
+    IL_008e:  ldloc.s    V_8
+    IL_0090:  ldloc.1
+    IL_0091:  add
+    IL_0092:  stloc.s    V_8
+    IL_0094:  ldloc.s    V_7
+    IL_0096:  ldc.i4.1
+    IL_0097:  conv.i8
+    IL_0098:  add
+    IL_0099:  stloc.s    V_7
+    IL_009b:  br.s       IL_00b2
 
-    IL_00a9:  ldloc.s    V_5
+    IL_009d:  ldloc.s    V_6
+    IL_009f:  ldloc.s    V_7
+    IL_00a1:  conv.i
+    IL_00a2:  ldloc.s    V_8
+    IL_00a4:  stelem.i8
+    IL_00a5:  ldloc.s    V_8
+    IL_00a7:  ldloc.1
+    IL_00a8:  add
+    IL_00a9:  stloc.s    V_8
     IL_00ab:  ldloc.s    V_7
-    IL_00ad:  conv.i
-    IL_00ae:  ldloc.s    V_8
-    IL_00b0:  stelem.i8
-    IL_00b1:  ldloc.s    V_8
-    IL_00b3:  ldloc.1
-    IL_00b4:  add
-    IL_00b5:  stloc.s    V_8
-    IL_00b7:  ldloc.s    V_7
-    IL_00b9:  ldc.i4.1
-    IL_00ba:  conv.i8
-    IL_00bb:  add
-    IL_00bc:  stloc.s    V_7
-    IL_00be:  ldloc.s    V_7
-    IL_00c0:  ldloc.s    V_6
-    IL_00c2:  blt.un.s   IL_00a9
+    IL_00ad:  ldc.i4.1
+    IL_00ae:  conv.i8
+    IL_00af:  add
+    IL_00b0:  stloc.s    V_7
+    IL_00b2:  ldloc.s    V_7
+    IL_00b4:  ldc.i4.0
+    IL_00b5:  conv.i8
+    IL_00b6:  bgt.un.s   IL_009d
 
-    IL_00c4:  nop
-    IL_00c5:  ldloc.s    V_5
-    IL_00c7:  ret
+    IL_00b8:  nop
+    IL_00b9:  br.s       IL_0105
+
+    IL_00bb:  ldloc.1
+    IL_00bc:  brtrue.s   IL_00ca
+
+    IL_00be:  ldloc.0
+    IL_00bf:  ldloc.1
+    IL_00c0:  ldloc.2
+    IL_00c1:  call       class [runtime]System.Collections.Generic.IEnumerable`1<uint64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeUInt64(uint64,
+                                                                                                                                                                             uint64,
+                                                                                                                                                                             uint64)
+    IL_00c6:  pop
+    IL_00c7:  nop
+    IL_00c8:  br.s       IL_00cb
+
+    IL_00ca:  nop
+    IL_00cb:  ldloc.2
+    IL_00cc:  ldloc.0
+    IL_00cd:  bge.un.s   IL_00d4
+
+    IL_00cf:  ldc.i4.0
+    IL_00d0:  conv.i8
+    IL_00d1:  nop
+    IL_00d2:  br.s       IL_00de
+
+    IL_00d4:  ldloc.2
+    IL_00d5:  ldloc.0
+    IL_00d6:  sub
+    IL_00d7:  ldloc.1
+    IL_00d8:  conv.i8
+    IL_00d9:  div.un
+    IL_00da:  ldc.i4.1
+    IL_00db:  conv.i8
+    IL_00dc:  add.ovf.un
+    IL_00dd:  nop
+    IL_00de:  stloc.s    V_7
+    IL_00e0:  ldc.i4.0
+    IL_00e1:  conv.i8
+    IL_00e2:  stloc.s    V_8
+    IL_00e4:  ldloc.0
+    IL_00e5:  stloc.s    V_9
+    IL_00e7:  br.s       IL_00fe
+
+    IL_00e9:  ldloc.s    V_6
+    IL_00eb:  ldloc.s    V_8
+    IL_00ed:  conv.i
+    IL_00ee:  ldloc.s    V_9
+    IL_00f0:  stelem.i8
+    IL_00f1:  ldloc.s    V_9
+    IL_00f3:  ldloc.1
+    IL_00f4:  add
+    IL_00f5:  stloc.s    V_9
+    IL_00f7:  ldloc.s    V_8
+    IL_00f9:  ldc.i4.1
+    IL_00fa:  conv.i8
+    IL_00fb:  add
+    IL_00fc:  stloc.s    V_8
+    IL_00fe:  ldloc.s    V_8
+    IL_0100:  ldloc.s    V_7
+    IL_0102:  blt.un.s   IL_00e9
+
+    IL_0104:  nop
+    IL_0105:  ldloc.s    V_6
+    IL_0107:  ret
   } 
 
 } 

@@ -441,7 +441,7 @@
     IL_000d:  sub
     IL_000e:  ldc.i4.1
     IL_000f:  conv.i8
-    IL_0010:  add
+    IL_0010:  add.ovf.un
     IL_0011:  nop
     IL_0012:  stloc.0
     IL_0013:  ldc.i4.0
@@ -499,7 +499,7 @@
     IL_000d:  sub
     IL_000e:  ldc.i4.1
     IL_000f:  conv.i8
-    IL_0010:  add
+    IL_0010:  add.ovf.un
     IL_0011:  nop
     IL_0012:  stloc.0
     IL_0013:  ldc.i4.0

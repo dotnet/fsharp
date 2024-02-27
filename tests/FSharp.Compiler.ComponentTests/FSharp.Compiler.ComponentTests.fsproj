@@ -145,6 +145,7 @@
     <Compile Include="EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs" />
     <Compile Include="EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs" />
     <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
+    <Compile Include="EmittedIL\ComputedCollections\ComputedCollections.fs" />
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
     <Compile Include="EmittedIL\ForLoop\ForLoop.fs" />
     <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
