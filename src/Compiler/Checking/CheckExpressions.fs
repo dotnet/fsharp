@@ -10874,19 +10874,19 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
             
         if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) && memberFlagsOpt.IsNone && not attrs.IsEmpty then
-            TcAttributeTargetsOnLetBindings cenv env attrs overallPatTy overallExprTy declaredTypars.IsEmpty
+            TcAttributeTargetsOnLetBindings cenv env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty)
 
         CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
 
 // Note:
 // - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
 // - Let function bindings can only have attributes that uses AttributeTargets.Method ||| AttributeTargets.ReturnValue
-and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy hasDeclTypars =
+and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy areTyparsDeclared =
     let rhsIsFunction = isFunTy cenv.g overallPatTy
     let lhsIsFunction = isFunTy cenv.g overallExprTy
     let attrTgt =
         match rhsIsFunction, lhsIsFunction with
-        | false, false when hasDeclTypars -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+        | false, false when not areTyparsDeclared -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
         | _, _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
 
     TcAttributes cenv env attrTgt attrs |> ignore
