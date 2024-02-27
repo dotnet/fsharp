@@ -221,7 +221,7 @@
     IL_005a:  sub
     IL_005b:  ldc.i4.1
     IL_005c:  conv.i8
-    IL_005d:  add
+    IL_005d:  add.ovf.un
     IL_005e:  nop
     IL_005f:  stloc.1
     IL_0060:  ldc.i4.0

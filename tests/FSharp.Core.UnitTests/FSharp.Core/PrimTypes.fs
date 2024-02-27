@@ -1110,47 +1110,26 @@ module RangeTests =
         let ``Range.UInt32`` () = RangeTestsHelpers.unsigned 0u 1u System.UInt32.MinValue System.UInt32.MaxValue
 
         [<Fact>]
-        let ``Range.Int64`` () =
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in Int64.MinValue..Int64.MaxValue do ignore (float n ** float n))
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in Int64.MinValue..1L..Int64.MaxValue do ignore (float n ** float n))
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in Int64.MaxValue .. -1L .. Int64.MinValue do ignore (float n ** float n))
-            RangeTestsHelpers.signed 0L 1L System.Int64.MinValue System.Int64.MaxValue
+        let ``Range.Int64`` () = RangeTestsHelpers.signed 0L 1L System.Int64.MinValue System.Int64.MaxValue
 
         [<Fact>]
-        let ``Range.UInt64`` () =
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in UInt64.MinValue..UInt64.MaxValue do ignore (float n ** float n))
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in UInt64.MinValue..1UL..UInt64.MaxValue do ignore (float n ** float n))
-            RangeTestsHelpers.unsigned 0UL 1UL System.UInt64.MinValue System.UInt64.MaxValue
+        let ``Range.UInt64`` () = RangeTestsHelpers.unsigned 0UL 1UL System.UInt64.MinValue System.UInt64.MaxValue
 
         [<Fact>]
         let ``Range.IntPtr`` () =
             // 0x80000000n is negative on x86, but would be positive on x64.
             if System.IntPtr.Size = 4 then
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x80000000n..0x7fffffffn do ignore (float n ** float n))
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x80000000n..0x1n..0x7fffffffn do ignore (float n ** float n))
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x7fffffffn .. 0xffffffffn .. 0x80000000n do ignore (float n ** float n))
                 RangeTestsHelpers.signed 0x0n 0x1n 0x80000000n 0x7fffffffn
 
             if System.IntPtr.Size = 8 then
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x8000000000000000n..0x7fffffffffffffffn do ignore (float n ** float n))
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x8000000000000000n..0x1n..0x7fffffffffffffffn do ignore (float n ** float n))
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x7fffffffffffffffn .. 0xffffffffffffffffn .. 0x8000000000000000n do ignore (float n ** float n))
                 RangeTestsHelpers.signed 0x0n 0x1n 0x8000000000000000n 0x7fffffffffffffffn
          
         [<Fact>]
         let ``Range.UIntPtr`` () =
             if System.UIntPtr.Size >= 4 then
-                if System.UIntPtr.Size = 4 then
-                    ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x0un..0xffffffffun do ignore (float n ** float n))
-                    ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x0un..0x1un..0xffffffffun do ignore (float n ** float n))
-
                 RangeTestsHelpers.unsigned 0x0un 0x1un 0x0un 0xffffffffun
 
             if System.UIntPtr.Size >= 8 then
-                if System.UIntPtr.Size = 8 then
-                    ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x0un..0xffffffffffffffffun do ignore (float n ** float n))
-                    ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in 0x0un..0x1un..0xffffffffffffffffun do ignore (float n ** float n))
-
                 RangeTestsHelpers.unsigned 0x0un 0x1un 0x0un 0xffffffffffffffffun
 
     /// These tests' arguments are intentionally _not_ inlined
@@ -1209,15 +1188,10 @@ module RangeTests =
 
         [<Theory; InlineData(0L, 1L, System.Int64.MinValue, System.Int64.MaxValue)>]
         let ``Range.Int64`` (zero: int64) (one: int64) (min0: int64) (max0: int64) =
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..max0 do ignore (float n ** float n))
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..one..max0 do ignore (float n ** float n))
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in max0 .. -one .. min0 do ignore (float n ** float n))
             RangeTestsHelpers.signed zero one min0 max0
 
         [<Theory; InlineData(0UL, 1UL, System.UInt64.MinValue, System.UInt64.MaxValue)>]
         let ``Range.UInt64`` (zero: uint64) (one: uint64) (min0: uint64) (max0: uint64) =
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..max0 do ignore (float n ** float n))
-            ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..one..max0 do ignore (float n ** float n))
             RangeTestsHelpers.unsigned zero one min0 max0
 
         [<Fact>]
@@ -1225,16 +1199,10 @@ module RangeTests =
             // The arguments here aren't being passed in as constants, so it doesn't matter if they're inlined.
             if System.IntPtr.Size = 4 then
                 let zero, one, min0, max0 = System.IntPtr 0, System.IntPtr 1, System.IntPtr System.Int32.MinValue, System.IntPtr System.Int32.MaxValue
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..max0 do ignore (float n ** float n))
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..one..max0 do ignore (float n ** float n))
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in max0 .. -one .. min0 do ignore (float n ** float n))
                 RangeTestsHelpers.signed zero one min0 max0
 
             if System.IntPtr.Size = 8 then
                 let zero, one, min0, max0 = System.IntPtr 0, System.IntPtr 1, System.IntPtr System.Int64.MinValue, System.IntPtr System.Int64.MaxValue
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..max0 do ignore (float n ** float n))
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..one..max0 do ignore (float n ** float n))
-                ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in max0 .. -one .. min0 do ignore (float n ** float n))
                 RangeTestsHelpers.signed zero one min0 max0
 
         [<Fact>]
@@ -1242,20 +1210,10 @@ module RangeTests =
             // The arguments here aren't being passed in as constants, so it doesn't matter if they're inlined.
             if System.UIntPtr.Size >= 4 then
                 let zero, one, min0, max0 = System.UIntPtr 0u, System.UIntPtr 1u, System.UIntPtr System.UInt32.MinValue, System.UIntPtr System.UInt32.MaxValue
-
-                if System.UIntPtr.Size = 4 then
-                    ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..max0 do ignore (float n ** float n))
-                    ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..one..max0 do ignore (float n ** float n))
-
                 RangeTestsHelpers.unsigned zero one min0 max0
 
             if System.UIntPtr.Size >= 8 then
                 let zero, one, min0, max0 =  System.UIntPtr 0u, System.UIntPtr 1u, System.UIntPtr System.UInt64.MinValue, System.UIntPtr System.UInt64.MaxValue
-
-                if System.UIntPtr.Size = 8 then
-                    ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..max0 do ignore (float n ** float n))
-                    ignore <| Assert.Throws<System.OverflowException>(fun () -> for n in min0..one..max0 do ignore (float n ** float n))
-
                 RangeTestsHelpers.unsigned zero one min0 max0
 
 open NonStructuralComparison
