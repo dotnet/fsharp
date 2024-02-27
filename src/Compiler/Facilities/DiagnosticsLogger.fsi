@@ -208,6 +208,9 @@ type DiagnosticsLogger =
 /// Represents a DiagnosticsLogger that discards diagnostics
 val DiscardErrorsLogger: DiagnosticsLogger
 
+/// Represents a DiagnosticsLogger that ignores diagnostics and asserts
+val AssertFalseDiagnosticsLogger: DiagnosticsLogger
+
 /// Represents a DiagnosticsLogger that captures all diagnostics, optionally formatting them
 /// eagerly.
 type CapturingDiagnosticsLogger =
@@ -228,8 +231,6 @@ type CapturingDiagnosticsLogger =
 type DiagnosticsThreadStatics =
 
     static member BuildPhase: BuildPhase with get, set
-
-    static member BuildPhaseUnchecked: BuildPhase
 
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
@@ -275,7 +276,7 @@ module DiagnosticsLoggerExtensions =
 val UseBuildPhase: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> DiagnosticsLogger) -> IDisposable
 
 val UseDiagnosticsLogger: newLogger: DiagnosticsLogger -> IDisposable
 

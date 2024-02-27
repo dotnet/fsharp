@@ -343,6 +343,13 @@ let DiscardErrorsLogger =
         member _.ErrorCount = 0
     }
 
+let AssertFalseDiagnosticsLogger =
+    { new DiagnosticsLogger("AssertFalseDiagnosticsLogger") with
+        // TODO: reenable these asserts in the compiler service
+        member _.DiagnosticSink(diagnostic, severity) = (* assert false; *) ()
+        member _.ErrorCount = (* assert false; *) 0
+    }
+
 type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
     inherit DiagnosticsLogger(nm)
     let mutable errorCount = 0
@@ -368,26 +375,19 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
-let trace prefix (dl: DiagnosticsLogger) =
-    let name = if box dl |> isNull then "NULL" else dl.DebugDisplay()
-    Trace.WriteLine $"t:{Thread.CurrentThread.ManagedThreadId} {prefix} {name}"
-    dl
-
-let buildPhase = AsyncLocal<_>()
-let diagnosticsLogger = AsyncLocal<_>()
+let buildPhase = AsyncLocal<BuildPhase voption>()
+let diagnosticsLogger = AsyncLocal<DiagnosticsLogger voption>()
 
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
 
-    static member BuildPhaseUnchecked = buildPhase.Value
-
     static member BuildPhase
-        with get () = buildPhase.Value
-        and set v = buildPhase.Value <- v
+        with get () = buildPhase.Value |> ValueOption.defaultValue BuildPhase.DefaultPhase
+        and set v = buildPhase.Value <- ValueSome v
 
     static member DiagnosticsLogger
-        with get () = diagnosticsLogger.Value
-        and set v = diagnosticsLogger.Value <- v
+        with get () = diagnosticsLogger.Value |> ValueOption.defaultValue AssertFalseDiagnosticsLogger
+        and set v = diagnosticsLogger.Value <- ValueSome v
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
@@ -418,7 +418,6 @@ module DiagnosticsLoggerExtensions =
     type DiagnosticsLogger with
 
         member x.EmitDiagnostic(exn, severity) =
-            trace "error emitted to " x |> ignore
 
             match exn with
             | InternalError(s, _)
@@ -491,24 +490,21 @@ module DiagnosticsLoggerExtensions =
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseBuildPhase (phase: BuildPhase) =
-    let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
+    let oldBuildPhase = buildPhase.Value
     DiagnosticsThreadStatics.BuildPhase <- phase
 
     { new IDisposable with
-        member x.Dispose() =
-            DiagnosticsThreadStatics.BuildPhase <- oldBuildPhase
+        member x.Dispose() = buildPhase.Value <- oldBuildPhase
     }
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
-    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger |> trace "old"
-    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger |> trace "new"
-    Trace.Indent()
+let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> DiagnosticsLogger) =
+    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
 
     { new IDisposable with
         member _.Dispose() =
-            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger |> trace "restore"
-            Trace.Unindent()
+            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
     }
 
 let UseDiagnosticsLogger newLogger =
@@ -518,7 +514,6 @@ let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
 
 let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
-    //trace "no unwind"
     DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
 
 /// This represents the thread-local state established as each task function runs as part of the build.
@@ -528,7 +523,7 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
     let unwindEL = UseDiagnosticsLogger diagnosticsLogger
     let unwindBP = UseBuildPhase buildPhase
 
-    new() = new CompilationGlobalsScope(diagnosticsLogger.Value, buildPhase.Value)
+    new() = new CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase
