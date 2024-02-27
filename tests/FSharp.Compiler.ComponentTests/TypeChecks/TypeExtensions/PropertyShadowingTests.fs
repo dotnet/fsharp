@@ -1,9 +1,9 @@
-module FSharp.Compiler.ComponentTests.TypeChecks.TypeExtensions.PropertyShadowingTests
+module FSharp.Compiler.ComponentTests.TypeChecks.TypeExtensions.Shadowing
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/PropertyShadowing"
+let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/Shadowing"
 
 [<Theory;
   Directory(
@@ -17,7 +17,7 @@ let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/PropertyShadowing"
         "ShadowWithLastOpenedTypeExtensions.fsx"
     |]
 )>]
-let ``can hide property`` compilation =
+let PropertyHidding compilation =
     compilation
     |> asFsx
     |> withOptions ["--langversion:preview"]
@@ -38,7 +38,7 @@ let ``can hide property`` compilation =
       |]
       , BaselineSuffix = ".support.added.later"
 )>]
-let ``cannot hide property v7.0 support added later`` compilation =
+let ``PropertyHiding v7.0`` compilation =
     compilation
     |> asFsx
     |> withOptions ["--langversion:7.0"]
@@ -57,7 +57,7 @@ let ``cannot hide property v7.0 support added later`` compilation =
         "E_NoChangeForEvent.fsx"
     |]
 )>]
-let ``cannot hide property`` compilation =
+let ``PropertyHiding fails`` compilation =
     compilation
     |> asFsx
     |> withOptions ["--langversion:preview"]
@@ -77,7 +77,7 @@ let ``cannot hide property`` compilation =
         "E_NoChangeForEvent.fsx"
     |]
 )>]
-let ``cannot hide property v7.0`` compilation =
+let ``PropertyHidingFails v7.0`` compilation =
     compilation
     |> asFsx
     |> withOptions ["--langversion:7.0"]

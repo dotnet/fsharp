@@ -1,7 +1,7 @@
 <Project>
   <Import Project="FSharpBuild.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
-  <Import Project="CoordinateXlif.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>
+  <Import Project="CoordinateXliff.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>
 
   <ItemGroup Condition="'$(UnitTestType)' == 'nunit'">
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
@@ -13,7 +13,4 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitRunnerVersion)" />
     <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
   </ItemGroup>
- <ItemGroup>
-    <PackageReference Condition="'$(BUILDING_USING_DOTNET)' == 'true'" Include="Microsoft.DotNet.XliffTasks" Version="$(MicrosoftDotNetXliffTasksVersion)" PrivateAssets="all" />  
- </ItemGroup>
 </Project>

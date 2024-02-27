@@ -1946,7 +1946,12 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
         Name = name
         AuxModuleHashAlgorithm = hash
         SecurityDeclsStored = ctxt.securityDeclsReader_Assembly
-        PublicKey = pubkey
+        PublicKey =
+            // The runtime and C# treat a 0 length publicKey as an unsigned assembly, so if a public record exists with a length of 0
+            // treat it as unsigned
+            match pubkey with
+            | Some pkBytes when pkBytes.Length > 0 -> pubkey
+            | _ -> None
         Version = Some(ILVersionInfo(v1, v2, v3, v4))
         Locale = readStringHeapOption ctxt localeIdx
         CustomAttrsStored = ctxt.customAttrsReader_Assembly

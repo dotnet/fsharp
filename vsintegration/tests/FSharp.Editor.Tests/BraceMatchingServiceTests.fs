@@ -8,9 +8,11 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
 type BraceMatchingServiceTests() =
-    let checker = FSharpChecker.Create()
+    let checker =
+        FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
     let fileName = "C:\\test.fs"
 

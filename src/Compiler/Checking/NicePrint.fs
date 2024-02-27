@@ -55,7 +55,7 @@ module internal PrintUtilities =
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
-    let isDiscard (name: string) = name.StartsWith("_")
+    let isDiscard (name: string) = name.StartsWithOrdinal("_")
 
     let ensureFloat (s: string) =
         if String.forall (fun c -> Char.IsDigit c || c = '-') s then
@@ -224,7 +224,7 @@ module internal PrintUtilities =
                         else s)
 
             let pathText = trimPathByDisplayEnv denv path
-            if pathText = "" then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
+            if String.IsNullOrEmpty(pathText) then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
 
     let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
         let tcref = attrib.TyconRef
@@ -823,7 +823,7 @@ module PrintTypes =
 
     and layoutTraitWithInfo denv env traitInfo =
         let g = denv.g
-        let (TTrait(tys, _, memFlags, _, _, _)) = traitInfo
+        let (TTrait(tys=tys;memberFlags=memFlags)) = traitInfo
         let nm = traitInfo.MemberDisplayNameCore
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> wordL) nm
         if denv.shortConstraints then 
@@ -1933,6 +1933,9 @@ module TastDefinitionPrinting =
         let props =
             GetImmediateIntrinsicPropInfosOfType (None, ad) g amap m ty
             |> List.filter (fun pinfo -> shouldShow pinfo.ArbitraryValRef)
+            // Filter out 'IsA' properties which are implied by the union cases since they don't need to be displayed
+            // in any printed outputs
+            |> List.filter (fun prop -> not prop.IsUnionCaseTester)
 
         let events = 
             infoReader.GetEventInfosOfType(None, ad, m, ty)
@@ -1960,6 +1963,7 @@ module TastDefinitionPrinting =
                 IsMethInfoAccessible amap m ad minfo &&
                 // Discard method impls such as System.IConvertible.ToBoolean
                 not (minfo.IsILMethod && minfo.DisplayName.Contains(".")) &&
+                not minfo.IsUnionCaseTester &&
                 not (minfo.DisplayName.Split('.') |> Array.exists isDiscard))
 
         let ilFields =
@@ -2017,7 +2021,7 @@ module TastDefinitionPrinting =
         let instanceValLs =
             instanceVals
             |> List.map (fun f -> layoutRecdField (fun l -> WordL.keywordVal ^^ l) true denv infoReader tcref f)
-    
+
         let propLs =
             props
             |> List.collect (fun x ->
@@ -2789,7 +2793,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> fun name -> if String.IsNullOrEmpty(name) then "" else sprintf " (%s)" name
             sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName ty1, makeName ty2, stringOfTyparConstraints denv tpcs)

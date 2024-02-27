@@ -420,6 +420,9 @@ type MethInfo =
     /// Indicates if this is an IL method.
     member IsILMethod: bool
 
+    /// Indicates if the method is a get_IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Does the method appear to the user as an instance method?
     member IsInstance: bool
 
@@ -821,6 +824,9 @@ type PropInfo =
 
     member ImplementedSlotSignatures: SlotSig list
 
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Indicates if this property is marked 'override' and thus definitely overrides another property.
     member IsDefiniteFSharpOverride: bool
 
@@ -1095,4 +1101,5 @@ val SettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) li
 
 val GettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
 
-val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) option
+[<return: Struct>]
+val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) voption

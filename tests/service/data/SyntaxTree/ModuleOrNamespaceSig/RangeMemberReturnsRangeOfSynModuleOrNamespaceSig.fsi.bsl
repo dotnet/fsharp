@@ -22,13 +22,15 @@ SigFile
                                   LongIdent
                                     (SynLongIdent ([string], [], [None])), false,
                                   PreXmlDoc ((4,20), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (4,20--4,26), { LeadingKeyword = None });
+                                  None, (4,20--4,26), { LeadingKeyword = None
+                                                        MutableKeyword = None });
                                SynField
                                  ([], false, None,
                                   LongIdent (SynLongIdent ([int], [], [None])),
                                   false,
                                   PreXmlDoc ((4,29), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (4,29--4,32), { LeadingKeyword = None })],
+                                  None, (4,29--4,32), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((4,11), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (4,13--4,32), { BarRange = Some (4,11--4,12) })],
                         (4,11--4,32)), (4,11--4,32)), [], (4,5--4,32),

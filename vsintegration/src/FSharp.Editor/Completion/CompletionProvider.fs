@@ -26,7 +26,12 @@ open CancellableTasks
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
 type internal FSharpCompletionProvider
-    (workspace: Workspace, serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider) =
+    (
+        workspace: Workspace,
+        serviceProvider: SVsServiceProvider,
+        assemblyContentProvider: AssemblyContentProvider,
+        editorOptions: EditorOptions
+    ) =
 
     inherit FSharpCompletionProviderBase()
 
@@ -380,7 +385,16 @@ type internal FSharpCompletionProvider
             let documentation = List()
             let collector = RoslynHelpers.CollectTaggedText documentation
             // mix main description and xmldoc by using one collector
-            XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description)
+            XmlDocumentation.BuildDataTipText(
+                documentationBuilder,
+                collector,
+                collector,
+                collector,
+                collector,
+                collector,
+                description,
+                editorOptions.QuickInfo.ShowRemarks
+            )
 
             Task.FromResult(CompletionDescription.Create(documentation.ToImmutableArray()))
         | _ ->

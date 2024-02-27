@@ -279,13 +279,13 @@ module Layout =
 
     let isEmptyL layout =
         match layout with
-        | Leaf(true, s, true) -> s.Text = ""
+        | Leaf(true, s, true) -> String.IsNullOrEmpty(s.Text)
         | _ -> false
 
 #if COMPILER
     let rec endsWithL (text: string) layout =
         match layout with
-        | Leaf(_, s, _) -> s.Text.EndsWith(text)
+        | Leaf(_, s, _) -> s.Text.EndsWith(text, StringComparison.Ordinal)
         | Node(_, r, _) -> endsWithL text r
         | Attr(_, _, l) -> endsWithL text l
         | ObjLeaf _ -> false
@@ -512,7 +512,7 @@ module ReflectUtils =
                         FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs[i]))
 
                     let tupleType =
-                        if reprty.Name.StartsWith "ValueTuple" then
+                        if reprty.Name.StartsWith("ValueTuple", StringComparison.Ordinal) then
                             TupleType.Value
                         else
                             TupleType.Reference
@@ -969,6 +969,13 @@ module Display =
         && (ty.GetGenericTypeDefinition() = typedefof<Map<_, _>>
             || ty.GetGenericTypeDefinition() = typedefof<Set<_>>)
 
+    let messageRegexLookup =
+        @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
+        |> System.Text.RegularExpressions.Regex
+
+    let illFormedBracketPatternLookup =
+        @"(?<!\\){|(?<!\\)}" |> System.Text.RegularExpressions.Regex
+
     // showMode = ShowTopLevelBinding on the outermost expression when called from fsi.exe,
     // This allows certain outputs, e.g. objects that would print as <seq> to be suppressed, etc. See 4343.
     // Calls to layout proper sub-objects should pass showMode = ShowAll.
@@ -1054,8 +1061,6 @@ module Display =
             if isNull txt || txt.Length <= 1 then
                 None
             else
-                let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
-                let illFormedBracketPattern = @"(?<!\\){|(?<!\\)}"
 
                 let rec buildObjMessageL (txt: string) (layouts: Layout list) =
 
@@ -1066,12 +1071,11 @@ module Display =
                     //  1) Everything up to the first opening bracket not preceded by a "\", lazily
                     //  2) Everything between that opening bracket and a closing bracket not preceded by a "\", lazily
                     //  3) Everything after that closing bracket
-                    let m = System.Text.RegularExpressions.Regex.Match(txt, messageRegexPattern)
+                    let m = messageRegexLookup.Match txt
 
                     if not m.Success then
                         // there isn't a match on the regex looking for a property, so now let's make sure we don't have an ill-formed format string (i.e. mismatched/stray brackets)
-                        let illFormedMatch =
-                            System.Text.RegularExpressions.Regex.IsMatch(txt, illFormedBracketPattern)
+                        let illFormedMatch = illFormedBracketPatternLookup.IsMatch txt
 
                         if illFormedMatch then
                             None // there are mismatched brackets, bail out
@@ -1108,8 +1112,8 @@ module Display =
 
                                 countNodes 0 // 0 means we do not count the preText and postText
 
-                                let postTextMatch =
-                                    System.Text.RegularExpressions.Regex.Match(postText, messageRegexPattern)
+                                let postTextMatch = messageRegexLookup.Match postText
+
                                 // the postText for this node will be everything up to the next occurrence of an opening brace, if one exists
                                 let currentPostText =
                                     match postTextMatch.Success with
@@ -1121,7 +1125,7 @@ module Display =
                                     :: layouts
 
                                 match postText with
-                                | "" ->
+                                | _ when String.IsNullOrEmpty(postText) ->
                                     //We are done, build a space-delimited layout from the collection of layouts we've accumulated
                                     Some(spaceListL (List.rev newLayouts))
 
@@ -1129,10 +1133,7 @@ module Display =
 
                                     // look for stray brackets in the text before the next opening bracket
                                     let strayClosingMatch =
-                                        System.Text.RegularExpressions.Regex.IsMatch(
-                                            postTextMatch.Groups["pre"].Value,
-                                            illFormedBracketPattern
-                                        )
+                                        illFormedBracketPatternLookup.IsMatch postTextMatch.Groups["pre"].Value
 
                                     if strayClosingMatch then
                                         None
@@ -1143,8 +1144,7 @@ module Display =
 
                                 | remaingPropertyText ->
                                     // make sure we don't have any stray brackets
-                                    let strayClosingMatch =
-                                        System.Text.RegularExpressions.Regex.IsMatch(remaingPropertyText, illFormedBracketPattern)
+                                    let strayClosingMatch = illFormedBracketPatternLookup.IsMatch remaingPropertyText
 
                                     if strayClosingMatch then
                                         None

@@ -475,6 +475,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show remarks in Quick Info.
+        /// </summary>
+        public static string Show_remarks_in_Quick_Info {
+            get {
+                return ResourceManager.GetString("Show_remarks_in_Quick_Info", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Display return type hints (preview).
         /// </summary>
         public static string Show_Return_Type_Hints {
@@ -547,6 +556,69 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Transparent Compiler Cache Factor.
+        /// </summary>
+        public static string Transparent_Compiler_Cache_Factor {
+            get {
+                return ResourceManager.GetString("Transparent_Compiler_Cache_Factor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Higher number means more memory will be used for caching. Changing the value wipes cache..
+        /// </summary>
+        public static string Transparent_Compiler_Cache_Factor_Tooltip {
+            get {
+                return ResourceManager.GetString("Transparent_Compiler_Cache_Factor_Tooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create new project snapshots from existing ones.
+        /// </summary>
+        public static string Transparent_Compiler_Snapshot_Reuse {
+            get {
+                return ResourceManager.GetString("Transparent_Compiler_Snapshot_Reuse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Transparent Compiler (experimental).
+        /// </summary>
+        public static string TransparentCompiler {
+            get {
+                return ResourceManager.GetString("TransparentCompiler", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results..
+        /// </summary>
+        public static string TransparentCompiler_Discalimer1 {
+            get {
+                return ResourceManager.GetString("TransparentCompiler_Discalimer1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use at your own risk!.
+        /// </summary>
+        public static string TransparentCompiler_Discalimer2 {
+            get {
+                return ResourceManager.GetString("TransparentCompiler_Discalimer2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to By checking this you also opt-in for additional performance telemetry.
+        /// </summary>
+        public static string TransparentCompiler_Discalimer3 {
+            get {
+                return ResourceManager.GetString("TransparentCompiler_Discalimer3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Analyze and suggest fixes for unused values.
         /// </summary>
         public static string Unused_declaration_code_fix {
@@ -570,6 +642,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Use_syntax_tree_cache {
             get {
                 return ResourceManager.GetString("Use_syntax_tree_cache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use Transparent Compiler (restart required).
+        /// </summary>
+        public static string Use_Transparent_Compiler {
+            get {
+                return ResourceManager.GetString("Use_Transparent_Compiler", resourceCulture);
             }
         }
     }

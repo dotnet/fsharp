@@ -25,6 +25,8 @@ let wrapThreadStaticInfo computation =
             DiagnosticsThreadStatics.BuildPhase <- phase
     }
 
+let unwrapNode (Node(computation)) = computation
+
 type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
@@ -193,7 +195,28 @@ type NodeCode private () =
         }
 
     static member Parallel(computations: NodeCode<'T> seq) =
-        computations |> Seq.map (fun (Node x) -> x) |> Async.Parallel |> Node
+        node {
+            let concurrentLogging = new CaptureDiagnosticsConcurrently()
+            let phase = DiagnosticsThreadStatics.BuildPhase
+            // Why does it return just IDisposable?
+            use _ = concurrentLogging
+
+            let injectLogger i computation =
+                let logger = concurrentLogging.GetLoggerForTask($"NodeCode.Parallel {i}")
+
+                async {
+                    DiagnosticsThreadStatics.DiagnosticsLogger <- logger
+                    DiagnosticsThreadStatics.BuildPhase <- phase
+                    return! unwrapNode computation
+                }
+
+            return!
+                computations
+                |> Seq.mapi injectLogger
+                |> Async.Parallel
+                |> wrapThreadStaticInfo
+                |> Node
+        }
 
 [<RequireQualifiedAccess>]
 module GraphNode =

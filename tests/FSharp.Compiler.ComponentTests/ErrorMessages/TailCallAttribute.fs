@@ -1440,7 +1440,7 @@ namespace N
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Warn about attribute on non-recursive let-bound value`` () =
+    let ``Error about attribute on non-recursive let-bound value`` () =
         """
 namespace N
 
@@ -1453,18 +1453,10 @@ namespace N
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withResults [
-            { Error = Warning 3861
-              Range = { StartLine = 7
-                        StartColumn = 13
-                        EndLine = 7
-                        EndColumn = 18 }
-              Message =
-                           "The TailCall attribute should only be applied to recursive functions." }
-        ]
+        |> withSingleDiagnostic (Error 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Warn about attribute on recursive let-bound value`` () =
+    let ``Error about attribute on recursive let-bound value`` () =
         """
 namespace N
 
@@ -1477,12 +1469,56 @@ namespace N
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withSingleDiagnostic (Error 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn about self-defined attribute`` () = // is the analysis available for users of older FSharp.Core versions
+        """
+module Microsoft.FSharp.Core
+
+    open System
+    
+    [<AttributeUsage(AttributeTargets.Method)>]
+    type TailCallAttribute() = inherit Attribute()
+
+    [<TailCall>]
+    let rec f x = 1 + f x
+        """
+        |> FSharp
+        |> compile
+        |> shouldFail
         |> withResults [
-            { Error = Warning 3861
-              Range = { StartLine = 7
-                        StartColumn = 17
-                        EndLine = 7
-                        EndColumn = 37 }
+            { Error = Warning 3569
+              Range = { StartLine = 10
+                        StartColumn = 23
+                        EndLine = 10
+                        EndColumn = 26 }
               Message =
-                           "The TailCall attribute should only be applied to recursive functions." }
+                "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for recursive call in list comprehension`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let rec reverse (input: list<'t>) =
+            match input with
+            | head :: tail -> [ yield! reverse tail; head ]
+            | [] -> []
+        """
+        |> FSharp
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 9
+                        StartColumn = 40
+                        EndLine = 9
+                        EndColumn = 52 }
+              Message =
+                "The member or function 'reverse' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]

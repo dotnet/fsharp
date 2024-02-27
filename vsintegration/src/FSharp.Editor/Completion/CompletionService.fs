@@ -24,7 +24,7 @@ type internal FSharpCompletionService
 
     let builtInProviders =
         ImmutableArray.Create<CompletionProvider>(
-            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
+            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider, settings),
             FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager))
         )
 

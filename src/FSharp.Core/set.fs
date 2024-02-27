@@ -669,7 +669,7 @@ module internal SetTree =
 
         loop t []
 
-    let copyToArray s (arr: _[]) i =
+    let copyToArray s (arr: _ array) i =
         let mutable j = i
 
         iter

@@ -538,7 +538,7 @@ type CalledMeth<'T>
     // Detect the special case where an indexer setter using param aray takes 'value' argument after ParamArray arguments
     let isIndexerSetter =
         match pinfoOpt with
-        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWith "set_"  && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
+        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWithOrdinal("set_") && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
         | _ -> false
 
     let argSetInfos = 
@@ -556,6 +556,12 @@ type CalledMeth<'T>
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
+
+                    // take the last ParamArray arg out, make it not break the optional/out params check
+                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs =
+                        match List.rev unnamedCalledOptOrOutArgs with
+                        | h :: t when h.IsParamArray -> unnamedCalledArgsTrimmed @ [h], List.rev t
+                        | _ -> unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs
                     
                     let isOpt x = x.OptArgInfo.IsOptional
                     let isOut x = x.IsOutArg && isByrefTy g x.CalledArgumentType

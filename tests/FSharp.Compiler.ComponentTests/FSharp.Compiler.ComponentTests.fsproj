@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net8.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
+    <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <OutputType>Library</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -19,6 +19,7 @@
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
     <!-- allow testing of static methods in interfaces on .NET 6  -->
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
+	  <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
 </PropertyGroup>
 
 <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -71,13 +72,14 @@
     <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
-	<Compile Include="Conformance\Constraints\Unmanaged.fs" />
+    <Compile Include="Conformance\Constraints\Unmanaged.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
+    <Compile Include="Conformance\Expressions\ComputationExpressions\CustomOperations.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
@@ -124,6 +126,7 @@
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
+    <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
@@ -209,6 +212,7 @@
     <Compile Include="Language\DynamicAssignmentOperatorTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
     <Compile Include="Language\NameofTests.fs" />
+    <Compile Include="Language\DiscriminatedUnionTests.fs" />
     <Compile Include="Language\DotLambdaTests.fs" />
     <Compile Include="Language\FixedBindings\FixedBindings.fs" />
     <Compile Include="Language\ExtensionMethodTests.fs" />
@@ -216,9 +220,10 @@
     <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
     <Compile Include="Language\PrintfFormatTests.fs" />
-	<Compile Include="Language\InterfaceTests.fs" />
-	<Compile Include="Language\CopyAndUpdateTests.fs" />
-	<Compile Include="Language\ConstraintIntersectionTests.fs" />
+  	<Compile Include="Language\InterfaceTests.fs" />
+	  <Compile Include="Language\CopyAndUpdateTests.fs" />
+	  <Compile Include="Language\ConstraintIntersectionTests.fs" />
+    <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
@@ -265,6 +270,9 @@
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
+    <Compile Include="CompilerService\LruCache.fs" />
+    <Compile Include="CompilerService\AsyncLock.fs" />
+	  <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -293,15 +301,16 @@
     <Compile Include="Signatures\MemberTests.fs" />
     <Compile Include="StaticLinking\StaticLinking.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
+    <Compile Include="FSharpChecker\ProjectSnapshot.fs" />
+    <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
+	    <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <None Include="**\*.bsl">

@@ -73,6 +73,9 @@ type internal FileContentEntry =
     /// Being explicit about nested modules allows for easier reasoning what namespaces (paths) are open.
     /// We can scope an `OpenStatement` to the everything that is happening inside the nested module.
     | NestedModule of name: string * nestedContent: FileContentEntry list
+    /// A single identifier that could be the name of a module.
+    /// Example use-case: `let x = nameof Foo` where `Foo` is a module.
+    | ModuleName of name: Identifier
 
 type internal FileContent =
     {

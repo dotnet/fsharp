@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/$(FSharpNetCoreProductTargetFramework)/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/$(FSharpNetCoreProductTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
+    <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="$(MSBuildThisFileDirectory)../../../artifacts/bin/FSharp.Core/Debug/netstandard2.0/FSharp.Core.dll" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>

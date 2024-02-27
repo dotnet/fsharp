@@ -57,96 +57,17 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
-
-//-------------------------------------------------------------------------
-// Generate type variables and record them in within the scope of the
-// compilation environment, which currently corresponds to the scope
-// of the constraint resolution carried out by type checking.
-//------------------------------------------------------------------------- 
-   
-let compgenId = mkSynId range0 unassignedTyparName
-
-let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
-    Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
-    
-let AnonTyparId m = mkSynId m unassignedTyparName
-
-let NewAnonTypar (kind, m, rigid, var, dyn) = 
-    Construct.NewTypar (kind, rigid, SynTypar(AnonTyparId m, var, true), false, dyn, [], false, false)
-    
-let NewNamedInferenceMeasureVar (_m, rigid, var, id) = 
-    Construct.NewTypar(TyparKind.Measure, rigid, SynTypar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
-
-let NewInferenceMeasurePar () =
-    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
-
-let NewErrorTypar () =
-    NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
-
-let NewErrorMeasureVar () =
-    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
-
-let NewInferenceType (g: TcGlobals) = 
-    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
-    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
-
-let NewErrorType () =
-    mkTyparTy (NewErrorTypar ())
-
-let NewErrorMeasure () =
-    Measure.Var (NewErrorMeasureVar ())
-
-let NewByRefKindInferenceType (g: TcGlobals) m = 
-    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)
-    if g.byrefkind_InOut_tcr.CanDeref then
-        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull), m)]
-    mkTyparTy tp
-
-let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
-
-let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
-    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
-    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
-    let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
-    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
-
-// QUERY: should 'rigid' ever really be 'true'? We set this when we know
-// we are going to have to generalize a typar, e.g. when implementing a 
-// abstract generic method slot. But we later check the generalization 
-// condition anyway, so we could get away with a non-rigid typar. This 
-// would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars g m rigid fctps tinst tpsorig =
-    let tps = tpsorig |> List.map (FreshenTypar g rigid)
-    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
-    tps, renaming, tinst
-
-let FreshenTypeInst g m tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig
-
-let FreshMethInst g m fctps tinst tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig
-
-let FreshenTypars g m tpsorig =
-    match tpsorig with 
-    | [] -> []
-    | _ -> 
-        let _, _, tpTys = FreshenTypeInst g m tpsorig
-        tpTys
-
-let FreshenMethInfo m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
-    tpTys
 
 //-------------------------------------------------------------------------
 // Unification of types: solve/record equality constraints
@@ -1394,7 +1315,7 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 ///
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
 and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> = trackErrors {
-    let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, sln)) = traitInfo
+    let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, source, sln)) = traitInfo
     // Do not re-solve if already solved
     if sln.Value.IsSome then return true else
 
@@ -1411,8 +1332,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
     let supportTys = ListSet.setify (typeAEquiv g aenv) supportTys
 
     // Rebuild the trait info after removing duplicates 
-    let traitInfo = TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, sln)
-    let retTy = GetFSharpViewOfReturnType g retTy    
+    let traitInfo = traitInfo.WithSupportTypes supportTys
+    let retTy = GetFSharpViewOfReturnType g retTy
     
     // Assert the object type if the constraint is for an instance member    
     if memFlags.IsInstance then 
@@ -1713,13 +1634,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   None
 
           let anonRecdPropSearch = 
-              let isGetProp = nm.StartsWith "get_" 
+              let isGetProp = nm.StartsWithOrdinal("get_")
               if not isRigid && isGetProp && memFlags.IsInstance  then
                   let propName = nm[4..]
                   let props = 
                     supportTys |> List.choose (fun ty ->
-                        match NameResolution.TryFindAnonRecdFieldOfType g ty propName with
-                        | Some (NameResolution.Item.AnonRecdField(anonInfo, tinst, i, _)) -> Some (anonInfo, tinst, i)
+                        match TryFindAnonRecdFieldOfType g ty propName with
+                        | Some (Item.AnonRecdField(anonInfo, tinst, i, _)) -> Some (anonInfo, tinst, i)
                         | _ -> None)
                   match props with 
                   | [ prop ] -> Some prop
@@ -1754,8 +1675,17 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                              if List.isSingleton supportTys then FSComp.SR.csTypeDoesNotSupportOperatorNullable(tyString, opName)
                              else FSComp.SR.csTypesDoNotSupportOperatorNullable(tyString, opName)
                           | _ ->
-                             if List.isSingleton supportTys then FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
-                             else FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
+                             match supportTys, source.Value with
+                                | [_], Some s when s.StartsWith("Operators.") ->
+                                    let opSource = s[10..]
+                                    if opSource = nm then FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
+                                    else FSComp.SR.csTypeDoesNotSupportOperator(tyString, opSource)
+                                | [_], Some s ->
+                                    FSComp.SR.csFunctionDoesNotSupportType(s, tyString, nm)
+                                | [_], _
+                                    -> FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
+                                | _, _ 
+                                    -> FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
                       return! ErrorD(ConstraintSolverError(err, m, m2))
 
           | _ -> 
@@ -1928,7 +1858,6 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm traitInfo : (TType * MethInfo) list =
-    let (TTrait(_, _, memFlags, _, _, _)) = traitInfo
     let results = 
         if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
@@ -1938,7 +1867,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             let minfos =
                 [ for (supportTy, nominalTy) in nominalTys do
                     let infos =
-                        match memFlags.MemberKind with
+                        match traitInfo.MemberFlags.MemberKind with
                         | SynMemberKind.Constructor ->
                             GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m nominalTy
                         | _ ->
@@ -1962,8 +1891,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then 
-        let (TTrait(supportTys, _, memFlags, argTys, retTy, soln)) = traitInfo
-        let traitInfo2 = TTrait(supportTys, "op_Implicit", memFlags, argTys, retTy, soln)
+        let traitInfo2 = traitInfo.WithMemberName "op_Implicit"
         results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" traitInfo2
     else
         results
@@ -2020,7 +1948,7 @@ and SupportTypeOfMemberConstraintIsSolved (csenv: ConstraintSolverEnv) (traitInf
     
 /// Get all the unsolved typars (statically resolved or not) relevant to the member constraint
 and GetFreeTyparsOfMemberConstraint (csenv: ConstraintSolverEnv) traitInfo =
-    let (TTrait(supportTys, _, _, argTys, retTy, _)) = traitInfo
+    let (TTrait(tys=supportTys; objAndArgTys=argTys; returnTyOpt=retTy)) = traitInfo
     freeInTypesLeftToRightSkippingConstraints csenv.g (supportTys @ argTys @ Option.toList retTy)
 
 and MemberConstraintIsReadyForWeakResolution csenv traitInfo =
@@ -2104,8 +2032,8 @@ and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     
 and TraitsAreRelated (csenv: ConstraintSolverEnv) retry traitInfo1 traitInfo2 =
     let g = csenv.g
-    let (TTrait(tys1, nm1, memFlags1, argTys1, _, _)) = traitInfo1
-    let (TTrait(tys2, nm2, memFlags2, argTys2, _, _)) = traitInfo2
+    let (TTrait(tys=tys1; memberName=nm1; memberFlags=memFlags1; objAndArgTys=argTys1)) = traitInfo1
+    let (TTrait(tys=tys2; memberName=nm2; memberFlags=memFlags2; objAndArgTys=argTys2)) = traitInfo2
     memFlags1.IsInstance = memFlags2.IsInstance &&
     nm1 = nm2 &&
     // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
@@ -2130,8 +2058,8 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
     match tpc1, tpc2 with
     | TyparConstraint.MayResolveMember(traitInfo1, _), TyparConstraint.MayResolveMember(traitInfo2, _)
         when TraitsAreRelated csenv retry traitInfo1 traitInfo2 ->
-        let (TTrait(tys1, _, _, argTys1, rty1, _)) = traitInfo1
-        let (TTrait(tys2, _, _, argTys2, rty2, _)) = traitInfo2
+        let (TTrait(tys=tys1; objAndArgTys=argTys1; returnTyOpt=rty1)) = traitInfo1
+        let (TTrait(tys=tys2; objAndArgTys=argTys2; returnTyOpt=rty2)) = traitInfo2
         if retry then
             match tys1, tys2 with
             | [ty1], [ty2] -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2
@@ -2359,7 +2287,7 @@ and SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                // Give a good error for structural types excluded from the comparison relation because of their fields
                elif (isAppTy g ty && 
                      let tcref = tcrefOfAppTy g ty 
-                     AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tcref.Deref && 
+                     AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithCompare g tcref.Deref && 
                      Option.isNone tcref.GeneratedCompareToWithComparerValues) then
  
                    ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportComparison3(NicePrint.minimalStringOfType denv ty), m, m2))
@@ -2389,7 +2317,7 @@ and SolveTypeSupportsEquality (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                match ty with
                | AppTy g (tcref, tinst) ->
                    // Give a good error for structural types excluded from the equality relation because of their fields
-                   if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
+                   if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
                        Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues 
                    then
                        ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality3(NicePrint.minimalStringOfType denv ty), m, m2))

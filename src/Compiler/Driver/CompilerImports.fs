@@ -377,6 +377,26 @@ let IsExe fileName =
     let ext = Path.GetExtension fileName
     String.Compare(ext, ".exe", StringComparison.OrdinalIgnoreCase) = 0
 
+let addConstraintSources(ia: ImportedAssembly) =
+    let contents = ia.FSharpViewOfMetadata.Contents
+    let addCxsToMember name (v: Val) =
+        for typar in fst v.GeneralizedType do
+            for cx in typar.Constraints do
+                match cx with
+                | TyparConstraint.MayResolveMember(TTrait(source=source), _) ->
+                    source.Value <- Some name
+                | _ -> ()
+    let rec addCxsToModule name (m: ModuleOrNamespaceType) =
+        for e in m.ModuleAndNamespaceDefinitions do
+            if e.IsModuleOrNamespace then
+                let mname =
+                    if String.length name > 0 then name + "." + e.DisplayName
+                    elif e.IsModule then e.DisplayName
+                    else ""
+                addCxsToModule mname e.ModuleOrNamespaceType
+        for memb in m.AllValsAndMembers do addCxsToMember (name + "." + memb.LogicalName) memb
+    addCxsToModule "" contents.ModuleOrNamespaceType
+
 type TcConfig with
 
     member tcConfig.TryResolveLibWithDirectories(r: AssemblyReference) =
@@ -2233,6 +2253,9 @@ and [<Sealed>] TcImports
             let _dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
             fixupOrphanCcus ()
             let ccuinfos = List.collect (fun phase2 -> phase2 ()) phase2s
+            if importsBase.IsSome then
+                importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
+                ccuTable.Values |> Seq.iter addConstraintSources
             return ccuinfos
         }
 

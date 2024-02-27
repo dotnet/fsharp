@@ -3,7 +3,7 @@
 // Regression for FSB 3417
 
 //<Expects id="FS0954" status="error" span="(8,6)">This type definition involves an immediate cyclic reference through a struct field or inheritance relation</Expects>
-//<Expects id="FS0039" status="error">The value or constructor 'BadType4' is not defined</Expects>
+//<Expects id="FS0800" status="error">Invalid use of a type name</Expects>
 
 type BadType4 =
     struct

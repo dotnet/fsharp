@@ -899,12 +899,12 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy tycr tyargs)
                 E.UnionCaseTag(ConvExpr cenv env arg1, typR) 
 
-            | TOp.TraitCall (TTrait(tys, nm, memFlags, argTys, _retTy, _solution)), _, _                    -> 
-                let tysR = ConvTypes cenv tys
+            | TOp.TraitCall traitInfo, _, _ ->
+                let tysR = ConvTypes cenv traitInfo.SupportTypes
                 let tyargsR = ConvTypes cenv tyargs
-                let argTysR = ConvTypes cenv argTys
+                let argTysR = ConvTypes cenv traitInfo.CompiledObjectAndArgumentTypes
                 let argsR = ConvExprs cenv env args
-                E.TraitCall(tysR, nm, memFlags, argTysR, tyargsR, argsR) 
+                E.TraitCall(tysR, traitInfo.MemberLogicalName, traitInfo.MemberFlags, argTysR, tyargsR, argsR) 
 
             | TOp.RefAddrGet readonly, [ty], [e]  -> 
                 let replExpr = mkRecdFieldGetAddrViaExprAddr(readonly, e, mkRefCellContentsRef g, [ty], m)

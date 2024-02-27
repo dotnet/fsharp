@@ -36,7 +36,7 @@ module FSharpTokenTag =
         tagOfToken (INTERP_STRING_BEGIN_PART("a", SynStringKind.Regular, LexCont.Default))
 
     let INTERP_STRING_PART = tagOfToken (INTERP_STRING_PART("a", LexCont.Default))
-    let INTERP_STRING_END = tagOfToken (INTERP_STRING_END("a", LexCont.Default))
+    let INTERP_STRING_END = tagOfToken (INTERP_STRING_END("a", None, LexCont.Default))
     let LPAREN = tagOfToken LPAREN
     let RPAREN = tagOfToken RPAREN
     let LBRACK = tagOfToken LBRACK
@@ -493,7 +493,7 @@ module internal LexerStateEncoding =
         | INTERP_STRING_BEGIN_PART(_, _, cont)
         | INTERP_STRING_PART(_, cont)
         | INTERP_STRING_BEGIN_END(_, _, cont)
-        | INTERP_STRING_END(_, cont)
+        | INTERP_STRING_END(_, _, cont)
         | LBRACE cont
         | RBRACE cont
         | BYTEARRAY(_, _, cont)
@@ -621,12 +621,12 @@ module internal LexerStateEncoding =
             let tag1, i1, kind1, rest =
                 match stringNest with
                 | [] -> false, 0, 0, []
-                | (i1, kind1, _, _) :: rest -> true, i1, encodeStringStyle kind1, rest
+                | (i1, kind1, _, _, _) :: rest -> true, i1, encodeStringStyle kind1, rest
 
             let tag2, i2, kind2 =
                 match rest with
                 | [] -> false, 0, 0
-                | (i2, kind2, _, _) :: _ -> true, i2, encodeStringStyle kind2
+                | (i2, kind2, _, _, _) :: _ -> true, i2, encodeStringStyle kind2
 
             (if tag1 then 0b100000000000 else 0)
             ||| (if tag2 then 0b010000000000 else 0)
@@ -696,9 +696,9 @@ module internal LexerStateEncoding =
             let nest =
                 [
                     if tag1 then
-                        i1, decodeStringStyle kind1, 0, range0
+                        i1, decodeStringStyle kind1, 0, None, range0
                     if tag2 then
-                        i2, decodeStringStyle kind2, 0, range0
+                        i2, decodeStringStyle kind2, 0, None, range0
                 ]
 
             nest
@@ -1042,8 +1042,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                     false, (RQUOTE(s, raw), leftc, rightc - 1)
                 | INFIX_COMPARE_OP(LexFilter.TyparsCloseOp(greaters, afterOp) as opstr) ->
                     match afterOp with
-                    | None -> ()
-                    | Some tok -> delayToken (tok, leftc + greaters.Length, rightc)
+                    | ValueNone -> ()
+                    | ValueSome tok -> delayToken (tok, leftc + greaters.Length, rightc)
 
                     for i = greaters.Length - 1 downto 1 do
                         delayToken (greaters[i]false, leftc + i, rightc - opstr.Length + i + 1)

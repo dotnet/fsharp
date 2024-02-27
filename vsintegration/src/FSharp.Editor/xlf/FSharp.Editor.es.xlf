@@ -22,6 +22,11 @@
         <target state="translated">Agregar "nueva" palabra clave</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Agregar una anotación de tipo</target>
@@ -36,6 +41,7 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
         <target state="needs-review-translation">Guías de estructura de bloques;
@@ -169,19 +175,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">Opciones de rendimiento de proyectos y caché de F#;
-Habilitar referencias cruzadas de proyecto en memoria;
+        <target state="translated">Opciones de rendimiento de almacenamiento en caché y proyectos de F#;
+Habilitar referencias entre proyectos en memoria;
 Enable_partial_type_checking;
 Opciones de rendimiento de IntelliSense;
-Habilitar datos obsoletos para funciones de IntelliSense;
+Habilitar datos obsoletos para características de IntelliSense;
 Tiempo hasta que se utilizan los resultados obsoletos (en milisegundos);
-Paralelización (requiere reinicio);
- 
-Habilitar la comprobación paralela de tipos con archivos de firmas;
- 
-Habilitar la resolución de referencias en paralelo;
-Habilitar búsqueda rápida de referencias y renombrado (experimental);
-Caché de resultados de análisis (experimental)</target>
+Paralelización (requiere reiniciar);
+Habilitar la comprobación de tipos paralelos con archivos de firma;
+Habilitar resolución de referencias paralelas;
+Habilitar referencias de búsqueda rápida y cambio de nombre (es necesario reiniciar);
+Resultados del análisis de la caché (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -197,15 +201,22 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Formato;
-Ancho de descripción preferido en caracteres;
-Dar formato a la firma con el ancho dado agregando saltos de línea que cumplan las reglas de sintaxis de F#;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="translated">Formateando;
+Anchura preferida de la descripción en caracteres;
+Da formato a la firma al ancho dado agregando saltos de línea conforme a las reglas de sintaxis de F#;
 Vínculos de navegación;
 Mostrar vínculos de navegación como;
 Subrayado sólido;
-Subrayado de punto;
-Subrayado de guion;</target>
+Subrayado de puntos;
+Subrayado guion;
+Mostrar comentarios en Información rápida</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="translated">Comentarios:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -241,6 +252,11 @@ Subrayado de guion;</target>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">Cambiar nombre de "{0}" por "_"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">

@@ -2,6 +2,25 @@
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
     "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "fscArgsPrompt",
+            "description": "Enter arguments for fsc",
+            "default": "",
+            "type": "promptString",
+        },
+        {
+            "id": "fsiArgsPrompt",
+            "description": "Enter arguments for fsi",
+            "default": "",
+            "type": "promptString",
+        },
+        {
+            "id": "PickProcess",
+            "description": "Enter process id",
+            "type": "promptString"
+        }
+    ],
     "windows": {
         "options": {
             "shell": {
@@ -72,17 +91,97 @@
             "group": "build"
         },
         {
-            "label": "Update xlf files",
-            "command": "./build.sh",
+            "label": "Run FSI with dotnet-trace",
+            "command": "dotnet",
             "type": "shell",
-            "windows": {
-                "command": "${workspaceFolder}/Build.cmd"
-            },
-            "options": {
-                "env": {
-                    "UpdateXlfOnBuild": "true"
-                }
-            },
+            "args": [
+                "dotnet-trace",
+                "collect",
+                "--format",
+                "Speedscope",
+                "--",
+                "dotnet",
+                "${workspaceFolder}/artifacts/bin/fsi/Debug/net8.0/fsi.dll",
+                "${input:fsiArgsPrompt}"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "none"
+        },
+        {
+            "label": "Run FSC with dotnet-trace",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "dotnet-trace",
+                "collect",
+                "--format",
+                "Speedscope",
+                "--",
+                "dotnet",
+                "${workspaceFolder}/artifacts/bin/fsc/Debug/net8.0/fsc.dll",
+                "--targetprofile:netstandard",
+                "--simpleresolution",
+                "${input:fscArgsPrompt}"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "none"
+        },
+        {
+            "label": "Create a process dump with dotnet-dump",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "dotnet-dump",
+                "collect",
+                "--diag",
+                "--crashreport",
+                "--type",
+                "Full",
+                "--process-id",
+                "${input:PickProcess}",
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "none"
+        },
+        {
+            "label": "Create a process GC dump with dotnet-gcdump",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "dotnet-gcdump",
+                "collect",
+                "--process-id",
+                "${input:PickProcess}",
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "none"
+        },
+        {
+            "label": "Collect process counters with dotnet-counters",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "dotnet-counters",
+                "collect",
+                "--process-id",
+                "${input:PickProcess}",
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "none"
+        },
+        {
+            "label": "Update xlf files",
+            "command": "dotnet",
+            "type": "shell",
+            "args": ["build", "-t:UpdateXlf", "src/Compiler/FSharp.Compiler.Service.fsproj"],
+            "problemMatcher": "$msCompile",
+            "group": "build"
+        },
+        {
+            "label": "Run Fantomas",
+            "command": "dotnet",
+            "args": ["fantomas", "."],
+            "type": "shell",
             "problemMatcher": "$msCompile",
             "group": "build"
         }

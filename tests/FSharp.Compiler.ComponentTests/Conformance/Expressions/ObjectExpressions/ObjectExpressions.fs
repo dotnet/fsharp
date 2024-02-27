@@ -72,6 +72,7 @@ let foo = { new Foo() with member __.ToString() = base.ToString() }
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
+            (Error 759, Line 5, Col 13, Line 5, Col 22, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.");
             (Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
             (Error 740, Line 5, Col 11, Line 5, Col 24, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
          ]     
@@ -116,12 +117,20 @@ let implSomeDU =
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
-            (Error 1, Line 31, Col 15, Line 31, Col 18, "This expression was expected to have type
+            Error 1, Line 31, Col 15, Line 31, Col 18, "This expression was expected to have type
     'AsString'    
 but here has type
-    'SomeDu'    ")
-         ]
-         
+    'SomeDu'    "
+            Error 1, Line 32, Col 15, Line 32, Col 18, "This expression was expected to have type
+    'AsString'    
+but here has type
+    'SomeDu'    "
+            Error 1, Line 33, Col 15, Line 33, Col 18, "This expression was expected to have type
+    'AsString'    
+but here has type
+    'SomeDu'    "
+            Warning 25, Line 30, Col 19, Line 30, Col 23, "Incomplete pattern matches on this expression."]
+
     [<Fact>]
     let ``Object expression implementing multiple interfaces`` () =
         Fsx """

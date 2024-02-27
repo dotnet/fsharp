@@ -327,7 +327,7 @@ module List =
 
         loop state list1 list2
 
-    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T[]) start fin acc =
+    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T array) start fin acc =
         let mutable state = acc
 
         for i = fin downto start do
@@ -365,7 +365,7 @@ module List =
 
     let scanArraySubRight<'T, 'State>
         (f: OptimizedClosures.FSharpFunc<'T, 'State, 'State>)
-        (arr: _[])
+        (arr: _ array)
         start
         fin
         initState

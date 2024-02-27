@@ -1990,6 +1990,7 @@ val internal mkILNonGenericStaticMethSpecInTy: ILType * string * ILType list * I
 
 /// Construct references to constructors.
 val internal mkILCtorMethSpecForTy: ILType * ILType list -> ILMethodSpec
+val internal mkILNonGenericCtorMethSpec: ILTypeRef * ILType list -> ILMethodSpec
 
 /// Construct references to fields.
 val internal mkILFieldRef: ILTypeRef * string * ILType -> ILFieldRef
@@ -2161,8 +2162,9 @@ val internal mkRawDataValueTypeDef: ILType -> string * size: int32 * pack: uint1
 /// the code, and the first instruction will be the new entry
 /// of the method.  The instructions should be non-branching.
 
+val internal appendInstrsToCode: ILInstr list -> ILCode -> ILCode
+val internal appendInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 val internal prependInstrsToCode: ILInstr list -> ILCode -> ILCode
-
 val internal prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 
 /// Injecting initialization code into a class.

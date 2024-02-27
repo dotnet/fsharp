@@ -1343,7 +1343,7 @@ type SynTypeDefnSimpleRepr =
         fields: SynField list *
         isConcrete: bool *
         isIncrClass: bool *
-        implicitCtorSynPats: SynSimplePats option *
+        implicitCtorSynPats: SynPat option *
         range: range
 
     /// A type defined by using an IL assembly representation. Only used in FSharp.Core.
@@ -1452,6 +1452,9 @@ type SynField =
         accessibility: SynAccess option *
         range: range *
         trivia: SynFieldTrivia
+
+    /// Gets the syntax range of this construct
+    member Range: range
 
 /// Represents the syntax tree associated with the name of a type definition or module
 /// in signature or implementation.
@@ -1611,7 +1614,7 @@ type SynMemberDefn =
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
-        ctorArgs: SynSimplePats *
+        ctorArgs: SynPat *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
         range: range *

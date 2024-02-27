@@ -358,19 +358,7 @@ module DeclarationListHelpers =
         | Item.CtorGroup(_, minfos) 
         | Item.MethodGroup(_, minfos, _) ->
             FormatOverloadsToList infoReader m denv item minfos symbol width
-        
-        // The 'fake' zero-argument constructors of .NET interfaces.
-        // This ideally should never appear in intellisense, but we do get here in repros like:
-        //     type IFoo = abstract F : int
-        //     type II = IFoo  // remove 'type II = ' and quickly hover over IFoo before it gets squiggled for 'invalid use of interface type'
-        // and in that case we'll just show the interface type name.
-        | Item.FakeInterfaceCtor ty ->
-           let ty, _ = PrettyTypes.PrettifyType g ty
-           let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g ty)
-           let layout = PrintUtilities.squashToWidth width layout
-           let layout = toArray layout
-           ToolTipElement.Single(layout, xml, ?symbol = symbol)
-        
+
         // The 'fake' representation of constructors of .NET delegate types
         | Item.DelegateCtor delTy -> 
            let delTy, _cxs = PrettyTypes.PrettifyType g delTy
@@ -848,10 +836,6 @@ module internal DescriptionListsImpl =
                 let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] retTy
                 [], prettyRetTyL  // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 
-        | Item.FakeInterfaceCtor ty -> 
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] ty
-            [], prettyRetTyL
-
         | Item.DelegateCtor delTy -> 
             let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delTy m AccessibleFromSomewhere
 
@@ -940,7 +924,6 @@ module internal DescriptionListsImpl =
             | Item.Property _ -> FSharpGlyph.Property   
             | Item.CtorGroup _ 
             | Item.DelegateCtor _ 
-            | Item.FakeInterfaceCtor _
             | Item.CustomOperation _ -> FSharpGlyph.Method
             | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
@@ -986,7 +969,6 @@ module internal DescriptionListsImpl =
         | Item.CtorGroup(nm, cinfos) -> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) cinfos 
         | Item.Trait traitInfo ->
             if traitInfo.GetLogicalArgumentTypes(g).IsEmpty then [] else [item]
-        | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 
         | Item.ILField _ -> []
@@ -1107,9 +1089,9 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             items 
             |> List.map (fun x ->
                 match x.Item with
+                | Item.Types (_, TType_app(tcref, _, _) :: _) when isInterfaceTyconRef tcref -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 | Item.Types (_, TType_app(tcref, _, _) :: _) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                | Item.FakeInterfaceCtor (TType_app(tcref, _, _)) 
                 | Item.DelegateCtor (TType_app(tcref, _, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }

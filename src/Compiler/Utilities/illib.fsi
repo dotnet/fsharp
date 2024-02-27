@@ -79,6 +79,12 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinalIgnoreCase: value: string -> bool
 
+        member inline IndexOfOrdinal: value: string -> int
+
+        member inline IndexOfOrdinal: value: string * startIndex: int -> int
+
+        member inline IndexOfOrdinal: value: string * startIndex: int * count: int -> int
+
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.

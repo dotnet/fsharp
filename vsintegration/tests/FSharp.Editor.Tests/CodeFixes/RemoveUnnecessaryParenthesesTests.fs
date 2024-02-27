@@ -244,7 +244,6 @@ let _ =
             async {
                 return 
                  1
-                
             }
             "
 
@@ -343,7 +342,7 @@ let _ =
             "
             let x =
              2
-           + 2
+             + 2
             in x
             "
 
@@ -362,9 +361,9 @@ let _ =
      
 
              2
-    
-
-           + 2
+      
+ 
+             + 2
             in x
             "
 
@@ -399,7 +398,7 @@ let _ =
             ",
             "
             let x = 2
-                  +             2
+                    +             2
             in x
             "
 
@@ -410,7 +409,7 @@ let _ =
             ",
             "
             let x = 2
-                  + 2
+                    + 2
             in x
             "
 
@@ -421,7 +420,7 @@ let _ =
             ",
             "
             let x = x
-                   +y
+                    +y
             in x
             "
 
@@ -443,7 +442,7 @@ let _ =
             ",
             "
             let x = 2
-                <<< 2
+                    <<< 2
             in x
             "
 
@@ -456,7 +455,7 @@ in x
             "
 let (<<<<<<<<) = (<<<)
 let x = 2
-<<<<<<<< 2
+        <<<<<<<< 2
 in x
             "
 
@@ -506,7 +505,7 @@ in x
 
             let y =
                 2
-              + 2
+                + 2
 
             in x + y
             "
@@ -533,8 +532,7 @@ in x
             "
             x <
                 2
-              + 3
-               
+                + 3
             "
 
             // LetOrUse
@@ -542,6 +540,83 @@ in x
             "let x = 3 in let y = 4 in (x + y)", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y =(4) in x + y", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y=(4) in x + y", "let x = 3 in let y=4 in x + y"
+
+            "
+            let _ =
+                let _ = 3
+                (
+                    44
+                )
+            ",
+            "
+            let _ =
+                let _ = 3
+                44
+            "
+
+            "
+            let (++++++) = (+)
+            let x =
+             ()
+             (
+                2
+         ++++++ 2
+             )
+            in x
+            ",
+            "
+            let (++++++) = (+)
+            let x =
+             ()
+             2
+             ++++++ 2
+            in x
+            "
+
+            "
+            let (!+++++) = (+)
+            let x =
+             ()
+             (
+              !+++++2
+             )
+            in x
+            ",
+            "
+            let (!+++++) = (+)
+            let x =
+             ()
+             !+++++2
+            in x
+            "
+
+            "
+            let _ =
+                (
+             printfn \"\"
+             +2
+                )
+            ",
+            "
+            let _ =
+                printfn \"\"
+                +2
+            "
+
+            "
+            let _ =
+                let x = 3
+                (
+                    let y = 99
+                    y - x
+                )
+            ",
+            "
+            let _ =
+                let x = 3
+                let y = 99
+                y - x
+            "
 
             // TryWith
             "try (raise null) with _ -> reraise ()", "try raise null with _ -> reraise ()"
@@ -568,6 +643,82 @@ in x
             """ (printfn "1"); printfn "2" """, """ printfn "1"; printfn "2" """
             """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
+
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            ",
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            "
+
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x
+            ",
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                let y = 99
+                ignore (y - x)
+                x
+            "
+
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            ",
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            "
+
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x
+            ",
+            "
+            let f y =
+                let x = 3
+                let y = 99
+                ignore (y - x)
+                x
+            "
 
             // IfThenElse
             "if (3 = 3) then 3 else 3", "if 3 = 3 then 3 else 3"
@@ -616,7 +767,8 @@ in x
             "([] : int list).Length", "([] : int list).Length"
 
             // DotLambda
-            "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
+            """_.ToString("x")""", """_.ToString("x")"""
+            """_.ToString(("x"))""", """_.ToString("x")"""
 
             // DotSet
             "(ref 3).Value <- (3)", "(ref 3).Value <- 3"
@@ -654,7 +806,7 @@ in x
             """
             let mutable x = 3
             x <- 3
-             <<< 3
+                 <<< 3
             """
 
             // DotIndexedGet
@@ -799,6 +951,28 @@ in x
             "$\"{(id 3)}\"", "$\"{id 3}\""
             "$\"{(x)}\"", "$\"{x}\""
 
+            "$\"{(if true then 1 else 0)}\"", "$\"{if true then 1 else 0}\""
+            "$\"{(if true then 1 else 0):N0}\"", "$\"{(if true then 1 else 0):N0}\""
+            "$\"{(if true then 1 else 0),-3}\"", "$\"{(if true then 1 else 0),-3}\""
+            "$\"{(match () with () -> 1):N0}\"", "$\"{(match () with () -> 1):N0}\""
+            "$\"{(match () with () -> 1),-3}\"", "$\"{(match () with () -> 1),-3}\""
+            "$\"{(try () with _ -> 1):N0}\"", "$\"{(try () with _ -> 1):N0}\""
+            "$\"{(try () with _ -> 1),-3}\"", "$\"{(try () with _ -> 1),-3}\""
+            "$\"{(try 1 finally ()):N0}\"", "$\"{(try 1 finally ()):N0}\""
+            "$\"{(try 1 finally ()),-3}\"", "$\"{(try 1 finally ()),-3}\""
+            "$\"{(let x = 3 in x):N0}\"", "$\"{(let x = 3 in x):N0}\""
+            "$\"{(let x = 3 in x),-3}\"", "$\"{(let x = 3 in x),-3}\""
+            "$\"{(do (); 3):N0}\"", "$\"{(do (); 3):N0}\""
+            "$\"{(do (); 3),-3}\"", "$\"{(do (); 3),-3}\""
+            "$\"{(x <- 3):N0}\"", "$\"{(x <- 3):N0}\""
+            "$\"{(x <- 3),-3}\"", "$\"{(x <- 3),-3}\""
+            "$\"{(1, 2):N0}\"", "$\"{(1, 2):N0}\""
+            "$\"{(1, 2),-3}\"", "$\"{(1, 2),-3}\""
+
+            "$\"{((); ())}\"", "$\"{((); ())}\""
+            "$\"{(do (); ())}\"", "$\"{do (); ()}\""
+            "$\"{(let x = 3 in ignore x; 99)}\"", "$\"{let x = 3 in ignore x; 99}\""
+
             """
             $"{(3 + LanguagePrimitives.GenericZero<int>):N0}"
             """,
@@ -919,6 +1093,48 @@ in x
 
                 // AnonRecd
                 "id ({||})", "id {||}"
+                "{| A = (fun () -> ()) |}", "{| A = fun () -> () |}"
+                "{| A = (fun () -> ()); B = 3 |}", "{| A = (fun () -> ()); B = 3 |}"
+                "{| A = (let x = 3 in x); B = 3 |}", "{| A = (let x = 3 in x); B = 3 |}"
+                "{| (try {||} with _ -> reraise ()) with A = 4 |}", "{| (try {||} with _ -> reraise ()) with A = 4 |}"
+
+                "
+                {| A = (fun () -> ())
+                   B = 3 |}
+                ",
+                "
+                {| A = fun () -> ()
+                   B = 3 |}
+                "
+
+                "
+                {| A = (fun () -> ()); B = (fun () -> ())
+                   C = 3 |}
+                ",
+                "
+                {| A = (fun () -> ()); B = fun () -> ()
+                   C = 3 |}
+                "
+
+                "
+                {| A = (let x = 3 in x)
+                   B = 3 |}
+                ",
+                "
+                {| A = let x = 3 in x
+                   B = 3 |}
+                "
+
+                "
+                {| (try {||} with _ -> reraise ())
+                    with
+                    A = 4 |}
+                ",
+                "
+                {| (try {||} with _ -> reraise ())
+                    with
+                    A = 4 |}
+                "
 
                 // ArrayOrList
                 "id ([])", "id []"
@@ -928,6 +1144,49 @@ in x
 
                 // Record
                 "id ({ A = x })", "id { A = x }"
+                "{ A = (fun () -> ()) }", "{ A = fun () -> () }"
+                "{ A = (fun () -> ()); B = 3 }", "{ A = (fun () -> ()); B = 3 }"
+                "{ A = (let x = 3 in x); B = 3 }", "{ A = (let x = 3 in x); B = 3 }"
+                "{ A.B.C.D.X = (match () with () -> ()); A.B.C.D.Y = 3 }", "{ A.B.C.D.X = (match () with () -> ()); A.B.C.D.Y = 3 }"
+                "{ (try { A = 3 } with _ -> reraise ()) with A = 4 }", "{ (try { A = 3 } with _ -> reraise ()) with A = 4 }"
+
+                "
+                { A = (fun () -> ())
+                  B = 3 }
+                ",
+                "
+                { A = fun () -> ()
+                  B = 3 }
+                "
+
+                "
+                { A = (let x = 3 in x)
+                  B = 3 }
+                ",
+                "
+                { A = let x = 3 in x
+                  B = 3 }
+                "
+
+                "
+                { A.B.C.D.X = (match () with () -> ())
+                  A.B.C.D.Y = 3 }
+                ",
+                "
+                { A.B.C.D.X = match () with () -> ()
+                  A.B.C.D.Y = 3 }
+                "
+
+                "
+                { (try { A = 3 } with _ -> reraise ())
+                  with
+                    A = 4 }
+                ",
+                "
+                { (try { A = 3 } with _ -> reraise ())
+                  with
+                    A = 4 }
+                "
 
                 // New
                 "id (new obj())", "id (new obj())"
@@ -993,7 +1252,7 @@ in x
                 |> id
                 "
 
-                "x |> (id |> fun x -> x)", "x |> id |> fun x -> x"
+                "x |> (id |> fun x -> x)", "x |> (id |> fun x -> x)"
                 "x |> (id <| fun x -> x)", "x |> (id <| fun x -> x)"
                 "id <| (fun x -> x)", "id <| fun x -> x"
                 "id <| (fun x -> x) |> id", "id <| (fun x -> x) |> id"
@@ -1034,6 +1293,10 @@ in x
                 "id ~~~(-x)", "id ~~~(-x)" // We could actually remove here, but probably best not to.
                 "id (-(-x))", "id -(-x)"
                 "id -(-x)", "id -(-x)"
+
+                "f <| (g << h)", "f <| (g << h)"
+                "x <> (y <> z)", "x <> (y <> z)"
+                "x > (y > z)", "x > (y > z)"
 
                 "
                 let f x y = 0
@@ -1106,6 +1369,8 @@ in x
 
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
+                """[1..10] |> List.map _.ToString("x")""", """[1..10] |> List.map _.ToString("x")"""
+                """[1..10] |> List.map _.ToString(("x"))""", """[1..10] |> List.map _.ToString("x")"""
 
                 // DotSet
                 "id ((ref x).Value <- y)", "id ((ref x).Value <- y)"
@@ -1338,6 +1603,12 @@ let _ = (2 + 2) { return 5 }
                 /// (x λ y) ρ z
                 | OuterRight of l: string * r: string
 
+                /// Indicates whether both operators are the same exact symbolic operator.
+                member this.Identical =
+                    match this with
+                    | OuterLeft(l, r)
+                    | OuterRight(l, r) -> l = r
+
                 override this.ToString() =
                     match this with
                     | OuterLeft(l, r) -> $"x {l} (y {r} z)"
@@ -1386,11 +1657,11 @@ let _ = (2 + 2) { return 5 }
                     | OuterLeft((":?" | ":>" | ":?>"), _) -> invalidPairing
                     | OuterLeft(_, "**op") -> fixable pair
                     | OuterLeft("**op", _) -> unfixable pair
-                    | OuterLeft("*op", "*op") -> fixable pair
+                    | OuterLeft("*op", "*op") -> if pair.Identical then fixable pair else unfixable pair
                     | OuterLeft(("%op" | "/op" | "*op"), ("%op" | "/op" | "*op")) -> unfixable pair
                     | OuterLeft(_, ("%op" | "/op" | "*op")) -> fixable pair
                     | OuterLeft(("%op" | "/op" | "*op"), _) -> unfixable pair
-                    | OuterLeft("+op", "+op") -> fixable pair
+                    | OuterLeft("+op", "+op") -> if pair.Identical then fixable pair else unfixable pair
                     | OuterLeft(("-op" | "+op"), ("-op" | "+op")) -> unfixable pair
                     | OuterLeft(_, ("-op" | "+op")) -> fixable pair
                     | OuterLeft(("-op" | "+op"), _) -> unfixable pair
@@ -1399,14 +1670,15 @@ let _ = (2 + 2) { return 5 }
                     | OuterLeft("::", _) -> unfixable pair
                     | OuterLeft(_, ("^op" | "@op")) -> fixable pair
                     | OuterLeft(("^op" | "@op"), _) -> unfixable pair
-                    | OuterLeft(l & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"),
-                                r & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) ->
-                        if l = r then fixable pair else unfixable pair
+                    | OuterLeft(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"),
+                                ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> unfixable pair
                     | OuterLeft(_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> fixable pair
                     | OuterLeft(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> unfixable pair
                     | OuterLeft(_, (":>" | ":?>")) -> fixable pair
+                    | OuterLeft(("&" | "&&"), ("&" | "&&")) -> if pair.Identical then fixable pair else unfixable pair
                     | OuterLeft(_, ("&" | "&&")) -> fixable pair
                     | OuterLeft(("&" | "&&"), _) -> unfixable pair
+                    | OuterLeft(("||" | "or"), ("||" | "or")) -> if pair.Identical then fixable pair else unfixable pair
                     | OuterLeft(_, ("||" | "or")) -> fixable pair
                     | OuterLeft(("||" | "or"), _) -> unfixable pair
                     | OuterLeft(":=", ":=") -> fixable pair
@@ -1439,11 +1711,14 @@ let _ = (2 + 2) { return 5 }
             let operators =
                 [
                     "**"
+                    "***"
                     "*"
+                    "*."
                     "/"
                     "%"
                     "-"
                     "+"
+                    "++"
                     ":?"
                     "::"
                     "^^^"
@@ -1680,7 +1955,7 @@ module Patterns =
                                 Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i inner)
                             else
                                 Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i (Paren inner))
-                    | Ands pats, (Or _ | As _) ->
+                    | Ands pats, (Or _ | As _ | Tuple _) ->
                         for i, _ in Seq.indexed pats do
                             Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i (Paren inner))
                     | Ands pats, _ ->

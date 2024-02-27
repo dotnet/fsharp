@@ -22,6 +22,11 @@
         <target state="translated">Добавить ключевое слово "new"</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="new">Add return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Добавить заметку типа</target>
@@ -36,6 +41,7 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
         <target state="needs-review-translation">Руководства по блочной структуре;
@@ -169,17 +175,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">Параметры производительности проекта F# и кэширования;
-Включить перекрестные ссылки проекта в памяти;
-Enable_partial_type_checking;
-Параметры производительности IntelliSense;
-Включить устаревшие данные для функций IntelliSense;
-Время до использования устаревших результатов (в миллисекундах);
-Параллелизация (требуется перезагрузка);
-Включить параллельную проверку типов с файлами подписей;
-Включить параллельное эталонное разрешение;
-Включить быстрый поиск ссылок и переименование (экспериментально);
-Результаты анализа кэша (экспериментально)</target>
+        <target state="translated">Параметры производительности проекта и кэширования F#; 
+Включить перекрестные ссылки проектов в памяти; 
+Enable_partial_type_checking; 
+Параметры производительности IntelliSense; 
+Включите устаревшие данные для функций IntelliSense; 
+Время до использования устаревших результатов (в миллисекундах); 
+Распараллеливание (требуется перезагрузка); 
+Включить параллельную проверку типов с файлами сигнатур; 
+Включить параллельное разрешение ссылок; 
+Включить быстрый поиск ссылок и переименование (требуется перезагрузка); 
+Результаты анализа кэша (экспериментальная функция)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -195,15 +201,22 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Форматирование;
-Предпочитаемая ширина описания в символах;
-Форматирование подписи до заданной ширины путем добавления разрывов строк в соответствии с правилами синтаксиса F#;
-Ссылки навигации;
-Показать ссылки навигации как;
-Сплошное подчеркивание;
-Пунктирное подчеркивание;
-Штриховое подчеркивание;</target>
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="translated">Форматирование; 
+Предпочтительная ширина описания в символах; 
+Отформатируйте подпись до заданной ширины, добавив разрывы строк в соответствии с правилами синтаксиса F#; 
+Навигационные ссылки; 
+Показывать навигационные ссылки как; 
+Сплошное подчеркивание; 
+Точка подчеркивания; 
+Подчеркивание тире; 
+Показать заметки в кратких сведениях</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="translated">Комментарии:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -239,6 +252,11 @@ Dash underline;</source>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">Переименовать "{0}" в "_"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="new">Returns:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">

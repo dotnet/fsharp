@@ -702,7 +702,7 @@ type MethInfo =
     member x.DebuggerDisplayName =
         match x with
         | ILMeth(_, y, _) -> y.DeclaringTyconRef.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + y.ILName
-        | FSMeth(_, AbbrevOrAppTy tcref, vref, _) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + vref.LogicalName
+        | FSMeth(_, AbbrevOrAppTy(tcref, _), vref, _) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + vref.LogicalName
         | FSMeth(_, _, vref, _) -> "??::" + vref.LogicalName
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name), m)
@@ -807,6 +807,15 @@ type MethInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> [mi.PUntaint((fun mi -> mi.GetParameters().Length), m)] // Why is this a list? Answer: because the method might be curried
 #endif
+
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member x.IsUnionCaseTester =
+        let tcref = x.ApparentEnclosingTyconRef
+        tcref.IsUnionTycon &&
+        x.LogicalName.StartsWithOrdinal("get_Is") &&
+        match x.ArbitraryValRef with 
+        | Some v -> v.IsImplied
+        | None -> false
 
     member x.IsCurried = x.NumArgs.Length > 1
 
@@ -2016,6 +2025,11 @@ type PropInfo =
 #endif
         | _ -> false
 
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member x.IsUnionCaseTester =
+        x.HasGetter &&
+        x.GetterMethod.IsUnionCaseTester
+
     /// Calculates a hash code of property info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member pi.ComputeHashCode() =
         match pi with
@@ -2377,18 +2391,19 @@ let SettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinf
 
 let GettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod, Some pinfo) else None)
 
+[<return: Struct>]
 let (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
     if not (pinfo.HasGetter && pinfo.HasSetter) then
-        None
+        ValueNone
     else
         match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
         | Some getValRef, Some setValRef ->
             if getValRef.Accessibility <> setValRef.Accessibility then
-                Some (getValRef, setValRef)
+                ValueSome (getValRef, setValRef)
             else
                 match getValRef.ValReprInfo with
                 | Some getValReprInfo when
                     // Getter has an index parameter
-                    getValReprInfo.TotalArgCount > 1  -> Some (getValRef, setValRef)
-                | _ -> None 
-        | _ -> None
+                    getValReprInfo.TotalArgCount > 1  -> ValueSome (getValRef, setValRef)
+                | _ -> ValueNone 
+        | _ -> ValueNone

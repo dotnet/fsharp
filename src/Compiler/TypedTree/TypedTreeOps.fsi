@@ -312,6 +312,9 @@ val mkRecdFieldSetViaExprAddr: Expr * RecdFieldRef * TypeInst * Expr * range -> 
 /// Make an expression that gets the tag of a union value (via the address of the value if it is a struct)
 val mkUnionCaseTagGetViaExprAddr: Expr * TyconRef * TypeInst * range -> Expr
 
+/// Make an expression which tests that a union value is of a particular union case.
+val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef * TypeInst * range -> Expr
+
 /// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
 val mkUnionCaseProof: Expr * UnionCaseRef * TypeInst * range -> Expr
 
@@ -1525,6 +1528,9 @@ val mkVoidPtrTy: TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType: TcGlobals -> TType -> TType
 
+/// Determine if a type is a bool type
+val isBoolTy: TcGlobals -> TType -> bool
+
 /// Determine if a type is a value option type
 val isValueOptionTy: TcGlobals -> TType -> bool
 
@@ -2446,10 +2452,11 @@ type PrettyNaming.ActivePatternInfo with
     member DisplayNameByIdx: idx: int -> string
 
     /// Get the result type for the active pattern
-    member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
+    member ResultType: g: TcGlobals -> range -> TType list -> ActivePatternReturnKind -> TType
 
     /// Get the overall type for a function that implements the active pattern
-    member OverallType: g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> isStruct: bool -> TType
+    member OverallType:
+        g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> retKind: ActivePatternReturnKind -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 
@@ -2651,6 +2658,8 @@ val TryBindTyconRefAttribute:
     f3: (obj option list * (string * obj option) list -> 'a option) ->
         'a option
 
+val HasDefaultAugmentationAttribute: g: TcGlobals -> tcref: TyconRef -> bool
+
 val (|ResumableCodeInvoke|_|):
     g: TcGlobals -> expr: Expr -> (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) option
 
@@ -2722,9 +2731,22 @@ type TraitConstraintInfo with
 val (|EmptyModuleOrNamespaces|_|):
     moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
 
-/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the Entity if found via predicate and not already present.
-val tryAddExtensionAttributeIfNotAlreadyPresent:
-    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) -> entity: Entity -> Entity
+val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
+
+/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the module Entity if found via predicate and not already present.
+val tryAddExtensionAttributeIfNotAlreadyPresentForModule:
+    g: TcGlobals ->
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+    moduleEntity: Entity ->
+        Entity
+
+/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the type Entity if found via predicate and not already present.
+val tryAddExtensionAttributeIfNotAlreadyPresentForType:
+    g: TcGlobals ->
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+    moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
+    typeEntity: Entity ->
+        Entity
 
 /// Serialize an entity to a very basic json structure.
 val serializeEntity: path: string -> entity: Entity -> unit

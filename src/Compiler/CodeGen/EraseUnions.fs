@@ -8,6 +8,7 @@ open FSharp.Compiler.IlxGenSupport
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities.Library
+open FSharp.Compiler.Features
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
@@ -843,7 +844,12 @@ let convAlternativeDef
         | SpecialFSharpListHelpers ->
 
             let baseTesterMeths, baseTesterProps =
-                if cud.UnionCases.Length <= 1 then
+                if
+                    g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible
+                    && cud.HasHelpers = AllHelpers
+                then
+                    [], []
+                elif cud.UnionCases.Length <= 1 then
                     [], []
                 elif repr.RepresentOneAlternativeAsNull info then
                     [], []

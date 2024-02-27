@@ -308,7 +308,7 @@ type LexerStringKind =
 
 /// Represents the degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
 /// Nesting counters and styles of outer interpolating strings are pushed on this stack.
-type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range) list
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range option * range) list
 
 /// The parser defines a number of tokens for whitespace and
 /// comments eliminated by the lexer.  These carry a specification of
@@ -973,7 +973,7 @@ let checkEndOfFileError t =
 
         match nesting with
         | [] -> ()
-        | (_, _, _, m) :: _ -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill ())
+        | (_, _, _, _, m) :: _ -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill ())
 
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 
@@ -1140,20 +1140,71 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
         trivia
     )
 
-let mkValField mVal mRhs mut access ident (typ: SynType) xmlDoc rangeStart attribs mStaticOpt =
-    let isStatic = Option.isSome mStaticOpt
-    let mValDecl = unionRanges rangeStart typ.Range |> unionRangeWithXmlDoc xmlDoc
+let mkSynField
+    parseState
+    (idOpt: Ident option)
+    (t: SynType option)
+    (isMutable: range option)
+    (vis: SynAccess option)
+    (attributes: SynAttributes)
+    (mStatic: range option)
+    (rangeStart: range)
+    (leadingKeyword: SynLeadingKeyword option)
+    =
 
+    let t, mStart =
+        match t with
+        | Some value -> value, rangeStart
+        | None ->
+
+            let mType, mStart =
+                idOpt
+                |> Option.map (fun x -> x.idRange)
+                |> Option.orElseWith (fun _ -> vis |> Option.map (fun v -> v.Range))
+                |> Option.orElse isMutable
+                |> Option.orElseWith (fun _ -> leadingKeyword |> Option.map (fun k -> k.Range))
+                |> Option.orElseWith (fun _ -> attributes |> List.tryLast |> Option.map (fun l -> l.Range))
+                |> Option.map (fun m -> m, rangeStart)
+                |> Option.defaultWith (fun _ -> rangeStart.StartRange, rangeStart.StartRange)
+
+            SynType.FromParseError(mType.EndRange), mStart
+
+    let mWhole = unionRanges mStart t.Range
+    let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
+    let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
+
+    SynField(
+        attributes,
+        Option.isSome mStatic,
+        idOpt,
+        t,
+        Option.isSome isMutable,
+        xmlDoc,
+        vis,
+        mWhole,
+        {
+            LeadingKeyword = leadingKeyword
+            MutableKeyword = isMutable
+        }
+    )
+
+let mkValField
+    parseState
+    mVal
+    (isMutable: range option)
+    access
+    (idOpt: Ident option)
+    (typ: SynType option)
+    (rangeStart: range)
+    attribs
+    mStaticOpt
+    =
     let leadingKeyword =
         match mStaticOpt with
         | None -> SynLeadingKeyword.Val mVal
         | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
 
-    let fld =
-        SynField(attribs, isStatic, Some ident, typ, mut, xmlDoc, access, mRhs, { LeadingKeyword = Some leadingKeyword })
+    let field =
+        mkSynField parseState idOpt typ isMutable access attribs mStaticOpt rangeStart (Some leadingKeyword)
 
-    SynMemberDefn.ValField(fld, mValDecl)
-
-let mkSynField parseState idOpt t isMutable vis attributes isStatic mWhole leadingKeyword =
-    let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
-    SynField(attributes, isStatic, idOpt, t, isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })
+    SynMemberDefn.ValField(field, field.Range)

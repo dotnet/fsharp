@@ -1184,7 +1184,7 @@ type SynTypeDefnSimpleRepr =
         fields: SynField list *
         isConcrete: bool *
         isIncrClass: bool *
-        implicitCtorSynPats: SynSimplePats option *
+        implicitCtorSynPats: SynPat option *
         range: range
 
     | LibraryOnlyILAssembly of
@@ -1287,6 +1287,10 @@ type SynField =
         accessibility: SynAccess option *
         range: range *
         trivia: SynFieldTrivia
+
+    member this.Range =
+        match this with
+        | SynField(range = range) -> range
 
 [<NoEquality; NoComparison>]
 type SynComponentInfo =
@@ -1429,7 +1433,7 @@ type SynMemberDefn =
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
-        ctorArgs: SynSimplePats *
+        ctorArgs: SynPat *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
         range: range *
