@@ -439,9 +439,10 @@ module rec CompilerAssertHelpers =
                     | Some text ->
                         // In memory source file copy it to the build directory
                         let source = item.ChangeExtension
-                        File.WriteAllText (source.GetSourceFileName, text)
-                        disposals.Add(disposeFile source.GetSourceFileName)
-                        yield source
+                        let destFileName = Path.Combine(outputDirectory.FullName, Path.GetFileName(source.GetSourceFileName))
+                        File.WriteAllText (destFileName, text)
+                        disposals.Add(disposeFile destFileName)
+                        yield source.WithFileName(destFileName)
                     | None ->
                         // On Disk file
                         let sourceFileName = item.GetSourceFileName
