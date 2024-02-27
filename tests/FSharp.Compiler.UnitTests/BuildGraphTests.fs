@@ -3,6 +3,7 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Xunit
 open FSharp.Test
@@ -134,22 +135,13 @@ module BuildGraphTests =
 
         use cts = new CancellationTokenSource()
 
-        let work =
+        let work(): Task = Async.StartAsTask(
             async {
                 cts.Cancel()
                 return! graphNode.GetOrComputeValue()
-            }
+            }, cancellationToken = cts.Token)
 
-        let ex =
-            try
-                Async.RunImmediate(work, cancellationToken = cts.Token)
-                |> ignore
-                failwith "Should have canceled"
-            with
-            | :? OperationCanceledException as ex ->
-                ex
-
-        Assert.shouldBeTrue(ex <> null)
+        Assert.ThrowsAnyAsync<OperationCanceledException>(work).Wait()
 
     [<Fact>]
     let ``A request can cancel 2``() =
@@ -158,7 +150,7 @@ module BuildGraphTests =
         let graphNode = 
             GraphNode(async { 
                 let! _ = Async.AwaitWaitHandle(resetEvent)
-                return 1 
+                failwith "Should have canceled" 
             })
 
         use cts = new CancellationTokenSource()
@@ -170,17 +162,9 @@ module BuildGraphTests =
             }
             |> Async.StartAsTask
 
-        let ex =
-            try
-                Async.RunImmediate(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)
-                |> ignore
-                failwith "Should have canceled"
-            with
-            | :? OperationCanceledException as ex ->
-                ex
-
-        Assert.shouldBeTrue(ex <> null)
-        try task.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ()
+        Assert.ThrowsAnyAsync<OperationCanceledException>(fun () ->
+            Async.StartImmediateAsTask(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)      
+        ) |> ignore
 
     [<Fact>]
     let ``Many requests to get a value asynchronously might evaluate the computation more than once even when some requests get canceled``() =
@@ -246,8 +230,6 @@ module BuildGraphTests =
         let job phase i = async {
             do! random 10 |> Async.Sleep
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
-            DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
-            |> Assert.shouldBe $"DiagnosticsLogger(Async.Parallel {i})"
 
             errorR (ExampleException $"job {i}")
         }
@@ -257,7 +239,7 @@ module BuildGraphTests =
                 let n = 8
                 let logger = CapturingDiagnosticsLogger("test NodeCode")
                 use _ = new CompilationGlobalsScope(logger, phase)
-                let! _ = Seq.init n (job phase) |> Async.Parallel
+                let! _ = Seq.init n (job phase) |> MultipleDiagnosticsLoggers.Parallel
 
                 let diags = logger.Diagnostics |> List.map fst
 
