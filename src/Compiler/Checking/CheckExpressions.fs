@@ -10636,8 +10636,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             | ModuleOrMemberBinding, SynBindingKind.StandaloneExpression, _ -> Some(".cctor")
             | _, _, _ -> envinner.eCallerMemberName
 
-        let envinner = {envinner with eCallerMemberName = callerName }
-
+        let envinner = { envinner with eCallerMemberName = callerName }
         let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
@@ -10873,6 +10872,16 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 errorR(Error(FSComp.SR.tcLiteralCannotBeInline(), mBinding))
             if not (isNil declaredTypars) then
                 errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
+            
+        if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) && memberFlagsOpt.IsNone && not attrs.IsEmpty then
+            let rhsIsFunction = isFunTy g overallPatTy
+            let lhsIsFunction = isFunTy g overallExprTy
+            let attrTgt =
+                match rhsIsFunction, lhsIsFunction with
+                | false, false when declaredTypars.IsEmpty -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+                | _, _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
+
+            TcAttributesWithPossibleTargets false cenv env attrTgt attrs |> ignore
 
         CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
 
