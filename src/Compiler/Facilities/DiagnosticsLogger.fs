@@ -376,12 +376,18 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
 
-let currentDiagnosticsLogger = AsyncLocal<DiagnosticsLogger>()
+let currentDiagnosticsLogger = AsyncLocal<DiagnosticsLogger voption>()
 
 let checkIfSame v =
     match currentDiagnosticsLogger.Value, v with
-    | c, _ when box c |> isNull -> v
-    | c, v when c = v -> v
+    | ValueSome c, v when c = v -> v // Good.
+    | ValueNone, _ -> v // New context.
+    | _, v when v = AssertFalseDiagnosticsLogger -> v // Not initialized but will catch up.
+    | ValueSome c, _ when c = AssertFalseDiagnosticsLogger -> v // Not initialized but will catch up.
+    | _, v when v.DebugDisplay().Contains("CachingDiagnosticsLogger") -> v // AsyncMemoize, disregard for now.
+    | ValueSome c, _ when c.DebugDisplay().Contains("CachingDiagnosticsLogger") -> v // AsyncMemoize, disregard for now.
+    | ValueSome c, _ when c.DebugDisplay().Contains("NodeCode") -> v // NodeCode.Parallel boundary.
+    | _, v when v.DebugDisplay().Contains("NodeCode") -> v // NodeCode.Parallel boundary.
     | _ -> failwith "AsyncLocal does not match ThreadStatic."
 
 /// Type holds thread-static globals for use by the compiler.
@@ -407,7 +413,7 @@ type internal DiagnosticsThreadStatics =
             | Null -> AssertFalseDiagnosticsLogger
             | _ -> checkIfSame DiagnosticsThreadStatics.diagnosticsLogger
         and set v =
-            currentDiagnosticsLogger.Value <- v
+            currentDiagnosticsLogger.Value <- ValueSome v
             DiagnosticsThreadStatics.diagnosticsLogger <- v
 
     static member DiagnosticsLoggerNodeCode
@@ -551,7 +557,7 @@ type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: B
     let unwindEL = UseDiagnosticsLogger diagnosticsLogger
     let unwindBP = UseBuildPhase buildPhase
 
-    new() = CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
+    new() = new CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase

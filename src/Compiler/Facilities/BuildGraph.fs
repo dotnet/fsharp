@@ -31,7 +31,14 @@ type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node(computation) -> wrapThreadStaticInfo computation
+        | Node(computation) ->
+            async {
+                try
+                    return! wrapThreadStaticInfo computation
+                finally
+                    // Reset threadstatics so they don't leak to unrelated computation.
+                    DiagnosticsThreadStatics.DiagnosticsLoggerNodeCode <- AssertFalseDiagnosticsLogger
+            }
 
 [<Sealed>]
 type NodeCodeBuilder() =
