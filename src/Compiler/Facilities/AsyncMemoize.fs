@@ -495,8 +495,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 let cachingLogger = new CachingDiagnosticsLogger(Some callerDiagnosticLogger)
 
                 try
-                    return
-                        Async.RunSynchronously(
+                    return!
+                        Async.StartAsTask(
                             async {
                                 // TODO: Should unify starting and restarting
                                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -512,7 +512,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                     DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
                             },
                             cancellationToken = linkedCtSource.Token
-                        )
+                        ) |> Async.AwaitTask
                 with
                 | TaskCancelled ex ->
                     // TODO: do we need to do anything else here? Presumably it should be done by the registration on
