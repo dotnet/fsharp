@@ -85,6 +85,7 @@ type LanguageFeature =
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | EnforceAttributeTargetsOnFunctions
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
 
@@ -199,6 +200,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
                 LanguageFeature.UnionIsPropertiesVisible, previewVersion
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
+                LanguageFeature.EnforceAttributeTargetsOnFunctions, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
                 LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
             ]
@@ -344,6 +346,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
         | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
             FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
+        | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
 

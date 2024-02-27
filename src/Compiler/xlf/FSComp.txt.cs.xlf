@@ -292,6 +292,11 @@
         <target state="translated">literál float32 bez tečky</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsOnFunctions">
+        <source>Enforce AttributeTargets on functions</source>
+        <target state="new">Enforce AttributeTargets on functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
         <target state="translated">Vyvolá chyby pro přepsání jiných než virtuálních členů</target>

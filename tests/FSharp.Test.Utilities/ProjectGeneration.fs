@@ -754,7 +754,13 @@ module ProjectOperations =
             |> Seq.toArray
 
         Assert.Equal<(string * int * int * int)[]>(expected |> Seq.sort |> Seq.toArray, actual)
-
+        
+    let expectNone x =
+        if Option.isSome x then failwith "expected None, but was Some"
+    
+    let expectSome x =
+        if Option.isNone x then failwith "expected Some, but was None"
+        
     let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
         async {
             Directory.CreateDirectory(p.ProjectDir) |> ignore
@@ -1344,6 +1350,28 @@ type ProjectWorkflowBuilder
             let! _diagnostics, exitCode = checker.Compile(arguments)
             if exitCode <> 0 then
                 exn $"Compilation failed with exit code {exitCode}" |> raise
+            return ctx
+        }
+        
+    [<CustomOperation "tryGetRecentCheckResults">]
+    member this.TryGetRecentCheckResults(workflow: Async<WorkflowContext>, fileId: string, expected) =
+        async {
+            let! ctx = workflow
+            let project, file = ctx.Project.FindInAllProjects fileId
+            let fileName = project.ProjectDir ++ file.FileName
+            let options = project.GetProjectOptions checker
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
+            let r = checker.TryGetRecentCheckResultsForFile(fileName, snapshot)
+            expected r
+            
+            match r with
+            | Some(parseFileResults, checkFileResults) ->
+                let signature = getSignature(parseFileResults, FSharpCheckFileAnswer.Succeeded(checkFileResults)) 
+                match ctx.Signatures.TryFind(fileId) with
+                | Some priorSignature -> Assert.Equal(priorSignature, signature)
+                | None -> ()
+            | None -> ()
+            
             return ctx
         }
 
