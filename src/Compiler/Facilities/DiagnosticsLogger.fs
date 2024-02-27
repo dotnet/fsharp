@@ -13,8 +13,6 @@ open System.Reflection
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open System.Collections.Concurrent
-open System.Threading
 open System.Threading.Tasks
 
 /// Represents the style being used to format errors

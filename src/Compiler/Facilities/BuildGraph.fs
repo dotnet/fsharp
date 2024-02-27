@@ -5,10 +5,7 @@ module FSharp.Compiler.BuildGraph
 open System
 open System.Threading
 open System.Threading.Tasks
-open System.Diagnostics
 open System.Globalization
-open FSharp.Compiler.DiagnosticsLogger
-open Internal.Utilities.Library
 
 [<RequireQualifiedAccess>]
 module GraphNode =
