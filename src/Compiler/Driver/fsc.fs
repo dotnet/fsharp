@@ -614,7 +614,7 @@ let main1
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
         TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
-        |> Async.RunImmediate
+        |> Async.RunImmediateWithoutCancellation
 
     let ilSourceDocs =
         [
@@ -663,7 +663,7 @@ let main1
 
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> Async.RunImmediate
+        |> Async.RunImmediateWithoutCancellation
 
     // register tcImports to be disposed in future
     disposables.Register tcImports

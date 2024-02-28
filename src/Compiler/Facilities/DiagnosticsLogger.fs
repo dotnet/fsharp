@@ -941,3 +941,10 @@ module MultipleDiagnosticsLoggers =
 
     let Parallel computations = computations |> run Async.Parallel
     let Sequential computations = computations |> run Async.Sequential
+
+module Async =
+    let RunImmediateWithoutCancellation computation =
+        try
+            Async.RunImmediate(computation, CancellationToken.None)
+        with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+            raise (ex.InnerExceptions[0])
