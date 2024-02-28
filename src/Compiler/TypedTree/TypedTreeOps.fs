@@ -10510,7 +10510,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
 
     match start, step, finish with
     // start..0..finish
-    | _, Expr.Const (value = IntegralConst.Zero), _ -> RangeCount.ConstantZeroStep (mkSequential m (mkCallAndIgnoreRangeExpr start step finish) (mkMinusOne g m))
+    | _, Expr.Const (value = IntegralConst.Zero), _ -> RangeCount.ConstantZeroStep (mkSequential m (mkCallAndIgnoreRangeExpr start step finish) (mkTypedZero g m rangeTy))
 
     // 5..1
     // 1..-1..5
@@ -10841,7 +10841,8 @@ let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, 
             buildLoop count (fun mkBody -> mkCountUpExclusive mkBody count)
 
         | RangeCount.ConstantZeroStep count ->
-            buildLoop count (fun mkBody -> mkCountUpExclusive mkBody count)
+            mkCompGenLetIn mIn (nameof count) (tyOfExpr g count) count (fun (_, count) ->
+                buildLoop count (fun mkBody -> mkCountUpExclusive mkBody count))
 
         | RangeCount.Safe count ->
             mkCompGenLetIn mIn (nameof count) (tyOfExpr g count) count (fun (_, count) ->
