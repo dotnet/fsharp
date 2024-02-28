@@ -5,7 +5,7 @@ open FSharp.Test.Compiler
 
 module PropertyShadowingTests =
 
-    let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/PropertyShadowing"
+    let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/Shadowing"
 
     [<Theory;
         Directory(
@@ -23,6 +23,7 @@ module PropertyShadowingTests =
     let ``can hide property - realInternalSignatureOff`` compilation =
         compilation
         |> asFsx
+        |> withNoDebug
         |> withOptions ["--langversion:preview"]
         |> withRealInternalSignatureOff
         |> verifyBaselines
@@ -45,11 +46,13 @@ module PropertyShadowingTests =
     let ``can hide property - realInternalSignatureOn`` compilation =
         compilation
         |> asFsx
+        |> withNoDebug
         |> withOptions ["--langversion:preview"]
         |> withRealInternalSignatureOn
         |> verifyBaselines
         |> compileAndRun
         |> shouldSucceed
+
 
     [<Theory;
         Directory(
@@ -67,6 +70,7 @@ module PropertyShadowingTests =
     let ``cannot hide property v7_0 support added later`` compilation =
         compilation
         |> asFsx
+        |> withNoDebug
         |> withOptions ["--langversion:7.0"]
         |> verifyBaselines
         |> compile
@@ -86,6 +90,7 @@ module PropertyShadowingTests =
     let ``cannot hide property`` compilation =
         compilation
         |> asFsx
+        |> withNoDebug
         |> withOptions ["--langversion:preview"]
         |> verifyBaselines
         |> compile
@@ -106,6 +111,7 @@ module PropertyShadowingTests =
     let ``cannot hide property v7_0`` compilation =
         compilation
         |> asFsx
+        |> withNoDebug
         |> withOptions ["--langversion:7.0"]
         |> verifyBaselines
         |> compile
