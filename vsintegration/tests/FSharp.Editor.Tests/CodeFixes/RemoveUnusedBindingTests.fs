@@ -9,8 +9,10 @@ open CodeFixTestFramework
 
 let private codeFix = RemoveUnusedBindingCodeFixProvider()
 
-[<Fact>]
-let ``Fixes FS1182 - let bindings in classes`` () =
+[<Theory>]
+[<InlineData "IDE0059">]
+[<InlineData "FS1182">]
+let ``Fixes FS1182 - let bindings in classes`` diag =
     let code =
         """
 type T() =
@@ -28,12 +30,14 @@ type T() =
 """
             }
 
-    let actual = codeFix |> tryFix code (WithOption "--warnon:1182")
+    let actual = codeFix |> tryFix code (Manual("blah", diag))
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Fixes FS1182 - let bindings within let bindings`` () =
+[<Theory>]
+[<InlineData "IDE0059">]
+[<InlineData "FS1182">]
+let ``Fixes let bindings within let bindings`` diag =
     let code =
         """
 let f() =
@@ -53,7 +57,7 @@ let f() =
 """
             }
 
-    let actual = codeFix |> tryFix code (WithOption "--warnon:1182")
+    let actual = codeFix |> tryFix code (Manual("blah", diag))
 
     Assert.Equal(expected, actual)
 
@@ -82,8 +86,36 @@ type C() = class end
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Doesn't fix FS1182 for member identifiers`` () =
+// a little copypaste never killed nobody
+[<Theory>]
+[<InlineData(" ", " ")>]
+[<InlineData("   ", " ")>]
+[<InlineData(" ", "   ")>]
+[<InlineData("   ", "   ")>]
+let ``Fixes IDE0059 - class identifiers`` preSpaces postSpaces =
+    let code =
+        $"""
+type C() as{preSpaces}this{postSpaces}= class end
+"""
+
+    let expected =
+        Some
+            {
+                Message = "Remove unused binding"
+                FixedCode =
+                    """
+type C() = class end
+"""
+            }
+
+    let actual = codeFix |> tryFix code (Manual("this", "IDE0059"))
+
+    Assert.Equal(expected, actual)
+
+[<Theory>]
+[<InlineData "IDE0059">]
+[<InlineData "FS1182">]
+let ``Doesn't fix member identifiers`` diag =
     let code =
         $"""
 type T() =
@@ -92,6 +124,6 @@ type T() =
 
     let expected = None
 
-    let actual = codeFix |> tryFix code (Manual("x", "FS1182"))
+    let actual = codeFix |> tryFix code (Manual("x", diag))
 
     Assert.Equal(expected, actual)

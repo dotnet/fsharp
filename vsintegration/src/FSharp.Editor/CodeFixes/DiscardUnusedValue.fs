@@ -22,7 +22,7 @@ type internal RenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstruc
     static let getTitle (symbolName: string) =
         String.Format(SR.RenameValueToUnderscore(), symbolName)
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create "FS1182"
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS1182", "IDE0059")
 
     override this.RegisterCodeFixesAsync context =
         if context.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then

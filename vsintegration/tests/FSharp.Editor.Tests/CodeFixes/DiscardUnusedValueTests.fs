@@ -9,8 +9,10 @@ open CodeFixTestFramework
 
 let private codeFix = RenameUnusedValueWithUnderscoreCodeFixProvider()
 
-[<Fact>]
-let ``Fixes FS1182 - let bindings in classes`` () =
+[<Theory>]
+[<InlineData "IDE0059">]
+[<InlineData "FS1182">]
+let ``Fixes let bindings in classes`` diag =
     let code =
         """
 type T() =
@@ -28,12 +30,14 @@ type T() =
 """
             }
 
-    let actual = codeFix |> tryFix code (WithOption "--warnon:1182")
+    let actual = codeFix |> tryFix code (Manual("blah", diag))
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Fixes FS1182 - let bindings within let bindings`` () =
+[<Theory>]
+[<InlineData "IDE0059">]
+[<InlineData "FS1182">]
+let ``Fixes let bindings within let bindings`` diag =
     let code =
         """
 let f() =
@@ -53,12 +57,14 @@ let f() =
 """
             }
 
-    let actual = codeFix |> tryFix code (WithOption "--warnon:1182")
+    let actual = codeFix |> tryFix code (Manual("blah", diag))
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Doesn't fix FS1182 - class identifiers`` () =
+[<Theory>]
+[<InlineData "IDE0059">]
+[<InlineData "FS1182">]
+let ``Doesn't fix class identifiers`` diag =
     let code =
         """
 type T() as this = class end
@@ -66,7 +72,7 @@ type T() as this = class end
 
     let expected = None
 
-    let actual = codeFix |> tryFix code (WithOption "--warnon:1182")
+    let actual = codeFix |> tryFix code (Manual("this", diag))
 
     Assert.Equal(expected, actual)
 
