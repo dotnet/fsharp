@@ -74,7 +74,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue()))
 
-        Async.RunImmediate(work)
+        Async.RunSynchronously(work)
         |> ignore
 
         Assert.shouldBe 1 computationCount
@@ -87,7 +87,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue()))
 
-        let result = Async.RunImmediate(work)
+        let result = Async.RunSynchronously(work)
 
         Assert.shouldNotBeEmpty result
         Assert.shouldBe requests result.Length
@@ -102,7 +102,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(graphNode.GetOrComputeValue())
+        Async.RunSynchronously(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -119,7 +119,7 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue())))
+        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue())))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -201,7 +201,7 @@ module BuildGraphTests =
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        Async.RunImmediate(work)
+        Async.RunSynchronously(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
