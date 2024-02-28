@@ -135,13 +135,14 @@ module BuildGraphTests =
 
         use cts = new CancellationTokenSource()
 
+        cts.Cancel()
+
         let work(): Task = Async.StartAsTask(
             async {
-                cts.Cancel()
                 return! graphNode.GetOrComputeValue()
             }, cancellationToken = cts.Token)
 
-        Assert.ThrowsAnyAsync<OperationCanceledException>(work).Wait()
+        Assert.ThrowsAnyAsync<OperationCanceledException>(work).Wait(TimeSpan.FromSeconds 10)
 
     [<Fact>]
     let ``A request can cancel 2``() =
@@ -155,16 +156,12 @@ module BuildGraphTests =
 
         use cts = new CancellationTokenSource()
 
-        let task =
-            async {
-                cts.Cancel()
-                resetEvent.Set() |> ignore
-            }
-            |> Async.StartAsTask
-
         Assert.ThrowsAnyAsync<OperationCanceledException>(fun () ->
             Async.StartImmediateAsTask(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)      
         ) |> ignore
+
+        cts.Cancel()
+        resetEvent.Set() |> ignore
 
     [<Fact>]
     let ``Many requests to get a value asynchronously might evaluate the computation more than once even when some requests get canceled``() =
