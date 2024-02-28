@@ -3097,7 +3097,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
         None
 
-    | _ when mustInline ->
+    | _ when shouldInline ->
         warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
         None
 
@@ -3653,8 +3653,8 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
                     | None -> true // over-application of a known function, which presumably returns a function. This counts as an indirect call
                  else
                     true // application of a function that may make a critical tailcall
-                
-            | _ -> 
+
+                | _ ->
                     // All indirect calls (calls to unknown functions) are assumed to be critical tailcalls 
                     true
 
