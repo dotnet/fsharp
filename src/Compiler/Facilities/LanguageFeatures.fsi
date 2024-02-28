@@ -76,6 +76,8 @@ type LanguageFeature =
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | EnforceAttributeTargetsOnFunctions
+    | LowerInterpolatedStringToConcat
 
 /// LanguageVersion management
 type LanguageVersion =

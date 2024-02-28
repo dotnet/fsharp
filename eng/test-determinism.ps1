@@ -378,9 +378,10 @@ try {
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
   $script:bootstrapTfm = "net472"
+  $script:fsharpNetCoreProductTfm = "net8.0"
 
   if ($script:msbuildEngine -eq "dotnet") {
-    $script.bootstrapTfm = "net8.0"
+    $script.bootstrapTfm = $script:fsharpNetCoreProductTfm
   }
 
   $bootstrapDir = Make-BootstrapBuild

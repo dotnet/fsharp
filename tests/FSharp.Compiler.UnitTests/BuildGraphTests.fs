@@ -235,22 +235,36 @@ module BuildGraphTests =
         Assert.shouldBeTrue graphNode.HasValue
         Assert.shouldBe (ValueSome 1) (graphNode.TryPeekValue())
 
-    
+    type ExampleException(msg) = inherit System.Exception(msg)
+
     [<Fact>]
     let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
         let random =
             let rng = Random()
             fun n -> rng.Next n
     
-        let job phase _ = node {
+        let job phase i = node {
             do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+            DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
+            |> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
+
+            errorR (ExampleException $"job {i}")
         }
     
         let work (phase: BuildPhase) =
             node {
-                use _ = new CompilationGlobalsScope(DiscardErrorsLogger, phase)
-                let! _ = Seq.init 8 (job phase) |> NodeCode.Parallel
+                let n = 8
+                let logger = CapturingDiagnosticsLogger("test NodeCode")
+                use _ = new CompilationGlobalsScope(logger, phase)
+                let! _ = Seq.init n (job phase) |> NodeCode.Parallel
+
+                let diags = logger.Diagnostics |> List.map fst
+
+                diags |> List.map _.Phase |> Set |> Assert.shouldBe (Set.singleton phase)
+                diags |> List.map _.Exception.Message
+                |> Assert.shouldBe (List.init n <| sprintf "job %d")
+
                 Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             }
     
