@@ -469,6 +469,3 @@ module MultipleDiagnosticsLoggers =
     val Parallel: computations: Async<'T> seq -> Async<'T array>
 
     val Sequential: computations: Async<'T> seq -> Async<'T array>
-
-module Async =
-    val RunImmediateWithoutCancellation: Async<'T> -> 'T

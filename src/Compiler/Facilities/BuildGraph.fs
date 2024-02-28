@@ -7,6 +7,16 @@ open System.Threading
 open System.Threading.Tasks
 open System.Globalization
 
+type Async with
+
+    static member FlattenException(computation: Async<'T>) =
+        async {
+            try
+                return! computation
+            with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+                return raise (ex.InnerExceptions[0])
+        }
+
 [<RequireQualifiedAccess>]
 module GraphNode =
 
@@ -76,7 +86,6 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
 
                             Async.StartWithContinuations(
                                 async {
-                                    do! Async.SwitchToThreadPool()
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
                                     return! computation
                                 },
@@ -90,7 +99,7 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                                 ct
                             )
 
-                            return! tcs.Task |> Async.AwaitTask
+                            return! tcs.Task |> Async.AwaitTask |> Async.FlattenException
                     finally
                         if taken then
                             semaphore.Release() |> ignore
