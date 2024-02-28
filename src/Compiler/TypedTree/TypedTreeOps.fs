@@ -10483,31 +10483,33 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         else
             mkAsmExpr ([AI_add], [], [pseudoCount; mkTypedOne g m ty], [ty], m)
 
-    let mkRuntimeCalc pseudoCount count =
+    let mkRuntimeCalc mkThrowIfStepIsZero pseudoCount count =
         let underlying = stripMeasuresFromTy g rangeTy
 
         if typeEquiv g underlying g.int64_ty || typeEquiv g underlying g.uint64_ty then
             RangeCount.PossiblyOversize (fun mkLoopExpr ->
-                mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
-                    let wouldOvf = mkILAsmCeq g m pseudoCount (Expr.Const (Const.UInt64 UInt64.MaxValue, m, g.uint64_ty))
-                    mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
-                        mkLoopExpr count wouldOvf)))
+                mkThrowIfStepIsZero
+                    (mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
+                        let wouldOvf = mkILAsmCeq g m pseudoCount (Expr.Const (Const.UInt64 UInt64.MaxValue, m, g.uint64_ty))
+                        mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
+                            mkLoopExpr count wouldOvf))))
         elif typeEquiv g underlying g.nativeint_ty || typeEquiv g underlying g.unativeint_ty then // We have a nativeint ty whose size we won't know till runtime.
             RangeCount.PossiblyOversize (fun mkLoopExpr ->
-                mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
-                    let wouldOvf =
-                        mkCond
-                            DebugPointAtBinding.NoneAtInvisible
-                            m
-                            g.bool_ty
-                            (mkILAsmCeq g m (mkAsmExpr ([I_sizeof g.ilg.typ_IntPtr], [], [], [g.uint32_ty], m)) (Expr.Const (Const.UInt32 4u, m, g.uint32_ty)))
-                            (mkILAsmCeq g m pseudoCount (Expr.Const (Const.UIntPtr (uint64 UInt32.MaxValue), m, g.unativeint_ty)))
-                            (mkILAsmCeq g m pseudoCount (Expr.Const (Const.UIntPtr UInt64.MaxValue, m, g.unativeint_ty)))
+                mkThrowIfStepIsZero
+                    (mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
+                        let wouldOvf =
+                            mkCond
+                                DebugPointAtBinding.NoneAtInvisible
+                                m
+                                g.bool_ty
+                                (mkILAsmCeq g m (mkAsmExpr ([I_sizeof g.ilg.typ_IntPtr], [], [], [g.uint32_ty], m)) (Expr.Const (Const.UInt32 4u, m, g.uint32_ty)))
+                                (mkILAsmCeq g m pseudoCount (Expr.Const (Const.UIntPtr (uint64 UInt32.MaxValue), m, g.unativeint_ty)))
+                                (mkILAsmCeq g m pseudoCount (Expr.Const (Const.UIntPtr UInt64.MaxValue, m, g.unativeint_ty)))
 
-                    mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
-                        mkLoopExpr count wouldOvf)))
+                        mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
+                            mkLoopExpr count wouldOvf))))
         else
-            RangeCount.Safe count
+            RangeCount.Safe (mkThrowIfStepIsZero count)
 
     match start, step, finish with
     // start..0..finish
@@ -10543,14 +10545,14 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         // The total count could exceed 2⁶⁴.
         | Expr.Const (value = Const.Int64 Int64.MinValue), _ | _, Expr.Const (value = Const.Int64 Int64.MaxValue)
         | Expr.Const (value = Const.UInt64 UInt64.MinValue), _ | _, Expr.Const (value = Const.UInt64 UInt64.MaxValue) ->
-            mkRuntimeCalc (mkCount id) (mkCount mkAddOne)
+            mkRuntimeCalc id (mkCount id) (mkCount mkAddOne)
 
         // The total count could not exceed 2⁶⁴.
         | Expr.Const (value = Const.Int64 _), _ | _, Expr.Const (value = Const.Int64 _)
         | Expr.Const (value = Const.UInt64 _), _ | _, Expr.Const (value = Const.UInt64 _) ->
             RangeCount.Safe (mkCount mkAddOne)
 
-        | _ -> mkRuntimeCalc (mkCount id) (mkCount mkAddOne)
+        | _ -> mkRuntimeCalc id (mkCount id) (mkCount mkAddOne)
 
     // (Only possible for signed types.)
     //
@@ -10573,13 +10575,13 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         match start, finish with
         // The total count could exceed 2⁶⁴.
         | Expr.Const (value = Const.Int64 Int64.MaxValue), _ | _, Expr.Const (value = Const.Int64 Int64.MinValue) ->
-            mkRuntimeCalc (mkCount id) (mkCount mkAddOne)
+            mkRuntimeCalc id (mkCount id) (mkCount mkAddOne)
 
         // The total count could not exceed 2⁶⁴.
         | Expr.Const (value = Const.Int64 _), _ | _, Expr.Const (value = Const.Int64 _) ->
             RangeCount.Safe (mkCount mkAddOne)
 
-        | _ -> mkRuntimeCalc (mkCount id) (mkCount mkAddOne)
+        | _ -> mkRuntimeCalc id (mkCount id) (mkCount mkAddOne)
 
     // start..2..finish
     //
@@ -10636,51 +10638,21 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         // exception at runtime if step is zero:
         //
         //     if step = 0 then ignore ((.. ..) start step finish)
-        let throwIfStepIsZero =
-            mkCond
-                DebugPointAtBinding.NoneAtInvisible
-                m
-                g.unit_ty
-                (mkILAsmCeq g m step (mkTypedZero g m rangeTy))
-                (mkCallAndIgnoreRangeExpr start step finish)
-                (mkUnit g m)
+        let mkThrowIfStepIsZero count =
+            let throwIfStepIsZero =
+                mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    g.unit_ty
+                    (mkILAsmCeq g m step (mkTypedZero g m rangeTy))
+                    (mkCallAndIgnoreRangeExpr start step finish)
+                    (mkUnit g m)
+
+            mkSequential m throwIfStepIsZero count
 
         let mkCount mkAddOne =
-            let count =
-                if isSignedIntegerTy g rangeTy then
-                    let positiveStep =
-                        let count = mkAddOne (mkQuotient (mkDiff finish start) step)
-                        let countTy = tyOfExpr g count
-
-                        mkCond
-                            DebugPointAtBinding.NoneAtInvisible
-                            m
-                            countTy
-                            (mkSignednessAppropriateClt rangeTy finish start)
-                            (mkTypedZero g m countTy)
-                            count
-
-                    let negativeStep =
-                        let absStep = mkAsmExpr ([AI_add], [], [mkAsmExpr ([AI_not], [], [step], [rangeTy], m); mkTypedOne g m rangeTy], [rangeTy], m)
-                        let count = mkAddOne (mkQuotient (mkDiff start finish) absStep)
-                        let countTy = tyOfExpr g count
-
-                        mkCond
-                            DebugPointAtBinding.NoneAtInvisible
-                            m
-                            countTy
-                            (mkSignednessAppropriateClt rangeTy start finish)
-                            (mkTypedZero g m countTy)
-                            count
-
-                    mkCond
-                        DebugPointAtBinding.NoneAtInvisible
-                        m
-                        (tyOfExpr g positiveStep)
-                        (mkSignednessAppropriateClt rangeTy (mkTypedZero g m rangeTy) step)
-                        positiveStep
-                        negativeStep
-                else // Unsigned.
+            if isSignedIntegerTy g rangeTy then
+                let positiveStep =
                     let count = mkAddOne (mkQuotient (mkDiff finish start) step)
                     let countTy = tyOfExpr g count
 
@@ -10692,21 +10664,51 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                         (mkTypedZero g m countTy)
                         count
 
-            mkSequential m throwIfStepIsZero count
+                let negativeStep =
+                    let absStep = mkAsmExpr ([AI_add], [], [mkAsmExpr ([AI_not], [], [step], [rangeTy], m); mkTypedOne g m rangeTy], [rangeTy], m)
+                    let count = mkAddOne (mkQuotient (mkDiff start finish) absStep)
+                    let countTy = tyOfExpr g count
+
+                    mkCond
+                        DebugPointAtBinding.NoneAtInvisible
+                        m
+                        countTy
+                        (mkSignednessAppropriateClt rangeTy start finish)
+                        (mkTypedZero g m countTy)
+                        count
+
+                mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    (tyOfExpr g positiveStep)
+                    (mkSignednessAppropriateClt rangeTy (mkTypedZero g m rangeTy) step)
+                    positiveStep
+                    negativeStep
+            else // Unsigned.
+                let count = mkAddOne (mkQuotient (mkDiff finish start) step)
+                let countTy = tyOfExpr g count
+
+                mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    countTy
+                    (mkSignednessAppropriateClt rangeTy finish start)
+                    (mkTypedZero g m countTy)
+                    count
 
         match start, finish with
         // The total count could exceed 2⁶⁴.
         | Expr.Const (value = Const.Int64 Int64.MinValue), _ | _, Expr.Const (value = Const.Int64 Int64.MaxValue)
         | Expr.Const (value = Const.Int64 Int64.MaxValue), _ | _, Expr.Const (value = Const.Int64 Int64.MinValue)
         | Expr.Const (value = Const.UInt64 UInt64.MinValue), _ | _, Expr.Const (value = Const.UInt64 UInt64.MaxValue) ->
-            mkRuntimeCalc (mkCount id) (mkCount mkAddOne)
+            mkRuntimeCalc mkThrowIfStepIsZero (mkCount id) (mkCount mkAddOne)
 
         // The total count could not exceed 2⁶⁴.
         | Expr.Const (value = Const.Int64 _), _ | _, Expr.Const (value = Const.Int64 _)
         | Expr.Const (value = Const.UInt64 _), _ | _, Expr.Const (value = Const.UInt64 _) ->
             RangeCount.Safe (mkCount mkAddOne)
 
-        | _ -> mkRuntimeCalc (mkCount id) (mkCount mkAddOne)
+        | _ -> mkRuntimeCalc mkThrowIfStepIsZero (mkCount id) (mkCount mkAddOne)
 
 let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr)) =
     let inline mkLetBindingsIfNeeded f =

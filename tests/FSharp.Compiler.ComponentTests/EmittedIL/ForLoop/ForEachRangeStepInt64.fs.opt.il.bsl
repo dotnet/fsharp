@@ -503,69 +503,53 @@
   .method public static void  f8(int64 step) cil managed
   {
     
-    .maxstack  5
+    .maxstack  4
     .locals init (uint64 V_0,
              uint64 V_1,
              int64 V_2)
-    IL_0000:  ldarg.0
-    IL_0001:  brtrue.s   IL_0012
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  ldarg.0
+    IL_0003:  bge.s      IL_0010
 
-    IL_0003:  ldc.i4.1
-    IL_0004:  conv.i8
-    IL_0005:  ldarg.0
-    IL_0006:  ldc.i4.s   10
-    IL_0008:  conv.i8
-    IL_0009:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt64(int64,
-                                                                                                                                                                           int64,
-                                                                                                                                                                           int64)
-    IL_000e:  pop
-    IL_000f:  nop
-    IL_0010:  br.s       IL_0013
+    IL_0005:  ldc.i4.s   9
+    IL_0007:  conv.i8
+    IL_0008:  ldarg.0
+    IL_0009:  div.un
+    IL_000a:  ldc.i4.1
+    IL_000b:  conv.i8
+    IL_000c:  add.ovf.un
+    IL_000d:  nop
+    IL_000e:  br.s       IL_0013
 
+    IL_0010:  ldc.i4.0
+    IL_0011:  conv.i8
     IL_0012:  nop
-    IL_0013:  ldc.i4.0
-    IL_0014:  conv.i8
-    IL_0015:  ldarg.0
-    IL_0016:  bge.s      IL_0023
+    IL_0013:  stloc.0
+    IL_0014:  ldc.i4.0
+    IL_0015:  conv.i8
+    IL_0016:  stloc.1
+    IL_0017:  ldc.i4.1
+    IL_0018:  conv.i8
+    IL_0019:  stloc.2
+    IL_001a:  br.s       IL_002b
 
-    IL_0018:  ldc.i4.s   9
-    IL_001a:  conv.i8
-    IL_001b:  ldarg.0
-    IL_001c:  div.un
-    IL_001d:  ldc.i4.1
-    IL_001e:  conv.i8
-    IL_001f:  add.ovf.un
-    IL_0020:  nop
-    IL_0021:  br.s       IL_0026
-
-    IL_0023:  ldc.i4.0
-    IL_0024:  conv.i8
-    IL_0025:  nop
-    IL_0026:  stloc.0
-    IL_0027:  ldc.i4.0
+    IL_001c:  ldloc.2
+    IL_001d:  call       void assembly::set_c(int64)
+    IL_0022:  ldloc.2
+    IL_0023:  ldarg.0
+    IL_0024:  add
+    IL_0025:  stloc.2
+    IL_0026:  ldloc.1
+    IL_0027:  ldc.i4.1
     IL_0028:  conv.i8
-    IL_0029:  stloc.1
-    IL_002a:  ldc.i4.1
-    IL_002b:  conv.i8
-    IL_002c:  stloc.2
-    IL_002d:  br.s       IL_003e
+    IL_0029:  add
+    IL_002a:  stloc.1
+    IL_002b:  ldloc.1
+    IL_002c:  ldloc.0
+    IL_002d:  blt.un.s   IL_001c
 
-    IL_002f:  ldloc.2
-    IL_0030:  call       void assembly::set_c(int64)
-    IL_0035:  ldloc.2
-    IL_0036:  ldarg.0
-    IL_0037:  add
-    IL_0038:  stloc.2
-    IL_0039:  ldloc.1
-    IL_003a:  ldc.i4.1
-    IL_003b:  conv.i8
-    IL_003c:  add
-    IL_003d:  stloc.1
-    IL_003e:  ldloc.1
-    IL_003f:  ldloc.0
-    IL_0040:  blt.un.s   IL_002f
-
-    IL_0042:  ret
+    IL_002f:  ret
   } 
 
   .method public static void  f9(int64 finish) cil managed
@@ -733,91 +717,77 @@
 
     IL_0069:  ret
 
-    IL_006a:  ldarg.1
-    IL_006b:  brtrue.s   IL_0079
+    IL_006a:  ldc.i4.0
+    IL_006b:  conv.i8
+    IL_006c:  ldarg.1
+    IL_006d:  bge.s      IL_0083
 
-    IL_006d:  ldarg.2
-    IL_006e:  ldarg.1
     IL_006f:  ldarg.2
-    IL_0070:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt64(int64,
-                                                                                                                                                                           int64,
-                                                                                                                                                                           int64)
-    IL_0075:  pop
-    IL_0076:  nop
-    IL_0077:  br.s       IL_007a
+    IL_0070:  ldarg.2
+    IL_0071:  bge.s      IL_0078
 
-    IL_0079:  nop
-    IL_007a:  ldc.i4.0
-    IL_007b:  conv.i8
-    IL_007c:  ldarg.1
-    IL_007d:  bge.s      IL_0093
+    IL_0073:  ldc.i4.0
+    IL_0074:  conv.i8
+    IL_0075:  nop
+    IL_0076:  br.s       IL_0099
 
-    IL_007f:  ldarg.2
-    IL_0080:  ldarg.2
-    IL_0081:  bge.s      IL_0088
+    IL_0078:  ldarg.2
+    IL_0079:  ldarg.2
+    IL_007a:  sub
+    IL_007b:  ldarg.1
+    IL_007c:  div.un
+    IL_007d:  ldc.i4.1
+    IL_007e:  conv.i8
+    IL_007f:  add.ovf.un
+    IL_0080:  nop
+    IL_0081:  br.s       IL_0099
 
-    IL_0083:  ldc.i4.0
-    IL_0084:  conv.i8
-    IL_0085:  nop
-    IL_0086:  br.s       IL_00a9
+    IL_0083:  ldarg.2
+    IL_0084:  ldarg.2
+    IL_0085:  bge.s      IL_008c
 
-    IL_0088:  ldarg.2
-    IL_0089:  ldarg.2
-    IL_008a:  sub
-    IL_008b:  ldarg.1
-    IL_008c:  div.un
-    IL_008d:  ldc.i4.1
-    IL_008e:  conv.i8
-    IL_008f:  add.ovf.un
-    IL_0090:  nop
-    IL_0091:  br.s       IL_00a9
+    IL_0087:  ldc.i4.0
+    IL_0088:  conv.i8
+    IL_0089:  nop
+    IL_008a:  br.s       IL_0099
 
-    IL_0093:  ldarg.2
-    IL_0094:  ldarg.2
-    IL_0095:  bge.s      IL_009c
-
-    IL_0097:  ldc.i4.0
-    IL_0098:  conv.i8
-    IL_0099:  nop
-    IL_009a:  br.s       IL_00a9
-
-    IL_009c:  ldarg.2
+    IL_008c:  ldarg.2
+    IL_008d:  ldarg.2
+    IL_008e:  sub
+    IL_008f:  ldarg.1
+    IL_0090:  not
+    IL_0091:  ldc.i4.1
+    IL_0092:  conv.i8
+    IL_0093:  add
+    IL_0094:  div.un
+    IL_0095:  ldc.i4.1
+    IL_0096:  conv.i8
+    IL_0097:  add.ovf.un
+    IL_0098:  nop
+    IL_0099:  stloc.1
+    IL_009a:  ldc.i4.0
+    IL_009b:  conv.i8
+    IL_009c:  stloc.3
     IL_009d:  ldarg.2
-    IL_009e:  sub
-    IL_009f:  ldarg.1
-    IL_00a0:  not
-    IL_00a1:  ldc.i4.1
-    IL_00a2:  conv.i8
-    IL_00a3:  add
-    IL_00a4:  div.un
-    IL_00a5:  ldc.i4.1
-    IL_00a6:  conv.i8
-    IL_00a7:  add.ovf.un
-    IL_00a8:  nop
-    IL_00a9:  stloc.1
-    IL_00aa:  ldc.i4.0
-    IL_00ab:  conv.i8
-    IL_00ac:  stloc.3
-    IL_00ad:  ldarg.2
-    IL_00ae:  stloc.2
-    IL_00af:  br.s       IL_00c0
+    IL_009e:  stloc.2
+    IL_009f:  br.s       IL_00b0
 
-    IL_00b1:  ldloc.2
-    IL_00b2:  call       void assembly::set_c(int64)
-    IL_00b7:  ldloc.2
-    IL_00b8:  ldarg.1
-    IL_00b9:  add
-    IL_00ba:  stloc.2
-    IL_00bb:  ldloc.3
-    IL_00bc:  ldc.i4.1
-    IL_00bd:  conv.i8
-    IL_00be:  add
-    IL_00bf:  stloc.3
-    IL_00c0:  ldloc.3
-    IL_00c1:  ldloc.1
-    IL_00c2:  blt.un.s   IL_00b1
+    IL_00a1:  ldloc.2
+    IL_00a2:  call       void assembly::set_c(int64)
+    IL_00a7:  ldloc.2
+    IL_00a8:  ldarg.1
+    IL_00a9:  add
+    IL_00aa:  stloc.2
+    IL_00ab:  ldloc.3
+    IL_00ac:  ldc.i4.1
+    IL_00ad:  conv.i8
+    IL_00ae:  add
+    IL_00af:  stloc.3
+    IL_00b0:  ldloc.3
+    IL_00b1:  ldloc.1
+    IL_00b2:  blt.un.s   IL_00a1
 
-    IL_00c4:  ret
+    IL_00b4:  ret
   } 
 
   .method public static void  f11(int64 start,

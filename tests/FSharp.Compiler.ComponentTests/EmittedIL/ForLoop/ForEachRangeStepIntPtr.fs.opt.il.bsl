@@ -791,104 +791,86 @@
 
     IL_013a:  ret
 
-    IL_013b:  ldarg.0
-    IL_013c:  ldc.i8     0x0
-    IL_0145:  conv.i
-    IL_0146:  bne.un.s   IL_0166
+    IL_013b:  ldc.i8     0x0
+    IL_0144:  conv.i
+    IL_0145:  ldarg.0
+    IL_0146:  bge.s      IL_0193
 
-    IL_0148:  ldc.i8     0x1
+    IL_0148:  ldc.i8     0xa
     IL_0151:  conv.i
-    IL_0152:  ldarg.0
-    IL_0153:  ldc.i8     0xa
-    IL_015c:  conv.i
-    IL_015d:  call       class [runtime]System.Collections.Generic.IEnumerable`1<native int> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeIntPtr(native int,
-                                                                                                                                                                                 native int,
-                                                                                                                                                                                 native int)
-    IL_0162:  pop
-    IL_0163:  nop
-    IL_0164:  br.s       IL_0167
+    IL_0152:  ldc.i8     0x1
+    IL_015b:  conv.i
+    IL_015c:  bge.s      IL_016e
 
-    IL_0166:  nop
-    IL_0167:  ldc.i8     0x0
-    IL_0170:  conv.i
-    IL_0171:  ldarg.0
-    IL_0172:  bge.s      IL_01bf
+    IL_015e:  ldc.i8     0x0
+    IL_0167:  conv.i
+    IL_0168:  nop
+    IL_0169:  br         IL_01e5
 
-    IL_0174:  ldc.i8     0xa
-    IL_017d:  conv.i
-    IL_017e:  ldc.i8     0x1
-    IL_0187:  conv.i
-    IL_0188:  bge.s      IL_019a
+    IL_016e:  ldc.i8     0xa
+    IL_0177:  conv.i
+    IL_0178:  ldc.i8     0x1
+    IL_0181:  conv.i
+    IL_0182:  sub
+    IL_0183:  ldarg.0
+    IL_0184:  div.un
+    IL_0185:  ldc.i8     0x1
+    IL_018e:  conv.i
+    IL_018f:  add.ovf.un
+    IL_0190:  nop
+    IL_0191:  br.s       IL_01e5
 
-    IL_018a:  ldc.i8     0x0
-    IL_0193:  conv.i
-    IL_0194:  nop
-    IL_0195:  br         IL_0211
+    IL_0193:  ldc.i8     0x1
+    IL_019c:  conv.i
+    IL_019d:  ldc.i8     0xa
+    IL_01a6:  conv.i
+    IL_01a7:  bge.s      IL_01b6
 
-    IL_019a:  ldc.i8     0xa
-    IL_01a3:  conv.i
-    IL_01a4:  ldc.i8     0x1
-    IL_01ad:  conv.i
-    IL_01ae:  sub
-    IL_01af:  ldarg.0
-    IL_01b0:  div.un
-    IL_01b1:  ldc.i8     0x1
-    IL_01ba:  conv.i
-    IL_01bb:  add.ovf.un
-    IL_01bc:  nop
-    IL_01bd:  br.s       IL_0211
+    IL_01a9:  ldc.i8     0x0
+    IL_01b2:  conv.i
+    IL_01b3:  nop
+    IL_01b4:  br.s       IL_01e5
 
-    IL_01bf:  ldc.i8     0x1
-    IL_01c8:  conv.i
-    IL_01c9:  ldc.i8     0xa
-    IL_01d2:  conv.i
-    IL_01d3:  bge.s      IL_01e2
+    IL_01b6:  ldc.i8     0x1
+    IL_01bf:  conv.i
+    IL_01c0:  ldc.i8     0xa
+    IL_01c9:  conv.i
+    IL_01ca:  sub
+    IL_01cb:  ldarg.0
+    IL_01cc:  not
+    IL_01cd:  ldc.i8     0x1
+    IL_01d6:  conv.i
+    IL_01d7:  add
+    IL_01d8:  div.un
+    IL_01d9:  ldc.i8     0x1
+    IL_01e2:  conv.i
+    IL_01e3:  add.ovf.un
+    IL_01e4:  nop
+    IL_01e5:  stloc.1
+    IL_01e6:  ldc.i8     0x0
+    IL_01ef:  conv.i
+    IL_01f0:  stloc.2
+    IL_01f1:  ldc.i8     0x1
+    IL_01fa:  conv.i
+    IL_01fb:  stloc.3
+    IL_01fc:  br.s       IL_0215
 
-    IL_01d5:  ldc.i8     0x0
-    IL_01de:  conv.i
-    IL_01df:  nop
-    IL_01e0:  br.s       IL_0211
+    IL_01fe:  ldloc.3
+    IL_01ff:  call       void assembly::set_c(native int)
+    IL_0204:  ldloc.3
+    IL_0205:  ldarg.0
+    IL_0206:  add
+    IL_0207:  stloc.3
+    IL_0208:  ldloc.2
+    IL_0209:  ldc.i8     0x1
+    IL_0212:  conv.i
+    IL_0213:  add
+    IL_0214:  stloc.2
+    IL_0215:  ldloc.2
+    IL_0216:  ldloc.1
+    IL_0217:  blt.un.s   IL_01fe
 
-    IL_01e2:  ldc.i8     0x1
-    IL_01eb:  conv.i
-    IL_01ec:  ldc.i8     0xa
-    IL_01f5:  conv.i
-    IL_01f6:  sub
-    IL_01f7:  ldarg.0
-    IL_01f8:  not
-    IL_01f9:  ldc.i8     0x1
-    IL_0202:  conv.i
-    IL_0203:  add
-    IL_0204:  div.un
-    IL_0205:  ldc.i8     0x1
-    IL_020e:  conv.i
-    IL_020f:  add.ovf.un
-    IL_0210:  nop
-    IL_0211:  stloc.1
-    IL_0212:  ldc.i8     0x0
-    IL_021b:  conv.i
-    IL_021c:  stloc.2
-    IL_021d:  ldc.i8     0x1
-    IL_0226:  conv.i
-    IL_0227:  stloc.3
-    IL_0228:  br.s       IL_0241
-
-    IL_022a:  ldloc.3
-    IL_022b:  call       void assembly::set_c(native int)
-    IL_0230:  ldloc.3
-    IL_0231:  ldarg.0
-    IL_0232:  add
-    IL_0233:  stloc.3
-    IL_0234:  ldloc.2
-    IL_0235:  ldc.i8     0x1
-    IL_023e:  conv.i
-    IL_023f:  add
-    IL_0240:  stloc.2
-    IL_0241:  ldloc.2
-    IL_0242:  ldloc.1
-    IL_0243:  blt.un.s   IL_022a
-
-    IL_0245:  ret
+    IL_0219:  ret
   } 
 
   .method public static void  f9(native int finish) cil managed
@@ -1071,93 +1053,77 @@
 
     IL_00d7:  ret
 
-    IL_00d8:  ldarg.1
-    IL_00d9:  ldc.i8     0x0
-    IL_00e2:  conv.i
-    IL_00e3:  bne.un.s   IL_00f1
+    IL_00d8:  ldc.i8     0x0
+    IL_00e1:  conv.i
+    IL_00e2:  ldarg.1
+    IL_00e3:  bge.s      IL_0109
 
     IL_00e5:  ldarg.2
-    IL_00e6:  ldarg.1
-    IL_00e7:  ldarg.2
-    IL_00e8:  call       class [runtime]System.Collections.Generic.IEnumerable`1<native int> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeIntPtr(native int,
-                                                                                                                                                                                 native int,
-                                                                                                                                                                                 native int)
-    IL_00ed:  pop
-    IL_00ee:  nop
-    IL_00ef:  br.s       IL_00f2
+    IL_00e6:  ldarg.2
+    IL_00e7:  bge.s      IL_00f6
 
-    IL_00f1:  nop
-    IL_00f2:  ldc.i8     0x0
-    IL_00fb:  conv.i
-    IL_00fc:  ldarg.1
-    IL_00fd:  bge.s      IL_0123
+    IL_00e9:  ldc.i8     0x0
+    IL_00f2:  conv.i
+    IL_00f3:  nop
+    IL_00f4:  br.s       IL_0137
 
-    IL_00ff:  ldarg.2
-    IL_0100:  ldarg.2
-    IL_0101:  bge.s      IL_0110
+    IL_00f6:  ldarg.2
+    IL_00f7:  ldarg.2
+    IL_00f8:  sub
+    IL_00f9:  ldarg.1
+    IL_00fa:  div.un
+    IL_00fb:  ldc.i8     0x1
+    IL_0104:  conv.i
+    IL_0105:  add.ovf.un
+    IL_0106:  nop
+    IL_0107:  br.s       IL_0137
 
-    IL_0103:  ldc.i8     0x0
-    IL_010c:  conv.i
-    IL_010d:  nop
-    IL_010e:  br.s       IL_0151
+    IL_0109:  ldarg.2
+    IL_010a:  ldarg.2
+    IL_010b:  bge.s      IL_011a
 
-    IL_0110:  ldarg.2
-    IL_0111:  ldarg.2
-    IL_0112:  sub
-    IL_0113:  ldarg.1
-    IL_0114:  div.un
-    IL_0115:  ldc.i8     0x1
-    IL_011e:  conv.i
-    IL_011f:  add.ovf.un
-    IL_0120:  nop
-    IL_0121:  br.s       IL_0151
+    IL_010d:  ldc.i8     0x0
+    IL_0116:  conv.i
+    IL_0117:  nop
+    IL_0118:  br.s       IL_0137
 
-    IL_0123:  ldarg.2
-    IL_0124:  ldarg.2
-    IL_0125:  bge.s      IL_0134
+    IL_011a:  ldarg.2
+    IL_011b:  ldarg.2
+    IL_011c:  sub
+    IL_011d:  ldarg.1
+    IL_011e:  not
+    IL_011f:  ldc.i8     0x1
+    IL_0128:  conv.i
+    IL_0129:  add
+    IL_012a:  div.un
+    IL_012b:  ldc.i8     0x1
+    IL_0134:  conv.i
+    IL_0135:  add.ovf.un
+    IL_0136:  nop
+    IL_0137:  stloc.1
+    IL_0138:  ldc.i8     0x0
+    IL_0141:  conv.i
+    IL_0142:  stloc.2
+    IL_0143:  ldarg.2
+    IL_0144:  stloc.3
+    IL_0145:  br.s       IL_015e
 
-    IL_0127:  ldc.i8     0x0
-    IL_0130:  conv.i
-    IL_0131:  nop
-    IL_0132:  br.s       IL_0151
-
-    IL_0134:  ldarg.2
-    IL_0135:  ldarg.2
-    IL_0136:  sub
-    IL_0137:  ldarg.1
-    IL_0138:  not
-    IL_0139:  ldc.i8     0x1
-    IL_0142:  conv.i
-    IL_0143:  add
-    IL_0144:  div.un
-    IL_0145:  ldc.i8     0x1
-    IL_014e:  conv.i
-    IL_014f:  add.ovf.un
-    IL_0150:  nop
-    IL_0151:  stloc.1
-    IL_0152:  ldc.i8     0x0
+    IL_0147:  ldloc.3
+    IL_0148:  call       void assembly::set_c(native int)
+    IL_014d:  ldloc.3
+    IL_014e:  ldarg.1
+    IL_014f:  add
+    IL_0150:  stloc.3
+    IL_0151:  ldloc.2
+    IL_0152:  ldc.i8     0x1
     IL_015b:  conv.i
-    IL_015c:  stloc.2
-    IL_015d:  ldarg.2
-    IL_015e:  stloc.3
-    IL_015f:  br.s       IL_0178
+    IL_015c:  add
+    IL_015d:  stloc.2
+    IL_015e:  ldloc.2
+    IL_015f:  ldloc.1
+    IL_0160:  blt.un.s   IL_0147
 
-    IL_0161:  ldloc.3
-    IL_0162:  call       void assembly::set_c(native int)
-    IL_0167:  ldloc.3
-    IL_0168:  ldarg.1
-    IL_0169:  add
-    IL_016a:  stloc.3
-    IL_016b:  ldloc.2
-    IL_016c:  ldc.i8     0x1
-    IL_0175:  conv.i
-    IL_0176:  add
-    IL_0177:  stloc.2
-    IL_0178:  ldloc.2
-    IL_0179:  ldloc.1
-    IL_017a:  blt.un.s   IL_0161
-
-    IL_017c:  ret
+    IL_0162:  ret
   } 
 
   .method public static void  f11(native int start,
@@ -1522,110 +1488,90 @@
 
     IL_0179:  ret
 
-    IL_017a:  ldc.i8     0xfffffffffffffffe
+    IL_017a:  ldc.i8     0x0
     IL_0183:  conv.i
-    IL_0184:  ldc.i8     0x0
+    IL_0184:  ldc.i8     0xfffffffffffffffe
     IL_018d:  conv.i
-    IL_018e:  bne.un.s   IL_01b7
+    IL_018e:  bge.s      IL_01e4
 
-    IL_0190:  ldc.i8     0xa
+    IL_0190:  ldc.i8     0x1
     IL_0199:  conv.i
-    IL_019a:  ldc.i8     0xfffffffffffffffe
+    IL_019a:  ldc.i8     0xa
     IL_01a3:  conv.i
-    IL_01a4:  ldc.i8     0x1
-    IL_01ad:  conv.i
-    IL_01ae:  call       class [runtime]System.Collections.Generic.IEnumerable`1<native int> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeIntPtr(native int,
-                                                                                                                                                                                 native int,
-                                                                                                                                                                                 native int)
-    IL_01b3:  pop
-    IL_01b4:  nop
-    IL_01b5:  br.s       IL_01b8
+    IL_01a4:  bge.s      IL_01b6
 
-    IL_01b7:  nop
-    IL_01b8:  ldc.i8     0x0
-    IL_01c1:  conv.i
-    IL_01c2:  ldc.i8     0xfffffffffffffffe
-    IL_01cb:  conv.i
-    IL_01cc:  bge.s      IL_0222
+    IL_01a6:  ldc.i8     0x0
+    IL_01af:  conv.i
+    IL_01b0:  nop
+    IL_01b1:  br         IL_023f
 
-    IL_01ce:  ldc.i8     0x1
-    IL_01d7:  conv.i
-    IL_01d8:  ldc.i8     0xa
-    IL_01e1:  conv.i
-    IL_01e2:  bge.s      IL_01f4
+    IL_01b6:  ldc.i8     0x1
+    IL_01bf:  conv.i
+    IL_01c0:  ldc.i8     0xa
+    IL_01c9:  conv.i
+    IL_01ca:  sub
+    IL_01cb:  ldc.i8     0xfffffffffffffffe
+    IL_01d4:  conv.i
+    IL_01d5:  div.un
+    IL_01d6:  ldc.i8     0x1
+    IL_01df:  conv.i
+    IL_01e0:  add.ovf.un
+    IL_01e1:  nop
+    IL_01e2:  br.s       IL_023f
 
-    IL_01e4:  ldc.i8     0x0
+    IL_01e4:  ldc.i8     0xa
     IL_01ed:  conv.i
-    IL_01ee:  nop
-    IL_01ef:  br         IL_027d
+    IL_01ee:  ldc.i8     0x1
+    IL_01f7:  conv.i
+    IL_01f8:  bge.s      IL_0207
 
-    IL_01f4:  ldc.i8     0x1
-    IL_01fd:  conv.i
-    IL_01fe:  ldc.i8     0xa
-    IL_0207:  conv.i
-    IL_0208:  sub
-    IL_0209:  ldc.i8     0xfffffffffffffffe
-    IL_0212:  conv.i
-    IL_0213:  div.un
-    IL_0214:  ldc.i8     0x1
-    IL_021d:  conv.i
-    IL_021e:  add.ovf.un
-    IL_021f:  nop
-    IL_0220:  br.s       IL_027d
+    IL_01fa:  ldc.i8     0x0
+    IL_0203:  conv.i
+    IL_0204:  nop
+    IL_0205:  br.s       IL_023f
 
-    IL_0222:  ldc.i8     0xa
-    IL_022b:  conv.i
-    IL_022c:  ldc.i8     0x1
-    IL_0235:  conv.i
-    IL_0236:  bge.s      IL_0245
+    IL_0207:  ldc.i8     0xa
+    IL_0210:  conv.i
+    IL_0211:  ldc.i8     0x1
+    IL_021a:  conv.i
+    IL_021b:  sub
+    IL_021c:  ldc.i8     0xfffffffffffffffe
+    IL_0225:  conv.i
+    IL_0226:  not
+    IL_0227:  ldc.i8     0x1
+    IL_0230:  conv.i
+    IL_0231:  add
+    IL_0232:  div.un
+    IL_0233:  ldc.i8     0x1
+    IL_023c:  conv.i
+    IL_023d:  add.ovf.un
+    IL_023e:  nop
+    IL_023f:  stloc.1
+    IL_0240:  ldc.i8     0x0
+    IL_0249:  conv.i
+    IL_024a:  stloc.2
+    IL_024b:  ldc.i8     0xa
+    IL_0254:  conv.i
+    IL_0255:  stloc.3
+    IL_0256:  br.s       IL_0278
 
-    IL_0238:  ldc.i8     0x0
-    IL_0241:  conv.i
-    IL_0242:  nop
-    IL_0243:  br.s       IL_027d
+    IL_0258:  ldloc.3
+    IL_0259:  call       void assembly::set_c(native int)
+    IL_025e:  ldloc.3
+    IL_025f:  ldc.i8     0xfffffffffffffffe
+    IL_0268:  conv.i
+    IL_0269:  add
+    IL_026a:  stloc.3
+    IL_026b:  ldloc.2
+    IL_026c:  ldc.i8     0x1
+    IL_0275:  conv.i
+    IL_0276:  add
+    IL_0277:  stloc.2
+    IL_0278:  ldloc.2
+    IL_0279:  ldloc.1
+    IL_027a:  blt.un.s   IL_0258
 
-    IL_0245:  ldc.i8     0xa
-    IL_024e:  conv.i
-    IL_024f:  ldc.i8     0x1
-    IL_0258:  conv.i
-    IL_0259:  sub
-    IL_025a:  ldc.i8     0xfffffffffffffffe
-    IL_0263:  conv.i
-    IL_0264:  not
-    IL_0265:  ldc.i8     0x1
-    IL_026e:  conv.i
-    IL_026f:  add
-    IL_0270:  div.un
-    IL_0271:  ldc.i8     0x1
-    IL_027a:  conv.i
-    IL_027b:  add.ovf.un
-    IL_027c:  nop
-    IL_027d:  stloc.1
-    IL_027e:  ldc.i8     0x0
-    IL_0287:  conv.i
-    IL_0288:  stloc.2
-    IL_0289:  ldc.i8     0xa
-    IL_0292:  conv.i
-    IL_0293:  stloc.3
-    IL_0294:  br.s       IL_02b6
-
-    IL_0296:  ldloc.3
-    IL_0297:  call       void assembly::set_c(native int)
-    IL_029c:  ldloc.3
-    IL_029d:  ldc.i8     0xfffffffffffffffe
-    IL_02a6:  conv.i
-    IL_02a7:  add
-    IL_02a8:  stloc.3
-    IL_02a9:  ldloc.2
-    IL_02aa:  ldc.i8     0x1
-    IL_02b3:  conv.i
-    IL_02b4:  add
-    IL_02b5:  stloc.2
-    IL_02b6:  ldloc.2
-    IL_02b7:  ldloc.1
-    IL_02b8:  blt.un.s   IL_0296
-
-    IL_02ba:  ret
+    IL_027c:  ret
   } 
 
   .property native int c()
