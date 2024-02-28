@@ -740,12 +740,12 @@ module IncrementalBuilderHelpers =
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
-        let! computedBoundModels = boundModels |> Seq.map (fun g -> g.GetOrComputeValue()) |> Async.Sequential
+        let! computedBoundModels = boundModels |> Seq.map (fun g -> g.GetOrComputeValue()) |> MultipleDiagnosticsLoggers.Sequential
 
         let! tcInfos =
             computedBoundModels
             |> Seq.map (fun boundModel -> async { return! boundModel.GetOrComputeTcInfo() })
-            |> Async.Sequential
+            |> MultipleDiagnosticsLoggers.Sequential
 
         // tcInfoExtras can be computed in parallel. This will check any previously skipped implementation files in parallel, too.
         let! latestImplFiles =
@@ -757,7 +757,7 @@ module IncrementalBuilderHelpers =
                         let! tcInfoExtras = boundModel.GetOrComputeTcInfoExtras()
                         return tcInfoExtras.latestImplFile
                 })
-            |> Async.Parallel
+            |> MultipleDiagnosticsLoggers.Parallel
 
         let results = [
             for tcInfo, latestImplFile in Seq.zip tcInfos latestImplFiles ->
@@ -826,7 +826,7 @@ module IncrementalBuilderHelpers =
         let! partialDiagnostics =
             computedBoundModels
             |> Seq.map (fun m -> m.Diagnostics.GetOrComputeValue())
-            |> Async.Parallel
+            |> MultipleDiagnosticsLoggers.Parallel
         let diagnostics = [
             diagnosticsLogger.GetDiagnostics()
             yield! partialDiagnostics |> Seq.rev
