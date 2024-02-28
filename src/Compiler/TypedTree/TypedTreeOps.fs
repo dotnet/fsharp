@@ -10706,7 +10706,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         // The total count could not exceed 2⁶⁴.
         | Expr.Const (value = Const.Int64 _), _ | _, Expr.Const (value = Const.Int64 _)
         | Expr.Const (value = Const.UInt64 _), _ | _, Expr.Const (value = Const.UInt64 _) ->
-            RangeCount.Safe (mkCount mkAddOne)
+            RangeCount.Safe (mkThrowIfStepIsZero (mkCount mkAddOne))
 
         | _ -> mkRuntimeCalc mkThrowIfStepIsZero (mkCount id) (mkCount mkAddOne)
 

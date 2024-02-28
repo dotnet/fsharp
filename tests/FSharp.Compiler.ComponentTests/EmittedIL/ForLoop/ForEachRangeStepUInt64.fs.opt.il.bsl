@@ -503,42 +503,58 @@
   .method public static void  f8(uint64 step) cil managed
   {
     
-    .maxstack  4
+    .maxstack  5
     .locals init (uint64 V_0,
              uint64 V_1,
              uint64 V_2)
-    IL_0000:  ldc.i4.s   9
-    IL_0002:  conv.i8
-    IL_0003:  ldarg.0
-    IL_0004:  div.un
-    IL_0005:  ldc.i4.1
-    IL_0006:  conv.i8
-    IL_0007:  add.ovf.un
-    IL_0008:  stloc.0
-    IL_0009:  ldc.i4.0
-    IL_000a:  conv.i8
-    IL_000b:  stloc.1
-    IL_000c:  ldc.i4.1
-    IL_000d:  conv.i8
-    IL_000e:  stloc.2
-    IL_000f:  br.s       IL_0020
+    IL_0000:  ldarg.0
+    IL_0001:  brtrue.s   IL_0012
 
-    IL_0011:  ldloc.2
-    IL_0012:  call       void assembly::set_c(uint64)
-    IL_0017:  ldloc.2
-    IL_0018:  ldarg.0
-    IL_0019:  add
-    IL_001a:  stloc.2
-    IL_001b:  ldloc.1
-    IL_001c:  ldc.i4.1
+    IL_0003:  ldc.i4.1
+    IL_0004:  conv.i8
+    IL_0005:  ldarg.0
+    IL_0006:  ldc.i4.s   10
+    IL_0008:  conv.i8
+    IL_0009:  call       class [runtime]System.Collections.Generic.IEnumerable`1<uint64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeUInt64(uint64,
+                                                                                                                                                                             uint64,
+                                                                                                                                                                             uint64)
+    IL_000e:  pop
+    IL_000f:  nop
+    IL_0010:  br.s       IL_0013
+
+    IL_0012:  nop
+    IL_0013:  ldc.i4.s   9
+    IL_0015:  conv.i8
+    IL_0016:  ldarg.0
+    IL_0017:  div.un
+    IL_0018:  ldc.i4.1
+    IL_0019:  conv.i8
+    IL_001a:  add.ovf.un
+    IL_001b:  stloc.0
+    IL_001c:  ldc.i4.0
     IL_001d:  conv.i8
-    IL_001e:  add
-    IL_001f:  stloc.1
-    IL_0020:  ldloc.1
-    IL_0021:  ldloc.0
-    IL_0022:  blt.un.s   IL_0011
+    IL_001e:  stloc.1
+    IL_001f:  ldc.i4.1
+    IL_0020:  conv.i8
+    IL_0021:  stloc.2
+    IL_0022:  br.s       IL_0033
 
-    IL_0024:  ret
+    IL_0024:  ldloc.2
+    IL_0025:  call       void assembly::set_c(uint64)
+    IL_002a:  ldloc.2
+    IL_002b:  ldarg.0
+    IL_002c:  add
+    IL_002d:  stloc.2
+    IL_002e:  ldloc.1
+    IL_002f:  ldc.i4.1
+    IL_0030:  conv.i8
+    IL_0031:  add
+    IL_0032:  stloc.1
+    IL_0033:  ldloc.1
+    IL_0034:  ldloc.0
+    IL_0035:  blt.un.s   IL_0024
+
+    IL_0037:  ret
   } 
 
   .method public static void  f9(uint64 finish) cil managed
