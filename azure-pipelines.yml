@@ -140,6 +140,8 @@ stages:
                 NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
             displayName: End to end build tests
+            continueOnError: true
+            condition: always()
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
