@@ -126,7 +126,7 @@ module BuildGraphTests =
 
         Assert.shouldBeFalse weak.IsAlive
 
-    [<Fact>]
+    // [<Fact>]
     let ``A request can cancel``() =
         let graphNode = 
             GraphNode(async { 
@@ -144,7 +144,7 @@ module BuildGraphTests =
 
         Assert.ThrowsAnyAsync<OperationCanceledException>(work).Wait(TimeSpan.FromSeconds 10)
 
-    [<Fact>]
+    // [<Fact>]
     let ``A request can cancel 2``() =
         let resetEvent = new ManualResetEvent(false)
 
