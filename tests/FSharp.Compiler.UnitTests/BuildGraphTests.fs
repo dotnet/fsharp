@@ -3,7 +3,6 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.Threading
-open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Xunit
 open FSharp.Test
@@ -72,9 +71,9 @@ module BuildGraphTests =
                 return 1 
             })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue()))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
-        Async.RunSynchronously(work)
+        Async.RunImmediate(work)
         |> ignore
 
         Assert.shouldBe 1 computationCount
@@ -85,9 +84,9 @@ module BuildGraphTests =
 
         let graphNode = GraphNode(async { return 1 })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue()))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
-        let result = Async.RunSynchronously(work)
+        let result = Async.RunImmediate(work)
 
         Assert.shouldNotBeEmpty result
         Assert.shouldBe requests result.Length
@@ -102,7 +101,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunSynchronously(graphNode.GetOrComputeValue())
+        Async.RunImmediateWithoutCancellation(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -119,14 +118,14 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue())))
+        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
 
         Assert.shouldBeFalse weak.IsAlive
 
-    // [<Fact>]
+    [<Fact>]
     let ``A request can cancel``() =
         let graphNode = 
             GraphNode(async { 
@@ -135,33 +134,53 @@ module BuildGraphTests =
 
         use cts = new CancellationTokenSource()
 
-        cts.Cancel()
-
-        let work(): Task = Async.StartAsTask(
+        let work =
             async {
+                cts.Cancel()
                 return! graphNode.GetOrComputeValue()
-            }, cancellationToken = cts.Token)
+            }
 
-        Assert.ThrowsAnyAsync<OperationCanceledException>(work).Wait(TimeSpan.FromSeconds 10)
+        let ex =
+            try
+                Async.RunImmediate(work, cancellationToken = cts.Token)
+                |> ignore
+                failwith "Should have canceled"
+            with
+            | :? OperationCanceledException as ex ->
+                ex
 
-    // [<Fact>]
+        Assert.shouldBeTrue(ex <> null)
+
+    [<Fact>]
     let ``A request can cancel 2``() =
         let resetEvent = new ManualResetEvent(false)
 
         let graphNode = 
             GraphNode(async { 
                 let! _ = Async.AwaitWaitHandle(resetEvent)
-                failwith "Should have canceled" 
+                return 1 
             })
 
         use cts = new CancellationTokenSource()
 
-        Assert.ThrowsAnyAsync<OperationCanceledException>(fun () ->
-            Async.StartImmediateAsTask(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)      
-        ) |> ignore
+        let task =
+            async {
+                cts.Cancel()
+                resetEvent.Set() |> ignore
+            }
+            |> Async.StartAsTask
 
-        cts.Cancel()
-        resetEvent.Set() |> ignore
+        let ex =
+            try
+                Async.RunImmediate(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)
+                |> ignore
+                failwith "Should have canceled"
+            with
+            | :? OperationCanceledException as ex ->
+                ex
+
+        Assert.shouldBeTrue(ex <> null)
+        try task.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ()
 
     [<Fact>]
     let ``Many requests to get a value asynchronously might evaluate the computation more than once even when some requests get canceled``() =
@@ -198,7 +217,7 @@ module BuildGraphTests =
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        Async.RunSynchronously(work)
+        Async.RunImmediateWithoutCancellation(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
@@ -227,6 +246,8 @@ module BuildGraphTests =
         let job phase i = async {
             do! random 10 |> Async.Sleep
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+            DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
+            |> Assert.shouldBe $"DiagnosticsLogger(CaptureDiagnosticsConcurrently {i})"
 
             errorR (ExampleException $"job {i}")
         }
