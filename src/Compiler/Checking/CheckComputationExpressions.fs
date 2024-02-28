@@ -27,7 +27,7 @@ open FSharp.Compiler.TypedTreeOps
 
 type cenv = TcFileState
 
-/// Used to flag if this is the first or a sebsequent translation pass through a computation expression
+/// Used to flag if this is the first or a subsequent translation pass through a computation expression
 type CompExprTranslationPass =
     | Initial
     | Subsequent
@@ -254,7 +254,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         // A parameterized custom builder, e.g., `builder<…>`, `builder ()`.
         | Expr.App(funcExpr = Expr.Val(vref, _, m)) ->
             let item = Item.CustomBuilder(vref.DisplayName, vref)
-            CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+            CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
             valRefEq cenv.g vref cenv.g.query_value_vref
         | _ -> false
 
@@ -777,7 +777,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 opName.idText = customOperationJoinConditionWord nm
                 ->
                 let item = Item.CustomOperation(opName.idText, (fun () -> None), None)
-                CallNameResolutionSink cenv.tcSink (opName.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
+                CallNameResolutionSink cenv.tcSink (opName.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.AccessRights)
                 Some(e1, e2)
             | _ -> None
 
@@ -798,7 +798,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | IntoSuffix(x, intoWordRange, intoPat) ->
             // record the "into" as a custom operation for colorization
             let item = Item.CustomOperation("into", (fun () -> None), None)
-            CallNameResolutionSink cenv.tcSink (intoWordRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+            CallNameResolutionSink cenv.tcSink (intoWordRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
             (x, intoPat, alreadyGivenError)
         | _ ->
             if not alreadyGivenError then
@@ -964,7 +964,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                     CallNameResolutionSink
                         cenv.tcSink
-                        (intoWordRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+                        (intoWordRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
 
                     Some intoInfo
                 | None -> None
@@ -1191,7 +1191,9 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                     // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
                     // of type variables in the quick info provided in the IDE.
-                    CallNameResolutionSink cenv.tcSink (nm.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+                    CallNameResolutionSink
+                        cenv.tcSink
+                        (nm.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
 
                     let mkJoinExpr keySelector1 keySelector2 innerPat e =
                         let mSynthetic = mOpCore.MakeSynthetic()
@@ -2422,7 +2424,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
             // of type variables in the quick info provided in the IDE.
-            CallNameResolutionSink cenv.tcSink (nm.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+            CallNameResolutionSink cenv.tcSink (nm.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
 
             if isLikeZip || isLikeJoin || isLikeGroupJoin then
                 errorR (Error(FSComp.SR.tcBinaryOperatorRequiresBody (nm.idText, Option.get (customOpUsageText nm)), nm.idRange))

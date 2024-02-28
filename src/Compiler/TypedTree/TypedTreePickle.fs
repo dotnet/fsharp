@@ -592,7 +592,7 @@ let u_lazy u st =
     let idx1 = st.is.Position
     // Skip the length of data
     st.is.Skip len
-    // This is the lazy computation that wil force the unpickling of the term.
+    // This is the lazy computation that will force the unpickling of the term.
     // This term must contain OSGN definitions of the given nodes.
     let res =
         lazy (let st = { st with is = st.is.CloneAndSeek idx1 }

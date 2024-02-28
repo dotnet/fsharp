@@ -84,7 +84,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Disable inline editing of Caption of a ReferendeNode
+        /// Disable inline editing of Caption of a ReferenceNode
         /// </summary>
         /// <returns>null</returns>
         public override string GetEditLabel()
@@ -257,7 +257,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>Success if the reference can be added.</returns>
         internal virtual AddReferenceCheckResult CheckIfCanAddReference()
         {
-            // When this method is called this refererence has not yet been added to the hierarchy, only instantiated.
+            // When this method is called this reference has not yet been added to the hierarchy, only instantiated.
             ReferenceNode existingNode;
             if (this.IsAlreadyAdded(out existingNode))
             {
@@ -318,7 +318,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
             }
 
-            // Request unmanaged code permission in order to be able to creaet the unmanaged memory representing the guid.
+            // Request unmanaged code permission in order to be able to create the unmanaged memory representing the guid.
             new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Demand();
 
             Guid guid = GetBrowseLibraryGuid();

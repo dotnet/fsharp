@@ -138,7 +138,7 @@ let addThings : (int->int->float) = add
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
-let ``Handle parantheses on the arguments`` () =
+let ``Handle parentheses on the arguments`` () =
     let symbolName = "sum"
 
     let code =

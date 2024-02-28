@@ -137,7 +137,7 @@ type class assert RightAddition<DateTime,TimeSpan>
 //end
 
 
-//BUG: empty object initializaers not being permitted:
+//BUG: empty object initializers not being permitted:
 (*
 //BUG: comments aren't being colored in red!!!!
 module EmptyClassTest = begin

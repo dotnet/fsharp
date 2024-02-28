@@ -192,7 +192,7 @@ type public FSharpSymbolUse =
 
     // For internal use only
     internal new:
-        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurence * range: range ->
+        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurrence * range: range ->
             FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions

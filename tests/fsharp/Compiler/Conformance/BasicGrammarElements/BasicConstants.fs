@@ -159,7 +159,7 @@ printfn "%A" x9
             """
 
     [<Test>]
-    let ``int with single underscore after leteral with leading zero ``() = 
+    let ``int with single underscore after literal with leading zero ``() = 
         CompilerAssert.CompileExeAndRun
             """
 let x10 = 05_2
@@ -168,7 +168,7 @@ printfn "%A" x10
             """
 
     [<Test>]
-    let ``int with single underscore after octo leteral ``() = 
+    let ``int with single underscore after octo literal ``() = 
         CompilerAssert.CompileExeAndRun
             """
 let x14 = 0o5_2

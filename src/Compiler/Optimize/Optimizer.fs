@@ -142,7 +142,7 @@ type ValInfos(entries) =
                          (fun (_: ValRef, k: ValLinkageFullKey) -> hash k.PartialKey)
                          (fun (v1, k1) (v2, k2) -> 
                              k1.PartialKey = k2.PartialKey && 
-                             // dismbiguate overloads, somewhat low-perf but only use for a handful of overloads in FSharp.Core
+                             // disambiguate overloads, somewhat low-perf but only use for a handful of overloads in FSharp.Core
                              match k1.TypeForLinkage, k2.TypeForLinkage with
                              | Some _, Some _ -> 
                                  let sig1 = XmlDocSigOfVal g true "" v1.Deref 

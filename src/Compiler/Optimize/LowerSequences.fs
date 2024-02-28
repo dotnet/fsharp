@@ -555,7 +555,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let pc2lab  = Map.ofList ((pcInit, initLabel) :: (pcDone, noDisposeContinuationLabel) :: List.zip pcs labs)
             let lab2pc = Map.ofList ((initLabel, pcInit) :: (noDisposeContinuationLabel, pcDone) :: List.zip labs pcs)
 
-            // Execute phase2, building the core of the the GenerateNext, Dispose and CheckDispose methods
+            // Execute phase2, building the core of the GenerateNext, Dispose and CheckDispose methods
             let generateExprCore, disposalExprCore, checkDisposeExprCore =
                 res.phase2 (pcVarRef, currVarRef, nextVarRef, lab2pc)
             

@@ -24,9 +24,9 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full,
                                          portable, embedded, pdbonly.
                                          ('pdbonly' is the default if no
-                                         debuggging type specified and
-                                         enables attaching a debugger to a
-                                         running program, 'portable' is a
+                                         debugging type specified and enables
+                                         attaching a debugger to a running
+                                         program, 'portable' is a
                                          cross-platform format, 'embedded' is
                                          a cross-platform format embedded
                                          into the output file).

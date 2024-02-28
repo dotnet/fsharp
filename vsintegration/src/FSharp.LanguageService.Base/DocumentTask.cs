@@ -79,7 +79,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         private static readonly Queue<Action> ourUIQueue = new Queue<Action>();
         private static bool ourIsReentrancy;
 
-        // Runs the action on UI thread. Prevents from reentracy.
+        // Runs the action on UI thread. Prevents from reentrancy.
         public static void Run(Action action) {
             if (isUnitTestingMode) {
                 action();

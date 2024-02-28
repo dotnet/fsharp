@@ -1,5 +1,5 @@
 ### NOTE
-Before running tests, `.global.json` files should be renamed to `global.json`, this is needed to not confuse UseDotNet task of Azure Pipelies when installing SDK.
+Before running tests, `.global.json` files should be renamed to `global.json`, this is needed to not confuse UseDotNet task of Azure Pipelines when installing SDK.
 
 
 #### no warnings

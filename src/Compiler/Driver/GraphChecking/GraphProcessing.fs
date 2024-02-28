@@ -11,7 +11,7 @@ type NodeInfo<'Item> =
         Item: 'Item
         Deps: 'Item[]
         TransitiveDeps: 'Item[]
-        Dependants: 'Item[]
+        Dependents: 'Item[]
     }
 
 type IncrementableInt(value: int) =
@@ -44,7 +44,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
     (parentCt: CancellationToken)
     : ('Item * 'Result)[] =
     let transitiveDeps = graph |> Graph.transitive
-    let dependants = graph |> Graph.reverse
+    let dependents = graph |> Graph.reverse
     // Cancellation source used to signal either an exception in one of the items or end of processing.
     use localCts = new CancellationTokenSource()
     use cts = CancellationTokenSource.CreateLinkedTokenSource(parentCt, localCts.Token)
@@ -56,7 +56,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
             if
                 not exists
                 || not (transitiveDeps.ContainsKey item)
-                || not (dependants.ContainsKey item)
+                || not (dependents.ContainsKey item)
             then
                 printfn $"Unexpected inconsistent state of the graph for item '{item}'"
 
@@ -64,7 +64,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
                 Item = item
                 Deps = graph[item]
                 TransitiveDeps = transitiveDeps[item]
-                Dependants = dependants[item]
+                Dependents = dependents[item]
             }
 
         {
@@ -133,17 +133,17 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
         let singleRes = work getItemPublicNode info
         node.Result <- Some singleRes
 
-        let unblockedDependants =
-            node.Info.Dependants
+        let unblockedDependents =
+            node.Info.Dependents
             |> lookupMany
-            // For every dependant, increment its number of processed dependencies,
-            // and filter dependants which now have all dependencies processed (but didn't before).
-            |> Array.filter (fun dependant ->
-                let pdc = dependant.ProcessedDepsCount.Increment()
-                // Note: We cannot read 'dependant.ProcessedDepsCount' again to avoid returning the same item multiple times.
-                pdc = dependant.Info.Deps.Length)
+            // For every dependent, increment its number of processed dependencies,
+            // and filter dependents which now have all dependencies processed (but didn't before).
+            |> Array.filter (fun dependent ->
+                let pdc = dependent.ProcessedDepsCount.Increment()
+                // Note: We cannot read 'dependent.ProcessedDepsCount' again to avoid returning the same item multiple times.
+                pdc = dependent.Info.Deps.Length)
 
-        unblockedDependants |> Array.iter queueNode
+        unblockedDependents |> Array.iter queueNode
         incrementProcessedNodesCount ()
 
     leaves |> Array.iter queueNode
@@ -175,7 +175,7 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
     : Async<('Item * 'Result)[]> =
     async {
         let transitiveDeps = graph |> Graph.transitive
-        let dependants = graph |> Graph.reverse
+        let dependents = graph |> Graph.reverse
         // Cancellation source used to signal either an exception in one of the items or end of processing.
         let! parentCt = Async.CancellationToken
         use localCts = new CancellationTokenSource()
@@ -193,7 +193,7 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
                 if
                     not exists
                     || not (transitiveDeps.ContainsKey item)
-                    || not (dependants.ContainsKey item)
+                    || not (dependents.ContainsKey item)
                 then
                     printfn $"Unexpected inconsistent state of the graph for item '{item}'"
 
@@ -201,7 +201,7 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
                     Item = item
                     Deps = graph[item]
                     TransitiveDeps = transitiveDeps[item]
-                    Dependants = dependants[item]
+                    Dependents = dependents[item]
                 }
 
             {
@@ -269,17 +269,17 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
                 let! singleRes = work getItemPublicNode info
                 node.Result <- Some singleRes
 
-                let unblockedDependants =
-                    node.Info.Dependants
+                let unblockedDependents =
+                    node.Info.Dependents
                     |> lookupMany
-                    // For every dependant, increment its number of processed dependencies,
-                    // and filter dependants which now have all dependencies processed (but didn't before).
-                    |> Array.filter (fun dependant ->
-                        let pdc = dependant.ProcessedDepsCount.Increment()
-                        // Note: We cannot read 'dependant.ProcessedDepsCount' again to avoid returning the same item multiple times.
-                        pdc = dependant.Info.Deps.Length)
+                    // For every dependent, increment its number of processed dependencies,
+                    // and filter dependents which now have all dependencies processed (but didn't before).
+                    |> Array.filter (fun dependent ->
+                        let pdc = dependent.ProcessedDepsCount.Increment()
+                        // Note: We cannot read 'dependent.ProcessedDepsCount' again to avoid returning the same item multiple times.
+                        pdc = dependent.Info.Deps.Length)
 
-                unblockedDependants |> Array.iter queueNode
+                unblockedDependents |> Array.iter queueNode
                 incrementProcessedNodesCount ()
             }
 

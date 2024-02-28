@@ -119,7 +119,7 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
 //
 // NOTE: Anonymous record types are not directly considered to implement IComparable,
 // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
-// consitutent types, which may not yet be known in type inference.
+// constituent types, which may not yet be known in type inference.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
     [
         match tryAppTy g ty with
@@ -178,7 +178,7 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
                 intfTy
 
         // NOTE: we should really only report the IComparable<A<'m>> interface for measure-annotated types
-        // if the original type supports IComparable<A> somewhere in the hierarchy, likeiwse IEquatable<A<'m>>.
+        // if the original type supports IComparable<A> somewhere in the hierarchy, likewise IEquatable<A<'m>>.
         //
         // However since F# 2.0 we have always reported these interfaces for all measure-annotated types.
 

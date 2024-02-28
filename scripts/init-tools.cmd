@@ -26,7 +26,7 @@ if "!cleanup_existing!" == "1" (
     rmdir /s /q "%DOTNET_TOOLS_PATH%"
 )
 
-:: download and install install SDK
+:: download and install SDK
 if not exist "%dotnetexe%" (
     echo powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\scripts\dotnet-install.ps1 -InstallDir %DOTNET_TOOLS_PATH% -Architecture x64 -Version %DOTNET_TOOLS_VERSION% -NoPath true; exit $LastExitCode;"
          powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\scripts\dotnet-install.ps1 -InstallDir %DOTNET_TOOLS_PATH% -Architecture x64 -Version %DOTNET_TOOLS_VERSION% -NoPath true; exit $LastExitCode;"

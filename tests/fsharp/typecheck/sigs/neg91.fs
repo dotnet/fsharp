@@ -33,7 +33,7 @@ module TestObsoleteSet =
         let test () =
             A.x <- 1     
 
-module TestCompilerMessgeSet = 
+module TestCompilerMessageSet = 
     // See https://github.com/Microsoft/visualfsharp/issues/27
     module A =
         [<CompilerMessageAttribute("Don't touch me", 3003)>]

@@ -839,7 +839,7 @@ module internal DescriptionListsImpl =
         | Item.DelegateCtor delTy -> 
             let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delTy m AccessibleFromSomewhere
 
-            // No need to pass more generic type information in here since the instanitations have already been applied
+            // No need to pass more generic type information in here since the instantiations have already been applied
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, delFuncTy)] delTy
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned

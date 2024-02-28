@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Editor.Tests.CodeFixes.RemoveSuperflousCaptureForUnionCaseWithNoDataTests
+module FSharp.Editor.Tests.CodeFixes.RemoveSuperfluousCaptureForUnionCaseWithNoDataTests
 
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit

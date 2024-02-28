@@ -2,7 +2,7 @@
 #light
 
 // Verify types which are generic WRT a unit of measure are exposed as 
-// standard .NET types (no funny buisness!)
+// standard .NET types (no funny business!)
 
 namespace Test
 

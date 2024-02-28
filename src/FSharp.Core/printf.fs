@@ -246,7 +246,7 @@ module internal PrintfImpl =
                             let p = parsePrecision s &i2
                             let typeChar = parseTypeChar s &i2
 
-                            // shortcut for the simpliest case
+                            // shortcut for the simplest case
                             // if typeChar is not % or it has star as width\precision - resort to long path
                             if typeChar = '%' && not (w = StarValue || p = StarValue) then 
                                 buf.Append('%') |> ignore
@@ -395,7 +395,7 @@ module internal PrintfImpl =
     /// Type of results produced by specialization.
     ///
     /// This is a function that accepts a thunk to create PrintfEnv on demand (at the very last
-    /// appliction of an argument) and returns a concrete instance of an appriate curried printer.
+    /// application of an argument) and returns a concrete instance of an appropriate curried printer.
     ///
     /// After all arguments are collected, specialization obtains concrete PrintfEnv from the thunk
     /// and uses it to output collected data.

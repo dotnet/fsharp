@@ -1,7 +1,7 @@
 // #Conformance #LexicalAnalysis 
 #light
 
-// Verify behaivor of invalid escape sequences
+// Verify behavior of invalid escape sequences
 
 // '\\' escape sequence for single backslash
 if "\\"B <> [|92uy|] then exit 1

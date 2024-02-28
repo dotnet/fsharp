@@ -17,7 +17,7 @@
 namespace FSharp.Core.UnitTests.Control.TasksDynamic
 
 #nowarn "1204" // construct only for use in compiled code
-#nowarn "3511" // state machine not staticlly compilable - the one in 'Run'
+#nowarn "3511" // state machine not statically compilable - the one in 'Run'
 open System
 open System.Collections
 open System.Collections.Generic

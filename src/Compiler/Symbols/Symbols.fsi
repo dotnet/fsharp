@@ -108,7 +108,7 @@ type FSharpSymbol =
 
     /// Gets the display name for the symbol. Double backticks are added if the name is not a valid identifier.
     ///
-    /// For FSharpParameter symbols without a name for the paramater, this returns "````"
+    /// For FSharpParameter symbols without a name for the parameter, this returns "````"
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation
@@ -660,7 +660,7 @@ type FSharpGenericParameterMemberConstraint =
     /// Get the name of the method required by the constraint
     member MemberName: string
 
-    /// Indicates if the the method required by the constraint must be static
+    /// Indicates if the method required by the constraint must be static
     member MemberIsStatic: bool
 
     /// Get the argument types of the method required by the constraint
@@ -977,7 +977,7 @@ type FSharpMemberOrFunctionOrValue =
     /// Get the signature text to include this Symbol into an existing signature file.
     member GetValSignatureText: displayContext: FSharpDisplayContext * m: range -> string option
 
-    /// Check if this method has an entrpoint that accepts witness arguments and if so return
+    /// Check if this method has an entrypoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
     member GetWitnessPassingInfo: unit -> (string * IList<FSharpParameter>) option
 
@@ -1197,7 +1197,7 @@ type FSharpAttribute =
     /// Get the range of the name of the attribute
     member Range: range
 
-    /// Indicates if attribute matchies the full name of the given type parameter
+    /// Indicates if attribute matches the full name of the given type parameter
     member IsAttribute<'T> : unit -> bool
 
 /// Represents open declaration in F# code.

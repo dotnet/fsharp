@@ -59,7 +59,7 @@ The F# tooling distinguishes between the following concepts of "name" for values
 
 * Compiled names
 
-  Characterists: 
+  Characteristics: 
   - Mark the names that appear in the .NET IL
 
   Current aliases in code:

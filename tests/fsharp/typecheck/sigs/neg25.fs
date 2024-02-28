@@ -11,7 +11,7 @@ module NegativeTests =
             abstract member Meth2: int -> int
 
         [<AbstractClass>]
-        type Partial() =  // THis should give an error  - Meth1 is not implemented
+        type Partial() =  // This should give an error  - Meth1 is not implemented
             interface ITestSub with 
                 override this.Meth2 x = x + 1
 
@@ -67,7 +67,7 @@ module NegativeTestsActualRepro1 =
             override this.MaximumStrength =
                 9u    // Stub
 
-    type TestVariableLevelEnumeratorFactory (levels: seq<Object>) =    // THis should give an error
+    type TestVariableLevelEnumeratorFactory (levels: seq<Object>) =    // This should give an error
             inherit TestCaseEnumeratorFactoryCommonImplementation ()
             let node =
                TestVariableNode levels

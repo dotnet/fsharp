@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-/// Contains logic to prepare, post-process, filter and emit compiler diagnsotics
+/// Contains logic to prepare, post-process, filter and emit compiler diagnostics
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System

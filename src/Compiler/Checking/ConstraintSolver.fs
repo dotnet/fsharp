@@ -298,7 +298,7 @@ let rec occursCheck g un ty =
 //------------------------------------------------------------------------- 
 
 /// Some additional solutions are forced prior to generalization (permitWeakResolution=true).  These are, roughly speaking, rules
-/// for binary-operand constraints arising from constructs such as "1.0 + x" where "x" is an unknown type. THe constraint here
+/// for binary-operand constraints arising from constructs such as "1.0 + x" where "x" is an unknown type. The constraint here
 /// involves two type parameters - one for the left, and one for the right.  The left is already known to be Double.
 /// In this situation (and in the absence of other evidence prior to generalization), constraint solving forces an assumption that 
 /// the right is also Double - this is "weak" because there is only weak evidence for it.
@@ -1058,7 +1058,7 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     let aenv = csenv.EquivEnv
     let g = csenv.g
 
-    // Pre F# 6.0 we asssert the trait solution here
+    // Pre F# 6.0 we assert the trait solution here
 #if TRAIT_CONSTRAINT_CORRECTIONS
     if not (csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections) then
 #endif
@@ -2087,9 +2087,9 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
                 if HaveSameHeadType g ty1Parent ty2Parent then
                     do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1Parent ty2Parent
 
-    | TyparConstraint.IsEnum (unerlyingTy1, _),
-      TyparConstraint.IsEnum (unerlyingTy2, m2) ->
-        return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace unerlyingTy1 unerlyingTy2
+    | TyparConstraint.IsEnum (underlyingTy1, _),
+      TyparConstraint.IsEnum (underlyingTy2, m2) ->
+        return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlyingTy1 underlyingTy2
             
     | TyparConstraint.IsDelegate (argsTy1, retTy1, _),
       TyparConstraint.IsDelegate (argsTy2, retTy2, m2) ->
@@ -2119,7 +2119,7 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
     | _ -> ()
   }
 
-// See when one constraint implies implies another.
+// See when one constraint implies another.
 // 'a :> ty1  implies 'a :> 'ty2 if the head type name of ty2 (say T2) occursCheck anywhere in the hierarchy of ty1
 // If it does occur, e.g. at instantiation T2<inst2>, then the check above will have enforced that
 // T2<inst2> = ty2
@@ -3254,7 +3254,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
         // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
         // into account when comparing overloads.  So adding a name to an argument might mean 
-        // overloads ould no longer be distinguished.  We thus look at *all* arguments (whether
+        // overloads could no longer be distinguished.  We thus look at *all* arguments (whether
         // optional or not) as an additional comparison technique.
         let c = 
             if g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) then

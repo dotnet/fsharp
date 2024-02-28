@@ -4956,7 +4956,7 @@ namespace Microsoft.FSharp.Core
                 | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
                 | _ -> value.ToString()
 
-             // other commmon mscorlib reference types
+             // other common mscorlib reference types
              when 'T : StringBuilder =
                 if value = unsafeDefault<'T> then ""
                 else let x = (# "" value : StringBuilder #) in x.ToString()
@@ -5581,7 +5581,7 @@ namespace Microsoft.FSharp.Core
 
             // Notes on "inline" with range ienumerable generation.
             // "inline" is used to ensure that primitive ops like add,sub etc. are direct calls.
-            // However, it is not used to ensure all explicit lambda arguments can be reduced by the optimiser.
+            // However, it is not used to ensure all explicit lambda arguments can be reduced by the optimizer.
 
             type Mode = 
                 | NotStarted = 0
@@ -5591,7 +5591,7 @@ namespace Microsoft.FSharp.Core
             [<AbstractClass>]
             type BaseRangeEnumerator<'T>() =
                 // Generate enumerator from mutable state "z".
-                // Marked "inline" to ensure argument functions are reduced (by optimiser).
+                // Marked "inline" to ensure argument functions are reduced (by optimizer).
                 let mutable mode = Mode.NotStarted
                 let getCurrent(x:BaseRangeEnumerator<'T>) = 
                     match mode with
@@ -5845,7 +5845,7 @@ namespace Microsoft.FSharp.Core
                     else                                               false              
 
                 // NOTE: The ordering Before is an argument. It will be < or > depending on direction.
-                // We assume assume "Before n m" 
+                // We assume "Before n m" 
                 abstract Before: 'T -> 'T -> bool
                 abstract Equal: 'T -> 'T -> bool
                 abstract Step: 'T -> 'T 

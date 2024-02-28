@@ -822,7 +822,7 @@ module AsyncPrimitives =
             WhileLoop())
 #endif
 
-    /// Implement the for loop construct of async commputation expressions
+    /// Implement the for loop construct of async computation expressions
     ///   - No initial cancellation check before GetEnumerator call.
     ///   - No initial cancellation check before entering protection of implied try/finally
     ///   - Cancellation check after 'entering' the implied try/finally and before loop
@@ -867,7 +867,7 @@ module AsyncPrimitives =
 #endif
 
     ///   - Initial cancellation check
-    ///   - Call syncCtxt.Post with exception protection. THis may fail as it is arbitrary user code
+    ///   - Call syncCtxt.Post with exception protection. This may fail as it is arbitrary user code
     let CreateSwitchToAsync (syncCtxt: SynchronizationContext) =
         MakeAsyncWithCancelCheck(fun ctxt -> ctxt.PostWithTrampoline syncCtxt ctxt.cont)
 

@@ -134,7 +134,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Overloaded constructor for creating a ComReferenceNode from selector data
         /// </summary>
         /// <param name="root">The Project node</param>
-        /// <param name="selectorData">The component selctor data.</param>
+        /// <param name="selectorData">The component selector data.</param>
         internal ComReferenceNode(ProjectNode root, VSCOMPONENTSELECTORDATA selectorData)
             : base(root)
         {
@@ -214,7 +214,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             // We need to create the project element at this point if it has not been created.
             // We cannot do that from the ctor if input comes from a component selector data, since had we been doing that we would have added a project element to the project file.  
-            // The problem with that approach is that we would need to remove the project element if the item cannot be added to the hierachy (E.g. It already exists).
+            // The problem with that approach is that we would need to remove the project element if the item cannot be added to the hierarchy (E.g. It already exists).
             // It is just safer to update the project file now. This is the intent of this method.
             // Call MSBuild to build the target ResolveComReferences
             if (this.ItemNode == null || this.ItemNode.Item == null)
@@ -226,7 +226,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Checks if a reference is already added. The method parses all references and compares the the FinalItemSpec and the Guid.
+        /// Checks if a reference is already added. The method parses all references and compares the FinalItemSpec and the Guid.
         /// </summary>
         /// <returns>true if the assembly has already been added.</returns>
         public override bool IsAlreadyAdded(out ReferenceNode existingNode)
@@ -263,7 +263,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// This is an helper method to convert the VSCOMPONENTSELECTORDATA recieved by the
+        /// This is an helper method to convert the VSCOMPONENTSELECTORDATA received by the
         /// implementer of IVsComponentUser into a ProjectElement that can be used to create
         /// an instance of this class.
         /// This should not be called for project reference or reference to managed assemblies.
@@ -337,7 +337,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Verify that the TypeLib is registered and set the the installed file path of the com reference.
+        /// Verify that the TypeLib is registered and set the installed file path of the com reference.
         /// </summary>
         /// <returns></returns>
         private void SetInstalledFilePath()

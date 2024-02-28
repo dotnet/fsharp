@@ -278,7 +278,7 @@ type ILMethInfo =
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member GetParamNamesAndTypes: amap: ImportMap * m: range * minst: TType list -> ParamNameAndType list
 
-    /// Get the argument types of the the IL method. If this is an C#-style extension method
+    /// Get the argument types of the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list
 
@@ -438,7 +438,7 @@ type MethInfo =
     /// Receiver must be a struct type.
     member IsReadOnly: bool
 
-    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    /// Indicates, whether this method has `IsExternalInit` modreq.
     member HasExternalInit: bool
 
     /// Indicates if the enclosing type for the method is a value type.
@@ -721,7 +721,7 @@ type ILPropInfo =
     /// Get the declaring IL type of the IL property, including any generic instantiation
     member ILTypeInfo: ILTypeInfo
 
-    /// Is the property requied (has the RequiredMemberAttribute).
+    /// Is the property required (has the RequiredMemberAttribute).
     member IsRequired: bool
 
     /// Indicates if the IL property is logically a 'newslot', i.e. hides any previous slots of the same name.
@@ -816,10 +816,10 @@ type PropInfo =
     /// Indicates if this property has an associated setter method.
     member HasSetter: bool
 
-    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    /// Indicates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifier)
     member IsSetterInitOnly: bool
 
-    /// Is the property requied (has the RequiredMemberAttribute).
+    /// Is the property required (has the RequiredMemberAttribute).
     member IsRequired: bool
 
     member ImplementedSlotSignatures: SlotSig list

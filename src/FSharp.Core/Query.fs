@@ -1265,7 +1265,7 @@ module Query =
     /// in terms of LINQ operators, operating over mutable tuples. Return the conversion
     /// information for the immutable-to-mutable conversion performed so we can undo it where needed.
     ///
-    /// Here 'inner' refers the the part of the query that produces a sequence of results.
+    /// Here 'inner' refers the part of the query that produces a sequence of results.
     ///
     /// The output query will use either Queryable.* or Enumerable.* operators depending on whether
     /// the inputs to the queries have type IQueryable or IEnumerable.
@@ -1605,7 +1605,7 @@ module Query =
     // propagate a immutable-->mutable-->immutable translation if any.
     //
     /// This is used on recursive translations of yielded elements to translate nested queries
-    /// in 'yield' position and still propagate information about a possible imutable->mutable->mutable
+    /// in 'yield' position and still propagate information about a possible immutable->mutable->mutable
     //  translation.
     //      e.g. yield (1, query { ... })
     and TransInnerNoCheck e =
@@ -1657,7 +1657,7 @@ module Query =
 
     /// Given a query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
-    /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postifx" in-memory transformation
+    /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postfix" in-memory transformation
     /// converting the data back to immutable tuples and records.
     let TransInnerWithFinalConsume canElim immutSource =
         let mutSource, sourceConv = TransInnerAndCommit canElim true immutSource

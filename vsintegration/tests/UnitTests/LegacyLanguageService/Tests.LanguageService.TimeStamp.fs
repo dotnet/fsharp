@@ -87,7 +87,7 @@ type UsingMSBuild()  =
         AssertNoErrorsOrWarnings(project1)
         AssertNoErrorsOrWarnings(project2)  // this is key, project2 remembers what used to be on disk, does not fail due to missing assembly
 
-    // In this bug, the referenced project output didn't exist yet. Building dependee should cause update in dependant
+    // In this bug, the referenced project output didn't exist yet. Building dependee should cause update in dependent
     [<Test>]
     [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Regression.NoContainedString.Timestamps.Bug3368a``() =

@@ -25,7 +25,7 @@ let check s b1 b2 = test s (b1 = b2)
 
 //! Address of incremental  local mutable
   
-module AddresOfIncrementalClassLocalMutable = 
+module AddressOfIncrementalClassLocalMutable = 
 
     open System.Drawing
     open System.Windows.Forms
@@ -39,7 +39,7 @@ module AddresOfIncrementalClassLocalMutable =
 
 //! Address of mutable record field (related to above)
 
-module AddresOfMutableRecordField = 
+module AddressOfMutableRecordField = 
     open System.Drawing
     open System.Windows.Forms
 
@@ -87,7 +87,7 @@ module Misc =
 
 
 
-//! Wire prevously
+//! Wire previously
     
 (* accepted *)
 module WireOld = 
@@ -726,7 +726,7 @@ module ExceptionsWithAugmentations =
 //! Test cases:
 (*  
   [ ] - self-references - allowed and trapped
-  [ ] - direct calls to most derrived base override
+  [ ] - direct calls to most derived base override
   [ ] - calls on "super" object - via self and super vars
 *)
 

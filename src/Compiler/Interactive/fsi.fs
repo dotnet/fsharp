@@ -2299,7 +2299,7 @@ type internal FsiDynamicCompiler
                                     istate.tcState.TcEnvFromImpls.DisplayEnv,
                                     symbol,
                                     [],
-                                    ItemOccurence.Binding,
+                                    ItemOccurrence.Binding,
                                     v.DeclarationLocation
                                 )
 
@@ -2314,7 +2314,7 @@ type internal FsiDynamicCompiler
                                 istate.tcState.TcEnvFromImpls.DisplayEnv,
                                 symbol,
                                 [],
-                                ItemOccurence.Binding,
+                                ItemOccurrence.Binding,
                                 e.DeclarationLocation
                             )
 
@@ -2607,7 +2607,7 @@ type internal FsiDynamicCompiler
     /// Process any delayed assembly additions.
     member _.ProcessDelayedReferences(ctok, istate) =
 
-        // Grab the dealyed assembly reference additions
+        // Grab the delayed assembly reference additions
         let refs = delayedReferences |> Seq.toList
         delayedReferences.Clear()
 
@@ -2776,13 +2776,13 @@ type internal FsiDynamicCompiler
                                 istate // error already reported
 
                         with _ ->
-                            // An exception occured during processing, so remove the lines causing the error from the package manager list.
+                            // An exception occurred during processing, so remove the lines causing the error from the package manager list.
                             tcConfigB.packageManagerLines <-
                                 PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
 
                             reraise ())
 
-    member fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, directiveKind, path, show, m) =
+    member fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, directiveKind, path, show, m) =
         let dm =
             fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(
                 tcConfigB.compilerToolPaths,
@@ -2830,7 +2830,7 @@ type internal FsiDynamicCompiler
                     st),
                  (fun st (m, path, directive) ->
                      let st, _ =
-                         fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, st, directive, path, false, m)
+                         fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
 
                      st),
                  (fun _ _ -> ()))
@@ -3251,7 +3251,7 @@ type internal FsiInterruptController
 // - The requesting assembly (that is, the assembly that is returned by the ResolveEventArgs.RequestingAssembly property)
 //   was loaded without context.
 //
-// On the coreclr we add an UnmanagedDll Resoution handler to ensure that native dll's can be searched for,
+// On the coreclr we add an UnmanagedDll Resolution handler to ensure that native dll's can be searched for,
 // the desktop version of the Clr does not support this mechanism.
 //
 // For information about contexts, see the Assembly.LoadFrom(String) method overload.
@@ -3731,10 +3731,10 @@ type FsiInteractionProcessor
             istate, Completed None
 
         | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [ path ], m) ->
-            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Resolution, path, true, m)
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, Directive.Resolution, path, true, m)
 
         | ParsedHashDirective("i", ParsedHashDirectiveArguments [ path ], m) ->
-            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Include, path, true, m)
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, Directive.Include, path, true, m)
 
         | ParsedHashDirective("I", ParsedHashDirectiveArguments [ path ], m) ->
             tcConfigB.AddIncludePath(m, path, tcConfigB.implicitIncludeDir)
@@ -3821,7 +3821,7 @@ type FsiInteractionProcessor
             warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
             istate, Completed None
 
-    /// Most functions return a step status - this decides whether to continue and propogates the
+    /// Most functions return a step status - this decides whether to continue and propagates the
     /// last value produced
     let ProcessStepStatus (istate, cont) lastResult f =
         match cont with

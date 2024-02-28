@@ -54,10 +54,10 @@ module internal GotoDefinition =
                         None, false
                     | Some (s, colIdent, isQuoted) -> 
                         let qualId  = if isQuoted then [s] else s.Split '.' |> Array.toList // chop it up (in case it's a qualified ident)
-                        // this is a bit irratiting: `GetTokenInfoAt` won't handle just-past-the-end, so we take the just-past-the-end position and adjust it by the `magicalAdjustmentConstant` to just-*at*-the-end
+                        // this is a bit irritating: `GetTokenInfoAt` won't handle just-past-the-end, so we take the just-past-the-end position and adjust it by the `magicalAdjustmentConstant` to just-*at*-the-end
                         let colIdentAdjusted = colIdent - QuickParse.MagicalAdjustmentConstant
             
-                        // Corrrect the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
+                        // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                         let tag = colourizer.GetTokenInfoAt(VsTextLines.TextColorState(VsTextView.Buffer textView), line, colIdentAdjusted).Token
                         let tag = QuickParse.CorrectIdentifierToken s tag
                         Some(colIdent, tag, qualId), false
@@ -67,7 +67,7 @@ module internal GotoDefinition =
                 |> GotoDefinitionResult_DEPRECATED.MakeError
             | Some(colIdent, tag, qualId) ->
                 if typedResults.HasFullTypeCheckInfo then 
-                    // Used to be the Parser's internal definition, now hard-coded to avoid an IVT into the parser itsef.
+                    // Used to be the Parser's internal definition, now hard-coded to avoid an IVT into the parser itself.
                     // Dead code (aside from legacy tests), ignore
                     if tag <> FSharpTokenTag.IDENT then
                         Strings.GotoDefinitionFailed_NotIdentifier()

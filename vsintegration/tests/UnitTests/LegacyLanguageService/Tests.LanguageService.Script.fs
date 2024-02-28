@@ -53,7 +53,7 @@ type UsingMSBuild() as this =
         | Some(severity,message) ->
             Assert.Fail(sprintf "Expected no squiggle but got '%A' with message: %s" severity message)
 
-    let VerifyErrorListContainedExpetedStr(expectedStr:string,project : OpenProject) = 
+    let VerifyErrorListContainedExpectedStr(expectedStr:string,project : OpenProject) = 
         let errorList = GetErrors(project)
         let GetErrorMessages(errorList : Error list) =
             [ for i = 0 to errorList.Length - 1 do
@@ -100,16 +100,16 @@ type UsingMSBuild() as this =
         AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertNotContains 
 
 
-    //Verify the error list in fsx file containd the expected string
+    //Verify the error list in fsx file contained the expected string
     member private this.VerifyFSXErrorListContainedExpectedString(fileContents : string, expectedStr : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
-        VerifyErrorListContainedExpetedStr(expectedStr,project)    
+        VerifyErrorListContainedExpectedStr(expectedStr,project)    
 
     //Verify no error list in fsx file 
     member private this.VerifyFSXNoErrorList(fileContents : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
         AssertNoErrorsOrWarnings(project)  
-    //Verify QuickInfo Containd In Fsx file
+    //Verify QuickInfo Contained In Fsx file
     member public this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile (code : string) marker expected =
 
         let (_, _, file) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
@@ -117,14 +117,14 @@ type UsingMSBuild() as this =
         MoveCursorToEndOfMarker(file, marker)
         let tooltip = GetQuickInfoAtCursor file
         AssertContains(tooltip, expected)
-    //Verify QuickInfo Containd In Fsx file
+    //Verify QuickInfo Contained In Fsx file
     member public this.AssertQuickInfoContainsAtStartOfMarkerInFsxFile (code : string) marker expected =
         let (_, _, file) = this.CreateSingleFileProject((code : string), fileKind = SourceFileKind.FSX)
 
         MoveCursorToStartOfMarker(file, marker)
         let tooltip = GetQuickInfoAtCursor file
         AssertContains(tooltip, expected)
-    //Verify QuickInfo Not Containd In Fsx file     
+    //Verify QuickInfo Not Contained In Fsx file     
     member public this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile code marker notexpected =
         let (_, _, file) = this.CreateSingleFileProject((code : string), fileKind = SourceFileKind.FSX)
 
@@ -138,7 +138,7 @@ type UsingMSBuild() as this =
         let fileContent = """open Thing1.Thing2"""
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"Thing1")
         
-    /// Regression test for FSharp1.0:4861 - #r to non-existent file causes the first line to be squiggled
+    /// Regression test for FSharp1.0:4861 - #r to nonexistent file causes the first line to be squiggled
     /// There was a problem with Salsa that caused squiggles not to be shown for .fsx files.
     [<Test>]
     member public this.``Fsx.Hash.RProperSquiggleForNonExistentFile``() =  
@@ -228,7 +228,7 @@ type UsingMSBuild() as this =
                                      "open System.Transactions"
                                      ]
         let (project, file) = createSingleFileFsxFromLines code
-        VerifyErrorListContainedExpetedStr("Transactions",project)
+        VerifyErrorListContainedExpectedStr("Transactions",project)
         
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         ReplaceFileInMemory file
@@ -259,7 +259,7 @@ type UsingMSBuild() as this =
                                      "printfn \"%d\" x"
                                      ])    
         let fsx = OpenFile(project,"File2.fsx")    
-        VerifyErrorListContainedExpetedStr("MyNamespace",project)
+        VerifyErrorListContainedExpectedStr("MyNamespace",project)
         
         ReplaceFileInMemory fsx
                          ["#light"
@@ -299,7 +299,7 @@ type UsingMSBuild() as this =
                           "printfn \"%d\" x"
                           ]
         TakeCoffeeBreak(this.VS)
-        VerifyErrorListContainedExpetedStr("MyNamespace",project)
+        VerifyErrorListContainedExpectedStr("MyNamespace",project)
     
     [<Test>]
     member public this.``Fsx.HashLoad.Conditionals``() =
@@ -356,7 +356,7 @@ type UsingMSBuild() as this =
                          ]
         SaveFileToDisk(file)
         TakeCoffeeBreak(this.VS)
-        VerifyErrorListContainedExpetedStr("Transactions",project)
+        VerifyErrorListContainedExpectedStr("Transactions",project)
         gpatcc.AssertExactly(notAA[file], notAA[file], true (* expectCreate, because dependent DLL set changed *))
     
 
@@ -919,7 +919,7 @@ type UsingMSBuild() as this =
     //
     //      %program files%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0
     //
-    // because this is where the the .XML files are.
+    // because this is where the .XML files are.
     //
     // When executing scripts, however, we need to _not_ resolve from these directories because
     // they may be metadata-only assemblies.
@@ -1575,29 +1575,29 @@ type UsingMSBuild() as this =
 
         let providerCounters2 = providerAssembly.GetType("ProviderImplementation.ProvidedTypes.GlobalCountersForInvalidation")
         Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
-        let totalInvaldiationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
-        Assert.IsNotNull(totalInvaldiationHandlersAddedMeth, "totalInvaldiationHandlersAddedMeth should not be null")
-        let totalInvaldiationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
-        Assert.IsNotNull(totalInvaldiationHandlersRemovedMeth, "totalInvaldiationHandlersRemovedMeth should not be null")
+        let totalInvalidationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
+        Assert.IsNotNull(totalInvalidationHandlersAddedMeth, "totalInvalidationHandlersAddedMeth should not be null")
+        let totalInvalidationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
+        Assert.IsNotNull(totalInvalidationHandlersRemovedMeth, "totalInvalidationHandlersRemovedMeth should not be null")
 
         let totalCreations() = totalCreationsMeth.Invoke(null, [| |]) :?> int
         let totalDisposals() = totalDisposalsMeth.Invoke(null, [| |]) :?> int
         let checkConfigsDisposed() = checkConfigsMeth.Invoke(null, [| |]) |> ignore
-        let totalInvaldiationHandlersAdded() = totalInvaldiationHandlersAddedMeth.Invoke(null, [| |]) :?> int
-        let totalInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
+        let totalInvalidationHandlersAdded() = totalInvalidationHandlersAddedMeth.Invoke(null, [| |]) :?> int
+        let totalInvalidationHandlersRemoved() = totalInvalidationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
 
          
         let startCreations = totalCreations()
         let startDisposals = totalDisposals()
-        let startInvaldiationHandlersAdded = totalInvaldiationHandlersAdded()
-        let startInvaldiationHandlersRemoved =  totalInvaldiationHandlersRemoved()
+        let startInvalidationHandlersAdded = totalInvalidationHandlersAdded()
+        let startInvalidationHandlersRemoved =  totalInvalidationHandlersRemoved()
         let countCreations() = totalCreations() - startCreations
         let countDisposals() = totalDisposals() - startDisposals
-        let countInvaldiationHandlersAdded() = totalInvaldiationHandlersAdded() - startInvaldiationHandlersAdded
-        let countInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemoved() - startInvaldiationHandlersRemoved
+        let countInvalidationHandlersAdded() = totalInvalidationHandlersAdded() - startInvalidationHandlersAdded
+        let countInvalidationHandlersRemoved() = totalInvalidationHandlersRemoved() - startInvalidationHandlersRemoved
 
         Assert.IsTrue(startCreations >= startDisposals, "Check0")
-        Assert.IsTrue(startInvaldiationHandlersAdded >= startInvaldiationHandlersRemoved, "Check0")
+        Assert.IsTrue(startInvalidationHandlersAdded >= startInvalidationHandlersRemoved, "Check0")
         for i in 1 .. 50 do 
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject" + string (i % 20))    
@@ -1633,7 +1633,7 @@ type UsingMSBuild() as this =
                 // there should be some roots to project builds still present
                 if i >= 3 then 
                     Assert.IsTrue(c >= d + 3, "Check4a, c >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string d)
-                    printfn "Check4a2, i = %d, countInvaldiationHandlersRemoved() = %d" i (countInvaldiationHandlersRemoved())
+                    printfn "Check4a2, i = %d, countInvalidationHandlersRemoved() = %d" i (countInvalidationHandlersRemoved())
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
             if clearing then 
@@ -1643,7 +1643,7 @@ type UsingMSBuild() as this =
 
                 // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
                 Assert.IsTrue((c = d), "Check4b, countCreations() = countDisposals(), iteration " + string i)
-                Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check4b2, all invlidation handlers removed, iteration " + string i)
+                Assert.IsTrue((countInvalidationHandlersAdded() = countInvalidationHandlersRemoved()), "Check4b2, all invalidation handlers removed, iteration " + string i)
         
         let c = countCreations()
         let d = countDisposals()
@@ -1655,7 +1655,7 @@ type UsingMSBuild() as this =
         let d = countDisposals()
         // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
         Assert.IsTrue((c = d), "Check6b, at end, countCreations() = countDisposals() after explicit clearing")
-        Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
+        Assert.IsTrue((countInvalidationHandlersAdded() = countInvalidationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit clearing")
         checkConfigsDisposed()
 
     [<Test;Category("TypeProvider"); Category("Expensive"); Ignore("Flaky test, unclear if it is valuable")>]

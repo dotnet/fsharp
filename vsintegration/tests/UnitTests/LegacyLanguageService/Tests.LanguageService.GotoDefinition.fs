@@ -147,7 +147,7 @@ type UsingMSBuild()  =
             marker = "123456I")
            
     [<Test>]
-    member public this.``OnTypeDefintion``() =
+    member public this.``OnTypeDefinition``() =
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
                 //regression test for bug 2516
@@ -189,7 +189,7 @@ type UsingMSBuild()  =
             MoveCursorToStartOfMarker (file,columnMarker)
             let _,column = GetCursorLocation(file)
 
-            // Put curson at start of marker and then hit F12
+            // Put cursor at start of marker and then hit F12
             MoveCursorToStartOfMarker (file, marker)
             let identifier = (GetIdentifierAtCursor file).Value |> fst
             let result = GotoDefinitionAtCursor file
@@ -380,7 +380,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
-    [<Ignore("Need some work to detect the line doesnot exist.")>]
+    [<Ignore("Need some work to detect the line does not exist.")>]
     //This test case is when the TypeProviderDefinitionLocationAttribute Line doesn't exist  for TypeProvider Type
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute.Type.LineDoesnotExist``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
@@ -452,10 +452,10 @@ type UsingMSBuild()  =
             addtlRefAssy = [PathRelativeToTestAssembly(@"DefinitionLocationAttributeFileDoesnotExist.dll")])
 
     [<Test>]
-    member public this.``ModuleDefintion``() =
+    member public this.``ModuleDefinition``() =
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
-                //regretion test for bug 2517
+                //regression test for bug 2517
                 module Foo (*MarkerModuleDefinition*) =
                   let x = ()
                 """,
@@ -463,10 +463,10 @@ type UsingMSBuild()  =
             definitionCode = "module Foo (*MarkerModuleDefinition*) =")
 
     [<Test>]
-    member public this.``Record.Field.Defintion``() = 
+    member public this.``Record.Field.Definition``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
-                //regretion test for bug 2518
+                //regression test for bug 2518
                 type MyRec =
                   { myX (*MarkerXFieldDefinition*) : int
                     myY (*MarkerYFieldDefinition*) : int
@@ -483,7 +483,7 @@ type UsingMSBuild()  =
     member public this.``Record.Field.Usage``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
-                //regretion test for bug 2518
+                //regression test for bug 2518
                 type MyRec =
                   { myX (*MarkerXFieldDefinition*) : int
                     myY (*MarkerYFieldDefinition*) : int

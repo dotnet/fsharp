@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 # This script generates a patch by comparing the contents of the fsharp/fsharp
-# and Microsoft/visualfsharp Github repositories. The resulting patch can be applied,
+# and Microsoft/visualfsharp GitHub repositories. The resulting patch can be applied,
 # if desired, to one of the repositories to synchronize changes in one direction;
 # CAUTION MUST BE TAKEN though, since this script generates the patch in a way that
 # ignores any ordering of commits in the repos -- so it could also end up reverting
@@ -100,7 +100,7 @@ remove_irrelevant_files "$repo_dir1"
 remove_irrelevant_files "$repo_dir2"
 
 # Use git-diff to compare the two source trees and create a patch.
-# Note, the 'git diff' command reeturns with non-zero exit code if there are any warnings emitted,
+# Note, the 'git diff' command returns with non-zero exit code if there are any warnings emitted,
 # which there will be -- so we can't really check the exit code to see if it succeeded'
 if [ "$include_all_changes" != '1' ]; then
     diff_filter_arg="--diff-filter=ad"

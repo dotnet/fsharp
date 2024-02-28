@@ -15,8 +15,8 @@ let btn = new System.Windows.Forms.Button()
 let mutable counter = 0
 
 let evt = btn.Click |> Observable.map(fun x -> counter <- counter + 1)
-let unsubsribe = evt.Subscribe(fun x -> printfn "%A" x)
-unsubsribe.Dispose()
+let unsubscribe = evt.Subscribe(fun x -> printfn "%A" x)
+unsubscribe.Dispose()
 
 btn.PerformClick()
 

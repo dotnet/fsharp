@@ -1,5 +1,5 @@
 // #Conformance #DataExpressions #ComputationExpressions 
-// Verify you can customize the behaivor of a workflow builder
+// Verify you can customize the behavior of a workflow builder
 // through the use of generics
 
 type WorkflowBuilder<'a>() =

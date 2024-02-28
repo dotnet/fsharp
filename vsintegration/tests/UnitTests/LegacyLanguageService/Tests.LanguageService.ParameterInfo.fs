@@ -30,7 +30,7 @@ type UsingMSBuild()  =
     let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option) =
         Assert.IsTrue(resultMethodGroup.IsNone, "Expected an empty method group")              
         
-    let AssertMethodGroupDesciptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED, expectNotToBeThere) = 
+    let AssertMethodGroupDescriptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED, expectNotToBeThere) = 
         for i = 0 to methods.GetCount() - 1 do
             let description = methods.GetDescription(i)
             if (description.Contains(expectNotToBeThere)) then
@@ -569,7 +569,7 @@ type UsingMSBuild()  =
     member public this.``Single.DotNet.ParameterByReference`` () = 
         this.TestSystematicParameterInfo("Int32.TryParse(s,", [ ["s: string"; "result: int byref"]; ["s"; "style"; "provider"; "result"] ] )
         
-    // Test on reference type and value type paramaters (e.g. string & DateTime)
+    // Test on reference type and value type parameters (e.g. string & DateTime)
     [<Test>]
     member public this.``Single.DotNet.RefTypeValueType`` () = 
         this.TestSystematicParameterInfo("loc-3*)Emp(", [ [];
@@ -863,7 +863,7 @@ type UsingMSBuild()  =
              "let aaa = Interlocked.Exchange<obj>(&n$, new obj())", 10) // "I" of Interlocked
           
     // A several cases that are tricky and we don't want to show anything
-    // in the following cases, we may return a location of an operator (its ambigous), but we don't want to show info about it!
+    // in the following cases, we may return a location of an operator (its ambiguous), but we don't want to show info about it!
     
     [<Test>]
     member public this.``Single.Negative.OperatorTrick1``() =
@@ -1579,7 +1579,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 |> List.map (fun (_, d, _) -> d)
                 |> List.forall2 (=) expectedParams
             if not ok then
-                printfn "==Parameters dont't match=="
+                printfn "==Parameters don't match=="
                 printfn "Expected parameters %A" expectedParams
                 printfn "Actual parameters %A" actualParams
                 Assert.Fail()
@@ -1712,7 +1712,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"int"]])
 
     [<Test>]
-    [<Ignore("93188 - No param info shown in the Attribute memthod")>]
+    [<Ignore("93188 - No param info shown in the Attribute method")>]
     member public this.``Regression.Multi.ExplicitAnnotate.Bug93188``() = 
         let fileContents = """
             type LiveAnimalAttribute(a : int, b: string) =
@@ -1771,7 +1771,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     (* Overload list/Adjust method's param for multi-parameterinfo tests ------------------------------ *)
 
     [<Test>]
-    member public this.``Multi.OverloadMethod.OrderedParamters``() = 
+    member public this.``Multi.OverloadMethod.OrderedParameters``() = 
         let fileContents = "new System.DateTime(2000,12,(*Mark*)"
         this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",3(*The fourth method*),["int";"int";"int"])
 
@@ -1855,7 +1855,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     (* No Param Info Shown for multi-parameterinfo tests ---------------------------------------------- *)
 
     [<Test>]
-    member public this.``ParameterInfo.Multi.NoParamterInfo.InComments``() = 
+    member public this.``ParameterInfo.Multi.NoParameterInfo.InComments``() = 
         let fileContents = "//let _ = System.Object((*Mark*))"
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
     
@@ -1865,24 +1865,24 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
     [<Test>]
-    member public this.``Multi.NoParamterInfo.OnFunctionDeclaration``() = 
+    member public this.``Multi.NoParameterInfo.OnFunctionDeclaration``() = 
         let fileContents = "let Foo(x : int, (*Mark*)b : string) = ()"
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
     [<Test>]
-    member public this.``Multi.NoParamterInfo.WithinString``() = 
+    member public this.``Multi.NoParameterInfo.WithinString``() = 
         let fileContents = """let s = "new System.DateTime(2000,12(*Mark*)" """
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
     [<Test>]
-    member public this.``Multi.NoParamterInfo.OnProperty``() = 
+    member public this.``Multi.NoParameterInfo.OnProperty``() = 
         let fileContents = """
             let s = "Hello"
             let _ = s.Length(*Mark*)"""
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
     [<Test>]
-    member public this.``Multi.NoParamterInfo.OnValues``() = 
+    member public this.``Multi.NoParameterInfo.OnValues``() = 
         let fileContents = """
             type Foo = class
                 val private size : int
@@ -1895,12 +1895,12 @@ We really need to rewrite some code paths here to use the real parse tree rather
     // To be added when the bugs are fixed...
     [<Test>]
     //[<Ignore("90832 - [ParameterInfo] No Parameter Info shown on string parameter with operator")>]
-    member public this.``Regrssion.ParameterWithOperators.Bug90832``() = 
+    member public this.``Regression.ParameterWithOperators.Bug90832``() = 
         let fileContents = """System.Console.WriteLine("This(*Mark*) is a" + " bug.")"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string"])
 
     [<Test>]
-    member public this.``Regression.OptionalArguuments.Bug4042``() = 
+    member public this.``Regression.OptionalArguments.Bug4042``() = 
         let fileContents = """
             module ParameterInfo
             type TT(x : int, ?y : int) = 
@@ -1938,7 +1938,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]   
     // regression test for bug 4495 : Should alway sort method lists in order of argument count
-    member public this.``Regression.MehtodSortedByArgumentCount.Bug4495.Case1``() = 
+    member public this.``Regression.MethodSortedByArgumentCount.Bug4495.Case1``() = 
         let fileContents = """
             module ParameterInfo
             
@@ -1947,7 +1947,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",0,["System.Type array"])
 
     [<Test>]   
-    member public this.``Regression.MehtodSortedByArgumentCount.Bug4495.Case2``() = 
+    member public this.``Regression.MethodSortedByArgumentCount.Bug4495.Case2``() = 
         let fileContents = """
             module ParameterInfo
             
@@ -1989,7 +1989,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]   
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
-    // wroks fine In nested queries
+    // works fine In nested queries
     member public this.``Query.InNestedQuery``() = 
         let fileContents = """
         let tuples = [ (1, 8, 9); (56, 45, 3)] 

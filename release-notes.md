@@ -23,7 +23,7 @@ These release notes track our current efforts to document changes to the F# proj
 * In FSharpExpr, FastIntegerForLoop has been renamed to IntegerForLoop 
 * SynModuleDecl.DoExpr --> SynModuleDecl.Expr because it was not corresponding to a 'do expr' declaration.
   A 'do expr' declaration in a module will correspond to a SynModuleDecl.Expr enclosing a SynExpr.Do 
-  This constructo also loses the debug point as it was always None. The debug point
+  This constructor also loses the debug point as it was always None. The debug point
   is always implicit for this construct.
 * In FCS API, FSharpParsingOptions, `CompilingFsLib` --> `CompilingFSharpCore`
 * In FCS API, FSharpParsingOptions, `ErrorSeverityOptions` --> `DiagnosticOptions`
@@ -73,7 +73,7 @@ These release notes track our current efforts to document changes to the F# proj
 * Add MakeDeclarationMutable code fix [#10480](https://github.com/dotnet/fsharp/pull/10480)
 * Add ChangeToUpcast code fix [#10463](https://github.com/dotnet/fsharp/pull/10463)
 * Add AddMissingEqualsToTypeDefinition code fixer [#10470](https://github.com/dotnet/fsharp/pull/10470)
-* Tag items in tooltips consistenly with respect to document classification. [#9563](https://github.com/dotnet/fsharp/pull/9563)
+* Tag items in tooltips consistently with respect to document classification. [#9563](https://github.com/dotnet/fsharp/pull/9563)
 * Add ConvertToSingleEqualsEqualityExpression code fix [#10462](https://github.com/dotnet/fsharp/pull/10462)
 * Turn XML doc and Sig<->Impl mismatch warnings on by default [#10457](https://github.com/dotnet/fsharp/pull/10457)
 * Add ChangeRefCellDerefToNotExpression code fixer [#10469](https://github.com/dotnet/fsharp/pull/10469)
@@ -101,7 +101,7 @@ The primary namespaces are now:
 
 ```
 FSharp.Compiler.IO                // FileSystem
-FSharp.Compiler.CodeAnalysis      // FSharpChecker, FSharpCheckFileResults, FSharpChecProjectResults and friends
+FSharp.Compiler.CodeAnalysis      // FSharpChecker, FSharpCheckFileResults, FSharpCheckProjectResults and friends
 FSharp.Compiler.Diagnostics       // FSharpDiagnostic and friends
 FSharp.Compiler.EditorServices    // Misc functionality for editors, e.g. interface stub generation
 FSharp.Compiler.Interactive.Shell // F# Interactive
@@ -440,7 +440,7 @@ Renamings in `FSharp.Compiler.SourceCodeServices`:
 
 ```
 
-* Extension methods in `ServiceAssemblyContent.fsi` are now now intrinsic methods on the symbol types themselves.
+* Extension methods in `ServiceAssemblyContent.fsi` are now intrinsic methods on the symbol types themselves.
 * `SemanticClassificationType` is now an enum instead of a discriminated union.
 * `GetBackgroundSemanticClassificationForFile` now returns `Async<SemanticClassificationView option>` instead of `Async<struct(range * SemanticClassificationType) []>`. The `SemanticClassificationView` provides a read-only view over the semantic classification contents via the `ForEach (FSharpSemanticClassificationItem -> unit) -> unit` function.
 
@@ -473,7 +473,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 ### FSharp Core 5.0.0
 
 
-* Consistent behavior for empty/non-existent slices for lists, strings, arrays, 2D arrays, 3D arrays, and 4D arrays
+* Consistent behavior for empty/nonexistent slices for lists, strings, arrays, 2D arrays, 3D arrays, and 4D arrays
 * Support for fixed-index slices in 3D and 4D arrays
 * Support for negative indexes (in preview)
 * Reverted a change where the %A and %O and `ToString`/`string` result of a union with `RequireQualifiedAccess` gave the fully-qualified union case name in response to user feedback
@@ -485,7 +485,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Improved batch compilation performance (up to 30% faster depending on the project type)
 * Support for editing `#r "nuget:..."` scripts in Visual Studio
 * Various fixes for F# script editing performance, especially for scripts with significant dependencies getting loaded
-* Support for compiling against .NET Core on Windows when no STAThread is availble
+* Support for compiling against .NET Core on Windows when no STAThread is available
 * Support for validating signatures against XML doc comments when compiling via `/warnon:3390`
 * Fixed a bug where FSharp.Core XML doc contents were not displayed in F# scripts in Visual Studio
 * Support for strong name signing against F# projects when compiling using the .NET SDK
@@ -520,7 +520,7 @@ The most notable change for FSharp.Compiler.Service is that it is now built and 
 
 * Support for Witness information [#9510](https://github.com/dotnet/fsharp/pull/95100) in `FSharpExpr` and `FSharpMemberOrFunctionOrValue`
 * Support for Jupyter Notebooks and VSCode notebooks via `FSharp.Compiler.Private.Scripting` and .NET Interactive
-* Improvements to the F# syntax tree represtation by [Eugene Auduchinok](https://github.com/auduchinok)
+* Improvements to the F# syntax tree representation by [Eugene Auduchinok](https://github.com/auduchinok)
 * Support for `const` in keyword completion info by [Alex Berezhnykh](https://github.com/DedSec256)
 * Support for passing in a `PrimaryAssembly` for AST compilation routines by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 * Support for `ToString` in `FSharp.Compiler.SourceCodeServices.StringText` by [Asti](https://github.com/deviousasti)
@@ -618,7 +618,7 @@ Several F# preview language features have been merged. You can try them out by s
 * It is now possible to [specify the `[<Literal>]` attribute](https://github.com/dotnet/fsharp/issues/7897) in F# signature files
 * A bug where the [`LangVersion` flag was culture-dependent](https://github.com/dotnet/fsharp/issues/7757) has been resolved
 * A bug where [large types and expressions defined in source would lead to a stack overflow](https://github.com/dotnet/fsharp/issues/7673) has been resolved
-* A bug where [arbitrary, nonsense attributes could be defined on F# type extesions](https://github.com/dotnet/fsharp/issues/7394) was resolved
+* A bug where [arbitrary, nonsense attributes could be defined on F# type extensions](https://github.com/dotnet/fsharp/issues/7394) was resolved
 * A bug where [exhaustive matches on SByte and Byte literal values emitted a warning](https://github.com/dotnet/fsharp/issues/6928) was resolved
 * A bug where [invalid type abbreviations with `byref`s and `byref`-like values](https://github.com/dotnet/fsharp/issues/6133) could be defined was resolved
 * A bug where [invalid binary and octal literals would be accepted by the compiler](https://github.com/dotnet/fsharp/issues/5729) was resolved, contributed by [Grzegorz Dziadkiewicz](https://github.com/gdziadkiewicz)
@@ -665,7 +665,7 @@ In addition to the F# 4.7 feature set, this release includes support for the fol
 * Support for [`nameof` expressions](https://github.com/fsharp/fslang-design/blob/master/preview/FS-1003-nameof-operator.md)
 * Support for opening of static classes
 
-You can enable this by seeting `<LangVersion>preview</LangVersion>` in your project file.
+You can enable this by setting `<LangVersion>preview</LangVersion>` in your project file.
 
 This release also contains the following bug fixes and improvements to the F# compiler:
 
@@ -674,7 +674,7 @@ This release also contains the following bug fixes and improvements to the F# co
 * Resolution of an issue where copying of a struct would not occur if it was defined in C# and mutated in a member call ([#7406](https://github.com/dotnet/fsharp/issues/7406))
 * A crypto hash of the portable PDB content created by the compiler is not included in the PE debug directory, with a configurable hash set to SHA-256 by default ([#4259](https://github.com/dotnet/fsharp/issues/4259), [#1223](https://github.com/dotnet/fsharp/issues/1223))
 * A bug where `LeafExpressionConverter` ignored `ValueType` and assumed `System.Tuple` has been fixed ([#6515](https://github.com/dotnet/fsharp/issues/6515)) by [Kevin Malenfant](https://github.com/kevmal)
-* A bug where `List.transpose` discaded data instead of throwing an exception has been resolved ([#6908](https://github.com/dotnet/fsharp/issues/6908)) by [Patrick McDonald](https://github.com/PatrickMcDonald)
+* A bug where `List.transpose` discarded data instead of throwing an exception has been resolved ([#6908](https://github.com/dotnet/fsharp/issues/6908)) by [Patrick McDonald](https://github.com/PatrickMcDonald)
 * A bug where `List.map3` gave a misleading error when used on lists of different lengths has been resolved ([#6897](https://github.com/dotnet/fsharp/issues/6897)) by [reacheight](https://github.com/reacheight)
 
 #### F# tools
@@ -705,7 +705,7 @@ This is a relatively minor release for the F# language and tools, but it's not w
 * A longstanding bug where extremely large generated parsers in FsLexYacc (over 100 million lines) has been resolved ([#5967](https://github.com/Microsoft/visualfsharp/issues/5976])
 * A longstanding issue in the Type Provider plugin component of the compiler that could leave the door open for a memory leak caused by a type provider has been resolved ([#6409](https://github.com/Microsoft/visualfsharp/issues/6409))
 * Support for `--pathmap` was added to the F# compiler by [Saul Rennison](https://github.com/saul), which resolves an issue where the resulting executable from a compilation would include absolute paths to source files in the embedded F# signature file resource ([#5213](https://github.com/Microsoft/visualfsharp/issues/5213))
-* An optimization to the F# AST that improves its consumption via other tools and enviroments (e.g., [Fable](https://fable.io/)) has been added by [ncave](https://github.com/ncave) ([#6333](https://github.com/Microsoft/visualfsharp/pull/6333))
+* An optimization to the F# AST that improves its consumption via other tools and environments (e.g., [Fable](https://fable.io/)) has been added by [ncave](https://github.com/ncave) ([#6333](https://github.com/Microsoft/visualfsharp/pull/6333))
 * An optimization around traversing information when resolving members has been added by [Steffen Forkmann](https://github.com/forki) ([#4457](https://github.com/Microsoft/visualfsharp/pull/4457))
 * An improvement to error messages such that when a type implementation is missing necessary overrides a list of those missing overrides is reported has been added by [Gauthier Segay](https://github.com/smoothdeveloper) ([#4982](https://github.com/Microsoft/visualfsharp/issues/4982))
 
@@ -907,7 +907,7 @@ There is now an experimental CodeLens implementation, contributed by [Victor Pet
 
 We made the following enhancements to infrastructure, packaging, and our open source contribution experience:
 
-* The F# compiler distributed with Visual Studio no longer installs as a singleton in the F# Compiler SDK location. It is now fully side-by-side with Visual Studio, meaning that side-by-side installations of Visual Studio wil finally have truly side-by-side F# tooling and language experiences.
+* The F# compiler distributed with Visual Studio no longer installs as a singleton in the F# Compiler SDK location. It is now fully side-by-side with Visual Studio, meaning that side-by-side installations of Visual Studio will finally have truly side-by-side F# tooling and language experiences.
 * The FSharp.Core NuGet package is now signed.
 * ETW logging has been added to the F# tools and compiler.
 * The very large `control.fs`/`control.fsi` files in FSharp.Core have been split into `async.fs`/`async.fsi`, `event.fs`/`event.fsi`, `eventmodule.fs`/`eventmodule.fsi`, `mailbox.fs`/`mailbox.fsi`, and `observable.fs`/`observable.fsi`.
@@ -929,7 +929,7 @@ We made the following enhancements to infrastructure, packaging, and our open so
 * Struct record support with the `[<Struct>]` attribute
 * Struct Discriminated Union support with the `[<Struct>]` attribute
 * `Result<'TSuccess, 'TFailure>` type, with supporting functions in FSharp.Core
-* Support for the `fixed` keyword to pin a pointer-tyle local to the stack
+* Support for the `fixed` keyword to pin a pointer-style local to the stack
 * Underscores in numeric literals
 * Caller Info Attribute Argument support
 * `namespace rec` and `module rec` to support mutually referential types and functions within the same file
@@ -942,7 +942,7 @@ We made the following enhancements to infrastructure, packaging, and our open so
 * Significant improvements to error messages, particularly to aid with suggestions
 * Performance improvements
 * Interoperability improvements
-* Support for geenerating F# AssymblyInfo from properties for .NET SDK projects
+* Support for generating F# AssemblyInfo from properties for .NET SDK projects
 * `--debug:full` support for F# on .NET Core on Windows
 * `MakeTuple` support for struct tuples
 * Warnings are forwarded when searching for method overloads
@@ -974,8 +974,8 @@ Most items here contributed by community members.
 * Semantic document highlighting for selected symbols
 * Support for Structured Guidelines and code outlining, which is toggleable
 * Support for `EditorBrowsable(EditorBrowsableState.Never)`
-* Code fix for making Record and Discriminated Union case lables upper-case
-* Code fix to make suggestions for an unkown identifier
+* Code fix for making Record and Discriminated Union case labels upper-case
+* Code fix to make suggestions for an unknown identifier
 * Code fix for prefixing or replacing an unused value with an underscore
 * Code fix to add the `new` keyword to a disposable type
 * Code fix to add an `open` statement at the top for a symbol coming from an unopened namespace or module
@@ -1509,7 +1509,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 
 ### 1.4.1 -
 
-* Add pause before backgrounnd work starts. The FCS request queue must be empty for 1 second before work will start
+* Add pause before background work starts. The FCS request queue must be empty for 1 second before work will start
 * Write trace information about the reactor queue to the event log
 * Rewrite reactor to consistently prioritize queued work
 * Implement cancellation for queued work if it is cancelled prior to being executed
@@ -1523,7 +1523,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 ### 1.4.0.8 -
 
 * FSharpType.Format now prettifies type variables.  If necessary, FSharpType.Prettify can also be called
-* Add maximum-memory trigger to downsize FCS caches. Defaults to 1.7GB of allocaed memory in the system
+* Add maximum-memory trigger to downsize FCS caches. Defaults to 1.7GB of allocated memory in the system
   process for a 32-bit process, and 2x this for a 64-bit process
 
 ### 1.4.0.7 -
@@ -1559,7 +1559,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 
 ### 1.4.0.2 -
 
-* #387 - types and arrays in F# attribute contructor arguments
+* #387 - types and arrays in F# attribute constructor arguments
 
 ### 1.4.0.1 - F# 4.0 support
 
@@ -1598,7 +1598,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 ### 0.0.85 -
 
 * Fix for FSharpSymbolUse for single case union type #301
-* Added supprt for ReturnParameter in nested functions
+* Added support for ReturnParameter in nested functions
 
 ### 0.0.84 -
 
@@ -1621,7 +1621,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 
 ### 0.0.80 -
 
-* Update to latest F# 3.1.3 (inclunding updated FsLex/FsYacc used in build of FCS)
+* Update to latest F# 3.1.3 (including updated FsLex/FsYacc used in build of FCS)
 * Report printf specifiers from Service API
 * Improve Accessibility of non-F# symbols
 
@@ -1928,7 +1928,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 ### 0.0.16 -
 
 * Make FSharpEntity.BaseType return an option
-* FsiSesion got a new "EvalScript" method which allows to evaluate .fsx files
+* FsiSession got a new "EvalScript" method which allows to evaluate .fsx files
 
 ### 0.0.15 -
 
@@ -1985,7 +1985,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 ### 0.0.4-alpha -
 
 * Added documentation of file system API
-* Reporte errors correctly from ParseAndCheckProject
+* Report errors correctly from ParseAndCheckProject
 
 ### 0.0.3-alpha -
 
@@ -2071,7 +2071,7 @@ Includes commits up to `dd8252eb8d20aaedf7b1c7576cd2a8a82d24f587`
 * Added `NonStructuralComparison` module containing non-structural comparison operators
 * Support for rational exponents in units of measure
 * Give fsi.exe, fsiAnyCpi.exe nice icons
-* `Microsoft.` optional in namepsace paths from FSharp.Core
+* `Microsoft.` optional in namespace paths from FSharp.Core
 * Support for extension properties in object initializers
 * Pre-support (not yet used) for additional nativeptr intrinsics
 * Simplified, more robust resolution of type references in quotations
@@ -2096,7 +2096,7 @@ Includes commits up to `dd8252eb8d20aaedf7b1c7576cd2a8a82d24f587`
 * Bugfix [#61](https://visualfsharp.codeplex.com/workitem/61) Nonverifiable code generated with units of measure conversion
 * Bugfix [#68](https://visualfsharp.codeplex.com/workitem/68) BadImageFormatException with Units of Measure
 * Bugfix [#146](https://visualfsharp.codeplex.com/workitem/146) BadImageFormatException in both Release and Debug build with units of measure
-* Bugfix: Incorrent cross-module inlining between different .NET profiles
+* Bugfix: Incorrect cross-module inlining between different .NET profiles
 * Bugfix: Properly document exceptions in `Array` module
 * Bugfix [#24](https://visualfsharp.codeplex.com/workitem/24): Error reporting of exceptions in type providers `AddMemberDelayed`
 * Bugfix [#13](https://github.com/fsharp/fsharp/issues/13): Error on FSI terminal resize

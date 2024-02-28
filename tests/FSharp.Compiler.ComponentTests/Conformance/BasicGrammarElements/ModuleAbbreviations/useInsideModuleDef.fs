@@ -17,5 +17,5 @@ module TestModule1 =
     module ABC = A.B.C
     
     let dsc = ABC.DirectorySeparatorChar
-    printfn "Current directory seperator char is %c" dsc
+    printfn "Current directory separator char is %c" dsc
 

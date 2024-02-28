@@ -47,7 +47,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Gets the msbuild target name which is assciated to the outputgroup.
+        /// Gets the msbuild target name which is associated to the outputgroup.
         /// ProjectNode defines a static collection of output group names and their associated MsBuild target
         /// </summary>
         public string TargetName

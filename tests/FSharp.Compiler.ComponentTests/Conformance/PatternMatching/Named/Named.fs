@@ -136,8 +136,8 @@ module Named =
         |> withSingleDiagnostic (Error 3174, Line 10, Col 24, Line 10, Col 25, "Active patterns do not have fields. This syntax is invalid.")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternNotAFuncion.fs"|])>]
-    let ``Named - E_ActivePatternNotAFuncion_fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternNotAFunction.fs"|])>]
+    let ``Named - E_ActivePatternNotAFunction_fs - --test:ErrorRanges`` compilation =
         compilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
@@ -416,8 +416,8 @@ but here has type
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ParamertizedPartialActivePattern01.fs"|])>]
-    let ``Named - ParamertizedPartialActivePattern01_fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ParameterizedPartialActivePattern01.fs"|])>]
+    let ``Named - ParameterizedPartialActivePattern01_fs - --test:ErrorRanges`` compilation =
         compilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]

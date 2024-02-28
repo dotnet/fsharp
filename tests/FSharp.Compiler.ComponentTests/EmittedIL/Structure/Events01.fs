@@ -13,13 +13,13 @@ namespace Test
         let channelChanged = new Event<ChannelChanged,_>()
         let triggerChanelChanged channelNumber = channelChanged.Trigger(this, channelNumber)
             
-        // When TV constrcuted, fire chanel changed event.
+        // When TV constructed, fire channel changed event.
         do triggerChanelChanged(3)
         
         // Static event
         static let defaultChannelChanged = new Event<ChannelChanged,_>()
 
-        // Setting the chanel will fire our event.
+        // Setting the channel will fire our event.
         member this.SetChanel (x : int) = triggerChanelChanged(x)
         
         // By adding the [<CompileAsEvent>] on a property of type IEvent<_>

@@ -2273,7 +2273,7 @@ type Typar =
         | _, Some optData -> optData.typar_attribs <- attribs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
 
-    /// Get the XML documetnation for the type parameter
+    /// Get the XML documentation for the type parameter
     member x.XmlDoc =
         match x.typar_opt_data with
         | Some optData -> optData.typar_xmldoc
@@ -2993,7 +2993,7 @@ type Val =
     //   - in opt.fs: when compiling fslib, we bind an entry for the value in a global table (see bind_escaping_local_vspec)
     //   - in ilxgen.fs: when compiling fslib, we bind an entry for the value in a global table (see bind_escaping_local_vspec)
     //   - in opt.fs: (fullDebugTextOfValRef) for error reporting of non-inlinable values
-    //   - in service.fs (boutput_item_description): to display the full text of a value's binding location
+    //   - in service.fs (output_item_description): to display the full text of a value's binding location
     //   - in check.fs: as a boolean to detect public values for saving quotations 
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
     //   - in MakeExportRemapping, to build non-local references for values
@@ -4627,7 +4627,7 @@ type DecisionTreeTest =
 ///   -- boundVals - The values bound at the target, matching the valuesin the TDSuccess
 ///   -- targetExpr - The expression to evaluate if we branch to the target
 ///   -- debugPoint - The debug point for the target
-///   -- isStateVarFlags - Indicates which, if any, of the values are repesents as state machine variables
+///   -- isStateVarFlags - Indicates which, if any, of the values are represents as state machine variables
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget = 
     | TTarget of 
@@ -5686,7 +5686,7 @@ type CcuThunk =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    /// Used at the end of comppiling an assembly to get a frozen, final stable CCU
+    /// Used at the end of compiling an assembly to get a frozen, final stable CCU
     /// for the compilation which we no longer mutate.
     member x.CloneWithFinalizedContents(ccuContents) =
         { x with target = { x.target with Contents = ccuContents } }

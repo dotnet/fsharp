@@ -84,7 +84,7 @@ module internal Utils =
     let getTempFilePathChangeExt tmp ext =
         Path.Combine(getTempPath(), Path.ChangeExtension(tmp, ext))
 
-    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
+    // This behaves slightly differently on Mono versions, 'null' is printed sometimes, 'None' other times
     // Presumably this is very small differences in Mono reflection causing F# printing to change behaviour
     // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
     let filterHack l =
@@ -171,8 +171,8 @@ module internal Utils =
         | [t] :: a ->
             "member " + t.CompiledName + "." + o.Signature.Name + printCurriedParams a + " = " + printExpr 10 o.Body
         | _ -> failwith "wrong this argument in object expression override"
-    and printIimpls iis = String.concat ";" (List.map printImlementation iis)
-    and printImlementation (i, ors) = "interface " + printTy i + " with " + printOverrides ors
+    and printIimpls iis = String.concat ";" (List.map printImplementation iis)
+    and printImplementation (i, ors) = "interface " + printTy i + " with " + printOverrides ors
 
     let rec printFSharpDecls prefix decls =
         seq {
@@ -340,12 +340,12 @@ module internal Utils =
         | DebugPoint(_dp, innerExpr) -> collectMembers innerExpr
         | _ -> failwith (sprintf "unrecognized %+A" e)
 
-    let rec printMembersOfDeclatations ds =
+    let rec printMembersOfDeclarations ds =
         seq {
             for d in ds do
             match d with
             | FSharpImplementationFileDeclaration.Entity(_,ds) ->
-                yield! printMembersOfDeclatations ds
+                yield! printMembersOfDeclarations ds
             | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue(v,vs,e) ->
                 yield printMemberSignature v
                 yield! collectMembers e |> Seq.map printMemberSignature
@@ -433,7 +433,7 @@ type ClassWithImplicitConstructor(compiledAsArg: int) =
     static member SM1() = compiledAsStaticField + compiledAsGenericStaticMethod compiledAsStaticField
     static member SM2() = compiledAsStaticMethod()
     //override _.ToString() = base.ToString() + string 999
-    member this.TestCallinToString() = this.ToString()
+    member this.TestCallingToString() = this.ToString()
 
 exception Error of int * int
 
@@ -473,10 +473,10 @@ type ClassWithEventsAndProperties() =
 let c = ClassWithEventsAndProperties()
 let v = c.InstanceProperty
 
-System.Console.WriteLine("777") // do a top-levl action
+System.Console.WriteLine("777") // do a top-level action
 
-let functionWithSubmsumption(x:obj)  =  x :?> string
-//let functionWithCoercion(x:string)  =  (x :> obj) :?> string |> functionWithSubmsumption |> functionWithSubmsumption
+let functionWithSubsumption(x:obj)  =  x :?> string
+//let functionWithCoercion(x:string)  =  (x :> obj) :?> string |> functionWithSubsumption |> functionWithSubsumption
 
 type MultiArgMethods(c:int,d:int) =
    member x.Method(a:int, b : int) = 1
@@ -777,7 +777,7 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
          "member M2(__) (unitVar1) = __.compiledAsInstanceMethod(()) @ (56,21--56,47)";
          "member SM1(unitVar0) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),compiledAsStaticField,let x: Microsoft.FSharp.Core.int = compiledAsStaticField in ClassWithImplicitConstructor.compiledAsGenericStaticMethod<Microsoft.FSharp.Core.int> (x)) @ (57,26--57,101)";
          "member SM2(unitVar0) = ClassWithImplicitConstructor.compiledAsStaticMethod (()) @ (58,26--58,50)";
-         "member TestCallinToString(this) (unitVar1) = this.ToString() @ (60,39--60,54)";
+         "member TestCallingToString(this) (unitVar1) = this.ToString() @ (60,40--60,55)";
          "type Error"; "let err = {Data0 = 3; Data1 = 4} @ (64,10--64,20)";
          "let matchOnException(err) = match (if err :? M.Error then $0 else $1) targets ... @ (66,33--66,36)";
          "let upwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (69,16--69,17)";
@@ -799,7 +799,7 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
          "let c = new ClassWithEventsAndProperties(()) @ (97,8--97,38)";
          "let v = M.c ().get_InstanceProperty(()) @ (98,8--98,26)";
          "do Console.WriteLine (\"777\")";
-         "let functionWithSubmsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,40--102,52)";
+         "let functionWithSubsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,39--102,51)";
          "type MultiArgMethods";
          "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
          "member Method(x) (a,b) = 1 @ (106,37--106,38)";
@@ -918,7 +918,7 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
          "member M2(__) (unitVar1) = __.compiledAsInstanceMethod(()) @ (56,21--56,47)";
          "member SM1(unitVar0) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),compiledAsStaticField,ClassWithImplicitConstructor.compiledAsGenericStaticMethod<Microsoft.FSharp.Core.int> (compiledAsStaticField)) @ (57,26--57,101)";
          "member SM2(unitVar0) = ClassWithImplicitConstructor.compiledAsStaticMethod (()) @ (58,26--58,50)";
-         "member TestCallinToString(this) (unitVar1) = this.ToString() @ (60,39--60,54)";
+         "member TestCallingToString(this) (unitVar1) = this.ToString() @ (60,40--60,55)";
          "type Error"; "let err = {Data0 = 3; Data1 = 4} @ (64,10--64,20)";
          "let matchOnException(err) = match (if err :? M.Error then $0 else $1) targets ... @ (66,33--66,36)";
          "let upwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (69,16--69,17)";
@@ -940,7 +940,7 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
          "let c = new ClassWithEventsAndProperties(()) @ (97,8--97,38)";
          "let v = M.c ().get_InstanceProperty(()) @ (98,8--98,26)";
          "do Console.WriteLine (\"777\")";
-         "let functionWithSubmsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,40--102,52)";
+         "let functionWithSubsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,39--102,51)";
          "type MultiArgMethods";
          "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
          "member Method(x) (a,b) = 1 @ (106,37--106,38)";

@@ -16,7 +16,7 @@ type SequentialPoint =
         Y : int
     }
 
-// Define the same point structre but using an explicit layout
+// Define the same point structure but using an explicit layout
 [<Struct>]
 [<StructLayout(LayoutKind.Explicit)>]
 type ExplicitPoint =
@@ -80,7 +80,7 @@ extern bool PointInRect_Explicit_Sequential(ExplicitRect& rect, SequentialPoint 
 let seqA = { SequentialPoint.X = -1;  Y = -1 }
 let seqB = { SequentialPoint.X = 17; Y = 8 }
 
-// 0xFFFFFF : int16 = -1, 0xFF : byte = -1 if arithmatic is NOT checked
+// 0xFFFFFF : int16 = -1, 0xFF : byte = -1 if arithmetic is NOT checked
 let expA = { ExplicitPoint.X1 = 0xFFFFs; X2 = 0xFFFFs; Y1 = 0xFFuy; Y2 = 0xFFuy; Y3 = 0xFFuy; Y4 = 0xFFuy }
 let expB = { ExplicitPoint.X1 = 0s; X2 = 17s; Y1 = 0uy; Y2 = 0uy; Y3 = 0uy; Y4 = 8uy }
 

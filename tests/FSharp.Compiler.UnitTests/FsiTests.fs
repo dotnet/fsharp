@@ -18,7 +18,7 @@ module MyModule =
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =
-        // Intialize output and input streams
+        // Initialize output and input streams
         let inStream = new StringReader("")
         let outStream = new CompilerOutputStream()
         let errStream = new CompilerOutputStream()
@@ -288,7 +288,7 @@ module FsiTests =
         Assert.shouldBe "``hello world``" boundValue.Name
 
     [<Fact>]
-    let ``Creation of a bound value succeeds with 'it' as the indentifier`` () =
+    let ``Creation of a bound value succeeds with 'it' as the identifier`` () =
         use fsiSession = createFsiSession false
 
         fsiSession.EvalInteraction("\"test\"")

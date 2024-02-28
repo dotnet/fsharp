@@ -22,7 +22,7 @@ module BuildGraphTests =
         }), WeakReference(o)
 
     [<Fact>]
-    let ``Intialization of graph node should not have a computed value``() =
+    let ``Initialization of graph node should not have a computed value``() =
         let node = GraphNode(node { return 1 })
         Assert.shouldBeTrue(node.TryPeekValue().IsNone)
         Assert.shouldBeFalse(node.HasValue)

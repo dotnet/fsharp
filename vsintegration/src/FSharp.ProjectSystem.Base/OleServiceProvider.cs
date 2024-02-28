@@ -139,7 +139,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
         /// <summary>
-        /// The IDispose interface Dispose method for disposing the object determinastically.
+        /// The IDispose interface Dispose method for disposing the object deterministically.
         /// </summary>
         public void Dispose()
         {
@@ -152,14 +152,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="serviceType">The type of the service to add.</param>
         /// <param name="serviceInstance">An instance of the service.</param>
-        /// <param name="shouldDisposeServiceInstance">true if the Dipose of the service provider is allowed to dispose the sevice instance.</param>
+        /// <param name="shouldDisposeServiceInstance">true if the Dispose of the service provider is allowed to dispose the service instance.</param>
         public void AddService(Type serviceType, object serviceInstance, bool shouldDisposeServiceInstance)
         {
             // Create the description of this service. Note that we don't do any validation
             // of the parameter here because the constructor of ServiceData will do it for us.
             ServiceData service = new ServiceData(serviceType, serviceInstance, null, shouldDisposeServiceInstance);
 
-            // Now add the service desctription to the dictionary.
+            // Now add the service description to the dictionary.
             AddService(service);
         }
 
@@ -169,7 +169,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // of the parameter here because the constructor of ServiceData will do it for us.
             ServiceData service = new ServiceData(serviceType, null, callback, shouldDisposeServiceInstance);
 
-            // Now add the service desctription to the dictionary.
+            // Now add the service description to the dictionary.
             AddService(service);
         }
 
@@ -215,7 +215,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Everybody can go here.
             if (!this.isDisposed)
             {
-                // Synchronize calls to the Dispose simulteniously.
+                // Synchronize calls to the Dispose simultaneously.
                 lock (Mutex)
                 {
                     if (!this.isDisposed)

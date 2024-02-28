@@ -10,7 +10,7 @@ using Microsoft.FSharp.Core.CompilerServices;
 
 namespace TypeProviderInCSharp
 {
-    class ArtificalEventInfo : EventInfo
+    class ArtificialEventInfo : EventInfo
     {
         string _Name;
         Type _DeclaringType;
@@ -18,7 +18,7 @@ namespace TypeProviderInCSharp
         MethodInfo _AddMethod;
         MethodInfo _RemoveMethod;
 
-        public ArtificalEventInfo(string Name, Type DeclaringType, Type EventHandleType)
+        public ArtificialEventInfo(string Name, Type DeclaringType, Type EventHandleType)
         {
             _Name = Name;
             _DeclaringType = DeclaringType;
@@ -33,6 +33,7 @@ namespace TypeProviderInCSharp
         {
             get
             {
+                
                 return _EventHandleType;
             }
         }
@@ -41,6 +42,7 @@ namespace TypeProviderInCSharp
         {
             get 
             { 
+                
                 return _Name;
             }
         }
@@ -49,6 +51,7 @@ namespace TypeProviderInCSharp
         {
             get
             {
+                
                 return _DeclaringType;
             }
         }
@@ -56,6 +59,7 @@ namespace TypeProviderInCSharp
         // This one is needed
         public override MethodInfo GetAddMethod(bool nonPublic)
         {
+            
             Debug.Assert(!nonPublic, "GetAddMethod() was called with nonPublic=true");
             return _AddMethod;
         }
@@ -63,6 +67,7 @@ namespace TypeProviderInCSharp
         // This one is needed
         public override MethodInfo GetRemoveMethod(bool nonPublic)
         {
+            
             Debug.Assert(!nonPublic, "GetRemoveMethod() was called with nonPublic=true");
             return _RemoveMethod;
         }
@@ -77,12 +82,14 @@ namespace TypeProviderInCSharp
         {
             get
             {
+                
                 return EventAttributes.None;
             }
         }
 
         public override MethodInfo GetRaiseMethod(bool nonPublic)
         {
+            
             Debug.Assert(false, "NYI");
             throw new NotImplementedException();
         }
@@ -95,6 +102,7 @@ namespace TypeProviderInCSharp
 
         public override bool IsDefined(Type attributeType, bool inherit)
         {
+            
             Debug.Assert(false, "NYI");
             throw new NotImplementedException();
         }
@@ -103,6 +111,7 @@ namespace TypeProviderInCSharp
         {
             get
             {
+                
                 Debug.Assert(false, "NYI");
                 throw new NotImplementedException();
             }
@@ -111,8 +120,8 @@ namespace TypeProviderInCSharp
         public override IList<CustomAttributeData> GetCustomAttributesData()
         {
             var attrs = new List<CustomAttributeData>();
-            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderXmlDocAttribute(string.Format("This is a synthetic *event* created by me for {0}.{1}", this._DeclaringType.Namespace, this._DeclaringType.Name))));
-            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderDefinitionLocationAttribute() { Column = 21, FilePath = "File.fs", Line = 4 }));
+            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderXmlDocAttribute(string.Format("This is a synthetic *event* Localized!  ኤፍ ሻርፕ for {0}.{1}", this._DeclaringType.Namespace, this._DeclaringType.Name))));
+            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderDefinitionLocationAttribute() { Column = 5, FilePath = "File.fs", Line = 3 }));
             attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderEditorHideMethodsAttribute()));
             return attrs;
         }

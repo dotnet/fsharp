@@ -413,7 +413,7 @@ val CheckSuperType: cenv: TcFileState -> ty: TType -> m: range -> unit
 val ChooseCanonicalDeclaredTyparsAfterInference:
     g: TcGlobals -> denv: DisplayEnv -> declaredTypars: Typar list -> m: range -> Typar list
 
-/// After inference, view a ValSchem in a canonical way.
+/// After inference, view a ValScheme in a canonical way.
 val ChooseCanonicalValSchemeAfterInference:
     g: TcGlobals -> denv: DisplayEnv -> vscheme: ValScheme -> m: range -> ValScheme
 
@@ -428,7 +428,7 @@ val ComputeAccessRights:
     eFamilyType: TyconRef option ->
         AccessorDomain
 
-/// Compute the available access rights and module/entity compilation path for a paricular location in code
+/// Compute the available access rights and module/entity compilation path for a particular location in code
 val ComputeAccessAndCompPath:
     env: TcEnv ->
     declKindOpt: DeclKind option ->
@@ -556,7 +556,7 @@ val MakeInnerEnv:
         TcEnv * ModuleOrNamespaceType ref
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
-/// given that the accumulator for the module type already exisits.
+/// given that the accumulator for the module type already exists.
 val MakeInnerEnvWithAcc:
     addOpenToNameEnv: bool ->
     env: TcEnv ->
@@ -566,7 +566,7 @@ val MakeInnerEnvWithAcc:
         TcEnv
 
 /// Produce a post-generalization type scheme for a simple type where no type inference generalization
-/// is appplied.
+/// is applied.
 val NonGenericTypeScheme: ty: TType -> GeneralizedType
 
 /// Publish a module definition to the module/namespace type accumulator.
@@ -744,7 +744,7 @@ val TcLetrecBinding:
                 UnscopedTyparEnv *
                 Map<Stamp, PreCheckingRecursiveBinding>
 
-/// Get the binding for the implicit safe initialziation check value if it is being used
+/// Get the binding for the implicit safe initialization check value if it is being used
 val TcLetrecComputeCtorSafeThisValBind: cenv: TcFileState -> safeThisValOpt: Val option -> Binding option
 
 /// Check a collection of `let rec` bindings
@@ -793,7 +793,7 @@ val TcTyparConstraints:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
     checkConstraints: CheckConstraints ->
-    occ: ItemOccurence ->
+    occ: ItemOccurrence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
     synConstraints: SynTypeConstraint list ->
@@ -807,7 +807,7 @@ val TcType:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
     checkConstraints: CheckConstraints ->
-    occ: ItemOccurence ->
+    occ: ItemOccurrence ->
     iwsam: WarnOnIWSAM ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -820,7 +820,7 @@ val TcTypeOrMeasureAndRecover:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
     checkConstraints: CheckConstraints ->
-    occ: ItemOccurence ->
+    occ: ItemOccurrence ->
     iwsam: WarnOnIWSAM ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -832,7 +832,7 @@ val TcTypeAndRecover:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
     checkConstraints: CheckConstraints ->
-    occ: ItemOccurence ->
+    occ: ItemOccurrence ->
     iwsam: WarnOnIWSAM ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -934,12 +934,12 @@ val TcVal:
 module GeneralizationHelpers =
 
     /// Given an environment, compute the set of inference type variables which may not be
-    /// generalised, because they appear somewhere in the types of the constructs availabe
+    /// generalised, because they appear somewhere in the types of the constructs available
     /// in the environment.
     val ComputeUngeneralizableTypars: env: TcEnv -> Zset<Typar>
 
     /// Given an environment, compute the set of trait solutions which must appear before
-    /// the current location, not after (to prevent use-before definitiosn and
+    /// the current location, not after (to prevent use-before definitions and
     /// forward calls via type inference filling in trait solutions).
     val ComputeUnabstractableTraitSolutions: env: TcEnv -> FreeLocals
 

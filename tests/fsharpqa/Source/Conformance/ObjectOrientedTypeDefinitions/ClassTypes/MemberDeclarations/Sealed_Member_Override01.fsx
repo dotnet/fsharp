@@ -32,7 +32,7 @@ type T4() =
 let t1 = T1()
 let t2 = T2()
 
-// The non-overriddable defined in B1
+// The non-overridable defined in B1
 if t1.M(1) <> 2 || t2.M(1) <> 2 then exit 1
 
 // The overridden defined here

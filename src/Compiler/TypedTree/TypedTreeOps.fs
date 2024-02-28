@@ -759,7 +759,7 @@ let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) =
     evalTupInfoIsStruct anonInfo.TupInfo
 
 /// This erases outermost occurrences of inference equations, type abbreviations, non-generated provided types
-/// and measureable types (float<_>).
+/// and measurable types (float<_>).
 /// It also optionally erases all "compilation representations", i.e. function and
 /// tuple types, and also "nativeptr<'T> --> System.IntPtr"
 let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
@@ -1233,7 +1233,7 @@ let rec stripDebugPoints expr =
     | Expr.DebugPoint (_, innerExpr) -> stripDebugPoints innerExpr
     | expr -> expr
 
-// Strip debug points and remember how to recrete them
+// Strip debug points and remember how to recreate them
 let (|DebugPoints|) expr =
     match stripExpr expr with
     | Expr.DebugPoint (dp, innerExpr) -> innerExpr, (fun e -> Expr.DebugPoint(dp, e))
@@ -2945,7 +2945,7 @@ module PrettyTypes =
     // Hence we double check here that the thing is really a type variable
     let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with ValueNone -> orig | ValueSome x -> x
 
-    let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
+    let foldUncurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
     let foldTypar f z (x: Typar) = foldOn mkTyparTy f z x
     let mapTypar g f (x: Typar) : Typar = (mkTyparTy >> f >> safeDestAnyParTy x g) x
 
@@ -2963,7 +2963,7 @@ module PrettyTypes =
 
     let PrettifyInstAndUncurriedSig g (x: TyparInstantiation * UncurriedArgInfos * TType) = 
         PrettifyThings g 
-            (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, f)) 
+            (fun f -> foldTriple (foldTyparInst f, foldUncurriedArgInfos f, f)) 
             (fun f -> mapTriple (mapTyparInst g f, List.map (map1Of2 f), f))
             x
 
@@ -6373,7 +6373,7 @@ let rec remarkExpr (m: range) x =
 
         // This code allows a feature where if a 'while'/'for' etc in a computation expression is
         // implemented using code inlining and is ultimately implemented by a corresponding construct somewhere
-        // in the remark'd code then aat least one debug point is recovered, based on the noted debug point for the original construct.
+        // in the remark'd code then at least one debug point is recovered, based on the noted debug point for the original construct.
         //
         // However it is imperfect, since only one debug point is recovered
         let op = 
@@ -10298,7 +10298,7 @@ let CombineCcuContentFragments l =
 
     CombineModuleOrNamespaceTypeList [] l
 
-/// An immutable mappping from witnesses to some data.
+/// An immutable mapping from witnesses to some data.
 ///
 /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
 type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>

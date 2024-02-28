@@ -313,7 +313,7 @@ type FindMemberFlag =
     /// Get overrides instead of abstract slots when measuring whether a class/interface implements all its required slots. 
     | PreferOverrides
     /// Similar to "IgnoreOverrides", but filters the items bottom-to-top,
-    /// and discards all when finds first non-virtual member which hides one above it in hirearchy.
+    /// and discards all when finds first non-virtual member which hides one above it in hierarchy.
     | DiscardOnFirstNonOverride
 
 /// The input list is sorted from most-derived to least-derived type, so any System.Object methods 
@@ -480,7 +480,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
             // MethodImpls contains a list of methods that override.
             // OverrideBy is the method that does the overriding.
-            // Overrides is the method being overriden.
+            // Overrides is the method being overridden.
             (acc, mimpls)
             ||> List.fold (fun acc ilMethImpl ->
                 let overridesName = ilMethImpl.Overrides.MethodRef.Name
@@ -968,7 +968,7 @@ let TryFindIntrinsicPropInfo (infoReader: InfoReader) m ad nm ty =
     infoReader.TryFindIntrinsicPropInfo m ad nm ty
 
 /// Get a set of most specific override methods.
-let GetIntrinisicMostSpecificOverrideMethInfoSetsOfType (infoReader: InfoReader) m ty =
+let GetIntrinsicMostSpecificOverrideMethInfoSetsOfType (infoReader: InfoReader) m ty =
     infoReader.GetIntrinsicMostSpecificOverrideMethodSetsOfType (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, ty)
 
 //-------------------------------------------------------------------------

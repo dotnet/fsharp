@@ -104,7 +104,7 @@ type internal LegacyProjectWorkspaceMap
 
             // OK, project options have changed, try to fake out Roslyn to convince it to reparse things.
             // Calling SetOptions fails because the CPS project system being used by the F# project system
-            // imlpementation at the moment has no command line parser installed, so we remove/add all the files
+            // implementation at the moment has no command line parser installed, so we remove/add all the files
             // instead.  A change of flags doesn't happen very often and the remove/add is fast in any case.
             //projectContext.SetOptions(String.concat " " updatedOptions)
             for file in updatedFiles do

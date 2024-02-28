@@ -195,7 +195,7 @@ type ByteFile(fileName: string, bytes: byte[]) =
 type PEFile(fileName: string, peReader: PEReader) as this =
 
     // We store a weak byte memory reference so we do not constantly create a lot of byte memory objects.
-    // We could just have a single ByteMemory stored in the PEFile, but we need to dispose of the stream via the finalizer; we cannot have a cicular reference.
+    // We could just have a single ByteMemory stored in the PEFile, but we need to dispose of the stream via the finalizer; we cannot have a circular reference.
     let mutable weakMemory = WeakReference<ByteMemory>(Unchecked.defaultof<_>)
 
     member _.FileName = fileName
@@ -207,7 +207,7 @@ type PEFile(fileName: string, peReader: PEReader) as this =
             match weakMemory.TryGetTarget() with
             | true, m -> m.AsReadOnly()
             | _ ->
-                let block = peReader.GetEntireImage() // it's ok to call this everytime we do GetView as it is cached in the PEReader.
+                let block = peReader.GetEntireImage() // it's ok to call this every time we do GetView as it is cached in the PEReader.
 
                 let m =
                     ByteMemory.FromUnsafePointer(block.Pointer |> NativePtr.toNativeInt, block.Length, this)
@@ -1585,10 +1585,10 @@ let seekReadTypeSpecRow (ctxt: ILMetadataReader) mdv idx =
 let seekReadImplMapRow (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.ImplMap idx
     let flags = seekReadUInt16AsInt32Adv mdv &addr
-    let forwrdedIdx = seekReadMemberForwardedIdx ctxt mdv &addr
+    let forwardedIdx = seekReadMemberForwardedIdx ctxt mdv &addr
     let nameIdx = seekReadStringIdx ctxt mdv &addr
     let scopeIdx = seekReadUntaggedIdx TableNames.ModuleRef ctxt mdv &addr
-    (flags, forwrdedIdx, nameIdx, scopeIdx)
+    (flags, forwardedIdx, nameIdx, scopeIdx)
 
 /// Read Table FieldRVA.
 let seekReadFieldRVARow (ctxt: ILMetadataReader) mdv idx =
@@ -2689,10 +2689,10 @@ and readBlobHeapAsPropertySigUncached ctxtH (BlobAsPropSigIdx(numTypars, blobIdx
     let sigptr = 0
     let ccByte, sigptr = sigptrGetByte bytes sigptr
     let hasthis = byteAsHasThis ccByte
-    let ccMaxked = (ccByte &&& 0x0Fuy)
+    let ccMasked = (ccByte &&& 0x0Fuy)
 
-    if ccMaxked <> e_IMAGE_CEE_CS_CALLCONV_PROPERTY then
-        dprintn ("warning: property sig was " + string ccMaxked + " instead of CC_PROPERTY")
+    if ccMasked <> e_IMAGE_CEE_CS_CALLCONV_PROPERTY then
+        dprintn ("warning: property sig was " + string ccMasked + " instead of CC_PROPERTY")
 
     let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
     let retTy, sigptr = sigptrGetTy ctxt numTypars bytes sigptr
@@ -2730,17 +2730,17 @@ and byteAsHasThis b =
 
 and byteAsCallConv b =
     let cc =
-        let ccMaxked = b &&& 0x0Fuy
+        let ccMasked = b &&& 0x0Fuy
 
-        if ccMaxked = e_IMAGE_CEE_CS_CALLCONV_FASTCALL then
+        if ccMasked = e_IMAGE_CEE_CS_CALLCONV_FASTCALL then
             ILArgConvention.FastCall
-        elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_STDCALL then
+        elif ccMasked = e_IMAGE_CEE_CS_CALLCONV_STDCALL then
             ILArgConvention.StdCall
-        elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_THISCALL then
+        elif ccMasked = e_IMAGE_CEE_CS_CALLCONV_THISCALL then
             ILArgConvention.ThisCall
-        elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_CDECL then
+        elif ccMasked = e_IMAGE_CEE_CS_CALLCONV_CDECL then
             ILArgConvention.CDecl
-        elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_VARARG then
+        elif ccMasked = e_IMAGE_CEE_CS_CALLCONV_VARARG then
             ILArgConvention.VarArg
         else
             ILArgConvention.Default
@@ -4633,10 +4633,10 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     let _headerPhysSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 60) // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding
     let subsys = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 68) // SubSystem Subsystem required to run this image.
 
-    let useHighEnthropyVA =
+    let useHighEntropyVA =
         let n = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 70)
-        let highEnthropyVA = 0x20us
-        (n &&& highEnthropyVA) = highEnthropyVA
+        let highEntropyVA = 0x20us
+        (n &&& highEntropyVA) = highEntropyVA
 
     (* x86: 000000e0 *)
 
@@ -4836,7 +4836,7 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     let peinfo =
         (subsys,
          (subsysMajor, subsysMinor),
-         useHighEnthropyVA,
+         useHighEntropyVA,
          ilOnly,
          only32,
          is32bitpreferred,

@@ -91,7 +91,7 @@ type FindMemberFlag =
     | PreferOverrides
 
     /// Similar to "IgnoreOverrides", but filters the items bottom-to-top,
-    /// and discards all when finds first non-virtual member which hides one above it in hirearchy.
+    /// and discards all when finds first non-virtual member which hides one above it in hierarchy.
     | DiscardOnFirstNonOverride
 
 /// An InfoReader is an object to help us read and cache infos.
@@ -280,7 +280,7 @@ val TryFindIntrinsicPropInfo:
     infoReader: InfoReader -> m: range -> ad: AccessorDomain -> nm: string -> ty: TType -> PropInfo list
 
 /// Get a set of most specific override methods.
-val GetIntrinisicMostSpecificOverrideMethInfoSetsOfType:
+val GetIntrinsicMostSpecificOverrideMethInfoSetsOfType:
     infoReader: InfoReader -> m: range -> ty: TType -> NameMultiMap<TType * MethInfo>
 
 /// Represents information about the delegate - the Invoke MethInfo, the delegate argument types, the delegate return type

@@ -155,8 +155,8 @@ let AdjustDelegateTy (infoReader: InfoReader) actualTy reqdTy m =
 // NOTE: 
 //   no generic method op_Implicit as yet
 //
-// Search for an adhoc conversion based on op_Implicit, optionally returing a new equational type constraint to 
-// eliminate articifical constrained type variables.
+// Search for an adhoc conversion based on op_Implicit, optionally returning a new equational type constraint to 
+// eliminate artificial constrained type variables.
 //
 // Allow adhoc for X --> Y where there is an op_Implicit from X to Y, and there is
 // no feasible subtype relationship between X and Y.
@@ -308,8 +308,8 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
             else 
                 reqdTy, TypeDirectedConversionUsed.No, None
     
-    // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
-    // eliminate articifical constrained type variables.
+    // Adhoc based on op_Implicit, perhaps returning a new equational type constraint to 
+    // eliminate artificial constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
          | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false, false), Some eqn
@@ -1687,7 +1687,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
         AdjustOutCallerArgs g calledMeth mMethExpr
 
     let adjustedNormalUnnamedArgs, setterValueArgs =
-        // IsIndexParamArraySetter onlye occurs for
+        // IsIndexParamArraySetter only occurs for
         //     expr.[indexes] <- value
         // where the 'value' arg to the setter is always the last unnamed argument (there is no syntax to use a named argument for it)
         // Indeed in this case there will be no named/optional/out arguments.
@@ -2238,12 +2238,12 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         match traitInfo.Solution with 
         | None -> None // the trait has been generalized
         | Some _-> 
-        // For these operators, the witness is just a call to the coresponding FSharp.Core operator
+        // For these operators, the witness is just a call to the corresponding FSharp.Core operator
         match g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
         | Some (info, tyargs, actualArgExprs) -> 
             tryMkCallCoreFunctionAsBuiltInWitness g info tyargs actualArgExprs m
         | None -> 
-            // For all other built-in operators, the witness is a call to the coresponding BuiltInWitnesses operator
+            // For all other built-in operators, the witness is a call to the corresponding BuiltInWitnesses operator
             // These are called as F# methods not F# functions
             tryMkCallBuiltInWitness g traitInfo argExprs m
         

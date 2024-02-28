@@ -31,7 +31,7 @@ let isOK =
     not (FSharpType.IsRecord ( typeof<Color> )) &&                  // Color is not record
     not (FSharpType.IsRecord ( typeof<FTE> )) &&                    // Union type is not record
     not (FSharpType.IsRecord ( typeof<NonStandardType> )) &&        // Enum type is not record
-    not (FSharpType.IsRecord ( typeof<Employee -> Employee> )) &&   // Funtion from Record type to Record type is not record
+    not (FSharpType.IsRecord ( typeof<Employee -> Employee> )) &&   // Function from Record type to Record type is not record
     not (FSharpType.IsRecord ( typeof<Employee * Employee> )) &&    // Tuple of Records is not record
     not (FSharpType.IsRecord ( typeof<System.Object> )) &&          // Object is not record
     not (FSharpType.IsRecord ( typeof<System.ValueType> )) &&       // ValueType is not record

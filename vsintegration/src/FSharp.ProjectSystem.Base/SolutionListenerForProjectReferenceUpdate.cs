@@ -78,7 +78,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                     // Remove will delete error associated with reference
                     projectReference.Remove(false);
-                    // Set back the remove state on the project refererence. The reason why we are doing this is that the OnBeforeUnloadProject immedaitely calls
+                    // Set back the remove state on the project reference. The reason why we are doing this is that the OnBeforeUnloadProject immediately calls
                     // OnBeforeCloseProject, thus we would be deleting references when we should not. Unload should not remove references.
                     projectReference.CanRemoveReference = true;
                 }
@@ -98,7 +98,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             List<ProjectReferenceNode> projectReferences = this.GetProjectReferencesContainingThisProject(realHierarchy);
 
-            // Refersh the project reference node. That should trigger the drawing of the normal project reference icon.
+            // Refresh the project reference node. That should trigger the drawing of the normal project reference icon.
             foreach (ProjectReferenceNode projectReference in projectReferences)
             {
                 projectReference.CanRemoveReference = true;

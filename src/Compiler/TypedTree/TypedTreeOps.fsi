@@ -370,7 +370,7 @@ val mkCompiledTupleTy: TcGlobals -> bool -> TTypes -> TType
 /// Convert from F# tuple creation expression to .NET tuple creation expressions
 val mkCompiledTuple: TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
 
-/// Make a TAST expression representing getting an item fromm a tuple
+/// Make a TAST expression representing getting an item from a tuple
 val mkGetTupleItemN: TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
 /// Evaluate the TupInfo to work out if it is a struct or a ref.  Currently this is very simple
@@ -2586,7 +2586,7 @@ val GetTraitConstraintInfosOfTypars: TcGlobals -> Typars -> TraitConstraintInfo 
 
 val GetTraitWitnessInfosOfTypars: TcGlobals -> numParentTypars: int -> typars: Typars -> TraitWitnessInfos
 
-/// An immutable mappping from witnesses to some data.
+/// An immutable mapping from witnesses to some data.
 ///
 /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
 type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>

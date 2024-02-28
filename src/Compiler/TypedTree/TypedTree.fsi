@@ -1603,7 +1603,7 @@ type Typar =
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core type member constraints.
     member StaticReq: Syntax.TyparStaticReq
 
-    /// Get the XML documetnation for the type parameter
+    /// Get the XML documentation for the type parameter
     member XmlDoc: XmlDoc
 
 /// Represents a constraint on a type parameter or type
@@ -3326,7 +3326,7 @@ type DecisionTreeTest =
 ///   -- boundVals - The values bound at the target, matching the valuesin the TDSuccess
 ///   -- targetExpr - The expression to evaluate if we branch to the target
 ///   -- debugPoint - The debug point for the target
-///   -- isStateVarFlags - Indicates which, if any, of the values are repesents as state machine variables
+///   -- isStateVarFlags - Indicates which, if any, of the values are represents as state machine variables
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget =
     | TTarget of boundVals: Val list * targetExpr: Expr * isStateVarFlags: bool list option
@@ -4110,7 +4110,7 @@ type CcuThunk =
     /// Create a CCU with the given name but where the contents have not yet been specified
     static member CreateDelayed: nm: CcuReference -> CcuThunk
 
-    /// Used at the end of comppiling an assembly to get a frozen, final stable CCU
+    /// Used at the end of compiling an assembly to get a frozen, final stable CCU
     /// for the compilation which we no longer mutate.
     member CloneWithFinalizedContents: ccuContents: ModuleOrNamespace -> CcuThunk
 

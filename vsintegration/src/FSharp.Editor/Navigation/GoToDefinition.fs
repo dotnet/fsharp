@@ -389,8 +389,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             let metadataReferences = originDocument.Project.MetadataReferences
                             return ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
                         else if
-                            // if goto definition is called at we are alread at the declaration location of a symbol in
-                            // either a signature or an implementation file then we jump to it's respective postion in thethe
+                            // if goto definition is called as we are already at the declaration location of a symbol in
+                            // either a signature or an implementation file then we jump to its respective position in the document
                             lexerSymbol.Range = targetRange
                         then
                             // jump from signature to the corresponding implementation
@@ -516,7 +516,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     member this.FindDefinitionAsync(originDocument: Document, position: int) =
         this.FindDefinitionAtPosition(originDocument, position)
 
-    /// Navigate to the positon of the textSpan in the provided document
+    /// Navigate to the position of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
     member _.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
@@ -683,7 +683,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                                     // Target range will point to .fsi file if only there is one so we can just use Roslyn navigation service.
                                     do gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
                                 else
-                                    // Navigation request was made in a .fs file, so we try to find the implmentation of the symbol at target range.
+                                    // Navigation request was made in a .fs file, so we try to find the implementation of the symbol at target range.
                                     // This is the part that may take some time, because of type checks involved.
                                     let! result = gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range)
 
@@ -886,7 +886,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
         // The groups are following:
         //   1 - type (see below).
         //   2 - Path - a dotted path to a symbol.
-        //   3 - parameters, opetional, only for methods and properties.
+        //   3 - parameters, optional, only for methods and properties.
         //   4 - return type, optional, only for methods.
         let docCommentIdRx =
             Regex(@"^(?<kind>\w):(?<entity>[\w\d#`.]+)(?<args>\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)

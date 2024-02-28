@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching 
-// Verify warning when capturing values with captial identifier
+// Verify warning when capturing values with capital identifier
 // FSB 3954
 
 //<Expects id="FS0049" span="(9,16-9,19)" status="warning">Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name</Expects>

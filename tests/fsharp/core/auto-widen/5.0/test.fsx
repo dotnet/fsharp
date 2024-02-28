@@ -134,7 +134,7 @@ module ConvertToSealedViaOpImplicit =
         static member M1(C:C) = 1
     let x = C.M1(2)
 
-module ConvertNoOverloadin =
+module ConvertNoOverloading =
     type C() = 
         static member M1(x:int64) = 1
     let x = C.M1(2)

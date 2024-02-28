@@ -20,7 +20,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// Defines a type converter.
     /// </summary>
     /// <remarks>This is needed to get rid of the type TypeConverter type that could not give back the Type we were passing to him.
-    /// We do not want to use reflection to get the type back from the  ConverterTypeName. Also the GetType methos does not spwan converters from other assemblies.</remarks>
+    /// We do not want to use reflection to get the type back from the  ConverterTypeName. Also the GetType method does not spwan converters from other assemblies.</remarks>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Enum | AttributeTargets.Property | AttributeTargets.Field)]
     internal sealed class PropertyPageTypeConverterAttribute : Attribute
     {

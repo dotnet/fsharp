@@ -810,7 +810,7 @@ module Regression5265_PubInt =
 module Regression5265_PubPri =
     type public   IAPublic   = interface abstract P: int end
     type private  IBPrivate  = interface inherit IAPublic abstract Q : int end
-;; (* ;; needed, to issolate error regressions *)
+;; (* ;; needed, to isolate error regressions *)
 
 "Regression4232: Expect an error about duplicate virtual methods from parent type";;
 module Regression4232 =
@@ -822,7 +822,7 @@ module Regression4232 =
     type E() = 
         inherit D<string,string>()
         override x.M(a:string) = 1
-;; (* ;; needed, to issolate error regressions *)
+;; (* ;; needed, to isolate error regressions *)
 
 "** Expect AnAxHostSubClass to be accepted. AxHost has a newslot virtual RightToLeft property outscope RightToLeft on Control";;
 type AnAxHostSubClass(x) = class inherit System.Windows.Forms.AxHost(x) end;;
@@ -998,7 +998,7 @@ let functionWhichTakesMixedLengthCurriedParametersB aaaaaaaaaaaaaaaaaaaaaaaaaaaa
 let f (``parameter with spaces in name``: int) = 1
 ;;
 
-let functionWhichTakesAParameterPeeciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2
+let functionWhichTakesAParameterPreciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2
 ;;
 
 let functionWhichTakesAParameterOpAddition ((+): int -> int -> int) = 1 + 1

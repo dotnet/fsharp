@@ -345,7 +345,7 @@ module DispatchSlotChecking =
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         let overridesKeyed = overrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         
-        // we accumulate those to compose a more complete error message, see noimpl() bellow.
+        // we accumulate those to compose a more complete error message, see noimpl() below.
         let missingOverloadImplementation = ResizeArray()
 
         for reqdSlot in dispatchSlots do
@@ -363,7 +363,7 @@ module DispatchSlotChecking =
             | [ovd] ->
                 if not ovd.IsCompilerGenerated then
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
-                    CallNameResolutionSink sink (ovd.Range, nenv, item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, AccessorDomain.AccessibleFromSomewhere)
+                    CallNameResolutionSink sink (ovd.Range, nenv, item, dispatchSlot.FormalMethodTyparInst, ItemOccurrence.Implemented, AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
                 if not reqdSlot.IsOptional &&
                    // Check that no available prior override implements this dispatch slot
@@ -482,7 +482,7 @@ module DispatchSlotChecking =
 
             // Get the most specific method overrides for each interface type.
             |> List.choose (fun (ty, m) -> 
-                let mostSpecificOverrides = GetIntrinisicMostSpecificOverrideMethInfoSetsOfType infoReader m ty
+                let mostSpecificOverrides = GetIntrinsicMostSpecificOverrideMethInfoSetsOfType infoReader m ty
                 if mostSpecificOverrides.IsEmpty then None
                 else Some mostSpecificOverrides)
 
@@ -506,8 +506,8 @@ module DispatchSlotChecking =
         let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo
         let minfoTy = generalizedTyconRef g minfo.ApparentEnclosingTyconRef
         NameMultiMap.find minfo.LogicalName mostSpecificOverrides
-        |> List.filter (fun (overridenTy, minfo2) -> 
-            typeEquiv g overridenTy minfoTy && 
+        |> List.filter (fun (overriddenTy, minfo2) -> 
+            typeEquiv g overriddenTy minfoTy && 
             IsSigExactMatch g amap m minfo2 overrideBy)
 
     /// Get a collection of slots for the given interface type.
@@ -848,14 +848,14 @@ module DispatchSlotChecking =
         allImmediateMembersThatMightImplementDispatchSlots |> List.iter (fun overrideBy -> 
 
             let isFakeEventProperty = overrideBy.IsFSharpEventProperty(g)
-            let overriden = 
+            let overridden = 
                 if isFakeEventProperty then 
                     let slotsigs = overrideBy.MemberInfo.Value.ImplementedSlotSigs 
                     slotsigs |> List.map (ReparentSlotSigToUseMethodTypars g overrideBy.Range overrideBy)
                 else
                     [ for (reqdTy, m), SlotImplSet(_dispatchSlots, dispatchSlotsKeyed, _, _) in allImpls do
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
-                          let overridenForThisSlotImplSet = 
+                          let overriddenForThisSlotImplSet = 
                               [ for reqdSlot in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do
                                     let dispatchSlot = reqdSlot.MethodInfo
                                     if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
@@ -876,10 +876,10 @@ module DispatchSlotChecking =
                                         // Record the slotsig via mutation
                                         yield slotsig ]
                           //if mustOverrideSomething reqdTy overrideBy then 
-                          //    assert nonNil overridenForThisSlotImplSet
-                          yield! overridenForThisSlotImplSet ]
+                          //    assert nonNil overriddenForThisSlotImplSet
+                          yield! overriddenForThisSlotImplSet ]
                 
-            overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overriden)
+            overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overridden)
 
 /// "Type Completion" inference and a few other checks at the end of the inference scope
 let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv, sink, isImplementation, denv, tycon: Tycon) =

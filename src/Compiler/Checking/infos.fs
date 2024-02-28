@@ -394,7 +394,7 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo MaybeNull) err = 
     match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase MaybeNull)),m) with 
-    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))   // TODO NULLNESS: type isntantiation should not be needed
+    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))   // TODO NULLNESS: type instantiation should not be needed
     | meth -> meth
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
@@ -558,7 +558,7 @@ type ILMethInfo =
     /// Does it appear to the user as an instance method?
     member x.IsInstance = not x.IsConstructor &&  not x.IsStatic
 
-    /// Get the argument types of the the IL method. If this is an C#-style extension method
+    /// Get the argument types of the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member x.GetParamTypes(amap, m, minst) =
         x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst)
@@ -1024,7 +1024,7 @@ type MethInfo =
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
-    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    /// Indicates, whether this method has `IsExternalInit` modreq.
     member x.HasExternalInit =
         match x with
         | ILMeth (_, ilMethInfo, _) -> HasExternalInit ilMethInfo.ILMethodRef
@@ -1622,7 +1622,7 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
-    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    /// Indicates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifier)
     member x.IsSetterInitOnly =
         x.HasSetter && HasExternalInit x.SetterMethod.ILMethodRef
 

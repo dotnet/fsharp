@@ -299,7 +299,7 @@ end
    findSCCs is based upon Tarjan's algorithm, 
    as explained in Aho, Hopcroft and Ullman. 
    It finds all the strongly connected components of a graph.
-   It requres the call-stack to traverse the graph.
+   It requires the call-stack to traverse the graph.
    ------------------------------------------------------------------------*)
 
   let findSCCsBase dfs t =

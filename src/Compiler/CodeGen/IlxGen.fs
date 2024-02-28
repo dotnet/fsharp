@@ -805,7 +805,7 @@ and GenTypeArgs cenv m tyenv tyargs = GenTypeArgsAux cenv m tyenv tyargs
 // fields are initialized only in their class constructors (we generate one primary
 // cctor for each file to ensure initialization coherence across the file, regardless
 // of how many modules are in the file). This means F# passes an extra check applied by SQL Server when it
-// verifies stored procedures: SQL Server checks that all 'initionly' static fields are only initialized from
+// verifies stored procedures: SQL Server checks that all 'initonly' static fields are only initialized from
 // their own class constructor.
 //
 // However, mutable static fields must be accessible across compilation units. This means we place them in their "natural" location
@@ -919,7 +919,7 @@ type ArityInfo = int list
 //
 // or, for witnesses:
 //
-//    let inline incr{addWitnessForT} (x: 'T) = x + GenericZero<'T> // has witness argment for '+'
+//    let inline incr{addWitnessForT} (x: 'T) = x + GenericZero<'T> // has witness argument for '+'
 //
 //    LAM <'T when 'T :... op_Addition ...>{addWitnessForT}.  (incr<'T>{addWitnessForT}, incr<'U>{addWitnessForU}, incr<'V>{addWitnessForV}) :  ('T -> 'T) * ('U -> 'U) * ('V -> 'V)
 //    directTypars = 'T
@@ -4613,7 +4613,7 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
 
     CountCallFuncInstructions()
 
-    // Generate the code code an ILX callfunc operation
+    // Generate the code for an ILX callfunc operation
     let instrs =
         EraseClosures.mkCallFunc
             cenv.ilxPubCloEnv
@@ -5060,7 +5060,7 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, condExpr, bodyExpr, m) sequel =
 // Generate IL assembly code.
 // Polymorphic IL/ILX instructions may be instantiated when polymorphic code is inlined.
 // We must implement this for the few uses of polymorphic instructions
-// in the standard libarary.
+// in the standard library.
 //--------------------------------------------------------------------------
 
 and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
@@ -5696,7 +5696,7 @@ and GenFormalSlotsig m cenv eenv slotsig =
     ilTy, ilParams, ilRet
 
 and GenOverridesSpec cenv eenv slotsig m isInstance =
-    let (TSlotSig(nameOfOverridenMethod, _, _, methodTypars, _, _)) = slotsig
+    let (TSlotSig(nameOfOverriddenMethod, _, _, methodTypars, _, _)) = slotsig
 
     let ilOverrideTy, ilOverrideParams, ilOverrideRet =
         GenFormalSlotsig m cenv eenv slotsig
@@ -5713,7 +5713,7 @@ and GenOverridesSpec cenv eenv slotsig m isInstance =
         mkILMethRef (
             ilOverrideTyRef,
             callingConv,
-            nameOfOverridenMethod,
+            nameOfOverriddenMethod,
             List.length (DropErasedTypars methodTypars),
             typesOfILParams ilOverrideParams,
             ilOverrideRet.Type
@@ -5767,13 +5767,13 @@ and GenActualSlotsig
     ilParams, iLRet
 
 and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
-    let (TSlotSig(nameOfOverridenMethod, enclTypOfOverridenMethod, _, _, _, _)) =
+    let (TSlotSig(nameOfOverriddenMethod, enclTypOfOverriddenMethod, _, _, _, _)) =
         slotsig
 
     if useMethodImpl then
-        qualifiedInterfaceImplementationName cenv.g enclTypOfOverridenMethod nameOfOverridenMethod
+        qualifiedInterfaceImplementationName cenv.g enclTypOfOverriddenMethod nameOfOverriddenMethod
     else
-        nameOfOverridenMethod
+        nameOfOverriddenMethod
 
 and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m isInstance =
     let ilOverridesSpec = GenOverridesSpec cenv eenv slotsig m isInstance
@@ -5840,7 +5840,7 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
     let (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methParams, methBodyExpr, m)) =
         tmethod
 
-    let (TSlotSig(nameOfOverridenMethod, _, _, _, _, _)) = slotsig
+    let (TSlotSig(nameOfOverriddenMethod, _, _, _, _, _)) = slotsig
 
     // Check if we're compiling the property as a .NET event
     if CompileAsEvent g attribs then
@@ -5871,7 +5871,7 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
                  Return)
 
         let ilMethodBody =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverriddenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
 
         let nameOfOverridingMethod, methodImplGenerator =
             GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range true
@@ -7268,7 +7268,7 @@ and IsSequelImmediate sequel =
 /// or 'match'.
 and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
 
-    // What the join point does depends on the contents of the sequel. For example, if the sequal is "return" then
+    // What the join point does depends on the contents of the sequel. For example, if the sequel is "return" then
     // each branch can just return and no true join point is needed.
     match sequel with
     // All of these can be done at the end of each branch - we don't need a real join point
@@ -7448,7 +7448,7 @@ and GenDecisionTreeSuccess
 
         let genTargetInfoOpt =
             if generateTargetNow then
-                // Fenerate the targets in-order only
+                // Generate the targets in-order only
                 targetNext.Value <- targetNext.Value + 1
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
@@ -8249,7 +8249,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
 
     let access = ComputeMethodAccessRestrictedBySig eenv vspec
 
-    // Workaround for .NET and Visual Studio restriction w.r.t debugger type proxys
+    // Workaround for .NET and Visual Studio restriction w.r.t debugger type proxies
     // Mark internal constructors in internal classes as public.
     let access =
         if
@@ -11836,7 +11836,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
 #endif
         None
 
-// Invoke the set_Foo method for a declaration with a value. Used to create variables with values programatically in fsi.exe.
+// Invoke the set_Foo method for a declaration with a value. Used to create variables with values programmatically in fsi.exe.
 let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: obj) =
     try
         match StorageForVal v.Range v eenv with
