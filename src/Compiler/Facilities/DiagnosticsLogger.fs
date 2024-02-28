@@ -878,13 +878,15 @@ type StackGuard(maxDepth: int, name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
 type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerFormat) =
+    // Common error count for all computations.
     let mutable errorCount = 0
 
-    let injected, diags =
+    let computationsWithLoggers, diagnosticsReady =
         [
             for i, computation in computations |> Seq.indexed do
-                let tcs = TaskCompletionSource<_>()
+                let diagnosticsReady = TaskCompletionSource<_>()
 
+                // Diagnostics logger utilizing the common error count. 
                 let logger =
                     { new CapturingDiagnosticsLogger($"CaptureDiagnosticsConcurrently {i}", ?eagerFormat = eagerFormat) with
                         override _.DiagnosticSink(d, severity) =
@@ -896,45 +898,49 @@ type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerForma
                         override _.ErrorCount = errorCount
                     }
 
-                let injected =
+                // Inject capturing loger into the computation. Signal the TaskCompletionSource when done.
+                let computationsWithLoggers =
                     async {
                         SetThreadDiagnosticsLoggerNoUnwind logger
 
                         try
                             return! computation
                         finally
-                            tcs.SetResult logger
+                            diagnosticsReady.SetResult logger
                     }
 
-                injected, tcs
+                computationsWithLoggers, diagnosticsReady
         ]
         |> List.unzip
 
+    // Commit diagnostics from computations as soon as it is possible, preserving the order.
     let replayDiagnostics =
         backgroundTask {
             let target = DiagnosticsThreadStatics.DiagnosticsLogger
 
-            for tcs in diags do
+            for tcs in diagnosticsReady do
                 let! finishedLogger = tcs.Task
                 finishedLogger.CommitDelayedDiagnostics target
 
             return target
         }
 
-    member val Computations = injected |> Seq.ofList
+    member val Computations = computationsWithLoggers |> Seq.ofList
     member val ReplayDiagnostics = replayDiagnostics
 
 module MultipleDiagnosticsLoggers =
-    let run method (computations: Async<'T> seq) =
+    // Capture diagnostics from multiple computations.
+    let run method computations =
         let forks = CaptureDiagnosticsConcurrently(computations)
 
         async {
             try
+                // We want to restore the current diagnostics context when finished.
                 use _ = new CompilationGlobalsScope()
                 return! forks.Computations |> method
             finally
                 forks.ReplayDiagnostics.Wait()
         }
 
-    let Parallel computations = run Async.Parallel computations
-    let Sequential computations = run Async.Sequential computations
+    let Parallel computations = computations |> run Async.Parallel 
+    let Sequential computations = computations |> run Async.Sequential
