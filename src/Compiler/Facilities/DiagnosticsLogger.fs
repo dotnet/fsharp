@@ -886,7 +886,7 @@ type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerForma
             for i, computation in computations |> Seq.indexed do
                 let diagnosticsReady = TaskCompletionSource<_>()
 
-                // Diagnostics logger utilizing the common error count. 
+                // Diagnostics logger utilizing the common error count.
                 let logger =
                     { new CapturingDiagnosticsLogger($"CaptureDiagnosticsConcurrently {i}", ?eagerFormat = eagerFormat) with
                         override _.DiagnosticSink(d, severity) =
@@ -942,5 +942,5 @@ module MultipleDiagnosticsLoggers =
                 forks.ReplayDiagnostics.Wait()
         }
 
-    let Parallel computations = computations |> run Async.Parallel 
+    let Parallel computations = computations |> run Async.Parallel
     let Sequential computations = computations |> run Async.Sequential
