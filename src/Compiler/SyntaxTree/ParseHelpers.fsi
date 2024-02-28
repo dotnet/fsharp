@@ -118,7 +118,7 @@ type LexerStringKind =
 
     static member String: LexerStringKind
 
-type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range) list
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range option * range) list
 
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LexerContinuation =
