@@ -731,81 +731,87 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
-    .maxstack  8
-    .locals init (int32 V_0,
-             char V_1)
+    .maxstack  7
+    .locals init (char V_0,
+             char V_1,
+             char V_2)
     IL_0000:  ldc.i4.0
-    IL_0001:  stloc.0
-    IL_0002:  ldarg.0
-    IL_0003:  stloc.1
-    IL_0004:  br.s       IL_0014
-
-    IL_0006:  ldloc.1
-    IL_0007:  call       void assembly::set_c(char)
-    IL_000c:  ldloc.1
-    IL_000d:  ldc.i4.0
-    IL_000e:  add
-    IL_000f:  stloc.1
-    IL_0010:  ldloc.0
-    IL_0011:  ldc.i4.1
-    IL_0012:  add
-    IL_0013:  stloc.0
-    IL_0014:  ldloc.0
-    IL_0015:  ldc.i4.0
-    IL_0016:  ldsfld     class assembly/f11@52 assembly/f11@52::@_instance
-    IL_001b:  ldarg.0
-    IL_001c:  ldc.i4.0
-    IL_001d:  ldarg.1
-    IL_001e:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!1> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeStepGeneric<char,char>(!!0,
+    IL_0001:  ldsfld     class assembly/f11@52 assembly/f11@52::@_instance
+    IL_0006:  ldarg.0
+    IL_0007:  ldc.i4.0
+    IL_0008:  ldarg.1
+    IL_0009:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!1> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeStepGeneric<char,char>(!!0,
                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>>,
                                                                                                                                                                                           !!1,
                                                                                                                                                                                           !!0,
                                                                                                                                                                                           !!1)
-    IL_0023:  pop
-    IL_0024:  ldc.i4.m1
-    IL_0025:  blt.un.s   IL_0006
+    IL_000e:  pop
+    IL_000f:  ldc.i4.0
+    IL_0010:  stloc.0
+    IL_0011:  ldc.i4.0
+    IL_0012:  stloc.1
+    IL_0013:  ldarg.0
+    IL_0014:  stloc.2
+    IL_0015:  br.s       IL_0025
 
-    IL_0027:  ret
+    IL_0017:  ldloc.2
+    IL_0018:  call       void assembly::set_c(char)
+    IL_001d:  ldloc.2
+    IL_001e:  ldc.i4.0
+    IL_001f:  add
+    IL_0020:  stloc.2
+    IL_0021:  ldloc.1
+    IL_0022:  ldc.i4.1
+    IL_0023:  add
+    IL_0024:  stloc.1
+    IL_0025:  ldloc.1
+    IL_0026:  ldloc.0
+    IL_0027:  blt.un.s   IL_0017
+
+    IL_0029:  ret
   } 
 
   .method public static void  f12() cil managed
   {
     
-    .maxstack  8
-    .locals init (int32 V_0,
-             char V_1)
+    .maxstack  7
+    .locals init (char V_0,
+             char V_1,
+             char V_2)
     IL_0000:  ldc.i4.0
-    IL_0001:  stloc.0
-    IL_0002:  ldc.i4.s   97
-    IL_0004:  stloc.1
-    IL_0005:  br.s       IL_0015
-
-    IL_0007:  ldloc.1
-    IL_0008:  call       void assembly::set_c(char)
-    IL_000d:  ldloc.1
-    IL_000e:  ldc.i4.0
-    IL_000f:  add
-    IL_0010:  stloc.1
-    IL_0011:  ldloc.0
-    IL_0012:  ldc.i4.1
-    IL_0013:  add
-    IL_0014:  stloc.0
-    IL_0015:  ldloc.0
-    IL_0016:  ldc.i4.0
-    IL_0017:  ldsfld     class assembly/f12@56 assembly/f12@56::@_instance
-    IL_001c:  ldc.i4.s   97
-    IL_001e:  ldc.i4.0
-    IL_001f:  ldc.i4.s   122
-    IL_0021:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!1> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeStepGeneric<char,char>(!!0,
+    IL_0001:  ldsfld     class assembly/f12@56 assembly/f12@56::@_instance
+    IL_0006:  ldc.i4.s   97
+    IL_0008:  ldc.i4.0
+    IL_0009:  ldc.i4.s   122
+    IL_000b:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!1> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeStepGeneric<char,char>(!!0,
                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>>,
                                                                                                                                                                                           !!1,
                                                                                                                                                                                           !!0,
                                                                                                                                                                                           !!1)
-    IL_0026:  pop
-    IL_0027:  ldc.i4.m1
-    IL_0028:  blt.un.s   IL_0007
+    IL_0010:  pop
+    IL_0011:  ldc.i4.0
+    IL_0012:  stloc.0
+    IL_0013:  ldc.i4.0
+    IL_0014:  stloc.1
+    IL_0015:  ldc.i4.s   97
+    IL_0017:  stloc.2
+    IL_0018:  br.s       IL_0028
 
-    IL_002a:  ret
+    IL_001a:  ldloc.2
+    IL_001b:  call       void assembly::set_c(char)
+    IL_0020:  ldloc.2
+    IL_0021:  ldc.i4.0
+    IL_0022:  add
+    IL_0023:  stloc.2
+    IL_0024:  ldloc.1
+    IL_0025:  ldc.i4.1
+    IL_0026:  add
+    IL_0027:  stloc.1
+    IL_0028:  ldloc.1
+    IL_0029:  ldloc.0
+    IL_002a:  blt.un.s   IL_001a
+
+    IL_002c:  ret
   } 
 
   .property char c()
