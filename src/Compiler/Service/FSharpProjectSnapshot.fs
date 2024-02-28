@@ -590,7 +590,10 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             // TODO: check if options is a good key here
             if not (snapshotAccumulator.ContainsKey options) then
 
-                let! sourceFiles = options.SourceFiles |> Seq.map (getFileSnapshot options) |> MultipleDiagnosticsLoggers.Parallel
+                let! sourceFiles =
+                    options.SourceFiles
+                    |> Seq.map (getFileSnapshot options)
+                    |> MultipleDiagnosticsLoggers.Parallel
 
                 let! referencedProjects =
                     options.ReferencedProjects

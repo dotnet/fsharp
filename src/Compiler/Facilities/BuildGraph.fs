@@ -76,6 +76,7 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
 
                             Async.StartWithContinuations(
                                 async {
+                                    do! Async.SwitchToThreadPool()
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
                                     return! computation
                                 },
