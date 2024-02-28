@@ -147,7 +147,7 @@
     IL_0019:  ret
   } 
 
-  .method public static void  f2y(int8 start) cil managed
+  .method public static void  f2(int8 start) cil managed
   {
     
     .maxstack  4
@@ -193,7 +193,7 @@
     IL_002a:  ret
   } 
 
-  .method public static void  f3y(int8 finish) cil managed
+  .method public static void  f3(int8 finish) cil managed
   {
     
     .maxstack  4
@@ -239,8 +239,8 @@
     IL_0028:  ret
   } 
 
-  .method public static void  f4y(int8 start,
-                                  int8 finish) cil managed
+  .method public static void  f4(int8 start,
+                                 int8 finish) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
@@ -345,7 +345,7 @@
     IL_0018:  ret
   } 
 
-  .method public static void  f7y(int8 start) cil managed
+  .method public static void  f7(int8 start) cil managed
   {
     
     .maxstack  4
@@ -393,7 +393,7 @@
     IL_002c:  ret
   } 
 
-  .method public static void  f8y(int8 step) cil managed
+  .method public static void  f8(int8 step) cil managed
   {
     
     .maxstack  5
@@ -453,7 +453,7 @@
     IL_003a:  ret
   } 
 
-  .method public static void  f9y(int8 finish) cil managed
+  .method public static void  f9(int8 finish) cil managed
   {
     
     .maxstack  4
@@ -501,9 +501,9 @@
     IL_002a:  ret
   } 
 
-  .method public static void  f10y(int8 start,
-                                   int8 step,
-                                   int8 finish) cil managed
+  .method public static void  f10(int8 start,
+                                  int8 step,
+                                  int8 finish) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
@@ -593,8 +593,8 @@
     IL_0054:  ret
   } 
 
-  .method public static void  f11y(int8 start,
-                                   int8 finish) cil managed
+  .method public static void  f11(int8 start,
+                                  int8 finish) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     

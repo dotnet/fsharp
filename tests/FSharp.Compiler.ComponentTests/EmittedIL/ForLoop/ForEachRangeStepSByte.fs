@@ -12,15 +12,15 @@ let f1 () =
     for n in 1y..10y do
         c <- n
 
-let f2y start =
+let f2 start =
     for n in start..10y do
         c <- n
 
-let f3y finish =
+let f3 finish =
     for n in 1y..finish do
         c <- n
 
-let f4y (start: sbyte) finish =
+let f4 (start: sbyte) finish =
     for n in start..finish do
         c <- n
 
@@ -32,23 +32,23 @@ let f6 () =
     for n in 1y..2y..10y do
         c <- n
 
-let f7y start =
+let f7 start =
     for n in start..2y..10y do
         c <- n
 
-let f8y step =
+let f8 step =
     for n in 1y..step..10y do
         c <- n
 
-let f9y finish =
+let f9 finish =
     for n in 1y..2y..finish do
         c <- n
 
-let f10y (start: sbyte) step finish =
+let f10 (start: sbyte) step finish =
     for n in finish..step..finish do
         c <- n
 
-let f11y start finish =
+let f11 start finish =
     for n in start..0y..finish do
         c <- n
 

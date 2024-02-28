@@ -10307,7 +10307,7 @@ let (|EmptyRange|_|) (start, step, finish) =
 [<return: Struct>]
 let (|ConstCount|_|) (start, step, finish) =
     match start, step, finish with
-    // The count for these ranges is 2⁶⁴ + 1. Let the count calculation raise an overflow exception at runtime.
+    // The count for these ranges is 2⁶⁴ + 1. We must handle such ranges at runtime.
     | Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 1L), Expr.Const (value = Const.Int64 Int64.MaxValue)
     | Expr.Const (value = Const.Int64 Int64.MaxValue), Expr.Const (value = Const.Int64 -1L), Expr.Const (value = Const.Int64 Int64.MinValue)
     | Expr.Const (value = Const.UInt64 UInt64.MinValue), Expr.Const (value = Const.UInt64 1UL), Expr.Const (value = Const.UInt64 UInt64.MaxValue)
@@ -10318,7 +10318,7 @@ let (|ConstCount|_|) (start, step, finish) =
     // We must special-case a step of Int64.MinValue, since we cannot call abs on it.
     | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / (uint64 Int64.MaxValue + 1UL) + 1UL))
     | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 finish) -> ValueSome (Const.UInt64 ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
-    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr finish) when start<= finish -> ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr finish) when start <= finish -> ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
     | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr finish) -> ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
 
     | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 step), Expr.Const (value = Const.Int64 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / uint64 (abs step) + 1UL))
@@ -10379,19 +10379,20 @@ type WouldOvf = Expr
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type RangeCount =
-    /// A count known at compile time.
+    /// An expression representing a count known at compile time.
     | Constant of Count
 
-    /// A "count" whose step is known to be zero at compile time.
+    /// An expression representing a "count" whose step is known to be zero at compile time.
     /// Evaluating this expression at runtime will raise an exception.
     | ConstantZeroStep of Expr
 
-    /// A count that will be computed at runtime but will definitely fit in 64 bits without overflow.
+    /// An expression to compute a count at runtime that will definitely fit in 64 bits without overflow.
     | Safe of Count
 
-    /// A count that, when one is added to it, might not fit in 64 bits without overflow,
-    /// in which case evaluating the expression would raise an overflow exception at runtime.
-    | PossiblyOversize of ((Count -> WouldOvf -> Count) -> Count)
+    /// A function for building a loop given an expression that may produce a count that
+    /// would not fit in 64 bits without overflow, and an expression indicating whether
+    /// evaluating the first expression directly would in fact overflow.
+    | PossiblyOversize of ((Count -> WouldOvf -> Expr) -> Expr)
 
 /// Makes an expression to compute the iteration count for the given integral range.
 let mkRangeCount g m rangeTy rangeExpr start step finish =
@@ -10486,13 +10487,13 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
         let underlying = stripMeasuresFromTy g rangeTy
 
         if typeEquiv g underlying g.int64_ty || typeEquiv g underlying g.uint64_ty then
-            RangeCount.PossiblyOversize (fun f ->
+            RangeCount.PossiblyOversize (fun mkLoopExpr ->
                 mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
                     let wouldOvf = mkILAsmCeq g m pseudoCount (Expr.Const (Const.UInt64 UInt64.MaxValue, m, g.uint64_ty))
                     mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
-                        f count wouldOvf)))
+                        mkLoopExpr count wouldOvf)))
         elif typeEquiv g underlying g.nativeint_ty || typeEquiv g underlying g.unativeint_ty then // We have a nativeint ty whose size we won't know till runtime.
-            RangeCount.PossiblyOversize (fun f ->
+            RangeCount.PossiblyOversize (fun mkLoopExpr ->
                 mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
                     let wouldOvf =
                         mkCond
@@ -10504,7 +10505,7 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
                             (mkILAsmCeq g m pseudoCount (Expr.Const (Const.UIntPtr UInt64.MaxValue, m, g.unativeint_ty)))
 
                     mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
-                        f count wouldOvf)))
+                        mkLoopExpr count wouldOvf)))
         else
             RangeCount.Safe count
 

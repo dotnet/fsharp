@@ -291,6 +291,7 @@ module List =
 
 module Array =
     /// Whether to check for overflow when converting a value to a native int.
+    [<NoEquality; NoComparison>]
     type Ovf =
         /// Check for overflow. We need this when passing the count into newarr.
         | CheckOvf

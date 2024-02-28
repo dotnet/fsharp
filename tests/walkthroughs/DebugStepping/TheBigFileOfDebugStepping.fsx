@@ -1091,11 +1091,11 @@ module ForLoopRegularCode =
             printfn $"hello, x = {x}"
 
     let testSimpleForEachInt64RangeLoopDownWithOneStatement (start: int64, stop) =
-        for x in stop .. -1L .. start do
+        for x in start .. -1L .. stop do
             printfn $"hello, x = {x}"
 
     let testSimpleForEachInt64RangeLoopDownWithTwoStatements (start: int64, stop) =
-        for x in stop .. -1L .. start do
+        for x in start .. -1L .. stop do
             printfn $"hello, x = {x}"
             printfn $"hello, x = {x}"
 

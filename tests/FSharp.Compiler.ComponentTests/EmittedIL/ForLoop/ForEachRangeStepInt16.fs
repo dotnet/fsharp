@@ -12,15 +12,15 @@ let f1 () =
     for n in 1s..10s do
         c <- n
 
-let f2s start =
+let f2 start =
     for n in start..10s do
         c <- n
 
-let f3s finish =
+let f3 finish =
     for n in 1s..finish do
         c <- n
 
-let f4s (start: int16) finish =
+let f4 (start: int16) finish =
     for n in start..finish do
         c <- n
 
@@ -32,23 +32,23 @@ let f6 () =
     for n in 1s..2s..10s do
         c <- n
 
-let f7s start =
+let f7 start =
     for n in start..2s..10s do
         c <- n
 
-let f8s step =
+let f8 step =
     for n in 1s..step..10s do
         c <- n
 
-let f9s finish =
+let f9 finish =
     for n in 1s..2s..finish do
         c <- n
 
-let f10s (start: int16) step finish =
+let f10 (start: int16) step finish =
     for n in finish..step..finish do
         c <- n
 
-let f11s start finish =
+let f11 start finish =
     for n in start..0s..finish do
         c <- n
 
