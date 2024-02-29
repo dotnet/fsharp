@@ -6784,9 +6784,7 @@ interpolatedStringParts:
        [ SynInterpolatedStringPart.String(s, m) ] }
 
   | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
-     { // let origM = rhs parseState 1
-       // let dummy = mkRange origM.FileName (mkPos origM.StartLine (origM.StartColumn - 2)) (mkPos origM.EndLine origM.EndColumn)
-       let (s, altStart, _) = $1
+     { let (s, altStart, _) = $1
        let mOrig = rhs parseState 1
        let m =
            match altStart with
