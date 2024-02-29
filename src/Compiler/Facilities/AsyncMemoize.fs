@@ -313,7 +313,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
         task {
-            do! Task.Delay 0
+            do! Task.Yield()
 
             do!
                 lock.Do(fun () ->
@@ -343,36 +343,34 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                             else
                                 // We need to restart the computation
-                                Task.Run(fun () ->
-                                    Async.StartAsTask(
-                                        async {
+                                Async.Start(
+                                    async {
 
-                                            let cachingLogger = new CachingDiagnosticsLogger(None)
+                                        let cachingLogger = new CachingDiagnosticsLogger(None)
+
+                                        try
+                                            // TODO: Should unify starting and restarting
+                                            log (Restarted, key)
+                                            Interlocked.Increment &restarted |> ignore
+                                            System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
+                                            let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                                            DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
 
                                             try
-                                                // TODO: Should unify starting and restarting
-                                                log (Restarted, key)
-                                                Interlocked.Increment &restarted |> ignore
-                                                System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
-
-                                                try
-                                                    let! result = computation
-                                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                                    return ()
-                                                finally
-                                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
-                                            with
-                                            | TaskCancelled _ ->
-                                                Interlocked.Increment &cancel_exception_subsequent |> ignore
-                                                post (key, CancelRequest)
-                                                ()
-                                            | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
-                                        }
-                                    ),
-                                    cts.Token)
-                                |> ignore
+                                                let! result = computation
+                                                post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                                return ()
+                                            finally
+                                                DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
+                                        with
+                                        | TaskCancelled _ ->
+                                            Interlocked.Increment &cancel_exception_subsequent |> ignore
+                                            post (key, CancelRequest)
+                                            ()
+                                        | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
+                                    },
+                                    cancellationToken = cts.Token
+                                )
 
                         | CancelRequest, Some(Running(tcs, cts, _c, _, _)) ->
 

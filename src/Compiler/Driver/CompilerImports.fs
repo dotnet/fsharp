@@ -2231,6 +2231,8 @@ and [<Sealed>] TcImports
         async {
             CheckDisposed()
 
+            do! Async.SwitchToThreadPool()
+
             let tcConfig = tcConfigP.Get ctok
 
             let runMethod =
@@ -2604,7 +2606,7 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
 
     let ccuinfos =
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions)
-        |> Async.RunSynchronously
+        |> Async.RunImmediateWithoutCancellation
 
     let asms =
         ccuinfos
