@@ -87,6 +87,7 @@ type LanguageFeature =
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
     | EnforceAttributeTargetsOnFunctions
     | LowerInterpolatedStringToConcat
+    | EnforceAttributeTargetsOnStructAndClasses
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -201,6 +202,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
                 LanguageFeature.EnforceAttributeTargetsOnFunctions, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
+                LanguageFeature.EnforceAttributeTargetsOnStructAndClasses, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -346,6 +348,7 @@ type LanguageVersion(versionText) =
             FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
         | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
+        | LanguageFeature.EnforceAttributeTargetsOnStructAndClasses -> FSComp.SR.featureEnforceAttributeTargetsOnStructAndClasses ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
