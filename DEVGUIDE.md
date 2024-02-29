@@ -130,7 +130,7 @@ Once the "proto" compiler is built, it won't be built again, so you may want to 
 
 ## Using your custom compiler to build other projects
 
-Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`. 
+Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`.
 
 To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to your project's `.fsproj` file, adjusted to point at your local build directory, build configuration, and target framework as appropriate:
 
@@ -138,6 +138,25 @@ To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to y
 <PropertyGroup>
     <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net8.0\fsc.dll</DotnetFscCompilerPath>
 </PropertyGroup>
+```
+
+### Changes in FSharp.Core
+
+The FSharp compiler uses an implicit FSharp.Core. This means that if you introduce changes to FSharp.Core and want to use it in a project, you need to disable the implicit version used by the compiler, and add a reference to your custom FSharp.Core dll. Both are done in the `.fsproj` file of your project.
+
+Disabling the implicit FSharp.Core is done with
+```
+  <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+```
+and referencing your custom FSharp.Core, available after you build the compiler, is done with
+```
+  <ItemGroup>
+    <Reference Include="FSharp.Core">
+      <HintPath>D:\Git\fsharp\artifacts\bin\FSharp.Core\Debug\netstandard2.1\FSharp.Core.dll<\HintPath>
+    </Reference>
+  </ItemGroup>
 ```
 
 ## Updating FSComp.fs, FSComp.resx and XLF
