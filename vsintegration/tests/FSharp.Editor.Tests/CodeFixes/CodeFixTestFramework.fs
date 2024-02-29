@@ -205,13 +205,19 @@ module Xunit =
         let split (s: string) =
             s.Split([| Environment.NewLine |], StringSplitOptions.RemoveEmptyEntries)
 
-        let expected = split expected
-        let actual = split actual
+        let expectedLines = split expected
+        let actualLines = split actual
 
-        try
-            Assert.All((expected, actual) ||> Array.zip |> Array.rev, (fun (expected, actual) -> Assert.Equal(expected, actual)))
-        with :? Xunit.Sdk.AllException as all when all.Failures.Count = 1 ->
-            raise all.Failures[0]
+        if expectedLines.Length <> actualLines.Length then
+            Assert.Equal(expected, actual)
+        else
+            try
+                Assert.All(
+                    (expectedLines, actualLines) ||> Array.zip |> Array.rev,
+                    (fun (expected, actual) -> Assert.Equal(expected, actual))
+                )
+            with :? Xunit.Sdk.AllException as all when all.Failures.Count = 1 ->
+                raise all.Failures[0]
 
     /// <summary>
     /// Expects no code fix to be applied to the given code.
