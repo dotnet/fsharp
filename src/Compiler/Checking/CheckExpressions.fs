@@ -10882,12 +10882,20 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 // - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
 // - Let function bindings can only have attributes that uses AttributeTargets.Method ||| AttributeTargets.ReturnValue
 and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy areTyparsDeclared =
-    let rhsIsFunction = isFunTy cenv.g overallPatTy
-    let lhsIsFunction = isFunTy cenv.g overallExprTy
     let attrTgt =
-        match rhsIsFunction, lhsIsFunction with
-        | false, false when not areTyparsDeclared -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
-        | _, _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
+        if
+            // It's a type function:
+            //     let x<'a> = …
+            areTyparsDeclared
+            // It's a regular function-valued binding:
+            //     let f x = …
+            //     let f = fun x -> …
+            || isFunTy cenv.g overallPatTy
+            || isFunTy cenv.g overallExprTy
+        then
+            AttributeTargets.ReturnValue ||| AttributeTargets.Method
+        else
+            AttributeTargets.ReturnValue ||| AttributeTargets.Field ||| AttributeTargets.Property
 
     TcAttributes cenv env attrTgt attrs |> ignore
 
