@@ -496,7 +496,7 @@ let rec IsPartialExprVal x =
     | TupleValue args | RecdValue (_, args) | UnionCaseValue (_, args) -> Array.exists IsPartialExprVal args
     | ConstValue _ | CurriedLambdaValue _ | ConstExprValue _ -> false
     | ValValue (_, a) 
-    | SizeValue(_, a) -> IsPartialExprVal a
+    | SizeValue (_, a) -> IsPartialExprVal a
 
 let CheckInlineValueIsComplete (v: Val) res =
     if v.MustInline && IsPartialExprVal res then
@@ -690,9 +690,24 @@ let GetInfoForVal cenv env m (vref: ValRef) =
             GetInfoForLocalValue cenv env vref.binding m
         else
             GetInfoForNonLocalVal cenv env vref
+    res
 
+let GetInfoForValWithCheck cenv env m (vref: ValRef) =  
+    let res = GetInfoForVal cenv env m vref
     check vref res |> ignore
     res
+
+let IsPartialExpr cenv env m x =
+    let rec isPartialExpression x =
+        match x with
+        | Expr.App (func, _, _, args, _) -> func :: args |> Seq.exists isPartialExpression
+        | Expr.Lambda (_, _, _, _, expr, _, _) -> expr |> isPartialExpression 
+        | Expr.Let (TBind (_,expr,_), body, _, _) -> expr :: [body] |> List.exists isPartialExpression
+        | Expr.LetRec (bindings, body, _, _) -> body :: (bindings |> List.map (fun (TBind (_,expr,_)) -> expr)) |> List.exists isPartialExpression
+        | Expr.Sequential (expr1, expr2, _, _) -> [expr1; expr2] |> Seq.exists isPartialExpression
+        | Expr.Val (vr, _, _) when not vr.IsLocalRef -> ((GetInfoForVal cenv env m vr).ValExprInfo) |> IsPartialExprVal
+        | _ -> false
+    isPartialExpression x
 
 //-------------------------------------------------------------------------
 // Try to get information about values of particular types
@@ -3062,11 +3077,14 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, inlineIfLambda, va
         failwith "tuple, union and record values cannot be marked 'inline'"
 
     | UnknownValue when mustInline ->
-        warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m)); None
+        warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
+        None
 
     | _ when mustInline ->
-        warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m)); None
-    | _ -> None 
+        warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
+        None
+
+    | _ -> None
   
 and TryOptimizeValInfo cenv env m vinfo = 
     if vinfo.HasEffect then None else TryOptimizeVal cenv env (None, false, false, vinfo.Info, m)
@@ -3089,7 +3107,7 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     let g = cenv.g
 
-    let valInfoForVal = GetInfoForVal cenv env m v 
+    let valInfoForVal = GetInfoForValWithCheck cenv env m v 
 
     match TryOptimizeVal cenv env (Some v, v.MustInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
     | Some e -> 
@@ -3402,7 +3420,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                                 | _ -> false
                             | _ -> false
                     | _ -> false
-                | _ -> false                                          
+                | _ -> false
         
         if isValFromLazyExtensions then None else
 
@@ -3410,7 +3428,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
           match finfo.Info with
           | ValValue(vref, _) ->
                 vref.Attribs |> List.exists (fun a -> (IsSecurityAttribute g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute g a))
-          | _ -> false                              
+          | _ -> false
 
         if isSecureMethod then None else
 
@@ -3420,6 +3438,13 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
             | _ -> false
 
         if isGetHashCode then None else
+
+        let isApplicationPartialExpr =
+            match finfo.Info with
+            | ValValue (_, CurriedLambdaValue (_, _, _, expr, _) ) -> IsPartialExpr cenv env m expr
+            | _ -> false
+
+        if isApplicationPartialExpr then None else
 
         // Inlining lambda 
         let f2R = CopyExprForInlining cenv false f2 m
@@ -3597,8 +3622,8 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
                  // This includes recursive calls to the function being defined (in which case we get a non-critical, closed-world tailcall).
                  // Note we also have to check the argument count to ensure this is a direct call (or a partial application).
                  let doesNotMakeCriticalTailcall = 
-                     vref.MakesNoCriticalTailcalls || 
-                     (let valInfoForVal = GetInfoForVal cenv env m vref in valInfoForVal.ValMakesNoCriticalTailcalls) ||
+                     vref.MakesNoCriticalTailcalls ||
+                     (let valInfoForVal = GetInfoForValWithCheck cenv env m vref in valInfoForVal.ValMakesNoCriticalTailcalls) ||
                      (match env.functionVal with | None -> false | Some (v, _) -> valEq vref.Deref v)
                  if doesNotMakeCriticalTailcall then
                     let numArgs = otherArgs.Length + newArgs.Length
