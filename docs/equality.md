@@ -32,7 +32,7 @@ Here we talk about 3 particular relations:
 3) **Transitivity** -  if `a` is related to `b`, and `b` is related to `c`, then `a` is also related `c`
   - For integers, `>` is transitive (`a > b` && `b > c` -> `a > c`) and `√` is not (`a = √b` && `b = √c` doesn't mean `a = √c`)
 
-If a relation has 1, 2, and 3, we talk about Equivalence Relation (ER). If a relation only has 2 and 3, we talk about Partial Equivalence Relation (PER).
+If a relation has 1, 2, and 3, we talk about **Equivalence Relation (ER)**. If a relation only has 2 and 3, we talk about **Partial Equivalence Relation (PER)**.
 
 This matters in comparing floats since they include [NaN](https://en.wikipedia.org/wiki/NaN). Depending on if we consider `NaN = NaN` true or false, we talk about ER or PER comparison respectively. 
 
@@ -301,7 +301,7 @@ This case happens in structural equality for tuple types and other structural ty
 * Semantics: User expects the PER equality semantics of whatever `'T` actually is  
 * Perf: User expects no boxing
 * Compilation today: `GenericEqualityWithComparerIntrinsic LanguagePrimitives.GenericComparer` 
-* Perf today: boxes for if `'T` is any non-reference type - Problem4 ❌
+* Perf today: boxes for if `'T` is any non-reference type (Problem4 ❌)
 * [Sharplab](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQCgB4iwSwDs0AqVAEwHsBXAIyVTIHIAVASjdQE9UBeLbH25t48TCVFxB/LpIC0cosCJEA5goB8kgOKJCiAE74AxgFEAjtQCGy5D0Gy48BUpWF1crU7gAJKxAALAGFKAFsABysDRAA6XX0jM0sbfDsAMX80B1R5RUJlQjVNHT1DEwtrWy4ASWIjQggTAB4WAEZGVBYAJg6WAGYNVAdcgHlw5HxQ/AAvQ00sckQAN3wDNHiypMrUmrqiRuMRbwyIZAqbCBZqcKQ+1AAZK3drVUQABSMpiaXECDjSxIhCJRQwCVoAGmwXUhfU4mC4EK40K4sNyrkK7mK3iQaGMYUi0QMQkezysrw+k1S+B+fw2gPxIIM8Dp5WSVQA6qlggzCSdcTzQdh2gjUAAyUXMgGs7Z2TnIbnA3mZVB4xWCnpIsUSuAsrYpWVcoEEwx8lUConYO4o3KDSQ4s1qon8EmqF7vT5Umn/BImI2M+DGRDmIbC9rigNBoYanrhnVSvUcw3m2rIeoHB3Gi1WvqSEhHeBAA==)
 * Note: [#16615](https://github.com/dotnet/fsharp/pull/16615) will compile to ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)`` and avoid boxing in many cases
 
