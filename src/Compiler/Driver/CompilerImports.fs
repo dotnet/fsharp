@@ -2285,7 +2285,7 @@ and [<Sealed>] TcImports
                     ReportWarnings warns
 
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res)
-                    |> Async.RunSynchronously
+                    |> Async.RunImmediateWithoutCancellation
                     |> ignore
 
                     true

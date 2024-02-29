@@ -736,7 +736,6 @@ let ignoreTestIfStackOverflowExpected () =
 [<TestCase(true)>]
 [<Test>]
 let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
-
     let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
@@ -878,7 +877,6 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
 [<TestCase(true)>]
 [<Test>]
 let ``Test Optimized Declarations Project1`` useTransparentCompiler =
-
     let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)

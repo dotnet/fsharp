@@ -343,34 +343,36 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                             else
                                 // We need to restart the computation
-                                Async.Start(
-                                    async {
+                                Task.Run(fun () ->
+                                    Async.StartAsTask(
+                                        async {
 
-                                        let cachingLogger = new CachingDiagnosticsLogger(None)
-
-                                        try
-                                            // TODO: Should unify starting and restarting
-                                            log (Restarted, key)
-                                            Interlocked.Increment &restarted |> ignore
-                                            System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                            let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                            DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+                                            let cachingLogger = new CachingDiagnosticsLogger(None)
 
                                             try
-                                                let! result = computation
-                                                post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                                return ()
-                                            finally
-                                                DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
-                                        with
-                                        | TaskCancelled _ ->
-                                            Interlocked.Increment &cancel_exception_subsequent |> ignore
-                                            post (key, CancelRequest)
-                                            ()
-                                        | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
-                                    },
-                                    cancellationToken = cts.Token
-                                )
+                                                // TODO: Should unify starting and restarting
+                                                log (Restarted, key)
+                                                Interlocked.Increment &restarted |> ignore
+                                                System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
+                                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+
+                                                try
+                                                    let! result = computation
+                                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                                    return ()
+                                                finally
+                                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
+                                            with
+                                            | TaskCancelled _ ->
+                                                Interlocked.Increment &cancel_exception_subsequent |> ignore
+                                                post (key, CancelRequest)
+                                                ()
+                                            | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
+                                        }
+                                    ),
+                                    cts.Token)
+                                |> ignore
 
                         | CancelRequest, Some(Running(tcs, cts, _c, _, _)) ->
 
