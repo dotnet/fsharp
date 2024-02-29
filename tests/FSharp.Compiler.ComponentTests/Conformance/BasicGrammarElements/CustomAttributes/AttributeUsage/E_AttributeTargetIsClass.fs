@@ -21,3 +21,9 @@ type Class3(x: int) = class end
 
 [<Class; CustomStruct>]
 type Class4 = class end
+
+[<RequireQualifiedAccess>] //RequireQualifiedAccess is marked AttributeTargets.Class
+type SemanticClassificationItem =
+    val Range: int
+    val Type: string
+    new((range, ty)) = { Range = range; Type = ty }
