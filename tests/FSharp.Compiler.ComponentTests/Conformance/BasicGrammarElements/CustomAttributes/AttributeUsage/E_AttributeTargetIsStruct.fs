@@ -28,3 +28,9 @@ type SemanticClassificationItem =
     val Range: int
     val Type: string
     new((range, ty)) = { Range = range; Type = ty }
+
+[<AutoOpen>] //AutoOpen is marked AttributeTargets.Class so this should be an error
+[<Struct>]
+type ILTableName(idx: int) =
+    member __.Index = idx
+    static member FromIndex n = ILTableName n

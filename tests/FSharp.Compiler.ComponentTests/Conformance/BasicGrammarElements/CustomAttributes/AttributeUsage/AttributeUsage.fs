@@ -329,6 +329,7 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 22, Col 11, Line 22, Col 22, "This attribute is not valid for use on this language element")
             (Error 842, Line 25, Col 3, Line 25, Col 25, "This attribute is not valid for use on this language element")
+            (Error 842, Line 32, Col 3, Line 32, Col 11, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=MarshalAsAttribute.fs					# MarshalAsAttribute.fs
