@@ -37,8 +37,8 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token <string * SynStringKind * ParseHelpers.LexerContinuation> STRING
 %token <string * SynStringKind * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
 %token <string * SynStringKind * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART
-%token <string * range option * ParseHelpers.LexerContinuation> INTERP_STRING_PART
-%token <string * range option * ParseHelpers.LexerContinuation> INTERP_STRING_END
+%token <string * ParseHelpers.LexerContinuation> INTERP_STRING_PART
+%token <string * ParseHelpers.LexerContinuation> INTERP_STRING_END
 %token <ParseHelpers.LexerContinuation> LBRACE RBRACE
 
 %token <string * string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
@@ -6774,37 +6774,16 @@ interpolatedStringFill:
 
 interpolatedStringParts:
   | INTERP_STRING_END
-     {
-       let (s, altStart, _) = $1
-       let mOrig = rhs parseState 1
-       let m =
-           match altStart with
-           | Some r -> unionRanges r mOrig
-           | None -> mOrig
-       [ SynInterpolatedStringPart.String(s, m) ] }
+     { [ SynInterpolatedStringPart.String(fst $1, rhs parseState 1) ] }
 
   | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
-     { // let origM = rhs parseState 1
-       // let dummy = mkRange origM.FileName (mkPos origM.StartLine (origM.StartColumn - 2)) (mkPos origM.EndLine origM.EndColumn)
-       let (s, altStart, _) = $1
-       let mOrig = rhs parseState 1
-       let m =
-           match altStart with
-           | Some r -> unionRanges r mOrig
-           | None -> mOrig
-       SynInterpolatedStringPart.String(s, m) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
+     { SynInterpolatedStringPart.String(fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
 
   | INTERP_STRING_PART interpolatedStringParts
      { let rbrace = parseState.InputEndPosition 1
        let lbrace = parseState.InputStartPosition 2
        reportParseErrorAt (mkSynRange rbrace lbrace) (FSComp.SR.parsEmptyFillInInterpolatedString())
-       let (s, altStart, _) = $1
-       let mOrig = rhs parseState 1
-       let m =
-           match altStart with
-           | Some r -> unionRanges r mOrig
-           | None -> mOrig
-       SynInterpolatedStringPart.String(s, m) :: $2 }
+       SynInterpolatedStringPart.String(fst $1, rhs parseState 1) :: $2 }
 
 /* INTERP_STRING_BEGIN_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_END */

@@ -120,7 +120,7 @@ let checkExprGreaterColonOp (lexbuf:UnicodeLexing.Lexbuf) =
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
 
-let startString args (lexbuf: UnicodeLexing.Lexbuf) altStartForStringPartOrEnd =
+let startString args (lexbuf: UnicodeLexing.Lexbuf) =
     let buf = ByteBuffer.Create StringCapacity
     let m = lexbuf.LexemeRange
     let startp = lexbuf.StartPos
@@ -158,9 +158,9 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) altStartForStringPartOrEnd =
                         INTERP_STRING_BEGIN_END (s, synStringKind, cont)
                 else
                     if isPart then
-                        INTERP_STRING_PART (s, altStartForStringPartOrEnd, cont)
+                        INTERP_STRING_PART (s, cont)
                     else
-                        INTERP_STRING_END (s, altStartForStringPartOrEnd, cont)
+                        INTERP_STRING_END (s, cont)
             else
                 let s = Lexhelp.stringBufferAsString buf
                 let synStringKind =
@@ -587,12 +587,12 @@ rule token (args: LexArgs) (skip: bool) = parse
        else mlOnly m args skip lexbuf }
 
  | '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | (_, LexerStringStyle.ExtendedInterpolated, _, _, _) :: _
-       | (_, LexerStringStyle.TripleQuote, _, _, _) :: _ -> ()
+       | (_, LexerStringStyle.ExtendedInterpolated, _, _) :: _
+       | (_, LexerStringStyle.TripleQuote, _, _) :: _ -> ()
        | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | [] -> ()
 
@@ -600,7 +600,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        else singleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | '$' '"' '"' '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
@@ -612,7 +612,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        else tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | ('$'+) '"' '"' '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        if lexbuf.SupportsFeature LanguageFeature.ExtendedStringInterpolation then
            // Single quote in triple quote ok, others disallowed
@@ -635,11 +635,11 @@ rule token (args: LexArgs) (skip: bool) = parse
      }
 
  | '$' '"'
-     { let buf,fin,m = startString args lexbuf None
+     { let buf,fin,m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | (_, style, _, _, _) :: _ when style = LexerStringStyle.ExtendedInterpolated || style = LexerStringStyle.TripleQuote -> ()
+       | (_, style, _, _) :: _ when style = LexerStringStyle.ExtendedInterpolated || style = LexerStringStyle.TripleQuote -> ()
        | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
@@ -649,7 +649,7 @@ rule token (args: LexArgs) (skip: bool) = parse
            singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | '"' '"' '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        args.interpolationDelimiterLength <- 0
 
@@ -664,12 +664,12 @@ rule token (args: LexArgs) (skip: bool) = parse
            tripleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | '@' '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | (_, LexerStringStyle.ExtendedInterpolated, _, _, _) :: _
-       | (_, LexerStringStyle.TripleQuote, _, _, _) :: _ -> ()
+       | (_, LexerStringStyle.ExtendedInterpolated, _, _) :: _
+       | (_, LexerStringStyle.TripleQuote, _, _) :: _ -> ()
        | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
@@ -679,11 +679,11 @@ rule token (args: LexArgs) (skip: bool) = parse
            verbatimString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | ("$@" | "@$") '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | (_, style, _, _, _) :: _ when style = LexerStringStyle.ExtendedInterpolated || style = LexerStringStyle.TripleQuote -> ()
+       | (_, style, _, _) :: _ when style = LexerStringStyle.ExtendedInterpolated || style = LexerStringStyle.TripleQuote -> ()
        | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
@@ -888,10 +888,10 @@ rule token (args: LexArgs) (skip: bool) = parse
      {
        match args.stringNest with
        | [] -> ()
-       | (counter, style, d, _, m) :: rest ->
+       | (counter, style, d, m) :: rest ->
          // Note, we do not update the 'm', any incomplete-interpolation error
          // will be reported w.r.t. the first '{'
-         args.stringNest <- (counter + 1, style, d, None, m) :: rest
+         args.stringNest <- (counter + 1, style, d, m) :: rest
        // To continue token-by-token lexing may involve picking up the new args.stringNes
        let cont = LexCont.Token(args.ifdefStack, args.stringNest)
        LBRACE cont
@@ -899,22 +899,12 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | "|" { BAR }
 
- | "}"
+ | "}" +
      {
-       // We encounter a '}' in the expression token stream.  First check if we're in an interpolated string expression
-       // and continue the string if necessary
        match args.stringNest with
-       | (1, LexerStringStyle.ExtendedInterpolated, delimLength, altR, r) :: rest when delimLength > 1 ->
-           // On the first "}" of multiple "}", keep the range of the starting "}" for later processing in startString 
-           let altStart =
-               match altR with
-               | None -> Some lexbuf.LexemeRange
-               | _ -> altR 
-           args.stringNest <- (1, LexerStringStyle.ExtendedInterpolated, delimLength - 1, altStart, r) :: rest
-           token args skip lexbuf
-       | (1, style, _, altR, _r) :: rest ->
+       | (1, style, _, _r) :: rest ->
            args.stringNest <- rest
-           let buf, fin, m = startString args lexbuf altR
+           let buf, fin, m = startString args lexbuf
            if not skip then
                STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, style, LexerStringKind.InterpolatedStringPart, args.interpolationDelimiterLength, m))
            else
@@ -923,10 +913,35 @@ rule token (args: LexArgs) (skip: bool) = parse
                | LexerStringStyle.SingleQuote -> singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
                | LexerStringStyle.TripleQuote -> tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
                | LexerStringStyle.ExtendedInterpolated -> extendedInterpolatedString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
-       | (counter, style, d, altR, m) :: rest ->
+       | (counter, style, d, m) :: rest ->
            // Note, we do not update the 'm', any incomplete-interpolation error
            // will be reported w.r.t. the first '{'
-           args.stringNest <- (counter - 1, style, d, altR, m) :: rest
+           args.stringNest <- (counter - 1, style, d, m) :: rest
+           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+           RBRACE cont
+       | _ ->
+           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+           RBRACE cont
+     }
+    
+ | "}"
+     {
+       match args.stringNest with
+       | (1, style, _, _r) :: rest ->
+           args.stringNest <- rest
+           let buf, fin, m = startString args lexbuf
+           if not skip then
+               STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, style, LexerStringKind.InterpolatedStringPart, args.interpolationDelimiterLength, m))
+           else
+               match style with
+               | LexerStringStyle.Verbatim -> verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
+               | LexerStringStyle.SingleQuote -> singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
+               | LexerStringStyle.TripleQuote -> tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
+               | LexerStringStyle.ExtendedInterpolated -> extendedInterpolatedString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
+       | (counter, style, d, m) :: rest ->
+           // Note, we do not update the 'm', any incomplete-interpolation error
+           // will be reported w.r.t. the first '{'
+           args.stringNest <- (counter - 1, style, d, m) :: rest
            let cont = LexCont.Token(args.ifdefStack, args.stringNest)
            RBRACE cont
 
@@ -1264,7 +1279,7 @@ and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
       if kind.IsInterpolated then
           // get a new range for where the fill starts
           let m2 = lexbuf.LexemeRange
-          args.stringNest <- (1, LexerStringStyle.SingleQuote, args.interpolationDelimiterLength, None, m2) :: args.stringNest
+          args.stringNest <- (1, LexerStringStyle.SingleQuote, args.interpolationDelimiterLength, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
           fin.Finish buf kind LexerStringFinisherContext.InterpolatedPart cont
       else
@@ -1380,7 +1395,7 @@ and verbatimString (sargs: LexerStringArgs) (skip: bool) = parse
       if kind.IsInterpolated then
           // get a new range for where the fill starts
           let m2 = lexbuf.LexemeRange
-          args.stringNest <- (1, LexerStringStyle.Verbatim, args.interpolationDelimiterLength, None, m2) :: args.stringNest
+          args.stringNest <- (1, LexerStringStyle.Verbatim, args.interpolationDelimiterLength, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
           fin.Finish buf kind (LexerStringFinisherContext.InterpolatedPart ||| LexerStringFinisherContext.Verbatim) cont
       else
@@ -1499,7 +1514,7 @@ and tripleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
       if kind.IsInterpolated then
           // get a new range for where the fill starts
           let m2 = lexbuf.LexemeRange
-          args.stringNest <- (1, LexerStringStyle.TripleQuote, args.interpolationDelimiterLength, None, m2) :: args.stringNest
+          args.stringNest <- (1, LexerStringStyle.TripleQuote, args.interpolationDelimiterLength, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
           fin.Finish buf kind (LexerStringFinisherContext.InterpolatedPart ||| LexerStringFinisherContext.TripleQuote) cont
       else
@@ -1604,7 +1619,7 @@ and extendedInterpolatedString (sargs: LexerStringArgs) (skip: bool) = parse
       let maxBraces = 2 * args.interpolationDelimiterLength - 1
       if numBraces > maxBraces then
           let m2 = lexbuf.LexemeRange
-          args.stringNest <- (1, LexerStringStyle.ExtendedInterpolated, args.interpolationDelimiterLength, None, m2) :: args.stringNest
+          args.stringNest <- (1, LexerStringStyle.ExtendedInterpolated, args.interpolationDelimiterLength, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
           fail args lexbuf
               (FSComp.SR.lexTooManyLBracesInTripleQuote())
@@ -1625,7 +1640,7 @@ and extendedInterpolatedString (sargs: LexerStringArgs) (skip: bool) = parse
               String.replicate extraBraces "{" |> addUnicodeString buf
           // get a new range for where the fill starts
           let m2 = lexbuf.LexemeRange
-          args.stringNest <- (1, LexerStringStyle.ExtendedInterpolated, args.interpolationDelimiterLength, None, m2) :: args.stringNest
+          args.stringNest <- (1, LexerStringStyle.ExtendedInterpolated, args.interpolationDelimiterLength, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
           fin.Finish buf kind (LexerStringFinisherContext.InterpolatedPart ||| LexerStringFinisherContext.TripleQuote) cont
     }
