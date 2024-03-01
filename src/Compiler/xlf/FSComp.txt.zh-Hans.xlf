@@ -827,6 +827,11 @@
         <target state="translated">pdb 输出文件名不能与生成输出文件名 use --pdb: filename.pdb 匹配</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsRealsig">
+        <source>Generate assembly with IL visibility that matches the source code visibility</source>
+        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
         <target state="translated">生成引用程序集而不是完整程序集作为主输出</target>
@@ -6215,11 +6220,6 @@
       <trans-unit id="optValueMarkedInlineButWasNotBoundInTheOptEnv">
         <source>The value '{0}' was marked inline but was not bound in the optimization environment</source>
         <target state="translated">值“{0}”已标记为“inline”，但其未在优化环境中绑定</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optLocalValueNotFoundDuringOptimization">
-        <source>Local value {0} not found during optimization</source>
-        <target state="translated">优化过程中未找到本地值 {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
