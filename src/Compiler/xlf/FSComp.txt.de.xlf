@@ -302,6 +302,11 @@
         <target state="new">Enforce AttributeTargets on functions</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsUnionCaseDeclarations">
+        <source>Enforce AttributeTargets on union case declarations</source>
+        <target state="new">Enforce AttributeTargets on union case declarations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
         <target state="translated">Löst Fehler für Außerkraftsetzungen nicht virtueller Member aus.</target>
