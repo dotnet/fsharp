@@ -2960,8 +2960,6 @@ namespace ProviderImplementation.ProvidedTypes.AssemblyReader
           systemRuntimeScopeRef: ILScopeRef }
         override _.ToString() = "<ILGlobals>"
 
-    [<AutoOpen>]
-
     [<Struct>]
     type ILTableName(idx: int) =
         member _.Index = idx
