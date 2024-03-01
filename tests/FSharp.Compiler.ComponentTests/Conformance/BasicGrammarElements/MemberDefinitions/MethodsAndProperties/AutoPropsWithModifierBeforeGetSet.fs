@@ -19,7 +19,7 @@ let verifyCompileAndRun compilation =
     |> compileAndRun
 
 [<Fact>]
-let ``Instance Properties Test`` =
+let ``Instance Properties Test`` () =
     Fs """type InstancePropertiesTest() =
     member val B1: int = 0 with get
     // should failed
@@ -54,7 +54,7 @@ let ``Instance Properties Test`` =
     ]
 
 [<Fact>]
-let ``Static Properties Test`` =
+let ``Static Properties Test`` () =
     Fs """type StaticPropertiesTest() =
     static member val B1: int = 0 with get
     // should failed
@@ -89,7 +89,7 @@ let ``Static Properties Test`` =
     ]
 
 [<Fact>]
-let ``Abstract Properties Test: access modifiers are not allowed`` =
+let ``Abstract Properties Test: access modifiers are not allowed`` () =
     Fs """type ``Abstract Properties Test`` =
     abstract member B1: int with get, set
     abstract member B2: int with get
@@ -115,7 +115,7 @@ let ``Abstract Properties Test: access modifiers are not allowed`` =
     ]
 
 [<Fact>]
-let ``Signature File Test: no access modifiers before getter and setter`` =
+let ``Signature File Test: no access modifiers before getter and setter`` () =
     Fsi """module Program
     
     type A =
@@ -136,7 +136,7 @@ let ``Signature File Test: no access modifiers before getter and setter`` =
     ]
 
 [<Fact>]
-let ``Signature And Implement File Test`` =
+let ``Signature And Implement File Test`` () =
     let encodeFs =
         FsSource """module Program
 
