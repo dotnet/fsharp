@@ -43,27 +43,26 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public specialname static int32 
-          get_r() cil managed
+  .field static assembly int32 r@4
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .method public specialname static int32 get_r() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest7::r@4
+    IL_0000:  ldsfld     int32 SeqExpressionSteppingTest7::r@4
     IL_0005:  ret
   } 
 
-  .method public specialname static void 
-          set_r(int32 'value') cil managed
+  .method public specialname static void set_r(int32 'value') cil managed
   {
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest7::r@4
+    IL_0001:  stsfld     int32 SeqExpressionSteppingTest7::r@4
     IL_0006:  ret
   } 
 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> 
-          f<a>() cil managed
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> f<a>() cil managed
   {
     
     .maxstack  5
@@ -673,8 +672,7 @@
     IL_0032:  ret
   } 
 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          ListExpressionSteppingTest7() cil managed
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest7() cil managed
   {
     
     .maxstack  5
@@ -736,26 +734,19 @@
     IL_005b:  ret
   } 
 
-  .property int32 r()
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .set void SeqExpressionSteppingTest7::set_r(int32)
-    .get int32 SeqExpressionSteppingTest7::get_r()
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest7::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest7::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
-} 
 
-.class private abstract auto ansi sealed '<StartupCode$assembly>'.$SeqExpressionSteppingTest7
-       extends [runtime]System.Object
-{
-  .field static assembly int32 r@4
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly int32 init@
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public static void  main@() cil managed
+  .method assembly specialname static void staticInitialization@() cil managed
   {
-    .entrypoint
     
     .maxstack  4
     .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
@@ -763,7 +754,7 @@
              class [runtime]System.Exception V_2,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_3)
     IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest7::r@4
+    IL_0001:  stsfld     int32 SeqExpressionSteppingTest7::r@4
     IL_0006:  ldstr      "res = %A"
     IL_000b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>::.ctor(string)
     IL_0010:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -804,6 +795,30 @@
     IL_004d:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_0052:  pop
     IL_0053:  ret
+  } 
+
+  .property int32 r()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .set void SeqExpressionSteppingTest7::set_r(int32)
+    .get int32 SeqExpressionSteppingTest7::get_r()
+  } 
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$SeqExpressionSteppingTest7
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    
+    .maxstack  8
+    IL_0000:  call       void SeqExpressionSteppingTest7::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 
