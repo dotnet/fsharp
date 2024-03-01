@@ -13,6 +13,8 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
+    open Microsoft.FSharp.Control
+    open Microsoft.FSharp.Linq
     open Microsoft.FSharp.Quotations
 
     /// <summary>Print to <c>stdout</c> using the given format.</summary>
@@ -129,7 +131,7 @@ module ExtraTopLevelOperators =
     /// </code>
     /// </example>
     [<CompiledName("DefaultAsyncBuilder")>]
-    val async: Microsoft.FSharp.Control.AsyncBuilder  
+    val async: AsyncBuilder
 
     /// <summary>Converts the argument to 32-bit float.</summary>
     ///
@@ -358,7 +360,7 @@ module ExtraTopLevelOperators =
     /// </code>
     /// Evaluates to <c>[4; 4; 12; 12]</c>.
     /// </example>
-    val query: Microsoft.FSharp.Linq.QueryBuilder
+    val query: QueryBuilder
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
