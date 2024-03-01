@@ -41,6 +41,7 @@ let ``Instance Properties Test`` () =
     member val internal B15: int = 0 with get
     // should failed
     member val internal B16: int = 0 with set""" 
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -76,6 +77,7 @@ let ``Static Properties Test`` () =
     static member val internal B15: int = 0 with get
     // should failed
     static member val internal B16: int = 0 with set""" 
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -104,6 +106,7 @@ let ``Abstract Properties Test: access modifiers are not allowed`` () =
     abstract member B7: int with internal get
     // should failed
     abstract member B8: int with internal set""" 
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -127,6 +130,7 @@ let ``Signature File Test: no access modifiers before getter and setter`` () =
         abstract E: int with get, set
         // will warning
         abstract F: int with get, private set""" 
+    |> withLangVersionPreview
     |> verifyCompile
     |> shouldFail
     |> withDiagnostics [
@@ -154,6 +158,7 @@ type A() =
         member D: int with internal get, private set
         abstract E: int with get, set""" 
     |> withAdditionalSourceFile encodeFs
+    |> withLangVersionPreview
     |> compile
     |> shouldFail
     |> withDiagnostics [
