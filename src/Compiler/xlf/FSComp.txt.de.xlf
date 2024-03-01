@@ -827,6 +827,11 @@
         <target state="translated">Der Name der PDB-Ausgabedatei kann nicht mit dem Ausgabedateinamen für den Build übereinstimmen, verwenden Sie --pdb:filename.pdb</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsRealsig">
+        <source>Generate assembly with IL visibility that matches the source code visibility</source>
+        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
         <target state="translated">Erstellen einer Referenzassembly anstelle einer vollständigen Assembly als primäre Ausgabe</target>
@@ -6215,11 +6220,6 @@
       <trans-unit id="optValueMarkedInlineButWasNotBoundInTheOptEnv">
         <source>The value '{0}' was marked inline but was not bound in the optimization environment</source>
         <target state="translated">Der Wert "{0}" war als inline markiert, aber nicht in der Optimierungsumgebung gebunden.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optLocalValueNotFoundDuringOptimization">
-        <source>Local value {0} not found during optimization</source>
-        <target state="translated">Der lokale Wert "{0}" wurde während der Optimierung nicht gefunden.</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">

@@ -568,6 +568,9 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
+let SetRealsig (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.realsig <- (switch = OptionSwitch.On)
+
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
     match tcConfigB.emitMetadataAssembly with
     | MetadataAssemblyGeneration.None when (not tcConfigB.standalone) && tcConfigB.extraStaticLinkRoots.IsEmpty ->
@@ -1025,6 +1028,8 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 None,
                 Some(FSComp.SR.optsDeterministic ())
             )
+
+            CompilerOption("realsig", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsRealsig ()))
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))
 

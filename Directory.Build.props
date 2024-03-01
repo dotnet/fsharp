@@ -6,6 +6,7 @@
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <FSharpNetCoreProductDefaultTargetFramework>net8.0</FSharpNetCoreProductDefaultTargetFramework>
   </PropertyGroup>
+
   <!--
    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
    This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local FSharp.Core project.
@@ -23,6 +24,19 @@
   <!-- Temporary workaround if proj-info is used, allows Ionide's evaluation to work correctly. -->
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'false' and '$(DotnetProjInfo)' == 'true'">
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'true'">
+    <!--
+         When shipping Build fsharp.compiler.service dll using realsig visibility
+         When testing we have a test pass built using old style visibility to improve
+         testing coverage.
+
+         Don't use it explicitly when building with plain .NET (without Proto or Arcade).
+     -->
+    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' != 'true'">$(OtherFlags) --realsig-</OtherFlags>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig+</OtherFlags>
+
   </PropertyGroup>
 
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition="Exists('$(RepoRoot)/Directory.Build.props.user')" />

@@ -17,6 +17,8 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Compiler.Xml
 open FSharp.Core.CompilerServices
 
+val getNameOfScopeRef: sref: ILScopeRef -> string
+
 type Stamp = int64
 
 type StampMap<'T> = Map<Stamp, 'T>
@@ -34,7 +36,7 @@ type ValInline =
     | Never
 
     /// Returns true if the implementation of a value must always be inlined
-    member MustInline: bool
+    member ShouldInline: bool
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, type
 /// if the value has been generalized or not as yet.
@@ -320,9 +322,17 @@ type PublicPath =
 
     member EnclosingPath: string[]
 
+/// Represents the specified visibility of the accessibility -- used to ensure IL visibility
+[<RequireQualifiedAccess>]
+type SyntaxAccess =
+    | Public
+    | Internal
+    | Private
+    | Unknown
+
 /// The information ILXGEN needs about the location of an item
 type CompilationPath =
-    | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
+    | CompPath of ILScopeRef * SyntaxAccess * (string * ModuleOrNamespaceKind) list
 
     /// String 'Module' off an F# module name, if FSharpModuleWithSuffix is used
     static member DemangleEntityName: nm: string -> k: ModuleOrNamespaceKind -> string
@@ -340,6 +350,8 @@ type CompilationPath =
     member MangledPath: string list
 
     member ParentCompPath: CompilationPath
+
+    member SyntaxAccess: SyntaxAccess
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -1424,6 +1436,8 @@ type ModuleOrNamespace = Entity
 /// Represents a type or exception definition in the typed AST
 type Tycon = Entity
 
+val updateSyntaxAccessForCompPath: CompilationPath list -> TypedTree.SyntaxAccess -> CompilationPath list
+
 /// Represents the constraint on access for a construct
 [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Accessibility =
@@ -1431,6 +1445,19 @@ type Accessibility =
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope.
     | TAccess of compilationPaths: CompilationPath list
 
+    member AsILMemberAccess: unit -> ILMemberAccess
+
+    member AsILTypeDefAccess: unit -> ILTypeDefAccess
+
+    member CompilationPaths: CompilationPath list
+
+    member IsPublic: bool
+
+    member IsInternal: bool
+
+    member IsPrivate: bool
+
+    /// Readable rendering of Accessibility
     override ToString: unit -> string
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2155,8 +2182,8 @@ type Val =
     /// a true body. These cases are often causes of bugs in the compiler.
     member MemberInfo: ValMemberInfo option
 
-    /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
-    member MustInline: bool
+    /// Indicates whether the inline declaration for the value indicates that the value should be inlined.
+    member ShouldInline: bool
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member NumObjArgs: int
@@ -2870,8 +2897,8 @@ type ValRef =
     /// Is this a member, if so some more data about the member.
     member MemberInfo: ValMemberInfo option
 
-    /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
-    member MustInline: bool
+    /// Indicates whether the inline declaration for the value indicate that the value should be inlined?
+    member ShouldInline: bool
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member NumObjArgs: int

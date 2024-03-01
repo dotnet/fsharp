@@ -31,7 +31,7 @@ module ScriptRunner =
         let cu  = cu |> withDefines defaultDefines
         match cu with 
         | FS fsSource ->
-            File.Delete("test.ok")           
+            File.Delete("test.ok")
             let engine = createEngine (fsSource.Options |> Array.ofList,version)
             let res = evalScriptFromDiskInSharedSession engine cu
             match res with

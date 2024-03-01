@@ -1970,7 +1970,8 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         let (TAccess l) = access
         // FSharp 1.0 bug 1908: Values hidden by signatures are implicitly at least 'internal'
         let scoref = cpath().ILScopeRef
-        TAccess(CompPath(scoref, []) :: l)
+        let sa = cpath().SyntaxAccess
+        TAccess(CompPath(scoref, sa, []) :: l)
     else
         access
 
@@ -2076,7 +2077,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         if cenv.reportErrors && isReturnsResumableCodeTy g v.TauType then
             if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                 error(Error(FSComp.SR.tcResumableCodeNotSupported(), bind.Var.Range))
-            if not v.MustInline then
+            if not v.ShouldInline then
                 warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
 
         if isReturnsResumableCodeTy g v.TauType then
@@ -2084,7 +2085,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         else
             env
 
-    CheckLambdas isTop (Some v) cenv env v.MustInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
+    CheckLambdas isTop (Some v) cenv env v.ShouldInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv env binds =
     for bind in binds do
