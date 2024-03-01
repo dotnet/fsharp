@@ -107,6 +107,7 @@ module SeqExpressionStepping =
     let ``SeqExpressionSteppingTest07_RealInternalSignatureOn_fs`` compilation =
         compilation
         |> withRealInternalSignatureOn
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=SeqExpressionSteppingTest07.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd SeqExpressionSteppingTest7.exe"	# SeqExpressionSteppingTest7.fs -
