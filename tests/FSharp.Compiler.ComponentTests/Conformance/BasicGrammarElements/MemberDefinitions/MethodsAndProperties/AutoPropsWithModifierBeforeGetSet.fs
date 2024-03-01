@@ -134,9 +134,10 @@ let ``Signature File Test: no access modifiers before getter and setter`` () =
     |> verifyCompile
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and set ters are not allowed in signature file.")
-        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and set ters are not allowed in signature file.")
-        (Warning 3866, Line 10, Col 31, Line 8, Col 38, "The modifier will be ignored because accessible modifiers before getters and set ters are not allowed in signature file.")
+        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 10, Col 31, Line 8, Col 38, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
+        (Error 240, Line 1, Col 1, Line 11, Col 46, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
     ]
 
 [<Fact>]
@@ -162,8 +163,8 @@ type A() =
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and set ters are not allowed in signature file.")
-        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and set ters are not allowed in signature file.")
+        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
         (Error 0034, Line 6, Col 16, Line 6, Col 17, "Module 'Program' contains
     member private A.D: int with set
     but its signature specifies
