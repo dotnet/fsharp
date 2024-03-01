@@ -129,10 +129,10 @@ let mkLocalNameTypeArity compgen m name ty valReprInfo =
 //-------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
-// pass1: GetValsBoundUnderMustInline (see comment further below)
+// pass1: GetValsBoundUnderShouldInline (see comment further below)
 //-------------------------------------------------------------------------
 
-let GetValsBoundUnderMustInline xinfo =
+let GetValsBoundUnderShouldInline xinfo =
     let accRejectFrom (v: Val) repr rejectS =
       if v.InlineInfo = ValInline.Always then
         Zset.union (GetValsBoundInExpr repr) rejectS
@@ -194,8 +194,14 @@ module Pass1_DetermineTLRAndArities =
             let nFormals = vss.Length
             let nMaxApplied = GetMaxNumArgsAtUses xinfo f
             let arity = Operators.min nFormals nMaxApplied
-            if atTopLevel || arity<>0 || not (isNil tps) then Some (f, arity)
-            else None
+            if atTopLevel then
+                Some (f, arity)
+            elif g.realsig then
+                None
+            else if arity<>0 || not (isNil tps) then
+                Some (f, arity)
+            else
+                None
 
     /// Check if f involves any value recursion (so can skip those).
     /// ValRec considered: recursive && some f in mutual binding is not bound to a lambda
@@ -213,21 +219,21 @@ module Pass1_DetermineTLRAndArities =
        let xinfo = GetUsageInfoOfImplFile g expr
        let fArities = Zmap.chooseL (SelectTLRVals g xinfo) xinfo.Defns
        let fArities = List.filter (fst >> IsValueRecursionFree xinfo) fArities
-       // Do not TLR v if it is bound under a mustinline defn
+       // Do not TLR v if it is bound under a shouldinline defn
        // There is simply no point - the original value will be duplicated and TLR'd anyway
-       let rejectS = GetValsBoundUnderMustInline xinfo
+       let rejectS = GetValsBoundUnderShouldInline xinfo
        let fArities = List.filter (fun (v, _) -> not (Zset.contains v rejectS)) fArities
        (*-*)
        let tlrS = Zset.ofList valOrder (List.map fst fArities)
-       let topValS = xinfo.TopLevelBindings                     (* genuinely top level *)
-       let topValS = Zset.filter (IsMandatoryNonTopLevel g >> not) topValS     (* restrict *)
-       (* REPORT MISSED CASES *)
+       let topValS = xinfo.TopLevelBindings                                 (* genuinely top level *)
+       let topValS = Zset.filter (IsMandatoryNonTopLevel g >> not) topValS  (* restrict *)
 #if DEBUG
+       (* REPORT MISSED CASES *)
        if verboseTLR then
            let missed = Zset.diff  xinfo.TopLevelBindings tlrS
            missed |> Zset.iter (fun v -> dprintf "TopLevel but not TLR = %s\n" v.LogicalName)
-#endif
        (* REPORT OVER *)
+#endif
        let arityM = Zmap.ofList valOrder fArities
 #if DEBUG
        if verboseTLR then DumpArity arityM
@@ -885,24 +891,24 @@ module Pass4_RewriteAssembly =
     /// Any TLR repr bindings under lambdas can be filtered out (and collected),
     /// giving pre-declarations to insert before the outermost lambda expr.
     type RewriteState =
-        { rws_mustinline: bool
+        { rws_shouldinline: bool
           /// counts level of enclosing "lambdas"
           rws_innerLevel: int
           /// collected preDecs (fringe is in-order)
           rws_preDecs: Tree<LiftedDeclaration>
         }
 
-    let rewriteState0 = {rws_mustinline=false;rws_innerLevel=0;rws_preDecs=emptyTR}
+    let rewriteState0 = {rws_shouldinline=false;rws_innerLevel=0;rws_preDecs=emptyTR}
 
     // move in/out of lambdas (or lambda containing construct)
     let EnterInner z = {z with rws_innerLevel = z.rws_innerLevel + 1}
 
     let ExitInner  z = {z with rws_innerLevel = z.rws_innerLevel - 1}
 
-    let EnterMustInline b z f =
-        let orig = z.rws_mustinline
-        let x, z' = f (if b then {z with rws_mustinline = true } else z)
-        {z' with rws_mustinline = orig }, x
+    let EnterShouldInline b z f =
+        let orig = z.rws_shouldinline
+        let x, z' = f (if b then {z with rws_shouldinline = true } else z)
+        {z' with rws_shouldinline = orig }, x
 
     /// extract PreDecs (iff at top-level)
     let ExtractPreDecs z =
@@ -1263,8 +1269,8 @@ module Pass4_RewriteAssembly =
         TObjExprMethod(slotsig, attribs, tps, vs, e, m), z
 
     and TransBindingRhs penv z (TBind(v, e, letSeqPtOpt)) : Binding * RewriteState =
-        let mustInline = v.MustInline
-        let z, e = EnterMustInline mustInline z (fun z -> TransExpr penv z e)
+        let shouldInline = v.ShouldInline
+        let z, e = EnterShouldInline shouldInline z (fun z -> TransExpr penv z e)
         TBind (v, e, letSeqPtOpt), z
 
     and TransDecisionTree penv z x: DecisionTree * RewriteState =

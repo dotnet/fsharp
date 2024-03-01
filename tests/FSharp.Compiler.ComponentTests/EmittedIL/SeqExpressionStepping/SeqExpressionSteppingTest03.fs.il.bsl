@@ -81,8 +81,7 @@
         IL_001b:  ret
       } 
 
-      .method public strict virtual instance int32 
-              GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
+      .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
       {
         
         .maxstack  7
@@ -143,8 +142,7 @@
         IL_007f:  ret
       } 
 
-      .method public strict virtual instance void 
-              Close() cil managed
+      .method public strict virtual instance void Close() cil managed
       {
         
         .maxstack  8
@@ -154,8 +152,7 @@
         IL_0007:  ret
       } 
 
-      .method public strict virtual instance bool 
-              get_CheckClose() cil managed
+      .method public strict virtual instance bool get_CheckClose() cil managed
       {
         
         .maxstack  8
@@ -184,8 +181,7 @@
         IL_0026:  ret
       } 
 
-      .method public strict virtual instance int32 
-              get_LastGenerated() cil managed
+      .method public strict virtual instance int32 get_LastGenerated() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -196,8 +192,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> 
-              GetFreshEnumerator() cil managed
+      .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -215,8 +210,7 @@
 
     } 
 
-    .method public static class [runtime]System.Collections.Generic.IEnumerable`1<int32> 
-            f2() cil managed
+    .method public static class [runtime]System.Collections.Generic.IEnumerable`1<int32> f2() cil managed
     {
       
       .maxstack  5
@@ -233,6 +227,49 @@
       IL_000f:  ret
     } 
 
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest3::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest3::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
+    .method assembly specialname static void staticInitialization@() cil managed
+    {
+      
+      .maxstack  3
+      .locals init (class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_0)
+      IL_0000:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> SeqExpressionSteppingTest3/SeqExpressionSteppingTest3::f2()
+      IL_0005:  stloc.0
+      IL_0006:  ldloc.0
+      IL_0007:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_000c:  pop
+      IL_000d:  ret
+    } 
+
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest3::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest3::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void SeqExpressionSteppingTest3/SeqExpressionSteppingTest3::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 
@@ -248,14 +285,9 @@
   {
     .entrypoint
     
-    .maxstack  3
-    .locals init (class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_0)
-    IL_0000:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> SeqExpressionSteppingTest3/SeqExpressionSteppingTest3::f2()
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_000c:  pop
-    IL_000d:  ret
+    .maxstack  8
+    IL_0000:  call       void SeqExpressionSteppingTest3::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 

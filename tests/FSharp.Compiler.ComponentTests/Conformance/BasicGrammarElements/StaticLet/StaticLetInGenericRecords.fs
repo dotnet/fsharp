@@ -7,7 +7,7 @@ type MyRecord<'T> =
     }
 
     static let sizeOfT = sizeof<'T>
-    static let cachedVal = 
+    static let cachedVal =
         printfn "Creating cached val for %s" (typeof<'T>.Name)
         { X = Unchecked.defaultof<'T> ; Y = 15}
     static let mutable perTyparInstMutableCounter = 0
