@@ -519,7 +519,7 @@ module TcRecdUnionAndEnumDeclarations =
             else
                 TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
             
-        let vis, _ = ComputeAccessAndCompPath env None m vis None parent
+        let vis, _ = ComputeAccessAndCompPath g env None m vis None parent
         let vis = CombineReprAccess parent vis
 
         CheckUnionCaseName cenv id hasRQAAttribute
