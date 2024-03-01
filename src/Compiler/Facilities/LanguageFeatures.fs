@@ -87,6 +87,7 @@ type LanguageFeature =
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
     | AllowAccessModifiersToAutoPropertiesGettersAndSetters
     | EnforceAttributeTargetsOnFunctions
+    | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
 
 /// LanguageVersion management
@@ -202,6 +203,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
                 LanguageFeature.EnforceAttributeTargetsOnFunctions, previewVersion
+                LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
             ]
 
@@ -349,6 +351,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters ->
             FSComp.SR.featureAllowAccessModifiersToAutoPropertiesGettersAndSetters ()
         | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
+        | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations -> FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
 
     /// Get a version string associated with the given feature.

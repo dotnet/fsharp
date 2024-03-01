@@ -10875,16 +10875,30 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
             
         if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) && memberFlagsOpt.IsNone && not attrs.IsEmpty then
-            let rhsIsFunction = isFunTy g overallPatTy
-            let lhsIsFunction = isFunTy g overallExprTy
-            let attrTgt =
-                match rhsIsFunction, lhsIsFunction with
-                | false, false when declaredTypars.IsEmpty -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
-                | _, _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
-
-            TcAttributesWithPossibleTargets false cenv env attrTgt attrs |> ignore
+            TcAttributeTargetsOnLetBindings cenv env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty)
 
         CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
+
+// Note:
+// - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+// - Let function bindings can only have attributes that uses AttributeTargets.Method ||| AttributeTargets.ReturnValue
+and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy areTyparsDeclared =
+    let attrTgt =
+        if
+            // It's a type function:
+            //     let x<'a> = …
+            areTyparsDeclared
+            // It's a regular function-valued binding:
+            //     let f x = …
+            //     let f = fun x -> …
+            || isFunTy cenv.g overallPatTy
+            || isFunTy cenv.g overallExprTy
+        then
+            AttributeTargets.ReturnValue ||| AttributeTargets.Method
+        else
+            AttributeTargets.ReturnValue ||| AttributeTargets.Field ||| AttributeTargets.Property
+
+    TcAttributes cenv env attrTgt attrs |> ignore
 
 and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
 

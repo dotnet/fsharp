@@ -78,6 +78,7 @@ type LanguageFeature =
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
     | AllowAccessModifiersToAutoPropertiesGettersAndSetters
     | EnforceAttributeTargetsOnFunctions
+    | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
 
 /// LanguageVersion management
