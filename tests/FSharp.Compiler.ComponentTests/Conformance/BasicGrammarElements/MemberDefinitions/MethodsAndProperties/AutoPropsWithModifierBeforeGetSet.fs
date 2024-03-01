@@ -120,24 +120,24 @@ let ``Abstract Properties Test: access modifiers are not allowed`` () =
 [<Fact>]
 let ``Signature File Test: no access modifiers before getter and setter`` () =
     Fsi """module Program
-    
-    type A =
-        new: unit -> A
-        member internal B: int
-        member internal C: int with get, set    
-        // will warning
-        member D: int with internal get, private set
-        abstract E: int with get, set
-        // will warning
-        abstract F: int with get, private set""" 
+
+type A =
+    new: unit -> A
+    member internal B: int
+    member internal C: int with get, set    
+    // will warning
+    member D: int with internal get, private set
+    abstract E: int with get, set
+    // will warning
+    abstract F: int with get, private set""" 
     |> withLangVersionPreview
     |> verifyCompile
     |> shouldFail
     |> withDiagnostics [
         (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
         (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
-        (Warning 3866, Line 10, Col 31, Line 8, Col 38, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
-        (Error 240, Line 1, Col 1, Line 11, Col 46, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
+        (Warning 3866, Line 11, Col 31, Line 8, Col 38, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
+        (Error 240, Line 1, Col 1, Line 11, Col 42, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
     ]
 
 [<Fact>]
@@ -150,14 +150,14 @@ type A() =
     member val C: int = 0 with internal get, internal set
     member val D: int = 0 with internal get, private set"""
     Fsi """module Program
-    
-    type A =
-        new: unit -> A
-        member internal B: int
-        member internal C: int with get, set    
-        // will warning
-        member D: int with internal get, private set
-        abstract E: int with get, set""" 
+
+type A =
+    new: unit -> A
+    member internal B: int
+    member internal C: int with get, set    
+    // will warning
+    member D: int with internal get, private set
+    abstract E: int with get, set""" 
     |> withAdditionalSourceFile encodeFs
     |> withLangVersionPreview
     |> compile
