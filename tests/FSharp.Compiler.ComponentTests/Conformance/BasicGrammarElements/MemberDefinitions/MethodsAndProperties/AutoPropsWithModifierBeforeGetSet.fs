@@ -165,12 +165,12 @@ type A =
         (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
         (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
         (Error 0034, Line 6, Col 16, Line 6, Col 17, "Module 'Program' contains
-    member private A.D: int with set
+    member private A.D: int with set    
 but its signature specifies
     member A.D: int with set    
 The accessibility specified in the signature is more than that specified in the implementation")
         (Error 0034, Line 6, Col 16, Line 6, Col 17, "Module 'Program' contains
-    member internal A.D: int
+    member internal A.D: int    
 but its signature specifies
     member A.D: int    
 The accessibility specified in the signature is more than that specified in the implementation")
