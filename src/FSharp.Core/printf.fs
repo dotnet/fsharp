@@ -546,7 +546,7 @@ module internal PrintfImpl =
     /// A wrapper struct used to slightly strengthen the types of "ValueConverter" objects produced during composition of
     /// the dynamic implementation.  These are always functions but sometimes they take one argument, sometimes two.
     [<Struct; NoEquality; NoComparison>]
-    type ValueConverter private (f: obj) =
+    type ValueConverter internal (f: obj) =
         member x.FuncObj = f
 
         static member inline Make (f: obj -> string) = ValueConverter(box f)
@@ -981,9 +981,9 @@ module internal PrintfImpl =
         let defaultFormat = getFormatForFloat spec.TypeChar DefaultPrecision
         FloatAndDecimal.withPadding spec (getFormatForFloat spec.TypeChar) defaultFormat
 
-    let private NonPublicStatics = BindingFlags.NonPublic ||| BindingFlags.Static
+    let private AllStatics = BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static
 
-    let mi_GenericToString = typeof<ObjectPrinter>.GetMethod("GenericToString", NonPublicStatics)
+    let mi_GenericToString = typeof<ObjectPrinter>.GetMethod("GenericToString", AllStatics)
 
     let private getValueConverter (ty: Type) (spec: FormatSpecifier) : ValueConverter = 
         match spec.TypeChar with
@@ -1103,7 +1103,7 @@ module internal PrintfImpl =
                 // %a has an existential type which must be converted to obj
                 assert (argTys.Length = 2)
                 let captureMethName = "CaptureLittleA" 
-                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, AllStatics)
                 let mi = mi.MakeGenericMethod([| argTys.[1]; retTy |])
                 let factoryObj = mi.Invoke(null, [| next  |])
                 factoryObj, false, argTys, retTy, None
@@ -1115,20 +1115,20 @@ module internal PrintfImpl =
                 match nextNextOpt with 
                 | None ->
                     let captureMethName = "CaptureFinal" + string captureCount
-                    let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                    let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, AllStatics)
                     let mi = mi.MakeGenericMethod(combinedArgTys)
                     let factoryObj = mi.Invoke(null, [| allSteps |])
                     factoryObj, true, combinedArgTys, nextRetTy, None
                 | Some nextNext ->
                     let captureMethName = "Capture" + string captureCount
-                    let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                    let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, AllStatics)
                     let mi = mi.MakeGenericMethod(Array.append combinedArgTys [| nextRetTy |])
                     let factoryObj = mi.Invoke(null, [| nextNext |])
                     factoryObj, true, combinedArgTys, nextRetTy, nextNextOpt
 
             | captureCount, _ ->
                 let captureMethName = "Capture" + string captureCount
-                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, AllStatics)
                 let mi = mi.MakeGenericMethod(Array.append argTys [| retTy |])
                 let factoryObj = mi.Invoke(null, [| next  |])
                 factoryObj, true, argTys, retTy, Some next
@@ -1277,7 +1277,7 @@ module internal PrintfImpl =
             // If there is one simple format specifier then we can create an even better factory function
             | [| StepWithArg (prefix1, conv1); StepString prefix2 |] ->
                 let captureMethName = "OneStepWithArg" 
-                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, AllStatics)
                 let mi = mi.MakeGenericMethod(combinedArgTys)
                 let factoryObj = mi.Invoke(null, [| box prefix1; box conv1; box prefix2  |])
                 factoryObj
@@ -1285,7 +1285,7 @@ module internal PrintfImpl =
             // If there are two simple format specifiers then we can create an even better factory function
             | [| StepWithArg (prefix1, conv1); StepWithArg (prefix2, conv2); StepString prefix3 |] ->
                 let captureMethName = "TwoStepWithArg" 
-                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, AllStatics)
                 let mi = mi.MakeGenericMethod(combinedArgTys)
                 let factoryObj = mi.Invoke(null, [| box prefix1; box conv1; box prefix2; box conv2; box prefix3 |])
                 factoryObj

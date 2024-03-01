@@ -34,7 +34,7 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // SOURCE=AssemblyVersion03.fs							# AssemblyVersion03.fs
+    // SOURCE=AssemblyVersion03.fs                          # AssemblyVersion03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion03.fs"|])>]
     let ``AssemblyVersion03_fs`` compilation =
         compilation

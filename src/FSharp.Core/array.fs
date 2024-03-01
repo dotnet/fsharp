@@ -2,6 +2,8 @@
 
 namespace Microsoft.FSharp.Collections
 
+//#nowarn "1118" // 'Make' marked 'inline', perhaps because a recursive value was marked 'inline'
+
 open System
 open System.Diagnostics
 open System.Collections.Generic
@@ -2081,10 +2083,10 @@ module Array =
 
         // The following two parameters were benchmarked and found to be optimal.
         // Benchmark was run using: 11th Gen Intel Core i9-11950H 2.60GHz, 1 CPU, 16 logical and 8 physical cores
-        let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
-        let private minChunkSize = 256 // The minimum size of a chunk to be sorted in parallel
+        let maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
+        let minChunkSize = 256 // The minimum size of a chunk to be sorted in parallel
 
-        let private createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize (array: 'T array) =
+        let createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize (array: 'T array) =
             [|
                 let chunkSize =
                     match maxIdxExclusive with
@@ -2101,7 +2103,7 @@ module Array =
                 yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
             |]
 
-        let private createPartitionsUpTo maxIdxExclusive (array: 'T array) =
+        let createPartitionsUpTo maxIdxExclusive (array: 'T array) =
             createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize array
 
         (* This function is there also as a support vehicle for other aggregations. 
