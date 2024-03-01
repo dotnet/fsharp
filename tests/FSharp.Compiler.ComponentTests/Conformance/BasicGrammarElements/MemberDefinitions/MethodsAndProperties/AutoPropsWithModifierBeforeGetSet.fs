@@ -136,7 +136,7 @@ type A =
     |> withDiagnostics [
         (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
         (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
-        (Warning 3866, Line 11, Col 31, Line 8, Col 38, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 11, Col 31, Line 11, Col 38, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
         (Error 240, Line 1, Col 1, Line 11, Col 42, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
     ]
 
