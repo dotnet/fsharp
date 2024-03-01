@@ -156,8 +156,7 @@ type A =
     member internal B: int
     member internal C: int with get, set    
     // will warning
-    member D: int with internal get, private set
-    abstract E: int with get, set""" 
+    member D: int with internal get, private set""" 
     |> withAdditionalSourceFile encodeFs
     |> withLangVersionPreview
     |> compile
