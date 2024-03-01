@@ -19,13 +19,6 @@ assert (sizeof<EntityFlags> = 8)
 assert (sizeof<TyparFlags> = 4)
 #endif
 
-let getNameOfScopeRef sref = 
-    match sref with 
-    | ILScopeRef.Local -> "<local>"
-    | ILScopeRef.Module mref -> mref.Name
-    | ILScopeRef.Assembly aref -> aref.Name
-    | ILScopeRef.PrimaryAssembly -> "<primary>"
-
 /// Metadata on values (names of arguments etc.) 
 module ValReprInfo = 
 
@@ -436,11 +429,11 @@ let primValRefEq compilingFSharpCore fslibCcu (x: ValRef) (y: ValRef) =
 //---------------------------------------------------------------------------
 
 let fullCompPathOfModuleOrNamespace (m: ModuleOrNamespace) = 
-    let (CompPath(scoref, cpath)) = m.CompilationPath
-    CompPath(scoref, cpath@[(m.LogicalName, m.ModuleOrNamespaceType.ModuleOrNamespaceKind)])
+    let (CompPath(scoref, sa, cpath)) = m.CompilationPath
+    CompPath(scoref, sa, cpath@[(m.LogicalName, m.ModuleOrNamespaceType.ModuleOrNamespaceKind)])
 
 // Can cpath2 be accessed given a right to access cpath1. That is, is cpath2 a nested type or namespace of cpath1. Note order of arguments.
-let inline canAccessCompPathFrom (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
+let inline canAccessCompPathFrom (CompPath(scoref1, _, cpath1)) (CompPath(scoref2, _, cpath2)) =
     let rec loop p1 p2 = 
         match p1, p2 with 
         | (a1, k1) :: rest1, (a2, k2) :: rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
@@ -465,12 +458,20 @@ let accessSubstPaths (newPath, oldPath) (TAccess paths) =
     let subst cpath = if cpath=oldPath then newPath else cpath
     TAccess (List.map subst paths)
 
-let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, []) 
+let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, SyntaxAccess.Unknown, []) 
 let taccessPublic = TAccess []
-let taccessPrivate accessPath = TAccess [accessPath]
-let compPathInternal = CompPath(ILScopeRef.Local, [])
+let compPathInternal = CompPath(ILScopeRef.Local, SyntaxAccess.Internal, [])
 let taccessInternal = TAccess [compPathInternal]
-let combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
+let taccessPrivate accessPath = let (CompPath(sc,_, paths)) = accessPath in TAccess [CompPath(sc, TypedTree.SyntaxAccess.Private, paths)]
+
+let combineAccess access1 access2 =
+    let (TAccess a1) = access1
+    let (TAccess a2) = access2
+    let combined =
+        if access1 = taccessPublic then updateSyntaxAccessForCompPath (a1@a2) TypedTree.SyntaxAccess.Public
+        elif access1 = taccessInternal then updateSyntaxAccessForCompPath (a1@a2) TypedTree.SyntaxAccess.Internal
+        else (a1@a2)
+    TAccess combined
 
 exception Duplicate of string * string * range
 exception NameClash of string * string * string * range * string * string * range

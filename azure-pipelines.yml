@@ -140,6 +140,8 @@ stages:
                 NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
             displayName: End to end build tests
+            continueOnError: true
+            condition: always()
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -337,6 +339,62 @@ stages:
             clean: true
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
+
+        - job: WindowsNoRealsig_testCoreclr
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testCoreclr -configuration Release
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
+
+        - job: WindowsNoRealsig_testDesktop
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testDesktop -configuration Release
             env:
               NativeToolsOnMachine: true
             displayName: Build
