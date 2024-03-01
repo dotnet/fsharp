@@ -3,13 +3,15 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Xunit
 open FSharp.Test
-open FSharp.Test.Compiler
 open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
+open FSharp.Compiler.Diagnostics
+
 
 module BuildGraphTests =
     
@@ -287,3 +289,103 @@ module BuildGraphTests =
         |> Seq.map work
         |> Async.Parallel
         |> Async.RunSynchronously
+
+    exception TestException
+
+    type internal SimpleConcurrentLogger(name) =
+        inherit DiagnosticsLogger(name)
+
+        let mutable errorCount = 0
+
+        override _.DiagnosticSink(d, s) =
+            if s = FSharpDiagnosticSeverity.Error then Interlocked.Increment(&errorCount) |> ignore
+
+        override this.ErrorCount = errorCount
+
+    [<Fact>]
+    let ``AsyncLocal diagnostics context flows correctly`` () =
+
+        let loggerShouldBe logger =
+            DiagnosticsThreadStatics.DiagnosticsLogger |> Assert.shouldBe logger
+
+        let errorCountShouldBe ec =
+            DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount |> Assert.shouldBe ec
+
+        let work logger = async {
+            use _ = UseDiagnosticsLogger logger
+
+            errorR TestException
+
+            loggerShouldBe logger
+            errorCountShouldBe 1
+
+            do! Async.SwitchToNewThread()
+
+            errorR TestException
+
+            loggerShouldBe logger
+            errorCountShouldBe 2
+
+            do! Async.SwitchToThreadPool()
+
+            errorR TestException
+
+            loggerShouldBe logger
+            errorCountShouldBe 3
+
+            let workInner = async {
+                    do! async.Zero()
+                    errorR TestException
+                    loggerShouldBe logger
+                }
+
+            let! child = workInner |> Async.StartChild
+            let! childTask = workInner |> Async.StartChildAsTask
+
+            do! child
+            do! childTask |> Async.AwaitTask
+            errorCountShouldBe 5
+        }
+
+        let init n =
+            let name = $"AsyncLocal test {n}"
+            let logger = SimpleConcurrentLogger name
+            work logger
+
+        Seq.init 10 init |> Async.Parallel |> Async.RunSynchronously |> ignore
+
+        let logger = SimpleConcurrentLogger "main"
+        use _ =  UseDiagnosticsLogger logger
+
+        errorCountShouldBe 0
+
+        let btask = backgroundTask {
+            errorR TestException
+            do! Task.Yield()
+            errorR TestException
+            loggerShouldBe logger
+        }
+
+        let task = task {
+            errorR TestException
+            do! Task.Yield()
+            errorR TestException
+            loggerShouldBe logger
+        }
+
+        let thread = Thread(ThreadStart(fun () ->
+            errorR TestException
+            errorR TestException
+            loggerShouldBe logger))
+        thread.Start()
+        thread.Join()
+
+        btask.Wait()
+        task.Wait()
+
+        Seq.init 11 (fun _ -> async { errorR TestException; loggerShouldBe logger } ) |> Async.Parallel |> Async.RunSynchronously |> ignore
+
+        loggerShouldBe logger
+        errorCountShouldBe 17
+
+
