@@ -2911,13 +2911,13 @@ module EstablishTypeDefinitionCores =
                         match kind with
                         | SynTypeDefnKind.Class ->
                             if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnStructAndClasses) then
-                                TcAttributes cenv envinner AttributeTargets.Class synAttrs |> ignore
+                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
                             TFSharpClass
                         | SynTypeDefnKind.Interface -> TFSharpInterface
                         | SynTypeDefnKind.Delegate _ -> TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
                         | SynTypeDefnKind.Struct ->
                             if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnStructAndClasses) then
-                                TcAttributes cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
                             TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
 
