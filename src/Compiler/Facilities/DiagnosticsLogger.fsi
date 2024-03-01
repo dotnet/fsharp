@@ -463,3 +463,10 @@ type CompilationGlobalsScope =
     member DiagnosticsLogger: DiagnosticsLogger
 
     member BuildPhase: BuildPhase
+
+type CaptureDiagnosticsConcurrently =
+    new: unit -> CaptureDiagnosticsConcurrently
+
+    member GetLoggerForTask: string -> DiagnosticsLogger
+
+    interface IDisposable

@@ -60,7 +60,8 @@ type public FSharpChecker =
             bool ->
             FSharpChecker
 
-    member internal UsesTransparentCompiler: bool
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member UsesTransparentCompiler: bool
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -250,6 +251,34 @@ type public FSharpChecker =
         ?userOpName: string ->
             Async<FSharpProjectOptions * FSharpDiagnostic list>
 
+    /// <param name="fileName">Used to differentiate between scripts, to consider each script a separate project. Also used in formatted error messages.</param>
+    /// <param name="source">The source for the file.</param>
+    /// <param name="previewEnabled">Is the preview compiler enabled.</param>
+    /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
+    /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
+    /// so that references are re-resolved.</param>
+    /// <param name="otherFlags">Other flags for compilation.</param>
+    /// <param name="useFsiAuxLib">Add a default reference to the FSharp.Compiler.Interactive.Settings library.</param>
+    /// <param name="useSdkRefs">Use the implicit references from the .NET SDK.</param>
+    /// <param name="assumeDotNetFramework">Set up compilation and analysis for .NET Framework scripts.</param>
+    /// <param name="sdkDirOverride">Override the .NET SDK used for default references.</param>
+    /// <param name="optionsStamp">An optional unique stamp for the options.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member GetProjectSnapshotFromScript:
+        fileName: string *
+        source: ISourceTextNew *
+        ?previewEnabled: bool *
+        ?loadedTimeStamp: DateTime *
+        ?otherFlags: string[] *
+        ?useFsiAuxLib: bool *
+        ?useSdkRefs: bool *
+        ?assumeDotNetFramework: bool *
+        ?sdkDirOverride: string *
+        ?optionsStamp: int64 *
+        ?userOpName: string ->
+            Async<FSharpProjectSnapshot * FSharpDiagnostic list>
+
     /// <summary>Get the FSharpProjectOptions implied by a set of command line arguments.</summary>
     ///
     /// <param name="projectFileName">Used to differentiate between projects and for the base directory of the project.</param>
@@ -393,6 +422,11 @@ type public FSharpChecker =
         fileName: string * options: FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string ->
             (FSharpParseFileResults * FSharpCheckFileResults (* hash *) * int64) option
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member TryGetRecentCheckResultsForFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+            (FSharpParseFileResults * FSharpCheckFileResults) option
+
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit
 
@@ -403,6 +437,13 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateConfiguration: options: FSharpProjectOptions * ?userOpName: string -> unit
+
+    /// <summary>
+    ///  This function is called when the configuration is known to have changed for reasons not encoded in the projectSnapshot.
+    ///  For example, dependent references may have been deleted or created.
+    /// </summary>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * ?userOpName: string -> unit
 
     /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>

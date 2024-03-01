@@ -715,7 +715,7 @@ and CheckBinding cenv alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bind) :
         | Some info -> info
         | _ -> ValReprInfo.emptyValData
 
-    CheckLambdas isTop (Some v) cenv v.MustInline valReprInfo tailCall alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
+    CheckLambdas isTop (Some v) cenv v.ShouldInline valReprInfo tailCall alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv binds =
     for bind in binds do
@@ -725,12 +725,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
 
     // warn for non-rec functions which have the attribute
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailCallAttrOnNonRec then
-        let isNotAFunction =
-            match bind.Var.ValReprInfo with
-            | Some info -> info.HasNoArgs
-            | _ -> false
-
-        if (not isRec || isNotAFunction) && cenv.g.HasTailCallAttrib bind.Var.Attribs then
+        if not isRec && cenv.g.HasTailCallAttrib bind.Var.Attribs then
             warning (Error(FSComp.SR.chkTailCallAttrOnNonRec (), bind.Var.Range))
 
     // Check if a let binding to the result of a rec expression is not inside the rec expression
