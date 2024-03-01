@@ -1595,6 +1595,7 @@ featureChkTailCallAttrOnNonRec,"Raises warnings if the 'TailCall' attribute is u
 featureUnionIsPropertiesVisible,"Union case test properties"
 featureBooleanReturningAndReturnTypeDirectedPartialActivePattern,"Boolean-returning and return-type-directed partial active patterns"
 featureEnforceAttributeTargetsOnFunctions,"Enforce AttributeTargets on functions"
+featureEnforceAttributeTargetsUnionCaseDeclarations,"Enforce AttributeTargets on union case declarations"
 featureLowerInterpolatedStringToConcat,"Optimizes interpolated strings in certain cases, by lowering to concatenation"
 featureLowerIntegralRangesToFastLoops,"Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops."
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."

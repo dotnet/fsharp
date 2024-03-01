@@ -10,6 +10,7 @@
 
 * Allow extension methods without type attribute work for types from imported assemblies. ([PR #16368](https://github.com/dotnet/fsharp/pull/16368))
 * Enforce AttributeTargets on let values and functions. ([PR #16692](https://github.com/dotnet/fsharp/pull/16692))
+* Enforce AttributeTargets on union case declarations. ([PR #16764](https://github.com/dotnet/fsharp/pull/16764))
 
 ### Changed
 
