@@ -120,7 +120,7 @@ let checkExprGreaterColonOp (lexbuf:UnicodeLexing.Lexbuf) =
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
 
-let startString args (lexbuf: UnicodeLexing.Lexbuf) altStartForStringEnd =
+let startString args (lexbuf: UnicodeLexing.Lexbuf) altStartForStringPartOrEnd =
     let buf = ByteBuffer.Create StringCapacity
     let m = lexbuf.LexemeRange
     let startp = lexbuf.StartPos
@@ -158,9 +158,9 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) altStartForStringEnd =
                         INTERP_STRING_BEGIN_END (s, synStringKind, cont)
                 else
                     if isPart then
-                        INTERP_STRING_PART (s, cont)
+                        INTERP_STRING_PART (s, altStartForStringPartOrEnd, cont)
                     else
-                        INTERP_STRING_END (s, altStartForStringEnd, cont)
+                        INTERP_STRING_END (s, altStartForStringPartOrEnd, cont)
             else
                 let s = Lexhelp.stringBufferAsString buf
                 let synStringKind =
