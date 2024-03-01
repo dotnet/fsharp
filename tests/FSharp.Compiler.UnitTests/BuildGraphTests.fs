@@ -312,7 +312,7 @@ module BuildGraphTests =
             DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount |> Assert.shouldBe ec
 
         let work logger = async {
-            use _ = UseDiagnosticsLogger logger
+            SetThreadDiagnosticsLoggerNoUnwind logger
 
             errorR TestException
 
@@ -366,6 +366,14 @@ module BuildGraphTests =
             loggerShouldBe logger
         }
 
+        let noErrorsTask = backgroundTask {
+            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger
+            errorR TestException
+            do! Task.Yield()
+            errorR TestException
+            loggerShouldBe DiscardErrorsLogger
+        }
+
         let task = task {
             errorR TestException
             do! Task.Yield()
@@ -380,12 +388,47 @@ module BuildGraphTests =
         thread.Start()
         thread.Join()
 
-        btask.Wait()
-        task.Wait()
+        Task.WaitAll(noErrorsTask, btask, task)
 
         Seq.init 11 (fun _ -> async { errorR TestException; loggerShouldBe logger } ) |> Async.Parallel |> Async.RunSynchronously |> ignore
 
         loggerShouldBe logger
         errorCountShouldBe 17
+
+        async {
+            // Async.Parallel flows back from the last that finished.
+            do! 
+                [ async { SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
+                |> Async.Parallel
+                |> Async.Ignore
+            loggerShouldBe DiscardErrorsLogger
+
+            do! async {
+                do! Async.SwitchToNewThread()
+                SetThreadDiagnosticsLoggerNoUnwind logger
+            }
+
+            loggerShouldBe logger
+        }
+        |> Async.RunImmediate
+
+        // This becomes fully synchronous:
+        async {
+            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger }
+        |> Async.RunImmediate
+        loggerShouldBe DiscardErrorsLogger
+
+        SetThreadDiagnosticsLoggerNoUnwind logger
+        // This creates new async context:
+        async {
+            do! Async.Sleep 0
+            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger }
+        |> Async.RunImmediate
+        loggerShouldBe logger
+
+
+
+
+
 
 
