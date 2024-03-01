@@ -167,11 +167,11 @@ type A =
         (Error 0034, Line 6, Col 16, Line 6, Col 17, "Module 'Program' contains
     member private A.D: int with set
 but its signature specifies
-    member A.D: int with set
+    member A.D: int with set    
 The accessibility specified in the signature is more than that specified in the implementation")
         (Error 0034, Line 6, Col 16, Line 6, Col 17, "Module 'Program' contains
     member internal A.D: int
 but its signature specifies
-    member A.D: int
+    member A.D: int    
 The accessibility specified in the signature is more than that specified in the implementation")
     ]
