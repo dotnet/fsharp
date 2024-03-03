@@ -185,8 +185,14 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
 // Regression: https://github.com/dotnet/fsharp/issues/14652
 module ``Let bindings in classes shoulnd't have DebuggerNonUserCodeAttribute`` =
 
-    [<Fact>]
-    let ``let binding doesn't have DebuggerNonUserCodeAttribute`` () =
+    let withRealInternalSignature realSig compilation =
+        compilation
+        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``let binding doesn't have DebuggerNonUserCodeAttribute`` (realSig) =
         FSharp
             """
             module Test
@@ -196,6 +202,7 @@ module ``Let bindings in classes shoulnd't have DebuggerNonUserCodeAttribute`` =
                 member this.Age
                     with get() = moo 9000
             """
+        |> withRealInternalSignature realSig
         |> compileAssembly
         |> getType "Test+User"
         |> getPrivateInstanceMethod "moo"

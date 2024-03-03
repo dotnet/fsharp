@@ -149,13 +149,13 @@ type internal FSharpParsedFile
         SyntaxTreeHash: byte array,
         SourceText: ISourceText,
         ParsedInput: ParsedInput,
-        ParseErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+        ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
     ) =
 
     member _.FileName = FileName
     member _.SourceText = SourceText
     member _.ParsedInput = ParsedInput
-    member _.ParseErrors = ParseErrors
+    member _.ParseDiagnostics = ParseDiagnostics
 
     member val IsSignatureFile = FileName |> isSignatureFile
 

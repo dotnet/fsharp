@@ -1,4 +1,4 @@
-namespace EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open System.IO
@@ -117,9 +117,17 @@ module TestFunctions =
         |> verifyCompilation
 
     //SOURCE=TestFunction09b4.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction09b4.exe"	# TestFunction09b4.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction09b4.fs"|])>]
-    let ``TestFunction09b4_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction09b4_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction09b4_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction09b4.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction09b4.exe"	# TestFunction09b4.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction09b4_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction09b4_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction10.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction10.exe"	# TestFunction10.fs -
@@ -195,51 +203,115 @@ module TestFunctions =
         |> verifyCompilation
 
     //SOURCE=TestFunction22.fs    SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22.exe"	# TestFunction22.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22.fs"|])>]
-    let ``TestFunction22_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction22_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction22.fs    SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22.exe"	# TestFunction22.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction22_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction22b.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22b.exe"	# TestFunction22b.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22b.fs"|])>]
-    let ``TestFunction22b_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22b_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction22b_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction22b.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22b.exe"	# TestFunction22b.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22b_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction22b_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction22c.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22c.exe"	# TestFunction22c.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22c.fs"|])>]
-    let ``TestFunction22c_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22c_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction22c_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction22c.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22c.exe"	# TestFunction22c.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22c_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction22c_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction22d.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22d.exe"	# TestFunction22d.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22d.fs"|])>]
-    let ``TestFunction22d_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22d_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction22d_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction22d.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22d.exe"	# TestFunction22d.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22d_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction22d_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction22e.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22e.exe"	# TestFunction22e.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22e.fs"|])>]
-    let ``TestFunction22e_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22e_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction22e_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction22e.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22e.exe"	# TestFunction22e.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22e_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction22e_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction22f.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22f.exe"	# TestFunction22f.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22f.fs"|])>]
-    let ``TestFunction22f_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22f_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction22f_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction22f.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22f.exe"	# TestFunction22f.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22f_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction22f_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction22g.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22g.exe"	# TestFunction22g.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22g.fs"|])>]
-    let ``TestFunction22g_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22g_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction22g_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction22g.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22g.exe"	# TestFunction22g.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22g_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction22g_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction22h.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22h.exe"	# TestFunction22h.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22h.fs"|])>]
-    let ``TestFunction22h_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22h_RealInternalSignatureOff.fs"|])>]
+    let ``TestFunction22h_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    //SOURCE=TestFunction22h.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22h.exe"	# TestFunction22h.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22h_RealInternalSignatureOn.fs"|])>]
+    let ``TestFunction22h_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction23.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction23.exe"	# TestFunction23.fs -
@@ -256,27 +328,59 @@ module TestFunctions =
         |> verifyCompilation
 
     // Verify IL 13043
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
-    let ``Verify13043_il`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043_RealInternalSignatureOff.fs"|])>]
+    let ``Verify13043_RealInternalSignatureOff_fs`` compilation =
         compilation
         |> withDebug
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    // Verify IL 13043
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043_RealInternalSignatureOn.fs"|])>]
+    let ``Verify13043_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withDebug
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     // Verify Execution 13043 run it built not optimized with debug
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
-    let ``Verify13043_execution_noopt`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043_RealInternalSignatureOff.fs"|])>]
+    let ``Verify13043_Verify13043_RealInternalSignatureOff_execution_noopt`` compilation =
         compilation
         |> withDebug
+        |> withRealInternalSignatureOff
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // Verify Execution 13043 run it built not optimized with debug
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043_RealInternalSignatureOn.fs"|])>]
+    let ``Verify13043_Verify13043_RealInternalSignatureOn_execution_noopt`` compilation =
+        compilation
+        |> withDebug
+        |> withRealInternalSignatureOn
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // Verify Execution 13043 --- run it built optimized no debug
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
-    let ``Verify13043_execution_opt`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043_RealInternalSignatureOff.fs"|])>]
+    let ``Verify13043_RealInternalSignatureOff_execution_opt`` compilation =
         compilation
         |> asExe
         |> withOptions [ "--test:EmitFeeFeeAs100001"; "--nowarn:988"; "--nowarn:3370"]
         |> withOptimize
         |> withNoDebug
+        |> withRealInternalSignatureOff
+        |> compileAndRun
+        |> shouldSucceed
+
+    // Verify Execution 13043 --- run it built optimized no debug
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043_RealInternalSignatureOn.fs"|])>]
+    let ``Verify13043_RealInternalSignatureOn_execution_opt`` compilation =
+        compilation
+        |> asExe
+        |> withOptions [ "--test:EmitFeeFeeAs100001"; "--nowarn:988"; "--nowarn:3370"]
+        |> withOptimize
+        |> withNoDebug
+        |> withRealInternalSignatureOn
         |> compileAndRun
         |> shouldSucceed

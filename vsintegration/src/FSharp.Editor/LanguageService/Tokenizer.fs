@@ -925,7 +925,7 @@ module internal Tokenizer =
 
         lineData, textLinePos, contents
 
-    let inline tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
+    let tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
         try
             let lineData, _, _ =
                 getCachedSourceLineData (
