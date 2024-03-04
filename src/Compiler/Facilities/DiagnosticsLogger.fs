@@ -377,17 +377,22 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
 
 let currentDiagnosticsLogger = AsyncLocal<DiagnosticsLogger voption>()
 
-let checkIfSame v =
-    match currentDiagnosticsLogger.Value, v with
-    | ValueSome c, v when c = v -> v // Good.
-    | ValueNone, _ -> v // New context.
-    | _, v when v = AssertFalseDiagnosticsLogger -> v // Not initialized but will catch up.
-    | ValueSome c, _ when c = AssertFalseDiagnosticsLogger -> v // Not initialized but will catch up.
-    | _, v when v.DebugDisplay().Contains("CachingDiagnosticsLogger") -> v // AsyncMemoize, disregard for now.
-    | ValueSome c, _ when c.DebugDisplay().Contains("CachingDiagnosticsLogger") -> v // AsyncMemoize, disregard for now.
-    | ValueSome c, _ when c.DebugDisplay().Contains("NodeCode") -> v // NodeCode.Parallel boundary.
-    | _, v when v.DebugDisplay().Contains("NodeCode") -> v // NodeCode.Parallel boundary.
-    | _ -> failwith "AsyncLocal does not match ThreadStatic."
+let checkIfSame threadStatic =
+    match currentDiagnosticsLogger.Value with
+
+    // Big hurdle in testing this is the fact that threadstatics leak from one unrelated test to another.
+    // At least that's what happens in VS test runner. In effect, at the beginning of some computation when we expect
+    // to see uninitialized threadstatic, we get some value that stayed alive from another test function.
+    // Especially FinalizeTypeCheckTask shows up here a lot.
+    // That's why we have to disregard the threadstatics at the beggining of each execution context,
+    // up to the moment of proper initialization (the first call of UseDiagnosticsLogger usually).
+    | ValueNone -> threadStatic
+
+    | ValueSome asyncLocal ->
+        match asyncLocal, threadStatic with
+        | a, t when a = t -> t // Good.
+        | _ when threadStatic = AssertFalseDiagnosticsLogger -> threadStatic // AsyncLocal is always good on thread switches. ThreadStatic needs to catch up.
+        | _ -> failwith $"AsyncLocal does not match ThreadStatic. a: {asyncLocal.DebugDisplay()} t: {threadStatic.DebugDisplay()}"
 
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =

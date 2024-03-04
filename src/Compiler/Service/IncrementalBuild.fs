@@ -375,11 +375,13 @@ type BoundModel private (
             return diags
         } |> GraphNode
 
-    let startComputingFullTypeCheck =
-        node {
-            let! _ = tcInfoExtras.GetOrComputeValue()
-            return! diagnostics.GetOrComputeValue()
-        }
+    //let startComputingFullTypeCheck() =
+    //    async {
+    //        use _ = InitCompilationGlobalsScope()
+    //        do! tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore
+    //        do! diagnostics.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore
+    //    }
+    //    |> Async.Start
 
     let tcInfo, tcInfoExtras =
         match tcStateOpt with
@@ -391,7 +393,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Catch |> Async.Ignore |> Async.Start
+                // startComputingFullTypeCheck()
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
@@ -735,7 +737,7 @@ module IncrementalBuilderHelpers =
       }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (boundModels: GraphNode<BoundModel> seq) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals _partialCheck assemblyName outfile (boundModels: GraphNode<BoundModel> seq) =
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
@@ -751,13 +753,13 @@ module IncrementalBuilderHelpers =
         let! latestImplFiles =
             computedBoundModels
             |> Seq.map (fun boundModel -> node {
-                    if partialCheck then
-                        return None
-                    else
+                    //if partialCheck then
+                    //    return None
+                    //else
                         let! tcInfoExtras = boundModel.GetOrComputeTcInfoExtras()
                         return tcInfoExtras.latestImplFile
                 })
-            |> NodeCode.Parallel
+            |> NodeCode.Sequential
 
         let results = [
             for tcInfo, latestImplFile in Seq.zip tcInfos latestImplFiles ->
@@ -826,7 +828,7 @@ module IncrementalBuilderHelpers =
         let! partialDiagnostics =
             computedBoundModels
             |> Seq.map (fun m -> m.Diagnostics.GetOrComputeValue())
-            |> NodeCode.Parallel
+            |> NodeCode.Sequential
         let diagnostics = [
             diagnosticsLogger.GetDiagnostics()
             yield! partialDiagnostics |> Seq.rev

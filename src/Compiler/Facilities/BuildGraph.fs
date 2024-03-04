@@ -25,20 +25,18 @@ let wrapThreadStaticInfo computation =
             DiagnosticsThreadStatics.BuildPhase <- phase
     }
 
+
+let reset() =
+    DiagnosticsThreadStatics.DiagnosticsLoggerNodeCode <- AssertFalseDiagnosticsLogger
+    DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
+
 let unwrapNode (Node(computation)) = computation
 
 type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node(computation) ->
-            async {
-                try
-                    return! wrapThreadStaticInfo computation
-                finally
-                    // Reset threadstatics so they don't leak to unrelated computation.
-                    DiagnosticsThreadStatics.DiagnosticsLoggerNodeCode <- AssertFalseDiagnosticsLogger
-            }
+        | Node(computation) -> wrapThreadStaticInfo computation
 
 [<Sealed>]
 type NodeCodeBuilder() =
@@ -212,9 +210,12 @@ type NodeCode private () =
                 let logger = concurrentLogging.GetLoggerForTask($"NodeCode.Parallel {i}")
 
                 async {
-                    DiagnosticsThreadStatics.DiagnosticsLogger <- logger
-                    DiagnosticsThreadStatics.BuildPhase <- phase
-                    return! unwrapNode computation
+                    try
+                        DiagnosticsThreadStatics.DiagnosticsLogger <- logger
+                        DiagnosticsThreadStatics.BuildPhase <- phase
+                        return! unwrapNode computation
+                    finally
+                        reset()
                 }
 
             return!
@@ -263,6 +264,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
             cachedResultNode
         else
             node {
+                use _ = new CompilationGlobalsScope()
                 Interlocked.Increment(&requestCount) |> ignore
 
                 try
@@ -291,13 +293,13 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                         | ValueSome value -> return value
                         | _ ->
                             let tcs = TaskCompletionSource<'T>()
-                            let (Node(p)) = computation
 
                             Async.StartWithContinuations(
-                                async {
+                                node {
                                     Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! p
-                                },
+                                    reset()
+                                    return! computation 
+                                } |> Async.AwaitNodeCode,
                                 (fun res ->
                                     cachedResult <- ValueSome res
                                     cachedResultNode <- node.Return res
