@@ -86,6 +86,7 @@ type LanguageFeature =
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | LowerInterpolatedStringToConcat
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -199,6 +200,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
                 LanguageFeature.UnionIsPropertiesVisible, previewVersion
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
+                LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -343,6 +345,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
         | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
             FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
+        | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
