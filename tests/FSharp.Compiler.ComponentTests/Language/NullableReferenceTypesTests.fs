@@ -61,7 +61,7 @@ let maybeNull : string | null = null
 let nonNullString = "abc"
 let printedValueNotNull = sprintf "This is not null: %s" nonNullString
 let printedValueNull = sprintf "This is null: %s" maybeNull
-let interpolated = $"This is fine {maybeNull}"
+let interpolated = $"This is fine %s{maybeNull}"
 let interpolatedAnnotatedNotNull = $"This is fine %s{nonNullString}"
 let interpolatedAnnotatedNullable = $"This is not null %s{maybeNull}"
 let interpolateNullLiteral = $"This is not null %s{null}"
@@ -91,6 +91,19 @@ let ``Printing a nullable array via percent A should pass`` () =
 let maybeArray : ((string array) | null) = null
 let arrayOfMaybes : ((string | null) array ) = [|null|]
 let printViaA = sprintf "This is null: %A and this has null inside %A" maybeArray arrayOfMaybes
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Type inference with sprintfn`` () = 
+    FSharp """module MyLibrary
+let needsString(x:string) = ()
+
+let myTopFunction inferedVal = 
+    printfn "This is it %s" inferedVal  // There was a regression infering this to be (string | null)
+    needsString inferedVal
 """
     |> asLibrary
     |> typeCheckWithStrictNullness

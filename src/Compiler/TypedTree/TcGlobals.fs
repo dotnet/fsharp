@@ -449,7 +449,7 @@ type TcGlobals(
   let v_FormattableStringFactory_tcref = findSysTyconRef sysCompilerServices "FormattableStringFactory"
   let v_FormattableStringFactory_ty = mkNonGenericTy v_FormattableStringFactory_tcref
   let v_string_ty       = mkNonGenericTy v_string_tcr
-  let v_string_ty_withNull = mkNonGenericTyWithNullness v_string_tcr KnownWithNull
+  let v_string_ty_ambivalent = mkNonGenericTyWithNullness v_string_tcr KnownAmbivalentToNull
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
   let v_system_Type_ty = mkSysNonGenericTy sys "Type" 
@@ -1341,7 +1341,7 @@ type TcGlobals(
   member _.bool_ty = v_bool_ty
   member _.int_ty = v_int_ty
   member _.string_ty = v_string_ty
-  member _.string_ty_withNull = v_string_ty_withNull
+  member _.string_ty_ambivalent = v_string_ty_ambivalent
   member _.system_IFormattable_tcref = v_IFormattable_tcref
   member _.system_FormattableString_tcref = v_FormattableString_tcref
   member _.system_FormattableStringFactory_tcref = v_FormattableStringFactory_tcref
