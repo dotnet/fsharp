@@ -194,7 +194,8 @@ type TcGlobals(
     emitDebugInfoInQuotations: bool,
     noDebugAttributes: bool,
     pathMap: PathMap,
-    langVersion: LanguageVersion) =
+    langVersion: LanguageVersion,
+    realsig: bool) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
 
@@ -367,7 +368,7 @@ type TcGlobals(
           let attrRef = ILTypeRef.Create(ILScopeRef.Local, [], nm)
           let attrTycon =
              Construct.NewTycon(
-                 Some (CompPath(ILScopeRef.Local, [])),
+                 Some (CompPath(ILScopeRef.Local, SyntaxAccess.Internal, [])),
                  attrRef.Name,
                  range0,
                  taccessInternal,
@@ -1130,6 +1131,8 @@ type TcGlobals(
   member _.pathMap = pathMap
 
   member _.langVersion = langVersion
+
+  member _.realsig = realsig
 
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
 

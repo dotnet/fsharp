@@ -34,6 +34,8 @@ usage()
   echo "  --skipBuild                    Do not run the build"
   echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
   echo "  --sourceBuild                  Simulate building for source-build"
+  echo "  --norealsig                    Build product with realsig- (default use realsig+)"
+  echo "  --tfm                          Override the default target framework"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -67,10 +69,13 @@ skip_analyzers=false
 skip_build=false
 prepare_machine=false
 source_build=false
+realsig=true
 properties=""
 
 docker=false
 args=""
+
+tfm="net8.0" # This needs to be changed every time it's bumped by arcade/us.
 
 BuildCategory=""
 BuildMessage=""
@@ -148,6 +153,13 @@ while [[ $# > 0 ]]; do
       ;;
     --sourcebuild)
       source_build=true
+      ;;
+    --norealsig)
+      realsig=false
+      ;;
+    --tfm)
+      tfm=$2
+      shift
       ;;
     /p:*)
       properties="$properties $1"
@@ -269,8 +281,8 @@ function BuildSolution {
       MSBuild "$repo_root/buildtools/buildtools.proj" /restore "$bltools" /p:Configuration=$bootstrap_config
 
       mkdir -p "$bootstrap_dir"
-      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net8.0 $bootstrap_dir/fslex
-      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net8.0 $bootstrap_dir/fsyacc
+      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/$tfm $bootstrap_dir/fslex
+      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/$tfm $bootstrap_dir/fsyacc
     fi
     if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
       local bltools=""
@@ -279,7 +291,7 @@ function BuildSolution {
       fi
       BuildMessage="Error building bootstrap"
       MSBuild "$repo_root/Proto.sln" /restore "$bltools" /p:Configuration=$bootstrap_config
-      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net8.0 $bootstrap_dir/fsc
+      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/$tfm $bootstrap_dir/fsc
     fi
   fi
 
@@ -301,6 +313,7 @@ function BuildSolution {
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
       /p:ArcadeBuildFromSource=$source_build \
+      /p:TestingLegacyInternalSignature=$realsig \
       $properties
   fi
 }
@@ -321,7 +334,7 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  coreclrtestframework=net8.0
+  coreclrtestframework=$tfm
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
@@ -331,7 +344,7 @@ if [[ "$test_core_clr" == true ]]; then
 fi
 
 if [[ "$test_compilercomponent_tests" == true ]]; then
-  coreclrtestframework=net8.0
+  coreclrtestframework=$tfm
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
 fi
 

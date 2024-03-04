@@ -1233,7 +1233,7 @@ let mkMultiLambdaTy g m vs bodyTy = mkFunTy g (typeOfLambdaArg m vs) bodyTy
 /// the library arising from env.fs. Part of this means that we have to be able to resolve these
 /// references. This function artificially forces the existence of a module or namespace at a 
 /// particular point in order to do this.
-let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)) xml =
+let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, sa, cpath)) xml =
     let scoref = ccu.ILScopeRef 
     let rec loop prior_cpath (path: Ident list) cpath (modul: ModuleOrNamespace) =
         let mtype = modul.ModuleOrNamespaceType 
@@ -1242,7 +1242,7 @@ let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)
             let modName = hpath.idText 
             if not (Map.containsKey modName mtype.AllEntitiesByCompiledAndLogicalMangledNames) then 
                 let mty = Construct.NewEmptyModuleOrNamespaceType mkind
-                let cpath = CompPath(scoref, prior_cpath)
+                let cpath = CompPath(scoref, sa, prior_cpath)
                 let smodul = Construct.NewModuleOrNamespace (Some cpath) taccessPublic hpath xml [] (MaybeLazy.Strict mty)
                 mtype.AddModuleOrNamespaceByMutation smodul
             let modul = Map.find modName mtype.AllEntitiesByCompiledAndLogicalMangledNames 
@@ -4210,7 +4210,7 @@ module DebugPrint =
 
     let typeOfValL (v: Val) =
         valL v
-          ^^ (if v.MustInline then wordL (tagText "inline ") else emptyL) 
+          ^^ (if v.ShouldInline then wordL (tagText "inline ") else emptyL) 
           ^^ (if v.IsMutable then wordL(tagText "mutable ") else emptyL)
           ^^ (if layoutTypes then wordL (tagText ":") ^^ typeL v.Type else emptyL)
 
@@ -5000,20 +5000,36 @@ let rec accImplHidingInfoAtAssemblyBoundary mdef acc =
 let ComputeImplementationHidingInfoAtAssemblyBoundary mty acc = 
     accImplHidingInfoAtAssemblyBoundary mty acc
 
+let DoRemap setF remapF = 
+    let rec remap mrmi x =
+
+        match mrmi with
+         | [] -> x
+         | (rpi, mhi) :: rest ->
+            // Explicitly hidden?
+            if Zset.contains x (setF mhi) then
+                x
+            else
+                remap rest (remapF rpi x)
+    fun mrmi x -> remap mrmi x
+
+let DoRemapTycon mrmi x = DoRemap (fun mhi -> mhi.HiddenTycons) (fun rpi x -> (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) mrmi x
+
+let DoRemapVal mrmi x = DoRemap (fun mhi -> mhi.HiddenVals) (fun rpi x -> (remapValRef rpi (mkLocalValRef x)).Deref) mrmi x 
+
 //--------------------------------------------------------------------------
 // Compute instances of the above for mexpr -> mty
 //--------------------------------------------------------------------------
-
 let IsHidden setF accessF remapF = 
-    let rec check mrmi x = 
-            // Internal/private? 
-        not (canAccessFromEverywhere (accessF x)) || 
-        (match mrmi with 
-         | [] -> false // Ah! we escaped to freedom! 
-         | (rpi, mhi) :: rest -> 
-            // Explicitly hidden? 
-            Zset.contains x (setF mhi) || 
-            // Recurse... 
+    let rec check mrmi x =
+        // Internal/private?
+        not (canAccessFromEverywhere (accessF x)) ||
+        (match mrmi with
+         | [] -> false // Ah! we escaped to freedom!
+         | (rpi, mhi) :: rest ->
+            // Explicitly hidden?
+            Zset.contains x (setF mhi) ||
+            // Recurse...
             check rest (remapF rpi x))
     check
 
@@ -5812,7 +5828,7 @@ and mapImmediateValsAndTycons ft fv (x: ModuleOrNamespaceType) =
     let vals = x.AllValsAndMembers |> QueueList.map fv
     let tycons = x.AllEntities |> QueueList.map ft
     ModuleOrNamespaceType(x.ModuleOrNamespaceKind, vals, tycons)
-    
+
 and copyVal compgen (v: Val) = 
     match compgen with 
     | OnlyCloneExprVals when v.IsMemberOrModuleBinding -> v
@@ -6189,10 +6205,7 @@ and copyAndRemapAndBindModTy ctxt compgen tmenv mty =
     let tycons = allEntitiesOfModuleOrNamespaceTy mty
     let vs = allValsOfModuleOrNamespaceTy mty
     let _, _, tmenvinner = copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs
-    remapModTy compgen tmenvinner mty, tmenvinner
-
-and remapModTy _compgen tmenv mty = 
-    mapImmediateValsAndTycons (renameTycon tmenv) (renameVal tmenv) mty 
+    (mapImmediateValsAndTycons (renameTycon tmenvinner) (renameVal tmenvinner) mty), tmenvinner
 
 and renameTycon tyenv x = 
     let tcref = 

@@ -113,7 +113,7 @@ module HashAccessibility =
     let isHiddenToObserver (TAccess access) (observer: ObserverVisibility) =
         let isInternalCompPath x =
             match x with
-            | CompPath(ILScopeRef.Local, []) -> true
+            | CompPath(ILScopeRef.Local, _, []) -> true
             | _ -> false
 
         match access with

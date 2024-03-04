@@ -1336,6 +1336,12 @@ val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
 /// Make a remapping table for viewing a module or namespace 'from the outside'
 val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
 
+/// Get the value including fsi remapping
+val DoRemapTycon: (Remap * SignatureHidingInfo) list -> Tycon -> Tycon
+
+/// Get the value including fsi remapping
+val DoRemapVal: (Remap * SignatureHidingInfo) list -> Val -> Val
+
 /// Determine if a type definition is hidden by a signature
 val IsHiddenTycon: (Remap * SignatureHidingInfo) list -> Tycon -> bool
 

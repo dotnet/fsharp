@@ -34,6 +34,9 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 --deterministic[+|-]                     Produce a deterministic assembly
                                          (including module version GUID and
                                          timestamp)
+--realsig[+|-]                           Generate assembly with IL visibility
+                                         that matches the source code
+                                         visibility
 --pathmap:<path=sourcePath;...>          Maps physical paths to source path
                                          names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
