@@ -13,6 +13,7 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
+    open Microsoft.FSharp.Linq
     open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Core.CompilerServices
 
@@ -334,7 +335,7 @@ module ExtraTopLevelOperators =
     let (|Lazy|) (input: Lazy<_>) =
         input.Force()
 
-    let query = Microsoft.FSharp.Linq.QueryBuilder()
+    let query = QueryBuilder()
 
 namespace Microsoft.FSharp.Core.CompilerServices
 

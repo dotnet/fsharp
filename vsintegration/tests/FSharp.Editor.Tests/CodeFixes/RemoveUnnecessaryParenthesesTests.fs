@@ -312,6 +312,152 @@ let _ =
             "x :: ([])", "x :: []"
 
             """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2)
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2
+                )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            // We could remove here, but we'd need to update
+            // the "sensitive indentation" logic to differentiate between
+            // an outer offsides column established by an open paren (as here)
+            // and an outer offsides column established by, say, the leftmost
+            // column of a binding, e.g.:
+            //
+            //     let _ = (
+            //     ↑
+            //     )
+            //
+            //     static member M () = (
+            //     ↑
+            //     )
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+            longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+            longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+        longFunctionName
+            longVarName1
+            longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+        longFunctionName
+            longVarName1
+            longVarName2
+            )
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (+longFunctionName
+                longVarName1
+                longVarName2)
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            +longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2 in (
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2 in 
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            """
+
+            """
             let x = (printfn $"{y}"
                      2)
             in x
@@ -342,10 +488,11 @@ let _ =
             "
             let x =
              2
-             + 2
+           + 2
             in x
             "
 
+            // The extra spaces in this test are intentional.
             "
             let x =
      
@@ -361,9 +508,9 @@ let _ =
      
 
              2
-      
- 
-             + 2
+    
+
+           + 2
             in x
             "
 
@@ -398,7 +545,7 @@ let _ =
             ",
             "
             let x = 2
-                    +             2
+                  +             2
             in x
             "
 
@@ -409,7 +556,7 @@ let _ =
             ",
             "
             let x = 2
-                    + 2
+                  + 2
             in x
             "
 
@@ -420,7 +567,7 @@ let _ =
             ",
             "
             let x = x
-                    +y
+                   +y
             in x
             "
 
@@ -442,7 +589,7 @@ let _ =
             ",
             "
             let x = 2
-                    <<< 2
+                <<< 2
             in x
             "
 
@@ -455,7 +602,7 @@ in x
             "
 let (<<<<<<<<) = (<<<)
 let x = 2
-        <<<<<<<< 2
+<<<<<<<< 2
 in x
             "
 
@@ -505,7 +652,7 @@ in x
 
             let y =
                 2
-                + 2
+              + 2
 
             in x + y
             "
@@ -532,7 +679,7 @@ in x
             "
             x <
                 2
-                + 3
+              + 3
             "
 
             // LetOrUse
@@ -569,7 +716,7 @@ in x
             let x =
              ()
              2
-             ++++++ 2
+      ++++++ 2
             in x
             "
 
@@ -806,7 +953,7 @@ in x
             """
             let mutable x = 3
             x <- 3
-                 <<< 3
+             <<< 3
             """
 
             // DotIndexedGet

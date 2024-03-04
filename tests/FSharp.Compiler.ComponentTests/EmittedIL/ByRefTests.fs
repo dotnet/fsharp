@@ -355,8 +355,7 @@ type IsReadOnlyAttribute() =
 
 type C() =
     let x = 59
-    member _.X: inref<_> = &x
-            """
+    member _.X: inref<_> = &x"""
 
         let verifyProperty = """.property instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute)
                 X()

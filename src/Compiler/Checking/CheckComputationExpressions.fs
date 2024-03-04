@@ -1838,7 +1838,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     addVarsToVarSpace varSpace (fun mQueryOp env ->
                         // Normalize the bindings before detecting the bound variables
                         match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with
-                        | [ NormalizedBinding(kind = SynBindingKind.Normal; mustInline = false; isMutable = false; pat = pat) ] ->
+                        | [ NormalizedBinding(kind = SynBindingKind.Normal; shouldInline = false; isMutable = false; pat = pat) ] ->
                             // successful case
                             use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
 

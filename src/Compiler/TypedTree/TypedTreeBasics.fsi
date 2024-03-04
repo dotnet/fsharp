@@ -12,8 +12,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-val getNameOfScopeRef: sref: ILScopeRef -> string
-
 /// Metadata on values (names of arguments etc.
 module ValReprInfo =
 

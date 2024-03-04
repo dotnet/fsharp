@@ -1777,7 +1777,7 @@ let p_istype x st =
     | ModuleOrType           -> p_byte 1 st
     | Namespace _            -> p_byte 2 st
 
-let p_cpath (CompPath(a, b)) st =
+let p_cpath (CompPath(a, _, b)) st =
     p_tup2 p_ILScopeRef (p_list (p_tup2 p_string p_istype)) (a, b) st
 
 let u_ranges st = u_option (u_tup2 u_range u_range) st
@@ -1792,7 +1792,7 @@ let u_istype st =
 
 let u_cpath st =
     let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st 
-    CompPath(a, b)
+    CompPath(a, SyntaxAccess.Unknown, b)
 
 let rec p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
