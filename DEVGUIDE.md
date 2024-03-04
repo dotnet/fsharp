@@ -49,7 +49,7 @@ Install the latest released [Visual Studio](https://visualstudio.microsoft.com/v
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
-You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
+You will also need .NET SDK installed from [here](https://dotnet.microsoft.com/download/dotnet), exact version can be found in the global.json file in the root of the repository.
 
 Building is simple:
 

@@ -37,11 +37,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.BuildGraph
 
-[<RequireQualifiedAccess>]
-type DocumentSource =
-    | FileSystem
-    | Custom of (string -> Async<ISourceText option>)
-
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
 type IsResultObsolete = IsResultObsolete of (unit -> bool)
@@ -376,6 +371,10 @@ type FSharpChecker
     member _.InvalidateConfiguration(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, userOpName)
+
+    member _.InvalidateConfiguration(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.InvalidateConfiguration(projectSnapshot, userOpName)
 
     /// Clear the internal cache of the given projects.
     member _.ClearCache(options: seq<FSharpProjectOptions>, ?userOpName: string) =

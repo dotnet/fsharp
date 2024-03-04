@@ -9226,10 +9226,13 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
     let objArgs = [objExpr]
 
-    // 'base' calls use a different resolution strategy when finding methods.
-    let findFlag =
-        let baseCall = IsBaseCall objArgs
-        (if baseCall then PreferOverrides else IgnoreOverrides)
+    let findFlag = 
+        // 'base' calls use a different resolution strategy when finding methods
+        // nullness checks need the overrides, since those can change nullable semantics (e.g. ToString from BCL)
+        if (g.checkNullness && g.langFeatureNullness) || IsBaseCall objArgs then
+            PreferOverrides
+        else
+            IgnoreOverrides
 
     // Canonicalize inference problem prior to '.' lookup on variable types
     if isTyparTy g objExprTy then
@@ -10399,10 +10402,13 @@ and TcMatchPattern cenv inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynE
 and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     let mutable first = true
     let isFirst() = if first then first <- false; true else false
-    List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
+    let resultList,(tpEnv,_input) = 
+        List.mapFold (fun (unscopedTyParEnv,inputTy) -> TcMatchClause cenv inputTy resultTy env (isFirst()) unscopedTyParEnv) (tpenv,inputTy) clauses
+    resultList,tpEnv
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
     let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, _)) = synMatchClause
+
     let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt
 
     let resultEnv =
@@ -10417,8 +10423,35 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
     let resultExpr, tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv synResultExpr
 
     let target = TTarget(vspecs, resultExpr, None)
+
+    let inputTypeForNextPatterns= 
+        let removeNull t = replaceNullnessOfTy KnownWithoutNull t
+        let rec isWild (p:Pattern) = 
+            match p with
+            | TPat_wild _ -> true
+            | TPat_as (p,_,_) -> isWild p
+            | TPat_disjs(patterns,_) -> patterns |> List.exists isWild
+            | TPat_conjs(patterns,_) -> patterns |> List.forall isWild
+            | TPat_tuple (_,pats,_,_) -> pats |> List.forall isWild              
+            | _ -> false
+
+        let rec eliminateNull (ty:TType) (p:Pattern)  = 
+            match p with
+            | TPat_null _ -> removeNull ty
+            | TPat_as (p,_,_) -> eliminateNull ty p
+            | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
+            | TPat_tuple (_,pats,_,_) -> 
+                match stripTyparEqns ty with
+                // In a tuple of size N, if 1 elem is matched for null and N-1 are wild => subsequent clauses can strip nullness
+                | TType_tuple(ti,tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
+                    TType_tuple(ti, List.map2 eliminateNull tys pats)
+                | _ -> ty
+            | _ -> ty
+        match whenExprOpt with
+        | None -> eliminateNull inputTy pat
+        | _ -> inputTy
     
-    MatchClause(pat, whenExprOpt, target, patm), tpenv
+    MatchClause(pat, whenExprOpt, target, patm), (tpenv,inputTypeForNextPatterns)
 
 and TcStaticOptimizationConstraint cenv env tpenv c =
     let g = cenv.g

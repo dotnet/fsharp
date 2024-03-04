@@ -9,7 +9,50 @@ let typeCheckWithStrictNullness cu =
     |> withCheckNulls
     |> withWarnOn 3261
     |> withOptions ["--warnaserror+"]
-    |> typecheck
+    |> compile
+
+    
+[<Fact>]
+let ``Cannot pass possibly null value to a strict function``() =
+    FSharp """
+module MyLib
+let strictFunc(x:string) = ()
+let nonStrictFunc(x:string | null) = strictFunc(x)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+
+[<Fact>]
+let ``Boolean literal to string is not nullable`` () = 
+    FSharp """module MyLibrary
+let onlyWantNotNullString(x:string) = ()
+
+let processBool () : string =
+    onlyWantNotNullString (true.ToString())
+    onlyWantNotNullString (false.ToString())
+
+    true.ToString()
+"""
+    |> asLibrary
+    |> withNoWarn 52 // The value has been copied to ensure the original is not mutated...
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Boolean to string is not nullable`` () = 
+    FSharp """module MyLibrary
+let onlyWantNotNullString(x:string) = ()
+
+let processBool (b:bool) : string =
+    let asString = b.ToString()  
+    asString
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
 
 [<Fact>]
 let ``Printing a nullable string should pass`` () = 
@@ -85,3 +128,59 @@ let doStuff() =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+
+[<InlineData("null")>]
+[<InlineData(""" null | "" """)>]
+[<InlineData(""" "" | null """)>]
+[<InlineData(""" "" | " " | null """)>]
+[<InlineData("(null)")>]
+[<InlineData("(null) as _myUselessNullValue")>]
+[<Theory>]
+let ``Eliminate nullness after matching`` (tp) = 
+    FSharp $"""module MyLibrary
+
+let myFunction (input : string | null) : string = 
+    match input with
+    | {tp} -> ""
+    | nonNullString -> nonNullString
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<InlineData("""(null,_aVal) | (_aVal, null) """)>]
+[<InlineData("""(null,("" | null | _)) | (_, null)""")>]
+[<Theory>]
+let ``Eliminate tupled nullness after matching`` (tp) = 
+    FSharp $"""module MyLibrary
+
+let myFunction (input1 : string | null) (input2 : string | null): (string*string) = 
+    match input1,input2 with
+    | {tp} -> "",""
+    | nns1,nns2 -> nns1,nns2
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+
+[<InlineData("""(null,"a") | ("b",null) """)>]
+[<InlineData("(null,null)")>]
+[<InlineData(""" null, a """)>]
+[<InlineData(""" "a", "b" """)>]
+[<InlineData(""" (_a,_b) when System.Console.ReadLine() = "lucky"  """)>]
+[<InlineData("(_,null)")>]
+[<Theory>]
+let ``Should NOT eliminate tupled nullness after matching`` (tp) = 
+    FSharp $"""module MyLibrary
+
+let myFunction (input1 : string | null) (input2 : string | null): (string*string) = 
+    match input1,input2 with
+    | %s{tp} ->  "",""
+    | nns1,nns2 -> nns1,nns2
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withErrorCode 3261
