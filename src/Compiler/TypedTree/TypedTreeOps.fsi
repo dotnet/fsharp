@@ -896,6 +896,8 @@ val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
+val nullnessSensitivetypeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
+
 val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
 val returnTypesAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType option -> TType option -> bool

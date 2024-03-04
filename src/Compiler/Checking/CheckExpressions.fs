@@ -9307,10 +9307,13 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
     let objArgs = [objExpr]
 
-    // 'base' calls use a different resolution strategy when finding methods.
-    let findFlag =
-        let baseCall = IsBaseCall objArgs
-        (if baseCall then PreferOverrides else IgnoreOverrides)
+    let findFlag = 
+        // 'base' calls use a different resolution strategy when finding methods
+        // nullness checks need the overrides, since those can change nullable semantics (e.g. ToString from BCL)
+        if (g.checkNullness && g.langFeatureNullness) || IsBaseCall objArgs then
+            PreferOverrides
+        else
+            IgnoreOverrides
 
     // Canonicalize inference problem prior to '.' lookup on variable types
     if isTyparTy g objExprTy then

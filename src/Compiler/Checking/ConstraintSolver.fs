@@ -3646,7 +3646,13 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
                 0
         if c <> 0 then c else
 
-        0
+        // Properties are kept incl. almost-duplicates because of the partial-override possibility.
+        // E.g. base can have get,set and derived only get => we keep both props around until method resolution time.
+        // Now is the type to pick the better (more derived) one.
+        match candidate.AssociatedPropertyInfo,other.AssociatedPropertyInfo,candidate.Method.IsExtensionMember,other.Method.IsExtensionMember with
+        | Some p1, Some p2, false, false -> compareTypes p1.ApparentEnclosingType p2.ApparentEnclosingType
+        | _ -> 0
+        
 
     let bestMethods =
         let indexedApplicableMeths = applicableMeths |> List.indexed

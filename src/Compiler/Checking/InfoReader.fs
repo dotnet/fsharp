@@ -644,6 +644,11 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
              MethInfosEquivByNameAndSig EraseNone true g amap m,
              (fun minfo -> minfo.LogicalName)) 
 
+    static let PropsGetterSetterEquiv innerEquality (p1:PropInfo) (p2:PropInfo)  : bool =
+        p1.HasGetter = p2.HasGetter &&
+        p1.HasSetter = p2.HasSetter &&
+        innerEquality p1 p2
+
     /// Filter the overrides of properties, either keeping the overrides or keeping the dispatch slots.
     static let FilterOverridesOfPropInfos findFlag g amap m props = 
         props 
@@ -652,7 +657,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                (fun pinfo -> pinfo.IsNewSlot),
                (fun pinfo -> pinfo.IsDefiniteFSharpOverride),
                (fun _ -> false),
-               PropInfosEquivByNameAndSig EraseNone g amap m,
+               PropsGetterSetterEquiv (PropInfosEquivByNameAndSig EraseNone g amap m),
                (fun pinfo -> pinfo.PropertyName)) 
 
     /// Exclude methods from super types which have the same signature as a method in a more specific type.
@@ -670,7 +675,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Exclude properties from super types which have the same name as a property in a more specific type.
     static let ExcludeHiddenOfPropInfosImpl g amap m pinfos = 
         pinfos 
-        |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes (fun (pinfo: PropInfo) -> pinfo.PropertyName) (PropInfosEquivByNameAndPartialSig EraseNone g amap m) 
+        |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes (fun (pinfo: PropInfo) -> pinfo.PropertyName) (PropsGetterSetterEquiv (PropInfosEquivByNameAndPartialSig EraseNone g amap m)) 
         |> List.concat
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
