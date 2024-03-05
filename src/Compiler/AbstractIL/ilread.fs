@@ -2137,15 +2137,48 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let layout = typeLayoutOfFlags ctxt mdv flags idx
 
         let hasLayout =
-            (match layout with
-             | ILTypeDefLayout.Explicit _ -> true
-             | _ -> false)
+            match layout with
+            | ILTypeDefLayout.Explicit _ -> true
+            | _ -> false
 
-        let canContainExtensionMethods =
-            seq { for i in methodsIdx .. endMethodsIdx -> i }
-            |> Seq.map(fun x -> ctxt.customAttrsReader_MethodDef.GetCustomAttrs(x).AsArray())
-            |> Seq.concat
-            |> Seq.tryFind(fun attr -> attr.Method.DeclaringType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
+        let containsExtensionMethods =
+            seq { methodsIdx .. endMethodsIdx }
+            //TODO
+            |> Seq.tryFind (fun idx ->
+                let reader =
+                    let searchedKey = TaggedIndex(hca_MethodDef, idx)
+                    { new ISeekReadIndexedRowReader<CustomAttributeRow, CustomAttributeRow, CustomAttributeRow> with
+                        member _.GetRow(i, row) = seekReadCustomAttributeRow ctxt mdv i &row
+                        member _.GetKey(attrRow) = attrRow
+                        member _.CompareKey(key) = hcaCompare searchedKey key.parentIndex
+                        member _.ConvertRow(row) = row
+                    }
+
+                let attrs =
+                    seekReadIndexedRowsByInterface (ctxt.getNumRows TableNames.CustomAttribute) (isSorted ctxt TableNames.CustomAttribute) reader
+
+                attrs |> Array.exists (fun attr ->
+                    let attrTypeIdx = attr.typeIndex.index
+                    if attr.typeIndex.tag = cat_MethodDef then
+                        let tidx = seekReadIndexedRow (
+                            ctxt.getNumRows TableNames.TypeDef,
+                            (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
+                            id,
+                            (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
+                                if endMethodsIdx <= attrTypeIdx then 1
+                                elif methodsIdx <= attrTypeIdx && attrTypeIdx < endMethodsIdx then 0
+                                else -1),
+                            true,
+                            fst)
+                        let enclType: ILTypeRef = seekReadTypeDefAsTypeRef ctxt tidx
+                        enclType.Name = "System.Runtime.CompilerServices.ExtensionAttribute"
+                    else
+                        let mrpIdx, _, _ = seekReadMemberRefRow ctxt mdv attrTypeIdx
+                        //TODO: optimize
+                        let enclType: ILType = seekReadMethodRefParent ctxt mdv 0 mrpIdx
+                        enclType.TypeRef.Name = "System.Runtime.CompilerServices.ExtensionAttribute"
+                    )
+            )
 
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
@@ -2170,7 +2203,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             events = events,
             properties = props,
             isKnownToBeAttribute = false,
-            canContainExtensionMethods = canContainExtensionMethods.IsSome,
+            canContainExtensionMethods = containsExtensionMethods.IsSome,
             customAttrsStored = ctxt.customAttrsReader_TypeDef,
             metadataIndex = idx
         ))
