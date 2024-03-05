@@ -2165,16 +2165,18 @@ and typeDefReader ctxtH : ILTypeDefStored =
 
                 attrs |> Array.exists (fun attr ->
                     let attrCtorIdx = attr.typeIndex.index
-                    if attr.typeIndex.tag = cat_MethodDef then
-                        let tidx = seekMethodDefParent ctxt attrCtorIdx
-                        let enclType: ILTypeRef = seekReadTypeDefAsTypeRef ctxt tidx
-                        enclType.Name = "System.Runtime.CompilerServices.ExtensionAttribute"
-                    else
-                        let mrpIdx, _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
-                        //TODO: optimize
-                        let enclType: ILType = seekReadMethodRefParent ctxt mdv 0 mrpIdx
-                        enclType.TypeRef.Name = "System.Runtime.CompilerServices.ExtensionAttribute"
-                    )
+                    let name =
+                        if attr.typeIndex.tag = cat_MethodDef then
+                            let idx = seekMethodDefParent ctxt attrCtorIdx
+                            let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
+                            readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+                        else
+                            let TaggedIndex(tag, idx), _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
+                            if tag <> mrp_TypeRef then "" else
+                            let _, nameIdx, namespaceIdx = seekReadTypeRefRow ctxt mdv idx
+                            readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+                    name = "System.Runtime.CompilerServices.ExtensionAttribute"
+                )
             )
 
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
