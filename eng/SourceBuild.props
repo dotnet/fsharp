@@ -26,7 +26,7 @@
   <Target Name="BuildBootstrap"
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
           BeforeTargets="RunInnerSourceBuildCommand"
-          Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'>
+          Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'">
           
     <PropertyGroup>
       <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>
