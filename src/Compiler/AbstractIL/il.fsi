@@ -868,13 +868,7 @@ type ILAttributes =
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
-type ILAttributesStored =
-    /// Computed by ilread.fs based on metadata index
-    | Reader of (int32 -> ILAttribute[])
-    /// Already computed
-    | Given of ILAttributes
-
-    member GetCustomAttrs: metadataIndex: int32 -> ILAttributes
+type ILAttributesStored
 
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
