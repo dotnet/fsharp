@@ -2142,23 +2142,26 @@ and typeDefReader ctxtH : ILTypeDefStored =
             | _ -> false
 
         let containsExtensionMethods =
+            if methodsIdx < 1 then None else
+
+            let mutable searchedKey = Unchecked.defaultof<_>
+            let attributesSearcher =
+                { new ISeekReadIndexedRowReader<CustomAttributeRow, CustomAttributeRow, CustomAttributeRow> with
+                    member _.GetRow(i, row) = seekReadCustomAttributeRow ctxt mdv i &row
+                    member _.GetKey(attrRow) = attrRow
+                    member _.CompareKey(key) = hcaCompare searchedKey key.parentIndex
+                    member _.ConvertRow(row) = row
+                }
             seq { methodsIdx .. endMethodsIdx }
             // TODO
             |> Seq.tryFind (fun idx ->
-                let reader =
-                    let searchedKey = TaggedIndex(hca_MethodDef, idx)
-                    { new ISeekReadIndexedRowReader<CustomAttributeRow, CustomAttributeRow, CustomAttributeRow> with
-                        member _.GetRow(i, row) = seekReadCustomAttributeRow ctxt mdv i &row
-                        member _.GetKey(attrRow) = attrRow
-                        member _.CompareKey(key) = hcaCompare searchedKey key.parentIndex
-                        member _.ConvertRow(row) = row
-                    }
+                searchedKey <- TaggedIndex(hca_MethodDef, idx)
 
                 let attrs =
                     seekReadIndexedRowsByInterface
                         (ctxt.getNumRows TableNames.CustomAttribute)
                         (isSorted ctxt TableNames.CustomAttribute)
-                        reader
+                        attributesSearcher
 
                 attrs |> Array.exists (fun attr ->
                     let attrCtorIdx = attr.typeIndex.index
