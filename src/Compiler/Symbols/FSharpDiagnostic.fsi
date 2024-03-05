@@ -101,6 +101,14 @@ module public ExtendedData =
         /// Argument identifier range within implementation file
         member ImplementationRange: range
 
+    [<Class; Experimental("This FCS API is experimental and subject to change.")>]
+    type DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData =
+        interface IFSharpDiagnosticExtendedData
+        /// Range of the entire signature type abbreviation.
+        member SignatureTypeRange: range
+        /// Range of the entire implementation type abbreviation.
+        member ImplementationRange: range
+
 open ExtendedData
 
 /// Represents a diagnostic produced by the F# compiler
