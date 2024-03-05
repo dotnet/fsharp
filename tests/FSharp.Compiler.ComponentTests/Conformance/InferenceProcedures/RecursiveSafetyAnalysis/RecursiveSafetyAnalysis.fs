@@ -49,7 +49,7 @@ module RecursiveSafetyAnalysis =
             (Error 1114, Line 8, Col 15, Line 8, Col 25, "The value 'E_RecursiveInline.test' was marked inline but was not bound in the optimization environment")
             (Error 1113, Line 7, Col 16, Line 7, Col 20, "The value 'test' was marked inline but its implementation makes use of an internal or private function which is not sufficiently accessible")
             (Warning 1116, Line 8, Col 15, Line 8, Col 25, "A value marked as 'inline' has an unexpected value")
-            (Error 1118, Line 8, Col 15, Line 8, Col 25, "Failed to inline the value 'test' marked 'inline', perhaps because a recursive value was marked 'inline'")
+            (Warning 1118, Line 8, Col 15, Line 8, Col 25, "Failed to inline the value 'test' marked 'inline', perhaps because a recursive value was marked 'inline'")
         ]
 
     // SOURCE=E_TypeDeclaration01.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges" COMPILE_ONLY=1	# E_TypeDeclaration01.fs

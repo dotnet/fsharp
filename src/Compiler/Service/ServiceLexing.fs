@@ -36,7 +36,7 @@ module FSharpTokenTag =
         tagOfToken (INTERP_STRING_BEGIN_PART("a", SynStringKind.Regular, LexCont.Default))
 
     let INTERP_STRING_PART = tagOfToken (INTERP_STRING_PART("a", LexCont.Default))
-    let INTERP_STRING_END = tagOfToken (INTERP_STRING_END("a", None, LexCont.Default))
+    let INTERP_STRING_END = tagOfToken (INTERP_STRING_END("a", LexCont.Default))
     let LPAREN = tagOfToken LPAREN
     let RPAREN = tagOfToken RPAREN
     let LBRACK = tagOfToken LBRACK
@@ -493,7 +493,7 @@ module internal LexerStateEncoding =
         | INTERP_STRING_BEGIN_PART(_, _, cont)
         | INTERP_STRING_PART(_, cont)
         | INTERP_STRING_BEGIN_END(_, _, cont)
-        | INTERP_STRING_END(_, _, cont)
+        | INTERP_STRING_END(_, cont)
         | LBRACE cont
         | RBRACE cont
         | BYTEARRAY(_, _, cont)

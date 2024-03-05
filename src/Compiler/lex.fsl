@@ -120,7 +120,7 @@ let checkExprGreaterColonOp (lexbuf:UnicodeLexing.Lexbuf) =
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
 
-let startString args (lexbuf: UnicodeLexing.Lexbuf) altStartForStringEnd =
+let startString args (lexbuf: UnicodeLexing.Lexbuf) =
     let buf = ByteBuffer.Create StringCapacity
     let m = lexbuf.LexemeRange
     let startp = lexbuf.StartPos
@@ -160,7 +160,7 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) altStartForStringEnd =
                     if isPart then
                         INTERP_STRING_PART (s, cont)
                     else
-                        INTERP_STRING_END (s, altStartForStringEnd, cont)
+                        INTERP_STRING_END (s, cont)
             else
                 let s = Lexhelp.stringBufferAsString buf
                 let synStringKind =
@@ -587,7 +587,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        else mlOnly m args skip lexbuf }
 
  | '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
@@ -600,7 +600,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        else singleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | '$' '"' '"' '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
@@ -612,7 +612,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        else tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | ('$'+) '"' '"' '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        if lexbuf.SupportsFeature LanguageFeature.ExtendedStringInterpolation then
            // Single quote in triple quote ok, others disallowed
@@ -635,7 +635,7 @@ rule token (args: LexArgs) (skip: bool) = parse
      }
 
  | '$' '"'
-     { let buf,fin,m = startString args lexbuf None
+     { let buf,fin,m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
@@ -649,7 +649,7 @@ rule token (args: LexArgs) (skip: bool) = parse
            singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | '"' '"' '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        args.interpolationDelimiterLength <- 0
 
@@ -664,7 +664,7 @@ rule token (args: LexArgs) (skip: bool) = parse
            tripleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | '@' '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
@@ -679,7 +679,7 @@ rule token (args: LexArgs) (skip: bool) = parse
            verbatimString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | ("$@" | "@$") '"'
-     { let buf, fin, m = startString args lexbuf None
+     { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
@@ -914,7 +914,11 @@ rule token (args: LexArgs) (skip: bool) = parse
            token args skip lexbuf
        | (1, style, _, altR, _r) :: rest ->
            args.stringNest <- rest
-           let buf, fin, m = startString args lexbuf altR
+           altR
+           |> Option.iter (fun r ->
+               let n = r.StartColumn - lexbuf.StartPos.Column 
+               lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)) 
+           let buf, fin, m = startString args lexbuf
            if not skip then
                STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, style, LexerStringKind.InterpolatedStringPart, args.interpolationDelimiterLength, m))
            else

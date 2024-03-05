@@ -69,6 +69,7 @@ param (
     [switch]$sourceBuild,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
+    [switch]$norealsig,
     [switch]$verifypackageshipstatus = $false,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
@@ -131,7 +132,8 @@ function Print-Usage() {
     Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host "  -skipbuild                    Skip building product"
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
-    Write-Host "  -verifypackageshipstatus     Verify whether the packages we are building have already shipped to nuget"
+    Write-Host "  -norealsig                    Build product with realsig- (default use realsig+)"
+    Write-Host "  -verifypackageshipstatus      Verify whether the packages we are building have already shipped to nuget"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -210,6 +212,12 @@ function Process-Arguments() {
         $script:compressAllMetadata = $True;
     }
 
+    if ($norealsig) {
+        $script:realsig = $False;
+    }
+    else {
+        $script:realsig = $True;
+    }        
     if ($verifypackageshipstatus) {
         $script:verifypackageshipstatus = $True;
     }
@@ -288,6 +296,7 @@ function BuildSolution([string] $solutionName, $nopack) {
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
         /p:CompressAllMetadata=$CompressAllMetadata `
+        /p:TestingLegacyInternalSignature=$realsig `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
@@ -671,7 +680,7 @@ try {
     }
 
     if ($testAOT) {
-        Push-Location "$RepoRoot\tests\AheadOfTime\Trimming"
+        Push-Location "$RepoRoot\tests\AheadOfTime"
         ./check.cmd
         Pop-Location
     }

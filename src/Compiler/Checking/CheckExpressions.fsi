@@ -256,7 +256,7 @@ type NormalizedBinding =
     | NormalizedBinding of
         visibility: SynAccess option *
         kind: SynBindingKind *
-        mustInline: bool *
+        shouldInline: bool *
         isMutable: bool *
         attribs: SynAttribute list *
         xmlDoc: XmlDoc *
@@ -430,6 +430,7 @@ val ComputeAccessRights:
 
 /// Compute the available access rights and module/entity compilation path for a paricular location in code
 val ComputeAccessAndCompPath:
+    g: TcGlobals ->
     env: TcEnv ->
     declKindOpt: DeclKind option ->
     m: range ->
