@@ -2294,25 +2294,33 @@ and seekReadTypeDefAsTypeUncached ctxtH (TypeDefAsTypIdx(boxity, ginst, idx)) =
     mkILTy boxity (ILTypeSpec.Create(seekReadTypeDefAsTypeRef ctxt idx, ginst))
 
 and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx =
+    let seekReadName ctxt idx =
+        let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
+        readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+
+    let getEnclosingIdx (ctxt: ILMetadataReader) idx =
+        seekReadIndexedRow (
+            ctxt.getNumRows TableNames.Nested,
+            seekReadNestedRow ctxt,
+            fst,
+            simpleIndexCompare idx,
+            isSorted ctxt TableNames.Nested,
+            snd
+        )
+
+    let rec seekReadEncl ctxt idx acc =
+        let nm = seekReadName ctxt idx
+        let acc = nm :: acc
+        if seekIsTopTypeDefOfIdx ctxt idx then acc else
+        let enclIdx = getEnclosingIdx ctxt idx
+        seekReadEncl ctxt enclIdx acc
+
     let enc =
-        if seekIsTopTypeDefOfIdx ctxt idx then
-            []
-        else
-            let enclIdx =
-                seekReadIndexedRow (
-                    ctxt.getNumRows TableNames.Nested,
-                    seekReadNestedRow ctxt,
-                    fst,
-                    simpleIndexCompare idx,
-                    isSorted ctxt TableNames.Nested,
-                    snd
-                )
+        if seekIsTopTypeDefOfIdx ctxt idx then List.empty else
+        let enclIdx = getEnclosingIdx ctxt idx
+        seekReadEncl ctxt enclIdx List.empty
 
-            let tref = seekReadTypeDefAsTypeRef ctxt enclIdx
-            tref.Enclosing @ [ tref.Name ]
-
-    let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
-    let nm = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+    let nm = seekReadName ctxt idx
     ILTypeRef.Create(scope = ILScopeRef.Local, enclosing = enc, name = nm)
 
 and seekReadTypeRef (ctxt: ILMetadataReader) idx = ctxt.seekReadTypeRef idx
