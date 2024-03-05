@@ -908,8 +908,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile">
-        <source>The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.</source>
-        <target state="new">The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.</target>
+        <source>The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</source>
+        <target state="new">The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">

@@ -22,24 +22,24 @@ let verifyCompileAndRun compilation =
 let ``Instance Properties Test`` () =
     Fs """type InstancePropertiesTest() =
     member val B1: int = 0 with get
-    // should failed
+    // should fail
     member val B2: int = 0 with set
     member val B3: int = 0 with get, set
     member val B4: int = 0 with internal get
-    // should failed
+    // should fail
     member val B5: int = 0 with internal set
     member val B6: int = 0 with internal get, internal set
     member val B7: int = 0 with internal get, set
     member val B8: int = 0 with get, internal set
-    // should failed
+    // should fail
     member val internal B11: int = 0 with internal get, set
-    // should failed
+    // should fail
     member val internal B12: int = 0 with internal get
-    // should failed
+    // should fail
     member val internal B13: int = 0 with internal set
     member val internal B14: int = 0 with get, set
     member val internal B15: int = 0 with get
-    // should failed
+    // should fail
     member val internal B16: int = 0 with set""" 
     |> withLangVersionPreview
     |> typecheck
@@ -58,24 +58,24 @@ let ``Instance Properties Test`` () =
 let ``Static Properties Test`` () =
     Fs """type StaticPropertiesTest() =
     static member val B1: int = 0 with get
-    // should failed
+    // should fail
     static member val B2: int = 0 with set
     static member val B3: int = 0 with get, set
     static member val B4: int = 0 with internal get
-    // should failed
+    // should fail
     static member val B5: int = 0 with internal set
     static member val B6: int = 0 with internal get, internal set
     static member val B7: int = 0 with internal get, set
     static member val B8: int = 0 with get, internal set
-    // should failed
+    // should fail
     static member val internal B11: int = 0 with internal get, set
-    // should failed
+    // should fail
     static member val internal B12: int = 0 with internal get
-    // should failed
+    // should fail
     static member val internal B13: int = 0 with internal set
     static member val internal B14: int = 0 with get, set
     static member val internal B15: int = 0 with get
-    // should failed
+    // should fail
     static member val internal B16: int = 0 with set""" 
     |> withLangVersionPreview
     |> typecheck
@@ -96,15 +96,15 @@ let ``Abstract Properties Test: access modifiers are not allowed`` () =
     abstract member B1: int with get, set
     abstract member B2: int with get
     abstract member B3: int with set
-    // should failed
+    // should fail
     abstract member B4: int with internal get, set
-    // should failed
+    // should fail
     abstract member B5: int with get, internal set
-    // should failed
+    // should fail
     abstract member B6: int with internal get, internal set
-    // should failed
+    // should fail
     abstract member B7: int with internal get
-    // should failed
+    // should fail
     abstract member B8: int with internal set""" 
     |> withLangVersionPreview
     |> typecheck
@@ -134,9 +134,9 @@ type A =
     |> verifyCompile
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
-        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
-        (Warning 3866, Line 11, Col 31, Line 11, Col 38, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 11, Col 31, Line 11, Col 38, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
         (Error 240, Line 1, Col 1, Line 11, Col 42, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
     ]
 
@@ -162,8 +162,8 @@ type A =
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
-        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because accessible modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
+        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
         (Error 0034, Line 6, Col 16, Line 6, Col 17, "Module 'Program' contains
     member private A.D: int with set    
 but its signature specifies
