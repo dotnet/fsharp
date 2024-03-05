@@ -71,6 +71,21 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersionPreview
         |> verifyCompileAndRun
         |> shouldSucceed
+        
+    // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
+    let ``AttributeTargetsIsProperty_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
+    let ``AttributeTargetsIsProperty_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
 
     // SOURCE=ConditionalAttribute.fs					# ConditionalAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConditionalAttribute.fs"|])>]

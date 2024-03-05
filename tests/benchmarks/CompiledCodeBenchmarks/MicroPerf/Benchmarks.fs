@@ -1,11 +1,11 @@
-namespace TaskPerf
+namespace MicroPerf
 
 open BenchmarkDotNet.Running
 
-module Main = 
+module Main =
 
     [<EntryPoint>]
-    let main _ = 
+    let main args = 
         printfn "Running benchmarks..."
-        let _ = BenchmarkRunner.Run<Collections.CollectionsBenchmark>()
-        0  
+        BenchmarkSwitcher.FromAssembly(typeof<Equality.FSharpCoreFunctions>.Assembly).Run(args) |> ignore
+        0
