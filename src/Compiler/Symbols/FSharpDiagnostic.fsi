@@ -104,9 +104,9 @@ module public ExtendedData =
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
     type DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData =
         interface IFSharpDiagnosticExtendedData
-        /// Range of the entire signature type abbreviation.
-        member SignatureTypeRange: range
-        /// Range of the entire implementation type abbreviation.
+        /// Range of the signature type identifier.
+        member SignatureRange: range
+        /// Range of the implementation type identifier.
         member ImplementationRange: range
 
 open ExtendedData
