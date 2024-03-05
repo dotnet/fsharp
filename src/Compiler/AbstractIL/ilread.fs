@@ -2143,7 +2143,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
 
         let containsExtensionMethods =
             seq { methodsIdx .. endMethodsIdx }
-            //TODO
+            // TODO
             |> Seq.tryFind (fun idx ->
                 let reader =
                     let searchedKey = TaggedIndex(hca_MethodDef, idx)
@@ -2155,25 +2155,19 @@ and typeDefReader ctxtH : ILTypeDefStored =
                     }
 
                 let attrs =
-                    seekReadIndexedRowsByInterface (ctxt.getNumRows TableNames.CustomAttribute) (isSorted ctxt TableNames.CustomAttribute) reader
+                    seekReadIndexedRowsByInterface
+                        (ctxt.getNumRows TableNames.CustomAttribute)
+                        (isSorted ctxt TableNames.CustomAttribute)
+                        reader
 
                 attrs |> Array.exists (fun attr ->
-                    let attrTypeIdx = attr.typeIndex.index
+                    let attrCtorIdx = attr.typeIndex.index
                     if attr.typeIndex.tag = cat_MethodDef then
-                        let tidx = seekReadIndexedRow (
-                            ctxt.getNumRows TableNames.TypeDef,
-                            (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
-                            id,
-                            (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
-                                if endMethodsIdx <= attrTypeIdx then 1
-                                elif methodsIdx <= attrTypeIdx && attrTypeIdx < endMethodsIdx then 0
-                                else -1),
-                            true,
-                            fst)
+                        let tidx = seekMethodDefParent ctxt attrCtorIdx
                         let enclType: ILTypeRef = seekReadTypeDefAsTypeRef ctxt tidx
                         enclType.Name = "System.Runtime.CompilerServices.ExtensionAttribute"
                     else
-                        let mrpIdx, _, _ = seekReadMemberRefRow ctxt mdv attrTypeIdx
+                        let mrpIdx, _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
                         //TODO: optimize
                         let enclType: ILType = seekReadMethodRefParent ctxt mdv 0 mrpIdx
                         enclType.TypeRef.Name = "System.Runtime.CompilerServices.ExtensionAttribute"
@@ -2862,22 +2856,24 @@ and seekReadMemberRefAsFieldSpecUncached ctxtH (MemberRefAsFspecIdx(numTypars, i
 // method-range and field-range start/finish indexes
 and seekReadMethodDefAsMethodData ctxt idx = ctxt.seekReadMethodDefAsMethodData idx
 
+and seekMethodDefParent (ctxt: ILMetadataReader) methodIdx =
+    seekReadIndexedRow (
+        ctxt.getNumRows TableNames.TypeDef,
+        (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
+        id,
+        (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
+            if endMethodsIdx <= methodIdx then 1
+            elif methodsIdx <= methodIdx && methodIdx < endMethodsIdx then 0
+            else -1),
+        true,
+        fst
+    )
+
 and seekReadMethodDefAsMethodDataUncached ctxtH idx =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     // Look for the method def parent.
-    let tidx =
-        seekReadIndexedRow (
-            ctxt.getNumRows TableNames.TypeDef,
-            (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
-            id,
-            (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
-                if endMethodsIdx <= idx then 1
-                elif methodsIdx <= idx && idx < endMethodsIdx then 0
-                else -1),
-            true,
-            fst
-        )
+    let tidx = seekMethodDefParent ctxt idx
     // Create a formal instantiation if needed
     let typeGenericArgs = seekReadGenericParams ctxt 0 (tomd_TypeDef, tidx)
     let typeGenericArgsCount = typeGenericArgs.Length
