@@ -1910,6 +1910,8 @@ type ILMethodDef
         metadataIndex: int32
     ) =
 
+    let _x = ()
+
     new(name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, securityDecls, customAttrs) =
         ILMethodDef(
             name,
@@ -5641,7 +5643,6 @@ let resolveILMethodRefWithRescope r (td: ILTypeDef) (mref: ILMethodRef) =
         |> List.filter (fun md ->
             mref.CallingConv = md.CallingConv
             &&
-            // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
             (md.Parameters, argTypes)
             ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
             &&
