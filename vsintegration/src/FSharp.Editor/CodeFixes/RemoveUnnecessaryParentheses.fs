@@ -46,60 +46,19 @@ module private Patterns =
             else
                 ValueNone
 
-        /// Trim only spaces from the start if there is something else
-        /// before the open paren on the same line (or else we could move
-        /// the whole inner expression up a line); otherwise trim all whitespace
-        // from start and end.
-        let (|Trim|) (span: TextSpan) (sourceText: SourceText) =
-            let linePosition = sourceText.Lines.GetLinePosition span.Start
-            let line = (sourceText.Lines.GetLineFromPosition span.Start).ToString()
+[<NoEquality; NoComparison>]
+type private InnerOffsides =
+    /// We haven't found an inner construct yet.
+    | NoneYet
 
-            if line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0 then
-                fun (s: string) -> s.TrimEnd().TrimStart ' '
-            else
-                fun (s: string) -> s.Trim()
+    /// The start column of the first inner construct we find.
+    /// This may not be on the same line as the open paren.
+    | FirstLine of col: int
 
-        /// Returns the offsides diff if the given span contains an expression
-        /// whose indentation would be made invalid if the open paren
-        /// were removed (because the offside line would be shifted), e.g.,
-        ///
-        ///     // Valid.
-        ///     (let x = 2
-        ///      x)
-        ///
-        ///     // Invalid.
-        ///    ←let x = 2
-        ///      x◌
-        ///
-        ///     // Valid.
-        ///     ◌let x = 2
-        ///      x◌
-        [<return: Struct>]
-        let (|OffsidesDiff|_|) (span: TextSpan) (sourceText: SourceText) =
-            let startLinePosition = sourceText.Lines.GetLinePosition span.Start
-            let endLinePosition = sourceText.Lines.GetLinePosition span.End
-            let startLineNo = startLinePosition.Line
-            let endLineNo = endLinePosition.Line
-
-            if startLineNo = endLineNo then
-                ValueNone
-            else
-                let rec loop innerOffsides lineNo startCol =
-                    if lineNo <= endLineNo then
-                        let line = sourceText.Lines[lineNo].ToString()
-
-                        match line.AsSpan(startCol).IndexOfAnyExcept(' ', ')') with
-                        | -1 -> loop innerOffsides (lineNo + 1) 0
-                        | i -> loop (i + startCol) (lineNo + 1) 0
-                    else
-                        ValueSome(startLinePosition.Character - innerOffsides)
-
-                loop startLinePosition.Character startLineNo (startLinePosition.Character + 1)
-
-        let (|ShiftLeft|NoShift|ShiftRight|) n =
-            if n < 0 then ShiftLeft -n
-            elif n = 0 then NoShift
-            else ShiftRight n
+    /// The leftmost start column of an inner construct on a line
+    /// following the first inner construct we found.
+    /// We keep the first column of the first inner construct for comparison at the end.
+    | FollowingLine of firstLine: int * followingLine: int
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnnecessaryParentheses); Shared; Sealed>]
 type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConstructor>] () =
@@ -147,22 +106,67 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
                 match firstChar, lastChar with
                 | '(', ')' ->
+                    /// Trim only spaces from the start if there is something else
+                    /// before the open paren on the same line (or else we could move
+                    /// the whole inner expression up a line); otherwise trim all whitespace
+                    /// from start and end.
+                    let (|Trim|) (sourceText: SourceText) =
+                        let linePosition = sourceText.Lines.GetLinePosition context.Span.Start
+                        let line = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()
+
+                        if line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0 then
+                            fun (s: string) -> s.TrimEnd().TrimStart ' '
+                        else
+                            fun (s: string) -> s.Trim()
+
+                    let (|ShiftLeft|NoShift|ShiftRight|) (sourceText: SourceText) =
+                        let startLinePosition = sourceText.Lines.GetLinePosition context.Span.Start
+                        let endLinePosition = sourceText.Lines.GetLinePosition context.Span.End
+                        let startLineNo = startLinePosition.Line
+                        let endLineNo = endLinePosition.Line
+
+                        if startLineNo = endLineNo then
+                            NoShift
+                        else
+                            let outerOffsides = startLinePosition.Character
+
+                            let rec loop innerOffsides lineNo startCol =
+                                if lineNo <= endLineNo then
+                                    let line = sourceText.Lines[lineNo].ToString()
+
+                                    match line.AsSpan(startCol).IndexOfAnyExcept(' ', ')') with
+                                    | -1 -> loop innerOffsides (lineNo + 1) 0
+                                    | i ->
+                                        match innerOffsides with
+                                        | NoneYet -> loop (FirstLine(i + startCol)) (lineNo + 1) 0
+                                        | FirstLine innerOffsides -> loop (FollowingLine(innerOffsides, i + startCol)) (lineNo + 1) 0
+                                        | FollowingLine(firstLine, innerOffsides) ->
+                                            loop (FollowingLine(firstLine, min innerOffsides (i + startCol))) (lineNo + 1) 0
+                                else
+                                    innerOffsides
+
+                            match loop NoneYet startLineNo (startLinePosition.Character + 1) with
+                            | NoneYet -> NoShift
+                            | FirstLine innerOffsides when innerOffsides < outerOffsides -> ShiftRight(outerOffsides - innerOffsides)
+                            | FirstLine innerOffsides -> ShiftLeft(innerOffsides - outerOffsides)
+                            | FollowingLine(firstLine, followingLine) ->
+                                match firstLine - outerOffsides with
+                                | 0 -> NoShift
+                                | 1 when firstLine < followingLine -> NoShift
+                                | primaryOffset when primaryOffset < 0 -> ShiftRight -primaryOffset
+                                | primaryOffset -> ShiftLeft primaryOffset
+
                     let adjusted =
                         match sourceText with
                         | TrailingOpen context.Span -> txt[1 .. txt.Length - 2].TrimEnd()
-
-                        | Trim context.Span trim & OffsidesDiff context.Span spaces ->
-                            match spaces with
-                            | NoShift -> trim txt[1 .. txt.Length - 2]
-                            | ShiftLeft spaces -> trim (txt[1 .. txt.Length - 2].Replace("\n" + String(' ', spaces), "\n"))
-                            | ShiftRight spaces -> trim (txt[1 .. txt.Length - 2].Replace("\n", "\n" + String(' ', spaces)))
-
-                        | _ -> txt[1 .. txt.Length - 2].Trim()
+                        | Trim trim & NoShift -> trim txt[1 .. txt.Length - 2]
+                        | Trim trim & ShiftLeft spaces -> trim (txt[1 .. txt.Length - 2].Replace("\n" + String(' ', spaces), "\n"))
+                        | Trim trim & ShiftRight spaces -> trim (txt[1 .. txt.Length - 2].Replace("\n", "\n" + String(' ', spaces)))
 
                     let newText =
                         let (|ShouldPutSpaceBefore|_|) (s: string) =
-                            // "……(……)"
-                            //  ↑↑ ↑
+                            // ……(……)
+                            // ↑↑ ↑
                             match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[0] with
                             | _, _, ('\n' | '\r') -> None
                             | '[', '|', (Punctuation | LetterOrDigit) -> None
@@ -178,8 +182,8 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                             | _ -> None
 
                         let (|ShouldPutSpaceAfter|_|) (s: string) =
-                            // "(……)…"
-                            //    ↑ ↑
+                            // (……)…
+                            //   ↑ ↑
                             match s[s.Length - 1], sourceText[min context.Span.End (sourceText.Length - 1)] with
                             | '>', ('|' | ']') -> Some ShouldPutSpaceAfter
                             | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
