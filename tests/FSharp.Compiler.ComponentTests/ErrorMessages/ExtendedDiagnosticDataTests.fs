@@ -237,7 +237,7 @@ type  Foo = {| bar: int; x: int |}
     |> withAdditionalSourceFile implementation
     |> typecheckProject true useTransparentCompiler
     |> checkDiagnostic
-       (318, "The type definitions for type 'Foo' in the signature and implementation are not compatible because the abbreviations differ: {| bar: int; x: int |} versus {| bar: int |}")
+       (318, "The type definitions for type 'Foo' in the signature and implementation are not compatible because the abbreviations differ:\n    {| bar: int; x: int |}\nversus\n    {| bar: int |}")
        (fun (fieldsData: DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData) ->
         assertRange (4,5) (4,8) fieldsData.SignatureRange
         assertRange (4,6) (4,9) fieldsData.ImplementationRange)
