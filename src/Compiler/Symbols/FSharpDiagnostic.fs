@@ -111,9 +111,7 @@ module ExtendedData =
     type DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData
         internal(signatureType: Tycon, implementationType: Tycon) =
         interface IFSharpDiagnosticExtendedData
-        /// Range of the entire signature type abbreviation.
         member x.SignatureRange: range = signatureType.Range
-        /// Range of the entire implementation type abbreviation.
         member x.ImplementationRange: range = implementationType.Range
 
 open ExtendedData
