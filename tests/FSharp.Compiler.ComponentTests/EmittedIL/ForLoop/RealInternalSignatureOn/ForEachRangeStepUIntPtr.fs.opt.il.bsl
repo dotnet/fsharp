@@ -169,9 +169,10 @@
     
     .maxstack  4
     .locals init (native uint V_0,
-             native uint V_1,
+             bool V_1,
              native uint V_2,
-             native uint V_3)
+             native uint V_3,
+             native uint V_4)
     IL_0000:  ldc.i8     0xa
     IL_0009:  conv.u
     IL_000a:  ldarg.0
@@ -204,89 +205,82 @@
     IL_004b:  conv.u
     IL_004c:  ceq
     IL_004e:  nop
-    IL_004f:  brfalse.s  IL_00ae
+    IL_004f:  brfalse.s  IL_0094
 
-    IL_0051:  ldc.i8     0x0
-    IL_005a:  conv.u
-    IL_005b:  stloc.1
-    IL_005c:  ldarg.0
+    IL_0051:  ldc.i4.1
+    IL_0052:  stloc.1
+    IL_0053:  ldc.i8     0x0
+    IL_005c:  conv.u
     IL_005d:  stloc.2
-    IL_005e:  ldloc.2
-    IL_005f:  call       void assembly::set_c(native uint)
-    IL_0064:  ldloc.2
-    IL_0065:  ldc.i8     0x1
-    IL_006e:  conv.u
-    IL_006f:  add
-    IL_0070:  stloc.2
-    IL_0071:  ldloc.1
-    IL_0072:  ldc.i8     0x1
-    IL_007b:  conv.u
-    IL_007c:  add
-    IL_007d:  stloc.1
-    IL_007e:  br.s       IL_00a0
+    IL_005e:  ldarg.0
+    IL_005f:  stloc.3
+    IL_0060:  br.s       IL_0090
 
-    IL_0080:  ldloc.2
-    IL_0081:  call       void assembly::set_c(native uint)
-    IL_0086:  ldloc.2
-    IL_0087:  ldc.i8     0x1
-    IL_0090:  conv.u
-    IL_0091:  add
-    IL_0092:  stloc.2
-    IL_0093:  ldloc.1
-    IL_0094:  ldc.i8     0x1
+    IL_0062:  ldloc.3
+    IL_0063:  call       void assembly::set_c(native uint)
+    IL_0068:  ldloc.3
+    IL_0069:  ldc.i8     0x1
+    IL_0072:  conv.u
+    IL_0073:  add
+    IL_0074:  stloc.3
+    IL_0075:  ldloc.2
+    IL_0076:  ldc.i8     0x1
+    IL_007f:  conv.u
+    IL_0080:  add
+    IL_0081:  stloc.2
+    IL_0082:  ldloc.2
+    IL_0083:  ldc.i8     0x0
+    IL_008c:  conv.u
+    IL_008d:  cgt.un
+    IL_008f:  stloc.1
+    IL_0090:  ldloc.1
+    IL_0091:  brtrue.s   IL_0062
+
+    IL_0093:  ret
+
+    IL_0094:  ldc.i8     0xa
     IL_009d:  conv.u
-    IL_009e:  add
-    IL_009f:  stloc.1
-    IL_00a0:  ldloc.1
+    IL_009e:  ldarg.0
+    IL_009f:  bge.un.s   IL_00ae
+
     IL_00a1:  ldc.i8     0x0
     IL_00aa:  conv.u
-    IL_00ab:  bgt.un.s   IL_0080
-
-    IL_00ad:  ret
+    IL_00ab:  nop
+    IL_00ac:  br.s       IL_00c6
 
     IL_00ae:  ldc.i8     0xa
     IL_00b7:  conv.u
     IL_00b8:  ldarg.0
-    IL_00b9:  bge.un.s   IL_00c8
-
-    IL_00bb:  ldc.i8     0x0
-    IL_00c4:  conv.u
+    IL_00b9:  sub
+    IL_00ba:  ldc.i8     0x1
+    IL_00c3:  conv.u
+    IL_00c4:  add.ovf.un
     IL_00c5:  nop
-    IL_00c6:  br.s       IL_00e0
-
-    IL_00c8:  ldc.i8     0xa
-    IL_00d1:  conv.u
+    IL_00c6:  stloc.2
+    IL_00c7:  ldc.i8     0x0
+    IL_00d0:  conv.u
+    IL_00d1:  stloc.3
     IL_00d2:  ldarg.0
-    IL_00d3:  sub
-    IL_00d4:  ldc.i8     0x1
-    IL_00dd:  conv.u
-    IL_00de:  add.ovf.un
-    IL_00df:  nop
-    IL_00e0:  stloc.1
-    IL_00e1:  ldc.i8     0x0
-    IL_00ea:  conv.u
-    IL_00eb:  stloc.2
-    IL_00ec:  ldarg.0
-    IL_00ed:  stloc.3
-    IL_00ee:  br.s       IL_0110
+    IL_00d3:  stloc.s    V_4
+    IL_00d5:  br.s       IL_00fa
 
-    IL_00f0:  ldloc.3
-    IL_00f1:  call       void assembly::set_c(native uint)
-    IL_00f6:  ldloc.3
-    IL_00f7:  ldc.i8     0x1
-    IL_0100:  conv.u
-    IL_0101:  add
-    IL_0102:  stloc.3
-    IL_0103:  ldloc.2
-    IL_0104:  ldc.i8     0x1
-    IL_010d:  conv.u
-    IL_010e:  add
-    IL_010f:  stloc.2
-    IL_0110:  ldloc.2
-    IL_0111:  ldloc.1
-    IL_0112:  blt.un.s   IL_00f0
+    IL_00d7:  ldloc.s    V_4
+    IL_00d9:  call       void assembly::set_c(native uint)
+    IL_00de:  ldloc.s    V_4
+    IL_00e0:  ldc.i8     0x1
+    IL_00e9:  conv.u
+    IL_00ea:  add
+    IL_00eb:  stloc.s    V_4
+    IL_00ed:  ldloc.3
+    IL_00ee:  ldc.i8     0x1
+    IL_00f7:  conv.u
+    IL_00f8:  add
+    IL_00f9:  stloc.3
+    IL_00fa:  ldloc.3
+    IL_00fb:  ldloc.2
+    IL_00fc:  blt.un.s   IL_00d7
 
-    IL_0114:  ret
+    IL_00fe:  ret
   } 
 
   .method public static void  f3(native uint finish) cil managed
@@ -294,9 +288,10 @@
     
     .maxstack  4
     .locals init (native uint V_0,
-             native uint V_1,
+             bool V_1,
              native uint V_2,
-             native uint V_3)
+             native uint V_3,
+             native uint V_4)
     IL_0000:  ldarg.0
     IL_0001:  ldc.i8     0x1
     IL_000a:  conv.u
@@ -329,91 +324,84 @@
     IL_004b:  conv.u
     IL_004c:  ceq
     IL_004e:  nop
-    IL_004f:  brfalse.s  IL_00b7
+    IL_004f:  brfalse.s  IL_009d
 
-    IL_0051:  ldc.i8     0x0
-    IL_005a:  conv.u
-    IL_005b:  stloc.1
-    IL_005c:  ldc.i8     0x1
-    IL_0065:  conv.u
-    IL_0066:  stloc.2
-    IL_0067:  ldloc.2
-    IL_0068:  call       void assembly::set_c(native uint)
-    IL_006d:  ldloc.2
-    IL_006e:  ldc.i8     0x1
-    IL_0077:  conv.u
-    IL_0078:  add
-    IL_0079:  stloc.2
-    IL_007a:  ldloc.1
-    IL_007b:  ldc.i8     0x1
-    IL_0084:  conv.u
-    IL_0085:  add
-    IL_0086:  stloc.1
-    IL_0087:  br.s       IL_00a9
+    IL_0051:  ldc.i4.1
+    IL_0052:  stloc.1
+    IL_0053:  ldc.i8     0x0
+    IL_005c:  conv.u
+    IL_005d:  stloc.2
+    IL_005e:  ldc.i8     0x1
+    IL_0067:  conv.u
+    IL_0068:  stloc.3
+    IL_0069:  br.s       IL_0099
 
-    IL_0089:  ldloc.2
-    IL_008a:  call       void assembly::set_c(native uint)
-    IL_008f:  ldloc.2
-    IL_0090:  ldc.i8     0x1
-    IL_0099:  conv.u
-    IL_009a:  add
-    IL_009b:  stloc.2
-    IL_009c:  ldloc.1
-    IL_009d:  ldc.i8     0x1
-    IL_00a6:  conv.u
-    IL_00a7:  add
-    IL_00a8:  stloc.1
-    IL_00a9:  ldloc.1
+    IL_006b:  ldloc.3
+    IL_006c:  call       void assembly::set_c(native uint)
+    IL_0071:  ldloc.3
+    IL_0072:  ldc.i8     0x1
+    IL_007b:  conv.u
+    IL_007c:  add
+    IL_007d:  stloc.3
+    IL_007e:  ldloc.2
+    IL_007f:  ldc.i8     0x1
+    IL_0088:  conv.u
+    IL_0089:  add
+    IL_008a:  stloc.2
+    IL_008b:  ldloc.2
+    IL_008c:  ldc.i8     0x0
+    IL_0095:  conv.u
+    IL_0096:  cgt.un
+    IL_0098:  stloc.1
+    IL_0099:  ldloc.1
+    IL_009a:  brtrue.s   IL_006b
+
+    IL_009c:  ret
+
+    IL_009d:  ldarg.0
+    IL_009e:  ldc.i8     0x1
+    IL_00a7:  conv.u
+    IL_00a8:  bge.un.s   IL_00b7
+
     IL_00aa:  ldc.i8     0x0
     IL_00b3:  conv.u
-    IL_00b4:  bgt.un.s   IL_0089
-
-    IL_00b6:  ret
+    IL_00b4:  nop
+    IL_00b5:  br.s       IL_00cf
 
     IL_00b7:  ldarg.0
     IL_00b8:  ldc.i8     0x1
     IL_00c1:  conv.u
-    IL_00c2:  bge.un.s   IL_00d1
-
-    IL_00c4:  ldc.i8     0x0
-    IL_00cd:  conv.u
+    IL_00c2:  sub
+    IL_00c3:  ldc.i8     0x1
+    IL_00cc:  conv.u
+    IL_00cd:  add.ovf.un
     IL_00ce:  nop
-    IL_00cf:  br.s       IL_00e9
+    IL_00cf:  stloc.2
+    IL_00d0:  ldc.i8     0x0
+    IL_00d9:  conv.u
+    IL_00da:  stloc.3
+    IL_00db:  ldc.i8     0x1
+    IL_00e4:  conv.u
+    IL_00e5:  stloc.s    V_4
+    IL_00e7:  br.s       IL_010c
 
-    IL_00d1:  ldarg.0
-    IL_00d2:  ldc.i8     0x1
-    IL_00db:  conv.u
-    IL_00dc:  sub
-    IL_00dd:  ldc.i8     0x1
-    IL_00e6:  conv.u
-    IL_00e7:  add.ovf.un
-    IL_00e8:  nop
-    IL_00e9:  stloc.1
-    IL_00ea:  ldc.i8     0x0
-    IL_00f3:  conv.u
-    IL_00f4:  stloc.2
-    IL_00f5:  ldc.i8     0x1
-    IL_00fe:  conv.u
-    IL_00ff:  stloc.3
-    IL_0100:  br.s       IL_0122
+    IL_00e9:  ldloc.s    V_4
+    IL_00eb:  call       void assembly::set_c(native uint)
+    IL_00f0:  ldloc.s    V_4
+    IL_00f2:  ldc.i8     0x1
+    IL_00fb:  conv.u
+    IL_00fc:  add
+    IL_00fd:  stloc.s    V_4
+    IL_00ff:  ldloc.3
+    IL_0100:  ldc.i8     0x1
+    IL_0109:  conv.u
+    IL_010a:  add
+    IL_010b:  stloc.3
+    IL_010c:  ldloc.3
+    IL_010d:  ldloc.2
+    IL_010e:  blt.un.s   IL_00e9
 
-    IL_0102:  ldloc.3
-    IL_0103:  call       void assembly::set_c(native uint)
-    IL_0108:  ldloc.3
-    IL_0109:  ldc.i8     0x1
-    IL_0112:  conv.u
-    IL_0113:  add
-    IL_0114:  stloc.3
-    IL_0115:  ldloc.2
-    IL_0116:  ldc.i8     0x1
-    IL_011f:  conv.u
-    IL_0120:  add
-    IL_0121:  stloc.2
-    IL_0122:  ldloc.2
-    IL_0123:  ldloc.1
-    IL_0124:  blt.un.s   IL_0102
-
-    IL_0126:  ret
+    IL_0110:  ret
   } 
 
   .method public static void  f4(native uint start,
@@ -423,9 +411,10 @@
     
     .maxstack  4
     .locals init (native uint V_0,
-             native uint V_1,
+             bool V_1,
              native uint V_2,
-             native uint V_3)
+             native uint V_3,
+             native uint V_4)
     IL_0000:  ldarg.1
     IL_0001:  ldarg.0
     IL_0002:  bge.un.s   IL_0011
@@ -456,87 +445,80 @@
     IL_0039:  conv.u
     IL_003a:  ceq
     IL_003c:  nop
-    IL_003d:  brfalse.s  IL_009c
+    IL_003d:  brfalse.s  IL_0082
 
-    IL_003f:  ldc.i8     0x0
-    IL_0048:  conv.u
-    IL_0049:  stloc.1
-    IL_004a:  ldarg.0
+    IL_003f:  ldc.i4.1
+    IL_0040:  stloc.1
+    IL_0041:  ldc.i8     0x0
+    IL_004a:  conv.u
     IL_004b:  stloc.2
-    IL_004c:  ldloc.2
-    IL_004d:  call       void assembly::set_c(native uint)
-    IL_0052:  ldloc.2
-    IL_0053:  ldc.i8     0x1
-    IL_005c:  conv.u
-    IL_005d:  add
-    IL_005e:  stloc.2
-    IL_005f:  ldloc.1
-    IL_0060:  ldc.i8     0x1
-    IL_0069:  conv.u
-    IL_006a:  add
-    IL_006b:  stloc.1
-    IL_006c:  br.s       IL_008e
+    IL_004c:  ldarg.0
+    IL_004d:  stloc.3
+    IL_004e:  br.s       IL_007e
 
-    IL_006e:  ldloc.2
-    IL_006f:  call       void assembly::set_c(native uint)
-    IL_0074:  ldloc.2
-    IL_0075:  ldc.i8     0x1
-    IL_007e:  conv.u
-    IL_007f:  add
-    IL_0080:  stloc.2
-    IL_0081:  ldloc.1
-    IL_0082:  ldc.i8     0x1
-    IL_008b:  conv.u
-    IL_008c:  add
-    IL_008d:  stloc.1
-    IL_008e:  ldloc.1
-    IL_008f:  ldc.i8     0x0
-    IL_0098:  conv.u
-    IL_0099:  bgt.un.s   IL_006e
+    IL_0050:  ldloc.3
+    IL_0051:  call       void assembly::set_c(native uint)
+    IL_0056:  ldloc.3
+    IL_0057:  ldc.i8     0x1
+    IL_0060:  conv.u
+    IL_0061:  add
+    IL_0062:  stloc.3
+    IL_0063:  ldloc.2
+    IL_0064:  ldc.i8     0x1
+    IL_006d:  conv.u
+    IL_006e:  add
+    IL_006f:  stloc.2
+    IL_0070:  ldloc.2
+    IL_0071:  ldc.i8     0x0
+    IL_007a:  conv.u
+    IL_007b:  cgt.un
+    IL_007d:  stloc.1
+    IL_007e:  ldloc.1
+    IL_007f:  brtrue.s   IL_0050
 
-    IL_009b:  ret
+    IL_0081:  ret
 
-    IL_009c:  ldarg.1
-    IL_009d:  ldarg.0
-    IL_009e:  bge.un.s   IL_00ad
+    IL_0082:  ldarg.1
+    IL_0083:  ldarg.0
+    IL_0084:  bge.un.s   IL_0093
 
-    IL_00a0:  ldc.i8     0x0
-    IL_00a9:  conv.u
-    IL_00aa:  nop
-    IL_00ab:  br.s       IL_00bc
+    IL_0086:  ldc.i8     0x0
+    IL_008f:  conv.u
+    IL_0090:  nop
+    IL_0091:  br.s       IL_00a2
 
-    IL_00ad:  ldarg.1
+    IL_0093:  ldarg.1
+    IL_0094:  ldarg.0
+    IL_0095:  sub
+    IL_0096:  ldc.i8     0x1
+    IL_009f:  conv.u
+    IL_00a0:  add.ovf.un
+    IL_00a1:  nop
+    IL_00a2:  stloc.2
+    IL_00a3:  ldc.i8     0x0
+    IL_00ac:  conv.u
+    IL_00ad:  stloc.3
     IL_00ae:  ldarg.0
-    IL_00af:  sub
-    IL_00b0:  ldc.i8     0x1
-    IL_00b9:  conv.u
-    IL_00ba:  add.ovf.un
-    IL_00bb:  nop
-    IL_00bc:  stloc.1
-    IL_00bd:  ldc.i8     0x0
-    IL_00c6:  conv.u
-    IL_00c7:  stloc.2
-    IL_00c8:  ldarg.0
-    IL_00c9:  stloc.3
-    IL_00ca:  br.s       IL_00ec
+    IL_00af:  stloc.s    V_4
+    IL_00b1:  br.s       IL_00d6
 
-    IL_00cc:  ldloc.3
-    IL_00cd:  call       void assembly::set_c(native uint)
-    IL_00d2:  ldloc.3
-    IL_00d3:  ldc.i8     0x1
-    IL_00dc:  conv.u
-    IL_00dd:  add
-    IL_00de:  stloc.3
-    IL_00df:  ldloc.2
-    IL_00e0:  ldc.i8     0x1
-    IL_00e9:  conv.u
-    IL_00ea:  add
-    IL_00eb:  stloc.2
-    IL_00ec:  ldloc.2
-    IL_00ed:  ldloc.1
-    IL_00ee:  blt.un.s   IL_00cc
+    IL_00b3:  ldloc.s    V_4
+    IL_00b5:  call       void assembly::set_c(native uint)
+    IL_00ba:  ldloc.s    V_4
+    IL_00bc:  ldc.i8     0x1
+    IL_00c5:  conv.u
+    IL_00c6:  add
+    IL_00c7:  stloc.s    V_4
+    IL_00c9:  ldloc.3
+    IL_00ca:  ldc.i8     0x1
+    IL_00d3:  conv.u
+    IL_00d4:  add
+    IL_00d5:  stloc.3
+    IL_00d6:  ldloc.3
+    IL_00d7:  ldloc.2
+    IL_00d8:  blt.un.s   IL_00b3
 
-    IL_00f0:  ret
+    IL_00da:  ret
   } 
 
   .method public static void  f5() cil managed
@@ -667,9 +649,10 @@
     
     .maxstack  5
     .locals init (native uint V_0,
-             native uint V_1,
+             bool V_1,
              native uint V_2,
-             native uint V_3)
+             native uint V_3,
+             native uint V_4)
     IL_0000:  ldarg.0
     IL_0001:  ldc.i8     0x0
     IL_000a:  conv.u
@@ -724,92 +707,86 @@
     IL_008b:  conv.u
     IL_008c:  ceq
     IL_008e:  nop
-    IL_008f:  brfalse.s  IL_00e5
+    IL_008f:  brfalse.s  IL_00d4
 
-    IL_0091:  ldc.i8     0x0
-    IL_009a:  conv.u
-    IL_009b:  stloc.1
-    IL_009c:  ldc.i8     0x1
-    IL_00a5:  conv.u
-    IL_00a6:  stloc.2
-    IL_00a7:  ldloc.2
-    IL_00a8:  call       void assembly::set_c(native uint)
-    IL_00ad:  ldloc.2
-    IL_00ae:  ldarg.0
-    IL_00af:  add
-    IL_00b0:  stloc.2
-    IL_00b1:  ldloc.1
-    IL_00b2:  ldc.i8     0x1
-    IL_00bb:  conv.u
-    IL_00bc:  add
-    IL_00bd:  stloc.1
-    IL_00be:  br.s       IL_00d7
+    IL_0091:  ldc.i4.1
+    IL_0092:  stloc.1
+    IL_0093:  ldc.i8     0x0
+    IL_009c:  conv.u
+    IL_009d:  stloc.2
+    IL_009e:  ldc.i8     0x1
+    IL_00a7:  conv.u
+    IL_00a8:  stloc.3
+    IL_00a9:  br.s       IL_00d0
 
-    IL_00c0:  ldloc.2
-    IL_00c1:  call       void assembly::set_c(native uint)
-    IL_00c6:  ldloc.2
-    IL_00c7:  ldarg.0
-    IL_00c8:  add
-    IL_00c9:  stloc.2
-    IL_00ca:  ldloc.1
-    IL_00cb:  ldc.i8     0x1
-    IL_00d4:  conv.u
-    IL_00d5:  add
-    IL_00d6:  stloc.1
-    IL_00d7:  ldloc.1
-    IL_00d8:  ldc.i8     0x0
-    IL_00e1:  conv.u
-    IL_00e2:  bgt.un.s   IL_00c0
+    IL_00ab:  ldloc.3
+    IL_00ac:  call       void assembly::set_c(native uint)
+    IL_00b1:  ldloc.3
+    IL_00b2:  ldarg.0
+    IL_00b3:  add
+    IL_00b4:  stloc.3
+    IL_00b5:  ldloc.2
+    IL_00b6:  ldc.i8     0x1
+    IL_00bf:  conv.u
+    IL_00c0:  add
+    IL_00c1:  stloc.2
+    IL_00c2:  ldloc.2
+    IL_00c3:  ldc.i8     0x0
+    IL_00cc:  conv.u
+    IL_00cd:  cgt.un
+    IL_00cf:  stloc.1
+    IL_00d0:  ldloc.1
+    IL_00d1:  brtrue.s   IL_00ab
 
-    IL_00e4:  ret
+    IL_00d3:  ret
 
-    IL_00e5:  ldc.i8     0xa
-    IL_00ee:  conv.u
-    IL_00ef:  ldc.i8     0x1
-    IL_00f8:  conv.u
-    IL_00f9:  bge.un.s   IL_0108
+    IL_00d4:  ldc.i8     0xa
+    IL_00dd:  conv.u
+    IL_00de:  ldc.i8     0x1
+    IL_00e7:  conv.u
+    IL_00e8:  bge.un.s   IL_00f7
 
-    IL_00fb:  ldc.i8     0x0
-    IL_0104:  conv.u
-    IL_0105:  nop
-    IL_0106:  br.s       IL_012b
+    IL_00ea:  ldc.i8     0x0
+    IL_00f3:  conv.u
+    IL_00f4:  nop
+    IL_00f5:  br.s       IL_011a
 
-    IL_0108:  ldc.i8     0xa
-    IL_0111:  conv.u
-    IL_0112:  ldc.i8     0x1
-    IL_011b:  conv.u
-    IL_011c:  sub
-    IL_011d:  ldarg.0
-    IL_011e:  div.un
-    IL_011f:  ldc.i8     0x1
-    IL_0128:  conv.u
-    IL_0129:  add.ovf.un
-    IL_012a:  nop
-    IL_012b:  stloc.1
-    IL_012c:  ldc.i8     0x0
-    IL_0135:  conv.u
-    IL_0136:  stloc.2
-    IL_0137:  ldc.i8     0x1
-    IL_0140:  conv.u
-    IL_0141:  stloc.3
-    IL_0142:  br.s       IL_015b
+    IL_00f7:  ldc.i8     0xa
+    IL_0100:  conv.u
+    IL_0101:  ldc.i8     0x1
+    IL_010a:  conv.u
+    IL_010b:  sub
+    IL_010c:  ldarg.0
+    IL_010d:  div.un
+    IL_010e:  ldc.i8     0x1
+    IL_0117:  conv.u
+    IL_0118:  add.ovf.un
+    IL_0119:  nop
+    IL_011a:  stloc.2
+    IL_011b:  ldc.i8     0x0
+    IL_0124:  conv.u
+    IL_0125:  stloc.3
+    IL_0126:  ldc.i8     0x1
+    IL_012f:  conv.u
+    IL_0130:  stloc.s    V_4
+    IL_0132:  br.s       IL_014e
 
-    IL_0144:  ldloc.3
-    IL_0145:  call       void assembly::set_c(native uint)
-    IL_014a:  ldloc.3
-    IL_014b:  ldarg.0
+    IL_0134:  ldloc.s    V_4
+    IL_0136:  call       void assembly::set_c(native uint)
+    IL_013b:  ldloc.s    V_4
+    IL_013d:  ldarg.0
+    IL_013e:  add
+    IL_013f:  stloc.s    V_4
+    IL_0141:  ldloc.3
+    IL_0142:  ldc.i8     0x1
+    IL_014b:  conv.u
     IL_014c:  add
     IL_014d:  stloc.3
-    IL_014e:  ldloc.2
-    IL_014f:  ldc.i8     0x1
-    IL_0158:  conv.u
-    IL_0159:  add
-    IL_015a:  stloc.2
-    IL_015b:  ldloc.2
-    IL_015c:  ldloc.1
-    IL_015d:  blt.un.s   IL_0144
+    IL_014e:  ldloc.3
+    IL_014f:  ldloc.2
+    IL_0150:  blt.un.s   IL_0134
 
-    IL_015f:  ret
+    IL_0152:  ret
   } 
 
   .method public static void  f9(native uint finish) cil managed
@@ -877,9 +854,10 @@
     
     .maxstack  5
     .locals init (native uint V_0,
-             native uint V_1,
+             bool V_1,
              native uint V_2,
-             native uint V_3)
+             native uint V_3,
+             native uint V_4)
     IL_0000:  ldarg.1
     IL_0001:  ldc.i8     0x0
     IL_000a:  conv.u
@@ -928,86 +906,80 @@
     IL_0055:  conv.u
     IL_0056:  ceq
     IL_0058:  nop
-    IL_0059:  brfalse.s  IL_00a6
+    IL_0059:  brfalse.s  IL_0095
 
-    IL_005b:  ldc.i8     0x0
-    IL_0064:  conv.u
-    IL_0065:  stloc.1
-    IL_0066:  ldarg.2
+    IL_005b:  ldc.i4.1
+    IL_005c:  stloc.1
+    IL_005d:  ldc.i8     0x0
+    IL_0066:  conv.u
     IL_0067:  stloc.2
-    IL_0068:  ldloc.2
-    IL_0069:  call       void assembly::set_c(native uint)
-    IL_006e:  ldloc.2
-    IL_006f:  ldarg.1
-    IL_0070:  add
-    IL_0071:  stloc.2
-    IL_0072:  ldloc.1
-    IL_0073:  ldc.i8     0x1
-    IL_007c:  conv.u
-    IL_007d:  add
-    IL_007e:  stloc.1
-    IL_007f:  br.s       IL_0098
+    IL_0068:  ldarg.2
+    IL_0069:  stloc.3
+    IL_006a:  br.s       IL_0091
 
-    IL_0081:  ldloc.2
-    IL_0082:  call       void assembly::set_c(native uint)
-    IL_0087:  ldloc.2
-    IL_0088:  ldarg.1
-    IL_0089:  add
-    IL_008a:  stloc.2
-    IL_008b:  ldloc.1
-    IL_008c:  ldc.i8     0x1
-    IL_0095:  conv.u
-    IL_0096:  add
-    IL_0097:  stloc.1
-    IL_0098:  ldloc.1
+    IL_006c:  ldloc.3
+    IL_006d:  call       void assembly::set_c(native uint)
+    IL_0072:  ldloc.3
+    IL_0073:  ldarg.1
+    IL_0074:  add
+    IL_0075:  stloc.3
+    IL_0076:  ldloc.2
+    IL_0077:  ldc.i8     0x1
+    IL_0080:  conv.u
+    IL_0081:  add
+    IL_0082:  stloc.2
+    IL_0083:  ldloc.2
+    IL_0084:  ldc.i8     0x0
+    IL_008d:  conv.u
+    IL_008e:  cgt.un
+    IL_0090:  stloc.1
+    IL_0091:  ldloc.1
+    IL_0092:  brtrue.s   IL_006c
+
+    IL_0094:  ret
+
+    IL_0095:  ldarg.2
+    IL_0096:  ldarg.2
+    IL_0097:  bge.un.s   IL_00a6
+
     IL_0099:  ldc.i8     0x0
     IL_00a2:  conv.u
-    IL_00a3:  bgt.un.s   IL_0081
-
-    IL_00a5:  ret
+    IL_00a3:  nop
+    IL_00a4:  br.s       IL_00b7
 
     IL_00a6:  ldarg.2
     IL_00a7:  ldarg.2
-    IL_00a8:  bge.un.s   IL_00b7
+    IL_00a8:  sub
+    IL_00a9:  ldarg.1
+    IL_00aa:  div.un
+    IL_00ab:  ldc.i8     0x1
+    IL_00b4:  conv.u
+    IL_00b5:  add.ovf.un
+    IL_00b6:  nop
+    IL_00b7:  stloc.2
+    IL_00b8:  ldc.i8     0x0
+    IL_00c1:  conv.u
+    IL_00c2:  stloc.3
+    IL_00c3:  ldarg.2
+    IL_00c4:  stloc.s    V_4
+    IL_00c6:  br.s       IL_00e2
 
-    IL_00aa:  ldc.i8     0x0
-    IL_00b3:  conv.u
-    IL_00b4:  nop
-    IL_00b5:  br.s       IL_00c8
-
-    IL_00b7:  ldarg.2
-    IL_00b8:  ldarg.2
-    IL_00b9:  sub
-    IL_00ba:  ldarg.1
-    IL_00bb:  div.un
-    IL_00bc:  ldc.i8     0x1
-    IL_00c5:  conv.u
-    IL_00c6:  add.ovf.un
-    IL_00c7:  nop
-    IL_00c8:  stloc.1
-    IL_00c9:  ldc.i8     0x0
-    IL_00d2:  conv.u
-    IL_00d3:  stloc.2
-    IL_00d4:  ldarg.2
-    IL_00d5:  stloc.3
-    IL_00d6:  br.s       IL_00ef
-
-    IL_00d8:  ldloc.3
-    IL_00d9:  call       void assembly::set_c(native uint)
-    IL_00de:  ldloc.3
-    IL_00df:  ldarg.1
+    IL_00c8:  ldloc.s    V_4
+    IL_00ca:  call       void assembly::set_c(native uint)
+    IL_00cf:  ldloc.s    V_4
+    IL_00d1:  ldarg.1
+    IL_00d2:  add
+    IL_00d3:  stloc.s    V_4
+    IL_00d5:  ldloc.3
+    IL_00d6:  ldc.i8     0x1
+    IL_00df:  conv.u
     IL_00e0:  add
     IL_00e1:  stloc.3
-    IL_00e2:  ldloc.2
-    IL_00e3:  ldc.i8     0x1
-    IL_00ec:  conv.u
-    IL_00ed:  add
-    IL_00ee:  stloc.2
-    IL_00ef:  ldloc.2
-    IL_00f0:  ldloc.1
-    IL_00f1:  blt.un.s   IL_00d8
+    IL_00e2:  ldloc.3
+    IL_00e3:  ldloc.2
+    IL_00e4:  blt.un.s   IL_00c8
 
-    IL_00f3:  ret
+    IL_00e6:  ret
   } 
 
   .method public static void  f11(native uint start,

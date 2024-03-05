@@ -10804,51 +10804,50 @@ let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, 
             )
 
         /// Start at 0 and count up till we have wrapped around.
+        /// We only emit this if the type is or may be 64-bit and step is not constant,
+        /// and we only execute it if step = 1 and |finish - step| = 2⁶⁴ + 1.
         ///
-        ///     <body>
-        ///     while i > 0 do
+        /// Logically equivalent to (pseudo-code):
+        ///
+        ///     while true do
         ///         <body>
+        ///         loopVar <- loopVar + step
         ///         i <- i + 1
+        ///         if i = 0 then break
         let mkCountUpInclusive mkBody countTy =
-            mkCompGenLetMutableIn mIn "i" countTy (mkTypedZero g mIn countTy) (fun (idxVal, idxVar) ->
-                mkCompGenLetMutableIn mIn "loopVar" rangeTy start (fun (loopVal, loopVar) ->
-                    // loopVar <- loopVar + step
-                    let incrV = mkValSet mIn (mkLocalValRef loopVal) (mkAsmExpr ([AI_add], [], [loopVar; step], [rangeTy], mIn))
+            mkCompGenLetMutableIn mFor "guard" g.bool_ty (mkTrue g mFor) (fun (guardVal, guardVar) ->
+                mkCompGenLetMutableIn mIn "i" countTy (mkTypedZero g mIn countTy) (fun (idxVal, idxVar) ->
+                    mkCompGenLetMutableIn mIn "loopVar" rangeTy start (fun (loopVal, loopVar) ->
+                        // loopVar <- loopVar + step
+                        let incrV = mkValSet mIn (mkLocalValRef loopVal) (mkAsmExpr ([AI_add], [], [loopVar; step], [rangeTy], mIn))
 
-                    // i <- i + 1
-                    let incrI = mkValSet mIn (mkLocalValRef idxVal) (mkAsmExpr ([AI_add], [], [idxVar; mkTypedOne g mIn countTy], [rangeTy], mIn))
+                        // i <- i + 1
+                        let incrI = mkValSet mIn (mkLocalValRef idxVal) (mkAsmExpr ([AI_add], [], [idxVar; mkTypedOne g mIn countTy], [rangeTy], mIn))
 
-                    // <body>
-                    // loopVar <- loopVar + step
-                    // i <- i + 1
-                    let body = mkSequentials g mBody [mkBody idxVar loopVar; incrV; incrI]
+                        // guard <- i <> 0
+                        let breakIfZero = mkValSet mFor (mkLocalValRef guardVal) (mkAsmExpr ([ILInstr.AI_cgt_un], [], [idxVar; mkTypedZero g mFor countTy], [g.bool_ty], mFor))
 
-                    // i > 0
-                    let guard = mkAsmExpr ([AI_cgt_un], [], [idxVar; mkTypedZero g mFor countTy], [g.bool_ty], mFor)
+                        // <body>
+                        // loopVar <- loopVar + step
+                        // i <- i + 1
+                        // guard <- i <> 0
+                        let body = mkSequentials g mBody [mkBody idxVar loopVar; incrV; incrI; breakIfZero]
 
-                    // while i > 0 do
-                    //     <body>
-                    //     loopVar <- loopVar + step
-                    //     i <- i + 1
-                    let loop =
+                        // while guard do
+                        //     <body>
+                        //     loopVar <- loopVar + step
+                        //     i <- i + 1
+                        //     guard <- i <> 0
                         mkWhile
                             g
                             (
                                 spInWhile,
                                 WhileLoopForCompiledForEachExprMarker,
-                                guard,
+                                guardVar,
                                 body,
                                 mBody
                             )
-
-                    // <body>
-                    // loopVar <- loopVar + step
-                    // i <- i + 1
-                    // while i > 0 do
-                    //     <body>
-                    //     loopVar <- loopVar + step
-                    //     i <- i + 1
-                    mkSequential mBody body loop
+                    )
                 )
             )
 

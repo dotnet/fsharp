@@ -303,9 +303,10 @@
     .locals init (uint64 V_0,
              bool V_1,
              valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64> V_2,
-             uint64 V_3,
+             bool V_3,
              uint64 V_4,
-             uint64 V_5)
+             uint64 V_5,
+             uint64 V_6)
     IL_0000:  nop
     IL_0001:  ldarg.1
     IL_0002:  ldarg.0
@@ -327,97 +328,88 @@
     IL_0012:  ceq
     IL_0014:  stloc.1
     IL_0015:  ldloc.1
-    IL_0016:  brfalse.s  IL_0054
+    IL_0016:  brfalse.s  IL_0048
 
-    IL_0018:  ldc.i4.0
-    IL_0019:  conv.i8
-    IL_001a:  stloc.3
-    IL_001b:  ldarg.0
+    IL_0018:  ldc.i4.1
+    IL_0019:  stloc.3
+    IL_001a:  ldc.i4.0
+    IL_001b:  conv.i8
     IL_001c:  stloc.s    V_4
-    IL_001e:  ldloca.s   V_2
-    IL_0020:  ldloc.s    V_4
-    IL_0022:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0027:  nop
-    IL_0028:  ldloc.s    V_4
-    IL_002a:  ldc.i4.1
-    IL_002b:  conv.i8
-    IL_002c:  add
-    IL_002d:  stloc.s    V_4
-    IL_002f:  ldloc.3
-    IL_0030:  ldc.i4.1
-    IL_0031:  conv.i8
-    IL_0032:  add
-    IL_0033:  stloc.3
-    IL_0034:  br.s       IL_004c
+    IL_001e:  ldarg.0
+    IL_001f:  stloc.s    V_5
+    IL_0021:  br.s       IL_0042
 
-    IL_0036:  ldloca.s   V_2
-    IL_0038:  ldloc.s    V_4
-    IL_003a:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_003f:  nop
-    IL_0040:  ldloc.s    V_4
-    IL_0042:  ldc.i4.1
-    IL_0043:  conv.i8
-    IL_0044:  add
-    IL_0045:  stloc.s    V_4
-    IL_0047:  ldloc.3
-    IL_0048:  ldc.i4.1
-    IL_0049:  conv.i8
-    IL_004a:  add
-    IL_004b:  stloc.3
-    IL_004c:  ldloc.3
-    IL_004d:  ldc.i4.0
-    IL_004e:  conv.i8
-    IL_004f:  bgt.un.s   IL_0036
+    IL_0023:  ldloca.s   V_2
+    IL_0025:  ldloc.s    V_5
+    IL_0027:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_002c:  nop
+    IL_002d:  ldloc.s    V_5
+    IL_002f:  ldc.i4.1
+    IL_0030:  conv.i8
+    IL_0031:  add
+    IL_0032:  stloc.s    V_5
+    IL_0034:  ldloc.s    V_4
+    IL_0036:  ldc.i4.1
+    IL_0037:  conv.i8
+    IL_0038:  add
+    IL_0039:  stloc.s    V_4
+    IL_003b:  ldloc.s    V_4
+    IL_003d:  ldc.i4.0
+    IL_003e:  conv.i8
+    IL_003f:  cgt.un
+    IL_0041:  stloc.3
+    IL_0042:  ldloc.3
+    IL_0043:  brtrue.s   IL_0023
 
-    IL_0051:  nop
-    IL_0052:  br.s       IL_008c
+    IL_0045:  nop
+    IL_0046:  br.s       IL_0082
 
-    IL_0054:  ldarg.1
-    IL_0055:  ldarg.0
-    IL_0056:  bge.un.s   IL_005d
+    IL_0048:  ldarg.1
+    IL_0049:  ldarg.0
+    IL_004a:  bge.un.s   IL_0051
 
-    IL_0058:  ldc.i4.0
-    IL_0059:  conv.i8
-    IL_005a:  nop
-    IL_005b:  br.s       IL_0064
+    IL_004c:  ldc.i4.0
+    IL_004d:  conv.i8
+    IL_004e:  nop
+    IL_004f:  br.s       IL_0058
 
-    IL_005d:  ldarg.1
+    IL_0051:  ldarg.1
+    IL_0052:  ldarg.0
+    IL_0053:  sub
+    IL_0054:  ldc.i4.1
+    IL_0055:  conv.i8
+    IL_0056:  add.ovf.un
+    IL_0057:  nop
+    IL_0058:  stloc.s    V_4
+    IL_005a:  ldc.i4.0
+    IL_005b:  conv.i8
+    IL_005c:  stloc.s    V_5
     IL_005e:  ldarg.0
-    IL_005f:  sub
-    IL_0060:  ldc.i4.1
-    IL_0061:  conv.i8
-    IL_0062:  add.ovf.un
-    IL_0063:  nop
-    IL_0064:  stloc.3
-    IL_0065:  ldc.i4.0
-    IL_0066:  conv.i8
-    IL_0067:  stloc.s    V_4
-    IL_0069:  ldarg.0
-    IL_006a:  stloc.s    V_5
-    IL_006c:  br.s       IL_0086
+    IL_005f:  stloc.s    V_6
+    IL_0061:  br.s       IL_007b
 
-    IL_006e:  ldloca.s   V_2
-    IL_0070:  ldloc.s    V_5
-    IL_0072:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0077:  nop
-    IL_0078:  ldloc.s    V_5
-    IL_007a:  ldc.i4.1
-    IL_007b:  conv.i8
-    IL_007c:  add
-    IL_007d:  stloc.s    V_5
-    IL_007f:  ldloc.s    V_4
-    IL_0081:  ldc.i4.1
-    IL_0082:  conv.i8
-    IL_0083:  add
-    IL_0084:  stloc.s    V_4
-    IL_0086:  ldloc.s    V_4
-    IL_0088:  ldloc.3
-    IL_0089:  blt.un.s   IL_006e
+    IL_0063:  ldloca.s   V_2
+    IL_0065:  ldloc.s    V_6
+    IL_0067:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_006c:  nop
+    IL_006d:  ldloc.s    V_6
+    IL_006f:  ldc.i4.1
+    IL_0070:  conv.i8
+    IL_0071:  add
+    IL_0072:  stloc.s    V_6
+    IL_0074:  ldloc.s    V_5
+    IL_0076:  ldc.i4.1
+    IL_0077:  conv.i8
+    IL_0078:  add
+    IL_0079:  stloc.s    V_5
+    IL_007b:  ldloc.s    V_5
+    IL_007d:  ldloc.s    V_4
+    IL_007f:  blt.un.s   IL_0063
 
-    IL_008b:  nop
-    IL_008c:  ldloca.s   V_2
-    IL_008e:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
-    IL_0093:  ret
+    IL_0081:  nop
+    IL_0082:  ldloca.s   V_2
+    IL_0084:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
+    IL_0089:  ret
   } 
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<uint64> f9(uint64 start) cil managed
@@ -702,9 +694,10 @@
     .locals init (uint64 V_0,
              bool V_1,
              valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64> V_2,
-             uint64 V_3,
+             bool V_3,
              uint64 V_4,
-             uint64 V_5)
+             uint64 V_5,
+             uint64 V_6)
     IL_0000:  nop
     IL_0001:  ldarg.1
     IL_0002:  ldarg.0
@@ -726,97 +719,88 @@
     IL_0012:  ceq
     IL_0014:  stloc.1
     IL_0015:  ldloc.1
-    IL_0016:  brfalse.s  IL_0054
+    IL_0016:  brfalse.s  IL_0048
 
-    IL_0018:  ldc.i4.0
-    IL_0019:  conv.i8
-    IL_001a:  stloc.3
-    IL_001b:  ldarg.0
+    IL_0018:  ldc.i4.1
+    IL_0019:  stloc.3
+    IL_001a:  ldc.i4.0
+    IL_001b:  conv.i8
     IL_001c:  stloc.s    V_4
-    IL_001e:  ldloca.s   V_2
-    IL_0020:  ldloc.s    V_4
-    IL_0022:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0027:  nop
-    IL_0028:  ldloc.s    V_4
-    IL_002a:  ldc.i4.1
-    IL_002b:  conv.i8
-    IL_002c:  add
-    IL_002d:  stloc.s    V_4
-    IL_002f:  ldloc.3
-    IL_0030:  ldc.i4.1
-    IL_0031:  conv.i8
-    IL_0032:  add
-    IL_0033:  stloc.3
-    IL_0034:  br.s       IL_004c
+    IL_001e:  ldarg.0
+    IL_001f:  stloc.s    V_5
+    IL_0021:  br.s       IL_0042
 
-    IL_0036:  ldloca.s   V_2
-    IL_0038:  ldloc.s    V_4
-    IL_003a:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_003f:  nop
-    IL_0040:  ldloc.s    V_4
-    IL_0042:  ldc.i4.1
-    IL_0043:  conv.i8
-    IL_0044:  add
-    IL_0045:  stloc.s    V_4
-    IL_0047:  ldloc.3
-    IL_0048:  ldc.i4.1
-    IL_0049:  conv.i8
-    IL_004a:  add
-    IL_004b:  stloc.3
-    IL_004c:  ldloc.3
-    IL_004d:  ldc.i4.0
-    IL_004e:  conv.i8
-    IL_004f:  bgt.un.s   IL_0036
+    IL_0023:  ldloca.s   V_2
+    IL_0025:  ldloc.s    V_5
+    IL_0027:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_002c:  nop
+    IL_002d:  ldloc.s    V_5
+    IL_002f:  ldc.i4.1
+    IL_0030:  conv.i8
+    IL_0031:  add
+    IL_0032:  stloc.s    V_5
+    IL_0034:  ldloc.s    V_4
+    IL_0036:  ldc.i4.1
+    IL_0037:  conv.i8
+    IL_0038:  add
+    IL_0039:  stloc.s    V_4
+    IL_003b:  ldloc.s    V_4
+    IL_003d:  ldc.i4.0
+    IL_003e:  conv.i8
+    IL_003f:  cgt.un
+    IL_0041:  stloc.3
+    IL_0042:  ldloc.3
+    IL_0043:  brtrue.s   IL_0023
 
-    IL_0051:  nop
-    IL_0052:  br.s       IL_008c
+    IL_0045:  nop
+    IL_0046:  br.s       IL_0082
 
-    IL_0054:  ldarg.1
-    IL_0055:  ldarg.0
-    IL_0056:  bge.un.s   IL_005d
+    IL_0048:  ldarg.1
+    IL_0049:  ldarg.0
+    IL_004a:  bge.un.s   IL_0051
 
-    IL_0058:  ldc.i4.0
-    IL_0059:  conv.i8
-    IL_005a:  nop
-    IL_005b:  br.s       IL_0064
+    IL_004c:  ldc.i4.0
+    IL_004d:  conv.i8
+    IL_004e:  nop
+    IL_004f:  br.s       IL_0058
 
-    IL_005d:  ldarg.1
+    IL_0051:  ldarg.1
+    IL_0052:  ldarg.0
+    IL_0053:  sub
+    IL_0054:  ldc.i4.1
+    IL_0055:  conv.i8
+    IL_0056:  add.ovf.un
+    IL_0057:  nop
+    IL_0058:  stloc.s    V_4
+    IL_005a:  ldc.i4.0
+    IL_005b:  conv.i8
+    IL_005c:  stloc.s    V_5
     IL_005e:  ldarg.0
-    IL_005f:  sub
-    IL_0060:  ldc.i4.1
-    IL_0061:  conv.i8
-    IL_0062:  add.ovf.un
-    IL_0063:  nop
-    IL_0064:  stloc.3
-    IL_0065:  ldc.i4.0
-    IL_0066:  conv.i8
-    IL_0067:  stloc.s    V_4
-    IL_0069:  ldarg.0
-    IL_006a:  stloc.s    V_5
-    IL_006c:  br.s       IL_0086
+    IL_005f:  stloc.s    V_6
+    IL_0061:  br.s       IL_007b
 
-    IL_006e:  ldloca.s   V_2
-    IL_0070:  ldloc.s    V_5
-    IL_0072:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0077:  nop
-    IL_0078:  ldloc.s    V_5
-    IL_007a:  ldc.i4.1
-    IL_007b:  conv.i8
-    IL_007c:  add
-    IL_007d:  stloc.s    V_5
-    IL_007f:  ldloc.s    V_4
-    IL_0081:  ldc.i4.1
-    IL_0082:  conv.i8
-    IL_0083:  add
-    IL_0084:  stloc.s    V_4
-    IL_0086:  ldloc.s    V_4
-    IL_0088:  ldloc.3
-    IL_0089:  blt.un.s   IL_006e
+    IL_0063:  ldloca.s   V_2
+    IL_0065:  ldloc.s    V_6
+    IL_0067:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_006c:  nop
+    IL_006d:  ldloc.s    V_6
+    IL_006f:  ldc.i4.1
+    IL_0070:  conv.i8
+    IL_0071:  add
+    IL_0072:  stloc.s    V_6
+    IL_0074:  ldloc.s    V_5
+    IL_0076:  ldc.i4.1
+    IL_0077:  conv.i8
+    IL_0078:  add
+    IL_0079:  stloc.s    V_5
+    IL_007b:  ldloc.s    V_5
+    IL_007d:  ldloc.s    V_4
+    IL_007f:  blt.un.s   IL_0063
 
-    IL_008b:  nop
-    IL_008c:  ldloca.s   V_2
-    IL_008e:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
-    IL_0093:  ret
+    IL_0081:  nop
+    IL_0082:  ldloca.s   V_2
+    IL_0084:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
+    IL_0089:  ret
   } 
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<uint64> 
@@ -909,9 +893,10 @@
     .locals init (uint64 V_0,
              bool V_1,
              valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64> V_2,
-             uint64 V_3,
+             bool V_3,
              uint64 V_4,
-             uint64 V_5)
+             uint64 V_5,
+             uint64 V_6)
     IL_0000:  nop
     IL_0001:  ldarg.1
     IL_0002:  brtrue.s   IL_0010
@@ -949,96 +934,88 @@
     IL_0024:  ceq
     IL_0026:  stloc.1
     IL_0027:  ldloc.1
-    IL_0028:  brfalse.s  IL_0064
+    IL_0028:  brfalse.s  IL_0059
 
-    IL_002a:  ldc.i4.0
-    IL_002b:  conv.i8
-    IL_002c:  stloc.3
-    IL_002d:  ldarg.0
+    IL_002a:  ldc.i4.1
+    IL_002b:  stloc.3
+    IL_002c:  ldc.i4.0
+    IL_002d:  conv.i8
     IL_002e:  stloc.s    V_4
-    IL_0030:  ldloca.s   V_2
-    IL_0032:  ldloc.s    V_4
-    IL_0034:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0039:  nop
-    IL_003a:  ldloc.s    V_4
-    IL_003c:  ldarg.1
-    IL_003d:  add
-    IL_003e:  stloc.s    V_4
-    IL_0040:  ldloc.3
-    IL_0041:  ldc.i4.1
-    IL_0042:  conv.i8
-    IL_0043:  add
-    IL_0044:  stloc.3
-    IL_0045:  br.s       IL_005c
+    IL_0030:  ldarg.0
+    IL_0031:  stloc.s    V_5
+    IL_0033:  br.s       IL_0053
 
-    IL_0047:  ldloca.s   V_2
-    IL_0049:  ldloc.s    V_4
-    IL_004b:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0050:  nop
-    IL_0051:  ldloc.s    V_4
-    IL_0053:  ldarg.1
-    IL_0054:  add
-    IL_0055:  stloc.s    V_4
-    IL_0057:  ldloc.3
-    IL_0058:  ldc.i4.1
-    IL_0059:  conv.i8
-    IL_005a:  add
-    IL_005b:  stloc.3
-    IL_005c:  ldloc.3
+    IL_0035:  ldloca.s   V_2
+    IL_0037:  ldloc.s    V_5
+    IL_0039:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_003e:  nop
+    IL_003f:  ldloc.s    V_5
+    IL_0041:  ldarg.1
+    IL_0042:  add
+    IL_0043:  stloc.s    V_5
+    IL_0045:  ldloc.s    V_4
+    IL_0047:  ldc.i4.1
+    IL_0048:  conv.i8
+    IL_0049:  add
+    IL_004a:  stloc.s    V_4
+    IL_004c:  ldloc.s    V_4
+    IL_004e:  ldc.i4.0
+    IL_004f:  conv.i8
+    IL_0050:  cgt.un
+    IL_0052:  stloc.3
+    IL_0053:  ldloc.3
+    IL_0054:  brtrue.s   IL_0035
+
+    IL_0056:  nop
+    IL_0057:  br.s       IL_0094
+
+    IL_0059:  ldarg.2
+    IL_005a:  ldarg.0
+    IL_005b:  bge.un.s   IL_0062
+
     IL_005d:  ldc.i4.0
     IL_005e:  conv.i8
-    IL_005f:  bgt.un.s   IL_0047
+    IL_005f:  nop
+    IL_0060:  br.s       IL_006b
 
-    IL_0061:  nop
-    IL_0062:  br.s       IL_009d
-
-    IL_0064:  ldarg.2
-    IL_0065:  ldarg.0
-    IL_0066:  bge.un.s   IL_006d
-
-    IL_0068:  ldc.i4.0
-    IL_0069:  conv.i8
+    IL_0062:  ldarg.2
+    IL_0063:  ldarg.0
+    IL_0064:  sub
+    IL_0065:  ldarg.1
+    IL_0066:  div.un
+    IL_0067:  ldc.i4.1
+    IL_0068:  conv.i8
+    IL_0069:  add.ovf.un
     IL_006a:  nop
-    IL_006b:  br.s       IL_0076
+    IL_006b:  stloc.s    V_4
+    IL_006d:  ldc.i4.0
+    IL_006e:  conv.i8
+    IL_006f:  stloc.s    V_5
+    IL_0071:  ldarg.0
+    IL_0072:  stloc.s    V_6
+    IL_0074:  br.s       IL_008d
 
-    IL_006d:  ldarg.2
-    IL_006e:  ldarg.0
-    IL_006f:  sub
-    IL_0070:  ldarg.1
-    IL_0071:  div.un
-    IL_0072:  ldc.i4.1
-    IL_0073:  conv.i8
-    IL_0074:  add.ovf.un
-    IL_0075:  nop
-    IL_0076:  stloc.3
-    IL_0077:  ldc.i4.0
-    IL_0078:  conv.i8
-    IL_0079:  stloc.s    V_4
-    IL_007b:  ldarg.0
-    IL_007c:  stloc.s    V_5
-    IL_007e:  br.s       IL_0097
+    IL_0076:  ldloca.s   V_2
+    IL_0078:  ldloc.s    V_6
+    IL_007a:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_007f:  nop
+    IL_0080:  ldloc.s    V_6
+    IL_0082:  ldarg.1
+    IL_0083:  add
+    IL_0084:  stloc.s    V_6
+    IL_0086:  ldloc.s    V_5
+    IL_0088:  ldc.i4.1
+    IL_0089:  conv.i8
+    IL_008a:  add
+    IL_008b:  stloc.s    V_5
+    IL_008d:  ldloc.s    V_5
+    IL_008f:  ldloc.s    V_4
+    IL_0091:  blt.un.s   IL_0076
 
-    IL_0080:  ldloca.s   V_2
-    IL_0082:  ldloc.s    V_5
-    IL_0084:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0089:  nop
-    IL_008a:  ldloc.s    V_5
-    IL_008c:  ldarg.1
-    IL_008d:  add
-    IL_008e:  stloc.s    V_5
-    IL_0090:  ldloc.s    V_4
-    IL_0092:  ldc.i4.1
-    IL_0093:  conv.i8
-    IL_0094:  add
-    IL_0095:  stloc.s    V_4
-    IL_0097:  ldloc.s    V_4
-    IL_0099:  ldloc.3
-    IL_009a:  blt.un.s   IL_0080
-
-    IL_009c:  nop
-    IL_009d:  ldloca.s   V_2
-    IL_009f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
-    IL_00a4:  ret
+    IL_0093:  nop
+    IL_0094:  ldloca.s   V_2
+    IL_0096:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
+    IL_009b:  ret
   } 
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<uint64> f16(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f) cil managed
@@ -1178,9 +1155,10 @@
              uint64 V_2,
              bool V_3,
              valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64> V_4,
-             uint64 V_5,
+             bool V_5,
              uint64 V_6,
-             uint64 V_7)
+             uint64 V_7,
+             uint64 V_8)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -1209,97 +1187,88 @@
     IL_0021:  ceq
     IL_0023:  stloc.3
     IL_0024:  ldloc.3
-    IL_0025:  brfalse.s  IL_0069
+    IL_0025:  brfalse.s  IL_005a
 
-    IL_0027:  ldc.i4.0
-    IL_0028:  conv.i8
-    IL_0029:  stloc.s    V_5
-    IL_002b:  ldloc.0
+    IL_0027:  ldc.i4.1
+    IL_0028:  stloc.s    V_5
+    IL_002a:  ldc.i4.0
+    IL_002b:  conv.i8
     IL_002c:  stloc.s    V_6
-    IL_002e:  ldloca.s   V_4
-    IL_0030:  ldloc.s    V_6
-    IL_0032:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0037:  nop
-    IL_0038:  ldloc.s    V_6
-    IL_003a:  ldc.i4.1
-    IL_003b:  conv.i8
-    IL_003c:  add
-    IL_003d:  stloc.s    V_6
-    IL_003f:  ldloc.s    V_5
-    IL_0041:  ldc.i4.1
-    IL_0042:  conv.i8
-    IL_0043:  add
-    IL_0044:  stloc.s    V_5
-    IL_0046:  br.s       IL_0060
+    IL_002e:  ldloc.0
+    IL_002f:  stloc.s    V_7
+    IL_0031:  br.s       IL_0053
 
-    IL_0048:  ldloca.s   V_4
-    IL_004a:  ldloc.s    V_6
-    IL_004c:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0051:  nop
-    IL_0052:  ldloc.s    V_6
-    IL_0054:  ldc.i4.1
-    IL_0055:  conv.i8
-    IL_0056:  add
-    IL_0057:  stloc.s    V_6
-    IL_0059:  ldloc.s    V_5
-    IL_005b:  ldc.i4.1
-    IL_005c:  conv.i8
-    IL_005d:  add
-    IL_005e:  stloc.s    V_5
-    IL_0060:  ldloc.s    V_5
-    IL_0062:  ldc.i4.0
-    IL_0063:  conv.i8
-    IL_0064:  bgt.un.s   IL_0048
+    IL_0033:  ldloca.s   V_4
+    IL_0035:  ldloc.s    V_7
+    IL_0037:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_003c:  nop
+    IL_003d:  ldloc.s    V_7
+    IL_003f:  ldc.i4.1
+    IL_0040:  conv.i8
+    IL_0041:  add
+    IL_0042:  stloc.s    V_7
+    IL_0044:  ldloc.s    V_6
+    IL_0046:  ldc.i4.1
+    IL_0047:  conv.i8
+    IL_0048:  add
+    IL_0049:  stloc.s    V_6
+    IL_004b:  ldloc.s    V_6
+    IL_004d:  ldc.i4.0
+    IL_004e:  conv.i8
+    IL_004f:  cgt.un
+    IL_0051:  stloc.s    V_5
+    IL_0053:  ldloc.s    V_5
+    IL_0055:  brtrue.s   IL_0033
 
-    IL_0066:  nop
-    IL_0067:  br.s       IL_00a3
+    IL_0057:  nop
+    IL_0058:  br.s       IL_0094
 
-    IL_0069:  ldloc.1
-    IL_006a:  ldloc.0
-    IL_006b:  bge.un.s   IL_0072
+    IL_005a:  ldloc.1
+    IL_005b:  ldloc.0
+    IL_005c:  bge.un.s   IL_0063
 
-    IL_006d:  ldc.i4.0
-    IL_006e:  conv.i8
-    IL_006f:  nop
-    IL_0070:  br.s       IL_0079
+    IL_005e:  ldc.i4.0
+    IL_005f:  conv.i8
+    IL_0060:  nop
+    IL_0061:  br.s       IL_006a
 
-    IL_0072:  ldloc.1
-    IL_0073:  ldloc.0
-    IL_0074:  sub
-    IL_0075:  ldc.i4.1
-    IL_0076:  conv.i8
-    IL_0077:  add.ovf.un
-    IL_0078:  nop
-    IL_0079:  stloc.s    V_5
-    IL_007b:  ldc.i4.0
-    IL_007c:  conv.i8
-    IL_007d:  stloc.s    V_6
-    IL_007f:  ldloc.0
-    IL_0080:  stloc.s    V_7
-    IL_0082:  br.s       IL_009c
+    IL_0063:  ldloc.1
+    IL_0064:  ldloc.0
+    IL_0065:  sub
+    IL_0066:  ldc.i4.1
+    IL_0067:  conv.i8
+    IL_0068:  add.ovf.un
+    IL_0069:  nop
+    IL_006a:  stloc.s    V_6
+    IL_006c:  ldc.i4.0
+    IL_006d:  conv.i8
+    IL_006e:  stloc.s    V_7
+    IL_0070:  ldloc.0
+    IL_0071:  stloc.s    V_8
+    IL_0073:  br.s       IL_008d
 
-    IL_0084:  ldloca.s   V_4
+    IL_0075:  ldloca.s   V_4
+    IL_0077:  ldloc.s    V_8
+    IL_0079:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_007e:  nop
+    IL_007f:  ldloc.s    V_8
+    IL_0081:  ldc.i4.1
+    IL_0082:  conv.i8
+    IL_0083:  add
+    IL_0084:  stloc.s    V_8
     IL_0086:  ldloc.s    V_7
-    IL_0088:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_008d:  nop
-    IL_008e:  ldloc.s    V_7
-    IL_0090:  ldc.i4.1
-    IL_0091:  conv.i8
-    IL_0092:  add
-    IL_0093:  stloc.s    V_7
-    IL_0095:  ldloc.s    V_6
-    IL_0097:  ldc.i4.1
-    IL_0098:  conv.i8
-    IL_0099:  add
-    IL_009a:  stloc.s    V_6
-    IL_009c:  ldloc.s    V_6
-    IL_009e:  ldloc.s    V_5
-    IL_00a0:  blt.un.s   IL_0084
+    IL_0088:  ldc.i4.1
+    IL_0089:  conv.i8
+    IL_008a:  add
+    IL_008b:  stloc.s    V_7
+    IL_008d:  ldloc.s    V_7
+    IL_008f:  ldloc.s    V_6
+    IL_0091:  blt.un.s   IL_0075
 
-    IL_00a2:  nop
-    IL_00a3:  ldloca.s   V_4
-    IL_00a5:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
-    IL_00aa:  ret
+    IL_0093:  nop
+    IL_0094:  ldloca.s   V_4
+    IL_0096:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
+    IL_009b:  ret
   } 
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<uint64> f19(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64> f) cil managed
@@ -1524,9 +1493,10 @@
              uint64 V_3,
              bool V_4,
              valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64> V_5,
-             uint64 V_6,
+             bool V_6,
              uint64 V_7,
-             uint64 V_8)
+             uint64 V_8,
+             uint64 V_9)
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,uint64>::Invoke(!0)
@@ -1575,96 +1545,88 @@
     IL_003b:  ceq
     IL_003d:  stloc.s    V_4
     IL_003f:  ldloc.s    V_4
-    IL_0041:  brfalse.s  IL_0083
+    IL_0041:  brfalse.s  IL_0075
 
-    IL_0043:  ldc.i4.0
-    IL_0044:  conv.i8
-    IL_0045:  stloc.s    V_6
-    IL_0047:  ldloc.0
+    IL_0043:  ldc.i4.1
+    IL_0044:  stloc.s    V_6
+    IL_0046:  ldc.i4.0
+    IL_0047:  conv.i8
     IL_0048:  stloc.s    V_7
-    IL_004a:  ldloca.s   V_5
-    IL_004c:  ldloc.s    V_7
-    IL_004e:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_0053:  nop
-    IL_0054:  ldloc.s    V_7
-    IL_0056:  ldloc.1
-    IL_0057:  add
-    IL_0058:  stloc.s    V_7
-    IL_005a:  ldloc.s    V_6
-    IL_005c:  ldc.i4.1
-    IL_005d:  conv.i8
-    IL_005e:  add
-    IL_005f:  stloc.s    V_6
-    IL_0061:  br.s       IL_007a
+    IL_004a:  ldloc.0
+    IL_004b:  stloc.s    V_8
+    IL_004d:  br.s       IL_006e
 
-    IL_0063:  ldloca.s   V_5
-    IL_0065:  ldloc.s    V_7
-    IL_0067:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_006c:  nop
-    IL_006d:  ldloc.s    V_7
-    IL_006f:  ldloc.1
-    IL_0070:  add
-    IL_0071:  stloc.s    V_7
-    IL_0073:  ldloc.s    V_6
-    IL_0075:  ldc.i4.1
-    IL_0076:  conv.i8
-    IL_0077:  add
-    IL_0078:  stloc.s    V_6
-    IL_007a:  ldloc.s    V_6
-    IL_007c:  ldc.i4.0
-    IL_007d:  conv.i8
-    IL_007e:  bgt.un.s   IL_0063
+    IL_004f:  ldloca.s   V_5
+    IL_0051:  ldloc.s    V_8
+    IL_0053:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_0058:  nop
+    IL_0059:  ldloc.s    V_8
+    IL_005b:  ldloc.1
+    IL_005c:  add
+    IL_005d:  stloc.s    V_8
+    IL_005f:  ldloc.s    V_7
+    IL_0061:  ldc.i4.1
+    IL_0062:  conv.i8
+    IL_0063:  add
+    IL_0064:  stloc.s    V_7
+    IL_0066:  ldloc.s    V_7
+    IL_0068:  ldc.i4.0
+    IL_0069:  conv.i8
+    IL_006a:  cgt.un
+    IL_006c:  stloc.s    V_6
+    IL_006e:  ldloc.s    V_6
+    IL_0070:  brtrue.s   IL_004f
 
-    IL_0080:  nop
-    IL_0081:  br.s       IL_00be
+    IL_0072:  nop
+    IL_0073:  br.s       IL_00b0
 
-    IL_0083:  ldloc.2
-    IL_0084:  ldloc.0
-    IL_0085:  bge.un.s   IL_008c
+    IL_0075:  ldloc.2
+    IL_0076:  ldloc.0
+    IL_0077:  bge.un.s   IL_007e
 
-    IL_0087:  ldc.i4.0
-    IL_0088:  conv.i8
-    IL_0089:  nop
-    IL_008a:  br.s       IL_0095
+    IL_0079:  ldc.i4.0
+    IL_007a:  conv.i8
+    IL_007b:  nop
+    IL_007c:  br.s       IL_0087
 
-    IL_008c:  ldloc.2
+    IL_007e:  ldloc.2
+    IL_007f:  ldloc.0
+    IL_0080:  sub
+    IL_0081:  ldloc.1
+    IL_0082:  div.un
+    IL_0083:  ldc.i4.1
+    IL_0084:  conv.i8
+    IL_0085:  add.ovf.un
+    IL_0086:  nop
+    IL_0087:  stloc.s    V_7
+    IL_0089:  ldc.i4.0
+    IL_008a:  conv.i8
+    IL_008b:  stloc.s    V_8
     IL_008d:  ldloc.0
-    IL_008e:  sub
-    IL_008f:  ldloc.1
-    IL_0090:  div.un
-    IL_0091:  ldc.i4.1
-    IL_0092:  conv.i8
-    IL_0093:  add.ovf.un
-    IL_0094:  nop
-    IL_0095:  stloc.s    V_6
-    IL_0097:  ldc.i4.0
-    IL_0098:  conv.i8
-    IL_0099:  stloc.s    V_7
-    IL_009b:  ldloc.0
-    IL_009c:  stloc.s    V_8
-    IL_009e:  br.s       IL_00b7
+    IL_008e:  stloc.s    V_9
+    IL_0090:  br.s       IL_00a9
 
-    IL_00a0:  ldloca.s   V_5
+    IL_0092:  ldloca.s   V_5
+    IL_0094:  ldloc.s    V_9
+    IL_0096:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
+    IL_009b:  nop
+    IL_009c:  ldloc.s    V_9
+    IL_009e:  ldloc.1
+    IL_009f:  add
+    IL_00a0:  stloc.s    V_9
     IL_00a2:  ldloc.s    V_8
-    IL_00a4:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Add(!0)
-    IL_00a9:  nop
-    IL_00aa:  ldloc.s    V_8
-    IL_00ac:  ldloc.1
-    IL_00ad:  add
-    IL_00ae:  stloc.s    V_8
-    IL_00b0:  ldloc.s    V_7
-    IL_00b2:  ldc.i4.1
-    IL_00b3:  conv.i8
-    IL_00b4:  add
-    IL_00b5:  stloc.s    V_7
-    IL_00b7:  ldloc.s    V_7
-    IL_00b9:  ldloc.s    V_6
-    IL_00bb:  blt.un.s   IL_00a0
+    IL_00a4:  ldc.i4.1
+    IL_00a5:  conv.i8
+    IL_00a6:  add
+    IL_00a7:  stloc.s    V_8
+    IL_00a9:  ldloc.s    V_8
+    IL_00ab:  ldloc.s    V_7
+    IL_00ad:  blt.un.s   IL_0092
 
-    IL_00bd:  nop
-    IL_00be:  ldloca.s   V_5
-    IL_00c0:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
-    IL_00c5:  ret
+    IL_00af:  nop
+    IL_00b0:  ldloca.s   V_5
+    IL_00b2:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<uint64>::Close()
+    IL_00b7:  ret
   } 
 
 } 
