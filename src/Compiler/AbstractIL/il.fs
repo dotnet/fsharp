@@ -1910,8 +1910,6 @@ type ILMethodDef
         metadataIndex: int32
     ) =
 
-    let _x = ()
-
     new(name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, securityDecls, customAttrs) =
         ILMethodDef(
             name,
