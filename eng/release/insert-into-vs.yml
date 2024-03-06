@@ -14,9 +14,8 @@ stages:
   jobs:
   - job: Insert_VS
     pool:
-      name: $(DncEngInternalBuildPool)
-      demands: 1es-windows-2022-pt
-      os: windows
+      name: NetCore1ESPool-Svc-Internal
+      image: 1es-windows-2022-pt
     variables:
     - group: DotNet-VSTS-Infra-Access
     - name: InsertAccessToken
