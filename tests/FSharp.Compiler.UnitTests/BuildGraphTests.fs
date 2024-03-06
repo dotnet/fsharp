@@ -396,9 +396,11 @@ module BuildGraphTests =
         errorCountShouldBe 17
 
         async {
-            // Async.Parallel flows back from the last that finished.
+            // Async.Parallel continues context from the last computation that finished.
             do! 
-                [ async { SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
+                [ async {
+                    do! Async.SwitchToNewThread()
+                    SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
                 |> Async.Parallel
                 |> Async.Ignore
             loggerShouldBe DiscardErrorsLogger
@@ -412,17 +414,25 @@ module BuildGraphTests =
         }
         |> Async.RunImmediate
 
-        // This becomes fully synchronous:
+        // Synchronus code will affect current context:
+
+        // This is synchrouous, caller's context is affected
         async {
-            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger }
+            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger
+            do! Async.SwitchToNewThread()
+            loggerShouldBe DiscardErrorsLogger
+        }
         |> Async.RunImmediate
         loggerShouldBe DiscardErrorsLogger
 
         SetThreadDiagnosticsLoggerNoUnwind logger
-        // This creates new async context:
+        // This runs in async continuation, so the context is forked.
         async {
             do! Async.Sleep 0
-            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger }
+            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger
+            do! Async.SwitchToNewThread()
+            loggerShouldBe DiscardErrorsLogger
+        }
         |> Async.RunImmediate
         loggerShouldBe logger
 
