@@ -312,26 +312,36 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Error 842, Line 12, Col 3, Line 12, Col 6, "This attribute is not valid for use on this language element")
         ]
-
-    // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
-    let ``E_AttributeTargetIsClass_fs`` compilation =
+        
+    // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsStruct.fs"|])>]
+    let ``AttributeTargetIsStruct_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldSucceed
         
-    // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
-    let ``E_AttributeTargetIsClass_fs preview`` compilation =
+    // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsStruct.fs"|])>]
+    let ``AttributeTargetIsStruct_fs preview`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 842, Line 13, Col 3, Line 13, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 22, Col 10, Line 22, Col 22, "This attribute is not valid for use on this language element")
-        ]
+        |> shouldSucceed
+        
+    // SOURCE=AttributeTargetIsClass.fs 	# AttributeTargetIsClass.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsClass.fs"|])>]
+    let ``AttributeTargetIsClass_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE=AttributeTargetIsClass.fs 	# AttributeTargetIsClass.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsClass.fs"|])>]
+    let ``AttributeTargetIsClass_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsStruct.fs 	# E_AttributeTargetIsStruct.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsStruct.fs"|])>]
@@ -351,8 +361,27 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 13, Col 3, Line 13, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 22, Col 11, Line 22, Col 22, "This attribute is not valid for use on this language element")
-            (Error 842, Line 25, Col 3, Line 25, Col 25, "This attribute is not valid for use on this language element")
-            (Error 842, Line 32, Col 3, Line 32, Col 11, "This attribute is not valid for use on this language element")
+            (Error 842, Line 25, Col 3, Line 25, Col 14, "This attribute is not valid for use on this language element")
+        ]
+
+    // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
+    let ``E_AttributeTargetIsClass_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
+    let ``E_AttributeTargetIsClass_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 13, Col 3, Line 13, Col 15, "This attribute is not valid for use on this language element")
+            (Error 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
+            (Error 842, Line 22, Col 10, Line 22, Col 22, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=MarshalAsAttribute.fs					# MarshalAsAttribute.fs
