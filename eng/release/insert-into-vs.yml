@@ -14,8 +14,9 @@ stages:
   jobs:
   - job: Insert_VS
     pool:
-      name: NetCore1ESPool-Svc-Internal
-      demands: ImageOverride -equals windows.vs2019.amd64
+      name: $(DncEngInternalBuildPool)
+      demands: 1es-windows-2022-pt
+      os: windows
     variables:
     - group: DotNet-VSTS-Infra-Access
     - name: InsertAccessToken
@@ -69,5 +70,5 @@ stages:
     - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@3
       displayName: 'Insert VS Payload'
       inputs:
-        LinkWorkItemsToPR: false
+        LinkWorkItemsToPR: true
       condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'), eq(variables['Build.SourceBranch'], 'refs/heads/${{ parameters.componentBranchName }}')))

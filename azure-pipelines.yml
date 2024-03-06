@@ -167,11 +167,19 @@ extends:
               displayName: End to end build tests
               continueOnError: true
               condition: always()
+            - task: PublishTestResults@2
+              displayName: Publish Test Results
+              inputs:
+                testResultsFormat: 'NUnit'
+                testResultsFiles: '*.xml'
+                searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              continueOnError: true
+              condition: ne(variables['SkipTests'], 'true')
 
     #---------------------------------------------------------------------------------------------------------------------#
     #                                                    Post Build                                                       #
     #---------------------------------------------------------------------------------------------------------------------#
-    - template: eng/common/templates/post-build/post-build.yml
+    - template: eng/common/templates-official/post-build/post-build.yml
       parameters:
         publishingInfraVersion: 3
         # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
