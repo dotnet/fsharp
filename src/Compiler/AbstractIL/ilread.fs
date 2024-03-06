@@ -2142,28 +2142,31 @@ and typeDefReader ctxtH : ILTypeDefStored =
             | _ -> false
 
         let containsExtensionMethods =
-            if methodsIdx < 1 then None else
+            methodsIdx > 0 &&
 
+            let mutable containsExtensionMethods = false
             let mutable searchedKey = Unchecked.defaultof<_>
             let attributesSearcher =
                 { new ISeekReadIndexedRowReader<CustomAttributeRow, CustomAttributeRow, CustomAttributeRow> with
                     member _.GetRow(i, row) = seekReadCustomAttributeRow ctxt mdv i &row
-                    member _.GetKey(attrRow) = attrRow
+                    member _.GetKey(row) = row
                     member _.CompareKey(key) = hcaCompare searchedKey key.parentIndex
                     member _.ConvertRow(row) = row
                 }
-            seq { methodsIdx .. endMethodsIdx }
-            // TODO
-            |> Seq.tryFind (fun idx ->
-                searchedKey <- TaggedIndex(hca_MethodDef, idx)
 
-                let attrs =
-                    seekReadIndexedRowsByInterface
+            let mutable methodIdx = methodsIdx
+            while methodIdx <= endMethodsIdx && not containsExtensionMethods do
+                searchedKey <- TaggedIndex(hca_MethodDef, methodIdx)
+                let attrsStartIdx, attrsEndIdx =
+                    seekReadIndexedRowsRange
                         (ctxt.getNumRows TableNames.CustomAttribute)
                         (isSorted ctxt TableNames.CustomAttribute)
                         attributesSearcher
 
-                attrs |> Array.exists (fun attr ->
+                let hasAttributes = attrsStartIdx > 0 && attrsEndIdx >= attrsStartIdx
+                let mutable attrIdx = attrsStartIdx
+                while hasAttributes && attrIdx <= attrsEndIdx && not containsExtensionMethods do
+                    let mutable attr = Unchecked.defaultof<_> in attributesSearcher.GetRow(attrIdx, &attr)
                     let attrCtorIdx = attr.typeIndex.index
                     let name =
                         if attr.typeIndex.tag = cat_MethodDef then
@@ -2171,13 +2174,16 @@ and typeDefReader ctxtH : ILTypeDefStored =
                             let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
                             readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
                         else
-                            let TaggedIndex(tag, idx), _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
-                            if tag <> mrp_TypeRef then "" else
-                            let _, nameIdx, namespaceIdx = seekReadTypeRefRow ctxt mdv idx
+                            let mrpTag, _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
+                            if mrpTag.tag <> mrp_TypeRef then "" else
+                            let _, nameIdx, namespaceIdx = seekReadTypeRefRow ctxt mdv mrpTag.index
                             readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
-                    name = "System.Runtime.CompilerServices.ExtensionAttribute"
-                )
-            )
+                    if name = "System.Runtime.CompilerServices.ExtensionAttribute" then
+                        containsExtensionMethods <- true
+                    attrIdx <- attrIdx + 1
+
+                methodIdx <- methodIdx + 1
+            containsExtensionMethods
 
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
@@ -2202,7 +2208,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             events = events,
             properties = props,
             isKnownToBeAttribute = false,
-            canContainExtensionMethods = containsExtensionMethods.IsSome,
+            canContainExtensionMethods = containsExtensionMethods,
             customAttrsStored = ctxt.customAttrsReader_TypeDef,
             metadataIndex = idx
         ))
