@@ -37,7 +37,8 @@ val NoSuggestions: Suggestions
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option
 
-val (|StopProcessing|_|): exn: exn -> unit option
+[<return: Struct>]
+val (|StopProcessing|_|): exn: exn -> unit voption
 
 val StopProcessing<'T> : exn
 

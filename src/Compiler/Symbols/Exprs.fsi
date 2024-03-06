@@ -92,38 +92,48 @@ type public FSharpObjectExprOverride =
 module public FSharpExprPatterns =
 
     /// Matches expressions which are uses of values
-    val (|Value|_|): FSharpExpr -> FSharpMemberOrFunctionOrValue option
+    [<return: Struct>]
+    val (|Value|_|): FSharpExpr -> FSharpMemberOrFunctionOrValue voption
 
     /// Matches expressions which are the application of function values
-    val (|Application|_|): FSharpExpr -> (FSharpExpr * FSharpType list * FSharpExpr list) option
+    [<return: Struct>]
+    val (|Application|_|): FSharpExpr -> (FSharpExpr * FSharpType list * FSharpExpr list) voption
 
     /// Matches expressions which are type abstractions
-    val (|TypeLambda|_|): FSharpExpr -> (FSharpGenericParameter list * FSharpExpr) option
+    [<return: Struct>]
+    val (|TypeLambda|_|): FSharpExpr -> (FSharpGenericParameter list * FSharpExpr) voption
 
     /// Matches expressions with a decision expression, each branch of which ends in DecisionTreeSuccess passing control and values to one of the targets.
-    val (|DecisionTree|_|): FSharpExpr -> (FSharpExpr * (FSharpMemberOrFunctionOrValue list * FSharpExpr) list) option
+    [<return: Struct>]
+    val (|DecisionTree|_|): FSharpExpr -> (FSharpExpr * (FSharpMemberOrFunctionOrValue list * FSharpExpr) list) voption
 
     /// Special expressions at the end of a conditional decision structure in the decision expression node of a DecisionTree .
     /// The given expressions are passed as values to the decision tree target.
-    val (|DecisionTreeSuccess|_|): FSharpExpr -> (int * FSharpExpr list) option
+    [<return: Struct>]
+    val (|DecisionTreeSuccess|_|): FSharpExpr -> (int * FSharpExpr list) voption
 
     /// Matches expressions which are lambda abstractions
-    val (|Lambda|_|): FSharpExpr -> (FSharpMemberOrFunctionOrValue * FSharpExpr) option
+    [<return: Struct>]
+    val (|Lambda|_|): FSharpExpr -> (FSharpMemberOrFunctionOrValue * FSharpExpr) voption
 
     /// Matches expressions which are conditionals
-    val (|IfThenElse|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * FSharpExpr) option
+    [<return: Struct>]
+    val (|IfThenElse|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * FSharpExpr) voption
 
     /// Matches expressions which are let definitions
+    [<return: Struct>]
     val (|Let|_|):
-        FSharpExpr -> ((FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtBinding) * FSharpExpr) option
+        FSharpExpr -> ((FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtBinding) * FSharpExpr) voption
 
     /// Matches expressions which are calls to members or module-defined functions. When calling curried functions and members the
     /// arguments are collapsed to a single collection of arguments, as done in the compiled version of these.
+    [<return: Struct>]
     val (|Call|_|):
         FSharpExpr ->
-            (FSharpExpr option * FSharpMemberOrFunctionOrValue * FSharpType list * FSharpType list * FSharpExpr list) option
+            (FSharpExpr option * FSharpMemberOrFunctionOrValue * FSharpType list * FSharpType list * FSharpExpr list) voption
 
     /// Like Call but also indicates witness arguments
+    [<return: Struct>]
     val (|CallWithWitnesses|_|):
         FSharpExpr ->
             (FSharpExpr option *
@@ -131,103 +141,134 @@ module public FSharpExprPatterns =
             FSharpType list *
             FSharpType list *
             FSharpExpr list *
-            FSharpExpr list) option
+            FSharpExpr list) voption
 
     /// Matches expressions which are calls to object constructors
-    val (|NewObject|_|): FSharpExpr -> (FSharpMemberOrFunctionOrValue * FSharpType list * FSharpExpr list) option
+    [<return: Struct>]
+    val (|NewObject|_|): FSharpExpr -> (FSharpMemberOrFunctionOrValue * FSharpType list * FSharpExpr list) voption
 
     /// Matches expressions which are uses of the 'this' value
-    val (|ThisValue|_|): FSharpExpr -> FSharpType option
+    [<return: Struct>]
+    val (|ThisValue|_|): FSharpExpr -> FSharpType voption
 
     /// Matches expressions which are uses of the 'base' value
-    val (|BaseValue|_|): FSharpExpr -> FSharpType option
+    [<return: Struct>]
+    val (|BaseValue|_|): FSharpExpr -> FSharpType voption
 
     /// Matches expressions which are quotation literals
-    val (|Quote|_|): FSharpExpr -> FSharpExpr option
+    [<return: Struct>]
+    val (|Quote|_|): FSharpExpr -> FSharpExpr voption
 
     /// Matches expressions which are let-rec definitions
+    [<return: Struct>]
     val (|LetRec|_|):
-        FSharpExpr -> ((FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtBinding) list * FSharpExpr) option
+        FSharpExpr -> ((FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtBinding) list * FSharpExpr) voption
 
     /// Matches record expressions
-    val (|NewRecord|_|): FSharpExpr -> (FSharpType * FSharpExpr list) option
+    [<return: Struct>]
+    val (|NewRecord|_|): FSharpExpr -> (FSharpType * FSharpExpr list) voption
 
     /// Matches anonymous record expressions
-    val (|NewAnonRecord|_|): FSharpExpr -> (FSharpType * FSharpExpr list) option
+    [<return: Struct>]
+    val (|NewAnonRecord|_|): FSharpExpr -> (FSharpType * FSharpExpr list) voption
 
     /// Matches expressions getting a field from an anonymous record. The integer represents the
     /// index into the sorted fields of the anonymous record.
-    val (|AnonRecordGet|_|): FSharpExpr -> (FSharpExpr * FSharpType * int) option
+    [<return: Struct>]
+    val (|AnonRecordGet|_|): FSharpExpr -> (FSharpExpr * FSharpType * int) voption
 
     /// Matches expressions which get a field from a record or class
-    val (|FSharpFieldGet|_|): FSharpExpr -> (FSharpExpr option * FSharpType * FSharpField) option
+    [<return: Struct>]
+    val (|FSharpFieldGet|_|): FSharpExpr -> (FSharpExpr option * FSharpType * FSharpField) voption
 
     /// Matches expressions which set a field in a record or class
-    val (|FSharpFieldSet|_|): FSharpExpr -> (FSharpExpr option * FSharpType * FSharpField * FSharpExpr) option
+    [<return: Struct>]
+    val (|FSharpFieldSet|_|): FSharpExpr -> (FSharpExpr option * FSharpType * FSharpField * FSharpExpr) voption
 
     /// Matches expressions which create an object corresponding to a union case
-    val (|NewUnionCase|_|): FSharpExpr -> (FSharpType * FSharpUnionCase * FSharpExpr list) option
+    [<return: Struct>]
+    val (|NewUnionCase|_|): FSharpExpr -> (FSharpType * FSharpUnionCase * FSharpExpr list) voption
 
     /// Matches expressions which get a field from a union case
-    val (|UnionCaseGet|_|): FSharpExpr -> (FSharpExpr * FSharpType * FSharpUnionCase * FSharpField) option
+    [<return: Struct>]
+    val (|UnionCaseGet|_|): FSharpExpr -> (FSharpExpr * FSharpType * FSharpUnionCase * FSharpField) voption
 
     /// Matches expressions which set a field from a union case (only used in FSharp.Core itself)
-    val (|UnionCaseSet|_|): FSharpExpr -> (FSharpExpr * FSharpType * FSharpUnionCase * FSharpField * FSharpExpr) option
+    [<return: Struct>]
+    val (|UnionCaseSet|_|): FSharpExpr -> (FSharpExpr * FSharpType * FSharpUnionCase * FSharpField * FSharpExpr) voption
 
     /// Matches expressions which gets the tag for a union case
-    val (|UnionCaseTag|_|): FSharpExpr -> (FSharpExpr * FSharpType) option
+    [<return: Struct>]
+    val (|UnionCaseTag|_|): FSharpExpr -> (FSharpExpr * FSharpType) voption
 
     /// Matches expressions which test if an expression corresponds to a particular union case
-    val (|UnionCaseTest|_|): FSharpExpr -> (FSharpExpr * FSharpType * FSharpUnionCase) option
+    [<return: Struct>]
+    val (|UnionCaseTest|_|): FSharpExpr -> (FSharpExpr * FSharpType * FSharpUnionCase) voption
 
     /// Matches tuple expressions
-    val (|NewTuple|_|): FSharpExpr -> (FSharpType * FSharpExpr list) option
+    [<return: Struct>]
+    val (|NewTuple|_|): FSharpExpr -> (FSharpType * FSharpExpr list) voption
 
     /// Matches expressions which get a value from a tuple
-    val (|TupleGet|_|): FSharpExpr -> (FSharpType * int * FSharpExpr) option
+    [<return: Struct>]
+    val (|TupleGet|_|): FSharpExpr -> (FSharpType * int * FSharpExpr) voption
 
     /// Matches expressions which coerce the type of a value
-    val (|Coerce|_|): FSharpExpr -> (FSharpType * FSharpExpr) option
+    [<return: Struct>]
+    val (|Coerce|_|): FSharpExpr -> (FSharpType * FSharpExpr) voption
 
     /// Matches array expressions
-    val (|NewArray|_|): FSharpExpr -> (FSharpType * FSharpExpr list) option
+    [<return: Struct>]
+    val (|NewArray|_|): FSharpExpr -> (FSharpType * FSharpExpr list) voption
 
     /// Matches expressions which test the runtime type of a value
-    val (|TypeTest|_|): FSharpExpr -> (FSharpType * FSharpExpr) option
+    [<return: Struct>]
+    val (|TypeTest|_|): FSharpExpr -> (FSharpType * FSharpExpr) voption
 
     /// Matches expressions which set the contents of an address
-    val (|AddressSet|_|): FSharpExpr -> (FSharpExpr * FSharpExpr) option
+    [<return: Struct>]
+    val (|AddressSet|_|): FSharpExpr -> (FSharpExpr * FSharpExpr) voption
 
     /// Matches expressions which set the contents of a mutable variable
-    val (|ValueSet|_|): FSharpExpr -> (FSharpMemberOrFunctionOrValue * FSharpExpr) option
+    [<return: Struct>]
+    val (|ValueSet|_|): FSharpExpr -> (FSharpMemberOrFunctionOrValue * FSharpExpr) voption
 
     /// Matches default-value expressions, including null expressions
-    val (|DefaultValue|_|): FSharpExpr -> FSharpType option
+    [<return: Struct>]
+    val (|DefaultValue|_|): FSharpExpr -> FSharpType voption
 
     /// Matches constant expressions, including signed and unsigned integers, strings, characters, booleans, arrays
     /// of bytes and arrays of unit16.
-    val (|Const|_|): FSharpExpr -> (obj * FSharpType) option
+    [<return: Struct>]
+    val (|Const|_|): FSharpExpr -> (obj * FSharpType) voption
 
     /// Matches expressions which take the address of a location
-    val (|AddressOf|_|): FSharpExpr -> FSharpExpr option
+    [<return: Struct>]
+    val (|AddressOf|_|): FSharpExpr -> FSharpExpr voption
 
     /// Matches sequential expressions
-    val (|Sequential|_|): FSharpExpr -> (FSharpExpr * FSharpExpr) option
+    [<return: Struct>]
+    val (|Sequential|_|): FSharpExpr -> (FSharpExpr * FSharpExpr) voption
 
     /// Matches debug points at leaf expressions in control flow
-    val (|DebugPoint|_|): FSharpExpr -> (DebugPointAtLeafExpr * FSharpExpr) option
+    [<return: Struct>]
+    val (|DebugPoint|_|): FSharpExpr -> (DebugPointAtLeafExpr * FSharpExpr) voption
 
     /// Matches fast-integer loops (up or down)
+    [<return: Struct>]
     val (|FastIntegerForLoop|_|):
-        FSharpExpr -> (FSharpExpr * FSharpExpr * FSharpExpr * bool * DebugPointAtFor * DebugPointAtInOrTo) option
+        FSharpExpr -> (FSharpExpr * FSharpExpr * FSharpExpr * bool * DebugPointAtFor * DebugPointAtInOrTo) voption
 
     /// Matches while loops
-    val (|WhileLoop|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * DebugPointAtWhile) option
+    [<return: Struct>]
+    val (|WhileLoop|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * DebugPointAtWhile) voption
 
     /// Matches try/finally expressions
-    val (|TryFinally|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * DebugPointAtTry * DebugPointAtFinally) option
+    [<return: Struct>]
+    val (|TryFinally|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * DebugPointAtTry * DebugPointAtFinally) voption
 
     /// Matches try/with expressions
+    [<return: Struct>]
     val (|TryWith|_|):
         FSharpExpr ->
             (FSharpExpr *
@@ -236,29 +277,36 @@ module public FSharpExprPatterns =
             FSharpMemberOrFunctionOrValue *
             FSharpExpr *
             DebugPointAtTry *
-            DebugPointAtWith) option
+            DebugPointAtWith) voption
 
     /// Matches expressions which create an instance of a delegate type
-    val (|NewDelegate|_|): FSharpExpr -> (FSharpType * FSharpExpr) option
+    [<return: Struct>]
+    val (|NewDelegate|_|): FSharpExpr -> (FSharpType * FSharpExpr) voption
 
     /// Matches expressions which are IL assembly code
-    val (|ILAsm|_|): FSharpExpr -> (string * FSharpType list * FSharpExpr list) option
+    [<return: Struct>]
+    val (|ILAsm|_|): FSharpExpr -> (string * FSharpType list * FSharpExpr list) voption
 
     /// Matches expressions which fetch a field from a .NET type
-    val (|ILFieldGet|_|): FSharpExpr -> (FSharpExpr option * FSharpType * string) option
+    [<return: Struct>]
+    val (|ILFieldGet|_|): FSharpExpr -> (FSharpExpr option * FSharpType * string) voption
 
     /// Matches expressions which set a field in a .NET type
-    val (|ILFieldSet|_|): FSharpExpr -> (FSharpExpr option * FSharpType * string * FSharpExpr) option
+    [<return: Struct>]
+    val (|ILFieldSet|_|): FSharpExpr -> (FSharpExpr option * FSharpType * string * FSharpExpr) voption
 
     /// Matches object expressions, returning the base type, the base call, the overrides and the interface implementations
+    [<return: Struct>]
     val (|ObjectExpr|_|):
         FSharpExpr ->
-            (FSharpType * FSharpExpr * FSharpObjectExprOverride list * (FSharpType * FSharpObjectExprOverride list) list) option
+            (FSharpType * FSharpExpr * FSharpObjectExprOverride list * (FSharpType * FSharpObjectExprOverride list) list) voption
 
     /// Matches expressions for an unresolved call to a trait
+    [<return: Struct>]
     val (|TraitCall|_|):
         FSharpExpr ->
-            (FSharpType list * string * SynMemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option
+            (FSharpType list * string * SynMemberFlags * FSharpType list * FSharpType list * FSharpExpr list) voption
 
     /// Indicates a witness argument index from the witness arguments supplied to the enclosing method
-    val (|WitnessArg|_|): FSharpExpr -> int option
+    [<return: Struct>]
+    val (|WitnessArg|_|): FSharpExpr -> int voption
