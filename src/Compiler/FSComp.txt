@@ -1609,6 +1609,7 @@ featureBooleanReturningAndReturnTypeDirectedPartialActivePattern,"Boolean-return
 featureEnforceAttributeTargetsOnFunctions,"Enforce AttributeTargets on functions"
 featureEnforceAttributeTargetsUnionCaseDeclarations,"Enforce AttributeTargets on union case declarations"
 featureLowerInterpolatedStringToConcat,"Optimizes interpolated strings in certain cases, by lowering to concatenation"
+featureLowerIntegralRangesToFastLoops,"Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops."
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3355,tcNotAnIndexerNamedIndexingNotYetEnabled,"The value '%s' is not a function and does not support index notation."

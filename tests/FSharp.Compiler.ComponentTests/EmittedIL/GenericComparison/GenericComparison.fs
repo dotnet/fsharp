@@ -62,12 +62,14 @@ module GenericComparison =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Compare08.fsx"|])>]
     let ``Compare08_fsx`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=Compare09.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Compare09.dll"    # Compare09.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Compare09.fsx"|])>]
     let ``Compare09_fsx`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=Compare10.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Compare10.dll"    # Compare10.fs -
@@ -142,12 +144,14 @@ module GenericComparison =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Hash10.fsx"|])>]
     let ``Hash10_fsx`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=Hash11.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Hash11.dll"          # Hash11.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Hash11.fsx"|])>]
     let ``Hash11_fsx`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=Hash12.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Hash12.dll"          # Hash12.fs -
@@ -197,12 +201,14 @@ module GenericComparison =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals07.fsx"|])>]
     let ``Equals07_fsx`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=Equals08.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals08.dll"	# Equals08.fs -
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals08.fsx"|])>]
     let ``Equals08_fsx`` compilation =
         compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=Equals09.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals09.dll"	# Equals09.fs -
