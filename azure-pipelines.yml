@@ -63,8 +63,13 @@ extends:
     #featureFlags:
     #  autoBaseline: true
     sdl:
+      binskim:
+        enabled: true
+      policheck:
+        enabled: true
       sbom:
         enabled: false # VS SBOM is generated with other steps
+        justificationForDisabling: 'SBOM for F# is generated via build process.'
       sourceAnalysisPool:
         name: $(DncEngInternalBuildPool)
         image: 1es-windows-2022-pt
@@ -112,27 +117,27 @@ extends:
                 - output: pipelineArtifact
                   displayName: 'Publish Test Logs'
                   condition: and(succeededOrFailed(), ne(variables['SkipTests'], 'true'))
-                  targetPath: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)'
+                  targetPath: $(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)
                   artifactName: 'Test Logs'
                 - output: pipelineArtifact
                   displayName: 'Publish Artifact Packages'
                   condition: succeeded()
-                  targetPath: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+                  targetPath: $(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)
                   artifactName: 'Packages'
                 - output: pipelineArtifact
                   displayName: 'Publish Artifact VSSetup'
                   condition: succeeded()
-                  targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                  targetPath: $(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion
                   artifactName: 'VSSetup'
                 - output: pipelineArtifact
                   displayName: 'Publish Nightly VSIX'
                   condition: succeeded()
-                  targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix'
+                  targetPath: $(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix
                   artifactName: 'Nightly'
                 - output: pipelineArtifact
                   displayName: 'Publish Artifact Symbols'
                   condition: succeeded()
-                  targetPath: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
+                  targetPath: $(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)
                   artifactName: 'NativeSymbols'
                 - output: microBuildVstsDrop
                   dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
