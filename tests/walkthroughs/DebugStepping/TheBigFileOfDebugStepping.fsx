@@ -1072,6 +1072,46 @@ module ForLoopRegularCode =
             printfn $"hello, x = {x}"
             printfn $"hello, x = {x}"
 
+    let testSimpleForEachIntRangeStepLoopWithOneStatement (start, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeStepLoopWithTwoStatements (start, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeLoopWithOneStatement (start: int64, stop) =
+        for x in start .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeLoopWithTwoStatements (start: int64, stop) =
+        for x in start .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeLoopDownWithOneStatement (start: int64, stop) =
+        for x in start .. -1L .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeLoopDownWithTwoStatements (start: int64, stop) =
+        for x in start .. -1L .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeStepLoopWithOneStatement (start: int64, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeStepLoopWithTwoStatements (start: int64, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeStepLoopWithConstCount () =
+        for x in 1L .. 3L .. 9L do
+            printfn $"hello, x = {x}"
+
     let testSimpleForEachIntLoopWithOneStatement (start, stop) =
         for x = start to stop do
             printfn $"hello, x = {x}"
@@ -1102,6 +1142,17 @@ module ForLoopRegularCode =
     testSimpleForEachIntRangeLoopWithTwoStatements (1, 3)
     testSimpleForEachIntRangeLoopDownWithOneStatement (1, 3)
     testSimpleForEachIntRangeLoopDownWithTwoStatements (1, 3)
+
+    testSimpleForEachIntRangeStepLoopWithOneStatement (-1, 5, 10)
+    testSimpleForEachIntRangeStepLoopWithTwoStatements (-1, 5, 10)
+    testSimpleForEachInt64RangeLoopWithOneStatement (3L, 7L)
+    testSimpleForEachInt64RangeLoopWithTwoStatements (-4L, 0L)
+    testSimpleForEachInt64RangeLoopDownWithOneStatement (3L, -1L)
+    testSimpleForEachInt64RangeLoopDownWithTwoStatements (3L, -1L)
+    testSimpleForEachInt64RangeStepLoopWithOneStatement (0L, 2L, 5L)
+    testSimpleForEachInt64RangeStepLoopWithTwoStatements (0L, 2L, 5L)
+    testSimpleForEachInt64RangeStepLoopWithConstCount ()
+
     testSimpleForEachIntLoopWithOneStatement (1, 3)
     testSimpleForEachIntLoopWithTwoStatements (1, 3)
     testSimpleForEachIntLoopDownWithOneStatement (1, 3)
