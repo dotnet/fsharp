@@ -21,6 +21,10 @@ stages:
       - input: pipelineArtifact
         artifactName: VSSetup
         targetPath: $(Build.ArtifactStagingDirectory)/VSSetup
+      outputs:
+      - output: pipelineArtifact
+        artifactName: VSSetup
+        targetPath: $(Build.ArtifactStagingDirectory)/VSSetup
   - job: Insert_VS
     pool:
       name: NetCore1ESPool-Svc-Internal
