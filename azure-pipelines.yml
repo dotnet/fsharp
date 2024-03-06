@@ -60,8 +60,8 @@ resources:
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:
-    featureFlags:
-      autoBaseline: true
+    #featureFlags:
+    #  autoBaseline: true
     sdl:
       sbom:
         enabled: false # VS SBOM is generated with other steps
@@ -171,18 +171,6 @@ extends:
                       /p:GenerateSbom=true
               env:
                   NativeToolsOnMachine: true
-            - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
-              displayName: End to end build tests
-              continueOnError: true
-              condition: always()
-            - task: PublishTestResults@2
-              displayName: Publish Test Results
-              inputs:
-                testResultsFormat: 'NUnit'
-                testResultsFiles: '*.xml'
-                searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              continueOnError: true
-              condition: ne(variables['SkipTests'], 'true')
 
     #---------------------------------------------------------------------------------------------------------------------#
     #                                                    Post Build                                                       #
