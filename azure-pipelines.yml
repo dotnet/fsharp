@@ -117,7 +117,7 @@ extends:
                   displayName: 'Publish Test Logs'
                   condition: and(succeededOrFailed(), ne(variables['SkipTests'], 'true'))
                   targetPath: $(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)
-                  artifactName: 'Test Logs'
+                  artifactName: TestLogs
                 - output: pipelineArtifact
                   displayName: 'Publish Artifact Packages'
                   condition: succeeded()
@@ -127,17 +127,17 @@ extends:
                   displayName: 'Publish Artifact VSSetup'
                   condition: succeeded()
                   targetPath: $(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion
-                  artifactName: 'VSSetup'
+                  artifactName: VSSetup
                 - output: pipelineArtifact
                   displayName: 'Publish Nightly VSIX'
                   condition: succeeded()
                   targetPath: $(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix
-                  artifactName: 'Nightly'
+                  artifactName: Nightly
                 - output: pipelineArtifact
                   displayName: 'Publish Artifact Symbols'
                   condition: succeeded()
                   targetPath: $(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)
-                  artifactName: 'NativeSymbols'
+                  artifactName: NativeSymbols
                 - output: microBuildVstsDrop
                   dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
                   dropName: $(VisualStudioDropName)
@@ -179,7 +179,7 @@ extends:
     #---------------------------------------------------------------------------------------------------------------------#
     #                                                    Post Build                                                       #
     #---------------------------------------------------------------------------------------------------------------------#
-    - template: eng/common/templates-official/post-build/post-build.yml
+    - template: eng/common/templates-official/post-build/post-build.yml@self
       parameters:
         publishingInfraVersion: 3
         # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
@@ -207,7 +207,8 @@ extends:
     #---------------------------------------------------------------------------------------------------------------------#
     #                                                   VS Insertion                                                      #
     #---------------------------------------------------------------------------------------------------------------------#
-    - template: eng/release/insert-into-vs.yml
+
+    - template: eng/release/insert-into-vs.yml@self
       parameters:
         componentBranchName: refs/heads/$(FSharpReleaseBranchName)
         insertTargetBranch: $(VSInsertionBranchName)
