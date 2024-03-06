@@ -25,9 +25,9 @@ trigger:
     - TESTGUIDE.md
 
 variables:
-  - name: ReleaseBranch
-    value: release/dev17.9
-  - name: VSTargetInsertionBranch
+  - name: FSharpReleaseBranchName
+    value: 1espm
+  - name: VSInsertionTargetBranchName
     value: main
   - name: _TeamName
     value: FSharp
@@ -74,11 +74,12 @@ extends:
       #-------------------------------------------------------------------------------------------------------------------#
       #                                                  Signed build                                                     #
       #-------------------------------------------------------------------------------------------------------------------#
+      # Localization: we only run it for specific release branches.
       - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.9') }}:
         - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
             MirrorRepo: fsharp
-            MirrorBranch: release/dev17.9
+            MirrorBranch: $(FSharpReleaseBranchName)
             LclSource: lclFilesfromPackage
             LclPackageId: 'LCL-JUNO-PROD-FSHARP'
       - template: /eng/common/templates-official/jobs/jobs.yml@self
@@ -213,8 +214,8 @@ extends:
     #---------------------------------------------------------------------------------------------------------------------#
     - template: eng/release/insert-into-vs.yml
       parameters:
-        componentBranchName: refs/heads/main
-        insertTargetBranch: main
+        componentBranchName: refs/heads/$(FSharpReleaseBranchName)
+        insertTargetBranch: $(VSInsertionBranchName)
         insertTeamEmail: fsharpteam@microsoft.com
         insertTeamName: 'F#'
         completeInsertion: 'auto'
