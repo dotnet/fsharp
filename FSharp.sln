@@ -60,6 +60,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{4E4F41D9-8
 		docs\large-inputs-and-stack-overflows.md = docs\large-inputs-and-stack-overflows.md
 		docs\memory-usage.md = docs\memory-usage.md
 		docs\optimizations.md = docs\optimizations.md
+		docs\optimizations-equality.md = docs\optimizations-equality.md
 		docs\overview.md = docs\overview.md
 	EndProjectSection
 EndProject
