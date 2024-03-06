@@ -12,19 +12,6 @@ stages:
   dependsOn: publish_using_darc
   displayName: Insert into VS
   jobs:
-  - job: Download_VSSetup
-    displayName: Download VSSetup
-    templateContext:
-      # The type of the job should be specified as artifactJob
-      type: artifactJob
-      inputs:
-      - input: pipelineArtifact
-        artifactName: VSSetup
-        targetPath: $(Build.ArtifactStagingDirectory)/VSSetup
-      outputs:
-      - output: pipelineArtifact
-        artifactName: VSSetup
-        targetPath: $(Build.ArtifactStagingDirectory)/VSSetup
   - job: Insert_VS
     pool:
       name: NetCore1ESPool-Svc-Internal
