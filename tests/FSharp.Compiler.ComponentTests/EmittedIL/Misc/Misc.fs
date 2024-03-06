@@ -45,6 +45,7 @@ module Misc =
     let ``CodeGenRenamings01_RealInternalSignatureOn_fs`` compilation =
         compilation
         |> withRealInternalSignatureOn
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> asExe
         |> verifyCompilation
 
@@ -116,6 +117,7 @@ module Misc =
     let ``ForLoop01_RealInternalSignatureOn_fs`` compilation =
         compilation
         |> withRealInternalSignatureOn
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> asExe
         |> verifyCompilation
 
