@@ -99,6 +99,41 @@ extends:
               demands: 1es-windows-2022-pt
               os: windows
             timeoutInMinutes: 300
+            templateContext:
+              outputs:
+                - output: pipelineArtifact
+                  displayName: 'Publish Test Logs'
+                  condition: and(succeededOrFailed(), ne(variables['SkipTests'], 'true'))
+                  targetPath: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)'
+                  artifactName: 'Test Logs'
+                - output: pipelineArtifact
+                  displayName: 'Publish Artifact Packages'
+                  condition: succeeded()
+                  targetPath: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+                  artifactName: 'Packages'
+                - output: pipelineArtifact
+                  displayName: 'Publish Artifact VSSetup'
+                  condition: succeeded()
+                  targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                  artifactName: 'VSSetup'
+                - output: pipelineArtifact
+                  displayName: 'Publish Nightly VSIX'
+                  condition: succeeded()
+                  targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix'
+                  artifactName: 'Nightly'
+                - output: pipelineArtifact
+                  displayName: 'Publish Artifact Symbols'
+                  condition: succeeded()
+                  targetPath: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
+                  artifactName: 'NativeSymbols'
+                - output: microBuildVstsDrop
+                  dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                  dropName: $(VisualStudioDropName)
+                  dropRetentionDays: 90
+                  accessToken: $(dn-bot-devdiv-drop-rw-code-rw)
+                  dropServiceUri: 'https://devdiv.artifacts.visualstudio.com'
+                  vsDropServiceUri: 'https://vsdrop.corp.microsoft.com/file/v1'
+
             variables:
             - group: DotNet-Symbol-Server-Pats
             - group: DotNet-DevDiv-Insertion-Workflow-Variables
@@ -132,54 +167,6 @@ extends:
               displayName: End to end build tests
               continueOnError: true
               condition: always()
-            - task: PublishTestResults@2
-              displayName: Publish Test Results
-              inputs:
-                testResultsFormat: 'NUnit'
-                testResultsFiles: '*.xml'
-                searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              continueOnError: true
-              condition: ne(variables['SkipTests'], 'true')
-            - task: PublishBuildArtifacts@1
-              displayName: Publish Test Logs
-              inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)'
-                ArtifactName: 'Test Logs'
-                publishLocation: Container
-              continueOnError: true
-              condition: ne(variables['SkipTests'], 'true')
-            - task: PublishBuildArtifacts@1
-              displayName: Publish Artifact Packages
-              inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
-                ArtifactName: 'Packages'
-              condition: succeeded()
-            - task: PublishBuildArtifacts@1
-              displayName: Publish Artifact VSSetup
-              inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
-                ArtifactName: 'VSSetup'
-              condition: succeeded()
-            - task: PublishBuildArtifacts@1
-              displayName: Publish Artifact Nightly
-              inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix'
-                ArtifactName: 'Nightly'
-              condition: succeeded()
-            - task: PublishBuildArtifacts@1
-              displayName: Publish Artifact Symbols
-              inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
-                ArtifactName: 'NativeSymbols'
-              condition: succeeded()
-            - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
-              displayName: Upload VSTS Drop
-              inputs:
-                DropName: $(VisualStudioDropName)
-                DropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
-                AccessToken: $(dn-bot-devdiv-drop-rw-code-rw)
-              condition: succeeded()
-
 
     #---------------------------------------------------------------------------------------------------------------------#
     #                                                    Post Build                                                       #
