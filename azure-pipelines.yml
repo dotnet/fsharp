@@ -99,10 +99,13 @@ extends:
           enableSourceBuild: true
           enableTelemetry: true
           helixRepo: dotnet/fsharp
+          poolName: $(DncEngInternalBuildPool)
+          poolDemands: 1es-windows-2022-pt
+          poolOs: windows
           jobs:
           - job: Full_Signed
             pool:
-              name: $(DncEngInternalBuildPool)
+              name: NetCore1ESPool-Svc-Internal
               demands: 1es-windows-2022-pt
               os: windows
             timeoutInMinutes: 300
