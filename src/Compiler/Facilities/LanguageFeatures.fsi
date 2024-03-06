@@ -80,6 +80,7 @@ type LanguageFeature =
     | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
     | EnforceAttributeTargetsOnStructAndClasses
+    | LowerIntegralRangesToFastLoops
 
 /// LanguageVersion management
 type LanguageVersion =

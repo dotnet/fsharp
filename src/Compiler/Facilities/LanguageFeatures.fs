@@ -89,6 +89,7 @@ type LanguageFeature =
     | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
     | EnforceAttributeTargetsOnStructAndClasses
+    | LowerIntegralRangesToFastLoops
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -205,6 +206,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
                 LanguageFeature.EnforceAttributeTargetsOnStructAndClasses, previewVersion
+                LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -352,6 +354,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations -> FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
         | LanguageFeature.EnforceAttributeTargetsOnStructAndClasses -> FSComp.SR.featureEnforceAttributeTargetsOnStructAndClasses ()
+        | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
