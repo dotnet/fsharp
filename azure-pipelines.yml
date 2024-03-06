@@ -26,9 +26,9 @@ trigger:
 
 variables:
   - name: FSharpReleaseBranchName
-    value: 1espm
+    value: 1espm # Should be 'current' branch name, i.e. 'main' in main or 'release/dev17.10' in release/dev17.10
   - name: VSInsertionTargetBranchName
-    value: main
+    value: main # Should be 'previous' release branch in main and current in release, i.e. 'rel/d17.10' in 'release/dev17.10'
   - name: _TeamName
     value: FSharp
   - name: TeamName
@@ -71,7 +71,7 @@ extends:
         enabled: false # VS SBOM is generated with other steps
         justificationForDisabling: 'SBOM for F# is generated via build process.'
       sourceAnalysisPool:
-        name: $(DncEngInternalBuildPool)
+        name: NetCore1ESPool-Svc-Internal
         image: 1es-windows-2022-pt
         os: windows
     stages:
@@ -81,7 +81,7 @@ extends:
       #-------------------------------------------------------------------------------------------------------------------#
       #                                                  Signed build                                                     #
       #-------------------------------------------------------------------------------------------------------------------#
-      # Localization: we only run it for specific release branches.
+      # Localization: we only run it for specific release branches
       - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.9') }}:
         - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
