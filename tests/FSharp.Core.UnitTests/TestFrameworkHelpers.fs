@@ -49,7 +49,7 @@ module private Impl =
             | :? seq<int32> as seq -> seq |> Seq.toArray :>obj
             | :? seq<uint16> as seq -> seq |> Seq.toArray :>obj
             | :? seq<int16> as seq -> seq |> Seq.toArray :>obj
-            | :? seq<sbyte> as seq -> Enumerable.ToArray(seq) :>obj
+            | :? seq<sbyte> as seq -> seq |> Seq.toArray :> obj
             | :? seq<byte> as seq -> seq |> Seq.toArray :>obj
             | :? seq<char> as seq -> seq |> Seq.toArray :>obj
             | :? seq<bool> as seq -> seq |> Seq.toArray :>obj

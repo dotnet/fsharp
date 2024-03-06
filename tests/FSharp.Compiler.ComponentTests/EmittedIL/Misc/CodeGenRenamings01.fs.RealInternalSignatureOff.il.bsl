@@ -72,8 +72,7 @@
       IL_0014:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>>& next) cil managed
     {
       
       .maxstack  7
@@ -131,8 +130,7 @@
       IL_0060:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  8
@@ -142,8 +140,7 @@
       IL_0007:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -179,8 +176,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`2<int32,int32> 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`2<int32,int32> get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -191,8 +187,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<class [runtime]System.Tuple`2<int32,int32>> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<class [runtime]System.Tuple`2<int32,int32>> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -207,8 +202,7 @@
 
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_alist() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_alist() cil managed
   {
     
     .maxstack  8
@@ -216,8 +210,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static int32[] 
-          get_array() cil managed
+  .method public specialname static int32[] get_array() cil managed
   {
     
     .maxstack  8
@@ -225,8 +218,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [runtime]System.Collections.Generic.IEnumerable`1<int32> 
-          get_aseq() cil managed
+  .method public specialname static class [runtime]System.Collections.Generic.IEnumerable`1<int32> get_aseq() cil managed
   {
     
     .maxstack  8
@@ -234,8 +226,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>> 
-          get_list1() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>> get_list1() cil managed
   {
     
     .maxstack  8
@@ -243,8 +234,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>> 
-          get_seq1() cil managed
+  .method public specialname static class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>> get_seq1() cil managed
   {
     
     .maxstack  8
@@ -252,8 +242,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [runtime]System.Tuple`2<int32,int32>[] 
-          get_array1() cil managed
+  .method public specialname static class [runtime]System.Tuple`2<int32,int32>[] get_array1() cil managed
   {
     
     .maxstack  8
@@ -261,8 +250,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static int32[0...,0...] 
-          get_a3() cil managed
+  .method public specialname static int32[0...,0...] get_a3() cil managed
   {
     
     .maxstack  8
@@ -270,8 +258,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static int32[0...,0...,0...] 
-          get_array3D() cil managed
+  .method public specialname static int32[0...,0...,0...] get_array3D() cil managed
   {
     
     .maxstack  8
@@ -279,8 +266,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static int32[0...,0...,0...,0...] 
-          get_array4D() cil managed
+  .method public specialname static int32[0...,0...,0...,0...] get_array4D() cil managed
   {
     
     .maxstack  8
@@ -288,8 +274,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static int32[] 
-          get_a1() cil managed
+  .method public specialname static int32[] get_a1() cil managed
   {
     
     .maxstack  8
@@ -297,8 +282,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static int32[] 
-          get_a2() cil managed
+  .method public specialname static int32[] get_a2() cil managed
   {
     
     .maxstack  8

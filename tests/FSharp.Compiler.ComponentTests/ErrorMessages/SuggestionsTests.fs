@@ -139,12 +139,12 @@ open Collectons
     [<Fact>]
     let ``Suggest Namespaces`` () =
         FSharp """
-open System.Collectons
+open System.Lema
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 2, Col 13, Line 2, Col 23,
-                                 "The namespace 'Collectons' is not defined.")
+        |> withSingleDiagnostic (Error 39, Line 2, Col 13, Line 2, Col 17,
+                                 "The namespace 'Lema' is not defined.")
 
     [<Fact>]
     let ``Suggest Record Labels`` () =

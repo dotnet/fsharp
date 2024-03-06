@@ -114,4 +114,5 @@ module ComputationExpressions =
     let ``ComputationExpr07_realsig=false`` compilation =
         compilation
         |> withoutRealInternalSignature
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation 

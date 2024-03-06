@@ -51,8 +51,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<!a,int32>,class [runtime]System.Tuple`2<!a,int32>>
     {
       .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!a> @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -63,8 +62,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> 
-              Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
+      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
       {
         
         .maxstack  7
@@ -85,8 +83,7 @@
         IL_0017:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
@@ -101,8 +98,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<!a,int32>,class [runtime]System.Tuple`2<!a,int32>>
     {
       .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a> @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -113,8 +109,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> 
-              Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
+      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
       {
         
         .maxstack  7
@@ -135,8 +130,7 @@
         IL_0017:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
@@ -151,8 +145,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`3<!a,int32,int32>,class [runtime]System.Tuple`3<!a,int32,int32>>
     {
       .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!a> @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -163,8 +156,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Tuple`3<!a,int32,int32> 
-              Invoke(class [runtime]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
+      .method public strict virtual instance class [runtime]System.Tuple`3<!a,int32,int32> Invoke(class [runtime]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
       {
         
         .maxstack  7
@@ -191,8 +183,7 @@
         IL_001f:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
@@ -207,8 +198,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`3<!a,int32,int32>,class [runtime]System.Tuple`3<!a,int32,int32>>
     {
       .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!a> @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -219,8 +209,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Tuple`3<!a,int32,int32> 
-              Invoke(class [runtime]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
+      .method public strict virtual instance class [runtime]System.Tuple`3<!a,int32,int32> Invoke(class [runtime]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
       {
         
         .maxstack  7
@@ -247,8 +236,7 @@
         IL_001f:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
@@ -259,8 +247,7 @@
 
     } 
 
-    .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-            f1() cil managed
+    .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f1() cil managed
     {
       
       .maxstack  4
@@ -287,8 +274,7 @@
       IL_003a:  ret
     } 
 
-    .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!a,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!a,int32,int32>>> 
-            f2<a>(!!a x) cil managed
+    .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!a,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<!!a,int32,int32>>> f2<a>(!!a x) cil managed
     {
       
       .maxstack  6

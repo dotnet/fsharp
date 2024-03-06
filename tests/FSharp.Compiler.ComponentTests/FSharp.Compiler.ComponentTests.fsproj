@@ -19,7 +19,7 @@
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
     <!-- allow testing of static methods in interfaces on .NET 6  -->
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
-	  <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
 </PropertyGroup>
 
 <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -152,6 +152,7 @@
     <Compile Include="EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs" />
     <Compile Include="EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs" />
     <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
+    <Compile Include="EmittedIL\ComputedCollections\ComputedCollections.fs" />
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
     <Compile Include="EmittedIL\ForLoop\RealInternalSignatureOff\ForLoop.fs" />
     <Compile Include="EmittedIL\ForLoop\RealInternalSignatureOn\ForLoop.fs" />
@@ -228,9 +229,9 @@
     <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
     <Compile Include="Language\PrintfFormatTests.fs" />
-  	<Compile Include="Language\InterfaceTests.fs" />
-	  <Compile Include="Language\CopyAndUpdateTests.fs" />
-	  <Compile Include="Language\ConstraintIntersectionTests.fs" />
+    <Compile Include="Language\InterfaceTests.fs" />
+    <Compile Include="Language\CopyAndUpdateTests.fs" />
+    <Compile Include="Language\ConstraintIntersectionTests.fs" />
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
@@ -280,7 +281,7 @@
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
     <Compile Include="CompilerService\AsyncLock.fs" />
-	  <Compile Include="CompilerService\AsyncMemoize.fs" />
+    <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -313,14 +314,12 @@
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-	    <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
-    </None>
   </ItemGroup>
 
-  <ItemGroup />
-
   <ItemGroup>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
+    </None>
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
     </None>
@@ -331,6 +330,7 @@
     <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />

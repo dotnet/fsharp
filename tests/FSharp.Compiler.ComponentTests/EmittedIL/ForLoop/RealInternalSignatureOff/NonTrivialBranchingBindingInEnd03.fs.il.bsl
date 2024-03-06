@@ -43,8 +43,7 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public specialname static int32[] 
-          get_r() cil managed
+  .method public specialname static int32[] get_r() cil managed
   {
     
     .maxstack  8
@@ -52,8 +51,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static int32[] 
-          get_w() cil managed
+  .method public specialname static int32[] get_w() cil managed
   {
     
     .maxstack  8
@@ -61,8 +59,7 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_current@9() cil managed
+  .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_current@9() cil managed
   {
     
     .maxstack  8
@@ -70,8 +67,7 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static void 
-          set_current@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'value') cil managed
+  .method assembly specialname static void set_current@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'value') cil managed
   {
     
     .maxstack  8
@@ -80,8 +76,7 @@
     IL_0006:  ret
   } 
 
-  .method assembly specialname static int32 
-          get_e1@1() cil managed
+  .method assembly specialname static int32 get_e1@1() cil managed
   {
     
     .maxstack  8
@@ -89,8 +84,7 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static int32 
-          get_e2@1() cil managed
+  .method assembly specialname static int32 get_e2@1() cil managed
   {
     
     .maxstack  8
@@ -98,8 +92,7 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_next@9() cil managed
+  .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_next@9() cil managed
   {
     
     .maxstack  8
@@ -107,8 +100,7 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static void 
-          set_next@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'value') cil managed
+  .method assembly specialname static void set_next@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'value') cil managed
   {
     
     .maxstack  8

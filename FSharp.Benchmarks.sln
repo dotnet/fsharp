@@ -13,10 +13,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.DependencyManager.Nu
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MicroPerf", "tests\benchmarks\CompiledCodeBenchmarks\MicroPerf\MicroPerf.fsproj", "{ED766F38-BD2B-436B-AF73-7BE6FAE061DD}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TaskPerf", "tests\benchmarks\CompiledCodeBenchmarks\TaskPerf\TaskPerf\TaskPerf.fsproj", "{4779C245-9B85-4491-85EB-B0AF6D818E81}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskPerfCSharp", "tests\benchmarks\CompiledCodeBenchmarks\TaskPerf\TaskPerfCSharp\TaskPerfCSharp.csproj", "{38CAA9B6-E4B8-42CB-B4E3-C2DC7D481913}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HistoricalBenchmark", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.fsproj", "{66E23120-5E94-49AE-A263-24583007F5F5}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HistoricalBenchmark.Runner", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.Runner\HistoricalBenchmark.Runner.fsproj", "{2A1289B1-1539-48CB-BE03-807FE4BC0387}"
@@ -71,18 +67,6 @@ Global
 		{ED766F38-BD2B-436B-AF73-7BE6FAE061DD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{ED766F38-BD2B-436B-AF73-7BE6FAE061DD}.ReleaseCompressed|Any CPU.ActiveCfg = Debug|Any CPU
 		{ED766F38-BD2B-436B-AF73-7BE6FAE061DD}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
-		{4779C245-9B85-4491-85EB-B0AF6D818E81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4779C245-9B85-4491-85EB-B0AF6D818E81}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4779C245-9B85-4491-85EB-B0AF6D818E81}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4779C245-9B85-4491-85EB-B0AF6D818E81}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4779C245-9B85-4491-85EB-B0AF6D818E81}.ReleaseCompressed|Any CPU.ActiveCfg = Debug|Any CPU
-		{4779C245-9B85-4491-85EB-B0AF6D818E81}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
-		{38CAA9B6-E4B8-42CB-B4E3-C2DC7D481913}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{38CAA9B6-E4B8-42CB-B4E3-C2DC7D481913}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{38CAA9B6-E4B8-42CB-B4E3-C2DC7D481913}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{38CAA9B6-E4B8-42CB-B4E3-C2DC7D481913}.Release|Any CPU.Build.0 = Release|Any CPU
-		{38CAA9B6-E4B8-42CB-B4E3-C2DC7D481913}.ReleaseCompressed|Any CPU.ActiveCfg = Debug|Any CPU
-		{38CAA9B6-E4B8-42CB-B4E3-C2DC7D481913}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
 		{66E23120-5E94-49AE-A263-24583007F5F5}.Debug|Any CPU.ActiveCfg = Release|Any CPU
 		{66E23120-5E94-49AE-A263-24583007F5F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66E23120-5E94-49AE-A263-24583007F5F5}.Release|Any CPU.Build.0 = Release|Any CPU
