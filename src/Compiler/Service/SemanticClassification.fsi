@@ -49,6 +49,7 @@ type SemanticClassificationType =
     | TypeDef = 35
     | Plaintext = 36
 
+[<RequireQualifiedAccess>]
 [<Struct>]
 type SemanticClassificationItem =
     val Range: range

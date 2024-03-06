@@ -3220,6 +3220,7 @@ module internal AssemblyReader =
           systemRuntimeScopeRef: ILScopeRef }
         override __.ToString() = "<ILGlobals>"
 
+    [<AutoOpen>]
     [<Struct>]
     type ILTableName(idx: int) =
         member __.Index = idx
