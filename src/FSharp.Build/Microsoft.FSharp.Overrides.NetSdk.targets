@@ -17,6 +17,15 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
+  <!-- The test sdk automagically forces OutputType to Exe for netcoreapp target frameworks
+       unfortunately it doesn't do that for desktop framework targets which causes build errors
+       with the shipping templates, that require a manual edit.
+       This just forces it for F# test projects where GenerateProgramFile is false.
+  -->
+  <PropertyGroup Condition="'$(IsTestProject)'=='true' and '$(GenerateProgramFile)'=='false'">
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
   <Target Name="CoreGenerateAssemblyInfo"
           Condition="'$(Language)'=='F#'"
           DependsOnTargets="CreateGeneratedAssemblyInfoInputsCacheFile"
