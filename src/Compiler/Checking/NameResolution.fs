@@ -573,6 +573,15 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
 /// Get the info for all the .NET-style extension members listed as static members in the type.
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
     let g = amap.g
+
+    let isApplicable =
+       IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass ||
+       g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
+       tcrefOfStaticClass.IsLocalRef &&
+       not tcrefOfStaticClass.IsTypeAbbrev
+
+    if not isApplicable then List.empty else
+
     let ty = generalizedTyconRef g tcrefOfStaticClass
     let ty1 = metadataOfTy g ty
 
@@ -581,14 +590,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
         | ILTypeMetadata(TILObjectReprData(_, _, ilTypeDef)) -> ilTypeDef.CanContainExtensionMethods
         | _ -> true
 
-    let isApplicable =
-       canContainExtensionMethods &&
-       (IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass ||
-        g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
-        tcrefOfStaticClass.IsLocalRef &&
-        not tcrefOfStaticClass.IsTypeAbbrev)
-
-    if not isApplicable then [] else
+    if not canContainExtensionMethods then List.empty else
 
     let pri = NextExtensionMethodPriority()
 
