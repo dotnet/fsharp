@@ -1159,7 +1159,8 @@ let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
 
     // We want to generate pretty much everything for attributes, because of serialization scenarios, and the fact that non-visible constructors, properties and fields can still be part of reference assembly.
     // Example: NoDynamicInvocationAttribute has an internal constructor, which should be included in the reference assembly.
-    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsClassInitializer) then
+    else if tdef.HasAdditionalFlags(ILTypeDefAdditionalFlags.IsKnownToBeAttribute) &&
+            mdef.IsSpecialName && (not mdef.IsClassInitializer) then
         true
     else
         match mdef.Access with
@@ -1179,7 +1180,7 @@ let canGenFieldDef (tdef: ILTypeDef) cenv (fd: ILFieldDef) =
     if not cenv.referenceAssemblyOnly then
         true
     // We want to explicitly generate fields for struct types and attributes, since they can be part of `unmanaged constraint`.
-    else if tdef.IsStruct || tdef.IsKnownToBeAttribute then
+    else if tdef.IsStruct || tdef.HasAdditionalFlags(ILTypeDefAdditionalFlags.IsKnownToBeAttribute) then
         true
     else
         match fd.Access with

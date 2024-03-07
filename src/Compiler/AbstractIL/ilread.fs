@@ -2137,9 +2137,74 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let layout = typeLayoutOfFlags ctxt mdv flags idx
 
         let hasLayout =
-            (match layout with
-             | ILTypeDefLayout.Explicit _ -> true
-             | _ -> false)
+            match layout with
+            | ILTypeDefLayout.Explicit _ -> true
+            | _ -> false
+
+        let containsExtensionMethods =
+            methodsIdx > 0
+            &&
+
+            let mutable containsExtensionMethods = false
+            let mutable searchedKey = Unchecked.defaultof<_>
+
+            let attributesSearcher =
+                { new ISeekReadIndexedRowReader<CustomAttributeRow, CustomAttributeRow, CustomAttributeRow> with
+                    member _.GetRow(i, row) =
+                        seekReadCustomAttributeRow ctxt mdv i &row
+
+                    member _.GetKey(row) = row
+                    member _.CompareKey(key) = hcaCompare searchedKey key.parentIndex
+                    member _.ConvertRow(row) = row
+                }
+
+            let mutable methodIdx = methodsIdx
+
+            while methodIdx <= endMethodsIdx && not containsExtensionMethods do
+                searchedKey <- TaggedIndex(hca_MethodDef, methodIdx)
+
+                let attrsStartIdx, attrsEndIdx =
+                    seekReadIndexedRowsRange
+                        (ctxt.getNumRows TableNames.CustomAttribute)
+                        (isSorted ctxt TableNames.CustomAttribute)
+                        attributesSearcher
+
+                let hasAttributes = attrsStartIdx > 0 && attrsEndIdx >= attrsStartIdx
+                let mutable attrIdx = attrsStartIdx
+
+                while hasAttributes && attrIdx <= attrsEndIdx && not containsExtensionMethods do
+                    let mutable attr = Unchecked.defaultof<_>
+                    attributesSearcher.GetRow(attrIdx, &attr)
+                    let attrCtorIdx = attr.typeIndex.index
+
+                    let name =
+                        if attr.typeIndex.tag = cat_MethodDef then
+                            let idx = seekMethodDefParent ctxt attrCtorIdx
+                            let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
+                            readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+                        else
+                            let mrpTag, _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
+
+                            if mrpTag.tag <> mrp_TypeRef then
+                                ""
+                            else
+                                let _, nameIdx, namespaceIdx = seekReadTypeRefRow ctxt mdv mrpTag.index
+                                readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+
+                    if name = "System.Runtime.CompilerServices.ExtensionAttribute" then
+                        containsExtensionMethods <- true
+
+                    attrIdx <- attrIdx + 1
+
+                methodIdx <- methodIdx + 1
+
+            containsExtensionMethods
+
+        let additionalFlags =
+            if containsExtensionMethods then
+                ILTypeDefAdditionalFlags.CanContainExtensionMethods
+            else
+                ILTypeDefAdditionalFlags.None
 
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
@@ -2163,7 +2228,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             methodImpls = mimpls,
             events = events,
             properties = props,
-            isKnownToBeAttribute = false,
+            additionalFlags = additionalFlags,
             customAttrsStored = ctxt.customAttrsReader_TypeDef,
             metadataIndex = idx
         ))
@@ -2257,25 +2322,38 @@ and seekReadTypeDefAsTypeUncached ctxtH (TypeDefAsTypIdx(boxity, ginst, idx)) =
     mkILTy boxity (ILTypeSpec.Create(seekReadTypeDefAsTypeRef ctxt idx, ginst))
 
 and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx =
+    let seekReadName ctxt idx =
+        let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
+        readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+
+    let getEnclosingIdx (ctxt: ILMetadataReader) idx =
+        seekReadIndexedRow (
+            ctxt.getNumRows TableNames.Nested,
+            seekReadNestedRow ctxt,
+            fst,
+            simpleIndexCompare idx,
+            isSorted ctxt TableNames.Nested,
+            snd
+        )
+
+    let rec seekReadEncl ctxt idx acc =
+        let nm = seekReadName ctxt idx
+        let acc = nm :: acc
+
+        if seekIsTopTypeDefOfIdx ctxt idx then
+            acc
+        else
+            let enclIdx = getEnclosingIdx ctxt idx
+            seekReadEncl ctxt enclIdx acc
+
     let enc =
         if seekIsTopTypeDefOfIdx ctxt idx then
-            []
+            List.empty
         else
-            let enclIdx =
-                seekReadIndexedRow (
-                    ctxt.getNumRows TableNames.Nested,
-                    seekReadNestedRow ctxt,
-                    fst,
-                    simpleIndexCompare idx,
-                    isSorted ctxt TableNames.Nested,
-                    snd
-                )
+            let enclIdx = getEnclosingIdx ctxt idx
+            seekReadEncl ctxt enclIdx List.empty
 
-            let tref = seekReadTypeDefAsTypeRef ctxt enclIdx
-            tref.Enclosing @ [ tref.Name ]
-
-    let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
-    let nm = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+    let nm = seekReadName ctxt idx
     ILTypeRef.Create(scope = ILScopeRef.Local, enclosing = enc, name = nm)
 
 and seekReadTypeRef (ctxt: ILMetadataReader) idx = ctxt.seekReadTypeRef idx
@@ -2822,22 +2900,27 @@ and seekReadMemberRefAsFieldSpecUncached ctxtH (MemberRefAsFspecIdx(numTypars, i
 // method-range and field-range start/finish indexes
 and seekReadMethodDefAsMethodData ctxt idx = ctxt.seekReadMethodDefAsMethodData idx
 
+and seekMethodDefParent (ctxt: ILMetadataReader) methodIdx =
+    seekReadIndexedRow (
+        ctxt.getNumRows TableNames.TypeDef,
+        (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
+        id,
+        (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
+            if endMethodsIdx <= methodIdx then
+                1
+            elif methodsIdx <= methodIdx && methodIdx < endMethodsIdx then
+                0
+            else
+                -1),
+        true,
+        fst
+    )
+
 and seekReadMethodDefAsMethodDataUncached ctxtH idx =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     // Look for the method def parent.
-    let tidx =
-        seekReadIndexedRow (
-            ctxt.getNumRows TableNames.TypeDef,
-            (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
-            id,
-            (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
-                if endMethodsIdx <= idx then 1
-                elif methodsIdx <= idx && idx < endMethodsIdx then 0
-                else -1),
-            true,
-            fst
-        )
+    let tidx = seekMethodDefParent ctxt idx
     // Create a formal instantiation if needed
     let typeGenericArgs = seekReadGenericParams ctxt 0 (tomd_TypeDef, tidx)
     let typeGenericArgsCount = typeGenericArgs.Length

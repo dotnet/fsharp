@@ -6216,7 +6216,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             nestedTypes = emptyILTypeDefs,
             implements = ilInterfaceTys,
             extends = Some super,
-            isKnownToBeAttribute = false,
+            additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls
         )
             .WithSealed(true)
@@ -6644,7 +6644,7 @@ and GenClosureTypeDefs
             nestedTypes = emptyILTypeDefs,
             implements = ilIntfTys,
             extends = Some ext,
-            isKnownToBeAttribute = false,
+            additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls
         )
             .WithSealed(true)
@@ -11357,6 +11357,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     let isKnownToBeAttribute =
                         ExistsSameHeadTypeInHierarchy g cenv.amap m super g.mk_Attribute_ty
 
+                    let additionalFlags =
+                        if isKnownToBeAttribute then
+                            ILTypeDefAdditionalFlags.IsKnownToBeAttribute
+                        else
+                            ILTypeDefAdditionalFlags.None
+
                     let tdef =
                         mkILGenericClass (
                             ilTypeName,
@@ -11382,7 +11388,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             .WithSerializable(isSerializable)
                             .WithAbstract(isAbstract)
                             .WithImport(isComInteropTy g thisTy)
-                            .With(methodImpls = mkILMethodImpls methodImpls, isKnownToBeAttribute = isKnownToBeAttribute)
+                            .With(methodImpls = mkILMethodImpls methodImpls, newAdditionalFlags = additionalFlags)
 
                     let tdLayout, tdEncoding =
                         match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -11552,7 +11558,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     else
                                         g.ilg.typ_Object
                                 ),
-                            isKnownToBeAttribute = false,
+                            additionalFlags = ILTypeDefAdditionalFlags.None,
                             securityDecls = emptyILSecurityDecls
                         )
                             .WithLayout(layout)
