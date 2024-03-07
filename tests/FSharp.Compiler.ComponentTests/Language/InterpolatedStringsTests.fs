@@ -70,7 +70,7 @@ printfn \"%s\" s"
         |> withLangVersion80
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 1249, Line 1, Col 15, Line 1, Col 21, "The interpolated string contains unmatched closing braces.")
+        |> withSingleDiagnostic (Error 1249, Line 1, Col 14, Line 1, Col 21, "The interpolated string contains unmatched closing braces.")
 
     [<Fact>]
     let ``Percent sign characters in interpolated strings`` () =

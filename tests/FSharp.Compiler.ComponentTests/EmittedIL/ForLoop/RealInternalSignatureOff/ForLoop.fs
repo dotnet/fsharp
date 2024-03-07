@@ -131,3 +131,79 @@ module ForLoopRealInternalSignatureOff =
         compilation
         |> verifyCompilation
 
+    // SOURCE=ForEachRangeStepSByte.fs SCFLAGS="--optimize+"	# ForEachRangeStepSByte.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepSByte.fs"|])>]
+    let ``ForEachRangeStepSByte_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepByte.fs SCFLAGS="--optimize+"	# ForEachRangeStepByte.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepByte.fs"|])>]
+    let ``ForEachRangeStepByte_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepChar.fs SCFLAGS="--optimize+"	# ForEachRangeStepChar.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepChar.fs"|])>]
+    let ``ForEachRangeStepChar_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepInt16.fs SCFLAGS="--optimize+"	# ForEachRangeStepInt16.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepInt16.fs"|])>]
+    let ``ForEachRangeStepInt16_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepUInt16.fs SCFLAGS="--optimize+"	# ForEachRangeStepUInt16.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepUInt16.fs"|])>]
+    let ``ForEachRangeStepUInt16_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepInt32.fs SCFLAGS="--optimize+"	# ForEachRangeStepInt32.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepInt32.fs"|])>]
+    let ``ForEachRangeStepInt32_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepUInt32.fs SCFLAGS="--optimize+"	# ForEachRangeStepUInt32.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepUInt32.fs"|])>]
+    let ``ForEachRangeStepUInt32_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepInt64.fs SCFLAGS="--optimize+"	# ForEachRangeStepInt64.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepInt64.fs"|])>]
+    let ``ForEachRangeStepInt64_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepUInt64.fs SCFLAGS="--optimize+"	# ForEachRangeStepUInt64.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepUInt64.fs"|])>]
+    let ``ForEachRangeStepUInt64_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepIntPtr.fs SCFLAGS="--optimize+"	# ForEachRangeStepIntPtr.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepIntPtr.fs"|])>]
+    let ``ForEachRangeStepIntPtr_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
+
+    // SOURCE=ForEachRangeStepUIntPtr.fs SCFLAGS="--optimize+"	# ForEachRangeStepUIntPtr.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStepUIntPtr.fs"|])>]
+    let ``ForEachRangeStepUIntPtr_fs_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation
