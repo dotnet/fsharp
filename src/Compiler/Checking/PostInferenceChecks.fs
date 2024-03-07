@@ -1307,14 +1307,14 @@ and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyarg
     match tryTcrefOfAppTy g baseVal.Type with
     | ValueSome tcref when tcref.IsILTycon ->
         try
-            // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
-            // We believe this may be fragile in some situations, since we are using the Abstract IL code to compare
-            // type equality, and it would be much better to remove any F# dependency on that implementation of IL type
-            // equality. It would be better to make this check in tc.fs when we have the Abstract IL metadata for the method to hand.
-            let mdef = resolveILMethodRef tcref.ILTyconRawMetadata ilMethRef
+            let mdef =
+                match tcref.ILTyconInfo with
+                | TILObjectReprData(scoref, _, _) ->
+                    resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
+
             if mdef.IsAbstract then
                 errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(mdef.Name), m))
-        with _ -> () // defensive coding
+        with _ -> ()
     | _ -> ()
 
     CheckTypeInstNoByrefs cenv env m tyargs
