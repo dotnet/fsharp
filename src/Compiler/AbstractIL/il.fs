@@ -2605,6 +2605,14 @@ let convertInitSemantics (init: ILTypeInit) =
     | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
     | ILTypeInit.OnAny -> enum 0
 
+[<Flags>]
+type ILTypeDefAdditionalFlags =
+    | None = 0
+    | IsKnownToBeAttribute = 1
+    /// The type can contain extension methods,
+    /// or this information may not be available at the time the ILTypeDef is created
+    | CanContainExtensionMethods = 2
+
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILTypeDef
     (
@@ -2620,8 +2628,7 @@ type ILTypeDef
         methodImpls: ILMethodImplDefs,
         events: ILEventDefs,
         properties: ILPropertyDefs,
-        isKnownToBeAttribute: bool,
-        canContainExtensionMethods: bool,
+        additionalFlags: ILTypeDefAdditionalFlags,
         securityDeclsStored: ILSecurityDeclsStored,
         customAttrsStored: ILAttributesStored,
         metadataIndex: int32
@@ -2641,7 +2648,7 @@ type ILTypeDef
         methodImpls,
         events,
         properties,
-        isKnownToBeAttribute,
+        additionalFlags,
         securityDecls,
         customAttrs) =
         ILTypeDef(
@@ -2657,8 +2664,7 @@ type ILTypeDef
             methodImpls,
             events,
             properties,
-            isKnownToBeAttribute,
-            false,
+            additionalFlags,
             storeILSecurityDecls securityDecls,
             storeILCustomAttrs customAttrs,
             NoMetadataIdx
@@ -2690,13 +2696,11 @@ type ILTypeDef
 
     member _.Properties = properties
 
-    member _.IsKnownToBeAttribute = isKnownToBeAttribute
-
-    member _.CanContainExtensionMethods = canContainExtensionMethods
-
     member _.CustomAttrsStored = customAttrsStored
 
     member _.MetadataIndex = metadataIndex
+
+    member _.HasAdditionalFlags(flags) = additionalFlags &&& flags = flags
 
     member x.With
         (
@@ -2712,7 +2716,7 @@ type ILTypeDef
             ?methodImpls,
             ?events,
             ?properties,
-            ?isKnownToBeAttribute,
+            ?newAdditionalFlags,
             ?customAttrs,
             ?securityDecls
         ) =
@@ -2730,7 +2734,7 @@ type ILTypeDef
             methodImpls = defaultArg methodImpls x.MethodImpls,
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
-            isKnownToBeAttribute = defaultArg isKnownToBeAttribute x.IsKnownToBeAttribute,
+            additionalFlags = defaultArg newAdditionalFlags additionalFlags,
             customAttrs = defaultArg customAttrs x.CustomAttrs
         )
 
@@ -4222,7 +4226,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         methodImpls = emptyILMethodImpls,
         properties = props,
         events = events,
-        isKnownToBeAttribute = false,
+        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 
@@ -4246,7 +4250,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
         methodImpls = emptyILMethodImpls,
         properties = emptyILProperties,
         events = emptyILEvents,
-        isKnownToBeAttribute = false,
+        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 

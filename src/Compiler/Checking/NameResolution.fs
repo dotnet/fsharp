@@ -587,7 +587,8 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
 
     let canContainExtensionMethods =
         match ty1 with
-        | ILTypeMetadata(TILObjectReprData(_, _, ilTypeDef)) -> ilTypeDef.CanContainExtensionMethods
+        | ILTypeMetadata(TILObjectReprData(_, _, ilTypeDef)) ->
+            ilTypeDef.HasAdditionalFlags(ILTypeDefAdditionalFlags.CanContainExtensionMethods)
         | _ -> true
 
     if not canContainExtensionMethods then List.empty else

@@ -2200,6 +2200,12 @@ and typeDefReader ctxtH : ILTypeDefStored =
 
             containsExtensionMethods
 
+        let additionalFlags =
+            if containsExtensionMethods then
+                ILTypeDefAdditionalFlags.CanContainExtensionMethods
+            else
+                ILTypeDefAdditionalFlags.None
+
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
         let nested = seekReadNestedTypeDefs ctxt idx
@@ -2222,8 +2228,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             methodImpls = mimpls,
             events = events,
             properties = props,
-            isKnownToBeAttribute = false,
-            canContainExtensionMethods = containsExtensionMethods,
+            additionalFlags = additionalFlags,
             customAttrsStored = ctxt.customAttrsReader_TypeDef,
             metadataIndex = idx
         ))
