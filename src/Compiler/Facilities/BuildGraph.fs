@@ -82,7 +82,8 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                         match cachedResult with
                         | ValueSome value -> return value
                         | _ ->
-                            let tcs = TaskCompletionSource<'T>(TaskCreationOptions.RunContinuationsAsynchronously)
+                            let tcs =
+                                TaskCompletionSource<'T>(TaskCreationOptions.RunContinuationsAsynchronously)
 
                             Async.StartWithContinuations(
                                 async {
