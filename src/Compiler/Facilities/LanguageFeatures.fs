@@ -85,6 +85,7 @@ type LanguageFeature =
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | AllowAccessModifiersToAutoPropertiesGettersAndSetters
     | EnforceAttributeTargetsOnFunctions
     | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
@@ -201,6 +202,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
                 LanguageFeature.UnionIsPropertiesVisible, previewVersion
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
+                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
                 LanguageFeature.EnforceAttributeTargetsOnFunctions, previewVersion
                 LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
@@ -348,6 +350,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
         | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
             FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
+        | LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters ->
+            FSComp.SR.featureAllowAccessModifiersToAutoPropertiesGettersAndSetters ()
         | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
         | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations -> FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
