@@ -4309,7 +4309,7 @@ module TcDeclarations =
             | _ -> ()
 
     /// Split auto-properties into 'let' and 'member' bindings
-    let private SplitAutoProps members =
+    let private SplitAutoProps (g: TcGlobals) members =
         let membersIncludingAutoProps, vals_Inherits_Abstractslots = 
             members |> List.partition (fun memb -> 
                 match memb with 
@@ -4359,7 +4359,7 @@ module TcDeclarations =
         let rec postAutoProps memb =
             match memb with 
             | SynMemberDefn.AutoProperty(ident = id) when String.IsNullOrEmpty(id.idText) -> []
-            | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeywords = mGetSetOpt }) ->
+            | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; trivia = { GetSetKeywords = mGetSetOpt }; accessibility = access; getterAccessibility = getterAccess; setterAccessibility = setterAccess) ->
                 let mMemberPortion = id.idRange
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
@@ -4372,7 +4372,41 @@ module TcDeclarations =
                 match propKind, mGetSetOpt with 
                 | SynMemberKind.PropertySet, Some getSetKeywords -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), getSetKeywords.Range))
                 | _ -> ()
-       
+
+                let getterAccess, setterAccess =
+                    match propKind with
+                    | SynMemberKind.PropertyGetSet ->
+                        match access with
+                        | Some _ ->
+                            match getterAccess, setterAccess with
+                            | None, None -> access, access
+                            | Some x, _
+                            | _, Some x -> 
+                                errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                                None, None
+                        | None ->
+                            match getterAccess, setterAccess with
+                            | Some x, _
+                            | _, Some x ->
+                                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
+                                getterAccess, setterAccess
+                            | _, _ -> None, None
+                    | SynMemberKind.PropertySet ->
+                        match access, setterAccess with
+                        | Some _, Some x -> 
+                            errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                            None, None
+                        | _, None -> None, access
+                        | None, _ -> None, setterAccess
+                    | SynMemberKind.Member
+                    | SynMemberKind.PropertyGet
+                    | _ ->
+                        match access, getterAccess with
+                        | Some _, Some x -> 
+                            errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                            None, None
+                        | _, None -> access, None
+                        | None, _ -> getterAccess, None
                 [ 
                     match propKind with 
                     | SynMemberKind.Member
@@ -4382,7 +4416,7 @@ module TcDeclarations =
                             let rhsExpr = SynExpr.Ident fldId
                             let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                             let attribs = mkAttributeList attribs mMemberPortion
-                            let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
+                            let binding = mkSynBinding (xmlDoc, headPat) (getterAccess, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
                             SynMemberDefn.Member (binding, mMemberPortion) 
                         yield getter
                     | _ -> ()
@@ -4394,7 +4428,7 @@ module TcDeclarations =
                             let vId = ident("v", mMemberPortion)
                             let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                             let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
-                            let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
+                            let binding = mkSynBinding (xmlDoc, headPat) (setterAccess, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
                             SynMemberDefn.Member (binding, mMemberPortion)
                         yield setter 
                     | _ -> ()]
@@ -4418,9 +4452,9 @@ module TcDeclarations =
     ///        where simpleRepr can contain inherit type, declared fields and virtual slots.
     /// body = members
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
-    let rec private SplitTyconDefn (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
+    let rec private SplitTyconDefn g (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
-        let extraMembers, extra_vals_Inherits_Abstractslots = SplitAutoProps extraMembers
+        let extraMembers, extra_vals_Inherits_Abstractslots = SplitAutoProps g extraMembers
         let implements1 = extraMembers |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
 
         match trepr with
@@ -4441,7 +4475,7 @@ module TcDeclarations =
 
             let slotsigs = members |> List.choose (function  SynMemberDefn.AbstractSlot (slotSig = x; flags = y) -> Some(x, y) | _ -> None)
            
-            let members,_vals_Inherits_Abstractslots = SplitAutoProps members
+            let members,_vals_Inherits_Abstractslots = SplitAutoProps g members
 
             let isConcrete = 
                 members |> List.exists (function 
@@ -4503,7 +4537,7 @@ module TcDeclarations =
 
         // Split the definitions into "core representations" and "members". The code to process core representations
         // is shared between processing of signature files and implementation files.
-        let mutRecDefnsAfterSplit = mutRecDefns |> MutRecShapes.mapTycons SplitTyconDefn
+        let mutRecDefnsAfterSplit = mutRecDefns |> MutRecShapes.mapTycons (fun i -> SplitTyconDefn g i)
 
         // Create the entities for each module and type definition, and process the core representation of each type definition.
         let tycons, envMutRecPrelim, mutRecDefnsAfterCore = 
