@@ -24,12 +24,12 @@
       </trans-unit>
       <trans-unit id="OverrideShouldBeInstance">
         <source> Non-static member is expected.</source>
-        <target state="new"> Non-static member is expected.</target>
+        <target state="translated"> 必須是非靜態成員。</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
-        <target state="new"> Static member is expected.</target>
+        <target state="translated"> 必須是靜態成員。</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -204,12 +204,12 @@
       </trans-unit>
       <trans-unit id="ValueRestriction">
         <source>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
-        <target state="new">Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</target>
+        <target state="translated">值限制: 值 '{0}' 具有推斷的函式類型\n    {1}\n不過，值不能有泛型類型變數，例如 "let x: '_a" 中的 '_a。您可以執行下列其中一項操作:\n- 將其定義為簡單資料項，例如整數常值、字串常值或聯集，例如 "let x = 1"\n- 新增明確類型註釋，例如 "let x : int"\n- 在稍後的程式碼中使用該值作為非泛型類型，以用於類型推斷，例如 "do x"\n，或者如果您仍然想要類型相依結果，可以改為將 '{2}' 定義為函式，方法是執行以下兩個動作之一:\n- 新增單位參數，例如 "let x()"\n- 寫入明確類型參數，例如 "let x&lt;'a&gt;"。\n此錯誤是因為 let 繫結沒有定義值的參數，而不是函式。值不能是泛型值，因為讀取值會假設在相同位置產生，但泛型類型參數可能透過啟用類型相依結果，使此假設失效。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestrictionFunction">
         <source>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
-        <target state="new">Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</target>
+        <target state="translated">值限制: 值 '{0}' 具有推斷的泛型函式類型\n    {1}\n不過，值不能有泛型類型變數，例如 "let f: '_a" 中的 '_a。您應該改為將 '{2}' 定義為函式，方法是執行以下動作之一:\n- 新增已套用的明確參數，而不是使用部分套用的 "let f param"\n- 新增單位參數，例如 "let f()"\n- 撰寫明確類型參數，例如 "let f&lt;'a&gt;"\n或者如果您不想讓它成為泛型，則執行以下兩個動作之一:\n- 新增明確的類型註釋，例如 "let f : obj -&gt; obj"\n- 在稍後程式碼中將非泛型類型的引數套用至函式值，以用於類型推斷，例如 "do f()"。\n此錯誤是因為 let 繫結沒有定義值的參數，而不是函式。值不能是泛型值，因為讀取值會假設在相同位置產生，但泛型類型參數可能透過啟用類型相依結果，使此假設失效。</target>
         <note />
       </trans-unit>
       <trans-unit id="VarBoundTwice">

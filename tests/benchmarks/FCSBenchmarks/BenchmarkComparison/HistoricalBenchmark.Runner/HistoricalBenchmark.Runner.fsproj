@@ -1,17 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <RootNamespace>HistoricalBenchmark.Utilities</RootNamespace>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+      <RootNamespace>HistoricalBenchmark.Utilities</RootNamespace>
+      <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Runner.fs" />
+      <Compile Include="Runner.fs" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
+      <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
       <PackageReference Include="LibGit2Sharp" Version="0.26.2" />
       <PackageReference Include="Microsoft.Data.Analysis" Version="0.19.1" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />

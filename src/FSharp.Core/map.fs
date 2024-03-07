@@ -546,13 +546,13 @@ module MapTree =
 
     let ofSeq comparer (c: seq<'Key * 'T>) =
         match c with
-        | :? (('Key * 'T)[]) as xs -> ofArray comparer xs
+        | :? (('Key * 'T) array) as xs -> ofArray comparer xs
         | :? (('Key * 'T) list) as xs -> ofList comparer xs
         | _ ->
             use ie = c.GetEnumerator()
             mkFromEnumerator comparer empty ie
 
-    let copyToArray m (arr: _[]) i =
+    let copyToArray m (arr: _ array) i =
         let mutable j = i
 
         m

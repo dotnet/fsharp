@@ -1,18 +1,11 @@
-(*
-msbuild tests\fsharp\perf\tasks\FS\TaskPerf.fsproj /p:Configuration=Release
-dotnet artifacts\bin\TaskPerf\Release\netcoreapp2.1\TaskPerf.dll
-*)
-
-namespace TaskPerf
+namespace MicroPerf
 
 open BenchmarkDotNet.Running
 
-module Main = 
+module Main =
 
     [<EntryPoint>]
-    let main argv = 
+    let main args = 
         printfn "Running benchmarks..."
-        //let results = BenchmarkRunner.Run<Benchmarks>()
-        //let results = BenchmarkRunner.Run<Async.AsyncWhileMemoryBench>()
-        let results = BenchmarkRunner.Run<Collections.CollectionsBenchmark>()
-        0  
+        BenchmarkSwitcher.FromAssembly(typeof<Equality.FSharpCoreFunctions>.Assembly).Run(args) |> ignore
+        0

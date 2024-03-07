@@ -3952,6 +3952,29 @@ let mdef_code2code f (md: ILMethodDef) =
     let b = MethodBody.IL(notlazy ilCode)
     md.With(body = notlazy b)
 
+let appendInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
+    let instrs = Array.ofList instrs
+
+    match
+        c2.Instrs
+        |> Array.tryFindIndexBack (fun instr ->
+            match instr with
+            | I_ret -> true
+            | _ -> false)
+    with
+    | Some 0 ->
+        { c2 with
+            Instrs = Array.concat [| instrs; c2.Instrs |]
+        }
+    | Some index ->
+        { c2 with
+            Instrs = Array.concat [| c2.Instrs[.. index - 1]; instrs; c2.Instrs[index..] |]
+        }
+    | None ->
+        { c2 with
+            Instrs = Array.append c2.Instrs instrs
+        }
+
 let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     let instrs = Array.ofList instrs
     let n = instrs.Length
@@ -3984,6 +4007,9 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
             Labels = labels
             Instrs = Array.append instrs c2.Instrs
         }
+
+let appendInstrsToMethod newCode md =
+    mdef_code2code (appendInstrsToCode newCode) md
 
 let prependInstrsToMethod newCode md =
     mdef_code2code (prependInstrsToCode newCode) md
@@ -5614,10 +5640,8 @@ let resolveILMethodRefWithRescope r (td: ILTypeDef) (mref: ILMethodRef) =
         possibles
         |> List.filter (fun md ->
             mref.CallingConv = md.CallingConv
-            &&
-            // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
-            (md.Parameters, argTypes)
-            ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
+            && (md.Parameters, argTypes)
+               ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
             &&
             // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
             r md.Return.Type = retType)

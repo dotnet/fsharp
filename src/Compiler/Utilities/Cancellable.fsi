@@ -7,7 +7,6 @@ open System.Threading
 type Cancellable =
     static member internal UsingToken: CancellationToken -> IDisposable
     static member Token: CancellationToken
-    static member internal Token: CancellationToken with set
     static member CheckAndThrow: unit -> unit
 
 namespace Internal.Utilities.Library

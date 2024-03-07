@@ -12,8 +12,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-val getNameOfScopeRef: sref: ILScopeRef -> string
-
 /// Metadata on values (names of arguments etc.
 module ValReprInfo =
 
@@ -135,7 +133,7 @@ val stripTyparEqns: ty: TType -> TType
 val stripUnitEqns: unt: Measure -> Measure
 
 /// Detect a use of a nominal type, including type abbreviations.
-val (|AbbrevOrAppTy|_|): ty: TType -> TyconRef option
+val (|AbbrevOrAppTy|_|): ty: TType -> (TyconRef * TypeInst) option
 
 val mkLocalValRef: v: Val -> ValRef
 

@@ -24,12 +24,12 @@
       </trans-unit>
       <trans-unit id="OverrideShouldBeInstance">
         <source> Non-static member is expected.</source>
-        <target state="new"> Non-static member is expected.</target>
+        <target state="translated"> 비정적 멤버가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
-        <target state="new"> Static member is expected.</target>
+        <target state="translated"> 정적 멤버가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -204,12 +204,12 @@
       </trans-unit>
       <trans-unit id="ValueRestriction">
         <source>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
-        <target state="new">Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</target>
+        <target state="translated">값 제한: 값 '{0}'에 유추된 제네릭 형식이 있습니다.\n    {1}\n하지만 값은 "let x: '_a"의 '_a와 같은 제네릭 형식 변수를 가질 수 없습니다. 다음 중 하나를 수행할 수 있습니다.\n- 정수 리터럴, 문자열 리터럴 또는 "let x = 1"과 같은 공용 구조체 대/소문자와 같은 간단한 데이터 용어로 정의합니다.\n- "let x : int"와 같은 명시적 형식 주석을 추가합니다.\n- "do x"와 같은 형식 유추를 위해 이후 코드에서 값을 제네릭이 아닌 형식으로 사용합니다.\n또는 여전히 형식 종속 결과를 원할 경우 다음 중 하나를 수행하여 '{2}'을(를) 함수로 정의할 수 있습니다.\n- "let x()"와 같은 단위 매개 변수를 추가합니다.\n- "let x&lt;'a&gt;"와 같은 명시적 형식 매개 변수를 작성합니다.\n이 오류는 매개 변수가 없는 let 바인딩이 함수가 아니라 값을 정의하기 때문입니다. 값을 읽으면 모든 위치에서 동일한 결과가 발생하는 것으로 가정되지만 제네릭 형식 매개 변수가 형식 종속 결과를 사용하여 이 가정을 무효화할 수 있기 때문에 값은 제네릭일 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestrictionFunction">
         <source>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
-        <target state="new">Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</target>
+        <target state="translated">값 제한: 값 '{0}'에 유추된 제네릭 함수 형식이 있습니다.\n    {1}\n하지만 값은 "let f: '_a"의 '_a와 같은 제네릭 형식 변수를 가질 수 없습니다. 대신 다음 중 하나를 수행하여 '{2}'을(를) 함수로 정의해야 합니다.\n- 부분 애플리케이션 "let f param"을 사용하는 대신 적용되는 명시적 매개 변수를 추가합니다.\n- "let f()"와 같은 단위 매개 변수를 추가합니다.\n- "let f&lt;'a&gt;"와 같은 명시적 형식 매개 변수를 작성합니다.\n또는 제네렉이 되지 않게 하려는 경우.\n- "let f : obj -&gt; obj"와 같은 명시적 형식 주석을 추가하거나\n- "do f()"와 같은 형식 유추를 위해 이후 코드의 함수 값에 제네릭이 아닌 형식의 인수를 적용합니다.\n이 오류는 매개 변수가 없는 let 바인딩이 함수가 아니라 값을 정의하기 때문입니다. 값을 읽으면 모든 위치에서 동일한 결과가 발생하는 것으로 가정되지만 제네릭 형식 매개 변수가 형식 종속 결과를 사용하여 이 가정을 무효화할 수 있기 때문에 값은 제네릭일 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="VarBoundTwice">

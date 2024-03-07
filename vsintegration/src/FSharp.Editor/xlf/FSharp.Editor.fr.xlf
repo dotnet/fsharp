@@ -41,6 +41,7 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
         <target state="needs-review-translation">Guides de structure de bloc ;
@@ -174,17 +175,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">Options de performances du projet F # et de la mise en cache ;
-Activer les références de projets croisés en mémoire ;
-Enable_partial_type_checking ;
-Options de performances IntelliSense ;
-Activer les données obsolètes pour les fonctionnalités IntelliSense ;
-Temps jusqu'à ce que les résultats obsolètes soient utilisés (en millisecondes) ;
-Parallélisation (nécessite un redémarrage) ;
-Activer la vérification de type parallèle avec les fichiers de signature ;
-Activer la résolution de référence parallèle ;
-Activer les références de recherche rapide et renommer (expérimental) ;
-Résultats de l'analyse du cache (expérimental)</target>
+        <target state="translated">Options relatives aux performances de la mise en cache et des projets F#; 
+Activer les références de projet croisé en mémoire; 
+Enable_partial_type_checking;
+Options relatives aux performances d’IntelliSense; 
+Activer les données périmées pour les fonctionnalités IntelliSense; 
+Délai avant l’utilisation des résultats périmés (en millisecondes); 
+Parallélisation (Nécessite un redémarrage); 
+Activer la vérification de type parallèle avec les fichiers de signature; 
+Activer la résolution de référence parallèle; 
+Activer la recherche rapide de références et le renommage (redémarrage requis);
+Résultats de l’analyse du cache (expérimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -202,19 +203,20 @@ Solid underline;
 Dot underline;
 Dash underline;
 Show remarks in Quick Info</source>
-        <target state="needs-review-translation">Formatage;
-Largeur de description préférée en caractères ;
-Mettre en forme la signature à la largeur donnée en ajoutant des sauts de ligne conformes aux règles de syntaxe F# ;
-Liens de navigation ;
-Afficher les liens de navigation en tant que ;
-Soulignement uni ;
-Soulignement pointé ;
-Soulignement en tirets ;</target>
+        <target state="translated">Mise en forme; 
+Largeur de description préférée en caractères; 
+Formatez la signature à la largeur donnée en ajoutant des sauts de ligne conformes aux règles de syntaxe F#; 
+Liens de navigation; 
+Afficher les liens de navigation en tant que; 
+Soulignement avec un trait uni; 
+Soulignement avec des points; 
+Soulignement avec des tirets; 
+Afficher les notes dans Info express</target>
         <note />
       </trans-unit>
       <trans-unit id="RemarksHeader">
         <source>Remarks:</source>
-        <target state="new">Remarks:</target>
+        <target state="translated">Notes :</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

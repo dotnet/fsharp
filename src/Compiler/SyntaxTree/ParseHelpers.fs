@@ -308,7 +308,7 @@ type LexerStringKind =
 
 /// Represents the degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
 /// Nesting counters and styles of outer interpolating strings are pushed on this stack.
-type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range) list
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range option * range) list
 
 /// The parser defines a number of tokens for whitespace and
 /// comments eliminated by the lexer.  These carry a specification of
@@ -973,7 +973,7 @@ let checkEndOfFileError t =
 
         match nesting with
         | [] -> ()
-        | (_, _, _, m) :: _ -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill ())
+        | (_, _, _, _, m) :: _ -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill ())
 
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 
@@ -1159,7 +1159,7 @@ let mkSynField
 
             let mType, mStart =
                 idOpt
-                |> Option.map _.idRange
+                |> Option.map (fun x -> x.idRange)
                 |> Option.orElseWith (fun _ -> vis |> Option.map (fun v -> v.Range))
                 |> Option.orElse isMutable
                 |> Option.orElseWith (fun _ -> leadingKeyword |> Option.map (fun k -> k.Range))

@@ -46,13 +46,11 @@ let rec (|IsOne|_|) someNumber =
     | 1 -> ValueSome 1
     | _ -> ValueNone   
 """
+        |> withLangVersion80
         |> withOptions ["--warnaserror+"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1,Line 2, Col 9 , Line 2, Col 31, """This expression was expected to have type
-    ''a option'    
-but here has type
-    'int voption'    """)
+        |> withSingleDiagnostic (Error 3350, Line 2, Col 9, Line 2, Col 31, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
 
     [<Fact>]
     let ``Rec struct active pattern is possible`` () =

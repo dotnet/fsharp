@@ -485,10 +485,19 @@ type BoundModel private (
             syntaxTreeOpt
         )
 
-
 /// Global service state
-type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
+type FrameworkImportsCacheKey = 
+    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
 
+    interface ICacheKey<string, FrameworkImportsCacheKey> with
+        member this.GetKey() =
+            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+
+        member this.GetLabel() = 
+            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+
+        member this.GetVersion() = this
+        
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
 
@@ -593,6 +602,7 @@ module Utilities =
 /// Constructs the build data (IRawFSharpAssemblyData) representing the assembly when used
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.
+[<Sealed>]
 type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef) =
 
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
