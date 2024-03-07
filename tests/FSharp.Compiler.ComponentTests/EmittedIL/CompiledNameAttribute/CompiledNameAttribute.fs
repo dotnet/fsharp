@@ -1,4 +1,4 @@
-namespace EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
@@ -33,9 +33,16 @@ module CompiledNameAttribute =
         compilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute04.fs"|])>]
-    let ``CompiledNameAttribute04_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute04_RealInternalSignatureOn.fs"|])>]
+    let ``CompiledNameAttribute04_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation 
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute04_RealInternalSignatureOff.fs"|])>]
+    let ``CompiledNameAttribute04_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> verifyCompilation 
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute05.fs"|])>]

@@ -292,6 +292,16 @@
         <target state="translated">punktloses float32-Literal</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsOnFunctions">
+        <source>Enforce AttributeTargets on functions</source>
+        <target state="new">Enforce AttributeTargets on functions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsUnionCaseDeclarations">
+        <source>Enforce AttributeTargets on union case declarations</source>
+        <target state="new">Enforce AttributeTargets on union case declarations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
         <target state="translated">Löst Fehler für Außerkraftsetzungen nicht virtueller Member aus.</target>
@@ -375,6 +385,11 @@
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerIntegralRangesToFastLoops">
+        <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
+        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -820,6 +835,11 @@
       <trans-unit id="optsPdbMatchesOutputFileName">
         <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
         <target state="translated">Der Name der PDB-Ausgabedatei kann nicht mit dem Ausgabedateinamen für den Build übereinstimmen, verwenden Sie --pdb:filename.pdb</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRealsig">
+        <source>Generate assembly with IL visibility that matches the source code visibility</source>
+        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -6210,11 +6230,6 @@
       <trans-unit id="optValueMarkedInlineButWasNotBoundInTheOptEnv">
         <source>The value '{0}' was marked inline but was not bound in the optimization environment</source>
         <target state="translated">Der Wert "{0}" war als inline markiert, aber nicht in der Optimierungsumgebung gebunden.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optLocalValueNotFoundDuringOptimization">
-        <source>Local value {0} not found during optimization</source>
-        <target state="translated">Der lokale Wert "{0}" wurde während der Optimierung nicht gefunden.</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">

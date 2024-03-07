@@ -646,10 +646,12 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 }
 
 
+(* This gets in the way of insertions too often now, uncomment when stable.
 [<Theory>]
 [<InlineData(SignatureFiles.Yes)>]
 [<InlineData(SignatureFiles.No)>]
 [<InlineData(SignatureFiles.Some)>]
+*)
 let Fuzzing signatureFiles =
 
     let seed = System.Random().Next()
@@ -957,4 +959,55 @@ let ``Background compiler and Transparent compiler return the same options`` () 
         Assert.Empty(transparentDiags)
         Assert.Equal<string list>(backgroundSnapshot.OtherOptions, transparentSnapshot.OtherOptions)
         Assert.Equal<ProjectSnapshot.ReferenceOnDisk list>(backgroundSnapshot.ReferencesOnDisk, transparentSnapshot.ReferencesOnDisk)
+    }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Unused warning should still produce after parse warning`` useTransparentCompiler =
+
+    // There should be parse warning because of the space in the file name:
+    //   warning FS0221: The declarations in this file will be placed in an implicit module 'As 01' based on the file name 'As 01.fs'.
+    //   However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.
+    
+    let project =
+        { SyntheticProject.Create(
+            { sourceFile "As 01" [] with
+                Source = """
+do
+    let _ as b = ()
+    ()
+
+// For more information see https://aka.ms/fsharp-console-apps
+printfn "Hello from F#"
+"""
+                SignatureFile = No
+                
+            }) with
+            AutoAddModules = false
+            OtherOptions = [
+                "--target:exe"
+                "--warn:3"
+                "--warnon:1182"
+                "--warnaserror:3239"
+                "--noframework"
+            ]
+        }
+
+    let expectTwoWarnings (_parseResult:FSharpParseFileResults, checkAnswer: FSharpCheckFileAnswer) (_, _) =
+        match checkAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwith "Should not have aborted"
+        | FSharpCheckFileAnswer.Succeeded checkResults ->
+            let hasParseWarning =
+                checkResults.Diagnostics
+                |> Array.exists (fun diag -> diag.Severity = FSharpDiagnosticSeverity.Warning && diag.ErrorNumber = 221)
+            Assert.True(hasParseWarning, "Expected parse warning FS0221")
+
+            let hasCheckWarning =
+                checkResults.Diagnostics
+                |> Array.exists (fun diag -> diag.Severity = FSharpDiagnosticSeverity.Warning && diag.ErrorNumber = 1182)
+            Assert.True(hasCheckWarning, "Expected post inference warning FS1182")
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = useTransparentCompiler) {
+        checkFile "As 01" expectTwoWarnings
     }

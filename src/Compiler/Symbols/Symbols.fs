@@ -32,9 +32,9 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     let isInternalCompPath x = 
         match x with 
-        | CompPath(ILScopeRef.Local, []) -> true 
+        | CompPath(ILScopeRef.Local, _, []) -> true 
         | _ -> false
-    
+
     let (|Public|Internal|Private|) (TAccess p) = 
         match p with 
         | [] -> Public 
@@ -53,7 +53,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     override _.ToString() = 
         let (TAccess paths) = a
-        let mangledTextOfCompPath (CompPath(scoref, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+        let mangledTextOfCompPath (CompPath(scoref, _, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
@@ -122,7 +122,7 @@ module Impl =
                 | ILScopeRef.Assembly aref -> aref.Name 
                 | ILScopeRef.Module mref -> mref.Name
                 | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyName
-            let canAccessCompPathFromCrossProject (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
+            let canAccessCompPathFromCrossProject (CompPath(scoref1, _, cpath1)) (CompPath(scoref2, _, cpath2)) =
                 let rec loop p1 p2  = 
                     match p1, p2 with 
                     | (a1, k1) :: rest1, (a2, k2) :: rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
@@ -141,7 +141,7 @@ module Impl =
         | ILMemberAccess.CompilerControlled
         | ILMemberAccess.FamilyAndAssembly 
         | ILMemberAccess.Assembly -> 
-            taccessPrivate  (CompPath(declaringEntity.CompilationPath.ILScopeRef, []))
+            taccessPrivate  (CompPath(declaringEntity.CompilationPath.ILScopeRef, SyntaxAccess.Unknown, []))
 
         | ILMemberAccess.Private ->
             taccessPrivate  declaringEntity.CompilationPath
@@ -166,7 +166,7 @@ module Impl =
             match td.Access with 
             | ILTypeDefAccess.Public 
             | ILTypeDefAccess.Nested ILMemberAccess.Public -> taccessPublic 
-            | ILTypeDefAccess.Private  -> taccessPrivate  (CompPath(entity.CompilationPath.ILScopeRef, []))
+            | ILTypeDefAccess.Private  -> taccessPrivate  (CompPath(entity.CompilationPath.ILScopeRef, SyntaxAccess.Unknown, []))
             | ILTypeDefAccess.Nested nested -> getApproxFSharpAccessibilityOfMember entity nested
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -409,13 +409,13 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
         checkIsResolved()
         match entity.CompilationPathOpt with 
         | None -> "global" 
-        | Some (CompPath(_, [])) -> "global" 
+        | Some (CompPath(_, _, [])) -> "global" 
         | Some cp -> buildAccessPath (Some cp)
     
     member x.DeclaringEntity = 
         match entity.CompilationPathOpt with 
         | None -> None
-        | Some (CompPath(_, [])) -> None
+        | Some (CompPath(_, _, [])) -> None
         | Some cp -> 
             match x.Assembly.Contents.FindEntityByPath cp.MangledPath with
             | Some res -> Some res
@@ -431,7 +431,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
         checkIsResolved()
         match entity.CompilationPathOpt with 
         | None -> None
-        | Some (CompPath(_, [])) -> None
+        | Some (CompPath(_, _, [])) -> None
         | Some cp when cp.AccessPath |> List.forall (function _, ModuleOrNamespaceKind.Namespace _ -> true | _  -> false) -> 
             Some (buildAccessPath (Some cp))
         | Some _ -> None
@@ -774,7 +774,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
 
     member _.AllCompilationPaths =
         checkIsResolved()
-        let (CompPath(_, parts)) = entity.CompilationPath
+        let (CompPath(_, _, parts)) = entity.CompilationPath
         let partsList =
             [ yield parts
               match parts with

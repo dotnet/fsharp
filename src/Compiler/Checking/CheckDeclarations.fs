@@ -305,7 +305,7 @@ let AddRootModuleOrNamespaceRefs g amap m env modrefs =
 
 /// Adjust the TcEnv to make more things 'InternalsVisibleTo'
 let addInternalsAccessibility env (ccu: CcuThunk) =
-    let compPath = CompPath (ccu.ILScopeRef, [])    
+    let compPath = CompPath (ccu.ILScopeRef, TypedTree.SyntaxAccess.Unknown, [])    
     let eInternalsVisibleCompPaths = compPath :: env.eInternalsVisibleCompPaths
     { env with 
         eAccessRights = ComputeAccessRights env.eAccessPath eInternalsVisibleCompPaths env.eFamilyType // update this computed field
@@ -418,8 +418,8 @@ module TcRecdUnionAndEnumDeclarations =
         | ParentNone -> vis 
         | Parent tcref -> combineAccess vis tcref.TypeReprAccessibility
 
-    let MakeRecdFieldSpec _cenv env parent (isStatic, konst, tyR, attrsForProperty, attrsForField, id, nameGenerated, isMutable, vol, xmldoc, vis, m) =
-        let vis, _ = ComputeAccessAndCompPath env None m vis None parent
+    let MakeRecdFieldSpec g env parent (isStatic, konst, tyR, attrsForProperty, attrsForField, id, nameGenerated, isMutable, vol, xmldoc, vis, m) =
+        let vis, _ = ComputeAccessAndCompPath g env None m vis None parent
         let vis = CombineReprAccess parent vis
         Construct.NewRecdField isStatic konst id nameGenerated tyR isMutable vol attrsForProperty attrsForField xmldoc vis false
 
@@ -445,7 +445,7 @@ module TcRecdUnionAndEnumDeclarations =
         let isPrivate = match vis with | Some (SynAccess.Private _) -> true | _ -> false
         if isStatic && (not zeroInit || not isMutable || not isPrivate) then errorR(Error(FSComp.SR.tcStaticValFieldsMustBeMutableAndPrivate(), m))
         let konst = if zeroInit then Some Const.Zero else None
-        let rfspec = MakeRecdFieldSpec cenv env parent (isStatic, konst, tyR, attrsForProperty, attrsForField, id, nameGenerated, isMutable, isVolatile, xmldoc, vis, m)
+        let rfspec = MakeRecdFieldSpec g env parent (isStatic, konst, tyR, attrsForProperty, attrsForField, id, nameGenerated, isMutable, isVolatile, xmldoc, vis, m)
         match parent with
         | Parent tcref when useGenuineField tcref.Deref rfspec ->
             // Recheck the attributes for errors if the definition only generates a field
@@ -511,8 +511,7 @@ module TcRecdUnionAndEnumDeclarations =
                 
     let TcUnionCaseDecl (cenv: cenv) env parent thisTy thisTyInst tpenv hasRQAAttribute (SynUnionCase(Attributes synAttrs, SynIdent(id, _), args, xmldoc, vis, m, _)) =
         let g = cenv.g
-        let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
-        let vis, _ = ComputeAccessAndCompPath env None m vis None parent
+        let vis, _ = ComputeAccessAndCompPath g env None m vis None parent
         let vis = CombineReprAccess parent vis
 
         CheckUnionCaseName cenv id hasRQAAttribute
@@ -551,7 +550,7 @@ module TcRecdUnionAndEnumDeclarations =
                 let rfields = 
                     argTys |> List.mapi (fun i (argTy, argInfo) ->
                         let id = (match argInfo.Name with Some id -> id | None -> mkSynId m (mkUnionCaseFieldName nFields i))
-                        MakeRecdFieldSpec cenv env parent (false, None, argTy, [], [], id, argInfo.Name.IsNone, false, false, XmlDoc.Empty, None, m))
+                        MakeRecdFieldSpec g env parent (false, None, argTy, [], [], id, argInfo.Name.IsNone, false, false, XmlDoc.Empty, None, m))
 
                 if not (typeEquiv g recordTy thisTy) then 
                     error(Error(FSComp.SR.tcReturnTypesForUnionMustBeSameAsType(), m))
@@ -564,6 +563,23 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
+        let attrs =
+            (*
+                The attributes of a union case decl get attached to the generated "static factory" method.
+                Enforce union-cases AttributeTargets:
+                - AttributeTargets.Method
+                    type SomeUnion =
+                    | Case1 of int // Compiles down to a static method
+                - AttributeTargets.Property
+                    type SomeUnion =
+                    | Case1 // Compiles down to a static property
+            *)
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations) then
+                let target = if rfields.IsEmpty then AttributeTargets.Property else AttributeTargets.Method
+                TcAttributes cenv env target synAttrs
+            else
+                TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
+        
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
     let TcUnionCaseDecls (cenv: cenv) env (parent: ParentRef) (thisTy: TType) (thisTyInst: TypeInst) hasRQAAttribute tpenv unionCases =
@@ -573,15 +589,15 @@ module TcRecdUnionAndEnumDeclarations =
             |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute) 
         unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let MakeEnumCaseSpec cenv env parent attrs thisTy caseRange (caseIdent: Ident) (xmldoc: PreXmlDoc) value =
-        let vis, _ = ComputeAccessAndCompPath env None caseRange None None parent
+    let MakeEnumCaseSpec g cenv env parent attrs thisTy caseRange (caseIdent: Ident) (xmldoc: PreXmlDoc) value =
+        let vis, _ = ComputeAccessAndCompPath g env None caseRange None None parent
         let vis = CombineReprAccess parent vis
         if caseIdent.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), caseIdent.idRange))
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
         Construct.NewRecdField true (Some value) caseIdent false thisTy false false [] attrs xmlDoc vis false
 
-    let TcEnumDecl cenv env tpenv parent thisTy fieldTy (SynEnumCase (attributes = Attributes synAttrs; ident = SynIdent (id, _); valueExpr = valueExpr; xmlDoc = xmldoc; range = caseRange)) =
+    let TcEnumDecl g cenv env tpenv parent thisTy fieldTy (SynEnumCase (attributes = Attributes synAttrs; ident = SynIdent (id, _); valueExpr = valueExpr; xmlDoc = xmldoc; range = caseRange)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
         let valueRange = valueExpr.Range
 
@@ -590,19 +606,19 @@ module TcRecdUnionAndEnumDeclarations =
             error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
         | SynExpr.Const (synConst, _) -> 
             let konst = TcConst cenv fieldTy valueRange env synConst
-            MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
+            MakeEnumCaseSpec g cenv env parent attrs thisTy caseRange id xmldoc konst
         | _ ->
             let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv valueExpr
             UnifyTypes cenv env valueRange fieldTy actualTy
             
             match EvalLiteralExprOrAttribArg cenv.g expr with
-            | Expr.Const (konst, _, _) -> MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
+            | Expr.Const (konst, _, _) -> MakeEnumCaseSpec g cenv env parent attrs thisTy caseRange id xmldoc konst
             | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
 
     let TcEnumDecls (cenv: cenv) env tpenv parent thisTy enumCases =
         let g = cenv.g
         let fieldTy = NewInferenceType g
-        let enumCases' = enumCases |> List.map (TcEnumDecl cenv env tpenv parent thisTy fieldTy) |> CheckDuplicates (fun f -> f.Id) "enum element"
+        let enumCases' = enumCases |> List.map (TcEnumDecl g cenv env tpenv parent thisTy fieldTy) |> CheckDuplicates (fun f -> f.Id) "enum element"
         fieldTy, enumCases'
 
 //-------------------------------------------------------------------------
@@ -663,7 +679,7 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
             CheckNamespaceModuleOrTypeName g id
 
     let IsPartiallyQualifiedNamespace (modref: ModuleOrNamespaceRef) = 
-        let (CompPath(_, p)) = modref.CompilationPath 
+        let (CompPath(_, _, p)) = modref.CompilationPath 
         // Bug FSharp 1.0 3274: FSI paths don't count when determining this warning
         let p = 
             match p with 
@@ -2389,10 +2405,10 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations = 
 
-    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident= SynIdent(id,_)), _, xmlDoc, vis, m)) =
+    let TcExnDefnCore_Phase1A g cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident= SynIdent(id,_)), _, xmlDoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor id.idRange)
-        let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
+        let vis, cpath = ComputeAccessAndCompPath g env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
         CheckForDuplicateConcreteType env id.idText id.idRange
@@ -2463,7 +2479,7 @@ module TcExceptionDeclarations =
 
     let private TcExnDefnCore (cenv: cenv) env parent synExnDefnRepr =
         let g = cenv.g
-        let exnc = TcExnDefnCore_Phase1A cenv env parent synExnDefnRepr
+        let exnc = TcExnDefnCore_Phase1A g cenv env parent synExnDefnRepr
         let args' = TcExnDefnCore_Phase1G_EstablishRepresentation cenv env parent exnc synExnDefnRepr
         exnc.TypeContents.tcaug_super <- Some g.exn_ty
 
@@ -2730,7 +2746,7 @@ module EstablishTypeDefinitionCores =
         let moduleKind = ComputeModuleOrNamespaceKind g true typeNames modAttrs id.idText
         let modName = AdjustModuleName moduleKind id.idText
 
-        let vis, _ = ComputeAccessAndCompPath envInitial None id.idRange vis None parent
+        let vis, _ = ComputeAccessAndCompPath g envInitial None id.idRange vis None parent
              
         CheckForDuplicateModule envInitial id.idText id.idRange
         let id = ident (modName, id.idRange)
@@ -2759,13 +2775,13 @@ module EstablishTypeDefinitionCores =
 
         match synTyconRepr with 
         | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
-          TcExceptionDeclarations.TcExnDefnCore_Phase1A cenv env parent synExnDefnRepr
+          TcExceptionDeclarations.TcExnDefnCore_Phase1A g cenv env parent synExnDefnRepr
         | _ ->
         let id = ComputeTyconName (id, (match synTyconRepr with SynTypeDefnSimpleRepr.TypeAbbrev _ -> false | _ -> true), checkedTypars)
 
         // Augmentations of type definitions are allowed within the same file as long as no new type representation or abbreviation is given 
         CheckForDuplicateConcreteType env id.idText id.idRange
-        let vis, cpath = ComputeAccessAndCompPath env None id.idRange synVis None parent
+        let vis, cpath = ComputeAccessAndCompPath g env None id.idRange synVis None parent
 
         // Establish the visibility of the representation, e.g.
         //   type R = 
@@ -2782,7 +2798,8 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.Enum _ -> None
             | SynTypeDefnSimpleRepr.Exception _ -> None
          
-        let visOfRepr, _ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
+        let visOfRepr, _ = ComputeAccessAndCompPath g env None id.idRange synVisOfRepr None parent
+
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
         let lmodTy = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
@@ -4818,7 +4835,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
                 return! TcSignatureElementsMutRec cenv parent typeNames endm None env [modDecl]
             else
                 let id = ComputeModuleName longPath
-                let vis, _ = ComputeAccessAndCompPath env None im vis None parent
+                let vis, _ = ComputeAccessAndCompPath g env None im vis None parent
                 let attribs = TcAttributes cenv env AttributeTargets.ModuleDecl attribs
                 CheckNamespaceModuleOrTypeName g id
                 let moduleKind = EstablishTypeDefinitionCores.ComputeModuleOrNamespaceKind g true typeNames attribs id.idText
@@ -5159,7 +5176,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let modName = EstablishTypeDefinitionCores.AdjustModuleName moduleKind id.idText
               CheckForDuplicateConcreteType env modName im
               CheckForDuplicateModule env id.idText id.idRange
-              let vis, _ = ComputeAccessAndCompPath env None id.idRange vis None parent
+              let vis, _ = ComputeAccessAndCompPath g env None id.idRange vis None parent
              
               let endm = m.EndRange
               let id = ident (modName, id.idRange)
@@ -5673,7 +5690,10 @@ let CheckOneImplFile
                 |]
         let cenv =
             cenv.Create (g, isScript, amap, thisCcu, false, Option.isSome rootSigOpt,
-                conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
+                conditionalDefines,
+                tcSink,
+                LightweightTcValForUsingInBuildMethodCall g,
+                isInternalTestSpanStackReferring,
                 diagnosticOptions,
                 tcPat=TcPat,
                 tcSimplePats=TcSimplePats,
@@ -5766,7 +5786,7 @@ let CheckOneImplFile
                                 Activity.Tags.qualifiedNameOfFile, qualNameOfFile.Text
                             |]
                     PostTypeCheckSemanticChecks.CheckImplFile 
-                       (g, cenv.amap, reportErrors, cenv.infoReader, 
+                       (g, cenv.amap,  reportErrors, cenv.infoReader, 
                         env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 
                         implFileTy, implFileContents, extraAttribs, isLastCompiland, 
                         isInternalTestSpanStackReferring)
@@ -5812,15 +5832,17 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
                 Activity.Tags.qualifiedNameOfFile, sigFile.QualifiedName.Text
             |]
     let cenv =
-        cenv.Create 
-            (g, false, amap, thisCcu, true, false, conditionalDefines, tcSink,
-             (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
-             diagnosticOptions,
-             tcPat=TcPat,
-             tcSimplePats=TcSimplePats,
-             tcSequenceExpressionEntry=TcSequenceExpressionEntry,
-             tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
-             tcComputationExpression=TcComputationExpression)
+        cenv.Create(g, false, amap, thisCcu, true, false,
+            conditionalDefines,
+            tcSink,
+            LightweightTcValForUsingInBuildMethodCall g,
+            isInternalTestSpanStackReferring,
+            diagnosticOptions,
+            tcPat=TcPat,
+            tcSimplePats=TcSimplePats,
+            tcSequenceExpressionEntry=TcSequenceExpressionEntry,
+            tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
+            tcComputationExpression=TcComputationExpression)
 
     let envinner, moduleTyAcc = MakeInitialEnv tcEnv 
 

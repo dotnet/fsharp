@@ -353,6 +353,62 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
+        - job: WindowsNoRealsig_testCoreclr
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testCoreclr -configuration Release
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
+
+        - job: WindowsNoRealsig_testDesktop
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testDesktop -configuration Release
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
+
         - job: WindowsStrictIndentation
           pool:
             # The PR build definition sets this variable:
@@ -738,7 +794,7 @@ stages:
             condition: always()
 
         # Test trimming on Windows
-        - job: Build_And_Test_Trimming_Windows
+        - job: Build_And_Test_AOT_Windows
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -769,9 +825,9 @@ stages:
             env:
               NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
-          - script: $(Build.SourcesDirectory)/tests/AheadOfTime/Trimming/check.cmd
+          - script: $(Build.SourcesDirectory)/tests/AheadOfTime/check.cmd
             displayName: Build, trim, publish and check the state of the trimmed app.
-            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/Trimming
+            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime
           - task: PublishPipelineArtifact@1
             displayName: Publish Trim Tests Logs
             inputs:

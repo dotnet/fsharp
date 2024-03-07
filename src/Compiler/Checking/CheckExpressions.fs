@@ -1177,7 +1177,7 @@ let CombineVisibilityAttribs vis1 vis2 m =
         vis1
     | _ -> vis2
 
-let ComputeAccessAndCompPath env (declKindOpt: DeclKind option) m vis overrideVis actualParent =
+let ComputeAccessAndCompPath (g:TcGlobals) env (declKindOpt: DeclKind option) m vis overrideVis actualParent =
     let accessPath = env.eAccessPath
     let accessModPermitted =
         match declKindOpt with
@@ -1188,12 +1188,13 @@ let ComputeAccessAndCompPath env (declKindOpt: DeclKind option) m vis overrideVi
         errorR(Error(FSComp.SR.tcMultipleVisibilityAttributesWithLet(), m))
 
     let vis =
-        match overrideVis, vis with
-        | Some v, _ -> v
-        | _, None -> taccessPublic (* a module or member binding defaults to "public" *)
-        | _, Some (SynAccess.Public _) -> taccessPublic
-        | _, Some (SynAccess.Private _) -> taccessPrivate accessPath
-        | _, Some (SynAccess.Internal _) -> taccessInternal
+        match declKindOpt, overrideVis, vis with
+        | _, Some v, _ -> v
+        | Some (DeclKind.ClassLetBinding _), _, None when g.realsig -> taccessPrivate accessPath  // a type binding defaults to "private"
+        | _, _, None ->  taccessPublic                                                  // a module or member binding defaults to "public"
+        | _, _, Some (SynAccess.Public _) -> taccessPublic
+        | _, _, Some (SynAccess.Private _) -> taccessPrivate accessPath
+        | _, _, Some (SynAccess.Internal _) -> taccessInternal
 
     let vis =
         match actualParent with
@@ -1319,7 +1320,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
             Parent(memberInfo.ApparentEnclosingEntity), vis
         | _ -> altActualParent, None
 
-    let vis, _ = ComputeAccessAndCompPath env (Some declKind) id.idRange vis overrideVis actualParent
+    let vis, _ = ComputeAccessAndCompPath g env (Some declKind) id.idRange vis overrideVis actualParent
 
     let inlineFlag = 
         if HasFSharpAttributeOpt g g.attrib_DllImportAttribute attrs then 
@@ -2365,7 +2366,7 @@ type NormalizedBinding =
   | NormalizedBinding of
       visibility: SynAccess option *
       kind: SynBindingKind *
-      mustInline: bool *
+      shouldInline: bool *
       isMutable: bool *
       attribs: SynAttribute list *
       xmlDoc: XmlDoc *
@@ -10636,8 +10637,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             | ModuleOrMemberBinding, SynBindingKind.StandaloneExpression, _ -> Some(".cctor")
             | _, _, _ -> envinner.eCallerMemberName
 
-        let envinner = {envinner with eCallerMemberName = callerName }
-
+        let envinner = { envinner with eCallerMemberName = callerName }
         let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
@@ -10873,8 +10873,32 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 errorR(Error(FSComp.SR.tcLiteralCannotBeInline(), mBinding))
             if not (isNil declaredTypars) then
                 errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
+            
+        if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnFunctions) && memberFlagsOpt.IsNone && not attrs.IsEmpty then
+            TcAttributeTargetsOnLetBindings cenv env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty)
 
         CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
+
+// Note:
+// - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+// - Let function bindings can only have attributes that uses AttributeTargets.Method ||| AttributeTargets.ReturnValue
+and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy areTyparsDeclared =
+    let attrTgt =
+        if
+            // It's a type function:
+            //     let x<'a> = …
+            areTyparsDeclared
+            // It's a regular function-valued binding:
+            //     let f x = …
+            //     let f = fun x -> …
+            || isFunTy cenv.g overallPatTy
+            || isFunTy cenv.g overallExprTy
+        then
+            AttributeTargets.ReturnValue ||| AttributeTargets.Method
+        else
+            AttributeTargets.ReturnValue ||| AttributeTargets.Field ||| AttributeTargets.Property
+
+    TcAttributes cenv env attrTgt attrs |> ignore
 
 and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
 
@@ -11221,7 +11245,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
                 when List.lengthsEqAndForall2 typarRefEq generalizedTypars generalizedTypars' ->
                     v, pat
 
-            | _ when inlineFlag.MustInline ->
+            | _ when inlineFlag.ShouldInline ->
                 error(Error(FSComp.SR.tcInvalidInlineSpecification(), m))
 
             | TPat_query _ when HasFSharpAttribute g g.attrib_LiteralAttribute attrs ->

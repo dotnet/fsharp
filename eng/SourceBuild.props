@@ -11,7 +11,9 @@
     The build script passes in the full path of the sln to build.  This must be overridden in order to build
     the cloned source in the inner build.
   -->
-  <Target Name="ConfigureInnerBuildArg" BeforeTargets="GetSourceBuildCommandConfiguration">
+  <Target Name="ConfigureInnerBuildArg"
+          BeforeTargets="GetSourceBuildCommandConfiguration"
+          Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'">
     <PropertyGroup>
       <InnerBuildArgs>$(InnerBuildArgs) /p:Projects="$(InnerSourceBuildRepoRoot)\Microsoft.FSharp.Compiler.sln"</InnerBuildArgs>
     </PropertyGroup>
@@ -23,7 +25,8 @@
   -->
   <Target Name="BuildBootstrap"
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
-          BeforeTargets="RunInnerSourceBuildCommand">
+          BeforeTargets="RunInnerSourceBuildCommand"
+          Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'">
           
     <PropertyGroup>
       <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>

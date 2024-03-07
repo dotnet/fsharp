@@ -207,7 +207,7 @@ module rec Compiler =
         | Arm = 5
         | Arm64 = 6
 
-    let public defaultOptions : string list = []
+    let public defaultOptions : string list = ["--realsig+"]
 
     let normalizePathSeparator (text:string) = text.Replace(@"\", "/")
 
@@ -365,6 +365,10 @@ module rec Compiler =
 
     let FSharp (source: string) : CompilationUnit =
         Fs source
+
+    let FSharpWithFileName name (source: string) : CompilationUnit =
+        fsFromString (SourceCodeFileKind.Fs({FileName=name; SourceText=Some source }))
+        |> FS
 
     let FsFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path)
@@ -583,6 +587,16 @@ module rec Compiler =
         | FS x -> FS { x with OutputType = outputType }
         | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
+
+    let withRealInternalSignatureOff (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realsig-"] }
+        | _ -> failwith "withRealInternalSignatureOff only supported by f#"
+
+    let withRealInternalSignatureOn (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realsig+"] }
+        | _ -> failwith "withRealInternalSignatureOn only supported by f#"
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit
@@ -1362,12 +1376,13 @@ Actual:
         if documents <> expectedDocuments then
             failwith $"Expected documents are different from PDB.\nExpected: %A{expectedDocuments}\nActual: %A{documents}"
 
-    let private verifyPdbOptions reader options =
+    let private verifyPdbOptions optOutputPath reader options =
+        let outputPath = Path.GetDirectoryName(optOutputPath |> Option.defaultValue ".")
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
-            | VerifyDocuments docs -> verifyDocuments reader docs
+            | VerifyDocuments docs -> verifyDocuments reader (docs |> List.map(fun doc -> Path.Combine(outputPath, doc)))
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
@@ -1386,7 +1401,7 @@ Actual:
                 | _ -> failwith "Only F# compilations are supported when verifying PDBs."
 
             verifyPdbFormat reader compilationType
-            verifyPdbOptions reader options
+            verifyPdbOptions result.OutputPath reader options
         | _ -> failwith "Output path is not set, please make sure compilation was successfull."
 
         ()
@@ -1431,7 +1446,7 @@ Actual:
         let private getErrorInfo (info: ErrorInfo) : string =
             sprintf "%A %A" info.Error info.Message
 
-        let inline private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
+        let private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
             if (List.length source) <> (List.length expected) then
                 failwith (sprintf "Expected list of issues differ from compilation result:\nExpected:\n %A\nActual:\n %A" expected (List.map getErrorInfo source))
             ()

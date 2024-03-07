@@ -85,7 +85,10 @@ type LanguageFeature =
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | EnforceAttributeTargetsOnFunctions
+    | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
+    | LowerIntegralRangesToFastLoops
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -198,7 +201,10 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
                 LanguageFeature.UnionIsPropertiesVisible, previewVersion
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
+                LanguageFeature.EnforceAttributeTargetsOnFunctions, previewVersion
+                LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
+                LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -342,7 +348,10 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
         | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
             FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
+        | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
+        | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations -> FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
+        | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

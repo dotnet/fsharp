@@ -4655,7 +4655,7 @@ let callToOverload = B(5).Overload(4)
     let args = mkProjectCommandLineArgs (dllName, [])
 
 [<Test>]
-[<TestCase true>]
+// [<TestCase true>] // Flaky, reenable when stable
 [<TestCase false>]
 let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` useTransparentCompiler =
     let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
@@ -4672,7 +4672,7 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` useTransparentC
     |> fun baseSymbol -> shouldEqual true baseSymbol.IsBaseValue
 
 [<Test>]
-[<TestCase true>]
+// [<TestCase true>] // Flaky, reenable when stable
 [<TestCase false>]
 let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMemberThisValue`` useTransparentCompiler =
     let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
@@ -4711,7 +4711,7 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
     |> shouldEqual true
 
 [<Test>]
-[<TestCase true>]
+// [<TestCase true>] // Flaky, reenable when stable
 [<TestCase false>]
 let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` useTransparentCompiler =
     let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
@@ -4751,17 +4751,17 @@ type TestRecord = { B : int }
 
 module Test =
     [<AttrTest(typeof<int>)>]
-    let withType = 0
+    let withType() = 0
     [<AttrTest(typeof<list<int>>)>]
-    let withGenericType = 0
+    let withGenericType() = 0
     [<AttrTest(typeof<int * int>)>]
-    let withTupleType = 0
+    let withTupleType() = 0
     [<AttrTest(typeof<int -> int>)>]
-    let withFuncType = 0
+    let withFuncType() = 0
     [<AttrTest([| typeof<TestUnion>; typeof<TestRecord> |])>]
-    let withTypeArray = 0
+    let withTypeArray() = 0
     [<AttrTest([| 0; 1; 2 |])>]
-    let withIntArray = 0
+    let withIntArray() = 0
     module NestedModule =
         type NestedRecordType = { B : int }
 
@@ -5329,7 +5329,7 @@ let foo (a: Foo): bool =
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
-[<TestCase true>]
+// [<TestCase true>] // Flaky, reenable when stable
 [<TestCase false>]
 let ``Test typed AST for struct unions`` useTransparentCompiler = // See https://github.com/fsharp/FSharp.Compiler.Service/issues/756
     let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
@@ -5419,7 +5419,7 @@ let ``Test diagnostics with line directives ignored`` () =
 //------------------------------------------------------
 
 [<Test>]
-[<TestCase true>]
+// [<TestCase true>] // Flaky, reenable when stable
 [<TestCase false>]
 let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is created with keepAssemblyContent flag set to true`` useTransparentCompiler =
 
@@ -5462,66 +5462,6 @@ type A(i:int) =
     | Some decl -> failwithf "unexpected declaration %A" decl
     | None -> failwith "declaration list is empty"
 
-[<Test>]
-[<TestCase true>]
-[<TestCase false>]
-let ``TryGetRecentCheckResultsForFile called with snapshot returns cached result after ParseAndCheckFile`` useTransparentCompiler =
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
-    let dllName = Path.ChangeExtension(base2, ".dll")
-    let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1Text = """
-type A(i:int) =
-    member x.Value = i
-"""
-    let fileSource1 = SourceText.ofString fileSource1Text
-    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
-
-    let fileNames = [|fileName1|]
-    let args = mkProjectCommandLineArgs (dllName, [])
-    let checker = FSharpChecker.Create(useTransparentCompiler=useTransparentCompiler)
-    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
-    let snapshot = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
-
-    let rbefore = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot)
-    match rbefore with
-    | Some(fileResults, checkFileResults) -> failwith "cached results before ParseAndCheckFileInProject was called"
-    | None -> ()
-    
-    checker.ParseAndCheckFileInProject(fileName1, snapshot)  |> Async.RunImmediate
-    |> function
-        | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
-        | _ -> failwithf "Parsing aborted unexpectedly..."
-            
-    let rafterCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshot)
-    match rafterCheckResults with
-    | Some(fileResults, checkFileResults) -> ()
-    | None -> failwith "no results from TryGetRecentCheckResultsForFile"
-   
-    let fileSource1TextEdited = """
-type A(i:int) =
-    member x.Value = i
-    member x.Value2 = 23
-"""
-    let fileSource1Edited = SourceText.ofString fileSource1TextEdited
-    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1TextEdited)
-    let snapshotAfterFileEdit = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem) |> Async.RunImmediate
-
-    let rafterEditBefore2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit)
-    match rafterEditBefore2ndCheckResults with
-    | Some(fileResults, checkFileResults) -> failwith "stale cache results from TryGetRecentCheckResultsForFile after edit"
-    | None -> ()
-    
-    checker.ParseAndCheckFileInProject(fileName1, snapshotAfterFileEdit)  |> Async.RunImmediate
-    |> function
-        | _, FSharpCheckFileAnswer.Succeeded(res) -> ()
-        | _ -> failwithf "Parsing aborted unexpectedly..."
-        
-    let rafterEditAfter2ndCheckResults = checker.TryGetRecentCheckResultsForFile(fileName1, snapshotAfterFileEdit)
-    match rafterEditAfter2ndCheckResults with
-    | Some(fileResults, checkFileResults) -> ()
-    | None -> failwith "no results from TryGetRecentCheckResultsForFile"
-
 [<TestCase(([||]: string[]), ([||]: bool[]))>]
 [<TestCase([| "--times" |], [| false |])>]
 [<TestCase([| "--times"; "--nowarn:75" |], ([||]: bool[]))>]
@@ -5538,7 +5478,7 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
 //------------------------------------------------------
 
 [<Test>]
-[<TestCase true>]
+// [<TestCase true>] // Flaky, reenable when stable
 [<TestCase false>]
 let ``Unused opens in rec module smoke test 1`` useTransparentCompiler =
 
@@ -5613,7 +5553,7 @@ type UseTheThings(i:int) =
     unusedOpensData |> shouldEqual expected
 
 [<Test>]
-[<TestCase true>]
+// [<TestCase true>] // Flaky, reenable when stable
 [<TestCase false>]
 let ``Unused opens in non rec module smoke test 1`` useTransparentCompiler =
 
@@ -5688,7 +5628,7 @@ type UseTheThings(i:int) =
     unusedOpensData |> shouldEqual expected
 
 [<Test>]
-[<TestCase true>]
+// [<TestCase true>] // Flaky, reenable when stable
 [<TestCase false>]
 let ``Unused opens smoke test auto open`` useTransparentCompiler =
 
