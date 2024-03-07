@@ -794,7 +794,7 @@ stages:
             condition: always()
 
         # Test trimming on Windows
-        - job: Build_And_Test_Trimming_Windows
+        - job: Build_And_Test_AOT_Windows
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -825,9 +825,9 @@ stages:
             env:
               NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
-          - script: $(Build.SourcesDirectory)/tests/AheadOfTime/Trimming/check.cmd
+          - script: $(Build.SourcesDirectory)/tests/AheadOfTime/check.cmd
             displayName: Build, trim, publish and check the state of the trimmed app.
-            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/Trimming
+            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime
           - task: PublishPipelineArtifact@1
             displayName: Publish Trim Tests Logs
             inputs:
