@@ -113,31 +113,6 @@ extends:
                   signType: $(_SignType)
                   zipSources: false
               outputs:
-                - output: pipelineArtifact
-                  displayName: 'Publish Test Logs'
-                  condition: and(succeededOrFailed(), ne(variables['SkipTests'], 'true'))
-                  targetPath: $(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)
-                  artifactName: TestLogs
-                - output: pipelineArtifact
-                  displayName: 'Publish Artifact Packages'
-                  condition: succeeded()
-                  targetPath: $(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)
-                  artifactName: 'Packages'
-                - output: pipelineArtifact
-                  displayName: 'Publish Artifact VSSetup'
-                  condition: succeeded()
-                  targetPath: $(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion
-                  artifactName: VSSetup
-                - output: pipelineArtifact
-                  displayName: 'Publish Nightly VSIX'
-                  condition: succeeded()
-                  targetPath: $(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix
-                  artifactName: Nightly
-                - output: pipelineArtifact
-                  displayName: 'Publish Artifact Symbols'
-                  condition: succeeded()
-                  targetPath: $(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)
-                  artifactName: NativeSymbols
                 - output: microBuildVstsDrop
                   dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
                   dropName: $(VisualStudioDropName)
@@ -175,6 +150,53 @@ extends:
                       /p:GenerateSbom=true
               env:
                   NativeToolsOnMachine: true
+            - task: PublishTestResults@2
+              displayName: Publish Test Results
+              inputs:
+                testResultsFormat: 'NUnit'
+                testResultsFiles: '*.xml'
+                searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              continueOnError: true
+              condition: ne(variables['SkipTests'], 'true')
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Test Logs
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)'
+                artifactName: 'Test Logs'
+                publishLocation: Container
+              continueOnError: true
+              condition: ne(variables['SkipTests'], 'true')
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Packages
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+                artifactName: 'Packages'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact VSSetup
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                artifactName: 'VSSetup'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Nightly
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix'
+                artifactName: 'Nightly'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Symbols
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
+                artifactName: 'NativeSymbols'
+              condition: succeeded()
+            - task: 1ES.MicroBuildVstsDrop@1
+              displayName: Upload VSTS Drop
+              inputs:
+                dropName: $(VisualStudioDropName)
+                dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                accessToken: $(dn-bot-devdiv-drop-rw-code-rw)
+              condition: succeeded()
 
     #---------------------------------------------------------------------------------------------------------------------#
     #                                                    Post Build                                                       #
