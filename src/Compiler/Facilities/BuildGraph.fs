@@ -79,11 +79,13 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                                 )
                             |> Async.AwaitTask
 
+                        // Prevent deadlocks.
+                        do! Async.SwitchToThreadPool()
+
                         match cachedResult with
                         | ValueSome value -> return value
                         | _ ->
-                            let tcs =
-                                TaskCompletionSource<'T>(TaskCreationOptions.RunContinuationsAsynchronously)
+                            let tcs = TaskCompletionSource<'T>()
 
                             Async.StartWithContinuations(
                                 async {
