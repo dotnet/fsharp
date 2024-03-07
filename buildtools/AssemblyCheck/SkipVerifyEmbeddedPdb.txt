@@ -1,4 +1,5 @@
 FSharp.Build.UnitTests.dll
+FSharp.Benchmarks.Common.dll
 FSharp.Compiler.Benchmarks.dll
 FSharp.Compiler.ComponentTests.dll
 FSharp.Test.Utilities.dll

@@ -5,12 +5,14 @@ namespace FSharp.Test
 #nowarn "57"
 
 open System
+open System.Globalization
 open System.IO
 open System.Text
 open System.Reflection
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 #if NETCOREAPP
@@ -22,6 +24,42 @@ open Microsoft.CodeAnalysis.CSharp
 open NUnit.Framework
 open TestFramework
 open System.Collections.Immutable
+
+
+#if !NETCOREAPP
+module AssemblyResolver =
+
+    let probingPaths = [|
+        AppDomain.CurrentDomain.BaseDirectory
+        Path.GetDirectoryName(typeof<FactForDESKTOPAttribute>.Assembly.Location)
+    |]
+
+    let addResolver () =
+        AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
+            let found () =
+                (probingPaths ) |> Seq.tryPick(fun p ->
+                    try
+                        let name = AssemblyName(args.Name)
+                        let codebase = Path.GetFullPath(Path.Combine(p, name.Name))
+                        if File.Exists(codebase + ".dll") then
+                            name.CodeBase <- codebase  + ".dll"
+                            name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                            name.Version <- Unchecked.defaultof<Version>
+                            Some (name)
+                        elif File.Exists(codebase + ".exe") then
+                                name.CodeBase <- codebase + ".exe"
+                                name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                                name.Version <- Unchecked.defaultof<Version>
+                                Some (name)
+                        else None
+                    with | _ -> None
+                    )
+            match found() with
+            | None -> Unchecked.defaultof<Assembly>
+            | Some name -> Assembly.Load(name) )
+
+    do addResolver()
+#endif
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -258,7 +296,11 @@ and Compilation =
 
 module rec CompilerAssertHelpers =
 
-    let checker = FSharpChecker.Create(suggestNamesForErrors=true)
+    let UseTransparentCompiler =
+        FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
+        not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
+
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=UseTransparentCompiler)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
     let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
@@ -397,9 +439,10 @@ module rec CompilerAssertHelpers =
                     | Some text ->
                         // In memory source file copy it to the build directory
                         let source = item.ChangeExtension
-                        File.WriteAllText (source.GetSourceFileName, text)
-                        disposals.Add(disposeFile source.GetSourceFileName)
-                        yield source
+                        let destFileName = Path.Combine(outputDirectory.FullName, Path.GetFileName(source.GetSourceFileName))
+                        File.WriteAllText (destFileName, text)
+                        disposals.Add(disposeFile destFileName)
+                        yield source.WithFileName(destFileName)
                     | None ->
                         // On Disk file
                         let sourceFileName = item.GetSourceFileName
@@ -619,6 +662,7 @@ module rec CompilerAssertHelpers =
         let timeout = 30000
         let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
+
 open CompilerAssertHelpers
 
 [<Sealed;AbstractClass>]
@@ -886,14 +930,31 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking) : FSharpCheckProjectResults =
-        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking)
+    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking, useTransparentCompiler) : FSharpCheckProjectResults =
+        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking, useTransparentCompiler = useTransparentCompiler)
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let projectOptions = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = sourceFiles }
 
-        checker.ParseAndCheckProject(projectOptions)
+        if useTransparentCompiler then
+            let getFileSnapshot _ fileName =
+                async.Return
+                    (FSharpFileSnapshot(
+                        FileName = fileName,
+                        Version = "1",
+                        GetSource = fun () -> task {
+                            match! getSourceText fileName with
+                            | Some source -> return SourceTextNew.ofISourceText source
+                            | None -> return failwith $"couldn't get source for {fileName}"
+                        }
+                    ))
+
+            let snapshot = FSharpProjectSnapshot.FromOptions(projectOptions, getFileSnapshot) |> Async.RunSynchronously
+
+            checker.ParseAndCheckProject(snapshot)
+        else
+            checker.ParseAndCheckProject(projectOptions)
         |> Async.RunImmediate
-    
+
     static member CompileExeWithOptions(options, (source: SourceCodeFileKind)) =
         compile true options source (fun (errors, _, _) ->
             if errors.Length > 0 then

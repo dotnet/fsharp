@@ -26,7 +26,7 @@ module String =
     [<CompiledName("Concat")>]
     let concat sep (strings: seq<string>) =
 
-        let concatArray sep (strings: string[]) =
+        let concatArray sep (strings: string array) =
             match length sep with
             | 0 -> String.Concat strings
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_0_OR_GREATER
@@ -35,7 +35,7 @@ module String =
             | _ -> String.Join(sep, strings, 0, strings.Length)
 
         match strings with
-        | :? (string[]) as arr -> concatArray sep arr
+        | :? (string array) as arr -> concatArray sep arr
 
         | :? (string list) as lst -> lst |> List.toArray |> concatArray sep
 

@@ -3,9 +3,7 @@
     <!-- opt-out properties -->
     <UsingToolXUnit>false</UsingToolXUnit>
     <!-- opt-in properties -->
-    <UsingToolNetFrameworkReferenceAssemblies>true</UsingToolNetFrameworkReferenceAssemblies>
     <UsingToolNuGetRepack>true</UsingToolNuGetRepack>
-    <UsingToolSourceLink>true</UsingToolSourceLink>
     <UsingToolSymbolUploader>true</UsingToolSymbolUploader>
     <UsingToolVSSDK>true</UsingToolVSSDK>
   </PropertyGroup>
@@ -91,7 +89,7 @@
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <!-- Versions for package groups -->
-    <RoslynVersion>4.6.0-2.23126.2</RoslynVersion>
+    <RoslynVersion>4.6.0-3.23329.3</RoslynVersion>
     <VisualStudioEditorPackagesVersion>17.7.25-preview</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioShellPackagesVersion>17.7.35338-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.7.58-pre</VisualStudioProjectSystemPackagesVersion>
@@ -168,7 +166,7 @@
     <MicroBuildCoreSentinelVersion>1.0.0</MicroBuildCoreSentinelVersion>
     <MicroBuildPluginsSwixBuildVersion>1.1.33</MicroBuildPluginsSwixBuildVersion>
     <!-- other packages -->
-    <BenchmarkDotNetVersion>0.13.2</BenchmarkDotNetVersion>
+    <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
     <FsCheckVersion>2.16.5</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
     <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
@@ -192,7 +190,6 @@
     <XUnitRunnerVersion>2.4.2</XUnitRunnerVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
-    <MicrosoftDotNetXliffTasksVersion>1.0.0-beta.23475.1</MicrosoftDotNetXliffTasksVersion>
     <!-- MIBC profile packages -->
     <optimizationwindows_ntx64MIBCRuntimeVersion>1.0.0-prerelease.23614.4</optimizationwindows_ntx64MIBCRuntimeVersion>
     <optimizationwindows_ntx86MIBCRuntimeVersion>1.0.0-prerelease.23614.4</optimizationwindows_ntx86MIBCRuntimeVersion>

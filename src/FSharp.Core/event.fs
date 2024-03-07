@@ -31,7 +31,7 @@ module private Atomic =
 type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() =
     let mutable multicast: System.Delegate = null
 
-    member x.Trigger(args: obj[]) =
+    member x.Trigger(args: obj array) =
         match multicast with
         | null -> ()
         | d -> d.DynamicInvoke(args) |> ignore

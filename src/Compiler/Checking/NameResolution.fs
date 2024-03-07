@@ -87,9 +87,9 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
     match TryGetActivePatternInfo vref with
     | Some apinfo ->
         
-        let isStructRetTy = 
+        let retKind = 
             if apinfo.IsTotal then
-                false
+                ActivePatternReturnKind.RefTypeWrapper
             else
                 let _, apReturnTy = stripFunTy g vref.TauType
                 let hasStructAttribute() = 
@@ -97,8 +97,10 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
                     |> List.exists (function 
                         | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> IsMatchingFSharpAttribute g g.attrib_StructAttribute a  
                         | _ -> false)
-                isStructTy g apReturnTy || hasStructAttribute()
-        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, isStructRetTy))
+                if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnKind.StructTypeWrapper
+                elif isBoolTy g apReturnTy then ActivePatternReturnKind.Boolean
+                else ActivePatternReturnKind.RefTypeWrapper
+        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, retKind))
     | None -> []
 
 /// Try to make a reference to a value in a module.
@@ -276,7 +278,7 @@ type Item =
         | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName
         | Item.DelegateCtor ty ->
             match ty with 
-            | AbbrevOrAppTy tcref -> tcref.DisplayNameCore
+            | AbbrevOrAppTy(tcref, _) -> tcref.DisplayNameCore
             // This case is not expected
             | _ -> "" 
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayNameCore
@@ -307,7 +309,7 @@ type Item =
         | Item.Property(info = pinfo :: _) -> pinfo.DisplayName
         | Item.Event einfo -> einfo.DisplayName
         | Item.MethodGroup(_, minfo :: _, _) -> minfo.DisplayName
-        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayName
+        | Item.DelegateCtor (AbbrevOrAppTy(tcref, _)) -> tcref.DisplayName
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
         | Item.TypeVar (nm, _) -> nm |> ConvertLogicalNameToDisplayName
@@ -1870,11 +1872,11 @@ let (|EntityUse|_|) (item: Item) =
     match item with
     | Item.UnqualifiedType (tcref :: _) -> ValueSome tcref
     | Item.ExnCase tcref -> ValueSome tcref
-    | Item.Types(_, [AbbrevOrAppTy tcref])
-    | Item.DelegateCtor(AbbrevOrAppTy tcref) -> ValueSome tcref
+    | Item.Types(_, [AbbrevOrAppTy(tcref, _)])
+    | Item.DelegateCtor(AbbrevOrAppTy(tcref, _)) -> ValueSome tcref
     | Item.CtorGroup(_, ctor :: _) ->
         match ctor.ApparentEnclosingType with
-        | AbbrevOrAppTy tcref -> ValueSome tcref
+        | AbbrevOrAppTy(tcref, _) -> ValueSome tcref
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -1956,7 +1958,7 @@ let ItemsAreEffectivelyEqual g orig other =
             not tp1.IsCompilerGenerated && not tp1.IsFromError &&
             not tp2.IsCompilerGenerated && not tp2.IsFromError &&
             equals tp1.Range tp2.Range
-         | AbbrevOrAppTy tcref1, AbbrevOrAppTy tcref2 ->
+         | AbbrevOrAppTy(tcref1, _), AbbrevOrAppTy(tcref2, _) ->
             tyconRefDefnEq g tcref1 tcref2
          | _ -> false)
 

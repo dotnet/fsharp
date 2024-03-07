@@ -495,7 +495,7 @@ module PrintTypes =
     let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
         let isInternalCompPath x = 
             match x with 
-            | CompPath(ILScopeRef.Local, []) -> true 
+            | CompPath(ILScopeRef.Local, _, []) -> true 
             | _ -> false
         let (|Public|Internal|Private|) (TAccess p) = 
             match p with 
@@ -1254,7 +1254,7 @@ module PrintTastMemberOrVals =
     open PrintTypes 
 
     let mkInlineL denv (v: Val) nameL = 
-        if v.MustInline && not denv.suppressInlineKeyword then 
+        if v.ShouldInline && not denv.suppressInlineKeyword then 
             WordL.keywordInline ++ nameL 
         else 
             nameL

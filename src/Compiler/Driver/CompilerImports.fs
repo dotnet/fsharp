@@ -1661,6 +1661,7 @@ and [<Sealed>] TcImports
                 let cpath =
                     CompPath(
                         ILScopeRef.Local,
+                        SyntaxAccess.Unknown,
                         injectedNamespace
                         |> List.rev
                         |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace true))
@@ -2513,7 +2514,8 @@ and [<Sealed>] TcImports
                     tcConfig.emitDebugInfoInQuotations,
                     tcConfig.noDebugAttributes,
                     tcConfig.pathMap,
-                    tcConfig.langVersion
+                    tcConfig.langVersion,
+                    tcConfig.realsig
                 )
 
 #if DEBUG

@@ -27,7 +27,7 @@ let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlag
     let projFileName = Path.ChangeExtension(base1, ".fsproj")
     FileSystem.OpenFileForWriteShim(fileName1).Write(content)
     let options =
-        checker.GetProjectOptionsFromCommandLineArgs(projFileName,
+        { checker.GetProjectOptionsFromCommandLineArgs(projFileName,
             [| yield "--debug:full"
                yield "--define:DEBUG"
                yield "--optimize-"
@@ -41,8 +41,7 @@ let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlag
                  yield "-r:"+dllFile
                for libDir in libDirs do
                  yield "-I:"+libDir
-               yield! otherFlags
-               yield fileName1 |])
+               yield! otherFlags |]) with SourceFiles = [| fileName1 |] }
     let results = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     if results.HasCriticalErrors then
         let builder = System.Text.StringBuilder()

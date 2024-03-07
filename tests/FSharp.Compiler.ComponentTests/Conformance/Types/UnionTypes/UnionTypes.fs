@@ -609,3 +609,103 @@ module UnionTypes =
         |> withDiagnostics [
             (Warning 42, Line 11, Col 12, Line 11, Col 24, "This construct is deprecated: it is only for use in the F# library")
         ]
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``UnionCaseIsTester inlined and SignatureData`` userec =
+
+        let kwrec = if userec then "rec" else ""
+        let myLibraryFsi =
+            SourceCodeFileKind.Create(
+                "myLibrary.fsi",
+                $"""
+module {kwrec} MyLibrary
+
+    [<RequireQualifiedAccess>]
+    type PrimaryAssembly =
+        | Mscorlib
+        | System_Runtime
+        | NetStandard""")
+
+        let myLibraryFs =
+            SourceCodeFileKind.Create(
+                "myLibrary.fs",
+                $"""
+module {kwrec} MyLibrary
+
+    [<RequireQualifiedAccess>]
+    type PrimaryAssembly =
+        | Mscorlib
+        | System_Runtime
+        | NetStandard
+                """)
+
+        let myFileFs =
+            SourceCodeFileKind.Create(
+                "myFile.fs",
+                $"""
+module {kwrec} FileName
+
+    open MyLibrary
+    let inline getAssemblyType () = PrimaryAssembly.NetStandard
+    let inline isNetStandard () = (PrimaryAssembly.NetStandard).IsNetStandard
+                """)
+
+        let myLibrary =
+            (fsFromString myLibraryFsi) |> FS
+            |> withAdditionalSourceFiles [myLibraryFs; myFileFs]
+            |> asLibrary
+            |> withLangVersionPreview
+            |> withName "MyLibrary"
+
+        Fs """
+let x = FileName.getAssemblyType().IsNetStandard
+let y = FileName.getAssemblyType()
+let z = FileName.isNetStandard()
+printfn "%b %A %b" x y z
+           """
+            |> asExe
+            |> withReferences [myLibrary]
+            |> withLangVersionPreview
+            |> compileAndRun
+            |> shouldSucceed
+
+    //SOURCE=W_UnionCaseProduction01.fsx SCFLAGS="-a --test:ErrorRanges"                          # W_UnionCaseProduction01.fsx
+    [<Fact>]
+    let ``UnionCaseInitialization_repro16431`` () =
+
+        let testFs =
+            SourceCodeFileKind.Create(
+                "testFs.fs",
+                $"""
+module Test
+
+type ABC =
+    | A
+    | B
+    | C of int
+
+    static let c75' = ABC.C 75
+    static member c75 = c75'
+
+    static let ab' = [ A; B ]
+    static member ab = ab'
+                 """)
+
+        let programFs =
+            SourceCodeFileKind.Create(
+                "programFs.fs",
+                $"""
+open Test
+
+if (sprintf "%%A" ABC.c75) <> "C 75" then failwith (sprintf "Failed: printing 'ABC.c75': Expected output: 'C 75'  Actual output: '%%A'" ABC.c75)
+if (sprintf "%%A" ABC.ab) <> "[A; B]" then failwith (sprintf "Failed: printing 'ABC.ab: Expected: '[A; B]'  Actual: '%%A'" ABC.ab)
+                 """)
+
+        (fsFromString testFs)
+        |> FS
+        |> withAdditionalSourceFiles [programFs]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

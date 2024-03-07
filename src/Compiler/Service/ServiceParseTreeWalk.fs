@@ -13,7 +13,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
-/// used to track route during traversal AST
 [<RequireQualifiedAccess>]
 type SyntaxNode =
     | SynPat of SynPat
@@ -30,6 +29,23 @@ type SyntaxNode =
     | SynValSig of SynValSig
     | SynTypeDefnSig of SynTypeDefnSig
     | SynMemberSig of SynMemberSig
+
+    member this.Range =
+        match this with
+        | SynPat pat -> pat.Range
+        | SynType ty -> ty.Range
+        | SynExpr expr -> expr.Range
+        | SynModule modul -> modul.Range
+        | SynModuleOrNamespace moduleOrNamespace -> moduleOrNamespace.Range
+        | SynTypeDefn tyDef -> tyDef.Range
+        | SynMemberDefn memberDef -> memberDef.Range
+        | SynMatchClause matchClause -> matchClause.Range
+        | SynBinding binding -> binding.RangeOfBindingWithRhs
+        | SynModuleOrNamespaceSig moduleOrNamespaceSig -> moduleOrNamespaceSig.Range
+        | SynModuleSigDecl moduleSigDecl -> moduleSigDecl.Range
+        | SynValSig(SynValSig.SynValSig(range = range)) -> range
+        | SynTypeDefnSig tyDefSig -> tyDefSig.Range
+        | SynMemberSig memberSig -> memberSig.Range
 
 type SyntaxVisitorPath = SyntaxNode list
 
@@ -211,6 +227,15 @@ type SyntaxVisitorBase<'T>() =
         ignore path
         defaultTraverse valSig
 
+[<AutoOpen>]
+module private ParsedInputExtensions =
+    type ParsedInput with
+
+        member parsedInput.Contents =
+            match parsedInput with
+            | ParsedInput.ImplFile file -> file.Contents |> List.map SyntaxNode.SynModuleOrNamespace
+            | ParsedInput.SigFile file -> file.Contents |> List.map SyntaxNode.SynModuleOrNamespaceSig
+
 /// A range of utility functions to assist with traversing an AST
 module SyntaxTraversal =
     // treat ranges as though they are half-open: [,)
@@ -304,7 +329,7 @@ module SyntaxTraversal =
         (pick: pos -> range -> obj -> (range * (unit -> 'T option)) list -> 'T option)
         (pos: pos)
         (visitor: SyntaxVisitorBase<'T>)
-        (parseTree: ParsedInput)
+        (ast: SyntaxNode list)
         : 'T option =
         let pick x = pick pos x
 
@@ -1062,40 +1087,182 @@ module SyntaxTraversal =
                 attributeApplicationDives path attributes |> pick m.Range attributes
             | SynMemberSig.NestedType(nestedType = nestedType) -> traverseSynTypeDefnSig path nestedType
 
-        match parseTree with
-        | ParsedInput.ImplFile file ->
-            let l = file.Contents
+        let fileRange =
+            (range0, ast) ||> List.fold (fun acc node -> unionRanges acc node.Range)
 
-            let fileRange =
-#if DEBUG
-                match l with
-                | [] -> range0
-                | _ -> l |> List.map (fun x -> x.Range) |> List.reduce unionRanges
-#else
-                range0 // only used for asserting, does not matter in non-debug
-#endif
-            l
-            |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespace []))
-            |> pick fileRange l
-        | ParsedInput.SigFile sigFile ->
-            let l = sigFile.Contents
+        ast
+        |> List.map (fun node ->
+            match node with
+            | SyntaxNode.SynModuleOrNamespace moduleOrNamespace ->
+                dive moduleOrNamespace moduleOrNamespace.Range (traverseSynModuleOrNamespace [])
+            | SyntaxNode.SynModuleOrNamespaceSig moduleOrNamespaceSig ->
+                dive moduleOrNamespaceSig moduleOrNamespaceSig.Range (traverseSynModuleOrNamespaceSig [])
+            | SyntaxNode.SynPat pat -> dive pat pat.Range (traversePat [])
+            | SyntaxNode.SynType ty -> dive ty ty.Range (traverseSynType [])
+            | SyntaxNode.SynExpr expr -> dive expr expr.Range (traverseSynExpr [])
+            | SyntaxNode.SynModule modul -> dive modul modul.Range (traverseSynModuleDecl [])
+            | SyntaxNode.SynTypeDefn tyDef -> dive tyDef tyDef.Range (traverseSynTypeDefn [])
+            | SyntaxNode.SynMemberDefn memberDef -> dive memberDef memberDef.Range (traverseSynMemberDefn [] (fun _ -> None))
+            | SyntaxNode.SynMatchClause matchClause -> dive matchClause matchClause.Range (traverseSynMatchClause [])
+            | SyntaxNode.SynBinding binding -> dive binding binding.RangeOfBindingWithRhs (traverseSynBinding [])
+            | SyntaxNode.SynModuleSigDecl moduleSigDecl -> dive moduleSigDecl moduleSigDecl.Range (traverseSynModuleSigDecl [])
+            | SyntaxNode.SynValSig(SynValSig.SynValSig(range = range) as valSig) -> dive valSig range (traverseSynValSig [])
+            | SyntaxNode.SynTypeDefnSig tyDefSig -> dive tyDefSig tyDefSig.Range (traverseSynTypeDefnSig [])
+            | SyntaxNode.SynMemberSig memberSig -> dive memberSig memberSig.Range (traverseSynMemberSig []))
+        |> pick fileRange ast
 
-            let fileRange =
-#if DEBUG
-                match l with
-                | [] -> range0
-                | _ -> l |> List.map (fun x -> x.Range) |> List.reduce unionRanges
-#else
-                range0 // only used for asserting, does not matter in non-debug
-#endif
-            l
-            |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespaceSig []))
-            |> pick fileRange l
+    /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
+    ///
+    let Traverse (pos: pos, parseTree: ParsedInput, visitor: SyntaxVisitorBase<'T>) =
+        traverseUntil pick pos visitor parseTree.Contents
 
-    let traverseAll (visitor: SyntaxVisitorBase<'T>) (parseTree: ParsedInput) : unit =
-        let pick _ _ _ diveResults =
-            let rec loop =
-                function
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module SyntaxNode =
+    let (|Attributes|) node =
+        let (|All|) = List.collect
+        let field (SynField(attributes = attributes)) = attributes
+        let unionCase (SynUnionCase(attributes = attributes)) = attributes
+        let enumCase (SynEnumCase(attributes = attributes)) = attributes
+        let typar (SynTyparDecl(attributes = attributes)) = attributes
+
+        let (|SynComponentInfo|) componentInfo =
+            match componentInfo with
+            | SynComponentInfo(attributes = attributes; typeParams = Some(SynTyparDecls.PrefixList(decls = All typar attributes')))
+            | SynComponentInfo(attributes = attributes; typeParams = Some(SynTyparDecls.PostfixList(decls = All typar attributes')))
+            | SynComponentInfo(
+                attributes = attributes; typeParams = Some(SynTyparDecls.SinglePrefix(decl = SynTyparDecl(attributes = attributes')))) ->
+                attributes @ attributes'
+            | SynComponentInfo(attributes = attributes) -> attributes
+
+        let (|SynBinding|) binding =
+            match binding with
+            | SynBinding(attributes = attributes; returnInfo = Some(SynBindingReturnInfo(attributes = attributes'))) ->
+                attributes @ attributes'
+            | SynBinding(attributes = attributes) -> attributes
+
+        match node with
+        | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(attribs = attributes))
+        | SyntaxNode.SynModuleOrNamespaceSig(SynModuleOrNamespaceSig(attribs = attributes))
+        | SyntaxNode.SynModule(SynModuleDecl.Attributes(attributes = attributes))
+        | SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo attributes))
+        | SyntaxNode.SynTypeDefn(SynTypeDefn(
+            typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFields = All field attributes), _)))
+        | SyntaxNode.SynTypeDefn(SynTypeDefn(
+            typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Union(unionCases = All unionCase attributes), _)))
+        | SyntaxNode.SynTypeDefn(SynTypeDefn(
+            typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Enum(cases = All enumCase attributes), _)))
+        | SyntaxNode.SynMemberDefn(SynMemberDefn.AutoProperty(attributes = attributes))
+        | SyntaxNode.SynMemberDefn(SynMemberDefn.AbstractSlot(slotSig = SynValSig(attributes = attributes)))
+        | SyntaxNode.SynMemberDefn(SynMemberDefn.ImplicitCtor(attributes = attributes))
+        | SyntaxNode.SynBinding(SynBinding attributes)
+        | SyntaxNode.SynPat(SynPat.Attrib(attributes = attributes))
+        | SyntaxNode.SynType(SynType.SignatureParameter(attributes = attributes))
+        | SyntaxNode.SynValSig(SynValSig(attributes = attributes)) -> attributes
+        | _ -> []
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module internal SyntaxNodes =
+    let fold folder state (ast: SyntaxNode list) =
+        let mutable state = state
+
+        let visitor =
+            { new SyntaxVisitorBase<unit>() with
+                member _.VisitExpr(path, _, defaultTraverse, expr) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as parent :: path -> state <- folder state path parent
+                    | _ -> ()
+
+                    state <- folder state path (SyntaxNode.SynExpr expr)
+                    defaultTraverse expr
+
+                member _.VisitPat(path, defaultTraverse, pat) =
+                    state <- folder state path (SyntaxNode.SynPat pat)
+                    defaultTraverse pat
+
+                member _.VisitType(path, defaultTraverse, synType) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ | SyntaxNode.SynMemberSig _ as parent :: path -> state <- folder state path parent
+                    | _ -> ()
+
+                    state <- folder state path (SyntaxNode.SynType synType)
+                    defaultTraverse synType
+
+                member _.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
+                    state <- folder state path (SyntaxNode.SynModule synModuleDecl)
+
+                    match synModuleDecl with
+                    | SynModuleDecl.Types(types, _) ->
+                        let path = SyntaxNode.SynModule synModuleDecl :: path
+
+                        for ty in types do
+                            state <- folder state path (SyntaxNode.SynTypeDefn ty)
+
+                    | _ -> ()
+
+                    defaultTraverse synModuleDecl
+
+                member _.VisitModuleOrNamespace(path, synModuleOrNamespace) =
+                    state <- folder state path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace)
+                    None
+
+                member _.VisitMatchClause(path, defaultTraverse, matchClause) =
+                    state <- folder state path (SyntaxNode.SynMatchClause matchClause)
+                    defaultTraverse matchClause
+
+                member _.VisitBinding(path, defaultTraverse, synBinding) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as parent :: path -> state <- folder state path parent
+                    | _ -> ()
+
+                    state <- folder state path (SyntaxNode.SynBinding synBinding)
+                    defaultTraverse synBinding
+
+                member _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
+                    state <- folder state path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig)
+                    None
+
+                member _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
+                    state <- folder state path (SyntaxNode.SynModuleSigDecl synModuleSigDecl)
+
+                    match synModuleSigDecl with
+                    | SynModuleSigDecl.Types(types, _) ->
+                        let path = SyntaxNode.SynModuleSigDecl synModuleSigDecl :: path
+
+                        for ty in types do
+                            state <- folder state path (SyntaxNode.SynTypeDefnSig ty)
+
+                    | _ -> ()
+
+                    defaultTraverse synModuleSigDecl
+
+                member _.VisitValSig(path, defaultTraverse, valSig) =
+                    match path with
+                    | SyntaxNode.SynMemberSig _ as parent :: path -> state <- folder state path parent
+                    | _ -> ()
+
+                    state <- folder state path (SyntaxNode.SynValSig valSig)
+                    defaultTraverse valSig
+
+                member _.VisitSimplePats(path, _pat) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as node :: path -> state <- folder state path node
+                    | _ -> ()
+
+                    None
+
+                member _.VisitInterfaceSynMemberDefnType(path, _synType) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as node :: path -> state <- folder state path node
+                    | _ -> ()
+
+                    None
+            }
+
+        let pickAll _ _ _ diveResults =
+            let rec loop diveResults =
+                match diveResults with
                 | [] -> None
                 | (_, project) :: rest ->
                     ignore (project ())
@@ -1103,9 +1270,319 @@ module SyntaxTraversal =
 
             loop diveResults
 
-        ignore<'T option> (traverseUntil pick parseTree.Range.End visitor parseTree)
+        let m = (range0, ast) ||> List.fold (fun acc node -> unionRanges acc node.Range)
+        ignore<unit option> (SyntaxTraversal.traverseUntil pickAll m.End visitor ast)
+        state
 
-    /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
-    ///
-    let Traverse (pos: pos, parseTree, visitor: SyntaxVisitorBase<'T>) =
-        traverseUntil pick pos visitor parseTree
+    let private foldWhileImpl pick pos folder state (ast: SyntaxNode list) =
+        let mutable state = state
+
+        let visitor =
+            { new SyntaxVisitorBase<unit>() with
+                member _.VisitExpr(path, _, defaultTraverse, expr) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as parent :: path ->
+                        match folder state path parent with
+                        | Some state' ->
+                            match folder state' path (SyntaxNode.SynExpr expr) with
+                            | Some state' ->
+                                state <- state'
+                                defaultTraverse expr
+                            | None -> Some()
+                        | None -> Some()
+                    | _ ->
+                        match folder state path (SyntaxNode.SynExpr expr) with
+                        | Some state' ->
+                            state <- state'
+                            defaultTraverse expr
+                        | None -> Some()
+
+                member _.VisitPat(path, defaultTraverse, pat) =
+                    match folder state path (SyntaxNode.SynPat pat) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse pat
+                    | None -> Some()
+
+                member _.VisitType(path, defaultTraverse, synType) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ | SyntaxNode.SynMemberSig _ as parent :: path ->
+                        match folder state path parent with
+                        | Some state' ->
+                            match folder state' path (SyntaxNode.SynType synType) with
+                            | Some state' ->
+                                state <- state'
+                                defaultTraverse synType
+                            | None -> Some()
+                        | None -> Some()
+                    | _ ->
+                        match folder state path (SyntaxNode.SynType synType) with
+                        | Some state' ->
+                            state <- state'
+                            defaultTraverse synType
+                        | None -> Some()
+
+                member _.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
+                    match folder state path (SyntaxNode.SynModule synModuleDecl) with
+                    | Some state' ->
+                        state <- state'
+
+                        match synModuleDecl with
+                        | SynModuleDecl.Types(types, _) ->
+                            let path = SyntaxNode.SynModule synModuleDecl :: path
+
+                            let rec loop types =
+                                match types with
+                                | [] -> defaultTraverse synModuleDecl
+                                | ty :: types ->
+                                    match folder state path (SyntaxNode.SynTypeDefn ty) with
+                                    | Some state' ->
+                                        state <- state'
+                                        loop types
+                                    | None -> Some()
+
+                            loop types
+
+                        | _ -> defaultTraverse synModuleDecl
+
+                    | None -> Some()
+
+                member _.VisitModuleOrNamespace(path, synModuleOrNamespace) =
+                    match folder state path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace) with
+                    | Some state' ->
+                        state <- state'
+                        None
+                    | None -> Some()
+
+                member _.VisitMatchClause(path, defaultTraverse, matchClause) =
+                    match folder state path (SyntaxNode.SynMatchClause matchClause) with
+                    | Some state' ->
+                        state <- state'
+                        defaultTraverse matchClause
+                    | None -> Some()
+
+                member _.VisitBinding(path, defaultTraverse, synBinding) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as parent :: path ->
+                        match folder state path parent with
+                        | Some state' ->
+                            match folder state' path (SyntaxNode.SynBinding synBinding) with
+                            | Some state' ->
+                                state <- state'
+                                defaultTraverse synBinding
+                            | None -> Some()
+                        | None -> Some()
+                    | _ ->
+                        match folder state path (SyntaxNode.SynBinding synBinding) with
+                        | Some state' ->
+                            state <- state'
+                            defaultTraverse synBinding
+                        | None -> Some()
+
+                member _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
+                    match folder state path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig) with
+                    | Some state' ->
+                        state <- state'
+                        None
+                    | None -> Some()
+
+                member _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
+                    match folder state path (SyntaxNode.SynModuleSigDecl synModuleSigDecl) with
+                    | Some state' ->
+                        state <- state'
+
+                        match synModuleSigDecl with
+                        | SynModuleSigDecl.Types(types, _) ->
+                            let path = SyntaxNode.SynModuleSigDecl synModuleSigDecl :: path
+
+                            let rec loop types =
+                                match types with
+                                | [] -> defaultTraverse synModuleSigDecl
+                                | ty :: types ->
+                                    match folder state path (SyntaxNode.SynTypeDefnSig ty) with
+                                    | Some state' ->
+                                        state <- state'
+                                        loop types
+                                    | None -> Some()
+
+                            loop types
+
+                        | _ -> defaultTraverse synModuleSigDecl
+
+                    | None -> Some()
+
+                member _.VisitValSig(path, defaultTraverse, valSig) =
+                    match path with
+                    | SyntaxNode.SynMemberSig _ as parent :: path ->
+                        match folder state path parent with
+                        | Some state' ->
+                            match folder state' path (SyntaxNode.SynValSig valSig) with
+                            | Some state' ->
+                                state <- state'
+                                defaultTraverse valSig
+                            | None -> Some()
+                        | None -> Some()
+                    | _ ->
+                        match folder state path (SyntaxNode.SynValSig valSig) with
+                        | Some state' ->
+                            state <- state'
+                            defaultTraverse valSig
+                        | None -> Some()
+
+                member _.VisitSimplePats(path, _pat) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as node :: path ->
+                        match folder state path node with
+                        | Some state' ->
+                            state <- state'
+                            None
+                        | None -> Some()
+                    | _ -> None
+
+                member _.VisitInterfaceSynMemberDefnType(path, _synType) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as node :: path ->
+                        match folder state path node with
+                        | Some state' ->
+                            state <- state'
+                            None
+                        | None -> Some()
+                    | _ -> None
+            }
+
+        ignore<unit option> (SyntaxTraversal.traverseUntil pick pos visitor ast)
+        state
+
+    let foldWhile folder state (ast: SyntaxNode list) =
+        let pickAll _ _ _ diveResults =
+            let rec loop diveResults =
+                match diveResults with
+                | [] -> None
+                | (_, project) :: rest ->
+                    ignore (project ())
+                    loop rest
+
+            loop diveResults
+
+        let m = (range0, ast) ||> List.fold (fun acc node -> unionRanges acc node.Range)
+        foldWhileImpl pickAll m.End folder state ast
+
+    let tryPick chooser position (ast: SyntaxNode list) =
+        let visitor =
+            { new SyntaxVisitorBase<'T>() with
+                member _.VisitExpr(path, _, defaultTraverse, expr) =
+                    (match path with
+                     | SyntaxNode.SynMemberDefn _ as parent :: parentPath -> chooser parentPath parent
+                     | _ -> None)
+                    |> Option.orElseWith (fun () -> chooser path (SyntaxNode.SynExpr expr))
+                    |> Option.orElseWith (fun () -> defaultTraverse expr)
+
+                member _.VisitPat(path, defaultTraverse, pat) =
+                    chooser path (SyntaxNode.SynPat pat)
+                    |> Option.orElseWith (fun () -> defaultTraverse pat)
+
+                member _.VisitType(path, defaultTraverse, synType) =
+                    (match path with
+                     | SyntaxNode.SynMemberDefn _ | SyntaxNode.SynMemberSig _ as parent :: parentPath -> chooser parentPath parent
+                     | _ -> None)
+                    |> Option.orElseWith (fun () -> chooser path (SyntaxNode.SynType synType))
+                    |> Option.orElseWith (fun () -> defaultTraverse synType)
+
+                member _.VisitModuleDecl(path, defaultTraverse, synModuleDecl) =
+                    chooser path (SyntaxNode.SynModule synModuleDecl)
+                    |> Option.orElseWith (fun () ->
+                        match synModuleDecl with
+                        | SynModuleDecl.Types(types, _) ->
+                            let path = SyntaxNode.SynModule synModuleDecl :: path
+                            types |> List.tryPick (SyntaxNode.SynTypeDefn >> chooser path)
+                        | _ -> None)
+                    |> Option.orElseWith (fun () -> defaultTraverse synModuleDecl)
+
+                member _.VisitModuleOrNamespace(path, synModuleOrNamespace) =
+                    chooser path (SyntaxNode.SynModuleOrNamespace synModuleOrNamespace)
+
+                member _.VisitMatchClause(path, defaultTraverse, matchClause) =
+                    chooser path (SyntaxNode.SynMatchClause matchClause)
+                    |> Option.orElseWith (fun () -> defaultTraverse matchClause)
+
+                member _.VisitBinding(path, defaultTraverse, synBinding) =
+                    (match path with
+                     | SyntaxNode.SynMemberDefn _ as parent :: parentPath -> chooser parentPath parent
+                     | _ -> None)
+                    |> Option.orElseWith (fun () -> chooser path (SyntaxNode.SynBinding synBinding))
+                    |> Option.orElseWith (fun () -> defaultTraverse synBinding)
+
+                member _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
+                    chooser path (SyntaxNode.SynModuleOrNamespaceSig synModuleOrNamespaceSig)
+
+                member _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
+                    chooser path (SyntaxNode.SynModuleSigDecl synModuleSigDecl)
+                    |> Option.orElseWith (fun () ->
+                        match synModuleSigDecl with
+                        | SynModuleSigDecl.Types(types, _) ->
+                            let path = SyntaxNode.SynModuleSigDecl synModuleSigDecl :: path
+                            types |> List.tryPick (SyntaxNode.SynTypeDefnSig >> chooser path)
+                        | _ -> None)
+                    |> Option.orElseWith (fun () -> defaultTraverse synModuleSigDecl)
+
+                member _.VisitValSig(path, defaultTraverse, valSig) =
+                    (match path with
+                     | SyntaxNode.SynMemberSig _ as parent :: parentPath -> chooser parentPath parent
+                     | _ -> None)
+                    |> Option.orElseWith (fun () -> chooser path (SyntaxNode.SynValSig valSig))
+                    |> Option.orElseWith (fun () -> defaultTraverse valSig)
+
+                member _.VisitSimplePats(path, _pat) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as node :: path -> chooser path node
+                    | _ -> None
+
+                member _.VisitInterfaceSynMemberDefnType(path, _synType) =
+                    match path with
+                    | SyntaxNode.SynMemberDefn _ as node :: path -> chooser path node
+                    | _ -> None
+            }
+
+        SyntaxTraversal.traverseUntil SyntaxTraversal.pick position visitor ast
+
+    let tryPickLast chooser position (ast: SyntaxNode list) =
+        (None, ast)
+        ||> foldWhileImpl SyntaxTraversal.pick position (fun prev path node ->
+            match chooser path node with
+            | Some _ as next -> Some next
+            | None -> Some prev)
+
+    let tryNode position (ast: SyntaxNode list) =
+        let Matching = Some
+
+        (None, ast)
+        ||> foldWhileImpl SyntaxTraversal.pick position (fun _prev path node ->
+            if rangeContainsPos node.Range position then
+                Some(Matching(node, path))
+            else
+                None)
+
+    let exists predicate position ast =
+        tryPick (fun path node -> if predicate path node then Some() else None) position ast
+        |> Option.isSome
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ParsedInput =
+    let fold folder state (parsedInput: ParsedInput) =
+        SyntaxNodes.fold folder state parsedInput.Contents
+
+    let foldWhile folder state (parsedInput: ParsedInput) =
+        SyntaxNodes.foldWhile folder state parsedInput.Contents
+
+    let tryPick chooser position (parsedInput: ParsedInput) =
+        SyntaxNodes.tryPick chooser position parsedInput.Contents
+
+    let tryPickLast chooser position (parsedInput: ParsedInput) =
+        SyntaxNodes.tryPickLast chooser position parsedInput.Contents
+
+    let tryNode position (parsedInput: ParsedInput) =
+        SyntaxNodes.tryNode position parsedInput.Contents
+
+    let exists predicate position (parsedInput: ParsedInput) =
+        SyntaxNodes.exists predicate position parsedInput.Contents

@@ -25,10 +25,11 @@
     <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
     <OtherFlags>$(OtherFlags) --nowarn:3513</OtherFlags>
     <OtherFlags>$(OtherFlags) --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1</OtherFlags>
+    <!-- .FSharp.Core always uses the old style initialization mechanism because of SQL CLR requirements -->
+    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">$(OtherFlags) --realsig-</OtherFlags>
     <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <Tailcalls>true</Tailcalls>
     <NGenBinary>true</NGenBinary>
-
     <PreRelease>true</PreRelease>
     <PackageId>FSharp.Core</PackageId>
     <PackageVersionPrefix>$(FSCorePackageVersion)</PackageVersionPrefix>

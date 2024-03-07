@@ -105,9 +105,11 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
                  TelemetryService.DefaultSession.IsUserMicrosoftInternal
              else
                  let workspace = componentModel.GetService<VisualStudioWorkspace>()
+                 let options = workspace.Services.GetService<EditorOptions>()
 
                  TelemetryService.DefaultSession.IsUserMicrosoftInternal
-                 || workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry)
+                 || options.Advanced.SendAdditionalTelemetry
+                 || options.Advanced.UseTransparentCompiler)
 
     static member ReportFault(name, ?severity: FaultSeverity, ?e: exn) =
         if TelemetryReporter.SendAdditionalTelemetry.Value then

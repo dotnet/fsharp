@@ -610,6 +610,8 @@ type TcConfigBuilder =
         mutable typeCheckingConfig: TypeCheckingConfig
 
         mutable dumpSignatureData: bool
+
+        mutable realsig: bool
     }
 
     // Directories to start probing in
@@ -817,6 +819,7 @@ type TcConfigBuilder =
                     DumpGraph = false
                 }
             dumpSignatureData = false
+            realsig = false
             strictIndentation = None
         }
 
@@ -1360,6 +1363,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData
+    member _.realsig = data.realsig
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter

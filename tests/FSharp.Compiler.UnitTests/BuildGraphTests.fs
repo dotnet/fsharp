@@ -8,6 +8,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 
 module BuildGraphTests =
@@ -233,3 +234,56 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue graphNode.HasValue
         Assert.shouldBe (ValueSome 1) (graphNode.TryPeekValue())
+
+    type ExampleException(msg) = inherit System.Exception(msg)
+
+    [<Fact>]
+    let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
+        let random =
+            let rng = Random()
+            fun n -> rng.Next n
+    
+        let job phase i = node {
+            do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
+            Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+            DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
+            |> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
+
+            errorR (ExampleException $"job {i}")
+        }
+    
+        let work (phase: BuildPhase) =
+            node {
+                let n = 8
+                let logger = CapturingDiagnosticsLogger("test NodeCode")
+                use _ = new CompilationGlobalsScope(logger, phase)
+                let! _ = Seq.init n (job phase) |> NodeCode.Parallel
+
+                let diags = logger.Diagnostics |> List.map fst
+
+                diags |> List.map _.Phase |> Set |> Assert.shouldBe (Set.singleton phase)
+                diags |> List.map _.Exception.Message
+                |> Assert.shouldBe (List.init n <| sprintf "job %d")
+
+                Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
+            }
+    
+        let phases = [|
+            BuildPhase.DefaultPhase
+            BuildPhase.Compile
+            BuildPhase.Parameter
+            BuildPhase.Parse
+            BuildPhase.TypeCheck
+            BuildPhase.CodeGen
+            BuildPhase.Optimize
+            BuildPhase.IlxGen
+            BuildPhase.IlGen
+            BuildPhase.Output
+            BuildPhase.Interactive
+        |]
+    
+        let pickRandomPhase _ = phases[random phases.Length]
+        Seq.init 100 pickRandomPhase
+        |> Seq.map (work >> Async.AwaitNodeCode)
+        |> Async.Parallel
+        |> Async.RunSynchronously
