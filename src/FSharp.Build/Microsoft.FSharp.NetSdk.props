@@ -31,7 +31,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup>
     <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!-- Do not glob F# source files -->
-    <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>
   </PropertyGroup>
 
   <PropertyGroup>
