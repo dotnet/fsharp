@@ -1463,8 +1463,6 @@ type SynMemberDefn =
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        getterAccessibility: SynAccess option *
-        setterAccessibility: SynAccess option *
         synExpr: SynExpr *
         range: range *
         trivia: SynMemberDefnAutoPropertyTrivia
