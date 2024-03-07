@@ -6,15 +6,10 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration
-open BenchmarkDotNet.Engines
-
-
-[<Literal>]
-let FSharpCategory = "fsharp"
-
+open FSharp.Benchmarks.Common.Categories
 
 [<MemoryDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
+[<BenchmarkCategory(LongCategory)>]
 type BackgroundCompilerBenchmarks () =
 
     let size = 50
@@ -104,7 +99,7 @@ type BackgroundCompilerBenchmarks () =
         this.Benchmark.DeleteProjectDir()
 
 [<MemoryDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
+[<BenchmarkCategory(ShortCategory)>]
 type ParsingBenchmark() =
 
     let mutable checker: FSharpChecker = Unchecked.defaultof<_>
@@ -134,7 +129,7 @@ type ParsingBenchmark() =
             failwith "ParseHadErrors"
 
 [<MemoryDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
+[<BenchmarkCategory(LongCategory)>]
 type NoFileSystemCheckerBenchmark() =
 
     let size = 30
@@ -229,8 +224,8 @@ type TestProjectType =
 
 [<MemoryDiagnoser>]
 [<ThreadingDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
 [<SimpleJob(warmupCount=1,iterationCount=4)>]
+[<BenchmarkCategory(LongCategory)>]
 type TransparentCompilerBenchmark() =
 
     let size = 30
@@ -331,9 +326,9 @@ type TransparentCompilerBenchmark() =
         benchmark.DeleteProjectDir()
 
 
+// needs Giraffe repo somewhere nearby, hence benchmarks disabled
 [<MemoryDiagnoser>]
 [<ThreadingDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
 [<SimpleJob(warmupCount=1,iterationCount=8)>]
 type TransparentCompilerGiraffeBenchmark() =
 
@@ -399,7 +394,7 @@ type TransparentCompilerGiraffeBenchmark() =
             checkFile (this.Project.SourceFiles |> List.last).Id expectOk
         }
 
-    [<Benchmark>]
+    // [<Benchmark>]
     member this.SomeWorkflow() =
 
         use _ = Activity.start "Benchmark" [

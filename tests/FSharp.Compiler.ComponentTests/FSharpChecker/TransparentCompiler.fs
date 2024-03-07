@@ -3,6 +3,7 @@
 open System.Collections.Concurrent
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open Internal.Utilities.Library.Extras
@@ -219,13 +220,13 @@ let ``Changes in a referenced project`` () =
 [<Fact>]
 let ``File is not checked twice`` () =
 
-    let cacheEvents = ResizeArray()
+    let cacheEvents = ConcurrentQueue()
 
     testWorkflow() {
         withChecker (fun checker ->
             async {
                 do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Add
+                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
             })
         updateFile "First" updatePublicSurface
         checkFile "Third" expectOk
@@ -237,18 +238,18 @@ let ``File is not checked twice`` () =
         |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
         |> Map
 
-    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
-    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileThird.fs"])
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileThird.fs"])
 
 [<Fact>]
 let ``If a file is checked as a dependency it's not re-checked later`` () =
-    let cacheEvents = ResizeArray()
+    let cacheEvents = ConcurrentQueue()
 
     testWorkflow() {
         withChecker (fun checker ->
             async {
                 do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Add
+                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
             })
         updateFile "First" updatePublicSurface
         checkFile "Last" expectOk
@@ -261,7 +262,7 @@ let ``If a file is checked as a dependency it's not re-checked later`` () =
         |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
         |> Map
 
-    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileThird.fs"])
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Requested], intermediateTypeChecks["FileThird.fs"])
 
 
 // [<Fact>] TODO: differentiate complete and minimal checking requests
@@ -272,13 +273,13 @@ let ``We don't check files that are not depended on`` () =
         sourceFile "Third" ["First"],
         sourceFile "Last" ["Third"])
 
-    let cacheEvents = ResizeArray()
+    let cacheEvents = ConcurrentQueue()
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         withChecker (fun checker ->
             async {
                 do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Add
+                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
             })
         updateFile "First" updatePublicSurface
         checkFile "Last" expectOk
@@ -302,8 +303,8 @@ let ``Files that are not depended on don't invalidate cache`` () =
         sourceFile "Third" ["First"],
         sourceFile "Last" ["Third"])
 
-    let cacheTcIntermediateEvents = ResizeArray()
-    let cacheGraphConstructionEvents = ResizeArray()
+    let cacheTcIntermediateEvents = ConcurrentQueue()
+    let cacheGraphConstructionEvents = ConcurrentQueue()
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         updateFile "First" updatePublicSurface
@@ -311,8 +312,8 @@ let ``Files that are not depended on don't invalidate cache`` () =
         withChecker (fun checker ->
             async {
                 do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheTcIntermediateEvents.Add
-                checker.Caches.DependencyGraph.OnEvent cacheGraphConstructionEvents.Add
+                checker.Caches.TcIntermediate.OnEvent cacheTcIntermediateEvents.Enqueue
+                checker.Caches.DependencyGraph.OnEvent cacheGraphConstructionEvents.Enqueue
 
             })
         updateFile "Second" updatePublicSurface
@@ -344,8 +345,8 @@ let ``Files that are not depended on don't invalidate cache part 2`` () =
         sourceFile "D" ["B"; "C"],
         sourceFile "E" ["C"])
 
-    let cacheTcIntermediateEvents = ResizeArray()
-    let cacheGraphConstructionEvents = ResizeArray()
+    let cacheTcIntermediateEvents = ConcurrentQueue()
+    let cacheGraphConstructionEvents = ConcurrentQueue()
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         updateFile "A" updatePublicSurface
@@ -353,8 +354,8 @@ let ``Files that are not depended on don't invalidate cache part 2`` () =
         withChecker (fun checker ->
             async {
                 do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheTcIntermediateEvents.Add
-                checker.Caches.DependencyGraph.OnEvent cacheGraphConstructionEvents.Add
+                checker.Caches.TcIntermediate.OnEvent cacheTcIntermediateEvents.Enqueue
+                checker.Caches.DependencyGraph.OnEvent cacheGraphConstructionEvents.Enqueue
             })
         updateFile "B" updatePublicSurface
         checkFile "E" expectOk
@@ -382,7 +383,7 @@ let ``Changing impl files doesn't invalidate cache when they have signatures`` (
         { sourceFile "B" ["A"] with SignatureFile = AutoGenerated },
         { sourceFile "C" ["B"] with SignatureFile = AutoGenerated })
 
-    let cacheEvents = ResizeArray()
+    let cacheEvents = ConcurrentQueue()
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         updateFile "A" updatePublicSurface
@@ -390,7 +391,7 @@ let ``Changing impl files doesn't invalidate cache when they have signatures`` (
         withChecker (fun checker ->
             async {
                 do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Add
+                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
             })
         updateFile "A" updateInternal
         checkFile "C" expectOk
@@ -412,14 +413,14 @@ let ``Changing impl file doesn't invalidate an in-memory referenced project`` ()
         SyntheticProject.Create("project", sourceFile "B" ["A"] )
         with DependsOn = [library] }
 
-    let cacheEvents = ResizeArray()
+    let cacheEvents = ConcurrentQueue()
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         checkFile "B" expectOk
         withChecker (fun checker ->
             async {
                 do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Add
+                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
             })
         updateFile "A" updateInternal
         checkFile "B" expectOk
@@ -479,12 +480,12 @@ type SignatureFiles = Yes = 1 | No = 2 | Some = 3
 let fuzzingTest seed (project: SyntheticProject) = task {
     let rng = System.Random seed
 
-    let checkingThreads = 3
-    let maxModificationDelayMs = 10
+    let checkingThreads = 10
+    let maxModificationDelayMs = 50
     let maxCheckingDelayMs = 20
     //let runTimeMs = 30000
     let signatureFileModificationProbability = 0.25
-    let modificationLoopIterations = 10
+    let modificationLoopIterations = 50
     let checkingLoopIterations = 5
 
     let minCheckingTimeoutMs = 0
@@ -494,7 +495,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
     let checker = builder.Checker
         
     // Force creation and caching of options
-    do! SaveAndCheckProject project checker |> Async.Ignore
+    do! SaveAndCheckProject project checker false |> Async.Ignore
 
     let projectAgent = MailboxProcessor.Start(fun (inbox: MailboxProcessor<ProjectRequest>) ->
         let rec loop project =
@@ -622,7 +623,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
             }
 
         try
-            let! _x = threads |> Seq.skip 1 |> Task.WhenAll
+            let! _x = threads |> Task.WhenAll
             ()
         with
             | e ->
@@ -645,13 +646,15 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 }
 
 
+(* This gets in the way of insertions too often now, uncomment when stable.
 [<Theory>]
 [<InlineData(SignatureFiles.Yes)>]
 [<InlineData(SignatureFiles.No)>]
 [<InlineData(SignatureFiles.Some)>]
+*)
 let Fuzzing signatureFiles =
 
-    let seed = 1106087513
+    let seed = System.Random().Next()
     let rng = System.Random(int seed)
 
     let fileCount = 30
@@ -711,7 +714,6 @@ type GiraffeTheoryAttribute() =
 [<InlineData false>]
 let GiraffeFuzzing signatureFiles =
     let seed = System.Random().Next()
-    //let seed = 1044159179
 
     let giraffeDir = if signatureFiles then giraffeSignaturesDir else giraffeDir
     let giraffeTestsDir = if signatureFiles then giraffeSignaturesTestsDir else giraffeTestsDir
@@ -801,3 +803,211 @@ module Stuff =
         //Assert.Equal<string>(hash, hash2)
 
         ()
+
+/// Update these paths to a local response file with compiler arguments of existing F# projects.
+/// References projects are expected to have been built.
+let localResponseFiles =
+    [|
+        @"C:\Projects\fantomas\src\Fantomas.Core.Tests\Fantomas.Core.Tests.rsp"
+    |]
+    |> Array.collect (fun f ->
+        [|
+            [| true :> obj; f:> obj |]
+            [| false :> obj; f :> obj|]
+        |]
+    )
+
+// Uncomment this attribute if you want run this test against local response files.
+// [<Theory>]
+[<MemberData(nameof(localResponseFiles))>]
+let ``TypeCheck last file in project with transparent compiler`` useTransparentCompiler responseFile =
+    let responseFile = FileInfo responseFile
+    let syntheticProject = mkSyntheticProjectForResponseFile responseFile
+
+    let workflow =     
+        ProjectWorkflowBuilder(
+            syntheticProject,
+            isExistingProject = true,
+            useTransparentCompiler = useTransparentCompiler
+        )
+
+    let lastFile =
+        syntheticProject.SourceFiles
+        |> List.tryLast
+        |> Option.map (fun sf -> sf.Id)
+
+    match lastFile with
+    | None -> failwithf "Last file of project could not be found"
+    | Some lastFile ->
+
+    workflow {
+        clearCache 
+        checkFile lastFile expectOk
+    }
+
+[<Fact>]
+let ``LoadClosure for script is computed once`` () =
+    let project = SyntheticProject.CreateForScript(
+        sourceFile "First" [])
+
+    let cacheEvents = ConcurrentQueue()
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50  // wait for events from initial project check
+                checker.Caches.ScriptClosure.OnEvent cacheEvents.Enqueue
+            })
+        
+        checkFile "First" expectOk
+    } |> ignore
+    
+    let closureComputations =
+        cacheEvents
+        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> Path.GetFileName f)
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
+        |> Map
+
+    Assert.Empty(closureComputations)
+
+[<Fact>]
+let ``LoadClosure for script is recomputed after changes`` () =
+    let project = SyntheticProject.CreateForScript(
+        sourceFile "First" [])
+
+    let cacheEvents = ConcurrentQueue()
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50  // wait for events from initial project check
+                checker.Caches.ScriptClosure.OnEvent cacheEvents.Enqueue
+            })
+        
+        checkFile "First" expectOk
+        updateFile "First" updateInternal
+        checkFile "First" expectOk
+        updateFile "First" updatePublicSurface
+        checkFile "First" expectOk
+    } |> ignore
+    
+    let closureComputations =
+        cacheEvents
+        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> Path.GetFileName f)
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
+        |> Map
+
+    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        clearCache
+        tryGetRecentCheckResults "First" expectNone
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [] )
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First" expectNone
+        checkFile "First" expectOk
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+    
+[<Fact>]
+let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" ["First"])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        tryGetRecentCheckResults "Second" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First"  expectNone
+        tryGetRecentCheckResults "Second" expectSome // file didn't change so we still want to get the recent result
+    } |> ignore
+
+[<Fact>]
+let ``Background compiler and Transparent compiler return the same options`` () =
+    async {
+        let backgroundChecker = FSharpChecker.Create(useTransparentCompiler = false)
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+
+        let! backgroundSnapshot, backgroundDiags = backgroundChecker.GetProjectSnapshotFromScript(scriptName, content)
+        let! transparentSnapshot, transparentDiags = transparentChecker.GetProjectSnapshotFromScript(scriptName, content)
+        Assert.Empty(backgroundDiags)
+        Assert.Empty(transparentDiags)
+        Assert.Equal<string list>(backgroundSnapshot.OtherOptions, transparentSnapshot.OtherOptions)
+        Assert.Equal<ProjectSnapshot.ReferenceOnDisk list>(backgroundSnapshot.ReferencesOnDisk, transparentSnapshot.ReferencesOnDisk)
+    }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Unused warning should still produce after parse warning`` useTransparentCompiler =
+
+    // There should be parse warning because of the space in the file name:
+    //   warning FS0221: The declarations in this file will be placed in an implicit module 'As 01' based on the file name 'As 01.fs'.
+    //   However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.
+    
+    let project =
+        { SyntheticProject.Create(
+            { sourceFile "As 01" [] with
+                Source = """
+do
+    let _ as b = ()
+    ()
+
+// For more information see https://aka.ms/fsharp-console-apps
+printfn "Hello from F#"
+"""
+                SignatureFile = No
+                
+            }) with
+            AutoAddModules = false
+            OtherOptions = [
+                "--target:exe"
+                "--warn:3"
+                "--warnon:1182"
+                "--warnaserror:3239"
+                "--noframework"
+            ]
+        }
+
+    let expectTwoWarnings (_parseResult:FSharpParseFileResults, checkAnswer: FSharpCheckFileAnswer) (_, _) =
+        match checkAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwith "Should not have aborted"
+        | FSharpCheckFileAnswer.Succeeded checkResults ->
+            let hasParseWarning =
+                checkResults.Diagnostics
+                |> Array.exists (fun diag -> diag.Severity = FSharpDiagnosticSeverity.Warning && diag.ErrorNumber = 221)
+            Assert.True(hasParseWarning, "Expected parse warning FS0221")
+
+            let hasCheckWarning =
+                checkResults.Diagnostics
+                |> Array.exists (fun diag -> diag.Severity = FSharpDiagnosticSeverity.Warning && diag.ErrorNumber = 1182)
+            Assert.True(hasCheckWarning, "Expected post inference warning FS1182")
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = useTransparentCompiler) {
+        checkFile "As 01" expectTwoWarnings
+    }

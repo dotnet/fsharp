@@ -3442,7 +3442,6 @@ let ``Test ProjectForWitnesses2`` useTransparentCompiler =
          "member Neg(p) = {x = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.UnaryNegationDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0),p.x); y = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.UnaryNegationDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0),p.y)} @ (7,34--7,56)";
          "member op_Addition(p1,p2) = {x = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.x,p2.x); y = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.y,p2.y)} @ (8,33--8,68)";
          "type MyNumber";
-         "member get_IsMyNumber(this) (unitArg) = (if this.IsMyNumber then True else False) @ (10,5--10,13)";
          "member get_Zero(unitVar0) = MyNumber(0) @ (12,25--12,35)";
          "member op_Addition(_arg1,_arg2) = let x: Microsoft.FSharp.Core.int = _arg1.Item in let y: Microsoft.FSharp.Core.int = _arg2.Item in MyNumber(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),x,y)) @ (13,23--13,33)";
          "member DivideByInt(_arg3,i) = let x: Microsoft.FSharp.Core.int = _arg3.Item in MyNumber(Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.DivisionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),x,i)) @ (15,31--15,41)";
@@ -3606,3 +3605,27 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` useTransparentCompiler =
     printfn "actual:\n\n%A" actual
     actual
       |> shouldPairwiseEqual expected
+
+module internal ProjectForNoWarnHashDirective =
+
+    let fileSource1 = """
+module N.M
+#nowarn "40"
+let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
+"""
+    
+    let createOptions() = createOptionsAux [fileSource1] []
+    
+[<TestCase(false)>]
+[<TestCase(true)>]
+[<Test>]
+let ``Test NoWarn HashDirective`` useTransparentCompiler =
+    let cleanup, options = ProjectForNoWarnHashDirective.createOptions()
+    use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+
+    for e in wholeProjectResults.Diagnostics do
+        printfn "ProjectForNoWarnHashDirective error: <<<%s>>>" e.Message
+
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0

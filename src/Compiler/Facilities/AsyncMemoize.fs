@@ -74,7 +74,9 @@ type internal Job<'TValue> =
         | Failed(_, ex) -> $"Failed {ex}"
 
 type internal JobEvent =
+    | Requested
     | Started
+    | Restarted
     | Finished
     | Canceled
     | Evicted
@@ -245,7 +247,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                 let cached, otherVersions = cache.GetAll(key.Key, key.Version)
 
-                return
+                let result =
                     match msg, cached with
                     | GetOrCompute _, Some(Completed(result, diags)) ->
                         Interlocked.Increment &hits |> ignore
@@ -298,6 +300,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cts.Cancel())
 
                         New cts.Token
+
+                log (Requested, key)
+                return result
             })
 
     let internalError key message =
@@ -346,8 +351,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                                             try
                                                 // TODO: Should unify starting and restarting
-                                                use _ = Cancellable.UsingToken(cts.Token)
-                                                log (Started, key)
+                                                log (Restarted, key)
                                                 Interlocked.Increment &restarted |> ignore
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
                                                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -498,7 +502,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 // TODO: Should unify starting and restarting
                                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
                                 DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
-                                use _ = Cancellable.UsingToken(internalCt)
+
                                 log (Started, key)
 
                                 try
@@ -529,6 +533,15 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             | Existing job -> return! job |> NodeCode.AwaitTask
 
         }
+
+    member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
+        let versionsAndJobs = cache.GetAll(key)
+
+        versionsAndJobs
+        |> Seq.tryPick (fun (version, job) ->
+            match predicate version, job with
+            | true, Completed(completed, _) -> Some completed
+            | _ -> None)
 
     member _.Clear() = cache.Clear()
 

@@ -133,8 +133,12 @@ let u = Case1 3
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
-let ``Test multi project 1 basic`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 1 basic`` useTransparentCompiler =
 
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+    
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunImmediate
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["MultiProject1"]
@@ -704,9 +708,12 @@ let ``Test multi project2 errors`` useTransparentCompiler =
     wholeProjectResultsC.Diagnostics.Length |> shouldEqual 1
 
 
-
 [<Test>]
-let ``Test multi project 2 all symbols`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 2 all symbols`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let mpA = checker.ParseAndCheckProject(Project2A.options) |> Async.RunImmediate
     let mpB = checker.ParseAndCheckProject(Project2B.options) |> Async.RunImmediate
@@ -832,7 +839,12 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` useTrans
 
 
 [<Test>]
-let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` useTransparentCompiler =
+    
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+    
     // The type provider and its dependency are compiled as part of the solution build
 #if DEBUG
     let csDLL = __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestTP/Debug/netstandard2.0/CSharp_Analysis.dll"

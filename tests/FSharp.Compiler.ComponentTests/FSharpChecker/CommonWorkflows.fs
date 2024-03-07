@@ -151,14 +151,14 @@ let GetAllUsesOfAllSymbols() =
                 .Build()
 
     use _ = Activity.start "GetAllUsesOfAllSymbols" [  ]
-    
-    let result = 
-        async { 
+
+    let result =
+        async {
             let project = makeTestProject()
             let checker = ProjectWorkflowBuilder(project, useGetSource=true, useChangeNotifications = true).Checker
-            do! saveProject project false checker 
+            do! saveProject project false checker
             let options = project.GetProjectOptions checker
-            let! checkProjectResults = checker.ParseAndCheckProject(options) 
+            let! checkProjectResults = checker.ParseAndCheckProject(options)
             return checkProjectResults.GetAllUsesOfAllSymbols()
         } |> Async.RunSynchronously
 
@@ -166,4 +166,4 @@ let GetAllUsesOfAllSymbols() =
     traceProvider.ForceFlush() |> ignore
     traceProvider.Dispose()
 
-    Assert.Equal(79, result.Length)
+    if result.Length <> 79 then failwith $"Expected 79 symbolUses, got {result.Length}:\n%A{result}"

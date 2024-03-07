@@ -58,6 +58,7 @@ module internal FSharpProjectSnapshotSerialization =
         | FSharpReference(projectOutputFile, snapshot) ->
             output.Add("projectOutputFile", projectOutputFile)
             output.Add("snapshot", serializeSnapshot snapshot)
+        | _ -> ()
 
         output
 
@@ -447,7 +448,7 @@ module private CheckerExtensions =
             ) =
             cancellableTask {
 
-                if document.Project.UseTransparentCompiler then
+                if checker.UsesTransparentCompiler then
                     return! checker.ParseAndCheckDocumentUsingTransparentCompiler(document, options, userOpName)
                 else
                     let allowStaleResults =

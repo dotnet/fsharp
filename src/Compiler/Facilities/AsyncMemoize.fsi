@@ -12,7 +12,9 @@ module internal Utils =
     val (|TaskCancelled|_|): ex: exn -> TaskCanceledException option
 
 type internal JobEvent =
+    | Requested
     | Started
+    | Restarted
     | Finished
     | Canceled
     | Evicted
@@ -66,6 +68,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     member Get: key: ICacheKey<'TKey, 'TVersion> * computation: NodeCode<'TValue> -> NodeCode<'TValue>
 
     member Get': key: 'TKey * computation: NodeCode<'TValue> -> NodeCode<'TValue>
+
+    member TryGet: key: 'TKey * predicate: ('TVersion -> bool) -> 'TValue option
 
     member Event: IEvent<JobEvent * (string * 'TKey * 'TVersion)>
 

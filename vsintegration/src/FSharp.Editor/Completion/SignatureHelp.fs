@@ -629,14 +629,18 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             let caretLineColumn = caretLinePos.Character
 
             let adjustedColumnInSource =
-
-                let rec loop ch pos =
-                    if Char.IsWhiteSpace(ch) then
-                        loop sourceText.[pos - 1] (pos - 1)
-                    else
+                let rec loop pos =
+                    if pos = 0 then
                         pos
+                    else
+                        let nextPos = pos - 1
 
-                loop sourceText.[caretPosition - 1] (caretPosition - 1)
+                        if not (Char.IsWhiteSpace sourceText[nextPos]) then
+                            pos
+                        else
+                            loop nextPos
+
+                loop (caretPosition - 1)
 
             let adjustedColumnChar = sourceText.[adjustedColumnInSource]
 

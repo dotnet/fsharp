@@ -198,21 +198,27 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
 
     /// Returns an option of a value for given key and version, and also a list of all other versions for given key
     member this.GetAll(key, version) =
-        this.TryGet(key, version),
+        let others =
+            this.GetAll(key) |> Seq.filter (fun (ver, _val) -> ver <> version) |> Seq.toList
 
+        this.TryGet(key, version), others
+
+    /// Returns a list of version * value pairs for a given key. The strongly held value is first in the list.
+    member _.GetAll(key: 'TKey) : ('TVersion * 'TValue) seq =
         match dictionary.TryGetValue key with
         | false, _ -> []
         | true, versionDict ->
             versionDict.Values
-            |> Seq.map (fun node -> node.Value)
-            |> Seq.filter (p24 >> ((<>) version))
+            |> Seq.map (_.Value)
+            |> Seq.sortBy (function
+                | _, _, _, Strong _ -> 0
+                | _ -> 1)
             |> Seq.choose (function
                 | _, ver, _, Strong v -> Some(ver, v)
                 | _, ver, _, Weak r ->
                     match r.TryGetTarget() with
                     | true, x -> Some(ver, x)
                     | _ -> None)
-            |> Seq.toList
 
     member _.Remove(key, version) =
         match dictionary.TryGetValue key with

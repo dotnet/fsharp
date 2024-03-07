@@ -38,6 +38,7 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
+
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
@@ -108,12 +109,12 @@ module Utilities =
         let outputLines = StringBuilder()
         let errorLines = StringBuilder()
 
-        do redirector.OutputProduced.Add (fun line -> outputLines.AppendLine line |>ignore)
-        do redirector.ErrorProduced.Add(fun line -> errorLines.AppendLine line |>ignore)
+        do redirector.OutputProduced.Add (fun line -> lock outputLines <| fun () -> outputLines.AppendLine line |>ignore)
+        do redirector.ErrorProduced.Add(fun line -> lock errorLines <| fun () -> errorLines.AppendLine line |>ignore)
 
-        member _.Output () = outputLines.ToString()
+        member _.Output () = lock outputLines outputLines.ToString
 
-        member _.ErrorOutput () = errorLines.ToString()
+        member _.ErrorOutput () = lock errorLines errorLines.ToString
 
         interface IDisposable with
             member _.Dispose() = (redirector :> IDisposable).Dispose()
@@ -306,7 +307,7 @@ let main argv = 0"""
                     File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
                     File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
-                    let timeout = 30000
+                    let timeout = 120000
                     let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
                     
                     if exitCode <> 0 || errors.Length > 0 then

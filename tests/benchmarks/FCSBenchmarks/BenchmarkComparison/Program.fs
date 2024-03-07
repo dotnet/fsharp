@@ -3,6 +3,7 @@ namespace HistoricalBenchmark
 open System.IO
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
+open FSharp.Benchmarks.Common.Categories
 
 [<AbstractClass>]
 type SingleFileCompilerBenchmarkBase(compiler : SingleFileCompiler) =
@@ -20,6 +21,7 @@ type SingleFileCompilerBenchmarkBase(compiler : SingleFileCompiler) =
 
 [<MemoryDiagnoser>]
 [<JsonExporter>]
+[<BenchmarkCategory(ShortCategory)>]
 type DecentlySizedStandAloneFileBenchmark() =
     inherit SingleFileCompilerBenchmarkBase(
         SingleFileCompiler(

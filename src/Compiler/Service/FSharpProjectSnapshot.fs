@@ -81,6 +81,25 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
                 |> Task.FromResult
         )
 
+    static member CreateFromDocumentSource(fileName: string, documentSource: DocumentSource) =
+
+        match documentSource with
+        | DocumentSource.Custom f ->
+            let version = DateTime.Now.Ticks.ToString()
+
+            FSharpFileSnapshot(
+                fileName,
+                version,
+                fun () ->
+                    task {
+                        match! f fileName |> Async.StartAsTask with
+                        | Some source -> return SourceTextNew.ofISourceText source
+                        | None -> return failwith $"Couldn't get source for file {f}"
+                    }
+            )
+
+        | DocumentSource.FileSystem -> FSharpFileSnapshot.CreateFromFileSystem fileName
+
     member public _.FileName = FileName
     member _.Version = Version
     member _.GetSource() = GetSource()
@@ -104,7 +123,7 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
 
 /// A source file snapshot with loaded source text.
 type internal FSharpFileSnapshotWithSource
-    (FileName: string, SourceHash: ImmutableArray<byte>, Source: ISourceText, IsLastCompiland: bool, IsExe: bool) =
+    (FileName: string, SourceHash: ImmutableArray<byte>, Source: ISourceTextNew, IsLastCompiland: bool, IsExe: bool) =
 
     let version = lazy (SourceHash.ToBuilder().ToArray())
     let stringVersion = lazy (version.Value |> BitConverter.ToString)
@@ -130,13 +149,13 @@ type internal FSharpParsedFile
         SyntaxTreeHash: byte array,
         SourceText: ISourceText,
         ParsedInput: ParsedInput,
-        ParseErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+        ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
     ) =
 
     member _.FileName = FileName
     member _.SourceText = SourceText
     member _.ParsedInput = ParsedInput
-    member _.ParseErrors = ParseErrors
+    member _.ParseDiagnostics = ParseDiagnostics
 
     member val IsSignatureFile = FileName |> isSignatureFile
 
@@ -326,6 +345,12 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Proj
     member this.FileKey(fileName: string) = this.UpTo(fileName).LastFileKey
     member this.FileKey(index: FileIndex) = this.UpTo(index).LastFileKey
 
+    member this.FileKeyWithExtraFileSnapshotVersion(fileName: string) =
+        let fileKey = this.FileKey fileName
+        let fileSnapshot = this.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
+
+        fileKey.WithExtraVersion(fileSnapshot.Version |> Md5Hasher.toString)
+
 /// Project snapshot with filenames and versions given as initial input
 and internal ProjectSnapshot = ProjectSnapshotBase<FSharpFileSnapshot>
 
@@ -364,7 +389,10 @@ and internal ProjectCore
              |> Md5Hasher.addDateTimes (ReferencesOnDisk |> Seq.map (fun r -> r.LastModified))
              |> Md5Hasher.addBytes' (
                  ReferencedProjects
-                 |> Seq.map (fun (FSharpReference(_name, p)) -> p.ProjectSnapshot.SignatureVersion)
+                 |> Seq.map (function
+                     | FSharpReference(_name, p) -> p.ProjectSnapshot.SignatureVersion
+                     | PEReference(getStamp, _) -> Md5Hasher.empty |> Md5Hasher.addDateTime (getStamp ())
+                     | ILModuleReference(_name, getStamp, _) -> Md5Hasher.empty |> Md5Hasher.addDateTime (getStamp ()))
              ))
 
     let fullHashString = lazy (fullHash.Value |> Md5Hasher.toString)
@@ -372,10 +400,10 @@ and internal ProjectCore
     let commandLineOptions =
         lazy
             (seq {
+                yield! OtherOptions
+
                 for r in ReferencesOnDisk do
                     $"-r:{r.Path}"
-
-                yield! OtherOptions
              }
              |> Seq.toList)
 
@@ -429,12 +457,32 @@ and internal ProjectCore
     member _.CacheKey = cacheKey.Value
 
 and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental and subject to change.")>] FSharpReferencedProjectSnapshot =
-    | FSharpReference of projectOutputFile: string * options: FSharpProjectSnapshot
-    //| PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
-    //| ILModuleReference of
-    //    projectOutputFile: string *
-    //    getStamp: (unit -> DateTime) *
-    //    getReader: (unit -> ILModuleReader)
+    /// <summary>
+    /// A reference to an F# project. The physical data for it is stored/cached inside of the compiler service.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="snapshot">Snapshot of the referenced F# project</param>
+    | FSharpReference of projectOutputFile: string * snapshot: FSharpProjectSnapshot
+    /// <summary>
+    /// A reference to any portable executable, including F#. The stream is owned by this reference.
+    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
+    /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
+    /// If the stream evaluation throws an exception, it will be automatically handled.
+    /// </summary>
+    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    /// <param name="delayedReader">A function that opens a Portable Executable data stream for reading.</param>
+    | PEReference of getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+
+    /// <summary>
+    /// A reference to an ILModuleReader.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    /// <param name="getReader">A function that creates an ILModuleReader for reading module data.</param>
+    | ILModuleReference of
+        projectOutputFile: string *
+        getStamp: (unit -> DateTime) *
+        getReader: (unit -> FSharp.Compiler.AbstractIL.ILBinaryReader.ILModuleReader)
 
     /// <summary>
     /// The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c>
@@ -442,7 +490,9 @@ and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental a
     /// </summary>
     member this.OutputFile =
         match this with
-        | FSharpReference(projectOutputFile, _) -> projectOutputFile
+        | FSharpReference(projectOutputFile = projectOutputFile)
+        | ILModuleReference(projectOutputFile = projectOutputFile) -> projectOutputFile
+        | PEReference(delayedReader = reader) -> reader.OutputFile
 
     /// <summary>
     /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
@@ -458,6 +508,11 @@ and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental a
             match this, o with
             | FSharpReference(projectOutputFile1, options1), FSharpReference(projectOutputFile2, options2) ->
                 projectOutputFile1 = projectOutputFile2 && options1 = options2
+            | PEReference(getStamp1, reader1), PEReference(getStamp2, reader2) ->
+                reader1.OutputFile = reader2.OutputFile && (getStamp1 ()) = (getStamp2 ())
+            | ILModuleReference(projectOutputFile1, getStamp1, _), ILModuleReference(projectOutputFile2, getStamp2, _) ->
+                projectOutputFile1 = projectOutputFile2 && (getStamp1 ()) = (getStamp2 ())
+            | _ -> false
 
         | _ -> false
 
@@ -478,6 +533,21 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
     member _.Label = projectSnapshot.Label
     member _.Identifier = FSharpProjectIdentifier projectSnapshot.ProjectCore.Identifier
+    member _.ProjectFileName = projectSnapshot.ProjectFileName
+    member _.ProjectId = projectSnapshot.ProjectId
+    member _.SourceFiles = projectSnapshot.SourceFiles
+    member _.ReferencesOnDisk = projectSnapshot.ReferencesOnDisk
+    member _.OtherOptions = projectSnapshot.OtherOptions
+    member _.ReferencedProjects = projectSnapshot.ReferencedProjects
+
+    member _.IsIncompleteTypeCheckEnvironment =
+        projectSnapshot.IsIncompleteTypeCheckEnvironment
+
+    member _.UseScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
+    member _.LoadTime = projectSnapshot.LoadTime
+    member _.UnresolvedReferences = projectSnapshot.UnresolvedReferences
+    member _.OriginalLoadReferences = projectSnapshot.OriginalLoadReferences
+    member _.Stamp = projectSnapshot.Stamp
 
     static member Create
         (
@@ -524,17 +594,19 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
                 let! referencedProjects =
                     options.ReferencedProjects
-                    |> Seq.choose (function
+                    |> Seq.map (function
                         | FSharpReferencedProject.FSharpReference(outputName, options) ->
-                            Some(
-                                async {
-                                    let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, snapshotAccumulator)
+                            async {
+                                let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, snapshotAccumulator)
 
-                                    return FSharpReferencedProjectSnapshot.FSharpReference(outputName, snapshot)
-                                }
-                            )
-                        // TODO: other types
-                        | _ -> None)
+                                return FSharpReferencedProjectSnapshot.FSharpReference(outputName, snapshot)
+                            }
+                        | FSharpReferencedProject.PEReference(getStamp, reader) ->
+                            async.Return <| FSharpReferencedProjectSnapshot.PEReference(getStamp, reader)
+                        | FSharpReferencedProject.ILModuleReference(outputName, getStamp, getReader) ->
+                            async.Return
+                            <| FSharpReferencedProjectSnapshot.ILModuleReference(outputName, getStamp, getReader))
+
                     |> Async.Sequential
 
                 let referencesOnDisk, otherOptions =
@@ -571,13 +643,22 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             return snapshotAccumulator[options]
         }
 
-    static member internal GetFileSnapshotFromDisk _ fileName =
-        FSharpFileSnapshot.CreateFromFileSystem fileName |> async.Return
+    static member FromOptions(options: FSharpProjectOptions, documentSource: DocumentSource) =
+        FSharpProjectSnapshot.FromOptions(
+            options,
+            fun _ fileName ->
+                FSharpFileSnapshot.CreateFromDocumentSource(fileName, documentSource)
+                |> async.Return
+        )
 
-    static member FromOptions(options: FSharpProjectOptions) =
-        FSharpProjectSnapshot.FromOptions(options, FSharpProjectSnapshot.GetFileSnapshotFromDisk)
-
-    static member FromOptions(options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText) =
+    static member FromOptions
+        (
+            options: FSharpProjectOptions,
+            fileName: string,
+            fileVersion: int,
+            sourceText: ISourceText,
+            documentSource: DocumentSource
+        ) =
 
         let getFileSnapshot _ fName =
             if fName = fileName then
@@ -587,7 +668,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                     fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
                 )
             else
-                FSharpFileSnapshot.CreateFromFileSystem fName
+                FSharpFileSnapshot.CreateFromDocumentSource(fName, documentSource)
             |> async.Return
 
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
@@ -601,7 +682,9 @@ let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshotBase<_>) =
         ReferencedProjects =
             projectSnapshot.ReferencedProjects
             |> Seq.map (function
-                | FSharpReference(name, opts) -> FSharpReferencedProject.FSharpReference(name, opts.ProjectSnapshot |> snapshotToOptions))
+                | FSharpReference(name, opts) -> FSharpReferencedProject.FSharpReference(name, opts.ProjectSnapshot |> snapshotToOptions)
+                | PEReference(getStamp, reader) -> FSharpReferencedProject.PEReference(getStamp, reader)
+                | ILModuleReference(name, getStamp, getReader) -> FSharpReferencedProject.ILModuleReference(name, getStamp, getReader))
             |> Seq.toArray
         IsIncompleteTypeCheckEnvironment = projectSnapshot.IsIncompleteTypeCheckEnvironment
         UseScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
