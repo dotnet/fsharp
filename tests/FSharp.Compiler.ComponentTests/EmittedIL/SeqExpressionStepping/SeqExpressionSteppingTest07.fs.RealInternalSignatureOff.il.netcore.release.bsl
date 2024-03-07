@@ -420,113 +420,119 @@
                                                                                 int32 stop) cil managed
   {
     
-    .maxstack  5
-    .locals init (class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_0,
-             class [runtime]System.Collections.Generic.IEnumerator`1<int32> V_1,
+    .maxstack  4
+    .locals init (uint64 V_0,
+             uint64 V_1,
              int32 V_2,
-             class [runtime]System.IDisposable V_3)
+             int32 V_3)
     IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.m1
-    IL_0002:  ldarg.1
-    IL_0003:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                           int32,
-                                                                                                                                                                           int32)
-    IL_0008:  stloc.0
-    IL_0009:  ldloc.0
-    IL_000a:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-    IL_000f:  stloc.1
-    .try
-    {
-      IL_0010:  br.s       IL_0029
+    IL_0001:  ldarg.1
+    IL_0002:  bge.s      IL_0009
 
-      IL_0012:  ldloc.1
-      IL_0013:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0018:  stloc.2
-      IL_0019:  ldstr      "{0}"
-      IL_001e:  ldloc.2
-      IL_001f:  box        [runtime]System.Int32
-      IL_0024:  call       void [runtime]System.Console::WriteLine(string,
-                                                                          object)
-      IL_0029:  ldloc.1
-      IL_002a:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-      IL_002f:  brtrue.s   IL_0012
+    IL_0004:  ldc.i4.0
+    IL_0005:  conv.i8
+    IL_0006:  nop
+    IL_0007:  br.s       IL_0011
 
-      IL_0031:  leave.s    IL_0045
+    IL_0009:  ldarg.0
+    IL_000a:  ldarg.1
+    IL_000b:  sub
+    IL_000c:  conv.i8
+    IL_000d:  ldc.i4.1
+    IL_000e:  conv.i8
+    IL_000f:  add
+    IL_0010:  nop
+    IL_0011:  stloc.0
+    IL_0012:  ldc.i4.0
+    IL_0013:  conv.i8
+    IL_0014:  stloc.1
+    IL_0015:  ldarg.0
+    IL_0016:  stloc.2
+    IL_0017:  br.s       IL_0034
 
-    }  
-    finally
-    {
-      IL_0033:  ldloc.1
-      IL_0034:  isinst     [runtime]System.IDisposable
-      IL_0039:  stloc.3
-      IL_003a:  ldloc.3
-      IL_003b:  brfalse.s  IL_0044
+    IL_0019:  ldloc.2
+    IL_001a:  stloc.3
+    IL_001b:  ldstr      "{0}"
+    IL_0020:  ldloc.3
+    IL_0021:  box        [runtime]System.Int32
+    IL_0026:  call       void [runtime]System.Console::WriteLine(string,
+                                                                        object)
+    IL_002b:  ldloc.2
+    IL_002c:  ldc.i4.m1
+    IL_002d:  add
+    IL_002e:  stloc.2
+    IL_002f:  ldloc.1
+    IL_0030:  ldc.i4.1
+    IL_0031:  conv.i8
+    IL_0032:  add
+    IL_0033:  stloc.1
+    IL_0034:  ldloc.1
+    IL_0035:  ldloc.0
+    IL_0036:  blt.un.s   IL_0019
 
-      IL_003d:  ldloc.3
-      IL_003e:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_0043:  endfinally
-      IL_0044:  endfinally
-    }  
-    IL_0045:  ret
+    IL_0038:  ret
   } 
 
   .method public static void  testSimpleForEachIntRangeLoopDownWithTwoStatements(int32 start,
                                                                                  int32 stop) cil managed
   {
     
-    .maxstack  5
-    .locals init (class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_0,
-             class [runtime]System.Collections.Generic.IEnumerator`1<int32> V_1,
+    .maxstack  4
+    .locals init (uint64 V_0,
+             uint64 V_1,
              int32 V_2,
-             class [runtime]System.IDisposable V_3)
+             int32 V_3)
     IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.m1
-    IL_0002:  ldarg.1
-    IL_0003:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                           int32,
-                                                                                                                                                                           int32)
-    IL_0008:  stloc.0
-    IL_0009:  ldloc.0
-    IL_000a:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-    IL_000f:  stloc.1
-    .try
-    {
-      IL_0010:  br.s       IL_0039
+    IL_0001:  ldarg.1
+    IL_0002:  bge.s      IL_0009
 
-      IL_0012:  ldloc.1
-      IL_0013:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0018:  stloc.2
-      IL_0019:  ldstr      "{0}"
-      IL_001e:  ldloc.2
-      IL_001f:  box        [runtime]System.Int32
-      IL_0024:  call       void [runtime]System.Console::WriteLine(string,
-                                                                          object)
-      IL_0029:  ldstr      "{0}"
-      IL_002e:  ldloc.2
-      IL_002f:  box        [runtime]System.Int32
-      IL_0034:  call       void [runtime]System.Console::WriteLine(string,
-                                                                          object)
-      IL_0039:  ldloc.1
-      IL_003a:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-      IL_003f:  brtrue.s   IL_0012
+    IL_0004:  ldc.i4.0
+    IL_0005:  conv.i8
+    IL_0006:  nop
+    IL_0007:  br.s       IL_0011
 
-      IL_0041:  leave.s    IL_0055
+    IL_0009:  ldarg.0
+    IL_000a:  ldarg.1
+    IL_000b:  sub
+    IL_000c:  conv.i8
+    IL_000d:  ldc.i4.1
+    IL_000e:  conv.i8
+    IL_000f:  add
+    IL_0010:  nop
+    IL_0011:  stloc.0
+    IL_0012:  ldc.i4.0
+    IL_0013:  conv.i8
+    IL_0014:  stloc.1
+    IL_0015:  ldarg.0
+    IL_0016:  stloc.2
+    IL_0017:  br.s       IL_0044
 
-    }  
-    finally
-    {
-      IL_0043:  ldloc.1
-      IL_0044:  isinst     [runtime]System.IDisposable
-      IL_0049:  stloc.3
-      IL_004a:  ldloc.3
-      IL_004b:  brfalse.s  IL_0054
+    IL_0019:  ldloc.2
+    IL_001a:  stloc.3
+    IL_001b:  ldstr      "{0}"
+    IL_0020:  ldloc.3
+    IL_0021:  box        [runtime]System.Int32
+    IL_0026:  call       void [runtime]System.Console::WriteLine(string,
+                                                                        object)
+    IL_002b:  ldstr      "{0}"
+    IL_0030:  ldloc.3
+    IL_0031:  box        [runtime]System.Int32
+    IL_0036:  call       void [runtime]System.Console::WriteLine(string,
+                                                                        object)
+    IL_003b:  ldloc.2
+    IL_003c:  ldc.i4.m1
+    IL_003d:  add
+    IL_003e:  stloc.2
+    IL_003f:  ldloc.1
+    IL_0040:  ldc.i4.1
+    IL_0041:  conv.i8
+    IL_0042:  add
+    IL_0043:  stloc.1
+    IL_0044:  ldloc.1
+    IL_0045:  ldloc.0
+    IL_0046:  blt.un.s   IL_0019
 
-      IL_004d:  ldloc.3
-      IL_004e:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_0053:  endfinally
-      IL_0054:  endfinally
-    }  
-    IL_0055:  ret
+    IL_0048:  ret
   } 
 
   .method public static void  testSimpleForEachIntLoopWithOneStatement(int32 start,
