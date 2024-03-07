@@ -31,6 +31,8 @@ stages:
     - name: InsertPayloadName
       value: '${{ parameters.insertTeamName }} $(Build.SourceBranchName) $(Build.BuildNumber)'
     steps:
+    - download: current
+      artifact: VSSetup
     - task: PowerShell@2
       displayName: Get Publish URLs
       inputs:
