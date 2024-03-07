@@ -419,7 +419,7 @@ module Array =
 [<return: Struct>]
 let (|SimpleMapping|_|) g expr =
     match expr with
-    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = ValApp g g.seq_map_vref (([ty1; ty2] | [ty1; _; ty2]), [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _))], _) ->
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _))], _) ->
         ValueSome (ty1, ty2, input, mapping, loopVal, body)
     | _ -> ValueNone
 
