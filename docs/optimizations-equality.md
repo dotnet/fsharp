@@ -11,12 +11,12 @@ This spec is about the semantics and performance of the following coding constru
 
 It is also about the semantics and performance of uses of the following `FSharp.Core` constructs which, after inlining, generate code that contains an equality check at the specific `EQTYPE`
 * `HashIdentity.Structural<'T>`
-* `{Array,Seq,List}.contains` 
-* `{Array,Seq,List}.countBy` 
+* `{Array,Seq,List}.contains`
+* `{Array,Seq,List}.countBy`
 * `{Array,Seq,List}.groupBy`
-* `{Array,Seq,List}.distinct` 
-* `{Array,Seq,List}.distinctBy` 
-* `{Array,Seq,List}.except` 
+* `{Array,Seq,List}.distinct`
+* `{Array,Seq,List}.distinctBy`
+* `{Array,Seq,List}.except`
 
 All of which have implied equality checks. Some of these operations are inlined, see below, which in turn affects the semantics and performance of the overall operation.
 
@@ -203,10 +203,9 @@ let f (x: float32) (y: float32) = (x = y)
 
 * Semantics: User expects call to `IEquatable<T>` if present, but F# spec says call `this.Equals(box that)`, in practice these are the same
 * Perf expected: no boxing
-* Compilation today: `GenericEqualityIntrinsic<SomeStructType>`
-* Perf today: always boxes (Problem3 ❌)
+* Compilation today: EqualityComparer<T>.Default
+* Perf today: good ✅
 * [sharplab](https://sharplab.io/#v2:DYLgZgzgNALiCWwA+BYAUMApjABGHAFAB4g4DKAnhDJgLYB0AIgIY0Aq8tmA8mJNgEocFHAF5CRMcIHogA==)
-* Note: [#16615](https://github.com/dotnet/fsharp/pull/16615) will improve things here since we'll start avoiding boxing
 
 ### F# struct type (records, tuples - with compiler-generated structural equality)
 
@@ -262,10 +261,9 @@ If we did, the devirtualizing optimization should reduce to this directly, which
 
 * Semantics: User expects structural
 * Perf expected: User expects perf is sum of constituent parts
-* Compilation today: `GenericEqualityIntrinsic<uint8[]>`
-* Perf today: hand-optimized ([here](https://github.com/dotnet/fsharp/blob/611e4f350e119a4173a2b235eac65539ac2b61b6/src/FSharp.Core/prim-types.fs#L1562)) for some primitive element types ✅ but boxes each element if "other" is struct or generic, see Problem3 ❌, Problem4 ❌ 
+* Compilation today: either ``FSharpEqualityComparer_PER`1<uint8[]>::get_EqualityComparer().Equals(...)`` or ``FSharpEqualityComparer_PER`1<T[]>::get_EqualityComparer().Equals(...)``
+* Perf today: good ✅
 * [sharplab for `byte[]`](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQCgB4lQIwE9lEBtAXQEpVDUBeLbemy+IA=)
-* Note: ([#16615](https://github.com/dotnet/fsharp/pull/16615)) will improve this compiling to either ``FSharpEqualityComparer_PER`1<uint8[]>::get_EqualityComparer().Equals(...)`` or ``FSharpEqualityComparer_PER`1<T[]>::get_EqualityComparer().Equals(...)``
 
 ### F# large reference record/union type
 
@@ -282,17 +280,15 @@ Here "tiny" means the compiler-generated structural equality IS inlined.
 
 * Semantics: User expects structural by default
 * Perf expected: User expects perf is sum of constituent parts, type-specialized if generic
-* Compilation today: flattened, calling `GenericEqualityERIntrinsic` on struct and generic fields
-* Perf today: boxes on struct and generic fields, see Problem3 ❌, Problem4 ❌
-* Note: [#16615](https://github.com/dotnet/fsharp/pull/16615) will help, compiling to ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)`` on struct and generic fields
+* Compilation today: ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
+* Perf today: good ✅
 
 ### Generic `'T` in non-inlined generic code
 
 * Semantics: User expects the PER equality semantics of whatever `'T` actually is  
 * Perf expected: User expects no boxing
-* Compilation today: `GenericEqualityERIntrinsic` 
-* Perf today: boxes if `'T` is any non-reference type (Problem4 ❌)
-* Note:  [#16615](https://github.com/dotnet/fsharp/pull/16615) will improve this compiling to ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
+* Compilation today: ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)``
+* Perf today: good ✅
 
 ### Generic `'T` in recursive position in structural comparison
 
@@ -300,10 +296,9 @@ This case happens in structural equality for tuple types and other structural ty
 
 * Semantics: User expects the PER equality semantics of whatever `'T` actually is  
 * Perf: User expects no boxing
-* Compilation today: `GenericEqualityWithComparerIntrinsic LanguagePrimitives.GenericComparer` 
-* Perf today: boxes for if `'T` is any non-reference type (Problem4 ❌)
+* Compilation today: ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)`` 
+* Perf today: good ✅
 * [Sharplab](https://sharplab.io/#v2:DYLgZgzgPgsAUMApgFwARlQCgB4iwSwDs0AqVAEwHsBXAIyVTIHIAVASjdQE9UBeLbH25t48TCVFxB/LpIC0cosCJEA5goB8kgOKJCiAE74AxgFEAjtQCGy5D0Gy48BUpWF1crU7gAJKxAALAGFKAFsABysDRAA6XX0jM0sbfDsAMX80B1R5RUJlQjVNHT1DEwtrWy4ASWIjQggTAB4WAEZGVBYAJg6WAGYNVAdcgHlw5HxQ/AAvQ00sckQAN3wDNHiypMrUmrqiRuMRbwyIZAqbCBZqcKQ+1AAZK3drVUQABSMpiaXECDjSxIhCJRQwCVoAGmwXUhfU4mC4EK40K4sNyrkK7mK3iQaGMYUi0QMQkezysrw+k1S+B+fw2gPxIIM8Dp5WSVQA6qlggzCSdcTzQdh2gjUAAyUXMgGs7Z2TnIbnA3mZVB4xWCnpIsUSuAsrYpWVcoEEwx8lUConYO4o3KDSQ4s1qon8EmqF7vT5Umn/BImI2M+DGRDmIbC9rigNBoYanrhnVSvUcw3m2rIeoHB3Gi1WvqSEhHeBAA==)
-* Note: [#16615](https://github.com/dotnet/fsharp/pull/16615) will compile to ``FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer().Equals(...)`` and avoid boxing in many cases
 
 ## Techniques available to us
  
