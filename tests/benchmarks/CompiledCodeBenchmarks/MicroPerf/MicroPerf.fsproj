@@ -1,8 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <OutputType>Exe</OutputType>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
     <OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
     <!-- Turn off "Experimental" -->
@@ -11,13 +9,21 @@
     <OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Equality\BasicTypes.fs" />
+    <Compile Include="Equality\FSharpCoreFunctions.fs" />
+    <Compile Include="Equality\Arrays.fs" />
+    <Compile Include="Equality\Floats.fs" />
+    <Compile Include="Equality\Tuples.fs" />
+    <Compile Include="Equality\ValueTypes.fs" />
+    <Compile Include="Equality\Misc.fs" />
+    <Compile Include="Equality\Structs.fs" />
+    <Compile Include="Equality\OptionsAndCo.fs" />
     <Compile Include="Async.fs" />
     <Compile Include="Conditions.fs" />
     <Compile Include="Collections.fs" />
     <Compile Include="Benchmarks.fs" />
     <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="CS\MicroPerfCSharp.csproj" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
   </ItemGroup>
 </Project>

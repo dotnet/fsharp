@@ -1198,7 +1198,7 @@ let mkMultiLambdaTy g m vs bodyTy = mkFunTy g (typeOfLambdaArg m vs) bodyTy
 /// the library arising from env.fs. Part of this means that we have to be able to resolve these
 /// references. This function artificially forces the existence of a module or namespace at a 
 /// particular point in order to do this.
-let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)) xml =
+let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, sa, cpath)) xml =
     let scoref = ccu.ILScopeRef 
     let rec loop prior_cpath (path: Ident list) cpath (modul: ModuleOrNamespace) =
         let mtype = modul.ModuleOrNamespaceType 
@@ -1207,7 +1207,7 @@ let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)
             let modName = hpath.idText 
             if not (Map.containsKey modName mtype.AllEntitiesByCompiledAndLogicalMangledNames) then 
                 let mty = Construct.NewEmptyModuleOrNamespaceType mkind
-                let cpath = CompPath(scoref, prior_cpath)
+                let cpath = CompPath(scoref, sa, prior_cpath)
                 let smodul = Construct.NewModuleOrNamespace (Some cpath) taccessPublic hpath xml [] (MaybeLazy.Strict mty)
                 mtype.AddModuleOrNamespaceByMutation smodul
             let modul = Map.find modName mtype.AllEntitiesByCompiledAndLogicalMangledNames 
@@ -4150,7 +4150,7 @@ module DebugPrint =
 
     let typeOfValL (v: Val) =
         valL v
-          ^^ (if v.MustInline then wordL (tagText "inline ") else emptyL) 
+          ^^ (if v.ShouldInline then wordL (tagText "inline ") else emptyL) 
           ^^ (if v.IsMutable then wordL(tagText "mutable ") else emptyL)
           ^^ (if layoutTypes then wordL (tagText ":") ^^ typeL v.Type else emptyL)
 
@@ -4940,20 +4940,36 @@ let rec accImplHidingInfoAtAssemblyBoundary mdef acc =
 let ComputeImplementationHidingInfoAtAssemblyBoundary mty acc = 
     accImplHidingInfoAtAssemblyBoundary mty acc
 
+let DoRemap setF remapF = 
+    let rec remap mrmi x =
+
+        match mrmi with
+         | [] -> x
+         | (rpi, mhi) :: rest ->
+            // Explicitly hidden?
+            if Zset.contains x (setF mhi) then
+                x
+            else
+                remap rest (remapF rpi x)
+    fun mrmi x -> remap mrmi x
+
+let DoRemapTycon mrmi x = DoRemap (fun mhi -> mhi.HiddenTycons) (fun rpi x -> (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) mrmi x
+
+let DoRemapVal mrmi x = DoRemap (fun mhi -> mhi.HiddenVals) (fun rpi x -> (remapValRef rpi (mkLocalValRef x)).Deref) mrmi x 
+
 //--------------------------------------------------------------------------
 // Compute instances of the above for mexpr -> mty
 //--------------------------------------------------------------------------
-
 let IsHidden setF accessF remapF = 
-    let rec check mrmi x = 
-            // Internal/private? 
-        not (canAccessFromEverywhere (accessF x)) || 
-        (match mrmi with 
-         | [] -> false // Ah! we escaped to freedom! 
-         | (rpi, mhi) :: rest -> 
-            // Explicitly hidden? 
-            Zset.contains x (setF mhi) || 
-            // Recurse... 
+    let rec check mrmi x =
+        // Internal/private?
+        not (canAccessFromEverywhere (accessF x)) ||
+        (match mrmi with
+         | [] -> false // Ah! we escaped to freedom!
+         | (rpi, mhi) :: rest ->
+            // Explicitly hidden?
+            Zset.contains x (setF mhi) ||
+            // Recurse...
             check rest (remapF rpi x))
     check
 
@@ -5752,7 +5768,7 @@ and mapImmediateValsAndTycons ft fv (x: ModuleOrNamespaceType) =
     let vals = x.AllValsAndMembers |> QueueList.map fv
     let tycons = x.AllEntities |> QueueList.map ft
     ModuleOrNamespaceType(x.ModuleOrNamespaceKind, vals, tycons)
-    
+
 and copyVal compgen (v: Val) = 
     match compgen with 
     | OnlyCloneExprVals when v.IsMemberOrModuleBinding -> v
@@ -6129,10 +6145,7 @@ and copyAndRemapAndBindModTy ctxt compgen tmenv mty =
     let tycons = allEntitiesOfModuleOrNamespaceTy mty
     let vs = allValsOfModuleOrNamespaceTy mty
     let _, _, tmenvinner = copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs
-    remapModTy compgen tmenvinner mty, tmenvinner
-
-and remapModTy _compgen tmenv mty = 
-    mapImmediateValsAndTycons (renameTycon tmenv) (renameVal tmenv) mty 
+    (mapImmediateValsAndTycons (renameTycon tmenvinner) (renameVal tmenvinner) mty), tmenvinner
 
 and renameTycon tyenv x = 
     let tcref = 
@@ -7403,6 +7416,42 @@ let mkTwo g m = mkInt g m 2
 
 let mkMinusOne g m = mkInt g m -1
 
+let mkTypedZero g m ty =
+    let underlyingTy = stripMeasuresFromTy g ty
+    if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 0, m, ty)
+    elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 0L, m, ty)
+    elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 0UL, m, ty)
+    elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 0u, m, ty)
+    elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 0L, m, ty)
+    elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 0UL, m, ty)
+    elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 0s, m, ty)
+    elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 0us, m, ty)
+    elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 0y, m, ty)
+    elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 0uy, m, ty)
+    elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\000', m, ty)
+    elif typeEquiv g underlyingTy g.float32_ty then Expr.Const (Const.Single 0.0f, m, ty)
+    elif typeEquiv g underlyingTy g.float_ty then Expr.Const (Const.Double 0.0, m, ty)
+    elif typeEquiv g underlyingTy g.decimal_ty then Expr.Const (Const.Decimal 0m, m, ty)
+    else error (InternalError ($"Unrecognized numeric type '{ty}'.", m))
+
+let mkTypedOne g m ty =
+    let underlyingTy = stripMeasuresFromTy g ty
+    if typeEquiv g underlyingTy g.int32_ty then Expr.Const (Const.Int32 1, m, ty)
+    elif typeEquiv g underlyingTy g.int64_ty then Expr.Const (Const.Int64 1L, m, ty)
+    elif typeEquiv g underlyingTy g.uint64_ty then Expr.Const (Const.UInt64 1UL, m, ty)
+    elif typeEquiv g underlyingTy g.uint32_ty then Expr.Const (Const.UInt32 1u, m, ty)
+    elif typeEquiv g underlyingTy g.nativeint_ty then Expr.Const (Const.IntPtr 1L, m, ty)
+    elif typeEquiv g underlyingTy g.unativeint_ty then Expr.Const (Const.UIntPtr 1UL, m, ty)
+    elif typeEquiv g underlyingTy g.int16_ty then Expr.Const (Const.Int16 1s, m, ty)
+    elif typeEquiv g underlyingTy g.uint16_ty then Expr.Const (Const.UInt16 1us, m, ty)
+    elif typeEquiv g underlyingTy g.sbyte_ty then Expr.Const (Const.SByte 1y, m, ty)
+    elif typeEquiv g underlyingTy g.byte_ty then Expr.Const (Const.Byte 1uy, m, ty)
+    elif typeEquiv g underlyingTy g.char_ty then Expr.Const (Const.Char '\001', m, ty)
+    elif typeEquiv g underlyingTy g.float32_ty then Expr.Const (Const.Single 1.0f, m, ty)
+    elif typeEquiv g underlyingTy g.float_ty then Expr.Const (Const.Double 1.0, m, ty)
+    elif typeEquiv g underlyingTy g.decimal_ty then Expr.Const (Const.Decimal 1m, m, ty)
+    else error (InternalError ($"Unrecognized numeric type '{ty}'.", m))
+
 let destInt32 = function Expr.Const (Const.Int32 n, _, _) -> Some n | _ -> None
 
 let isIDelegateEventType g ty =
@@ -8324,6 +8373,10 @@ let mkCoerceIfNeeded g tgtTy srcTy expr =
 
 let mkCompGenLetIn m nm ty e f = 
     let v, ve = mkCompGenLocal m nm ty
+    mkCompGenLet m v e (f (v, ve))
+
+let mkCompGenLetMutableIn m nm ty e f = 
+    let v, ve = mkMutableCompGenLocal m nm ty
     mkCompGenLet m v e (f (v, ve))
 
 /// Take a node representing a coercion from one function type to another, e.g.
@@ -10095,7 +10148,7 @@ let (|CompiledForEachExpr|_|) g expr =
 
         Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr))
     | _ -> None  
-             
+
 
 let (|CompiledInt32RangeForEachExpr|_|) g expr = 
     match expr with
@@ -10103,6 +10156,724 @@ let (|CompiledInt32RangeForEachExpr|_|) g expr =
         Some (startExpr, step, finishExpr, elemVar, bodyExpr, ranges)
     | _ -> None
 
+let (|ValApp|_|) g vref expr =
+    match expr with
+    | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
+    | _ -> None
+
+[<RequireQualifiedAccess>]
+module IntegralConst =
+    /// Constant 0.
+    [<return: Struct>]
+    let (|Zero|_|) c =
+        match c with
+        | Const.Zero
+        | Const.Int32 0
+        | Const.Int64 0L
+        | Const.UInt64 0UL
+        | Const.UInt32 0u
+        | Const.IntPtr 0L
+        | Const.UIntPtr 0UL
+        | Const.Int16 0s
+        | Const.UInt16 0us
+        | Const.SByte 0y
+        | Const.Byte 0uy
+        | Const.Char '\000' -> ValueSome Zero
+        | _ -> ValueNone
+
+    /// Constant 1.
+    [<return: Struct>]
+    let (|One|_|) expr =
+        match expr with
+        | Const.Int32 1
+        | Const.Int64 1L
+        | Const.UInt64 1UL
+        | Const.UInt32 1u
+        | Const.IntPtr 1L
+        | Const.UIntPtr 1UL
+        | Const.Int16 1s
+        | Const.UInt16 1us
+        | Const.SByte 1y
+        | Const.Byte 1uy
+        | Const.Char '\001' -> ValueSome One
+        | _ -> ValueNone
+
+    /// Constant -1.
+    [<return: Struct>]
+    let (|MinusOne|_|) c =
+        match c with
+        | Const.Int32 -1
+        | Const.Int64 -1L
+        | Const.IntPtr -1L
+        | Const.Int16 -1s
+        | Const.SByte -1y -> ValueSome MinusOne
+        | _ -> ValueNone
+
+    /// Positive constant.
+    [<return: Struct>]
+    let (|Positive|_|) c =
+        match c with
+        | Const.Int32 v when v > 0 -> ValueSome Positive
+        | Const.Int64 v when v > 0L -> ValueSome Positive
+        // sizeof<nativeint> is not constant, so |𝑐| ≥ 0x80000000n cannot be treated as a constant.
+        | Const.IntPtr v when v > 0L && uint64 v < 0x80000000UL -> ValueSome Positive
+        | Const.Int16 v when v > 0s -> ValueSome Positive
+        | Const.SByte v when v > 0y -> ValueSome Positive
+        | Const.UInt64 v when v > 0UL -> ValueSome Positive
+        | Const.UInt32 v when v > 0u -> ValueSome Positive
+        // sizeof<unativeint> is not constant, so |𝑐| > 0xffffffffun cannot be treated as a constant.
+        | Const.UIntPtr v when v > 0UL && v <= 0xffffffffUL -> ValueSome Positive
+        | Const.UInt16 v when v > 0us -> ValueSome Positive
+        | Const.Byte v when v > 0uy -> ValueSome Positive
+        | Const.Char v when v > '\000' -> ValueSome Positive
+        | _ -> ValueNone
+
+    /// Negative constant.
+    [<return: Struct>]
+    let (|Negative|_|) c =
+        match c with
+        | Const.Int32 v when v < 0 -> ValueSome Negative
+        | Const.Int64 v when v < 0L -> ValueSome Negative
+        // sizeof<nativeint> is not constant, so |𝑐| ≥ 0x80000000n cannot be treated as a constant.
+        | Const.IntPtr v when v < 0L && uint64 v < 0x80000000UL -> ValueSome Negative
+        | Const.Int16 v when v < 0s -> ValueSome Negative
+        | Const.SByte v when v < 0y -> ValueSome Negative
+        | _ -> ValueNone
+
+    /// Returns the absolute value of the given integral constant.
+    let abs c =
+        match c with
+        | Const.Int32 Int32.MinValue -> Const.UInt32 (uint Int32.MaxValue + 1u)
+        | Const.Int64 Int64.MinValue -> Const.UInt64 (uint64 Int64.MaxValue + 1UL)
+        | Const.IntPtr Int64.MinValue -> Const.UIntPtr (uint64 Int64.MaxValue + 1UL)
+        | Const.Int16 Int16.MinValue -> Const.UInt16 (uint16 Int16.MaxValue + 1us)
+        | Const.SByte SByte.MinValue -> Const.Byte (byte SByte.MaxValue + 1uy)
+        | Const.Int32 v -> Const.Int32 (abs v)
+        | Const.Int64 v -> Const.Int64 (abs v)
+        | Const.IntPtr v -> Const.IntPtr (abs v)
+        | Const.Int16 v -> Const.Int16 (abs v)
+        | Const.SByte v -> Const.SByte (abs v)
+        | _ -> c
+
+/// start..finish
+/// start..step..finish
+[<return: Struct>]
+let (|IntegralRange|_|) g expr =
+    match expr with
+    | ValApp g g.range_int32_op_vref ([], [start; step; finish], _) -> ValueSome (g.int32_ty, (start, step, finish))
+    | ValApp g g.range_int64_op_vref ([], [start; step; finish], _) -> ValueSome (g.int64_ty, (start, step, finish))
+    | ValApp g g.range_uint64_op_vref ([], [start; step; finish], _) -> ValueSome (g.uint64_ty, (start, step, finish))
+    | ValApp g g.range_uint32_op_vref ([], [start; step; finish], _) -> ValueSome (g.uint32_ty, (start, step, finish))
+    | ValApp g g.range_nativeint_op_vref ([], [start; step; finish], _) -> ValueSome (g.nativeint_ty, (start, step, finish))
+    | ValApp g g.range_unativeint_op_vref ([], [start; step; finish], _) -> ValueSome (g.unativeint_ty, (start, step, finish))
+    | ValApp g g.range_int16_op_vref ([], [start; step; finish], _) -> ValueSome (g.int16_ty, (start, step, finish))
+    | ValApp g g.range_uint16_op_vref ([], [start; step; finish], _) -> ValueSome (g.uint16_ty, (start, step, finish))
+    | ValApp g g.range_sbyte_op_vref ([], [start; step; finish], _) -> ValueSome (g.sbyte_ty, (start, step, finish))
+    | ValApp g g.range_byte_op_vref ([], [start; step; finish], _) -> ValueSome (g.byte_ty, (start, step, finish))
+    | ValApp g g.range_char_op_vref ([], [start; finish], _) -> ValueSome (g.char_ty, (start, Expr.Const (Const.Char '\001', Text.Range.range0, g.char_ty), finish))
+    | ValApp g g.range_op_vref (ty :: _, [start; finish], _) when isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty -> ValueSome (ty, (start, mkTypedOne g Text.Range.range0 ty, finish))
+    | ValApp g g.range_step_op_vref ([ty; ty2], [start; step; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, step, finish))
+    | ValApp g g.range_generic_op_vref ([ty; ty2], [_one; _add; start; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, mkTypedOne g Text.Range.range0 ty, finish))
+    | ValApp g g.range_step_generic_op_vref ([ty; ty2], [_zero; _add; start; step; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, step, finish))
+    | _ -> ValueNone
+
+/// 5..1
+/// 1..-5
+/// 1..-1..5
+/// -5..-1..-1
+/// 5..2..1
+[<return: Struct>]
+let (|EmptyRange|_|) (start, step, finish) =
+    match start, step, finish with
+    | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) when finish < start && step > 0 || finish > start && step < 0 -> ValueSome EmptyRange
+    | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 step), Expr.Const (value = Const.Int64 finish) when finish < start && step > 0L || finish > start && step < 0L -> ValueSome EmptyRange
+    | Expr.Const (value = Const.UInt64 start), Expr.Const (value = Const.UInt64 _), Expr.Const (value = Const.UInt64 finish) when finish < start -> ValueSome EmptyRange
+    | Expr.Const (value = Const.UInt32 start), Expr.Const (value = Const.UInt32 _), Expr.Const (value = Const.UInt32 finish) when finish < start -> ValueSome EmptyRange
+
+    // sizeof<nativeint> is not constant, so |𝑐| ≥ 0x80000000n cannot be treated as a constant.
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) when
+        uint64 start < 0x80000000UL
+        && uint64 step < 0x80000000UL
+        && uint64 finish < 0x80000000UL
+        && (finish < start && step > 0L || finish > start && step < 0L)
+        ->
+        ValueSome EmptyRange
+
+    // sizeof<unativeint> is not constant, so |𝑐| > 0xffffffffun cannot be treated as a constant.
+    | Expr.Const (value = Const.UIntPtr start), Expr.Const (value = Const.UIntPtr step), Expr.Const (value = Const.UIntPtr finish) when
+        start <= 0xffffffffUL
+        && step <= 0xffffffffUL
+        && finish <= 0xffffffffUL
+        && finish <= start
+        ->
+        ValueSome EmptyRange
+
+    | Expr.Const (value = Const.Int16 start), Expr.Const (value = Const.Int16 step), Expr.Const (value = Const.Int16 finish) when finish < start && step > 0s || finish > start && step < 0s -> ValueSome EmptyRange
+    | Expr.Const (value = Const.UInt16 start), Expr.Const (value = Const.UInt16 _), Expr.Const (value = Const.UInt16 finish) when finish < start -> ValueSome EmptyRange
+    | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) when finish < start && step > 0y || finish > start && step < 0y -> ValueSome EmptyRange
+    | Expr.Const (value = Const.Byte start), Expr.Const (value = Const.Byte _), Expr.Const (value = Const.Byte finish) when finish < start -> ValueSome EmptyRange
+    | Expr.Const (value = Const.Char start), Expr.Const (value = Const.Char _), Expr.Const (value = Const.Char finish) when finish < start -> ValueSome EmptyRange
+    | _ -> ValueNone
+
+/// Note: this assumes that an empty range has already been checked for
+/// (otherwise the conversion operations here might overflow).
+[<return: Struct>]
+let (|ConstCount|_|) (start, step, finish) =
+    match start, step, finish with
+    // The count for these ranges is 2⁶⁴ + 1. We must handle such ranges at runtime.
+    | Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 1L), Expr.Const (value = Const.Int64 Int64.MaxValue)
+    | Expr.Const (value = Const.Int64 Int64.MaxValue), Expr.Const (value = Const.Int64 -1L), Expr.Const (value = Const.Int64 Int64.MinValue)
+    | Expr.Const (value = Const.UInt64 UInt64.MinValue), Expr.Const (value = Const.UInt64 1UL), Expr.Const (value = Const.UInt64 UInt64.MaxValue)
+    | Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr 1L), Expr.Const (value = Const.IntPtr Int64.MaxValue)
+    | Expr.Const (value = Const.IntPtr Int64.MaxValue), Expr.Const (value = Const.IntPtr -1L), Expr.Const (value = Const.IntPtr Int64.MinValue)
+    | Expr.Const (value = Const.UIntPtr UInt64.MinValue), Expr.Const (value = Const.UIntPtr 1UL), Expr.Const (value = Const.UIntPtr UInt64.MaxValue) -> ValueNone
+
+    // We must special-case a step of Int64.MinValue, since we cannot call abs on it.
+    | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / (uint64 Int64.MaxValue + 1UL) + 1UL))
+    | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 Int64.MinValue), Expr.Const (value = Const.Int64 finish) -> ValueSome (Const.UInt64 ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr finish) when start <= finish -> ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr Int64.MinValue), Expr.Const (value = Const.IntPtr finish) -> ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
+
+    | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 step), Expr.Const (value = Const.Int64 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / uint64 (abs step) + 1UL))
+    | Expr.Const (value = Const.Int64 start), Expr.Const (value = Const.Int64 step), Expr.Const (value = Const.Int64 finish) -> ValueSome (Const.UInt64 ((uint64 start - uint64 finish) / uint64 (abs step) + 1UL))
+
+    // sizeof<nativeint> is not constant, so |𝑐| ≥ 0x80000000n cannot be treated as a constant.
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) when
+        uint64 start < 0x80000000UL
+        && uint64 step < 0x80000000UL
+        && uint64 finish < 0x80000000UL
+        && start <= finish
+        ->
+        ValueSome (Const.UIntPtr ((uint64 finish - uint64 start) / uint64 (abs step) + 1UL))
+
+    | Expr.Const (value = Const.IntPtr start), Expr.Const (value = Const.IntPtr step), Expr.Const (value = Const.IntPtr finish) when
+        uint64 start < 0x80000000UL
+        && uint64 step < 0x80000000UL
+        && uint64 finish < 0x80000000UL
+        ->
+        ValueSome (Const.UIntPtr ((uint64 start - uint64 finish) / uint64 (abs step) + 1UL))
+
+    | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) when start <= finish -> ValueSome (Const.UInt64 ((uint64 finish - uint64 start) / uint64 (abs (int64 step)) + 1UL))
+    | Expr.Const (value = Const.Int32 start), Expr.Const (value = Const.Int32 step), Expr.Const (value = Const.Int32 finish) -> ValueSome (Const.UInt64 ((uint64 start - uint64 finish) / uint64 (abs (int64 step)) + 1UL))
+
+    | Expr.Const (value = Const.Int16 start), Expr.Const (value = Const.Int16 step), Expr.Const (value = Const.Int16 finish) when start <= finish -> ValueSome (Const.UInt32 ((uint finish - uint start) / uint (abs (int step)) + 1u))
+    | Expr.Const (value = Const.Int16 start), Expr.Const (value = Const.Int16 step), Expr.Const (value = Const.Int16 finish) -> ValueSome (Const.UInt32 ((uint start - uint finish) / uint (abs (int step)) + 1u))
+
+    | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) when start <= finish -> ValueSome (Const.UInt16 ((uint16 finish - uint16 start) / uint16 (abs (int16 step)) + 1us))
+    | Expr.Const (value = Const.SByte start), Expr.Const (value = Const.SByte step), Expr.Const (value = Const.SByte finish) -> ValueSome (Const.UInt16 ((uint16 start - uint16 finish) / uint16 (abs (int16 step)) + 1us))
+
+    // sizeof<unativeint> is not constant, so |𝑐| > 0xffffffffun cannot be treated as a constant.
+    | Expr.Const (value = Const.UIntPtr start), Expr.Const (value = Const.UIntPtr step), Expr.Const (value = Const.UIntPtr finish) when
+        start <= 0xffffffffUL
+        && step <= 0xffffffffUL
+        && finish <= 0xffffffffUL
+        ->
+        ValueSome (Const.UIntPtr ((finish - start) / step + 1UL))
+
+    | Expr.Const (value = Const.UInt64 start), Expr.Const (value = Const.UInt64 step), Expr.Const (value = Const.UInt64 finish) when start <= finish -> ValueSome (Const.UInt64 ((finish - start) / step + 1UL))
+    | Expr.Const (value = Const.UInt64 start), Expr.Const (value = Const.UInt64 step), Expr.Const (value = Const.UInt64 finish) -> ValueSome (Const.UInt64 ((start - finish) / step + 1UL))
+    | Expr.Const (value = Const.UInt32 start), Expr.Const (value = Const.UInt32 step), Expr.Const (value = Const.UInt32 finish) when start <= finish -> ValueSome (Const.UInt64 (uint64 (finish - start) / uint64 step + 1UL))
+    | Expr.Const (value = Const.UInt32 start), Expr.Const (value = Const.UInt32 step), Expr.Const (value = Const.UInt32 finish) -> ValueSome (Const.UInt64 (uint64 (start - finish) / uint64 step + 1UL))
+    | Expr.Const (value = Const.UInt16 start), Expr.Const (value = Const.UInt16 step), Expr.Const (value = Const.UInt16 finish) when start <= finish -> ValueSome (Const.UInt32 (uint (finish - start) / uint step + 1u))
+    | Expr.Const (value = Const.UInt16 start), Expr.Const (value = Const.UInt16 step), Expr.Const (value = Const.UInt16 finish) -> ValueSome (Const.UInt32 (uint (start - finish) / uint step + 1u))
+    | Expr.Const (value = Const.Byte start), Expr.Const (value = Const.Byte step), Expr.Const (value = Const.Byte finish) when start <= finish -> ValueSome (Const.UInt16 (uint16 (finish - start) / uint16 step + 1us))
+    | Expr.Const (value = Const.Byte start), Expr.Const (value = Const.Byte step), Expr.Const (value = Const.Byte finish) -> ValueSome (Const.UInt16 (uint16 (start - finish) / uint16 step + 1us))
+    | Expr.Const (value = Const.Char start), Expr.Const (value = Const.Char step), Expr.Const (value = Const.Char finish) when start <= finish -> ValueSome (Const.UInt32 (uint (finish - start) / uint step + 1u))
+    | Expr.Const (value = Const.Char start), Expr.Const (value = Const.Char step), Expr.Const (value = Const.Char finish) -> ValueSome (Const.UInt32 (uint (start - finish) / uint step + 1u))
+
+    | _ -> ValueNone
+
+type Count = Expr
+type Idx = Expr
+type Elem = Expr
+type Body = Expr
+type Loop = Expr
+type WouldOvf = Expr
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type RangeCount =
+    /// An expression representing a count known at compile time.
+    | Constant of Count
+
+    /// An expression representing a "count" whose step is known to be zero at compile time.
+    /// Evaluating this expression at runtime will raise an exception.
+    | ConstantZeroStep of Expr
+
+    /// An expression to compute a count at runtime that will definitely fit in 64 bits without overflow.
+    | Safe of Count
+
+    /// A function for building a loop given an expression that may produce a count that
+    /// would not fit in 64 bits without overflow, and an expression indicating whether
+    /// evaluating the first expression directly would in fact overflow.
+    | PossiblyOversize of ((Count -> WouldOvf -> Expr) -> Expr)
+
+/// Makes an expression to compute the iteration count for the given integral range.
+let mkRangeCount g m rangeTy rangeExpr start step finish =
+    /// This will raise an exception at runtime if step is zero.
+    let mkCallAndIgnoreRangeExpr start step finish =
+        // Use the potentially-evaluated-and-bound start, step, and finish.
+        let rangeExpr =
+            match rangeExpr with
+            // Type-specific range op (RangeInt32, etc.).
+            | Expr.App (funcExpr, formalType, tyargs, [_start; _step; _finish], m) -> Expr.App (funcExpr, formalType, tyargs, [start; step; finish], m)
+            // Generic range–step op (RangeStepGeneric).
+            | Expr.App (funcExpr, formalType, tyargs, [zero; add; _start; _step; _finish], m) -> Expr.App (funcExpr, formalType, tyargs, [zero; add; start; step; finish], m)
+            | _ -> error (InternalError ($"Unrecognized range function application '{rangeExpr}'.", m))
+
+        mkSequential
+            m
+            rangeExpr
+            (mkUnit g m)
+
+    let mkSignednessAppropriateClt ty e1 e2 =
+        if isSignedIntegerTy g ty then
+            mkILAsmClt g m e1 e2
+        else
+            mkAsmExpr ([AI_clt_un], [], [e1; e2], [g.bool_ty], m)
+
+    let unsignedEquivalent ty =
+        if typeEquiv g ty g.int64_ty then g.uint64_ty
+        elif typeEquiv g ty g.int32_ty then g.uint32_ty
+        elif typeEquiv g ty g.int16_ty then g.uint16_ty
+        elif typeEquiv g ty g.sbyte_ty then g.byte_ty
+        else ty
+
+    /// Find the unsigned type with twice the width of the given type, if available.
+    let nextWidestUnsignedTy ty =
+        let ty = stripMeasuresFromTy g ty
+
+        if typeEquiv g ty g.int64_ty || typeEquiv g ty g.int32_ty || typeEquiv g ty g.uint32_ty then
+            g.uint64_ty
+        elif typeEquiv g ty g.int16_ty || typeEquiv g ty g.uint16_ty || typeEquiv g ty g.char_ty then
+            g.uint32_ty
+        elif typeEquiv g ty g.sbyte_ty || typeEquiv g ty g.byte_ty then
+            g.uint16_ty
+        else
+            ty
+
+    /// Convert the value to the next-widest unsigned type.
+    /// We do this so that adding one won't result in overflow.
+    let mkWiden e =
+        let ty = stripMeasuresFromTy g rangeTy
+
+        if typeEquiv g ty g.int32_ty then
+            mkAsmExpr ([AI_conv DT_I8], [], [e], [g.uint64_ty], m)
+        elif typeEquiv g ty g.uint32_ty then
+            mkAsmExpr ([AI_conv DT_U8], [], [e], [g.uint64_ty], m)
+        elif typeEquiv g ty g.int16_ty then
+            mkAsmExpr ([AI_conv DT_I4], [], [e], [g.uint32_ty], m)
+        elif typeEquiv g ty g.uint16_ty || typeEquiv g ty g.char_ty then
+            mkAsmExpr ([AI_conv DT_U4], [], [e], [g.uint32_ty], m)
+        elif typeEquiv g ty g.sbyte_ty then
+            mkAsmExpr ([AI_conv DT_I2], [], [e], [g.uint16_ty], m)
+        elif typeEquiv g ty g.byte_ty then
+            mkAsmExpr ([AI_conv DT_U2], [], [e], [g.uint16_ty], m)
+        else
+            e
+
+    /// Expects that |e1| ≥ |e2|.
+    let mkDiff e1 e2 = mkAsmExpr ([AI_sub], [], [e1; e2], [unsignedEquivalent (tyOfExpr g e1)], m)
+
+    /// diff / step
+    let mkQuotient diff step = mkAsmExpr ([AI_div_un], [], [diff; step], [tyOfExpr g diff], m)
+
+    /// Whether the total count might not fit in 64 bits.
+    let couldBeTooBig ty =
+        let underlying = stripMeasuresFromTy g ty
+
+        typeEquiv g underlying g.int64_ty
+        || typeEquiv g underlying g.uint64_ty
+        || typeEquiv g underlying g.nativeint_ty
+        || typeEquiv g underlying g.unativeint_ty
+
+    /// pseudoCount + 1
+    let mkAddOne pseudoCount =
+        let pseudoCount = mkWiden pseudoCount
+        let ty = tyOfExpr g pseudoCount
+
+        if couldBeTooBig rangeTy then
+            mkAsmExpr ([AI_add_ovf_un], [], [pseudoCount; mkTypedOne g m ty], [ty], m)
+        else
+            mkAsmExpr ([AI_add], [], [pseudoCount; mkTypedOne g m ty], [ty], m)
+
+    let mkRuntimeCalc mkThrowIfStepIsZero pseudoCount count =
+        let underlying = stripMeasuresFromTy g rangeTy
+
+        if typeEquiv g underlying g.int64_ty || typeEquiv g underlying g.uint64_ty then
+            RangeCount.PossiblyOversize (fun mkLoopExpr ->
+                mkThrowIfStepIsZero
+                    (mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
+                        let wouldOvf = mkILAsmCeq g m pseudoCount (Expr.Const (Const.UInt64 UInt64.MaxValue, m, g.uint64_ty))
+                        mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
+                            mkLoopExpr count wouldOvf))))
+        elif typeEquiv g underlying g.nativeint_ty || typeEquiv g underlying g.unativeint_ty then // We have a nativeint ty whose size we won't know till runtime.
+            RangeCount.PossiblyOversize (fun mkLoopExpr ->
+                mkThrowIfStepIsZero
+                    (mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
+                        let wouldOvf =
+                            mkCond
+                                DebugPointAtBinding.NoneAtInvisible
+                                m
+                                g.bool_ty
+                                (mkILAsmCeq g m (mkAsmExpr ([I_sizeof g.ilg.typ_IntPtr], [], [], [g.uint32_ty], m)) (Expr.Const (Const.UInt32 4u, m, g.uint32_ty)))
+                                (mkILAsmCeq g m pseudoCount (Expr.Const (Const.UIntPtr (uint64 UInt32.MaxValue), m, g.unativeint_ty)))
+                                (mkILAsmCeq g m pseudoCount (Expr.Const (Const.UIntPtr UInt64.MaxValue, m, g.unativeint_ty)))
+
+                        mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
+                            mkLoopExpr count wouldOvf))))
+        else
+            RangeCount.Safe (mkThrowIfStepIsZero count)
+
+    match start, step, finish with
+    // start..0..finish
+    | _, Expr.Const (value = IntegralConst.Zero), _ -> RangeCount.ConstantZeroStep (mkSequential m (mkCallAndIgnoreRangeExpr start step finish) (mkTypedZero g m rangeTy))
+
+    // 5..1
+    // 1..-1..5
+    | EmptyRange -> RangeCount.Constant (mkTypedZero g m rangeTy)
+
+    // 1..5
+    // 1..2..5
+    // 5..-1..1
+    | ConstCount count -> RangeCount.Constant (Expr.Const (count, m, nextWidestUnsignedTy rangeTy))
+
+    // start..finish
+    // start..1..finish
+    //
+    //     if finish < start then 0 else finish - start + 1
+    | _, Expr.Const (value = IntegralConst.One), _ ->
+        let mkCount mkAddOne =
+            let count = mkAddOne (mkDiff finish start)
+            let countTy = tyOfExpr g count
+
+            mkCond
+                DebugPointAtBinding.NoneAtInvisible
+                m
+                countTy
+                (mkSignednessAppropriateClt rangeTy finish start)
+                (mkTypedZero g m countTy)
+                count
+
+        match start, finish with
+        // The total count could exceed 2⁶⁴.
+        | Expr.Const (value = Const.Int64 Int64.MinValue), _ | _, Expr.Const (value = Const.Int64 Int64.MaxValue)
+        | Expr.Const (value = Const.UInt64 UInt64.MinValue), _ | _, Expr.Const (value = Const.UInt64 UInt64.MaxValue) ->
+            mkRuntimeCalc id (mkCount id) (mkCount mkAddOne)
+
+        // The total count could not exceed 2⁶⁴.
+        | Expr.Const (value = Const.Int64 _), _ | _, Expr.Const (value = Const.Int64 _)
+        | Expr.Const (value = Const.UInt64 _), _ | _, Expr.Const (value = Const.UInt64 _) ->
+            RangeCount.Safe (mkCount mkAddOne)
+
+        | _ -> mkRuntimeCalc id (mkCount id) (mkCount mkAddOne)
+
+    // (Only possible for signed types.)
+    //
+    // start..-1..finish
+    //
+    //     if start < finish then 0 else start - finish + 1
+    | _, Expr.Const (value = IntegralConst.MinusOne), _ ->
+        let mkCount mkAddOne =
+            let count = mkAddOne (mkDiff start finish)
+            let countTy = tyOfExpr g count
+
+            mkCond
+                DebugPointAtBinding.NoneAtInvisible
+                m
+                countTy
+                (mkSignednessAppropriateClt rangeTy start finish)
+                (mkTypedZero g m countTy)
+                count
+
+        match start, finish with
+        // The total count could exceed 2⁶⁴.
+        | Expr.Const (value = Const.Int64 Int64.MaxValue), _ | _, Expr.Const (value = Const.Int64 Int64.MinValue) ->
+            mkRuntimeCalc id (mkCount id) (mkCount mkAddOne)
+
+        // The total count could not exceed 2⁶⁴.
+        | Expr.Const (value = Const.Int64 _), _ | _, Expr.Const (value = Const.Int64 _) ->
+            RangeCount.Safe (mkCount mkAddOne)
+
+        | _ -> mkRuntimeCalc id (mkCount id) (mkCount mkAddOne)
+
+    // start..2..finish
+    //
+    //     if finish < start then 0 else (finish - start) / step + 1
+    | _, Expr.Const (value = IntegralConst.Positive), _ ->
+        let count =
+            let count = mkAddOne (mkQuotient (mkDiff finish start) step)
+            let countTy = tyOfExpr g count
+
+            mkCond
+                DebugPointAtBinding.NoneAtInvisible
+                m
+                countTy
+                (mkSignednessAppropriateClt rangeTy finish start)
+                (mkTypedZero g m countTy)
+                count
+
+        // We know that the magnitude of step is greater than one,
+        // so we know that the total count won't overflow.
+        RangeCount.Safe count
+
+    // (Only possible for signed types.)
+    //
+    // start..-2..finish
+    //
+    //     if start < finish then 0 else (start - finish) / abs step + 1
+    | _, Expr.Const (value = IntegralConst.Negative as negativeStep), _ ->
+        let count =
+            let count = mkAddOne (mkQuotient (mkDiff start finish) (Expr.Const (IntegralConst.abs negativeStep, m, unsignedEquivalent rangeTy)))
+            let countTy = tyOfExpr g count
+
+            mkCond
+                DebugPointAtBinding.NoneAtInvisible
+                m
+                countTy
+                (mkSignednessAppropriateClt rangeTy start finish)
+                (mkTypedZero g m countTy)
+                count
+
+        // We know that the magnitude of step is greater than one,
+        // so we know that the total count won't overflow.
+        RangeCount.Safe count
+
+    // start..step..finish
+    //
+    //     if step = 0 then
+    //         ignore ((.. ..) start step finish) // Throws.
+    //     if 0 < step then
+    //         if finish < start then 0 else unsigned (finish - start) / unsigned step + 1
+    //     else // step < 0
+    //         if start < finish then 0 else unsigned (start - finish) / unsigned (abs step) + 1
+    | _, _, _ ->
+        // Let the range call throw the appropriate localized
+        // exception at runtime if step is zero:
+        //
+        //     if step = 0 then ignore ((.. ..) start step finish)
+        let mkThrowIfStepIsZero count =
+            let throwIfStepIsZero =
+                mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    g.unit_ty
+                    (mkILAsmCeq g m step (mkTypedZero g m rangeTy))
+                    (mkCallAndIgnoreRangeExpr start step finish)
+                    (mkUnit g m)
+
+            mkSequential m throwIfStepIsZero count
+
+        let mkCount mkAddOne =
+            if isSignedIntegerTy g rangeTy then
+                let positiveStep =
+                    let count = mkAddOne (mkQuotient (mkDiff finish start) step)
+                    let countTy = tyOfExpr g count
+
+                    mkCond
+                        DebugPointAtBinding.NoneAtInvisible
+                        m
+                        countTy
+                        (mkSignednessAppropriateClt rangeTy finish start)
+                        (mkTypedZero g m countTy)
+                        count
+
+                let negativeStep =
+                    let absStep = mkAsmExpr ([AI_add], [], [mkAsmExpr ([AI_not], [], [step], [rangeTy], m); mkTypedOne g m rangeTy], [rangeTy], m)
+                    let count = mkAddOne (mkQuotient (mkDiff start finish) absStep)
+                    let countTy = tyOfExpr g count
+
+                    mkCond
+                        DebugPointAtBinding.NoneAtInvisible
+                        m
+                        countTy
+                        (mkSignednessAppropriateClt rangeTy start finish)
+                        (mkTypedZero g m countTy)
+                        count
+
+                mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    (tyOfExpr g positiveStep)
+                    (mkSignednessAppropriateClt rangeTy (mkTypedZero g m rangeTy) step)
+                    positiveStep
+                    negativeStep
+            else // Unsigned.
+                let count = mkAddOne (mkQuotient (mkDiff finish start) step)
+                let countTy = tyOfExpr g count
+
+                mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    countTy
+                    (mkSignednessAppropriateClt rangeTy finish start)
+                    (mkTypedZero g m countTy)
+                    count
+
+        match start, finish with
+        // The total count could exceed 2⁶⁴.
+        | Expr.Const (value = Const.Int64 Int64.MinValue), _ | _, Expr.Const (value = Const.Int64 Int64.MaxValue)
+        | Expr.Const (value = Const.Int64 Int64.MaxValue), _ | _, Expr.Const (value = Const.Int64 Int64.MinValue)
+        | Expr.Const (value = Const.UInt64 UInt64.MinValue), _ | _, Expr.Const (value = Const.UInt64 UInt64.MaxValue) ->
+            mkRuntimeCalc mkThrowIfStepIsZero (mkCount id) (mkCount mkAddOne)
+
+        // The total count could not exceed 2⁶⁴.
+        | Expr.Const (value = Const.Int64 _), _ | _, Expr.Const (value = Const.Int64 _)
+        | Expr.Const (value = Const.UInt64 _), _ | _, Expr.Const (value = Const.UInt64 _) ->
+            RangeCount.Safe (mkThrowIfStepIsZero (mkCount mkAddOne))
+
+        | _ -> mkRuntimeCalc mkThrowIfStepIsZero (mkCount id) (mkCount mkAddOne)
+
+let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr)) =
+    let inline mkLetBindingsIfNeeded f =
+        match start, step, finish with
+        | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) ->
+            f start step finish
+    
+        | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), _ ->
+            mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) ->
+                f start step finish)
+    
+        | _, (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) ->
+            mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
+                f start step finish)
+    
+        | (Expr.Const _ | Expr.Val _), _, (Expr.Const _ | Expr.Val _) ->
+            mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
+                f start step finish)
+    
+        | _, (Expr.Const _ | Expr.Val _), _ ->
+            mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
+                mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) ->
+                    f start step finish))
+    
+        | (Expr.Const _ | Expr.Val _), _, _ ->
+            mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
+                mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) ->
+                    f start step finish))
+    
+        | _, _, (Expr.Const _ | Expr.Val _) ->
+            mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
+                mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
+                    f start step finish))
+    
+        | _, _, _ ->
+            mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
+                mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
+                    mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) ->
+                        f start step finish)))
+
+    mkLetBindingsIfNeeded (fun start step finish ->
+        /// Start at 0 and count up through count - 1.
+        ///
+        ///     while i < count do
+        ///         <body>
+        ///         i <- i + 1
+        let mkCountUpExclusive mkBody count =
+            let countTy = tyOfExpr g count
+
+            mkCompGenLetMutableIn mIn "i" countTy (mkTypedZero g mIn countTy) (fun (idxVal, idxVar) ->
+                mkCompGenLetMutableIn mIn "loopVar" rangeTy start (fun (loopVal, loopVar) ->
+                    // loopVar <- loopVar + step
+                    let incrV = mkValSet mIn (mkLocalValRef loopVal) (mkAsmExpr ([AI_add], [], [loopVar; step], [rangeTy], mIn))
+
+                    // i <- i + 1
+                    let incrI = mkValSet mIn (mkLocalValRef idxVal) (mkAsmExpr ([AI_add], [], [idxVar; mkTypedOne g mIn countTy], [rangeTy], mIn))
+
+                    // <body>
+                    // loopVar <- loopVar + step
+                    // i <- i + 1
+                    let body = mkSequentials g mBody [mkBody idxVar loopVar; incrV; incrI]
+
+                    // i < count
+                    let guard = mkAsmExpr ([AI_clt_un], [], [idxVar; count], [g.bool_ty], mFor)
+
+                    // while i < count do
+                    //     <body>
+                    //     loopVar <- loopVar + step
+                    //     i <- i + 1
+                    mkWhile
+                        g
+                        (
+                            spInWhile,
+                            WhileLoopForCompiledForEachExprMarker,
+                            guard,
+                            body,
+                            mBody
+                        )
+                )
+            )
+
+        /// Start at 0 and count up till we have wrapped around.
+        /// We only emit this if the type is or may be 64-bit and step is not constant,
+        /// and we only execute it if step = 1 and |finish - step| = 2⁶⁴ + 1.
+        ///
+        /// Logically equivalent to (pseudo-code):
+        ///
+        ///     while true do
+        ///         <body>
+        ///         loopVar <- loopVar + step
+        ///         i <- i + 1
+        ///         if i = 0 then break
+        let mkCountUpInclusive mkBody countTy =
+            mkCompGenLetMutableIn mFor "guard" g.bool_ty (mkTrue g mFor) (fun (guardVal, guardVar) ->
+                mkCompGenLetMutableIn mIn "i" countTy (mkTypedZero g mIn countTy) (fun (idxVal, idxVar) ->
+                    mkCompGenLetMutableIn mIn "loopVar" rangeTy start (fun (loopVal, loopVar) ->
+                        // loopVar <- loopVar + step
+                        let incrV = mkValSet mIn (mkLocalValRef loopVal) (mkAsmExpr ([AI_add], [], [loopVar; step], [rangeTy], mIn))
+
+                        // i <- i + 1
+                        let incrI = mkValSet mIn (mkLocalValRef idxVal) (mkAsmExpr ([AI_add], [], [idxVar; mkTypedOne g mIn countTy], [rangeTy], mIn))
+
+                        // guard <- i <> 0
+                        let breakIfZero = mkValSet mFor (mkLocalValRef guardVal) (mkAsmExpr ([ILInstr.AI_cgt_un], [], [idxVar; mkTypedZero g mFor countTy], [g.bool_ty], mFor))
+
+                        // <body>
+                        // loopVar <- loopVar + step
+                        // i <- i + 1
+                        // guard <- i <> 0
+                        let body = mkSequentials g mBody [mkBody idxVar loopVar; incrV; incrI; breakIfZero]
+
+                        // while guard do
+                        //     <body>
+                        //     loopVar <- loopVar + step
+                        //     i <- i + 1
+                        //     guard <- i <> 0
+                        mkWhile
+                            g
+                            (
+                                spInWhile,
+                                WhileLoopForCompiledForEachExprMarker,
+                                guardVar,
+                                body,
+                                mBody
+                            )
+                    )
+                )
+            )
+
+        match mkRangeCount g mIn rangeTy rangeExpr start step finish with
+        | RangeCount.Constant count ->
+            buildLoop count (fun mkBody -> mkCountUpExclusive mkBody count)
+
+        | RangeCount.ConstantZeroStep count ->
+            mkCompGenLetIn mIn (nameof count) (tyOfExpr g count) count (fun (_, count) ->
+                buildLoop count (fun mkBody -> mkCountUpExclusive mkBody count))
+
+        | RangeCount.Safe count ->
+            mkCompGenLetIn mIn (nameof count) (tyOfExpr g count) count (fun (_, count) ->
+                buildLoop count (fun mkBody -> mkCountUpExclusive mkBody count))
+
+        | RangeCount.PossiblyOversize calc ->
+            calc (fun count wouldOvf ->
+                buildLoop count (fun mkBody ->
+                    mkCond
+                        DebugPointAtBinding.NoneAtInvisible
+                        mIn
+                        g.unit_ty
+                        wouldOvf
+                        (mkCountUpInclusive mkBody (tyOfExpr g count))
+                        (mkCompGenLetIn mIn (nameof count) (tyOfExpr g count) count (fun (_, count) -> mkCountUpExclusive mkBody count))))
+    )
 
 let mkDebugPoint m expr = 
     Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, expr)
@@ -10118,6 +10889,18 @@ let DetectAndOptimizeForEachExpression g option expr =
            let _mBody, spFor, spIn, _mFor, _mIn, _spInWhile, mWholeExpr = ranges
            let spFor = match spFor with DebugPointAtBinding.Yes mFor -> DebugPointAtFor.Yes mFor | _ -> DebugPointAtFor.No
            mkFastForLoop g (spFor, spIn, mWholeExpr, elemVar, startExpr, (step = 1), finishExpr, bodyExpr)
+
+    | OptimizeAllForExpressions, CompiledForEachExpr g (_enumTy, rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), elemVar, bodyExpr, ranges) when
+        g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
+        ->
+        let mBody, _spFor, _spIn, mFor, mIn, spInWhile, _mWhole = ranges
+
+        mkOptimizedRangeLoop
+            g
+            (mBody, mFor, mIn, spInWhile)
+            (rangeTy, rangeExpr)
+            (start, step, finish)
+            (fun _count mkLoop -> mkLoop (fun _idxVar loopVar -> mkInvisibleLet elemVar.Range elemVar loopVar bodyExpr))
 
     | OptimizeAllForExpressions, CompiledForEachExpr g (enumerableTy, enumerableExpr, elemVar, bodyExpr, ranges) ->
 
@@ -10211,12 +10994,6 @@ let isThreadOrContextStatic g attrs =
 let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
-
-
-let (|ValApp|_|) g vref expr =
-    match expr with
-    | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
-    | _ -> None
 
 let (|UseResumableStateMachinesExpr|_|) g expr =
     match expr with

@@ -38,7 +38,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token <string * SynStringKind * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
 %token <string * SynStringKind * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_PART
-%token <string * range option * ParseHelpers.LexerContinuation> INTERP_STRING_END
+%token <string * ParseHelpers.LexerContinuation> INTERP_STRING_END
 %token <ParseHelpers.LexerContinuation> LBRACE RBRACE
 
 %token <string * string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
@@ -6774,14 +6774,7 @@ interpolatedStringFill:
 
 interpolatedStringParts:
   | INTERP_STRING_END
-     {
-       let (s, altStart, _) = $1
-       let mOrig = rhs parseState 1
-       let m =
-           match altStart with
-           | Some r -> unionRanges r mOrig
-           | None -> mOrig
-       [ SynInterpolatedStringPart.String(s, m) ] }
+     { [ SynInterpolatedStringPart.String(fst $1, rhs parseState 1) ] }
 
   | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
      { SynInterpolatedStringPart.String(fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }

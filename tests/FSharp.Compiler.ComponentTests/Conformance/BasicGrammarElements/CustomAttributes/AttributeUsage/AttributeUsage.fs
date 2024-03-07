@@ -34,7 +34,7 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // SOURCE=AssemblyVersion03.fs							# AssemblyVersion03.fs
+    // SOURCE=AssemblyVersion03.fs                          # AssemblyVersion03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion03.fs"|])>]
     let ``AssemblyVersion03_fs`` compilation =
         compilation
@@ -62,6 +62,29 @@ module CustomAttributes_AttributeUsage =
     let ``AttributeTargetsIsMethod01_fs`` compilation =
         compilation
         |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=AttributeTargetsIsMethod01.fs				# AttributeTargetsIsMethod01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod01.fs"|])>]
+    let ``AttributeTargetsIsMethod01_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        
+    // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
+    let ``AttributeTargetsIsProperty_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
+    let ``AttributeTargetsIsProperty_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
         |> shouldSucceed
 
     // SOURCE=ConditionalAttribute.fs					# ConditionalAttribute.fs
@@ -352,5 +375,45 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Warning 2003, Line 5, Col 59, Line 5, Col 68, "The attribute System.Reflection.AssemblyFileVersionAttribute specified version '9.8.*.6', but this value is invalid and has been ignored")
         ]
-
-
+        
+    // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
+    let ``E_AttributeTargetIsField03_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+        ]
+    
+    // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
+    let ``E_AttributeTargetIsField03_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+            (Error 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
+        ]
+        
+        
+    // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
+    let ``E_AttributeTargetIsProperty01_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldSucceed
+    
+    // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
+    let ``E_AttributeTargetIsProperty01_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 14, Col 5, Line 14, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
+        ]

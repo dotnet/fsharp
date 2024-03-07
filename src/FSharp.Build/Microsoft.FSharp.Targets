@@ -275,7 +275,8 @@ this file.
                 $(VersionFile);
                 $(KeyOriginatorFile);
                 $(UseSource);
-                $(LoadSource)"
+                $(LoadSource);
+                $(SourceLink)"
         Outputs="@(DocFileItem);
                  @(IntermediateAssembly);
                  @(IntermediateRefAssembly);

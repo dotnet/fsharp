@@ -21,7 +21,6 @@
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
-	<!--<OtherFlags>$(OtherFlags) - - allsigs</OtherFlags>-->
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
@@ -77,8 +76,8 @@
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="HistoricalBenchmark" />
-	<InternalsVisibleTo Include="FSharp.Test.Utilities" />
-	<InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="FSharp.Test.Utilities" />
+    <InternalsVisibleTo Include="FSharp.Editor" />
   </ItemGroup>
 
   <ItemGroup>
@@ -366,8 +365,8 @@
     <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
-	<Compile Include="Checking\SignatureHash.fsi" />
-	<Compile Include="Checking\SignatureHash.fs" />
+    <Compile Include="Checking\SignatureHash.fsi" />
+    <Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
@@ -505,12 +504,12 @@
     <Compile Include="Service\QuickParse.fsi" />
     <Compile Include="Service\QuickParse.fs" />
     <Compile Include="Service\FSharpCheckerResults.fsi" />
-	  <Compile Include="Service\FSharpCheckerResults.fs" />
-	  <Compile Include="Service\FSharpProjectSnapshot.fs" />
-	  <Compile Include="Service\BackgroundCompiler.fsi" />
-	  <Compile Include="Service\BackgroundCompiler.fs" />
-	  <Compile Include="Service\TransparentCompiler.fsi" />
-	  <Compile Include="Service\TransparentCompiler.fs" />
+    <Compile Include="Service\FSharpCheckerResults.fs" />
+    <Compile Include="Service\FSharpProjectSnapshot.fs" />
+    <Compile Include="Service\BackgroundCompiler.fsi" />
+    <Compile Include="Service\BackgroundCompiler.fs" />
+    <Compile Include="Service\TransparentCompiler.fsi" />
+    <Compile Include="Service\TransparentCompiler.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\ServiceInterfaceStubGenerator.fsi" />
