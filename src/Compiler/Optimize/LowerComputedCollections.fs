@@ -2,9 +2,10 @@
 
 module internal FSharp.Compiler.LowerComputedCollectionExpressions
 
-open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.LowerSequenceExpressions
 open FSharp.Compiler.MethodCalls
@@ -255,18 +256,178 @@ let (|SeqToArray|_|) g expr =
     | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> ValueSome (seqExpr, m)
     | _ -> ValueNone
 
+module List =
+    /// Makes an expression that will build a list from an integral range.
+    let mkFromIntegralRange tcVal (g: TcGlobals) amap m overallElemTy overallSeqExpr start step finish =
+        let collectorTy = g.mk_ListCollector_ty overallElemTy
+
+        /// let collector = ListCollector () in
+        /// <initialization loop>
+        /// collector.Close ()
+        let mkListInit mkLoop =
+            mkCompGenLetMutableIn m "collector" collectorTy (mkDefault (m, collectorTy)) (fun (_, collector) ->
+                let reader = InfoReader (g, amap)
+                let loop = mkLoop (fun _idxVar loopVar -> mkCallCollectorAdd tcVal g reader m collector loopVar)
+                let close = mkCallCollectorClose tcVal g reader m collector
+                mkSequential m loop close
+            )
+
+        mkOptimizedRangeLoop
+            g
+            (m, m, m, DebugPointAtWhile.No)
+            (overallElemTy, overallSeqExpr)
+            (start, step, finish)
+            (fun count mkLoop ->
+                match count with
+                | Expr.Const (value = IntegralConst.Zero) ->
+                    mkNil g m overallElemTy
+
+                | Expr.Const (value = _nonzeroConstant) ->
+                    mkListInit mkLoop
+
+                | _dynamicCount ->
+                    mkListInit mkLoop
+            )
+
+module Array =
+    /// Whether to check for overflow when converting a value to a native int.
+    [<NoEquality; NoComparison>]
+    type Ovf =
+        /// Check for overflow. We need this when passing the count into newarr.
+        | CheckOvf
+
+        /// Don't check for overflow. We don't need to check when indexing into the array,
+        /// since we already know count didn't overflow during initialization.
+        | NoCheckOvf
+
+    /// Makes an expression that will build an array from an integral range.
+    let mkFromIntegralRange g m overallElemTy overallSeqExpr start step finish =
+        let arrayTy = mkArrayType g overallElemTy
+
+        let convToNativeInt ovf expr =
+            let ty = stripMeasuresFromTy g (tyOfExpr g expr)
+
+            let conv =
+                match ovf with
+                | NoCheckOvf -> AI_conv DT_I
+                | CheckOvf when isSignedIntegerTy g ty -> AI_conv_ovf DT_I
+                | CheckOvf -> AI_conv_ovf_un DT_I
+
+            if typeEquiv g ty g.int64_ty then
+                mkAsmExpr ([conv], [], [expr], [g.nativeint_ty], m)
+            elif typeEquiv g ty g.nativeint_ty then
+                mkAsmExpr ([conv], [], [mkAsmExpr ([AI_conv DT_I8], [], [expr], [g.int64_ty], m)], [g.nativeint_ty], m)
+            elif typeEquiv g ty g.uint64_ty then
+                mkAsmExpr ([conv], [], [expr], [g.nativeint_ty], m)
+            elif typeEquiv g ty g.unativeint_ty then
+                mkAsmExpr ([conv], [], [mkAsmExpr ([AI_conv DT_U8], [], [expr], [g.uint64_ty], m)], [g.nativeint_ty], m)
+            else
+                expr
+
+        let ilTy, ilBasicTy =
+            let ty = stripMeasuresFromTy g overallElemTy
+
+            if typeEquiv g ty g.int32_ty then g.ilg.typ_Int32, DT_I4
+            elif typeEquiv g ty g.int64_ty then g.ilg.typ_Int64, DT_I8
+            elif typeEquiv g ty g.uint64_ty then g.ilg.typ_UInt64, DT_U8
+            elif typeEquiv g ty g.uint32_ty then g.ilg.typ_UInt32, DT_U4
+            elif typeEquiv g ty g.nativeint_ty then g.ilg.typ_IntPtr, DT_I
+            elif typeEquiv g ty g.unativeint_ty then g.ilg.typ_UIntPtr, DT_U
+            elif typeEquiv g ty g.int16_ty then g.ilg.typ_Int16, DT_I2
+            elif typeEquiv g ty g.uint16_ty then g.ilg.typ_UInt16, DT_U2
+            elif typeEquiv g ty g.sbyte_ty then g.ilg.typ_SByte, DT_I1
+            elif typeEquiv g ty g.byte_ty then g.ilg.typ_Byte, DT_U1
+            elif typeEquiv g ty g.char_ty then g.ilg.typ_Char, DT_U2
+            else error (InternalError ($"Unable to find IL type for integral type '{overallElemTy}'.", m))
+
+        /// (# "newarr !0" type ('T) count : 'T array #)
+        let mkNewArray count =
+            mkAsmExpr
+                (
+                    [I_newarr (ILArrayShape.SingleDimensional, ilTy)],
+                    [],
+                    [convToNativeInt CheckOvf count],
+                    [arrayTy],
+                    m
+                )
+
+        /// let array = (# "newarr !0" type ('T) count : 'T array #) in
+        /// <initialization loop>
+        /// array
+        let mkArrayInit count mkLoop =
+            mkCompGenLetIn m "array" arrayTy (mkNewArray count) (fun (_, array) ->
+                let loop = mkLoop (fun idxVar loopVar -> mkAsmExpr ([I_stelem ilBasicTy], [], [array; convToNativeInt NoCheckOvf idxVar; loopVar], [], m))
+                mkSequential m loop array)
+
+        mkOptimizedRangeLoop
+            g
+            (m, m, m, DebugPointAtWhile.No)
+            (overallElemTy, overallSeqExpr)
+            (start, step, finish)
+            (fun count mkLoop ->
+                match count with
+                | Expr.Const (value = IntegralConst.Zero) ->
+                    mkArray (overallElemTy, [], m)
+
+                | Expr.Const (value = _nonzeroConstant) ->
+                    mkArrayInit count mkLoop
+
+                | _dynamicCount ->
+                    mkCompGenLetIn m (nameof count) (tyOfExpr g count) count (fun (_, count) ->
+                        let countTy = tyOfExpr g count
+
+                        // count < 1
+                        let countLtOne =
+                            if isSignedIntegerTy g countTy then
+                                mkILAsmClt g m count (mkTypedOne g m countTy)
+                            else
+                                mkAsmExpr ([AI_clt_un], [], [count; mkTypedOne g m countTy], [g.bool_ty], m)
+
+                        // if count < 1 then
+                        //     [||]
+                        // else
+                        //     let array = (# "newarr !0" type ('T) count : 'T array #) in
+                        //     <initialization loop>
+                        //     array
+                        mkCond
+                            DebugPointAtBinding.NoneAtInvisible
+                            m
+                            arrayTy
+                            countLtOne
+                            (mkArray (overallElemTy, [], m))
+                            (mkArrayInit count mkLoop)
+                    )
+            )
+
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
     if g.ListCollector_tcr.CanDeref then
-
         match overallExpr with
+        // […]
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
-            let collectorTy = g.mk_ListCollector_ty overallElemTy
-            LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
-        
+            match overallSeqExpr with
+            // [start..finish]
+            // [start..step..finish]
+            | IntegralRange g (_, (start, step, finish)) when g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops ->
+                Some (List.mkFromIntegralRange tcVal g amap m overallElemTy overallSeqExpr start step finish)
+
+            // [(* Anything more complex. *)]
+            | _ ->
+                let collectorTy = g.mk_ListCollector_ty overallElemTy
+                LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
+
+        // [|…|]
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
-            let collectorTy = g.mk_ArrayCollector_ty overallElemTy
-            LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
+            match overallSeqExpr with
+            // [|start..finish|]
+            // [|start..step..finish|]
+            | IntegralRange g (_, (start, step, finish)) when g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops ->
+                Some (Array.mkFromIntegralRange g m overallElemTy overallSeqExpr start step finish)
+
+            // [|(* Anything more complex. *)|]
+            | _ ->
+                let collectorTy = g.mk_ArrayCollector_ty overallElemTy
+                LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
 
         | _ -> None
     else

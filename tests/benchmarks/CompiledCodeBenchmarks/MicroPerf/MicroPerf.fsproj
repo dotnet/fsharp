@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <OutputType>Exe</OutputType>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
     <OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
     <!-- Turn off "Experimental" -->
@@ -26,7 +24,6 @@
     <Compile Include="Benchmarks.fs" />
     <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="CS\MicroPerfCSharp.csproj" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
   </ItemGroup>
 </Project>
