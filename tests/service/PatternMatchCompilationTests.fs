@@ -1261,3 +1261,19 @@ let f : obj -> _ =
     dumpDiagnostics checkResults |> shouldEqual [
         "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 5.0. Please use language version 6.0 or greater."
     ]
+
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``Unresolved name - Qualifier 01`` () =
+    let _, checkResults = getParseAndCheckResults """
+match None with
+| Foo.Bar -> let a = 1 in ignore a
+| Some b -> ignore b
+"""
+    assertHasSymbolUsages ["a"; "b"] checkResults
+    dumpDiagnostics checkResults |> shouldEqual [
+        "(3,2--3,5): The namespace or module 'Foo' is not defined."
+        "(2,6--2,10): Incomplete pattern matches on this expression."
+    ]
