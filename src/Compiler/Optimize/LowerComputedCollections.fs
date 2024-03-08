@@ -365,13 +365,14 @@ module Array =
         /// array
         let mkArrayInit count mkLoop =
             mkCompGenLetIn m "array" arrayTy (mkNewArray count) (fun (_, array) ->
-                let loop = mkLoop (fun idxVar loopVar ->
-                    let body =
-                        body
-                        |> Option.map (fun (loopVal, body) -> mkInvisibleLet m loopVal loopVar body)
-                        |> Option.defaultValue loopVar
+                let loop =
+                    mkLoop (fun idxVar loopVar ->
+                        let body =
+                            body
+                            |> Option.map (fun (loopVal, body) -> mkInvisibleLet m loopVal loopVar body)
+                            |> Option.defaultValue loopVar
 
-                    mkAsmExpr ([stelem], [], [array; convToNativeInt NoCheckOvf idxVar; body], [], m))
+                        mkAsmExpr ([stelem], [], [array; convToNativeInt NoCheckOvf idxVar; body], [], m))
 
                 mkSequential m loop array)
 
