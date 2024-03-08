@@ -88,6 +88,7 @@ type LanguageFeature =
     | EnforceAttributeTargetsOnFunctions
     | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
+    | EnforceAttributeTargetsOnImplicitConstructors
     | EnforceAttributeTargetsOnConstructors
     | EnforceAttributeTargetsOnStructAndClasses
     | LowerIntegralRangesToFastLoops
@@ -206,6 +207,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EnforceAttributeTargetsOnFunctions, previewVersion
                 LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
+                LanguageFeature.EnforceAttributeTargetsOnImplicitConstructors, previewVersion
                 LanguageFeature.EnforceAttributeTargetsOnConstructors, previewVersion
                 LanguageFeature.EnforceAttributeTargetsOnStructAndClasses, previewVersion
                 LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
@@ -355,6 +357,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
         | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations -> FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
+        | LanguageFeature.EnforceAttributeTargetsOnImplicitConstructors -> FSComp.SR.featureEnforceAttributeTargetsOnImplicitConstructors ()
         | LanguageFeature.EnforceAttributeTargetsOnConstructors -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
         | LanguageFeature.EnforceAttributeTargetsOnStructAndClasses -> FSComp.SR.featureEnforceAttributeTargetsOnStructAndClasses ()
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
