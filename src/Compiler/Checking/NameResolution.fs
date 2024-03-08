@@ -575,10 +575,11 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
     let g = amap.g
 
     let isApplicable =
-       IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass ||
-       g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
-         tcrefOfStaticClass.IsLocalRef &&
-         not tcrefOfStaticClass.IsTypeAbbrev
+        IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass ||
+
+        g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
+        tcrefOfStaticClass.IsLocalRef &&
+        not tcrefOfStaticClass.IsTypeAbbrev
 
     if not isApplicable then [] else
 
