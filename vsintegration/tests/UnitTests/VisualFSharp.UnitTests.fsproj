@@ -10,6 +10,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <UnitTestType>nunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
