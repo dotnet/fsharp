@@ -881,7 +881,8 @@ type CaptureDiagnosticsConcurrently<'T>(computations: Async<'T> seq, ?eagerForma
     let computationsWithLoggers, diagnosticsReady =
         [
             for i, computation in computations |> Seq.indexed do
-                let diagnosticsReady = TaskCompletionSource<_>()
+                let diagnosticsReady =
+                    TaskCompletionSource<_>(TaskCreationOptions.RunContinuationsAsynchronously)
 
                 // Diagnostics logger utilizing the common error count.
                 let logger =
