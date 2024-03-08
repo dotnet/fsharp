@@ -218,115 +218,108 @@ module FSharpExprConvert =
         rfref.RecdField.LogicalName.StartsWithOrdinal("init") 
 
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
-    [<return: Struct>]
     let (|StaticInitializationCheck|_|) e = 
         match e with 
-        | Expr.Match (_, _, TDSwitch(Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> ValueSome ()
-        | _ -> ValueNone
+        | Expr.Match (_, _, TDSwitch(Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
+        | _ -> None
 
         // Match "init@41 <- 6"
-    [<return: Struct>]
     let (|StaticInitializationCount|_|) e = 
         match e with 
-        | Expr.Op (TOp.ValFieldSet rfref, _, _, _)  when IsStaticInitializationField rfref -> ValueSome ()
-        | _ -> ValueNone
+        | Expr.Op (TOp.ValFieldSet rfref, _, _, _)  when IsStaticInitializationField rfref -> Some ()
+        | _ -> None
 
-    [<return: Struct>]
     let (|ILUnaryOp|_|) e = 
         match e with 
-        | AI_neg -> ValueSome mkCallUnaryNegOperator
-        | AI_not -> ValueSome mkCallUnaryNotOperator
-        | _ -> ValueNone
+        | AI_neg -> Some mkCallUnaryNegOperator
+        | AI_not -> Some mkCallUnaryNotOperator
+        | _ -> None
 
-    [<return: Struct>]
     let (|ILMulDivOp|_|) e = 
         match e with 
-        | AI_mul        -> ValueSome (mkCallMultiplyOperator, true)
+        | AI_mul        -> Some (mkCallMultiplyOperator, true)
         | AI_mul_ovf
-        | AI_mul_ovf_un -> ValueSome (mkCallMultiplyChecked, true)
+        | AI_mul_ovf_un -> Some (mkCallMultiplyChecked, true)
         | AI_div
-        | AI_div_un     -> ValueSome (mkCallDivisionOperator, false)
-        | _ -> ValueNone
+        | AI_div_un     -> Some (mkCallDivisionOperator, false)
+        | _ -> None
 
-    [<return: Struct>]
     let (|ILBinaryOp|_|) e = 
         match e with 
-        | AI_add        -> ValueSome mkCallAdditionOperator
+        | AI_add        -> Some mkCallAdditionOperator
         | AI_add_ovf
-        | AI_add_ovf_un -> ValueSome mkCallAdditionChecked
-        | AI_sub        -> ValueSome mkCallSubtractionOperator
+        | AI_add_ovf_un -> Some mkCallAdditionChecked
+        | AI_sub        -> Some mkCallSubtractionOperator
         | AI_sub_ovf
-        | AI_sub_ovf_un -> ValueSome mkCallSubtractionChecked
+        | AI_sub_ovf_un -> Some mkCallSubtractionChecked
         | AI_rem
-        | AI_rem_un     -> ValueSome mkCallModulusOperator
-        | AI_ceq        -> ValueSome mkCallEqualsOperator
+        | AI_rem_un     -> Some mkCallModulusOperator
+        | AI_ceq        -> Some mkCallEqualsOperator
         | AI_clt
-        | AI_clt_un     -> ValueSome mkCallLessThanOperator
+        | AI_clt_un     -> Some mkCallLessThanOperator
         | AI_cgt
-        | AI_cgt_un     -> ValueSome mkCallGreaterThanOperator
-        | AI_and        -> ValueSome mkCallBitwiseAndOperator
-        | AI_or         -> ValueSome mkCallBitwiseOrOperator
-        | AI_xor        -> ValueSome mkCallBitwiseXorOperator
-        | AI_shl        -> ValueSome mkCallShiftLeftOperator
+        | AI_cgt_un     -> Some mkCallGreaterThanOperator
+        | AI_and        -> Some mkCallBitwiseAndOperator
+        | AI_or         -> Some mkCallBitwiseOrOperator
+        | AI_xor        -> Some mkCallBitwiseXorOperator
+        | AI_shl        -> Some mkCallShiftLeftOperator
         | AI_shr
-        | AI_shr_un     -> ValueSome mkCallShiftRightOperator
-        | _ -> ValueNone
+        | AI_shr_un     -> Some mkCallShiftRightOperator
+        | _ -> None
 
-    [<return: Struct>]
     let (|ILConvertOp|_|) e = 
         match e with 
         | AI_conv basicTy ->
             match basicTy with
-            | DT_R  -> ValueSome mkCallToDoubleOperator
-            | DT_I1 -> ValueSome mkCallToSByteOperator
-            | DT_U1 -> ValueSome mkCallToByteOperator
-            | DT_I2 -> ValueSome mkCallToInt16Operator
-            | DT_U2 -> ValueSome mkCallToUInt16Operator
-            | DT_I4 -> ValueSome mkCallToInt32Operator
-            | DT_U4 -> ValueSome mkCallToUInt32Operator
-            | DT_I8 -> ValueSome mkCallToInt64Operator
-            | DT_U8 -> ValueSome mkCallToUInt64Operator
-            | DT_R4 -> ValueSome mkCallToSingleOperator
-            | DT_R8 -> ValueSome mkCallToDoubleOperator
-            | DT_I  -> ValueSome mkCallToIntPtrOperator
-            | DT_U  -> ValueSome mkCallToUIntPtrOperator
-            | DT_REF -> ValueNone
+            | DT_R  -> Some mkCallToDoubleOperator
+            | DT_I1 -> Some mkCallToSByteOperator
+            | DT_U1 -> Some mkCallToByteOperator
+            | DT_I2 -> Some mkCallToInt16Operator
+            | DT_U2 -> Some mkCallToUInt16Operator
+            | DT_I4 -> Some mkCallToInt32Operator
+            | DT_U4 -> Some mkCallToUInt32Operator
+            | DT_I8 -> Some mkCallToInt64Operator
+            | DT_U8 -> Some mkCallToUInt64Operator
+            | DT_R4 -> Some mkCallToSingleOperator
+            | DT_R8 -> Some mkCallToDoubleOperator
+            | DT_I  -> Some mkCallToIntPtrOperator
+            | DT_U  -> Some mkCallToUIntPtrOperator
+            | DT_REF -> None
         | AI_conv_ovf basicTy
         | AI_conv_ovf_un basicTy ->
             match basicTy with
-            | DT_R  -> ValueSome mkCallToDoubleOperator
-            | DT_I1 -> ValueSome mkCallToSByteChecked
-            | DT_U1 -> ValueSome mkCallToByteChecked
-            | DT_I2 -> ValueSome mkCallToInt16Checked
-            | DT_U2 -> ValueSome mkCallToUInt16Checked
-            | DT_I4 -> ValueSome mkCallToInt32Checked
-            | DT_U4 -> ValueSome mkCallToUInt32Checked
-            | DT_I8 -> ValueSome mkCallToInt64Checked
-            | DT_U8 -> ValueSome mkCallToUInt64Checked
-            | DT_R4 -> ValueSome mkCallToSingleOperator
-            | DT_R8 -> ValueSome mkCallToDoubleOperator
-            | DT_I  -> ValueSome mkCallToIntPtrChecked
-            | DT_U  -> ValueSome mkCallToUIntPtrChecked
-            | DT_REF -> ValueNone
-        | _ -> ValueNone
+            | DT_R  -> Some mkCallToDoubleOperator
+            | DT_I1 -> Some mkCallToSByteChecked
+            | DT_U1 -> Some mkCallToByteChecked
+            | DT_I2 -> Some mkCallToInt16Checked
+            | DT_U2 -> Some mkCallToUInt16Checked
+            | DT_I4 -> Some mkCallToInt32Checked
+            | DT_U4 -> Some mkCallToUInt32Checked
+            | DT_I8 -> Some mkCallToInt64Checked
+            | DT_U8 -> Some mkCallToUInt64Checked
+            | DT_R4 -> Some mkCallToSingleOperator
+            | DT_R8 -> Some mkCallToDoubleOperator
+            | DT_I  -> Some mkCallToIntPtrChecked
+            | DT_U  -> Some mkCallToUIntPtrChecked
+            | DT_REF -> None
+        | _ -> None
 
-    [<return: Struct>]
     let (|TTypeConvOp|_|) (cenv: SymbolEnv) ty = 
         let g = cenv.g
         match ty with
-        | _ when typeEquiv g ty g.sbyte_ty      -> ValueSome mkCallToSByteOperator
-        | _ when typeEquiv g ty g.byte_ty       -> ValueSome mkCallToByteOperator
-        | _ when typeEquiv g ty g.int16_ty      -> ValueSome mkCallToInt16Operator
-        | _ when typeEquiv g ty g.uint16_ty     -> ValueSome mkCallToUInt16Operator
-        | _ when typeEquiv g ty g.int32_ty      -> ValueSome mkCallToInt32Operator
-        | _ when typeEquiv g ty g.uint32_ty     -> ValueSome mkCallToUInt32Operator
-        | _ when typeEquiv g ty g.int64_ty      -> ValueSome mkCallToInt64Operator
-        | _ when typeEquiv g ty g.uint64_ty     -> ValueSome mkCallToUInt64Operator
-        | _ when typeEquiv g ty g.float32_ty    -> ValueSome mkCallToSingleOperator
-        | _ when typeEquiv g ty g.float_ty      -> ValueSome mkCallToDoubleOperator
-        | _ when typeEquiv g ty g.nativeint_ty  -> ValueSome mkCallToIntPtrOperator
-        | _ when typeEquiv g ty g.unativeint_ty -> ValueSome mkCallToUIntPtrOperator
-        | _ -> ValueNone
+        | _ when typeEquiv g ty g.sbyte_ty      -> Some mkCallToSByteOperator
+        | _ when typeEquiv g ty g.byte_ty       -> Some mkCallToByteOperator
+        | _ when typeEquiv g ty g.int16_ty      -> Some mkCallToInt16Operator
+        | _ when typeEquiv g ty g.uint16_ty     -> Some mkCallToUInt16Operator
+        | _ when typeEquiv g ty g.int32_ty      -> Some mkCallToInt32Operator
+        | _ when typeEquiv g ty g.uint32_ty     -> Some mkCallToUInt32Operator
+        | _ when typeEquiv g ty g.int64_ty      -> Some mkCallToInt64Operator
+        | _ when typeEquiv g ty g.uint64_ty     -> Some mkCallToUInt64Operator
+        | _ when typeEquiv g ty g.float32_ty    -> Some mkCallToSingleOperator
+        | _ when typeEquiv g ty g.float_ty      -> Some mkCallToDoubleOperator
+        | _ when typeEquiv g ty g.nativeint_ty  -> Some mkCallToIntPtrOperator
+        | _ when typeEquiv g ty g.unativeint_ty -> Some mkCallToUIntPtrOperator
+        | _ -> None
 
     let ConvType cenv ty = FSharpType(cenv, ty)
 
@@ -1405,146 +1398,99 @@ and FSharpImplementationFileContents(cenv, mimpl) =
 
 
 module FSharpExprPatterns = 
-    [<return: Struct>]
-    let (|Value|_|) (e: FSharpExpr) = match e.E with E.Value v -> ValueSome v | _ -> ValueNone
+    let (|Value|_|) (e: FSharpExpr) = match e.E with E.Value v -> Some v | _ -> None
 
-    [<return: Struct>]
-    let (|Const|_|) (e: FSharpExpr) = match e.E with E.Const (v, ty) -> ValueSome (v, ty) | _ -> ValueNone
+    let (|Const|_|) (e: FSharpExpr) = match e.E with E.Const (v, ty) -> Some (v, ty) | _ -> None
 
-    [<return: Struct>]
-    let (|TypeLambda|_|) (e: FSharpExpr) = match e.E with E.TypeLambda (v, e) -> ValueSome (v, e) | _ -> ValueNone
+    let (|TypeLambda|_|) (e: FSharpExpr) = match e.E with E.TypeLambda (v, e) -> Some (v, e) | _ -> None
 
-    [<return: Struct>]
-    let (|Lambda|_|) (e: FSharpExpr) = match e.E with E.Lambda (v, e) -> ValueSome (v, e) | _ -> ValueNone
+    let (|Lambda|_|) (e: FSharpExpr) = match e.E with E.Lambda (v, e) -> Some (v, e) | _ -> None
 
-    [<return: Struct>]
-    let (|Application|_|) (e: FSharpExpr) = match e.E with E.Application (f, tys, e) -> ValueSome (f, tys, e) | _ -> ValueNone
+    let (|Application|_|) (e: FSharpExpr) = match e.E with E.Application (f, tys, e) -> Some (f, tys, e) | _ -> None
 
-    [<return: Struct>]
-    let (|IfThenElse|_|) (e: FSharpExpr) = match e.E with E.IfThenElse (e1, e2, e3) -> ValueSome (e1, e2, e3) | _ -> ValueNone
+    let (|IfThenElse|_|) (e: FSharpExpr) = match e.E with E.IfThenElse (e1, e2, e3) -> Some (e1, e2, e3) | _ -> None
 
-    [<return: Struct>]
-    let (|Let|_|) (e: FSharpExpr) = match e.E with E.Let ((dp, v, e), b) -> ValueSome ((dp, v, e), b) | _ -> ValueNone
+    let (|Let|_|) (e: FSharpExpr) = match e.E with E.Let ((dp, v, e), b) -> Some ((dp, v, e), b) | _ -> None
 
-    [<return: Struct>]
-    let (|LetRec|_|) (e: FSharpExpr) = match e.E with E.LetRec (ves, b) -> ValueSome (ves, b) | _ -> ValueNone
+    let (|LetRec|_|) (e: FSharpExpr) = match e.E with E.LetRec (ves, b) -> Some (ves, b) | _ -> None
 
-    [<return: Struct>]
-    let (|NewRecord|_|) (e: FSharpExpr) = match e.E with E.NewRecord (ty, es) -> ValueSome (ty, es) | _ -> ValueNone
+    let (|NewRecord|_|) (e: FSharpExpr) = match e.E with E.NewRecord (ty, es) -> Some (ty, es) | _ -> None
 
-    [<return: Struct>]
-    let (|NewAnonRecord|_|) (e: FSharpExpr) = match e.E with E.NewAnonRecord (ty, es) -> ValueSome (ty, es) | _ -> ValueNone
+    let (|NewAnonRecord|_|) (e: FSharpExpr) = match e.E with E.NewAnonRecord (ty, es) -> Some (ty, es) | _ -> None
 
-    [<return: Struct>]
-    let (|NewUnionCase|_|) (e: FSharpExpr) = match e.E with E.NewUnionCase (e, tys, es) -> ValueSome (e, tys, es) | _ -> ValueNone
+    let (|NewUnionCase|_|) (e: FSharpExpr) = match e.E with E.NewUnionCase (e, tys, es) -> Some (e, tys, es) | _ -> None
 
-    [<return: Struct>]
-    let (|NewTuple|_|) (e: FSharpExpr) = match e.E with E.NewTuple (ty, es) -> ValueSome (ty, es) | _ -> ValueNone
+    let (|NewTuple|_|) (e: FSharpExpr) = match e.E with E.NewTuple (ty, es) -> Some (ty, es) | _ -> None
 
-    [<return: Struct>]
-    let (|TupleGet|_|) (e: FSharpExpr) = match e.E with E.TupleGet (ty, n, es) -> ValueSome (ty, n, es) | _ -> ValueNone
+    let (|TupleGet|_|) (e: FSharpExpr) = match e.E with E.TupleGet (ty, n, es) -> Some (ty, n, es) | _ -> None
 
-    [<return: Struct>]
-    let (|Call|_|) (e: FSharpExpr) = match e.E with E.Call (a, b, c, d, _e, f) -> ValueSome (a, b, c, d, f) | _ -> ValueNone
+    let (|Call|_|) (e: FSharpExpr) = match e.E with E.Call (a, b, c, d, _e, f) -> Some (a, b, c, d, f) | _ -> None
 
-    [<return: Struct>]
-    let (|CallWithWitnesses|_|) (e: FSharpExpr) = match e.E with E.Call (a, b, c, d, e, f) -> ValueSome (a, b, c, d, e, f) | _ -> ValueNone
+    let (|CallWithWitnesses|_|) (e: FSharpExpr) = match e.E with E.Call (a, b, c, d, e, f) -> Some (a, b, c, d, e, f) | _ -> None
 
-    [<return: Struct>]
-    let (|NewObject|_|) (e: FSharpExpr) = match e.E with E.NewObject (a, b, c) -> ValueSome (a, b, c) | _ -> ValueNone
+    let (|NewObject|_|) (e: FSharpExpr) = match e.E with E.NewObject (a, b, c) -> Some (a, b, c) | _ -> None
 
-    [<return: Struct>]
-    let (|FSharpFieldGet|_|) (e: FSharpExpr) = match e.E with E.FSharpFieldGet (a, b, c) -> ValueSome (a, b, c) | _ -> ValueNone
+    let (|FSharpFieldGet|_|) (e: FSharpExpr) = match e.E with E.FSharpFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
 
-    [<return: Struct>]
-    let (|AnonRecordGet|_|) (e: FSharpExpr) = match e.E with E.AnonRecordGet (a, b, c) -> ValueSome (a, b, c) | _ -> ValueNone
+    let (|AnonRecordGet|_|) (e: FSharpExpr) = match e.E with E.AnonRecordGet (a, b, c) -> Some (a, b, c) | _ -> None
 
-    [<return: Struct>]
-    let (|FSharpFieldSet|_|) (e: FSharpExpr) = match e.E with E.FSharpFieldSet (a, b, c, d) -> ValueSome (a, b, c, d) | _ -> ValueNone
+    let (|FSharpFieldSet|_|) (e: FSharpExpr) = match e.E with E.FSharpFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
 
-    [<return: Struct>]
-    let (|UnionCaseGet|_|) (e: FSharpExpr) = match e.E with E.UnionCaseGet (a, b, c, d) -> ValueSome (a, b, c, d) | _ -> ValueNone
+    let (|UnionCaseGet|_|) (e: FSharpExpr) = match e.E with E.UnionCaseGet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
 
-    [<return: Struct>]
-    let (|UnionCaseTag|_|) (e: FSharpExpr) = match e.E with E.UnionCaseTag (a, b) -> ValueSome (a, b) | _ -> ValueNone
+    let (|UnionCaseTag|_|) (e: FSharpExpr) = match e.E with E.UnionCaseTag (a, b) -> Some (a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|UnionCaseTest|_|) (e: FSharpExpr) = match e.E with E.UnionCaseTest (a, b, c) -> ValueSome (a, b, c) | _ -> ValueNone
+    let (|UnionCaseTest|_|) (e: FSharpExpr) = match e.E with E.UnionCaseTest (a, b, c) -> Some (a, b, c) | _ -> None
 
-    [<return: Struct>]
-    let (|NewArray|_|) (e: FSharpExpr) = match e.E with E.NewArray (a, b) -> ValueSome (a, b) | _ -> ValueNone
+    let (|NewArray|_|) (e: FSharpExpr) = match e.E with E.NewArray (a, b) -> Some (a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|Coerce|_|) (e: FSharpExpr) = match e.E with E.Coerce (a, b) -> ValueSome (a, b) | _ -> ValueNone
+    let (|Coerce|_|) (e: FSharpExpr) = match e.E with E.Coerce (a, b) -> Some (a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|Quote|_|) (e: FSharpExpr) = match e.E with E.Quote a -> ValueSome a | _ -> ValueNone
+    let (|Quote|_|) (e: FSharpExpr) = match e.E with E.Quote a -> Some a | _ -> None
 
-    [<return: Struct>]
-    let (|TypeTest|_|) (e: FSharpExpr) = match e.E with E.TypeTest (a, b) -> ValueSome (a, b) | _ -> ValueNone
+    let (|TypeTest|_|) (e: FSharpExpr) = match e.E with E.TypeTest (a, b) -> Some (a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|Sequential|_|) (e: FSharpExpr) = match e.E with E.Sequential (dp, a) -> ValueSome (dp, a) | _ -> ValueNone
+    let (|Sequential|_|) (e: FSharpExpr) = match e.E with E.Sequential (dp, a) -> Some (dp, a) | _ -> None
 
-    [<return: Struct>]
-    let (|DebugPoint|_|) (e: FSharpExpr) = match e.E with E.DebugPoint (dp, a) -> ValueSome (dp, a) | _ -> ValueNone
+    let (|DebugPoint|_|) (e: FSharpExpr) = match e.E with E.DebugPoint (dp, a) -> Some (dp, a) | _ -> None
 
-    [<return: Struct>]
-    let (|FastIntegerForLoop|_|) (e: FSharpExpr) = match e.E with E.IntegerForLoop (dpFor, dpEquals, a, b, c, d) -> ValueSome (dpFor, dpEquals, a, b, c, d) | _ -> ValueNone
+    let (|FastIntegerForLoop|_|) (e: FSharpExpr) = match e.E with E.IntegerForLoop (dpFor, dpEquals, a, b, c, d) -> Some (dpFor, dpEquals, a, b, c, d) | _ -> None
 
-    [<return: Struct>]
-    let (|WhileLoop|_|) (e: FSharpExpr) = match e.E with E.WhileLoop (dpWhile, a, b) -> ValueSome (dpWhile, a, b) | _ -> ValueNone
+    let (|WhileLoop|_|) (e: FSharpExpr) = match e.E with E.WhileLoop (dpWhile, a, b) -> Some (dpWhile, a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|TryFinally|_|) (e: FSharpExpr) = match e.E with E.TryFinally (dpTry, dpFinally, a, b) -> ValueSome (dpTry, dpFinally, a, b) | _ -> ValueNone
+    let (|TryFinally|_|) (e: FSharpExpr) = match e.E with E.TryFinally (dpTry, dpFinally, a, b) -> Some (dpTry, dpFinally, a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|TryWith|_|) (e: FSharpExpr) = match e.E with E.TryWith (dpTry, dpWith, a, b, c, d, e) -> ValueSome (dpTry, dpWith, a, b, c, d, e) | _ -> ValueNone
+    let (|TryWith|_|) (e: FSharpExpr) = match e.E with E.TryWith (dpTry, dpWith, a, b, c, d, e) -> Some (dpTry, dpWith, a, b, c, d, e) | _ -> None
 
-    [<return: Struct>]
-    let (|NewDelegate|_|) (e: FSharpExpr) = match e.E with E.NewDelegate (ty, e) -> ValueSome (ty, e) | _ -> ValueNone
+    let (|NewDelegate|_|) (e: FSharpExpr) = match e.E with E.NewDelegate (ty, e) -> Some (ty, e) | _ -> None
 
-    [<return: Struct>]
-    let (|DefaultValue|_|) (e: FSharpExpr) = match e.E with E.DefaultValue ty -> ValueSome ty | _ -> ValueNone
+    let (|DefaultValue|_|) (e: FSharpExpr) = match e.E with E.DefaultValue ty -> Some ty | _ -> None
 
-    [<return: Struct>]
-    let (|AddressSet|_|) (e: FSharpExpr) = match e.E with E.AddressSet (a, b) -> ValueSome (a, b) | _ -> ValueNone
+    let (|AddressSet|_|) (e: FSharpExpr) = match e.E with E.AddressSet (a, b) -> Some (a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|ValueSet|_|) (e: FSharpExpr) = match e.E with E.ValueSet (a, b) -> ValueSome (a, b) | _ -> ValueNone
+    let (|ValueSet|_|) (e: FSharpExpr) = match e.E with E.ValueSet (a, b) -> Some (a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|AddressOf|_|) (e: FSharpExpr) = match e.E with E.AddressOf a -> ValueSome a | _ -> ValueNone
+    let (|AddressOf|_|) (e: FSharpExpr) = match e.E with E.AddressOf a -> Some a | _ -> None
 
-    [<return: Struct>]
-    let (|ThisValue|_|) (e: FSharpExpr) = match e.E with E.ThisValue a -> ValueSome a | _ -> ValueNone
+    let (|ThisValue|_|) (e: FSharpExpr) = match e.E with E.ThisValue a -> Some a | _ -> None
 
-    [<return: Struct>]
-    let (|BaseValue|_|) (e: FSharpExpr) = match e.E with E.BaseValue a -> ValueSome a | _ -> ValueNone
+    let (|BaseValue|_|) (e: FSharpExpr) = match e.E with E.BaseValue a -> Some a | _ -> None
 
-    [<return: Struct>]
-    let (|ILAsm|_|) (e: FSharpExpr) = match e.E with E.ILAsm (a, b, c) -> ValueSome (a, b, c) | _ -> ValueNone
+    let (|ILAsm|_|) (e: FSharpExpr) = match e.E with E.ILAsm (a, b, c) -> Some (a, b, c) | _ -> None
 
-    [<return: Struct>]
-    let (|ILFieldGet|_|) (e: FSharpExpr) = match e.E with E.ILFieldGet (a, b, c) -> ValueSome (a, b, c) | _ -> ValueNone
+    let (|ILFieldGet|_|) (e: FSharpExpr) = match e.E with E.ILFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
 
-    [<return: Struct>]
-    let (|ILFieldSet|_|) (e: FSharpExpr) = match e.E with E.ILFieldSet (a, b, c, d) -> ValueSome (a, b, c, d) | _ -> ValueNone
+    let (|ILFieldSet|_|) (e: FSharpExpr) = match e.E with E.ILFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
 
-    [<return: Struct>]
-    let (|ObjectExpr|_|) (e: FSharpExpr) = match e.E with E.ObjectExpr (a, b, c, d) -> ValueSome (a, b, c, d) | _ -> ValueNone
+    let (|ObjectExpr|_|) (e: FSharpExpr) = match e.E with E.ObjectExpr (a, b, c, d) -> Some (a, b, c, d) | _ -> None
 
-    [<return: Struct>]
-    let (|DecisionTree|_|) (e: FSharpExpr) = match e.E with E.DecisionTree (a, b) -> ValueSome (a, b) | _ -> ValueNone
+    let (|DecisionTree|_|) (e: FSharpExpr) = match e.E with E.DecisionTree (a, b) -> Some (a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|DecisionTreeSuccess|_|) (e: FSharpExpr) = match e.E with E.DecisionTreeSuccess (a, b) -> ValueSome (a, b) | _ -> ValueNone
+    let (|DecisionTreeSuccess|_|) (e: FSharpExpr) = match e.E with E.DecisionTreeSuccess (a, b) -> Some (a, b) | _ -> None
 
-    [<return: Struct>]
-    let (|UnionCaseSet|_|) (e: FSharpExpr) = match e.E with E.UnionCaseSet (a, b, c, d, e) -> ValueSome (a, b, c, d, e) | _ -> ValueNone
+    let (|UnionCaseSet|_|) (e: FSharpExpr) = match e.E with E.UnionCaseSet (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
 
-    [<return: Struct>]
-    let (|TraitCall|_|) (e: FSharpExpr) = match e.E with E.TraitCall (a, b, c, d, e, f) -> ValueSome (a, b, c, d, e, f) | _ -> ValueNone
+    let (|TraitCall|_|) (e: FSharpExpr) = match e.E with E.TraitCall (a, b, c, d, e, f) -> Some (a, b, c, d, e, f) | _ -> None
 
-    [<return: Struct>]
-    let (|WitnessArg|_|) (e: FSharpExpr) = match e.E with E.WitnessArg n -> ValueSome n | _ -> ValueNone
+    let (|WitnessArg|_|) (e: FSharpExpr) = match e.E with E.WitnessArg n -> Some n | _ -> None
+
