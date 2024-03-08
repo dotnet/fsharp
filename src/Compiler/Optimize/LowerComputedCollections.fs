@@ -433,13 +433,44 @@ let (|SimpleSequential|_|) g expr =
 
     loop expr Expr.Sequential
 
+/// The representation used for
+///
 /// for … in … -> …
+///
+/// and
+///
+/// for … in … do yield …
+[<return: Struct>]
+let (|SeqMap|_|) g expr =
+    match expr with
+    | ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _) ->
+        ValueSome (ty1, ty2, input, mapping, loopVal, body)
+    | _ -> ValueNone
+
+/// The representation used for
+///
+/// for … in … do f (); …; yield …
+[<return: Struct>]
+let (|SeqCollectSingle|_|) g expr =
+    match expr with
+    | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = SimpleSequential g body) as mapping; input], _) ->
+        ValueSome (ty1, ty2, input, mapping, loopVal, body)
+    | _ -> ValueNone
+
+/// for … in … -> …
+/// for … in … do yield …
+/// for … in … do f (); …; yield …
 [<return: Struct>]
 let (|SimpleMapping|_|) g expr =
     match expr with
-    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _))], _)
-    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = SimpleSequential g body) as mapping; input], _))], _) ->
+    // for … in … -> …
+    // for … in … do yield …
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = SeqMap g (ty1, ty2, input, mapping, loopVal, body))], _)
+
+    // for … in … do f (); …; yield …
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = SeqCollectSingle g (ty1, ty2, input, mapping, loopVal, body))], _) ->
         ValueSome (ty1, ty2, input, mapping, loopVal, body)
+
     | _ -> ValueNone
 
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr =
