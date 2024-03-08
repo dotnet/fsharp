@@ -48,64 +48,101 @@
     
     .maxstack  5
     .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
-             class [runtime]System.Collections.Generic.IEnumerator`1<int32> V_1,
-             class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_2,
-             int32 V_3,
-             class [runtime]System.IDisposable V_4)
-    IL_0000:  nop
-    IL_0001:  ldc.i4.1
-    IL_0002:  ldc.i4.1
-    IL_0003:  ldc.i4.s   10
-    IL_0005:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                           int32,
-                                                                                                                                                                           int32)
-    IL_000a:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-    IL_000f:  stloc.1
-    .try
-    {
-      IL_0010:  br.s       IL_002a
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.1
+    IL_0003:  ldc.i4.1
+    IL_0004:  stloc.2
+    IL_0005:  br.s       IL_0023
 
-      IL_0012:  ldloc.1
-      IL_0013:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0018:  stloc.3
-      IL_0019:  ldarg.0
-      IL_001a:  ldnull
-      IL_001b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_0020:  pop
-      IL_0021:  ldloca.s   V_0
-      IL_0023:  ldloc.3
-      IL_0024:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-      IL_0029:  nop
-      IL_002a:  ldloc.1
-      IL_002b:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0030:  brtrue.s   IL_0012
+    IL_0007:  ldloca.s   V_0
+    IL_0009:  ldloc.2
+    IL_000a:  stloc.3
+    IL_000b:  ldarg.0
+    IL_000c:  ldnull
+    IL_000d:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0012:  pop
+    IL_0013:  ldloc.3
+    IL_0014:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0019:  nop
+    IL_001a:  ldloc.2
+    IL_001b:  ldc.i4.1
+    IL_001c:  add
+    IL_001d:  stloc.2
+    IL_001e:  ldloc.1
+    IL_001f:  ldc.i4.1
+    IL_0020:  conv.i8
+    IL_0021:  add
+    IL_0022:  stloc.1
+    IL_0023:  ldloc.1
+    IL_0024:  ldc.i4.s   10
+    IL_0026:  conv.i8
+    IL_0027:  blt.un.s   IL_0007
 
-      IL_0032:  ldnull
-      IL_0033:  stloc.2
-      IL_0034:  leave.s    IL_004b
-
-    }  
-    finally
-    {
-      IL_0036:  ldloc.1
-      IL_0037:  isinst     [runtime]System.IDisposable
-      IL_003c:  stloc.s    V_4
-      IL_003e:  ldloc.s    V_4
-      IL_0040:  brfalse.s  IL_004a
-
-      IL_0042:  ldloc.s    V_4
-      IL_0044:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_0049:  endfinally
-      IL_004a:  endfinally
-    }  
-    IL_004b:  ldloc.2
-    IL_004c:  pop
-    IL_004d:  ldloca.s   V_0
-    IL_004f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_0054:  ret
+    IL_0029:  ldloca.s   V_0
+    IL_002b:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0030:  ret
   } 
 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f00(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f) cil managed
+  .method public static int32[]  f00(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
+                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+    
+    .maxstack  6
+    .locals init (int32[] V_0,
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  ldc.i4.s   10
+    IL_0002:  conv.i8
+    IL_0003:  conv.ovf.i.un
+    IL_0004:  newarr     [runtime]System.Int32
+    IL_0009:  stloc.0
+    IL_000a:  ldc.i4.0
+    IL_000b:  conv.i8
+    IL_000c:  stloc.1
+    IL_000d:  ldc.i4.1
+    IL_000e:  stloc.2
+    IL_000f:  br.s       IL_0031
+
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.1
+    IL_0013:  conv.i
+    IL_0014:  ldloc.2
+    IL_0015:  stloc.3
+    IL_0016:  ldarg.0
+    IL_0017:  ldnull
+    IL_0018:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001d:  pop
+    IL_001e:  ldarg.1
+    IL_001f:  ldnull
+    IL_0020:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0025:  pop
+    IL_0026:  ldloc.3
+    IL_0027:  stelem.i4
+    IL_0028:  ldloc.2
+    IL_0029:  ldc.i4.1
+    IL_002a:  add
+    IL_002b:  stloc.2
+    IL_002c:  ldloc.1
+    IL_002d:  ldc.i4.1
+    IL_002e:  conv.i8
+    IL_002f:  add
+    IL_0030:  stloc.1
+    IL_0031:  ldloc.1
+    IL_0032:  ldc.i4.s   10
+    IL_0034:  conv.i8
+    IL_0035:  blt.un.s   IL_0011
+
+    IL_0037:  ldloc.0
+    IL_0038:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f000(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f) cil managed
   {
     
     .maxstack  5
@@ -173,7 +210,7 @@
     IL_005f:  ret
   } 
 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f000() cil managed
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f0000() cil managed
   {
     
     .maxstack  4

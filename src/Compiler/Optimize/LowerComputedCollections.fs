@@ -415,11 +415,29 @@ module Array =
                     )
             )
 
+/// f (); …; Seq.singleton x
+///
+/// E.g., in [for x in … do f (); …; yield x]
+[<return: Struct>]
+let (|SimpleSequential|_|) g expr =
+    let rec loop expr cont =
+        match expr with
+        | Expr.Sequential (expr1, DebugPoints (ValApp g g.seq_singleton_vref (_, [body], _), debug), kind, m) ->
+            ValueSome (cont (expr1, debug body, kind, m))
+
+        | Expr.Sequential (expr1, body, kind, m) ->
+            loop body (cont >> fun body -> Expr.Sequential (expr1, body, kind, m))
+
+        | _ -> ValueNone
+
+    loop expr Expr.Sequential
+
 /// for … in … -> …
 [<return: Struct>]
 let (|SimpleMapping|_|) g expr =
     match expr with
-    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _))], _) ->
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _))], _)
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = SimpleSequential g body) as mapping; input], _))], _) ->
         ValueSome (ty1, ty2, input, mapping, loopVal, body)
     | _ -> ValueNone
 
