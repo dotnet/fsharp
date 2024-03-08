@@ -321,8 +321,7 @@ type Exception with
         | BadEventTransformation _ -> 91
         | HashLoadedScriptConsideredSource _ -> 92
         | UnresolvedConversionOperator _ -> 93
-        | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer _ -> 318
-        | ArgumentsInSigAndImplMismatch _ -> 3218
+
         // avoid 94-100 for safety
         | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
@@ -330,6 +329,9 @@ type Exception with
         | TypeProviders.ProvidedTypeResolution _ -> 103
 #endif
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
+        | Failure _ -> 192
+        | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer _ -> 318
+        | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
@@ -337,7 +339,6 @@ type Exception with
         | DiagnosticWithText(n, _, _) -> n
         | DiagnosticWithSuggestions(n, _, _, _, _) -> n
         | DiagnosticEnabledWithLanguageFeature(n, _, _, _) -> n
-        | Failure _ -> 192
         | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar))
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Number
