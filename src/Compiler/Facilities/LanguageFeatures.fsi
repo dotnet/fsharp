@@ -76,7 +76,6 @@ type LanguageFeature =
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
-    | AllowAccessModifiersToAutoPropertiesGettersAndSetters
     | EnforceAttributeTargetsOnFunctions
     | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
