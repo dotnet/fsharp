@@ -227,11 +227,6 @@
         <target state="translated">conversões direcionadas por tipos adicionais</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
-        <source>Allow access modifiers to auto properties getters and setters</source>
-        <target state="new">Allow access modifiers to auto properties getters and setters</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">expressões de computação aplicáveis</target>
@@ -910,11 +905,6 @@
       <trans-unit id="packageManagementRequiresVFive">
         <source>The 'package management' feature requires language version 5.0 or above</source>
         <target state="translated">O recurso 'gerenciamento de pacotes' requer a versão 5.0 ou superior do idioma</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile">
-        <source>The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</source>
-        <target state="new">The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">

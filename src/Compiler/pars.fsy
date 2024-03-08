@@ -949,14 +949,7 @@ classMemberSpfn:
   | opt_attributes opt_access memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), (mEquals, optLiteralValue) = (Option.isSome $4), grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
-       let mWith, (getSet, getSetRangeOpt, getterAccess, setterAccess) = $10
-       match getterAccess with
-       | Some(x: SynAccess) -> warning(Error(FSComp.SR.parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile(), x.Range))
-       | _ -> ()
-       match setterAccess with
-       | Some(x: SynAccess) -> warning(Error(FSComp.SR.parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile(), x.Range))
-       | _ -> ()
-
+       let mWith, (getSet, getSetRangeOpt) = $10
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole =
            let m = rhs parseState 3
@@ -1028,7 +1021,7 @@ classMemberSpfn:
 /* The optional "with get, set" on a member in a signature */
 classMemberSpfnGetSet:
   | /* EMPTY */
-    { None, (SynMemberKind.Member, None, None, None) }
+    { None, (SynMemberKind.Member, None) }
 
   | WITH classMemberSpfnGetSetElements
     { let mWith = rhs parseState 1
@@ -1046,39 +1039,39 @@ classMemberSpfnGetSet:
 
 /* The "get, set" on a property member in a signature */
 classMemberSpfnGetSetElements:
-  | opt_access nameop
-    { (let (SynIdent(id:Ident, _)) = $2
+  | nameop
+    { (let (SynIdent(id:Ident, _)) = $1
        if id.idText = "get" then
-           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange), $1, None
+           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange)
        else if id.idText = "set" then
-           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange), None, $1
+           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange)
        else
            raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
-  | opt_access nameop COMMA opt_access nameop
-    { let (SynIdent(id, _)) = $2
-      let (SynIdent(id2, _)) = $5
+  | nameop COMMA nameop
+    { let (SynIdent(id, _)) = $1
+      let (SynIdent(id2, _)) = $3
       if not ((id.idText = "get" && id2.idText = "set") ||
               (id.idText = "set" && id2.idText = "get")) then
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
 
       if id.idText = "get" then
-          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, id2.idRange)), $1, $4
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, id2.idRange))
       else
-          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, id.idRange)), $4, $1 }
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, id.idRange)) }
 
-  | opt_access nameop COMMA recover
-    { (let (SynIdent(id:Ident, _)) = $2
+  | nameop COMMA recover
+    { (let (SynIdent(id:Ident, _)) = $1
        if id.idText = "get" then
-           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange), $1, None
+           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange)
        else if id.idText = "set" then
-           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange), None, $1
+           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange)
        else
-           raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsGetOrSetRequired())) }
+           raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
   | OBLOCKBEGIN oblockend ODECLEND
     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsIdentifierExpected())
-      SynMemberKind.Member, None, None, None }
+      SynMemberKind.Member, None }
 
 memberSpecFlags:
   | memberFlags { $1 }
@@ -2041,7 +2034,7 @@ classDefnMember:
   | opt_attributes opt_access abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet opt_ODECLEND
      { let ty, arity = $8
        let isInline, doc, id, explicitValTyparDecls = (Option.isSome $4), grabXmlDoc(parseState, $1, 1), $5, $6
-       let mWith, (getSet, getSetRangeOpt, getterAccess, setterAccess) = $9
+       let mWith, (getSet, getSetRangeOpt) = $9
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole =
            let m = rhs parseState 1
@@ -2049,8 +2042,7 @@ classDefnMember:
            | None -> unionRanges m ty.Range
            | Some gs -> unionRanges m gs.Range
            |> unionRangeWithXmlDoc doc
-       if Option.isSome $2 || Option.isSome getterAccess || Option.isSome setterAccess
-       then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
+       if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
        let mkFlags, leadingKeyword = $3
        let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $4; WithKeyword = mWith; EqualsRange = None }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
@@ -2189,7 +2181,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None, None, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
 
   | VAL opt_mutable opt_access ident opt_typ OBLOCKSEP
      { let mVal = rhs parseState 1
@@ -2202,7 +2194,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None, None, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
 
 | VAL opt_mutable opt_access recover
      { let mVal = rhs parseState 1
@@ -2212,7 +2204,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 id None None expr (None, (SynMemberKind.Member, None, None, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 id None None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
 
 /* An optional type on an auto-property definition */
 opt_typ:
