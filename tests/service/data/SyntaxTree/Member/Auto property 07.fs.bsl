@@ -32,8 +32,7 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, None, None, Const (Int32 7, (4,24--4,25)),
-                         (4,4--4,38),
+                         None, Const (Int32 7, (4,24--4,25)), (4,4--4,38),
                          { LeadingKeyword =
                             MemberVal ((4,4--4,10), (4,11--4,14))
                            WithKeyword = Some (4,26--4,30)

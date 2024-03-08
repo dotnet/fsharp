@@ -227,11 +227,6 @@
         <target state="translated">추가 형식-디렉션 변환</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
-        <source>Allow access modifiers to auto properties getters and setters</source>
-        <target state="new">Allow access modifiers to auto properties getters and setters</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">적용 가능한 계산 식</target>
@@ -910,11 +905,6 @@
       <trans-unit id="packageManagementRequiresVFive">
         <source>The 'package management' feature requires language version 5.0 or above</source>
         <target state="translated">'패키지 관리' 기능을 사용하려면 언어 버전 5.0 이상이 필요합니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile">
-        <source>The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</source>
-        <target state="new">The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
