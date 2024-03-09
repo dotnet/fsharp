@@ -70,17 +70,11 @@ let arityOfValForDisplay (v: Val) =
          | None -> ValReprInfo.emptyValData
          | Some info -> info
 
-let tupInfoRef = TupInfo.Const false
-
-let tupInfoStruct = TupInfo.Const true
-
-let mkTupInfo b = if b then tupInfoStruct else tupInfoRef
-
 let structnessDefault = false
 
-let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
+let mkRawRefTupleTy tys = TType_tuple (false, tys)
 
-let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
+let mkRawStructTupleTy tys = TType_tuple (true, tys)
 
 //---------------------------------------------------------------------------
 // Equality relations on locally defined things 

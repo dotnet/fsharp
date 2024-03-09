@@ -69,13 +69,13 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
     | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
-        (evalTupInfoIsStruct anonInfo1.TupInfo = evalTupInfoIsStruct anonInfo2.TupInfo) &&
+        (anonInfo1.IsStruct = anonInfo2.IsStruct) &&
         (match anonInfo1.Assembly, anonInfo2.Assembly with ccu1, ccu2 -> ccuEq ccu1 ccu2) &&
         (anonInfo1.SortedNames = anonInfo2.SortedNames) &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)     -> 
-        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
+    | TType_tuple (isStruct1, l1), TType_tuple (isStruct2, l2)     -> 
+        isStruct1 = isStruct2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2 
 
     | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) -> 

@@ -33,7 +33,7 @@ type Pattern =
         range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
     | TPat_exnconstr of TyconRef * Pattern list * range
-    | TPat_tuple of TupInfo * Pattern list * TType list * range
+    | TPat_tuple of isStruct: bool * Pattern list * TType list * range
     | TPat_array of Pattern list * TType * range
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
     | TPat_null of range

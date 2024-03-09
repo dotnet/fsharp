@@ -3068,7 +3068,7 @@ type TType =
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
 
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
-    | TType_tuple of tupInfo: TupInfo * elementTypes: TTypes
+    | TType_tuple of isStruct: bool * elementTypes: TTypes
 
     /// Indicates the type is a function type.
     ///
@@ -3105,14 +3105,14 @@ type TTypes = TType list
 [<RequireQualifiedAccess>]
 type AnonRecdTypeInfo =
     { mutable Assembly: CcuThunk
-      mutable TupInfo: TupInfo
+      mutable IsStruct: bool
       mutable SortedIds: Syntax.Ident[]
       mutable Stamp: Stamp
       mutable SortedNames: string[]
       mutable IlTypeName: int64 }
 
     /// Create an AnonRecdTypeInfo from the basic data
-    static member Create: ccu: CcuThunk * tupInfo: TupInfo * ids: Syntax.Ident[] -> AnonRecdTypeInfo
+    static member Create: ccu: CcuThunk * isStruct: bool * ids: Syntax.Ident[] -> AnonRecdTypeInfo
 
     static member NewUnlinked: unit -> AnonRecdTypeInfo
 
@@ -3128,12 +3128,6 @@ type AnonRecdTypeInfo =
 
     /// Get the core of the display name for one of the fields of the anonymous record, by index
     member DisplayNameCoreByIdx: idx: int -> string
-
-[<RequireQualifiedAccess>]
-type TupInfo =
-
-    /// Some constant, e.g. true or false for tupInfo
-    | Const of bool
 
 /// Represents a unit of measure in the typed AST
 [<RequireQualifiedAccess>]
@@ -3628,7 +3622,7 @@ type TOp =
     | ExnConstr of TyconRef
 
     /// An operation representing the creation of a tuple value
-    | Tuple of TupInfo
+    | Tuple of isStruct: bool
 
     /// An operation representing the creation of an anonymous record
     | AnonRecd of AnonRecdTypeInfo
@@ -3695,7 +3689,7 @@ type TOp =
     | ExnFieldSet of TyconRef * int
 
     /// An operation representing a field-get from an F# tuple value.
-    | TupleFieldGet of TupInfo * int
+    | TupleFieldGet of isStruct: bool * int
 
     /// IL assembly code - type list are the types pushed on the stack
     | ILAsm of instrs: ILInstr list * retTypes: TTypes
