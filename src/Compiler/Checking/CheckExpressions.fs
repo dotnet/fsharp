@@ -5124,22 +5124,23 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let vExprTy = vExpr.Type
 
     let activePatArgsAsSynPats, patArg =
-        match args with
-        | [] -> [], SynPat.Const(SynConst.Unit, m)
-        | _ ->
-            // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
-            let dtys, retTy = stripFunTy g vExprTy
-
-            if dtys.Length = args.Length + 1 &&
-                ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
-                (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy))) ||
-                // `bool` partial AP always be treated as `unit option`
-                // For `val (|P|_|) : _ -> bool`, only allow `match x with | P -> ...`
-                // For `val (|P|_|) : _ -> _ -> bool`, only allow `match x with | P parameter -> ...`
-                (not apinfo.IsTotal && isBoolTy g retTy) then
-                args, SynPat.Const(SynConst.Unit, m)
-            else
-                List.frontAndBack args
+        // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
+        let dtys, retTy = stripFunTy g vExprTy
+        if (not apinfo.IsTotal && isBoolTy g retTy) then
+            checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
+            if dtys.Length - 1 <> (args: _ list).Length then
+                errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 0, args.Length, 0), m))
+            args, SynPat.Const(SynConst.Unit, m)
+        elif dtys.Length = args.Length + 1 &&
+             ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
+              (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy))) then
+            args, SynPat.Const(SynConst.Unit, m)
+        else
+            if dtys.Length > args.Length then
+                errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 1, args.Length, 0), m))
+            elif dtys.Length < args.Length then
+                errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 1, args.Length - 1, 1), m))
+            List.frontAndBack args
 
     if not (isNil activePatArgsAsSynPats) && apinfo.ActiveTags.Length <> 1 then
         errorR (Error (FSComp.SR.tcRequireActivePatternWithOneResult (), m))

@@ -1112,6 +1112,11 @@
         <target state="translated">(建議的名稱)</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcActivePatternArgumentCountNotMatch">
+        <source>This active pattern case needs {0} argument(s) and {1} return value, but here has {2} argument(s) and {3} return value.</source>
+        <target state="new">This active pattern case needs {0} argument(s) and {1} return value, but here has {2} argument(s) and {3} return value.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="translated">此處的 _ 意義不明確。它不能在同一個範圍中既作為已捨棄的變數又作為函式速記。</target>
