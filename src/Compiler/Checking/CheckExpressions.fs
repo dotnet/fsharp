@@ -5132,12 +5132,22 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
             if dtys.Length - 1 <> (args: _ list).Length then
                 errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 0, args.Length, 0), m))
             args, SynPat.Const(SynConst.Unit, m)
-        elif dtys.Length = args.Length + 1 &&
-             ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
-              (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy)) ||
-              isUnitTy g retTy ||
-              (isChoiceTy g retTy && isUnitTy g (destChoiceTy g retTy idx))) then
-            args, SynPat.Const(SynConst.Unit, m)
+        elif dtys.Length = args.Length + 1 then
+             let IsNotSolved ty =
+                 match ty with
+                 | TType_var(v, _) -> not v.IsSolved
+                 | _ -> false
+
+             let caseRetTy =
+                 if isOptionTy g retTy then destOptionTy g retTy
+                 elif isValueOptionTy g retTy then destValueOptionTy g retTy
+                 elif isChoiceTy g retTy then destChoiceTy g retTy idx
+                 else retTy
+
+             if not (isUnitTy g caseRetTy || IsNotSolved caseRetTy) then
+                 errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 1, args.Length, 0), m))
+
+             args, SynPat.Const(SynConst.Unit, m)
         else
             if dtys.Length > args.Length then
                 errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 1, args.Length, 0), m))
