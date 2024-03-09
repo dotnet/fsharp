@@ -5135,7 +5135,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
         elif dtys.Length = args.Length + 1 &&
              ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
               (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy)) ||
-              isUnitTy g retTy) then
+              isUnitTy g retTy ||
+              (isChoiceTy g retTy && isUnitTy g (destChoiceTy g retTy idx))) then
             args, SynPat.Const(SynConst.Unit, m)
         else
             if dtys.Length > args.Length then
