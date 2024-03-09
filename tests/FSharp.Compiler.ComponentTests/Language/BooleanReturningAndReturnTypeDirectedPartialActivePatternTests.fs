@@ -93,25 +93,7 @@ match "A" with
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 1, Line 4, Col 3, Line 4, Col 13,
-         "This expression was expected to have type
-    'string -> bool'    
-but here has type
-    'bool'    ")
-        (Error 39, Line 4, Col 7, Line 4, Col 13,
-         "The value or constructor 'result' is not defined. Maybe you want one of the following:
-   Result")
-        (Error 1, Line 8, Col 3, Line 8, Col 13,
-         "This expression was expected to have type
-    'string -> bool'    
-but here has type
-    'bool'    ")
-        (Error 39, Line 8, Col 7, Line 8, Col 13,
-         "The value or constructor 'result' is not defined. Maybe you want one of the following:
-   Result")
-        (Error 1, Line 12, Col 3, Line 12, Col 30,
-         "This expression was expected to have type
-    'string -> bool'    
-but here has type
-    'bool'    ")
+        (Error 3866, Line 4, Col 3, Line 4, Col 13, "This active pattern case needs 0 argument(s) and 0 return value, but here has 1 argument(s) and 0 return value.")
+        (Error 3866, Line 8, Col 3, Line 8, Col 13, "This active pattern case needs 0 argument(s) and 0 return value, but here has 1 argument(s) and 0 return value.")
+        (Error 3866, Line 12, Col 3, Line 12, Col 30, "This active pattern case needs 0 argument(s) and 0 return value, but here has 1 argument(s) and 0 return value.")
     ]

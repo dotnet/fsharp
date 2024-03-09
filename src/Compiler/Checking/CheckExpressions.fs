@@ -5124,35 +5124,44 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let vExprTy = vExpr.Type
 
     let activePatArgsAsSynPats, patArg =
+        let rec IsNotSolved ty =
+            match ty with
+            | TType_var(v, _) when v.IsSolved ->
+                match v.Solution with
+                | Some t -> IsNotSolved t
+                | None -> false
+            | TType_var _ -> true
+            | _ -> false
+
         // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
         let dtys, retTy = stripFunTy g vExprTy
+        let paramCount = if dtys.Length = 0 then 0 else dtys.Length - 1
         
         if (not apinfo.IsTotal && isBoolTy g retTy) then
             checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
-            if dtys.Length - 1 <> (args: _ list).Length then
-                errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 0, args.Length, 0), m))
-            args, SynPat.Const(SynConst.Unit, m)
-        elif dtys.Length = args.Length + 1 then
-             let IsNotSolved ty =
-                 match ty with
-                 | TType_var(v, _) -> not v.IsSolved
-                 | _ -> false
+            if paramCount = (args: _ list).Length then
+                args, SynPat.Const(SynConst.Unit, m)
+            else
+                error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 0, args.Length, 0), m))
 
+        elif paramCount = args.Length then
              let caseRetTy =
                  if isOptionTy g retTy then destOptionTy g retTy
                  elif isValueOptionTy g retTy then destValueOptionTy g retTy
                  elif isChoiceTy g retTy then destChoiceTy g retTy idx
                  else retTy
 
-             if not (isUnitTy g caseRetTy || IsNotSolved caseRetTy) then
-                 errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 1, args.Length, 0), m))
-
-             args, SynPat.Const(SynConst.Unit, m)
+             if isUnitTy g caseRetTy || IsNotSolved caseRetTy then
+                args, SynPat.Const(SynConst.Unit, m)
+             else
+                 error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 1, args.Length, 0), m))
+        elif IsNotSolved vExprTy then 
+            List.frontAndBack args
+        elif dtys.Length > args.Length then
+            error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 1, args.Length, 0), m))
+        elif dtys.Length < args.Length then
+            error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 1, args.Length - 1, 1), m))
         else
-            if dtys.Length > args.Length then
-                errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 1, args.Length, 0), m))
-            elif dtys.Length < args.Length then
-                errorR(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(dtys.Length - 1, 1, args.Length - 1, 1), m))
             List.frontAndBack args
 
     if not (isNil activePatArgsAsSynPats) && apinfo.ActiveTags.Length <> 1 then
