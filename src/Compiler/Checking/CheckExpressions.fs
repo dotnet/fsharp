@@ -5126,6 +5126,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let activePatArgsAsSynPats, patArg =
         // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
         let dtys, retTy = stripFunTy g vExprTy
+        
         if (not apinfo.IsTotal && isBoolTy g retTy) then
             checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
             if dtys.Length - 1 <> (args: _ list).Length then
@@ -5133,7 +5134,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
             args, SynPat.Const(SynConst.Unit, m)
         elif dtys.Length = args.Length + 1 &&
              ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
-              (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy))) then
+              (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy)) ||
+              isUnitTy g retTy) then
             args, SynPat.Const(SynConst.Unit, m)
         else
             if dtys.Length > args.Length then
