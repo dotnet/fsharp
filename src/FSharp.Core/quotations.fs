@@ -27,7 +27,7 @@ module Helpers =
     let qOneOrMoreRLinear q inp =
         let rec queryAcc rvs e =
             match q e with
-            | Some (v, body) -> queryAcc (v :: rvs) body
+            | Some(v, body) -> queryAcc (v :: rvs) body
             | None ->
                 match rvs with
                 | [] -> None
@@ -38,7 +38,7 @@ module Helpers =
     let qOneOrMoreLLinear q inp =
         let rec queryAcc e rvs =
             match q e with
-            | Some (body, v) -> queryAcc body (v :: rvs)
+            | Some(body, v) -> queryAcc body (v :: rvs)
             | None ->
                 match rvs with
                 | [] -> None
@@ -92,7 +92,7 @@ module Helpers =
         | null -> nullArg argName
         | _ -> ()
 
-    let getTypesFromParamInfos (infos: ParameterInfo[]) =
+    let getTypesFromParamInfos (infos: ParameterInfo array) =
         infos |> Array.map (fun pi -> pi.ParameterType)
 
 open Helpers
@@ -237,10 +237,10 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
             let rec eq t1 t2 =
                 match t1, t2 with
                 // We special-case ValueOp to ensure that ValueWithName = Value
-                | CombTerm (ValueOp (v1, ty1, _), []), CombTerm (ValueOp (v2, ty2, _), []) -> (v1 = v2) && (ty1 = ty2)
+                | CombTerm(ValueOp(v1, ty1, _), []), CombTerm(ValueOp(v2, ty2, _), []) -> (v1 = v2) && (ty1 = ty2)
 
                 // We strip off InstanceMethodCallWOp to ensure that CallWithWitness = Call
-                | CombTerm (InstanceMethodCallWOp (minfo1, _minfoW1, nWitnesses1), obj1 :: args1WithoutObj), _ ->
+                | CombTerm(InstanceMethodCallWOp(minfo1, _minfoW1, nWitnesses1), obj1 :: args1WithoutObj), _ ->
                     if nWitnesses1 <= args1WithoutObj.Length then
                         let args1WithoutWitnesses = List.skip nWitnesses1 args1WithoutObj
                         eq (CombTerm(InstanceMethodCallOp(minfo1), obj1 :: args1WithoutWitnesses)) t2
@@ -248,30 +248,30 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
                         false
 
                 // We strip off InstanceMethodCallWOp to ensure that CallWithWitness = Call
-                | _, CombTerm (InstanceMethodCallWOp (minfo2, _minfoW2, nWitnesses2), obj2 :: args2WithoutObj) when
+                | _, CombTerm(InstanceMethodCallWOp(minfo2, _minfoW2, nWitnesses2), obj2 :: args2WithoutObj) when
                     nWitnesses2 <= args2WithoutObj.Length
                     ->
                     let args2WithoutWitnesses = List.skip nWitnesses2 args2WithoutObj
                     eq t1 (CombTerm(InstanceMethodCallOp(minfo2), obj2 :: args2WithoutWitnesses))
 
                 // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
-                | CombTerm (StaticMethodCallWOp (minfo1, _minfoW1, nWitnesses1), args1), _ when
+                | CombTerm(StaticMethodCallWOp(minfo1, _minfoW1, nWitnesses1), args1), _ when
                     nWitnesses1 <= args1.Length
                     ->
                     let argsWithoutWitnesses1 = List.skip nWitnesses1 args1
                     eq (CombTerm(StaticMethodCallOp(minfo1), argsWithoutWitnesses1)) t2
 
                 // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
-                | _, CombTerm (StaticMethodCallWOp (minfo2, _minfoW2, nWitnesses2), args2) when
+                | _, CombTerm(StaticMethodCallWOp(minfo2, _minfoW2, nWitnesses2), args2) when
                     nWitnesses2 <= args2.Length
                     ->
                     let argsWithoutWitnesses2 = List.skip nWitnesses2 args2
                     eq t1 (CombTerm(StaticMethodCallOp(minfo2), argsWithoutWitnesses2))
 
-                | CombTerm (c1, es1), CombTerm (c2, es2) -> c1 = c2 && es1.Length = es2.Length && (es1 = es2)
+                | CombTerm(c1, es1), CombTerm(c2, es2) -> c1 = c2 && es1.Length = es2.Length && (es1 = es2)
                 | VarTerm v1, VarTerm v2 -> (v1 = v2)
-                | LambdaTerm (v1, e1), LambdaTerm (v2, e2) -> (v1 = v2) && (e1 = e2)
-                | HoleTerm (ty1, n1), HoleTerm (ty2, n2) -> (ty1 = ty2) && (n1 = n2)
+                | LambdaTerm(v1, e1), LambdaTerm(v2, e2) -> (v1 = v2) && (e1 = e2)
+                | HoleTerm(ty1, n1), HoleTerm(ty2, n2) -> (ty1 = ty2) && (n1 = n2)
                 | _ -> false
 
             eq x.Tree y.Tree
@@ -329,7 +329,7 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
 
         let (|Lambda|_|) (E x) =
             match x with
-            | LambdaTerm (a, b) -> Some(a, b)
+            | LambdaTerm(a, b) -> Some(a, b)
             | _ -> None
 
         let (|IteratedLambda|_|) (e: Expr) =
@@ -368,66 +368,66 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
         let rec (|NLambdas|_|) n (e: Expr) =
             match e with
             | _ when n <= 0 -> Some([], e)
-            | Lambda (v, NLambdas ((-) n 1) (vs, b)) -> Some(v :: vs, b)
+            | Lambda(v, NLambdas ((-) n 1) (vs, b)) -> Some(v :: vs, b)
             | _ -> None
 
         match x.Tree with
-        | CombTerm (AppOp, args) -> combL "Application" (exprs args)
-        | CombTerm (IfThenElseOp, args) -> combL "IfThenElse" (exprs args)
-        | CombTerm (LetRecOp, [ IteratedLambda (vs, E (CombTerm (LetRecCombOp, b2 :: bs))) ]) ->
+        | CombTerm(AppOp, args) -> combL "Application" (exprs args)
+        | CombTerm(IfThenElseOp, args) -> combL "IfThenElse" (exprs args)
+        | CombTerm(LetRecOp, [ IteratedLambda(vs, E(CombTerm(LetRecCombOp, b2 :: bs))) ]) ->
             combL "LetRecursive" [ listL (List.map2 pairL (List.map varL vs) (exprs bs)); b2.GetLayout long ]
-        | CombTerm (LetOp, [ e; E (LambdaTerm (v, b)) ]) -> combL "Let" [ varL v; e.GetLayout long; b.GetLayout long ]
-        | CombTerm (NewRecordOp ty, args) -> combL "NewRecord" (typeL ty :: exprs args)
-        | CombTerm (NewUnionCaseOp unionCase, args) -> combL "NewUnionCase" (ucaseL unionCase :: exprs args)
-        | CombTerm (UnionCaseTestOp unionCase, args) -> combL "UnionCaseTest" (exprs args @ [ ucaseL unionCase ])
-        | CombTerm (NewTupleOp _, args) -> combL "NewTuple" (exprs args)
-        | CombTerm (TupleGetOp (_, i), [ arg ]) -> combL "TupleGet" ([ expr arg ] @ [ objL i ])
-        | CombTerm (ValueOp (v, _, Some nm), []) -> combL "ValueWithName" [ objL v; wordL (tagLocal nm) ]
-        | CombTerm (ValueOp (v, _, None), []) -> combL "Value" [ objL v ]
-        | CombTerm (WithValueOp (v, _), [ defn ]) -> combL "WithValue" [ objL v; expr defn ]
+        | CombTerm(LetOp, [ e; E(LambdaTerm(v, b)) ]) -> combL "Let" [ varL v; e.GetLayout long; b.GetLayout long ]
+        | CombTerm(NewRecordOp ty, args) -> combL "NewRecord" (typeL ty :: exprs args)
+        | CombTerm(NewUnionCaseOp unionCase, args) -> combL "NewUnionCase" (ucaseL unionCase :: exprs args)
+        | CombTerm(UnionCaseTestOp unionCase, args) -> combL "UnionCaseTest" (exprs args @ [ ucaseL unionCase ])
+        | CombTerm(NewTupleOp _, args) -> combL "NewTuple" (exprs args)
+        | CombTerm(TupleGetOp(_, i), [ arg ]) -> combL "TupleGet" ([ expr arg ] @ [ objL i ])
+        | CombTerm(ValueOp(v, _, Some nm), []) -> combL "ValueWithName" [ objL v; wordL (tagLocal nm) ]
+        | CombTerm(ValueOp(v, _, None), []) -> combL "Value" [ objL v ]
+        | CombTerm(WithValueOp(v, _), [ defn ]) -> combL "WithValue" [ objL v; expr defn ]
 
-        | CombTerm (InstanceMethodCallOp (minfo), obj :: args) ->
+        | CombTerm(InstanceMethodCallOp(minfo), obj :: args) ->
             combL "Call" [ someL obj; minfoL minfo; listL (exprs args) ]
 
-        | CombTerm (StaticMethodCallOp (minfo), args) -> combL "Call" [ noneL; minfoL minfo; listL (exprs args) ]
+        | CombTerm(StaticMethodCallOp(minfo), args) -> combL "Call" [ noneL; minfoL minfo; listL (exprs args) ]
 
-        | CombTerm (InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), obj :: argsWithoutObj) when
+        | CombTerm(InstanceMethodCallWOp(minfo, _minfoW, nWitnesses), obj :: argsWithoutObj) when
             nWitnesses <= argsWithoutObj.Length
             ->
             let argsWithoutWitnesses = List.skip nWitnesses argsWithoutObj
             combL "Call" [ someL obj; minfoL minfo; listL (exprs argsWithoutWitnesses) ]
 
-        | CombTerm (StaticMethodCallWOp (minfo, _minfoW, nWitnesses), args) when nWitnesses <= args.Length ->
+        | CombTerm(StaticMethodCallWOp(minfo, _minfoW, nWitnesses), args) when nWitnesses <= args.Length ->
             let argsWithoutWitnesses = List.skip nWitnesses args
             combL "Call" [ noneL; minfoL minfo; listL (exprs argsWithoutWitnesses) ]
 
-        | CombTerm (InstancePropGetOp (pinfo), (obj :: args)) ->
+        | CombTerm(InstancePropGetOp(pinfo), (obj :: args)) ->
             combL "PropertyGet" [ someL obj; pinfoL pinfo; listL (exprs args) ]
-        | CombTerm (StaticPropGetOp (pinfo), args) -> combL "PropertyGet" [ noneL; pinfoL pinfo; listL (exprs args) ]
-        | CombTerm (InstancePropSetOp (pinfo), (obj :: args)) ->
+        | CombTerm(StaticPropGetOp(pinfo), args) -> combL "PropertyGet" [ noneL; pinfoL pinfo; listL (exprs args) ]
+        | CombTerm(InstancePropSetOp(pinfo), (obj :: args)) ->
             combL "PropertySet" [ someL obj; pinfoL pinfo; listL (exprs args) ]
-        | CombTerm (StaticPropSetOp (pinfo), args) -> combL "PropertySet" [ noneL; pinfoL pinfo; listL (exprs args) ]
-        | CombTerm (InstanceFieldGetOp (finfo), [ obj ]) -> combL "FieldGet" [ someL obj; finfoL finfo ]
-        | CombTerm (StaticFieldGetOp (finfo), []) -> combL "FieldGet" [ noneL; finfoL finfo ]
-        | CombTerm (InstanceFieldSetOp (finfo), [ obj; v ]) -> combL "FieldSet" [ someL obj; finfoL finfo; expr v ]
-        | CombTerm (StaticFieldSetOp (finfo), [ v ]) -> combL "FieldSet" [ noneL; finfoL finfo; expr v ]
-        | CombTerm (CoerceOp (ty), [ arg ]) -> combL "Coerce" [ expr arg; typeL ty ]
-        | CombTerm (NewObjectOp cinfo, args) -> combL "NewObject" ([ cinfoL cinfo ] @ exprs args)
-        | CombTerm (DefaultValueOp ty, args) -> combL "DefaultValue" ([ typeL ty ] @ exprs args)
-        | CombTerm (NewArrayOp ty, args) -> combL "NewArray" ([ typeL ty ] @ exprs args)
-        | CombTerm (TypeTestOp ty, args) -> combL "TypeTest" ([ typeL ty ] @ exprs args)
-        | CombTerm (AddressOfOp, args) -> combL "AddressOf" (exprs args)
-        | CombTerm (VarSetOp, [ E (VarTerm v); e ]) -> combL "VarSet" [ varL v; expr e ]
-        | CombTerm (AddressSetOp, args) -> combL "AddressSet" (exprs args)
-        | CombTerm (ForIntegerRangeLoopOp, [ e1; e2; E (LambdaTerm (v, e3)) ]) ->
+        | CombTerm(StaticPropSetOp(pinfo), args) -> combL "PropertySet" [ noneL; pinfoL pinfo; listL (exprs args) ]
+        | CombTerm(InstanceFieldGetOp(finfo), [ obj ]) -> combL "FieldGet" [ someL obj; finfoL finfo ]
+        | CombTerm(StaticFieldGetOp(finfo), []) -> combL "FieldGet" [ noneL; finfoL finfo ]
+        | CombTerm(InstanceFieldSetOp(finfo), [ obj; v ]) -> combL "FieldSet" [ someL obj; finfoL finfo; expr v ]
+        | CombTerm(StaticFieldSetOp(finfo), [ v ]) -> combL "FieldSet" [ noneL; finfoL finfo; expr v ]
+        | CombTerm(CoerceOp(ty), [ arg ]) -> combL "Coerce" [ expr arg; typeL ty ]
+        | CombTerm(NewObjectOp cinfo, args) -> combL "NewObject" ([ cinfoL cinfo ] @ exprs args)
+        | CombTerm(DefaultValueOp ty, args) -> combL "DefaultValue" ([ typeL ty ] @ exprs args)
+        | CombTerm(NewArrayOp ty, args) -> combL "NewArray" ([ typeL ty ] @ exprs args)
+        | CombTerm(TypeTestOp ty, args) -> combL "TypeTest" ([ typeL ty ] @ exprs args)
+        | CombTerm(AddressOfOp, args) -> combL "AddressOf" (exprs args)
+        | CombTerm(VarSetOp, [ E(VarTerm v); e ]) -> combL "VarSet" [ varL v; expr e ]
+        | CombTerm(AddressSetOp, args) -> combL "AddressSet" (exprs args)
+        | CombTerm(ForIntegerRangeLoopOp, [ e1; e2; E(LambdaTerm(v, e3)) ]) ->
             combL "ForIntegerRangeLoop" [ varL v; expr e1; expr e2; expr e3 ]
-        | CombTerm (WhileLoopOp, args) -> combL "WhileLoop" (exprs args)
-        | CombTerm (TryFinallyOp, args) -> combL "TryFinally" (exprs args)
-        | CombTerm (TryWithOp, [ e1; Lambda (v1, e2); Lambda (v2, e3) ]) ->
+        | CombTerm(WhileLoopOp, args) -> combL "WhileLoop" (exprs args)
+        | CombTerm(TryFinallyOp, args) -> combL "TryFinally" (exprs args)
+        | CombTerm(TryWithOp, [ e1; Lambda(v1, e2); Lambda(v2, e3) ]) ->
             combL "TryWith" [ expr e1; varL v1; expr e2; varL v2; expr e3 ]
-        | CombTerm (SequentialOp, args) -> combL "Sequential" (exprs args)
+        | CombTerm(SequentialOp, args) -> combL "Sequential" (exprs args)
 
-        | CombTerm (NewDelegateOp ty, [ e ]) ->
+        | CombTerm(NewDelegateOp ty, [ e ]) ->
             let nargs = (getDelegateInvoke ty).GetParameters().Length
 
             if nargs = 0 then
@@ -440,9 +440,9 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
                 | NLambdas nargs (vs, e) -> combL "NewDelegate" ([ typeL ty ] @ (vs |> List.map varL) @ [ expr e ])
                 | _ -> combL "NewDelegate" [ typeL ty; expr e ]
         | VarTerm v -> wordL (tagLocal v.Name)
-        | LambdaTerm (v, b) -> combL "Lambda" [ varL v; expr b ]
+        | LambdaTerm(v, b) -> combL "Lambda" [ varL v; expr b ]
         | HoleTerm _ -> wordL (tagLocal "_")
-        | CombTerm (QuoteOp _, args) -> combL "Quote" (exprs args)
+        | CombTerm(QuoteOp _, args) -> combL "Quote" (exprs args)
         | _ -> failwithf "Unexpected term"
 
 and [<CompiledName("FSharpExpr`1")>] Expr<'T>(term: Tree, attribs) =
@@ -456,7 +456,7 @@ module Patterns =
     /// as a computation.
     type Instantiable<'T> = (int -> Type) -> 'T
 
-    type ByteStream(bytes: byte[], initial: int, len: int) =
+    type ByteStream(bytes: byte array, initial: int, len: int) =
 
         let mutable pos = initial
         let lim = initial + len
@@ -500,7 +500,7 @@ module Patterns =
 
         loop [] es
 
-    let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition ()
+    let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()
     let exprTyC = typedefof<Expr<int>>
     let voidTy = typeof<System.Void>
     let unitTy = typeof<unit>
@@ -526,22 +526,22 @@ module Patterns =
 
     let (|Comb0|_|) (E x) =
         match x with
-        | CombTerm (k, []) -> Some k
+        | CombTerm(k, []) -> Some k
         | _ -> None
 
     let (|Comb1|_|) (E x) =
         match x with
-        | CombTerm (k, [ x ]) -> Some(k, x)
+        | CombTerm(k, [ x ]) -> Some(k, x)
         | _ -> None
 
     let (|Comb2|_|) (E x) =
         match x with
-        | CombTerm (k, [ x1; x2 ]) -> Some(k, x1, x2)
+        | CombTerm(k, [ x1; x2 ]) -> Some(k, x1, x2)
         | _ -> None
 
     let (|Comb3|_|) (E x) =
         match x with
-        | CombTerm (k, [ x1; x2; x3 ]) -> Some(k, x1, x2, x3)
+        | CombTerm(k, [ x1; x2; x3 ]) -> Some(k, x1, x2, x3)
         | _ -> None
 
     [<CompiledName("VarPattern")>]
@@ -553,218 +553,218 @@ module Patterns =
     [<CompiledName("ApplicationPattern")>]
     let (|Application|_|) input =
         match input with
-        | Comb2 (AppOp, a, b) -> Some(a, b)
+        | Comb2(AppOp, a, b) -> Some(a, b)
         | _ -> None
 
     [<CompiledName("LambdaPattern")>]
     let (|Lambda|_|) (E x) =
         match x with
-        | LambdaTerm (a, b) -> Some(a, b)
+        | LambdaTerm(a, b) -> Some(a, b)
         | _ -> None
 
     [<CompiledName("QuotePattern")>]
     let (|Quote|_|) (E x) =
         match x with
-        | CombTerm (QuoteOp _, [ a ]) -> Some(a)
+        | CombTerm(QuoteOp _, [ a ]) -> Some(a)
         | _ -> None
 
     [<CompiledName("QuoteRawPattern")>]
     let (|QuoteRaw|_|) (E x) =
         match x with
-        | CombTerm (QuoteOp false, [ a ]) -> Some(a)
+        | CombTerm(QuoteOp false, [ a ]) -> Some(a)
         | _ -> None
 
     [<CompiledName("QuoteTypedPattern")>]
     let (|QuoteTyped|_|) (E x) =
         match x with
-        | CombTerm (QuoteOp true, [ a ]) -> Some(a)
+        | CombTerm(QuoteOp true, [ a ]) -> Some(a)
         | _ -> None
 
     [<CompiledName("IfThenElsePattern")>]
     let (|IfThenElse|_|) input =
         match input with
-        | Comb3 (IfThenElseOp, e1, e2, e3) -> Some(e1, e2, e3)
+        | Comb3(IfThenElseOp, e1, e2, e3) -> Some(e1, e2, e3)
         | _ -> None
 
     [<CompiledName("NewTuplePattern")>]
     let (|NewTuple|_|) input =
         match input with
-        | E (CombTerm (NewTupleOp (_), es)) -> Some es
+        | E(CombTerm(NewTupleOp(_), es)) -> Some es
         | _ -> None
 
     [<CompiledName("NewStructTuplePattern")>]
     let (|NewStructTuple|_|) input =
         match input with
-        | E (CombTerm (NewTupleOp (ty), es)) when ty.IsValueType -> Some es
+        | E(CombTerm(NewTupleOp(ty), es)) when ty.IsValueType -> Some es
         | _ -> None
 
     [<CompiledName("DefaultValuePattern")>]
     let (|DefaultValue|_|) input =
         match input with
-        | E (CombTerm (DefaultValueOp ty, [])) -> Some ty
+        | E(CombTerm(DefaultValueOp ty, [])) -> Some ty
         | _ -> None
 
     [<CompiledName("NewRecordPattern")>]
     let (|NewRecord|_|) input =
         match input with
-        | E (CombTerm (NewRecordOp x, es)) -> Some(x, es)
+        | E(CombTerm(NewRecordOp x, es)) -> Some(x, es)
         | _ -> None
 
     [<CompiledName("NewUnionCasePattern")>]
     let (|NewUnionCase|_|) input =
         match input with
-        | E (CombTerm (NewUnionCaseOp unionCase, es)) -> Some(unionCase, es)
+        | E(CombTerm(NewUnionCaseOp unionCase, es)) -> Some(unionCase, es)
         | _ -> None
 
     [<CompiledName("UnionCaseTestPattern")>]
     let (|UnionCaseTest|_|) input =
         match input with
-        | Comb1 (UnionCaseTestOp unionCase, e) -> Some(e, unionCase)
+        | Comb1(UnionCaseTestOp unionCase, e) -> Some(e, unionCase)
         | _ -> None
 
     [<CompiledName("TupleGetPattern")>]
     let (|TupleGet|_|) input =
         match input with
-        | Comb1 (TupleGetOp (_, n), e) -> Some(e, n)
+        | Comb1(TupleGetOp(_, n), e) -> Some(e, n)
         | _ -> None
 
     [<CompiledName("CoercePattern")>]
     let (|Coerce|_|) input =
         match input with
-        | Comb1 (CoerceOp ty, e1) -> Some(e1, ty)
+        | Comb1(CoerceOp ty, e1) -> Some(e1, ty)
         | _ -> None
 
     [<CompiledName("TypeTestPattern")>]
     let (|TypeTest|_|) input =
         match input with
-        | Comb1 (TypeTestOp ty, e1) -> Some(e1, ty)
+        | Comb1(TypeTestOp ty, e1) -> Some(e1, ty)
         | _ -> None
 
     [<CompiledName("NewArrayPattern")>]
     let (|NewArray|_|) input =
         match input with
-        | E (CombTerm (NewArrayOp ty, es)) -> Some(ty, es)
+        | E(CombTerm(NewArrayOp ty, es)) -> Some(ty, es)
         | _ -> None
 
     [<CompiledName("AddressSetPattern")>]
     let (|AddressSet|_|) input =
         match input with
-        | E (CombTerm (AddressSetOp, [ e; v ])) -> Some(e, v)
+        | E(CombTerm(AddressSetOp, [ e; v ])) -> Some(e, v)
         | _ -> None
 
     [<CompiledName("TryFinallyPattern")>]
     let (|TryFinally|_|) input =
         match input with
-        | E (CombTerm (TryFinallyOp, [ e1; e2 ])) -> Some(e1, e2)
+        | E(CombTerm(TryFinallyOp, [ e1; e2 ])) -> Some(e1, e2)
         | _ -> None
 
     [<CompiledName("TryWithPattern")>]
     let (|TryWith|_|) input =
         match input with
-        | E (CombTerm (TryWithOp, [ e1; Lambda (v1, e2); Lambda (v2, e3) ])) -> Some(e1, v1, e2, v2, e3)
+        | E(CombTerm(TryWithOp, [ e1; Lambda(v1, e2); Lambda(v2, e3) ])) -> Some(e1, v1, e2, v2, e3)
         | _ -> None
 
     [<CompiledName("VarSetPattern")>]
     let (|VarSet|_|) input =
         match input with
-        | E (CombTerm (VarSetOp, [ E (VarTerm v); e ])) -> Some(v, e)
+        | E(CombTerm(VarSetOp, [ E(VarTerm v); e ])) -> Some(v, e)
         | _ -> None
 
     [<CompiledName("ValuePattern")>]
     let (|Value|_|) input =
         match input with
-        | E (CombTerm (ValueOp (v, ty, _), _)) -> Some(v, ty)
+        | E(CombTerm(ValueOp(v, ty, _), _)) -> Some(v, ty)
         | _ -> None
 
     [<CompiledName("ValueObjPattern")>]
     let (|ValueObj|_|) input =
         match input with
-        | E (CombTerm (ValueOp (v, _, _), _)) -> Some v
+        | E(CombTerm(ValueOp(v, _, _), _)) -> Some v
         | _ -> None
 
     [<CompiledName("ValueWithNamePattern")>]
     let (|ValueWithName|_|) input =
         match input with
-        | E (CombTerm (ValueOp (v, ty, Some nm), _)) -> Some(v, ty, nm)
+        | E(CombTerm(ValueOp(v, ty, Some nm), _)) -> Some(v, ty, nm)
         | _ -> None
 
     [<CompiledName("WithValuePattern")>]
     let (|WithValue|_|) input =
         match input with
-        | E (CombTerm (WithValueOp (v, ty), [ e ])) -> Some(v, ty, e)
+        | E(CombTerm(WithValueOp(v, ty), [ e ])) -> Some(v, ty, e)
         | _ -> None
 
     [<CompiledName("AddressOfPattern")>]
     let (|AddressOf|_|) input =
         match input with
-        | Comb1 (AddressOfOp, e) -> Some e
+        | Comb1(AddressOfOp, e) -> Some e
         | _ -> None
 
     [<CompiledName("SequentialPattern")>]
     let (|Sequential|_|) input =
         match input with
-        | Comb2 (SequentialOp, e1, e2) -> Some(e1, e2)
+        | Comb2(SequentialOp, e1, e2) -> Some(e1, e2)
         | _ -> None
 
     [<CompiledName("ForIntegerRangeLoopPattern")>]
     let (|ForIntegerRangeLoop|_|) input =
         match input with
-        | Comb3 (ForIntegerRangeLoopOp, e1, e2, Lambda (v, e3)) -> Some(v, e1, e2, e3)
+        | Comb3(ForIntegerRangeLoopOp, e1, e2, Lambda(v, e3)) -> Some(v, e1, e2, e3)
         | _ -> None
 
     [<CompiledName("WhileLoopPattern")>]
     let (|WhileLoop|_|) input =
         match input with
-        | Comb2 (WhileLoopOp, e1, e2) -> Some(e1, e2)
+        | Comb2(WhileLoopOp, e1, e2) -> Some(e1, e2)
         | _ -> None
 
     [<CompiledName("PropertyGetPattern")>]
     let (|PropertyGet|_|) input =
         match input with
-        | E (CombTerm (StaticPropGetOp pinfo, args)) -> Some(None, pinfo, args)
-        | E (CombTerm (InstancePropGetOp pinfo, obj :: args)) -> Some(Some obj, pinfo, args)
+        | E(CombTerm(StaticPropGetOp pinfo, args)) -> Some(None, pinfo, args)
+        | E(CombTerm(InstancePropGetOp pinfo, obj :: args)) -> Some(Some obj, pinfo, args)
         | _ -> None
 
     [<CompiledName("PropertySetPattern")>]
     let (|PropertySet|_|) input =
         match input with
-        | E (CombTerm (StaticPropSetOp pinfo, FrontAndBack (args, v))) -> Some(None, pinfo, args, v)
-        | E (CombTerm (InstancePropSetOp pinfo, obj :: FrontAndBack (args, v))) -> Some(Some obj, pinfo, args, v)
+        | E(CombTerm(StaticPropSetOp pinfo, FrontAndBack(args, v))) -> Some(None, pinfo, args, v)
+        | E(CombTerm(InstancePropSetOp pinfo, obj :: FrontAndBack(args, v))) -> Some(Some obj, pinfo, args, v)
         | _ -> None
 
     [<CompiledName("FieldGetPattern")>]
     let (|FieldGet|_|) input =
         match input with
-        | E (CombTerm (StaticFieldGetOp finfo, [])) -> Some(None, finfo)
-        | E (CombTerm (InstanceFieldGetOp finfo, [ obj ])) -> Some(Some obj, finfo)
+        | E(CombTerm(StaticFieldGetOp finfo, [])) -> Some(None, finfo)
+        | E(CombTerm(InstanceFieldGetOp finfo, [ obj ])) -> Some(Some obj, finfo)
         | _ -> None
 
     [<CompiledName("FieldSetPattern")>]
     let (|FieldSet|_|) input =
         match input with
-        | E (CombTerm (StaticFieldSetOp finfo, [ v ])) -> Some(None, finfo, v)
-        | E (CombTerm (InstanceFieldSetOp finfo, [ obj; v ])) -> Some(Some obj, finfo, v)
+        | E(CombTerm(StaticFieldSetOp finfo, [ v ])) -> Some(None, finfo, v)
+        | E(CombTerm(InstanceFieldSetOp finfo, [ obj; v ])) -> Some(Some obj, finfo, v)
         | _ -> None
 
     [<CompiledName("NewObjectPattern")>]
     let (|NewObject|_|) input =
         match input with
-        | E (CombTerm (NewObjectOp ty, e)) -> Some(ty, e)
+        | E(CombTerm(NewObjectOp ty, e)) -> Some(ty, e)
         | _ -> None
 
     [<CompiledName("CallPattern")>]
     let (|Call|_|) input =
         match input with
-        | E (CombTerm (StaticMethodCallOp minfo, args)) -> Some(None, minfo, args)
+        | E(CombTerm(StaticMethodCallOp minfo, args)) -> Some(None, minfo, args)
 
-        | E (CombTerm (InstanceMethodCallOp minfo, (obj :: args))) -> Some(Some(obj), minfo, args)
+        | E(CombTerm(InstanceMethodCallOp minfo, (obj :: args))) -> Some(Some(obj), minfo, args)
 
         // A StaticMethodCallWOp matches as if it were a StaticMethodCallOp
-        | E (CombTerm (StaticMethodCallWOp (minfo, _minfoW, nWitnesses), args)) when nWitnesses <= args.Length ->
+        | E(CombTerm(StaticMethodCallWOp(minfo, _minfoW, nWitnesses), args)) when nWitnesses <= args.Length ->
             Some(None, minfo, List.skip nWitnesses args)
 
         // A InstanceMethodCallWOp matches as if it were a InstanceMethodCallOp
-        | E (CombTerm (InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), obj :: argsWithoutObj)) when
+        | E(CombTerm(InstanceMethodCallWOp(minfo, _minfoW, nWitnesses), obj :: argsWithoutObj)) when
             nWitnesses <= argsWithoutObj.Length
             ->
             let argsWithoutWitnesses = List.skip nWitnesses argsWithoutObj
@@ -775,14 +775,14 @@ module Patterns =
     [<CompiledName("CallWithWitnessesPattern")>]
     let (|CallWithWitnesses|_|) input =
         match input with
-        | E (CombTerm (StaticMethodCallWOp (minfo, minfoW, nWitnesses), args)) ->
+        | E(CombTerm(StaticMethodCallWOp(minfo, minfoW, nWitnesses), args)) ->
             if args.Length >= nWitnesses then
                 let witnessArgs, argsWithoutWitnesses = List.splitAt nWitnesses args
                 Some(None, minfo, minfoW, witnessArgs, argsWithoutWitnesses)
             else
                 None
 
-        | E (CombTerm (InstanceMethodCallWOp (minfo, minfoW, nWitnesses), obj :: argsWithoutObj)) ->
+        | E(CombTerm(InstanceMethodCallWOp(minfo, minfoW, nWitnesses), obj :: argsWithoutObj)) ->
             if argsWithoutObj.Length >= nWitnesses then
                 let witnessArgs, argsWithoutWitnesses = List.splitAt nWitnesses argsWithoutObj
                 Some(Some obj, minfo, minfoW, witnessArgs, argsWithoutWitnesses)
@@ -793,18 +793,18 @@ module Patterns =
 
     let (|LetRaw|_|) input =
         match input with
-        | Comb2 (LetOp, e1, e2) -> Some(e1, e2)
+        | Comb2(LetOp, e1, e2) -> Some(e1, e2)
         | _ -> None
 
     let (|LetRecRaw|_|) input =
         match input with
-        | Comb1 (LetRecOp, e1) -> Some e1
+        | Comb1(LetRecOp, e1) -> Some e1
         | _ -> None
 
     [<CompiledName("LetPattern")>]
     let (|Let|_|) input =
         match input with
-        | LetRaw (e, Lambda (v, body)) -> Some(v, e, body)
+        | LetRaw(e, Lambda(v, body)) -> Some(v, e, body)
         | _ -> None
 
     let (|IteratedLambda|_|) (e: Expr) =
@@ -813,13 +813,13 @@ module Patterns =
     let rec (|NLambdas|_|) n (e: Expr) =
         match e with
         | _ when n <= 0 -> Some([], e)
-        | Lambda (v, NLambdas ((-) n 1) (vs, b)) -> Some(v :: vs, b)
+        | Lambda(v, NLambdas ((-) n 1) (vs, b)) -> Some(v :: vs, b)
         | _ -> None
 
     [<CompiledName("NewDelegatePattern")>]
     let (|NewDelegate|_|) input =
         match input with
-        | Comb1 (NewDelegateOp ty, e) ->
+        | Comb1(NewDelegateOp ty, e) ->
             let nargs = (getDelegateInvoke ty).GetParameters().Length
 
             if nargs = 0 then
@@ -836,7 +836,7 @@ module Patterns =
     [<CompiledName("LetRecursivePattern")>]
     let (|LetRecursive|_|) input =
         match input with
-        | LetRecRaw (IteratedLambda (vs1, E (CombTerm (LetRecCombOp, body :: es)))) -> Some(List.zip vs1 es, body)
+        | LetRecRaw(IteratedLambda(vs1, E(CombTerm(LetRecCombOp, body :: es)))) -> Some(List.zip vs1 es, body)
         | _ -> None
 
     //--------------------------------------------------------------------------
@@ -848,7 +848,7 @@ module Patterns =
         let mems = FSharpType.GetRecordFields(ty, publicOrPrivateBindingFlags)
 
         match mems |> Array.tryFind (fun minfo -> minfo.Name = fieldName) with
-        | Some (m) -> m
+        | Some(m) -> m
         | _ -> invalidArg "fieldName" (String.Format(SR.GetString(SR.QmissingRecordField), ty.FullName, fieldName))
 
     let getUnionCaseInfo (ty, unionCaseName) =
@@ -882,27 +882,27 @@ module Patterns =
 
         match t with
         | VarTerm v -> v.Type
-        | LambdaTerm (v, b) -> mkFunTy v.Type (typeOf b)
-        | HoleTerm (ty, _) -> ty
-        | CombTerm (c, args) ->
+        | LambdaTerm(v, b) -> mkFunTy v.Type (typeOf b)
+        | HoleTerm(ty, _) -> ty
+        | CombTerm(c, args) ->
             match c, args with
             | AppOp, [ f; _ ] -> typeOfAppliedLambda f
             | LetOp, _ ->
                 match e with
-                | Let (_, _, b) -> typeOf b
+                | Let(_, _, b) -> typeOf b
                 | _ -> failwith "unreachable"
             | IfThenElseOp, [ _; t; _ ] -> typeOf t
             | LetRecOp, _ ->
                 match e with
-                | LetRecursive (_, b) -> typeOf b
+                | LetRecursive(_, b) -> typeOf b
                 | _ -> failwith "unreachable"
             | LetRecCombOp, _ -> failwith "typeOfConst: LetRecCombOp"
             | NewRecordOp ty, _ -> ty
             | NewUnionCaseOp unionCase, _ -> unionCase.DeclaringType
             | UnionCaseTestOp _, _ -> typeof<Boolean>
-            | ValueOp (_, ty, _), _ -> ty
-            | WithValueOp (_, ty), _ -> ty
-            | TupleGetOp (ty, i), _ -> FSharpType.GetTupleElements(ty).[i]
+            | ValueOp(_, ty, _), _ -> ty
+            | WithValueOp(_, ty), _ -> ty
+            | TupleGetOp(ty, i), _ -> FSharpType.GetTupleElements(ty).[i]
             | NewTupleOp ty, _ -> ty
             | StaticPropGetOp prop, _ -> prop.PropertyType
             | InstancePropGetOp prop, _ -> prop.PropertyType
@@ -915,8 +915,8 @@ module Patterns =
             | NewObjectOp ctor, _ -> ctor.DeclaringType
             | InstanceMethodCallOp minfo, _ -> minfo.ReturnType |> removeVoid
             | StaticMethodCallOp minfo, _ -> minfo.ReturnType |> removeVoid
-            | InstanceMethodCallWOp (_, minfoW, _), _ -> minfoW.ReturnType |> removeVoid
-            | StaticMethodCallWOp (_, minfoW, _), _ -> minfoW.ReturnType |> removeVoid
+            | InstanceMethodCallWOp(_, minfoW, _), _ -> minfoW.ReturnType |> removeVoid
+            | StaticMethodCallWOp(_, minfoW, _), _ -> minfoW.ReturnType |> removeVoid
             | CoerceOp ty, _ -> ty
             | SequentialOp, [ _; b ] -> typeOf b
             | ForIntegerRangeLoopOp, _ -> typeof<Unit>
@@ -970,7 +970,7 @@ module Patterns =
         if (not (assignableFrom expectedType receivedType)) then
             invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
-    let checkArgs (paramInfos: ParameterInfo[]) (args: Expr list) =
+    let checkArgs (paramInfos: ParameterInfo array) (args: Expr list) =
         if (paramInfos.Length <> args.Length) then
             invalidArg "args" (SR.GetString(SR.QincorrectNumArgs))
 
@@ -1381,7 +1381,7 @@ module Patterns =
     let typesEqual (tys1: Type list) (tys2: Type list) =
         (tys1.Length = tys2.Length) && List.forall2 typeEquals tys1 tys2
 
-    let instFormal (typarEnv: Type[]) (ty: Instantiable<'T>) =
+    let instFormal (typarEnv: Type array) (ty: Instantiable<'T>) =
         ty (fun i -> typarEnv.[i])
 
     let getGenericArguments (genericType: Type) =
@@ -1433,10 +1433,9 @@ module Patterns =
                     // check for match
                     if nargTs <> haveArgTs.Length then
                         false (* method argument length mismatch *)
-                    else
+                    else if
 
-                    // If a known-number-of-arguments-including-object-argument has been given then check that
-                    if
+                        // If a known-number-of-arguments-including-object-argument has been given then check that
                         (match knownArgCount with
                          | ValueNone -> false
                          | ValueSome n -> n <> (if methInfo.IsStatic then 0 else 1) + nargTs)
@@ -1510,6 +1509,7 @@ module Patterns =
                             mi.GetGenericArguments().Length
                         else
                             0 in
+
                        methodTyArgCount = tyArgs.Length)
 
             let fail () =
@@ -1672,9 +1672,9 @@ module Patterns =
         type InputState =
             {
                 is: ByteStream
-                istrings: string[]
+                istrings: string array
                 localAssembly: System.Reflection.Assembly
-                referencedTypeDefs: Type[]
+                referencedTypeDefs: Type array
             }
 
         let u_byte_as_int st =
@@ -1935,7 +1935,7 @@ module Patterns =
             varn = env.varn + 1
         }
 
-    let mkTyparSubst (tyargs: Type[]) =
+    let mkTyparSubst (tyargs: Type array) =
         let n = tyargs.Length
 
         fun idx ->
@@ -1944,7 +1944,7 @@ module Patterns =
             else
                 invalidOp (SR.GetString(SR.QtypeArgumentOutOfRange))
 
-    let envClosed (spliceTypes: Type[]) =
+    let envClosed (spliceTypes: Type array) =
         {
             vars = Map.empty
             varn = 0
@@ -1976,7 +1976,7 @@ module Patterns =
                 E(CombTerm(a tyargs (ValueSome args.Length), args)))
         | 1 ->
             let x = u_VarRef st
-            (fun env -> E(VarTerm(x env)))
+            (x >> VarTerm >> E)
         | 2 ->
             let a = u_VarDecl st
             let b = u_Expr st
@@ -2034,7 +2034,7 @@ module Patterns =
             | [| minfo |] ->
                 match witnessInfo with
                 | None -> Unique(StaticMethodCallOp(minfo))
-                | Some (nmW, nWitnesses) ->
+                | Some(nmW, nWitnesses) ->
                     let methsW =
                         ty.GetMethods(staticBindingFlags) |> Array.filter (fun mi -> mi.Name = nmW)
 
@@ -2051,7 +2051,7 @@ module Patterns =
                     | None ->
                         let minfo = bindModuleFunctionWithCallSiteArgs (ty, nm, argTypes, tyargs)
                         StaticMethodCallOp minfo
-                    | Some (nmW, nWitnesses) ->
+                    | Some(nmW, nWitnesses) ->
                         let minfo =
                             bindModuleFunctionWithCallSiteArgs (ty, nm, List.skip nWitnesses argTypes, tyargs)
 
@@ -2073,9 +2073,9 @@ module Patterns =
         match tag with
         | 0 ->
             match u_ModuleDefn None st with
-            | Unique (StaticMethodCallOp minfo) -> (minfo :> MethodBase)
-            | Unique (StaticPropGetOp pinfo) -> (pinfo.GetGetMethod true :> MethodBase)
-            | Ambiguous (_) -> raise (System.Reflection.AmbiguousMatchException())
+            | Unique(StaticMethodCallOp minfo) -> (minfo :> MethodBase)
+            | Unique(StaticPropGetOp pinfo) -> (pinfo.GetGetMethod true :> MethodBase)
+            | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 ->
             let ((genericType, _, _, methName, _) as data) = u_MethodInfoData st
@@ -2095,17 +2095,17 @@ module Patterns =
             let nWitnesses = u_int st
 
             match u_ModuleDefn (Some(methNameW, nWitnesses)) st with
-            | Unique (StaticMethodCallOp (minfo)) -> (minfo :> MethodBase)
-            | Unique (StaticMethodCallWOp (_minfo, minfoW, _)) -> (minfoW :> MethodBase)
-            | Unique (StaticPropGetOp (pinfo)) -> (pinfo.GetGetMethod(true) :> MethodBase)
-            | Ambiguous (_) -> raise (System.Reflection.AmbiguousMatchException())
+            | Unique(StaticMethodCallOp(minfo)) -> (minfo :> MethodBase)
+            | Unique(StaticMethodCallWOp(_minfo, minfoW, _)) -> (minfoW :> MethodBase)
+            | Unique(StaticPropGetOp(pinfo)) -> (pinfo.GetGetMethod(true) :> MethodBase)
+            | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | _ -> failwith "u_MethodBase"
 
     and instModuleDefnOp r tyargs _ =
         match r with
-        | StaticMethodCallOp (minfo) -> StaticMethodCallOp(instMeth (minfo, tyargs))
-        | StaticMethodCallWOp (minfo, minfoW, n) ->
+        | StaticMethodCallOp(minfo) -> StaticMethodCallOp(instMeth (minfo, tyargs))
+        | StaticMethodCallWOp(minfo, minfoW, n) ->
             StaticMethodCallWOp(instMeth (minfo, tyargs), instMeth (minfoW, tyargs), n)
         // OK to throw away the tyargs here since this only non-generic values in modules get represented by static properties
         | x -> x
@@ -2256,12 +2256,12 @@ module Patterns =
     //--------------------------------------------------------------------------
 
     /// Fill the holes in an Expr
-    let rec fillHolesInRawExpr (l: Expr[]) (E t as e) =
+    let rec fillHolesInRawExpr (l: Expr array) (E t as e) =
         match t with
         | VarTerm _ -> e
-        | LambdaTerm (v, b) -> EA(LambdaTerm(v, fillHolesInRawExpr l b), e.CustomAttributes)
-        | CombTerm (op, args) -> EA(CombTerm(op, args |> List.map (fillHolesInRawExpr l)), e.CustomAttributes)
-        | HoleTerm (ty, idx) ->
+        | LambdaTerm(v, b) -> EA(LambdaTerm(v, fillHolesInRawExpr l b), e.CustomAttributes)
+        | CombTerm(op, args) -> EA(CombTerm(op, args |> List.map (fillHolesInRawExpr l)), e.CustomAttributes)
+        | HoleTerm(ty, idx) ->
             if idx < 0 || idx >= l.Length then
                 failwith "hole index out of range"
 
@@ -2275,13 +2275,13 @@ module Patterns =
     let rec freeInExprAcc bvs acc (E t) =
         match t with
         | HoleTerm _ -> acc
-        | CombTerm (_, ag) -> ag |> List.fold (freeInExprAcc bvs) acc
+        | CombTerm(_, ag) -> ag |> List.fold (freeInExprAcc bvs) acc
         | VarTerm v ->
             if Set.contains v bvs || Set.contains v acc then
                 acc
             else
                 Set.add v acc
-        | LambdaTerm (v, b) -> freeInExprAcc (Set.add v bvs) acc b
+        | LambdaTerm(v, b) -> freeInExprAcc (Set.add v bvs) acc b
 
     and freeInExpr e =
         freeInExprAcc Set.empty Set.empty e
@@ -2293,7 +2293,7 @@ module Patterns =
     /// given substitution functions/maps.
     let rec substituteInExpr bvs tmsubst (E t as e) =
         match t with
-        | CombTerm (c, args) ->
+        | CombTerm(c, args) ->
             let substargs = args |> List.map (fun arg -> substituteInExpr bvs tmsubst arg)
             EA(CombTerm(c, substargs), e.CustomAttributes)
         | VarTerm v ->
@@ -2307,7 +2307,7 @@ module Patterns =
                     e2
                 else
                     raise (Clash(clashes.MinimumElement))
-        | LambdaTerm (v, b) ->
+        | LambdaTerm(v, b) ->
             try
                 EA(LambdaTerm(v, substituteInExpr (Set.add v bvs) tmsubst b), e.CustomAttributes)
             with Clash bv ->
@@ -2363,7 +2363,7 @@ module Patterns =
         resourceName.StartsWith(ReflectedDefinitionsResourceNameBase, StringComparison.Ordinal)
 
     /// Get the reflected definition at the given (always generic) instantiation
-    let tryGetReflectedDefinition (methodBase: MethodBase, tyargs: Type[]) =
+    let tryGetReflectedDefinition (methodBase: MethodBase, tyargs: Type array) =
         checkNonNull "methodBase" methodBase
 
         let data =
@@ -2404,7 +2404,9 @@ module Patterns =
                                         | x -> x)
                                         |> Array.tryPick (fun ca ->
                                             match ca with
-                                            | :? CompilationMappingAttribute as cma when cma.ResourceName = resourceName ->
+                                            | :? CompilationMappingAttribute as cma when
+                                                cma.ResourceName = resourceName
+                                                ->
                                                 Some cma
                                             | _ -> None)
 
@@ -2437,7 +2439,7 @@ module Patterns =
                 if ok then Some res else None
 
         match data with
-        | Some (Entry exprBuilder) ->
+        | Some(Entry exprBuilder) ->
             let expectedNumTypars =
                 getNumGenericArguments (methodBase.DeclaringType)
                 + (match methodBase with
@@ -2690,12 +2692,12 @@ type Expr with
     static member Cast(source: Expr) =
         cast source
 
-    static member Deserialize(qualifyingType: Type, spliceTypes, spliceExprs, bytes: byte[]) =
+    static member Deserialize(qualifyingType: Type, spliceTypes, spliceExprs, bytes: byte array) =
         checkNonNull "qualifyingType" qualifyingType
         checkNonNull "bytes" bytes
         deserialize (qualifyingType, [||], Array.ofList spliceTypes, Array.ofList spliceExprs, bytes)
 
-    static member Deserialize40(qualifyingType: Type, referencedTypes, spliceTypes, spliceExprs, bytes: byte[]) =
+    static member Deserialize40(qualifyingType: Type, referencedTypes, spliceTypes, spliceExprs, bytes: byte array) =
         checkNonNull "spliceExprs" spliceExprs
         checkNonNull "spliceTypes" spliceTypes
         checkNonNull "referencedTypeDefs" referencedTypes
@@ -2721,85 +2723,85 @@ module DerivedPatterns =
     [<CompiledName("BoolPattern")>]
     let (|Bool|_|) input =
         match input with
-        | ValueObj (:? bool as v) -> Some v
+        | ValueObj(:? bool as v) -> Some v
         | _ -> None
 
     [<CompiledName("StringPattern")>]
     let (|String|_|) input =
         match input with
-        | ValueObj (:? string as v) -> Some v
+        | ValueObj(:? string as v) -> Some v
         | _ -> None
 
     [<CompiledName("SinglePattern")>]
     let (|Single|_|) input =
         match input with
-        | ValueObj (:? single as v) -> Some v
+        | ValueObj(:? single as v) -> Some v
         | _ -> None
 
     [<CompiledName("DoublePattern")>]
     let (|Double|_|) input =
         match input with
-        | ValueObj (:? double as v) -> Some v
+        | ValueObj(:? double as v) -> Some v
         | _ -> None
 
     [<CompiledName("CharPattern")>]
     let (|Char|_|) input =
         match input with
-        | ValueObj (:? char as v) -> Some v
+        | ValueObj(:? char as v) -> Some v
         | _ -> None
 
     [<CompiledName("SBytePattern")>]
     let (|SByte|_|) input =
         match input with
-        | ValueObj (:? sbyte as v) -> Some v
+        | ValueObj(:? sbyte as v) -> Some v
         | _ -> None
 
     [<CompiledName("BytePattern")>]
     let (|Byte|_|) input =
         match input with
-        | ValueObj (:? byte as v) -> Some v
+        | ValueObj(:? byte as v) -> Some v
         | _ -> None
 
     [<CompiledName("Int16Pattern")>]
     let (|Int16|_|) input =
         match input with
-        | ValueObj (:? int16 as v) -> Some v
+        | ValueObj(:? int16 as v) -> Some v
         | _ -> None
 
     [<CompiledName("UInt16Pattern")>]
     let (|UInt16|_|) input =
         match input with
-        | ValueObj (:? uint16 as v) -> Some v
+        | ValueObj(:? uint16 as v) -> Some v
         | _ -> None
 
     [<CompiledName("Int32Pattern")>]
     let (|Int32|_|) input =
         match input with
-        | ValueObj (:? int32 as v) -> Some v
+        | ValueObj(:? int32 as v) -> Some v
         | _ -> None
 
     [<CompiledName("UInt32Pattern")>]
     let (|UInt32|_|) input =
         match input with
-        | ValueObj (:? uint32 as v) -> Some v
+        | ValueObj(:? uint32 as v) -> Some v
         | _ -> None
 
     [<CompiledName("Int64Pattern")>]
     let (|Int64|_|) input =
         match input with
-        | ValueObj (:? int64 as v) -> Some v
+        | ValueObj(:? int64 as v) -> Some v
         | _ -> None
 
     [<CompiledName("UInt64Pattern")>]
     let (|UInt64|_|) input =
         match input with
-        | ValueObj (:? uint64 as v) -> Some v
+        | ValueObj(:? uint64 as v) -> Some v
         | _ -> None
 
     [<CompiledName("UnitPattern")>]
     let (|Unit|_|) input =
         match input with
-        | Comb0 (ValueOp (_, ty, None)) when ty = typeof<unit> -> Some()
+        | Comb0(ValueOp(_, ty, None)) when ty = typeof<unit> -> Some()
         | _ -> None
 
     /// (fun (x, y) -> z) is represented as 'fun p -> let x = p#0 let y = p#1' etc.
@@ -2808,13 +2810,13 @@ module DerivedPatterns =
         /// Strip off the 'let' bindings for an TupledLambda
         let rec stripSuccessiveProjLets (p: Var) n expr =
             match expr with
-            | Let (v1, TupleGet (Var pA, m), rest) when p = pA && m = n ->
+            | Let(v1, TupleGet(Var pA, m), rest) when p = pA && m = n ->
                 let restvs, b = stripSuccessiveProjLets p (n + 1) rest
                 v1 :: restvs, b
             | _ -> ([], expr)
 
         match lam.Tree with
-        | LambdaTerm (v, body) ->
+        | LambdaTerm(v, body) ->
             match stripSuccessiveProjLets v 0 body with
             | [], b -> Some([ v ], b)
             | letvs, b -> Some(letvs, b)
@@ -2822,7 +2824,7 @@ module DerivedPatterns =
 
     let (|TupledApplication|_|) e =
         match e with
-        | Application (f, x) ->
+        | Application(f, x) ->
             match x with
             | Unit -> Some(f, [])
             | NewTuple x -> Some(f, x)
@@ -2841,20 +2843,20 @@ module DerivedPatterns =
     [<CompiledName("AndAlsoPattern")>]
     let (|AndAlso|_|) input =
         match input with
-        | IfThenElse (x, y, Bool false) -> Some(x, y)
+        | IfThenElse(x, y, Bool false) -> Some(x, y)
         | _ -> None
 
     [<CompiledName("OrElsePattern")>]
     let (|OrElse|_|) input =
         match input with
-        | IfThenElse (x, Bool true, y) -> Some(x, y)
+        | IfThenElse(x, Bool true, y) -> Some(x, y)
         | _ -> None
 
     [<CompiledName("SpecificCallPattern")>]
     let (|SpecificCall|_|) templateParameter =
         // Note: precomputation
         match templateParameter with
-        | (Lambdas (_, Call (_, minfo1, _)) | Call (_, minfo1, _)) ->
+        | (Lambdas(_, Call(_, minfo1, _)) | Call(_, minfo1, _)) ->
             let isg1 = minfo1.IsGenericMethod
 
             let gmd =
@@ -2867,7 +2869,7 @@ module DerivedPatterns =
 
             (fun tm ->
                 match tm with
-                | Call (obj, minfo2, args) when
+                | Call(obj, minfo2, args) when
 #if FX_NO_REFLECTION_METADATA_TOKENS
                     ( // if metadata tokens are not available we'll rely only on equality of method references
 #else
@@ -2892,7 +2894,7 @@ module DerivedPatterns =
     [<CompiledName("DecimalPattern")>]
     let (|Decimal|_|) input =
         match input with
-        | Call (None, mi, [ Int32 low; Int32 medium; Int32 high; Bool isNegative; Byte scale ]) when
+        | Call(None, mi, [ Int32 low; Int32 medium; Int32 high; Bool isNegative; Byte scale ]) when
             mi.Name = new_decimal_info.Name
             && mi.DeclaringType.FullName = new_decimal_info.DeclaringType.FullName
             ->
@@ -2930,11 +2932,11 @@ module ExprShape =
             | NewUnionCaseOp unionCase, _ -> mkNewUnionCase (unionCase, arguments)
             | UnionCaseTestOp unionCase, [ arg ] -> mkUnionCaseTest (unionCase, arg)
             | NewTupleOp ty, _ -> mkNewTupleWithType (ty, arguments)
-            | TupleGetOp (ty, i), [ arg ] -> mkTupleGet (ty, i, arg)
+            | TupleGetOp(ty, i), [ arg ] -> mkTupleGet (ty, i, arg)
             | InstancePropGetOp pinfo, (obj :: args) -> mkInstancePropGet (obj, pinfo, args)
             | StaticPropGetOp pinfo, _ -> mkStaticPropGet (pinfo, arguments)
-            | InstancePropSetOp pinfo, obj :: (FrontAndBack (args, v)) -> mkInstancePropSet (obj, pinfo, args, v)
-            | StaticPropSetOp pinfo, (FrontAndBack (args, v)) -> mkStaticPropSet (pinfo, args, v)
+            | InstancePropSetOp pinfo, obj :: (FrontAndBack(args, v)) -> mkInstancePropSet (obj, pinfo, args, v)
+            | StaticPropSetOp pinfo, (FrontAndBack(args, v)) -> mkStaticPropSet (pinfo, args, v)
             | InstanceFieldGetOp finfo, [ obj ] -> mkInstanceFieldGet (obj, finfo)
             | StaticFieldGetOp finfo, [] -> mkStaticFieldGet (finfo)
             | InstanceFieldSetOp finfo, [ obj; v ] -> mkInstanceFieldSet (obj, finfo, v)
@@ -2943,8 +2945,8 @@ module ExprShape =
             | DefaultValueOp ty, _ -> mkDefaultValue ty
             | StaticMethodCallOp minfo, _ -> mkStaticMethodCall (minfo, arguments)
             | InstanceMethodCallOp minfo, obj :: args -> mkInstanceMethodCall (obj, minfo, args)
-            | StaticMethodCallWOp (minfo, minfoW, n), _ -> mkStaticMethodCallW (minfo, minfoW, n, arguments)
-            | InstanceMethodCallWOp (minfo, minfoW, n), obj :: args ->
+            | StaticMethodCallWOp(minfo, minfoW, n), _ -> mkStaticMethodCallW (minfo, minfoW, n, arguments)
+            | InstanceMethodCallWOp(minfo, minfoW, n), obj :: args ->
                 mkInstanceMethodCallW (obj, minfo, minfoW, n, args)
             | CoerceOp ty, [ arg ] -> mkCoerce (ty, arg)
             | NewArrayOp ty, _ -> mkNewArray (ty, arguments)
@@ -2952,16 +2954,16 @@ module ExprShape =
             | SequentialOp, [ e1; e2 ] -> mkSequential (e1, e2)
             | TypeTestOp ty, [ e1 ] -> mkTypeTest (e1, ty)
             | AddressOfOp, [ e1 ] -> mkAddressOf e1
-            | VarSetOp, [ E (VarTerm v); e ] -> mkVarSet (v, e)
+            | VarSetOp, [ E(VarTerm v); e ] -> mkVarSet (v, e)
             | AddressSetOp, [ e1; e2 ] -> mkAddressSet (e1, e2)
-            | ForIntegerRangeLoopOp, [ e1; e2; E (LambdaTerm (v, e3)) ] -> mkForLoop (v, e1, e2, e3)
+            | ForIntegerRangeLoopOp, [ e1; e2; E(LambdaTerm(v, e3)) ] -> mkForLoop (v, e1, e2, e3)
             | WhileLoopOp, [ e1; e2 ] -> mkWhileLoop (e1, e2)
             | TryFinallyOp, [ e1; e2 ] -> mkTryFinally (e1, e2)
-            | TryWithOp, [ e1; Lambda (v1, e2); Lambda (v2, e3) ] -> mkTryWith (e1, v1, e2, v2, e3)
+            | TryWithOp, [ e1; Lambda(v1, e2); Lambda(v2, e3) ] -> mkTryWith (e1, v1, e2, v2, e3)
             | QuoteOp flg, [ e1 ] -> mkQuote (e1, flg)
-            | ValueOp (v, ty, None), [] -> mkValue (v, ty)
-            | ValueOp (v, ty, Some nm), [] -> mkValueWithName (v, ty, nm)
-            | WithValueOp (v, ty), [ e ] -> mkValueWithDefn (v, ty, e)
+            | ValueOp(v, ty, None), [] -> mkValue (v, ty)
+            | ValueOp(v, ty, Some nm), [] -> mkValueWithName (v, ty, nm)
+            | WithValueOp(v, ty), [ e ] -> mkValueWithDefn (v, ty, e)
             | _ -> invalidOp (SR.GetString(SR.QillFormedAppOrLet))
 
         EA(e.Tree, attrs)
@@ -2973,8 +2975,8 @@ module ExprShape =
 
             match t with
             | VarTerm v -> ShapeVar v
-            | LambdaTerm (v, b) -> ShapeLambda(v, b)
-            | CombTerm (op, args) -> ShapeCombination(box<ExprConstInfo * Expr list> (op, expr.CustomAttributes), args)
+            | LambdaTerm(v, b) -> ShapeLambda(v, b)
+            | CombTerm(op, args) -> ShapeCombination(box<ExprConstInfo * Expr list> (op, expr.CustomAttributes), args)
             | HoleTerm _ -> invalidArg "expr" (SR.GetString(SR.QunexpectedHole))
 
         loop (input :> Expr)

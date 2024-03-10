@@ -1,0 +1,292 @@
+name: Check release notes
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches:
+        - 'main'
+        - 'release/*'
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  check_release_notes:
+    permissions:
+       issues: write
+       pull-requests: write
+    env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get github ref
+      uses: actions/github-script@v3
+      id: get-pr
+      with:
+        script: |
+          const result = await github.pulls.get({
+            pull_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          return { "pr_number": context.issue.number, "ref": result.data.head.ref, "repository": result.data.head.repo.full_name};
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ fromJson(steps.get-pr.outputs.result).repository }}
+        ref: ${{ fromJson(steps.get-pr.outputs.result).ref }}
+        fetch-depth: 0
+    - name: Check for release notes changes
+      id: release_notes_changes
+      run: |
+        set -e
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        FSHARP_REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
+        PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+        PR_NUMBER=${{ github.event.number }}
+        PR_URL="${FSHARP_REPO_URL}/pull/${PR_NUMBER}"
+
+        echo "PR Tags: ${{ toJson(github.event.pull_request.labels) }}"
+
+        OPT_OUT_RELEASE_NOTES=${{ contains(github.event.pull_request.labels.*.name, 'NO_RELEASE_NOTES') }}
+
+        echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
+
+        # Parse version from eng/Versions.props
+        # For FSarp.Core:
+        # <FSMajorVersion>8</FSMajorVersion>
+        # <FSMinorVersion>0</FSMinorVersion>
+        # <FSBuildVersion>100</FSBuildVersion>
+        # For FCS:
+        # FCSMajorVersion>43</FCSMajorVersion>
+        # <FCSMinorVersion>8</FCSMinorVersion>
+        # <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
+        # For VS:
+        # <VSMajorVersion>17</VSMajorVersion>
+        # <VSMinorVersion>8</VSMinorVersion>
+
+        _fs_major_version=$(grep -oPm1 "(?<=<FSMajorVersion>)[^<]+" eng/Versions.props)
+        _fs_minor_version=$(grep -oPm1 "(?<=<FSMinorVersion>)[^<]+" eng/Versions.props)
+        _fs_build_version=$(grep -oPm1 "(?<=<FSBuildVersion>)[^<]+" eng/Versions.props)
+        _fcs_major_version=$(grep -oPm1 "(?<=<FCSMajorVersion>)[^<]+" eng/Versions.props)
+        _fcs_minor_version=$(grep -oPm1 "(?<=<FCSMinorVersion>)[^<]+" eng/Versions.props)
+        _fcs_build_version=$_fs_build_version
+        _vs_major_version=$(grep -oPm1 "(?<=<VSMajorVersion>)[^<]+" eng/Versions.props)
+        _vs_minor_version=$(grep -oPm1 "(?<=<VSMinorVersion>)[^<]+" eng/Versions.props)
+
+        FSHARP_CORE_VERSION="$_fs_major_version.$_fs_minor_version.$_fs_build_version"
+        FCS_VERSION="$_fcs_major_version.$_fcs_minor_version.$_fcs_build_version"
+        VISUAL_STUDIO_VERSION="$_vs_major_version.$_vs_minor_version"
+
+        echo "Found F# version: ${FSHARP_CORE_VERSION}"
+        echo "Found FCS version: ${FCS_VERSION}"
+        echo "Found Visual Studio version: ${VISUAL_STUDIO_VERSION}"
+
+        [[ "$FSHARP_CORE_VERSION" =~ ^[0-9]+\.[0-9]+.[0-9]+$ ]] || (echo "  Invalid FSharp.Core Version parsed"; exit 1)
+        [[ "$FCS_VERSION" =~ ^[0-9]+\.[0-9]+.[0-9]+$ ]] || (echo "  Invalid FCS Version parsed"; exit 1)
+        [[ "$VISUAL_STUDIO_VERSION" =~ ^[0-9]+\.[0-9]+$ ]] || (echo "   Invalid Visual Studio Version parsed"; exit 1)
+
+        _release_notes_base_path='docs/release-notes'
+        _fsharp_core_release_notes_path="${_release_notes_base_path}/.FSharp.Core/${FSHARP_CORE_VERSION}.md"
+        _fsharp_compiler_release_notes_path="${_release_notes_base_path}/.FSharp.Compiler.Service/${FSHARP_CORE_VERSION}.md"
+        _fsharp_language_release_notes_path="${_release_notes_base_path}/.Language/preview.md"
+        _fsharp_vs_release_notes_path="${_release_notes_base_path}/.VisualStudio/${VISUAL_STUDIO_VERSION}.md"
+
+        readonly paths=(
+            "src/FSharp.Core|${_fsharp_core_release_notes_path}"
+            "src/Compiler|${_fsharp_compiler_release_notes_path}"
+            "LanguageFeatures.fsi|${_fsharp_language_release_notes_path}"
+            "vsintegration/src|${_fsharp_vs_release_notes_path}"
+        )
+
+        # Check all changed paths
+        RELEASE_NOTES_MESSAGE=""
+        RELEASE_NOTES_MESSAGE_DETAILS=""
+        RELEASE_NOTES_FOUND=""
+        RELEASE_NOTES_CHANGES_SUMMARY=""
+        RELEASE_NOTES_NOT_FOUND=""
+        PULL_REQUEST_FOUND=true
+
+        gh repo set-default ${GITHUB_REPOSITORY}
+
+        _modified_paths=`gh pr view ${PR_NUMBER} --json files --jq '.files.[].path'`
+
+        for fields in ${paths[@]}
+        do
+            IFS=$'|' read -r path release_notes <<< "$fields"
+            echo "Checking for changed files in: $path"
+
+            # Check if path is in modified files:
+            if [[ "${_modified_paths[@]}" =~ "${path}" ]]; then
+                echo "  Found $path in modified files"
+                echo "      Checking if release notes modified in: $release_notes"
+                if [[ "${_modified_paths[@]}" =~ "${release_notes}" ]]; then
+                    echo "          Found $release_notes in modified files"
+                    echo "              Checking for pull request URL in $release_notes"
+
+                    if [[ ! -f $release_notes ]]; then
+                        echo "              $release_notes does not exist, please, create it."
+                        #exit 1;
+                    fi
+
+                    _pr_link_occurences=`grep -c "${PR_URL}" $release_notes || true`
+
+                    echo "              Found $_pr_link_occurences occurences of $PR_URL in $release_notes"
+
+                    if [[ ${_pr_link_occurences} -eq 1 ]]; then
+                        echo "                  Found pull request URL in $release_notes once"
+                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | |"
+                        RELEASE_NOTES_FOUND+=$'\n'
+                    elif [[ ${_pr_link_occurences} -eq 0 ]]; then
+                        echo "                  Did not find pull request URL in $release_notes"
+                        DESCRIPTION="**No current pull request URL (${PR_URL}) found, please consider adding it**"
+                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | ${DESCRIPTION} |"
+                        RELEASE_NOTES_FOUND+=$'\n'
+                        PULL_REQUEST_FOUND=false
+                    fi
+                else
+                    echo "          Did not find $release_notes in modified files"
+                    DESCRIPTION="**No release notes found or release notes format is not correct**"
+                    RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | ${DESCRIPTION} |"
+                    RELEASE_NOTES_NOT_FOUND+=$'\n'
+                fi
+            else
+                echo "      Nothing found, no release notes required"
+            fi
+        done
+
+        echo "Done checking for release notes changes"
+
+        if [[ $RELEASE_NOTES_NOT_FOUND != "" ]]; then
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"@${PR_AUTHOR},"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!CAUTION]"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No release notes found for the changed paths (see table below).**"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> Please make sure to add an entry with an informative description of the change as well as link to this pull request, issue and language suggestion if applicable. Release notes for this repository are based on [Keep A Changelog](https://keepachangelog.com/en/1.1.0/) format."
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> **The following format is recommended for this repository:**"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> \\\`* <Informative description>. ([PR #XXXXX](https://github.com/dotnet/fsharp/pull/XXXXX))\\\`"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$">"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> See examples in the files, listed in the table below or in th full documentation at https://fsharp.github.io/fsharp-compiler-docs/release-notes/About.html."
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'**If you believe that release notes are not necessary for this PR, please add <kbd>NO_RELEASE_NOTES</kbd> label to the pull request.**'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"**You can open this PR in browser to add release notes: [open in github.dev](https://github.dev/dotnet/fsharp/pull/${PR_NUMBER})**"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+='| Change path      | Release notes path | Description |'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+='| ---------------- | ------------------ | ----------- |'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+="${RELEASE_NOTES_NOT_FOUND}"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+        fi
+
+        if [[ $RELEASE_NOTES_FOUND != "" ]]; then
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"<hr/>"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> :white_check_mark: Found changes and release notes in following paths:"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+
+            if [[ $PULL_REQUEST_FOUND = false ]]; then
+                RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!WARNING]"
+                RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+                RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No PR link found in some release notes, please consider adding it.**"
+                RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+                RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+                RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            fi
+
+            RELEASE_NOTES_MESSAGE_DETAILS+='> | Change path      | Release notes path | Description |'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+='> | ---------------- | ------------------ | ----------- |'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+="${RELEASE_NOTES_FOUND}"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+        fi
+
+        RELEASE_NOTES_MESSAGE+=$'<!-- DO_NOT_REMOVE: release_notes_check -->\n'
+
+        if [[ $RELEASE_NOTES_MESSAGE_DETAILS == "" ]]; then
+            RELEASE_NOTES_MESSAGE+=$'## :white_check_mark: No release notes required\n\n'
+        else
+            RELEASE_NOTES_MESSAGE+=$'## :heavy_exclamation_mark: Release notes required\n\n'
+            RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
+        fi
+
+        echo "release-notes-check-message<<$EOF" >>$GITHUB_OUTPUT
+
+        if [[ "$OPT_OUT_RELEASE_NOTES" = true ]]; then
+            echo "<!-- DO_NOT_REMOVE: release_notes_check -->" >>$GITHUB_OUTPUT
+            echo "" >>$GITHUB_OUTPUT
+            echo "## :warning: Release notes required, but author opted out" >>$GITHUB_OUTPUT
+            echo "" >>$GITHUB_OUTPUT
+            echo "" >>$GITHUB_OUTPUT
+            echo "> [!WARNING]" >>$GITHUB_OUTPUT
+            echo "> **Author opted out of release notes, check is disabled for this pull request.**" >>$GITHUB_OUTPUT
+            echo "> cc @dotnet/fsharp-team-msft" >>$GITHUB_OUTPUT
+        else
+            echo "${RELEASE_NOTES_MESSAGE}" >>$GITHUB_OUTPUT
+        fi
+
+        echo "$EOF" >>$GITHUB_OUTPUT
+
+        if [[ $RELEASE_NOTES_NOT_FOUND != "" && ${OPT_OUT_RELEASE_NOTES} != true ]]; then
+            exit 1
+        fi
+    # Did bot already commented the PR?
+    - name: Find Comment
+      if: success() || failure()
+      uses: peter-evans/find-comment@v2.4.0
+      id: fc
+      with:
+        issue-number: ${{github.event.pull_request.number}}
+        comment-author: 'github-actions[bot]'
+        body-includes: '<!-- DO_NOT_REMOVE: release_notes_check -->'
+    # If not, create a new comment
+    - name: Create comment
+      if: steps.fc.outputs.comment-id == '' && (success() || failure())
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ github.token }}
+        script: |
+            const comment = await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `${{steps.release_notes_changes.outputs.release-notes-check-message}}`
+            });
+            return comment.data.id;
+    # If yes, update the comment
+    - name: Update comment
+      if: steps.fc.outputs.comment-id != '' && (success() || failure())
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ github.token }}
+        script: |
+            const comment = await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: ${{steps.fc.outputs.comment-id}},
+                body: `${{steps.release_notes_changes.outputs.release-notes-check-message}}`
+            });
+            return comment.data.id;

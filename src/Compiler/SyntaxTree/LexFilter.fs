@@ -4,6 +4,7 @@
 /// Implements the offside rule and a couple of other lexical transformations.
 module internal FSharp.Compiler.LexFilter
 
+open System
 open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler
@@ -46,7 +47,7 @@ type Context =
     | CtxtElse of Position
     | CtxtDo of Position
     | CtxtInterfaceHead of Position
-    | CtxtTypeDefns of Position    // 'type <here> =', not removed when we find the "="
+    | CtxtTypeDefns of Position * equalsEndPos: Position option // 'type <here> =', not removed when we find the "="
 
     | CtxtNamespaceHead of Position * token
     | CtxtModuleHead of Position * token * LexingModuleAttributes * isNested: bool
@@ -69,7 +70,7 @@ type Context =
     member c.StartPos =
         match c with
         | CtxtNamespaceHead (p, _) | CtxtModuleHead (p, _, _, _) | CtxtException p | CtxtModuleBody (p, _) | CtxtNamespaceBody p
-        | CtxtLetDecl (_, p) | CtxtDo p | CtxtInterfaceHead p | CtxtTypeDefns p | CtxtParen (_, p) | CtxtMemberHead p | CtxtMemberBody p
+        | CtxtLetDecl (_, p) | CtxtDo p | CtxtInterfaceHead p | CtxtTypeDefns(p, _) | CtxtParen (_, p) | CtxtMemberHead p | CtxtMemberBody p
         | CtxtWithAsLet p
         | CtxtWithAsAugment p
         | CtxtMatchClauses (_, p) | CtxtIf p | CtxtMatch p | CtxtFor p | CtxtWhile p | CtxtWhen p | CtxtFunction p | CtxtFun p | CtxtTry p | CtxtThen p | CtxtElse p | CtxtVanilla (p, _)
@@ -181,18 +182,20 @@ let infixTokenLength token =
 //
 // LBRACK_LESS and GREATER_RBRACK are not here because adding them in these active patterns
 // causes more offside warnings, while removing them doesn't add offside warnings in attributes.
+[<return: Struct>]
 let (|TokenLExprParen|_|) token =
     match token with
     | BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true
-        -> Some ()
-    | _ -> None
+        -> ValueSome ()
+    | _ -> ValueNone
 
 /// Matches against a right-parenthesis-like token that is valid in expressions.
+[<return: Struct>]
 let (|TokenRExprParen|_|) token =
     match token with
     | END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true
-        -> Some ()
-    | _ -> None
+        -> ValueSome ()
+    | _ -> ValueNone
 
 /// Determine the tokens that may align with the 'if' of an 'if/then/elif/else' without closing
 /// the construct
@@ -511,55 +514,68 @@ type TokenTupPool() =
 // Utilities for the tokenizer that are needed in other places
 //--------------------------------------------------------------------------*)
 
+[<return: Struct>]
+let (|Equals|_|) (s: string) (span: ReadOnlySpan<char>) =
+    if span.SequenceEqual(s.AsSpan()) then ValueSome Equals
+    else ValueNone
+
+[<return: Struct>]
+let (|StartsWith|_|) (s: string) (span: ReadOnlySpan<char>) =
+    if span.StartsWith(s.AsSpan()) then ValueSome StartsWith
+    else ValueNone
+
 // Strip a bunch of leading '>' of a token, at the end of a typar application
 // Note: this is used in the 'service.fs' to do limited postprocessing
+[<return: Struct>]
 let (|TyparsCloseOp|_|) (txt: string) =
-    let angles = txt |> Seq.takeWhile (fun c -> c = '>') |> Seq.toList
-    let afterAngles = txt |> Seq.skipWhile (fun c -> c = '>') |> Seq.toList
-    if List.isEmpty angles then None else
+    if not (txt.StartsWith ">") then
+        ValueNone
+    else
+        match txt.AsSpan().IndexOfAnyExcept '>' with
+        | -1 -> ValueSome(struct (Array.init txt.Length (fun _ -> GREATER), ValueNone))
+        | angles ->
+            let afterAngles = txt.AsSpan angles
 
-    let afterOp =
-        match (System.String(Array.ofSeq afterAngles)) with
-         | "." -> Some DOT
-         | "]" -> Some RBRACK
-         | "-" -> Some MINUS
-         | ".." -> Some DOT_DOT
-         | "?" -> Some QMARK
-         | "??" -> Some QMARK_QMARK
-         | ":=" -> Some COLON_EQUALS
-         | "::" -> Some COLON_COLON
-         | "*" -> Some STAR
-         | "&" -> Some AMP
-         | "->" -> Some RARROW
-         | "<-" -> Some LARROW
-         | "=" -> Some EQUALS
-         | "<" -> Some (LESS false)
-         | "$" -> Some DOLLAR
-         | "%" -> Some (PERCENT_OP("%") )
-         | "%%" -> Some (PERCENT_OP("%%"))
-         | "" -> None
-         | s ->
-             match List.ofSeq afterAngles with
-              | '=' :: _
-              | '!' :: '=' :: _
-              | '<' :: _
-              | '>' :: _
-              | '$' :: _ -> Some (INFIX_COMPARE_OP s)
-              | '&' :: _ -> Some (INFIX_AMP_OP s)
-              | '|' :: _ -> Some (INFIX_BAR_OP s)
-              | '!' :: _
-              | '?' :: _
-              | '~' :: _ -> Some (PREFIX_OP s)
-              | '@' :: _
-              | '^' :: _ -> Some (INFIX_AT_HAT_OP s)
-              | '+' :: _
-              | '-' :: _ -> Some (PLUS_MINUS_OP s)
-              | '*' :: '*' :: _ -> Some (INFIX_STAR_STAR_OP s)
-              | '*' :: _
-              | '/' :: _
-              | '%' :: _ -> Some (INFIX_STAR_DIV_MOD_OP s)
-              | _ -> None
-    Some([| for _c in angles do yield GREATER |], afterOp)
+            let afterOp =
+                match afterAngles with
+                | Equals "." -> ValueSome DOT
+                | Equals "]" -> ValueSome RBRACK
+                | Equals "-" -> ValueSome MINUS
+                | Equals ".." -> ValueSome DOT_DOT
+                | Equals "?" -> ValueSome QMARK
+                | Equals "??" -> ValueSome QMARK_QMARK
+                | Equals ":=" -> ValueSome COLON_EQUALS
+                | Equals "::" -> ValueSome COLON_COLON
+                | Equals "*" -> ValueSome STAR
+                | Equals "&" -> ValueSome AMP
+                | Equals "->" -> ValueSome RARROW
+                | Equals "<-" -> ValueSome LARROW
+                | Equals "=" -> ValueSome EQUALS
+                | Equals "<" -> ValueSome (LESS false)
+                | Equals "$" -> ValueSome DOLLAR
+                | Equals "%" -> ValueSome (PERCENT_OP "%")
+                | Equals "%%" -> ValueSome (PERCENT_OP "%%")
+                | StartsWith "="
+                | StartsWith "!="
+                | StartsWith "<"
+                | StartsWith ">"
+                | StartsWith "$" -> ValueSome (INFIX_COMPARE_OP (afterAngles.ToString()))
+                | StartsWith "&" -> ValueSome (INFIX_AMP_OP (afterAngles.ToString()))
+                | StartsWith "|" -> ValueSome (INFIX_BAR_OP (afterAngles.ToString()))
+                | StartsWith "!"
+                | StartsWith "?"
+                | StartsWith "~"  -> ValueSome (PREFIX_OP (afterAngles.ToString()))
+                | StartsWith "@"
+                | StartsWith "^" -> ValueSome (INFIX_AT_HAT_OP (afterAngles.ToString()))
+                | StartsWith "+"
+                | StartsWith "-" -> ValueSome (PLUS_MINUS_OP (afterAngles.ToString()))
+                | StartsWith "**" -> ValueSome (INFIX_STAR_STAR_OP (afterAngles.ToString()))
+                | StartsWith "*"
+                | StartsWith "/"
+                | StartsWith "%" -> ValueSome (INFIX_STAR_DIV_MOD_OP (afterAngles.ToString()))
+                | _ -> ValueNone
+        
+            ValueSome(struct (Array.init angles (fun _ -> GREATER), afterOp))
 
 [<Struct>]
 type PositionWithColumn =
@@ -742,7 +758,7 @@ type LexFilterImpl (
 
     //let indexerNotationWithoutDot = lexbuf.SupportsFeature LanguageFeature.IndexerNotationWithoutDot
 
-    let tryPushCtxt strict tokenTup (newCtxt: Context) =
+    let tryPushCtxt strict ignoreIndent tokenTup (newCtxt: Context) =
         let rec undentationLimit strict stack =
             match newCtxt, stack with
             | _, [] -> PositionWithColumn(newCtxt.StartPos, -1)
@@ -960,8 +976,10 @@ type LexFilterImpl (
             // These contexts can have their contents exactly aligning
             | _, (CtxtParen _ | CtxtFor _ | CtxtWhen _ | CtxtWhile _ | CtxtTypeDefns _ | CtxtMatch _ | CtxtModuleBody (_, true) | CtxtNamespaceBody _ | CtxtTry _ | CtxtMatchClauses _ | CtxtSeqBlock _ as limitCtxt :: _)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
-    
+
         let isCorrectIndent =
+            if ignoreIndent then true else
+
             match newCtxt with
             // Don't bother to check pushes of Vanilla blocks since we've
             // always already pushed a SeqBlock at this position.
@@ -992,7 +1010,7 @@ type LexFilterImpl (
         true
 
     let pushCtxt tokenTup newCtxt =
-        tryPushCtxt false tokenTup newCtxt |> ignore
+        tryPushCtxt false false tokenTup newCtxt |> ignore
 
     let rec popCtxt() =
         match offsideStack with
@@ -1007,6 +1025,10 @@ type LexFilterImpl (
                 | _ -> ()
 
     let replaceCtxt p ctxt = popCtxt(); pushCtxt p ctxt
+
+    let replaceCtxtIgnoreIndent p ctxt =
+        popCtxt()
+        tryPushCtxt false true p ctxt |> ignore
 
     //----------------------------------------------------------------------------
     // Peek ahead at a token, either from the old lexer or from our delayedStack
@@ -1166,6 +1188,11 @@ type LexFilterImpl (
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
+                            
+                        | INFIX_COMPARE_OP ">:" ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, COLON, 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -1))
+                            pool.Return tokenTup
                         // NOTE: this is "<@"
                         | LQUOTE ("<@ @>", false) ->
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "@", 1, 0))
@@ -1184,8 +1211,8 @@ type LexFilterImpl (
                             pool.Return tokenTup
                         | INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp) as opstr) ->
                             match afterOp with
-                            | None -> ()
-                            | Some tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
+                            | ValueNone -> ()
+                            | ValueSome tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
                             for i = greaters.Length - 1 downto 0 do
                                 delayToken (pool.UseShiftedLocation(tokenTup, greaters[i] res, i, -opstr.Length + i + 1))
                             pool.Return tokenTup
@@ -1679,7 +1706,7 @@ type LexFilterImpl (
                             //  | B
                             //
                             //  <TOKEN>    <-- close the type context sequence block here *)
-                        | _, CtxtTypeDefns posType :: _ when offsidePos.Column = posType.Column && not (isTypeSeqBlockElementContinuator token) -> -1
+                        | _, CtxtTypeDefns(posType, _) :: _ when offsidePos.Column = posType.Column && not (isTypeSeqBlockElementContinuator token) -> -1
 
                             // This ensures we close a namespace body when we see the next namespace definition
                             //
@@ -1822,7 +1849,7 @@ type LexFilterImpl (
             popCtxt()
             reprocess()
 
-        | _, CtxtTypeDefns offsidePos :: _
+        | _, CtxtTypeDefns(offsidePos, _) :: _
                 when isSemiSemi || (if relaxWhitespace2OffsideRule || isTypeContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
             if debug then dprintf "token at column %d is offside from TYPE(offsidePos=%a)! pop and reprocess\n" tokenStartCol outputPos offsidePos
             popCtxt()
@@ -2076,8 +2103,9 @@ type LexFilterImpl (
             pushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState token
 
-        | EQUALS, CtxtTypeDefns _ :: _ ->
+        | EQUALS, CtxtTypeDefns(p, _) :: _ ->
             if debug then dprintf "CtxType: EQUALS, pushing CtxtSeqBlock\n"
+            replaceCtxtIgnoreIndent tokenTup (CtxtTypeDefns(p, Some tokenTup.EndPos))
             pushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState token
 
@@ -2202,7 +2230,7 @@ type LexFilterImpl (
             let leadingBar = match (peekNextToken()) with BAR -> true | _ -> false
 
             if debug then dprintf "WITH, pushing CtxtMatchClauses, lookaheadTokenStartPos = %a, tokenStartPos = %a\n" outputPos lookaheadTokenStartPos outputPos tokenStartPos
-            tryPushCtxt strictIndentation lookaheadTokenTup (CtxtMatchClauses(leadingBar, lookaheadTokenStartPos)) |> ignore
+            tryPushCtxt strictIndentation false lookaheadTokenTup (CtxtMatchClauses(leadingBar, lookaheadTokenStartPos)) |> ignore
 
             returnToken tokenLexbufState OWITH
 
@@ -2385,22 +2413,42 @@ type LexFilterImpl (
             pushCtxt tokenTup (CtxtFun tokenStartPos)
             returnToken tokenLexbufState OFUN
 
+        // type I = interface .... end
+        | INTERFACE, CtxtSeqBlock _ :: CtxtTypeDefns(typePos, Some equalsEndPos) :: _ when
+                (tokenTup.LastTokenPos = equalsEndPos &&
+
+                 // Allow deindenting interface representation when started after `=`:
+                 //
+                 // type I = interface
+                 //   abstract P: int
+                 // end
+
+                 let allowDeindent = tokenTup.EndPos.Line = equalsEndPos.Line
+
+                 let lookaheadTokenTup = peekNextTokenTup ()
+                 let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
+                 match lookaheadTokenTup.Token with
+                 | END ->
+                     lookaheadTokenStartPos.Column >= typePos.Column
+
+                 | DEFAULT | OVERRIDE | INTERFACE | NEW | TYPE | STATIC | MEMBER | ABSTRACT | INHERIT | LBRACK_LESS ->
+                     let limitPos = if allowDeindent then typePos else tokenTup.StartPos
+                     lookaheadTokenStartPos.Column >= limitPos.Column + 1
+
+                 | _ ->
+                     false) ->
+
+            if debug then dprintf "INTERFACE, pushing CtxtParen, tokenStartPos = %a\n" outputPos tokenStartPos
+            pushCtxt tokenTup (CtxtParen (token, tokenStartPos))
+            pushCtxtSeqBlock tokenTup AddBlockEnd
+            returnToken tokenLexbufState token
+
+        // type C with interface .... with
+        // type C = interface .... with
         | INTERFACE, _ ->
-            let lookaheadTokenTup = peekNextTokenTup()
-            let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
-            match lookaheadTokenTup.Token with
-            // type I = interface .... end
-            | DEFAULT | OVERRIDE | INTERFACE | NEW | TYPE | STATIC | END | MEMBER | ABSTRACT | INHERIT | LBRACK_LESS ->
-                if debug then dprintf "INTERFACE, pushing CtxtParen, tokenStartPos = %a, lookaheadTokenStartPos = %a\n" outputPos tokenStartPos outputPos lookaheadTokenStartPos
-                pushCtxt tokenTup (CtxtParen (token, tokenStartPos))
-                pushCtxtSeqBlock tokenTup AddBlockEnd
-                returnToken tokenLexbufState token
-            // type C with interface .... with
-            // type C = interface .... with
-            | _ ->
-                if debug then dprintf "INTERFACE, pushing CtxtInterfaceHead, tokenStartPos = %a, lookaheadTokenStartPos = %a\n" outputPos tokenStartPos outputPos lookaheadTokenStartPos
-                pushCtxt tokenTup (CtxtInterfaceHead tokenStartPos)
-                returnToken tokenLexbufState OINTERFACE_MEMBER
+            if debug then dprintf "INTERFACE, pushing CtxtInterfaceHead, tokenStartPos = %a, lookaheadTokenStartPos \n" outputPos tokenStartPos
+            pushCtxt tokenTup (CtxtInterfaceHead tokenStartPos)
+            returnToken tokenLexbufState OINTERFACE_MEMBER
 
         | CLASS, _ ->
             if debug then dprintf "CLASS, pushing CtxtParen(%a)\n" outputPos tokenStartPos
@@ -2411,7 +2459,7 @@ type LexFilterImpl (
         | TYPE, _ ->
             insertComingSoonTokens("TYPE", TYPE_COMING_SOON, TYPE_IS_HERE)
             if debug then dprintf "TYPE, pushing CtxtTypeDefns(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtTypeDefns tokenStartPos)
+            pushCtxt tokenTup (CtxtTypeDefns(tokenStartPos, None))
             pool.Return tokenTup
             hwTokenFetch useBlockRule
 
@@ -2582,7 +2630,7 @@ type LexFilterImpl (
         pushCtxtSeqBlockAt strictIndentation false fallbackToken (peekNextTokenTup ()) addBlockEnd
 
     and pushCtxtSeqBlockAt strict (useFallback: bool) (fallbackToken: TokenTup) (tokenTup: TokenTup) addBlockEnd =
-         let pushed = tryPushCtxt strict tokenTup (CtxtSeqBlock(FirstInSeqBlock, startPosOfTokenTup tokenTup, addBlockEnd))
+         let pushed = tryPushCtxt strict false tokenTup (CtxtSeqBlock(FirstInSeqBlock, startPosOfTokenTup tokenTup, addBlockEnd))
          if not pushed && useFallback then
              // The upcoming token isn't sufficiently indented to start the new context.
              // The parser expects proper contexts structure, so we push a new recovery context at the fallback token position.

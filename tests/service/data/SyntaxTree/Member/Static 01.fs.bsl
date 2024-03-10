@@ -23,7 +23,7 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = Member },
                                SynValInfo ([[]], SynArgInfo ([], false, None)),
-                               None, None),
+                               None),
                             FromParseError (Wild (5,10--5,10), (5,10--5,10)),
                             None,
                             ArbitraryAfterError
@@ -38,7 +38,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None, None), Const (Unit, (7,4--7,9)), None,
+                                None), Const (Unit, (7,4--7,9)), None,
                              Const (Unit, (7,7--7,9)), (7,4--7,9), NoneAtDo,
                              { LeadingKeyword = Do (7,4--7,6)
                                InlineKeyword = None

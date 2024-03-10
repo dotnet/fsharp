@@ -5,7 +5,7 @@
 
 You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET](https://dotnet.microsoft.com/).
 
-You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
+You will also need .NET SDK installed from [here](https://dotnet.microsoft.com/download/dotnet), exact version can be found in the global.json file in the root of the repository.
 
 ## Contributing
 
@@ -74,6 +74,8 @@ Even if you find a single-character typo, we're happy to take the change! Althou
 ```xml
 <add key="fsharp-prerelease" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8/nuget/v3/index.json" />
 ```
+
+**NOTE:** Official NuGet releases of FCS and FSharp.Core are synched with SDK releases (on purpose - we want to be in sync). Nightly packages release to Azure feeds on every successful insertion.
 
 ## Branches
 

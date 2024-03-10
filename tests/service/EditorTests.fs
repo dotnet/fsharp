@@ -781,7 +781,6 @@ type Class1() =
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual
         [|("LiteralAttribute", (3, 10, 3, 17))
-          ("LiteralAttribute", (3, 10, 3, 17))
           ("member .ctor", (3, 10, 3, 17))
           ("val ModuleValue", (3, 20, 3, 31))
           ("val op_Addition", (6, 26, 6, 27))
@@ -793,10 +792,8 @@ type Class1() =
           ("Class1", (10, 5, 10, 11))
           ("member .ctor", (10, 5, 10, 11))
           ("LiteralAttribute", (11, 10, 11, 17))
-          ("LiteralAttribute", (11, 10, 11, 17))
           ("member .ctor", (11, 10, 11, 17))
           ("val ClassValue", (11, 20, 11, 30))
-          ("LiteralAttribute", (12, 17, 12, 24))
           ("LiteralAttribute", (12, 17, 12, 24))
           ("member .ctor", (12, 17, 12, 24))
           ("val StaticClassValue", (12, 27, 12, 43))
@@ -1577,7 +1574,7 @@ let _ = Threading.Buzz = null
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
     |> shouldEqual
-        // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
+        // note: these "System" and "Threading" symbol uses are not duplications because each of them corresponds to different namespaces
         [|("System", (2, 5, 2, 11))
           ("Threading", (2, 12, 2, 21))
           ("System", (3, 5, 3, 11))
@@ -1585,7 +1582,6 @@ let _ = Threading.Buzz = null
           ("Threading", (5, 14, 5, 23))
           ("Tasks", (5, 24, 5, 29))
           ("val op_Equality", (6, 23, 6, 24))
-          ("Threading", (6, 8, 6, 17))
           ("Test", (1, 0, 1, 0))|]
 
 [<Test>]

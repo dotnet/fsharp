@@ -36,6 +36,9 @@ type public PatternContext =
     /// Completing union case field identifier in a pattern (e.g. fun (Case (field1 = a; fie| )) -> )
     | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
 
+    /// Completing a record field identifier in a pattern (e.g. fun { Field1 = a; Fie| } -> )
+    | RecordFieldIdentifier of referencedFields: (string * range) list
+
     /// Any other position in a pattern that does not need special handling
     | Other
 
@@ -166,7 +169,11 @@ module public ParsedInput =
         parsedInput: ParsedInput ->
         partiallyQualifiedName: MaybeUnresolvedIdent[] ->
         insertionPoint: OpenStatementInsertionPoint ->
-            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *) * ShortIdents option (*  entityNamespace *) * ShortIdents option (* entity: *) * ShortIdents) -> (InsertionContextEntity * InsertionContext)[])
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *) *
+            ShortIdents option (*  entityNamespace *) *
+            ShortIdents option (* entity: *) *
+            ShortIdents)
+                -> (InsertionContextEntity * InsertionContext)[])
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val FindNearestPointToInsertOpenDeclaration:

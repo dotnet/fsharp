@@ -121,10 +121,10 @@ let ``innerpoly-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/innerpoly" FSC_
 let ``innerpoly-FSI`` () = singleTestBuildAndRun "core/innerpoly" FSI
 
 [<Fact>]
-let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRun "core/namespaces" COMPILED_EXE_APP
+let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRunVersion "core/namespaces" COMPILED_EXE_APP LangVersion.Preview
 
 [<Fact>]
-let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/namespaces" COMPILED_EXE_APP
+let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/namespaces" COMPILED_EXE_APP LangVersion.Preview
 
 [<Fact>]
 let ``unicode2-FSC_DEBUG`` () = singleTestBuildAndRun "core/unicode" FSC_DEBUG // TODO: fails on coreclr
@@ -211,7 +211,7 @@ let ``nested-FSI`` () = singleTestBuildAndRun "core/nested" FSI
 let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPTIMIZED
 
 [<FactForDESKTOP>]
-let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_OPTIMIZED
+let ``members-basics-hw-mutrec-realinternalsignature`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_DEBUG//OPTIMIZED
 
 [<FactForDESKTOP>]
 let ``members-incremental-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/incremental" FSC_OPTIMIZED
@@ -365,16 +365,6 @@ let ``test int32-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/int32" FSC_OPT
 
 [<Fact>]
 let ``test int32-FSI`` () = singleTestBuildAndRun "core/int32" FSI
-
-// This test stays in FsharpSuite for desktop framework for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
-[<FactForNETCOREAPP>]
-let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
-
-[<FactForNETCOREAPP>]
-let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
-
-[<FactForNETCOREAPP>]
-let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
 
 [<Fact>]
 let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG

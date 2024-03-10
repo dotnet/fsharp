@@ -10,20 +10,20 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (i, None), false, None, (3,4--3,5)),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (i, None), false, None, (3,4--3,5)),
                   Some
                     (SynBindingReturnInfo
                        (FromParseError (3,6--3,6), (3,6--3,6), [],
                         { ColonRange = Some (3,5--3,6) })),
                   Typed
-                    (ArbitraryAfterError ("localBinding2", (5,1--5,1)),
-                     FromParseError (3,6--3,6), (5,1--5,1)), (3,4--3,5),
-                  Yes (3,0--5,1), { LeadingKeyword = Let (3,0--3,3)
+                    (ArbitraryAfterError ("localBinding2", (3,6--3,6)),
+                     FromParseError (3,6--3,6), (3,6--3,6)), (3,4--3,5),
+                  Yes (3,0--3,6), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None
-                                    EqualsRange = None })], (3,0--5,1))],
+                                    EqualsRange = None })], (3,0--3,6))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--5,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--3,6), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 

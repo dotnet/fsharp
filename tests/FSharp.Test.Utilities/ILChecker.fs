@@ -29,12 +29,17 @@ module ILChecker =
             (fun me -> String.Empty)
         )
 
-    let private normalizeILText assemblyName (ilCode: string) =
+    let normalizeILText assemblyName (ilCode: string) =
         let blockComments = @"/\*(.*?)\*/"
         let lineComments = @"//(.*?)\r?\n"
         let lineCommentsEof = @"//(.*?)$"
         let strings = @"""((\\[^\n]|[^""\n])*)"""
         let verbatimStrings = @"@(""[^""]*"")+"
+        let methodSingleLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(\s*\{)"
+        let methodMultiLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(\s*\{)"
+
+        let normalizeNewLines (text: string) = text.Replace("\r\n", "\n").Replace("\r\n", "\r")
+
         let stripComments (text:string) =
             Regex.Replace(text,
                 $"{blockComments}|{lineComments}|{lineCommentsEof}|{strings}|{verbatimStrings}",
@@ -44,6 +49,11 @@ module ILChecker =
                     else
                         me.Value), RegexOptions.Singleline)
             |> filterSpecialComment
+
+        let unifyMethodLine (text:string) =
+            let text1 = Regex.Replace(text, $"{methodSingleLine}", (fun me -> $"{me.Groups[1].Value}\n{me.Groups[2].Value}"), RegexOptions.Multiline)
+            let text2 = Regex.Replace(text1, $"{methodMultiLine}", (fun me -> $"{me.Groups[1].Value} {me.Groups[2].Value}\n{me.Groups[3].Value}"), RegexOptions.Multiline)
+            text2
 
         let replace input (pattern, replacement: string) = Regex.Replace(input, pattern, replacement, RegexOptions.Singleline)
 
@@ -62,8 +72,11 @@ module ILChecker =
             |> unifyRuntimeAssemblyName
             |> unifyImageBase
 
-        ilCode.Trim() |> stripComments |> unifyingAssemblyNames
-
+        ilCode.Trim()
+        |> normalizeNewLines
+        |> stripComments
+        |> unifyingAssemblyNames
+        |> unifyMethodLine
 
     let private generateIlFile dllFilePath ildasmArgs =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
@@ -104,48 +117,46 @@ module ILChecker =
                 |> Array.skipWhile(String.IsNullOrWhiteSpace)
                 |> Array.rev
 
-        expectedIL
-        |> List.map (fun (ilCode: string) -> ilCode.Trim())
-        |> List.iter (fun (ilCode: string) ->
-            let expectedLines = ilCode |> normalizeILText (Some assemblyName) |> prepareLines
+        match expectedIL with
+        | [] -> errorMsgOpt <- Some "No Expected IL"
+        | expectedIL ->
+            expectedIL
+            |> List.map (fun (ilCode: string) -> ilCode.Trim())
+            |> List.iter (fun (ilCode: string) ->
+                let expectedLines = ilCode |> normalizeILText (Some assemblyName) |> prepareLines
 
-            if expectedLines.Length = 0 then
-                errorMsgOpt <- Some("ExpectedLines length invalid: 0")
-            else
-                let startIndex =
-                    let index = actualIL.IndexOf(expectedLines[0].Trim())
-                    if index > 0 then
-                        index
-                    else
-                        0
-                let actualLines = actualIL.Substring(startIndex) |> prepareLines
-
-                let errors = ResizeArray()
-                if actualLines.Length < expectedLines.Length then
-                    let msg = $"\nExpected at least %d{expectedLines.Length} lines but found only %d{actualLines.Length}\n"
-                    errorMsgOpt <- Some(msg + "\nExpected:\n" + ilCode + "\n")
+                if expectedLines.Length = 0 then
+                    errorMsgOpt <- Some("ExpectedLines length invalid: 0")
                 else
-                    for i = 0 to expectedLines.Length - 1 do
-                        let expected = expectedLines[i].Trim()
-                        let actual = actualLines[i].Trim()
-                        if expected <> actual then
-                            errors.Add $"\n==\nName: '%s{actualLines[0]}'\n\nExpected:\t %s{expected}\nActual:\t\t %s{actual}\n=="
+                    let startIndex =
+                        let index = actualIL.IndexOf(expectedLines[0].Trim())
+                        if index > 0 then
+                            index
+                        else
+                            0
+                    let actualLines = actualIL.Substring(startIndex) |> prepareLines
 
-                    if errors.Count > 0 then
-                        let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
-                        errorMsgOpt <- Some(msg + "\n\n\nActual:\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
-        )
+                    let errors = ResizeArray()
+                    if actualLines.Length < expectedLines.Length then
+                        let msg = $"\nExpected at least %d{expectedLines.Length} lines but found only %d{actualLines.Length}\n"
+                        errorMsgOpt <- Some(msg + "\nExpected:\n" + ilCode + "\n")
+                    else
+                        for i = 0 to expectedLines.Length - 1 do
+                            let expected = expectedLines[i].Trim()
+                            let actual = actualLines[i].Trim()
+                            if expected <> actual then
+                                errors.Add $"\n==\nName: '%s{actualLines[0]}'\n\nExpected:\t %s{expected}\nActual:\t\t %s{actual}\n=="
 
-        if expectedIL.Length = 0 then
-            errorMsgOpt <- Some ("No Expected IL")
+                        if errors.Count > 0 then
+                            let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
+                            errorMsgOpt <- Some(msg + "\n\n\nActual:\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
+            )
 
         match errorMsgOpt with
-        | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\nEntire actual:\n" + actualIL)
-        | _ -> ()
-
-        match errorMsgOpt with
-        | Some(errorMsg) -> (false, errorMsg, actualIL)
-        | _ -> (true, String.Empty, String.Empty)
+        | Some msg ->
+            let msg = msg + "\n\n\nEntire actual:\n" + actualIL
+            (false, msg, actualIL)
+        | _ -> (true, String.Empty, actualIL)
 
     let private checkILPrim ildasmArgs dllFilePath =
         let actualIL = generateIL dllFilePath ildasmArgs
@@ -167,8 +178,8 @@ module ILChecker =
     let verifyIL (dllFilePath: string) (expectedIL: string) =
         checkIL dllFilePath [expectedIL]
 
-    let verifyILAndReturnActual (dllFilePath: string) (expectedIL: string) =
-        checkILPrim [] dllFilePath [expectedIL]
+    let verifyILAndReturnActual args dllFilePath expectedIL =
+        checkILPrim args dllFilePath expectedIL
 
     let checkILNotPresent dllFilePath unexpectedIL =
         let actualIL = generateIL dllFilePath []

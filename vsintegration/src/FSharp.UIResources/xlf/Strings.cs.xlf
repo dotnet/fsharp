@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AdditionalTelemetry">
         <source>Additional performance telemetry (experimental)</source>
-        <target state="new">Additional performance telemetry (experimental)</target>
+        <target state="translated">Další telemetrie výkonu (experimentální)</target>
         <note />
       </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
@@ -14,22 +14,17 @@
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
         <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="new">Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</target>
+        <target state="translated">Nadále analyzovat celé řešení pro diagnostiku jako úlohu na pozadí s nízkou prioritou (vyžaduje restartování)</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
         <source>Background analysis</source>
-        <target state="new">Background analysis</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="new">Capture identifiers while parsing</target>
+        <target state="translated">Analýza na pozadí</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
-        <target state="new">Keep background symbol keys</target>
+        <target state="translated">Zachovat klávesy symbolů pozadí</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -38,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">Pro kontrolu používat živé (neuložené) vyrovnávací paměti (vyžaduje se restartování)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="translated">Pro analýzu používat živé (neuložené) vyrovnávací paměti (vyžaduje se restartování)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -84,12 +79,12 @@
       </trans-unit>
       <trans-unit id="Keep_All_Background_Resolutions">
         <source>Keep all background intermediate resolutions (increases memory usage)</source>
-        <target state="new">Keep all background intermediate resolutions (increases memory usage)</target>
+        <target state="translated">Zachovat všechna přechodná řešení na pozadí (zvyšuje využití paměti)</target>
         <note />
       </trans-unit>
       <trans-unit id="Keep_All_Background_Symbol_Uses">
         <source>Keep all background symbol uses (increases memory usage)</source>
-        <target state="new">Keep all background symbol uses (increases memory usage)</target>
+        <target state="translated">Zachovat všechna použití symbolů pozadí (zvyšuje využití paměti)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -109,12 +104,12 @@
       </trans-unit>
       <trans-unit id="Language_Service_Settings">
         <source>Language service settings (advanced)</source>
-        <target state="new">Language service settings (advanced)</target>
+        <target state="translated">Nastavení jazykové služby (pokročilé)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="translated">Živé vyrovnávací paměti (experimentální)</target>
+        <source>Live Buffers</source>
+        <target state="translated">Živé vyrovnávací paměti</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -132,9 +127,14 @@
         <target state="translated">Upřednostňovaná šířka popisu ve znacích</target>
         <note />
       </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="translated">Odebrání nepotřebných závorek (experimentální, může mít vliv na výkon při psaní)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
-        <target state="new">Send additional performance telemetry</target>
+        <target state="translated">Odeslat další telemetrii výkonu</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
@@ -177,6 +177,11 @@
         <target state="translated">Zo_brazit navigační odkazy jako</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="translated">Zobrazit poznámky v Rychlých informacích</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
         <source>Simplify names (remove unnecessary qualifiers)</source>
         <target state="translated">Zjednodušit názvy (odebrat nepotřebné kvalifikátory)</target>
@@ -195,6 +200,41 @@
       <trans-unit id="Tooltip_preferred_description_width_in_characters">
         <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
         <target state="translated">Umožňuje formátovat podpis na danou šířku přidáním konců řádků odpovídajících pravidlům syntaxe F#. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="new">Transparent Compiler (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="new">Use at your own risk!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor">
+        <source>Transparent Compiler Cache Factor</source>
+        <target state="new">Transparent Compiler Cache Factor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
+        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
+        <target state="new">Higher number means more memory will be used for caching. Changing the value wipes cache.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="new">Create new project snapshots from existing ones</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -280,6 +320,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Navrhovat názvy pro nerozpoznané identifikátory</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="new">Use Transparent Compiler (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">

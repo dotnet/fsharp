@@ -14,27 +14,29 @@ ImplFile
                     (Class,
                      [ImplicitCtor
                         (None, [],
-                         SimplePats
-                           ([Typed
-                               (Id (i, None, false, false, false, (3,7--3,8)),
-                                Fun
-                                  (LongIdent (SynLongIdent ([a], [], [None])),
-                                   FromParseError (3,14--3,14), (3,10--3,14),
-                                   { ArrowRange = (3,12--3,14) }), (3,7--3,16))],
-                            [], (3,6--3,16)), None,
+                         Paren
+                           (Typed
+                              (Named
+                                 (SynIdent (i, None), false, None, (3,7--3,8)),
+                               Fun
+                                 (LongIdent (SynLongIdent ([a], [], [None])),
+                                  FromParseError (3,14--3,14), (3,10--3,14),
+                                  { ArrowRange = (3,12--3,14) }), (3,7--3,16)),
+                            (3,6--3,16)), None,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None })], (3,19--3,28)), [],
                   Some
                     (ImplicitCtor
                        (None, [],
-                        SimplePats
-                          ([Typed
-                              (Id (i, None, false, false, false, (3,7--3,8)),
-                               Fun
-                                 (LongIdent (SynLongIdent ([a], [], [None])),
-                                  FromParseError (3,14--3,14), (3,10--3,14),
-                                  { ArrowRange = (3,12--3,14) }), (3,7--3,16))],
-                           [], (3,6--3,16)), None,
+                        Paren
+                          (Typed
+                             (Named
+                                (SynIdent (i, None), false, None, (3,7--3,8)),
+                              Fun
+                                (LongIdent (SynLongIdent ([a], [], [None])),
+                                 FromParseError (3,14--3,14), (3,10--3,14),
+                                 { ArrowRange = (3,12--3,14) }), (3,7--3,16)),
+                           (3,6--3,16)), None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--3,28),
                   { LeadingKeyword = Type (3,0--3,4)

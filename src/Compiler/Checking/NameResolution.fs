@@ -87,9 +87,9 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
     match TryGetActivePatternInfo vref with
     | Some apinfo ->
         
-        let isStructRetTy = 
+        let retKind = 
             if apinfo.IsTotal then
-                false
+                ActivePatternReturnKind.RefTypeWrapper
             else
                 let _, apReturnTy = stripFunTy g vref.TauType
                 let hasStructAttribute() = 
@@ -97,8 +97,10 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
                     |> List.exists (function 
                         | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> IsMatchingFSharpAttribute g g.attrib_StructAttribute a  
                         | _ -> false)
-                isStructTy g apReturnTy || hasStructAttribute()
-        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, isStructRetTy))
+                if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnKind.StructTypeWrapper
+                elif isBoolTy g apReturnTy then ActivePatternReturnKind.Boolean
+                else ActivePatternReturnKind.RefTypeWrapper
+        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, retKind))
     | None -> []
 
 /// Try to make a reference to a value in a module.
@@ -201,9 +203,6 @@ type Item =
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list
 
-    /// Represents the resolution of a name to the fake constructor simulated for an interface type.
-    | FakeInterfaceCtor of TType
-
     /// Represents the resolution of a name to a delegate
     | DelegateCtor of TType
 
@@ -276,11 +275,10 @@ type Item =
             | ValueSome tcref -> tcref.DisplayNameCore
             | _ -> nm
             |> DemangleGenericTypeName
-        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName
-        | Item.FakeInterfaceCtor ty
+        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
         | Item.DelegateCtor ty ->
             match ty with 
-            | AbbrevOrAppTy tcref -> tcref.DisplayNameCore
+            | AbbrevOrAppTy(tcref, _) -> tcref.DisplayNameCore
             // This case is not expected
             | _ -> "" 
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayNameCore
@@ -311,7 +309,7 @@ type Item =
         | Item.Property(info = pinfo :: _) -> pinfo.DisplayName
         | Item.Event einfo -> einfo.DisplayName
         | Item.MethodGroup(_, minfo :: _, _) -> minfo.DisplayName
-        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayName
+        | Item.DelegateCtor (AbbrevOrAppTy(tcref, _)) -> tcref.DisplayName
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
         | Item.TypeVar (nm, _) -> nm |> ConvertLogicalNameToDisplayName
@@ -568,7 +566,7 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
                 | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
                 | _ -> None
         Some rs
-    with e -> // Import of the ILType may fail, if so report the error and skip on
+    with RecoverableException e -> // Import of the ILType may fail, if so report the error and skip on
         errorRecovery e m
         None
 
@@ -578,8 +576,8 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
     let pri = NextExtensionMethodPriority()
     
     if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-        let csharpStyleExtensionMembers = 
-            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
+        let csharpStyleExtensionMembers =
+            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || (tcrefOfStaticClass.IsLocalRef && not tcrefOfStaticClass.IsTypeAbbrev) then
                 protectAssemblyExploration [] (fun () ->
                     let ty = generalizedTyconRef g tcrefOfStaticClass
                     GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
@@ -1570,6 +1568,85 @@ let FreshenUnionCaseRef (ncenv: NameResolver) m (ucref: UnionCaseRef) =
 let FreshenRecdFieldRef (ncenv: NameResolver) m (rfref: RecdFieldRef) =
     RecdFieldInfo(ncenv.InstantiationGenerator m (rfref.Tycon.Typars m), rfref)
 
+//-------------------------------------------------------------------------
+// Generate type variables and record them in within the scope of the
+// compilation environment, which currently corresponds to the scope
+// of the constraint resolution carried out by type checking.
+//------------------------------------------------------------------------- 
+   
+let compgenId = mkSynId range0 unassignedTyparName
+
+let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
+    Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
+    
+let AnonTyparId m = mkSynId m unassignedTyparName
+
+let NewAnonTypar (kind, m, rigid, var, dyn) = 
+    Construct.NewTypar (kind, rigid, SynTypar(AnonTyparId m, var, true), false, dyn, [], false, false)
+    
+let NewNamedInferenceMeasureVar (_m: range, rigid, var, id) = 
+    Construct.NewTypar(TyparKind.Measure, rigid, SynTypar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
+
+let NewInferenceMeasurePar () =
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
+
+let NewErrorTypar () =
+    NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
+
+let NewErrorMeasureVar () =
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
+
+let NewInferenceType (g: TcGlobals) = 
+    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
+    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
+
+let NewErrorType () =
+    mkTyparTy (NewErrorTypar ())
+
+let NewErrorMeasure () =
+    Measure.Var (NewErrorMeasureVar ())
+
+let NewByRefKindInferenceType (g: TcGlobals) m = 
+    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)
+    if g.byrefkind_InOut_tcr.CanDeref then
+        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull), m)]
+    mkTyparTy tp
+
+let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
+
+let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
+    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
+    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
+    let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
+    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
+
+// QUERY: should 'rigid' ever really be 'true'? We set this when we know
+// we are going to have to generalize a typar, e.g. when implementing a 
+// abstract generic method slot. But we later check the generalization 
+// condition anyway, so we could get away with a non-rigid typar. This 
+// would sort of be cleaner, though give errors later. 
+let FreshenAndFixupTypars g m rigid fctps tinst tpsorig =
+    let tps = tpsorig |> List.map (FreshenTypar g rigid)
+    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
+    tps, renaming, tinst
+
+let FreshenTypeInst g m tpsorig =
+    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig
+
+let FreshMethInst g m fctps tinst tpsorig =
+    FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig
+
+let FreshenTypars g m tpsorig =
+    match tpsorig with 
+    | [] -> []
+    | _ -> 
+        let _, _, tpTys = FreshenTypeInst g m tpsorig
+        tpTys
+
+let FreshenMethInfo m (minfo: MethInfo) =
+    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+    tpTys
+
 /// This must be called after fetching unqualified items that may need to be freshened 
 /// or have type instantiations
 let ResolveUnqualifiedItem (ncenv: NameResolver) nenv m res =
@@ -1713,6 +1790,8 @@ type ItemOccurence =
     | RelatedText
     /// This is a usage of a module or namespace name in open statement
     | Open
+    /// Not permitted item uses like interface names used as expressions
+    | InvalidUse
 
 type FormatStringCheckContext =
     { SourceText: ISourceText
@@ -1741,88 +1820,100 @@ let (|ValRefOfProp|_|) (pi: PropInfo) = pi.ArbitraryValRef
 let (|ValRefOfMeth|_|) (mi: MethInfo) = mi.ArbitraryValRef
 let (|ValRefOfEvent|_|) (evt: EventInfo) = evt.ArbitraryValRef
 
+[<return: Struct>]
 let rec (|RecordFieldUse|_|) (item: Item) =
     match item with
-    | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, name))) -> Some (name, tcref)
-    | Item.SetterArg(_, RecordFieldUse f) -> Some f
-    | _ -> None
+    | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, name))) -> ValueSome (name, tcref)
+    | Item.SetterArg(_, RecordFieldUse f) -> ValueSome f
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|UnionCaseFieldUse|_|) (item: Item) =
     match item with
-    | Item.UnionCaseField (uci, fieldIndex) -> Some (fieldIndex, uci.UnionCaseRef)
-    | _ -> None
+    | Item.UnionCaseField (uci, fieldIndex) -> ValueSome (fieldIndex, uci.UnionCaseRef)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let rec (|ILFieldUse|_|) (item: Item) =
     match item with
-    | Item.ILField finfo -> Some finfo
-    | Item.SetterArg(_, ILFieldUse f) -> Some f
-    | _ -> None
+    | Item.ILField finfo -> ValueSome finfo
+    | Item.SetterArg(_, ILFieldUse f) -> ValueSome f
+    | _ -> ValueNone
 
+[<return: Struct>]
 let rec (|PropertyUse|_|) (item: Item) =
     match item with
-    | Item.Property(info = pinfo :: _) -> Some pinfo
-    | Item.SetterArg(_, PropertyUse pinfo) -> Some pinfo
-    | _ -> None
+    | Item.Property(info = pinfo :: _) -> ValueSome pinfo
+    | Item.SetterArg(_, PropertyUse pinfo) -> ValueSome pinfo
+    | _ -> ValueNone
 
+[<return: Struct>]
 let rec (|FSharpPropertyUse|_|) (item: Item) =
     match item with
-    | Item.Property(info = [ValRefOfProp vref]) -> Some vref
-    | Item.SetterArg(_, FSharpPropertyUse propDef) -> Some propDef
-    | _ -> None
+    | Item.Property(info = [ValRefOfProp vref]) -> ValueSome vref
+    | Item.SetterArg(_, FSharpPropertyUse propDef) -> ValueSome propDef
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|MethodUse|_|) (item: Item) =
     match item with
-    | Item.MethodGroup(_, [minfo], _) -> Some minfo
-    | _ -> None
+    | Item.MethodGroup(_, [minfo], _) -> ValueSome minfo
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|FSharpMethodUse|_|) (item: Item) =
     match item with
-    | Item.MethodGroup(_, [ValRefOfMeth vref], _) -> Some vref
-    | Item.Value vref when vref.IsMember -> Some vref
-    | _ -> None
+    | Item.MethodGroup(_, [ValRefOfMeth vref], _) -> ValueSome vref
+    | Item.Value vref when vref.IsMember -> ValueSome vref
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|EntityUse|_|) (item: Item) =
     match item with
-    | Item.UnqualifiedType (tcref :: _) -> Some tcref
-    | Item.ExnCase tcref -> Some tcref
-    | Item.Types(_, [AbbrevOrAppTy tcref])
-    | Item.DelegateCtor(AbbrevOrAppTy tcref)
-    | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref) -> Some tcref
+    | Item.UnqualifiedType (tcref :: _) -> ValueSome tcref
+    | Item.ExnCase tcref -> ValueSome tcref
+    | Item.Types(_, [AbbrevOrAppTy(tcref, _)])
+    | Item.DelegateCtor(AbbrevOrAppTy(tcref, _)) -> ValueSome tcref
     | Item.CtorGroup(_, ctor :: _) ->
         match ctor.ApparentEnclosingType with
-        | AbbrevOrAppTy tcref -> Some tcref
-        | _ -> None
-    | _ -> None
+        | AbbrevOrAppTy(tcref, _) -> ValueSome tcref
+        | _ -> ValueNone
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|EventUse|_|) (item: Item) =
     match item with
-    | Item.Event einfo -> Some einfo
-    | _ -> None
+    | Item.Event einfo -> ValueSome einfo
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|FSharpEventUse|_|) (item: Item) =
     match item with
-    | Item.Event(ValRefOfEvent vref) -> Some vref
-    | _ -> None
+    | Item.Event(ValRefOfEvent vref) -> ValueSome vref
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|UnionCaseUse|_|) (item: Item) =
     match item with
-    | Item.UnionCase(UnionCaseInfo(_, u1), _) -> Some u1
-    | _ -> None
+    | Item.UnionCase(UnionCaseInfo(_, u1), _) -> ValueSome u1
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|ValUse|_|) (item: Item) =
     match item with
     | Item.Value vref
     | FSharpPropertyUse vref
     | FSharpMethodUse vref
     | FSharpEventUse vref
-    | Item.CustomBuilder(_, vref) -> Some vref
-    | _ -> None
+    | Item.CustomBuilder(_, vref) -> ValueSome vref
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|ActivePatternCaseUse|_|) (item: Item) =
     match item with
-    | Item.ActivePatternCase(APElemRef(_, vref, idx, _)) -> Some (vref.SigRange, vref.DefinitionRange, idx)
-    | Item.ActivePatternResult(ap, _, idx, _) -> Some (ap.Range, ap.Range, idx)
-    | _ -> None
+    | Item.ActivePatternCase(APElemRef(_, vref, idx, _)) -> ValueSome (vref.SigRange, vref.DefinitionRange, idx)
+    | Item.ActivePatternResult(ap, _, idx, _) -> ValueSome (ap.Range, ap.Range, idx)
+    | _ -> ValueNone
 
 let tyconRefDefnHash (_g: TcGlobals) (eref1: EntityRef) =
     hash eref1.LogicalName
@@ -1867,7 +1958,7 @@ let ItemsAreEffectivelyEqual g orig other =
             not tp1.IsCompilerGenerated && not tp1.IsFromError &&
             not tp2.IsCompilerGenerated && not tp2.IsFromError &&
             equals tp1.Range tp2.Range
-         | AbbrevOrAppTy tcref1, AbbrevOrAppTy tcref2 ->
+         | AbbrevOrAppTy(tcref1, _), AbbrevOrAppTy(tcref2, _) ->
             tyconRefDefnEq g tcref1 tcref2
          | _ -> false)
 
@@ -2229,7 +2320,6 @@ let CheckAllTyparsInferrable amap m item =
 
     | Item.Trait _
     | Item.CtorGroup _
-    | Item.FakeInterfaceCtor _
     | Item.DelegateCtor _
     | Item.Types _
     | Item.ModuleOrNamespaces _
@@ -2364,14 +2454,19 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 // Consume ids that refer to a namespace, module, or type
 //-------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
+type ShouldNotifySink =
+    | Yes
+    | No
+
 /// Perform name resolution for an identifier which must resolve to be a module or namespace.
-let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
+let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl notifySink =
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2 :: rest2 ->
-            ResolveLongIdentAsModuleOrNamespace sink amap m false FullyQualified nenv ad id2 rest2 isOpenDecl
+            ResolveLongIdentAsModuleOrNamespace sink amap m false FullyQualified nenv ad id2 rest2 isOpenDecl notifySink
     else
         let notFoundAux (id: Ident) depth error (tcrefs: TyconRef seq) =
             let suggestNames (addToBuffer: string -> unit) =
@@ -2432,7 +2527,8 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m firs
             modrefs
             |> List.map (fun modref ->
                 if IsEntityAccessible amap m ad modref then
-                    notifyNameResolution modref id.idRange
+                    if notifySink = ShouldNotifySink.Yes then
+                        notifyNameResolution modref id.idRange
                     look 1 modref rest
                 else
                     raze (namespaceOrModuleNotFound.Force()))
@@ -2440,8 +2536,8 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m firs
         | _ -> raze (namespaceOrModuleNotFound.Force())
 
 // Note - 'rest' is annotated due to a bug currently in Unity (see: https://github.com/dotnet/fsharp/pull/7427)
-let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl f =
-    match ResolveLongIdentAsModuleOrNamespace sink amap m true fullyQualified nenv ad id [] isOpenDecl with
+let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl notifySink f =
+    match ResolveLongIdentAsModuleOrNamespace sink amap m true fullyQualified nenv ad id [] isOpenDecl notifySink with
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))
@@ -2464,7 +2560,8 @@ let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m a
     else
         let ctorInfos = GetIntrinsicConstructorInfosOfType ncenv.InfoReader m ty
         if isNil ctorInfos && isInterfaceTy g ty then
-            success (resInfo, Item.FakeInterfaceCtor ty)
+            let tcref = tcrefOfAppTy g ty
+            success (resInfo, Item.Types(tcref.DisplayName, [ty]))
         else
             let defaultStructCtorInfo =
                 if (not (ctorInfos |> List.exists (fun x -> x.IsNullary)) &&
@@ -2575,7 +2672,10 @@ let CheckNestedTypesOfType (ncenv: NameResolver) (resInfo: ResolutionInfo) ad nm
 
 // REVIEW: this shows up on performance logs. Consider for example endless resolutions of "List.map" to
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
-let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInfo: ResolutionInfo) depth m ad (id: Ident) (rest: Ident list) findFlag (typeNameResInfo: TypeNameResolutionInfo) ty =
+
+// maybeAppliedArgExpr is used in context of resolving extension method that would override property name, it may contain argExpr coming from the DelayedApp(argExpr: SynExpr)
+// see RFC-1137
+let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInfo: ResolutionInfo) depth m ad (id: Ident) (rest: Ident list) findFlag (typeNameResInfo: TypeNameResolutionInfo) ty (maybeAppliedArgExpr: SynExpr option) =
     let g = ncenv.g
     let m = unionRanges m id.idRange
     let nm = id.idText // used to filter the searches of the tables
@@ -2619,8 +2719,56 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 // make sure to keep the intrinsic pinfos before the extension pinfos in the list,
                 // since later on this logic is used when giving preference to intrinsic definitions
                 match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
-                | Some x -> success [resInfo, x, rest]
-                | None -> raze (UndefinedName (depth, FSComp.SR.undefinedNameFieldConstructorOrMember, id, NoSuggestions))
+                | Some x ->
+                    if
+                        not (g.langVersion.SupportsFeature LanguageFeature.PreferExtensionMethodOverPlainProperty)
+                        || not (List.isEmpty rest) // if not empty, it is .X.Y...
+                    then
+                        success [resInfo, x, rest]
+                    else
+                        match maybeAppliedArgExpr with
+                        | None -> success [resInfo, x, rest]
+                        | Some _argExpr ->
+                            // RFC-1137 prefer extension method when ...
+        
+                            let ignoreProperty (p: PropInfo) =
+                                // do not hide properties if:
+                                // * is indexed property e.g.:
+                                // ```fsharp
+                                // member x.Prop with 
+                                //     get (indexPiece1:int,indexPiece2: string) = ...
+                                //     and set (indexPiece1:int,indexPiece2: string) value = ... 
+                                // ```
+                                // which is called like this: obj.Prop(1,"a") or obj.Prop(1,"a") <- someValue
+                                // * is function type e.g.:
+                                // ```fsharp
+                                // member x.Prop with
+                                //    get () = fun a -> printfn $"{a}"
+                                // ```
+                                // which is called like this: obj.Prop 123
+                                if p.IsIndexer then
+                                    true
+                                else
+                                    match p.GetPropertyType(ncenv.amap, m) with
+                                    | TType_var(typar={typar_solution = Some (TType_fun _) }) ->
+                                        true
+                                    | _ -> false
+                            
+                            match x with
+                            | Item.Property(info=ps) when ps |> List.exists ignoreProperty ->
+                                success [resInfo, x, rest]
+                            | _ ->
+                                // lookup in-scope extension methods
+                                // to keep in sync with the same expression in `| Some(MethodItem msets) when isLookupExpr` below
+                                match ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty with
+                                | [] -> success [resInfo, x, rest]
+                                | methods ->
+                                    let extensionMethods = Item.MakeMethGroup(nm, methods)
+                                    success ((resInfo,extensionMethods,rest)::[resInfo,x,rest])
+                | None ->
+                    // todo: consider if we should check extension method, but we'd probably won't have matched
+                    // `Some(PropertyItem psets) when isLookUpExpr` in the first place.
+                    raze (UndefinedName (depth, FSComp.SR.undefinedNameFieldConstructorOrMember, id, NoSuggestions))     
 
             | Some(MethodItem msets) when isLookUpExpr ->
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
@@ -2753,20 +2901,20 @@ and ResolveLongIdentInNestedTypes (ncenv: NameResolver) nenv lookupKind resInfo 
                 resInfo.AddEntity(id.idRange, tcref) 
              | _ ->
                 resInfo
-        ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id2 rest findFlag typeNameResInfo ty
+        ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id2 rest findFlag typeNameResInfo ty None
         |> AtMostOneResult m)
 
 /// Resolve a long identifier using type-qualified name resolution.
 let ResolveLongIdentInType sink (ncenv: NameResolver) nenv lookupKind m ad id findFlag typeNameResInfo ty =
     let resInfo, item, rest =
-        ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 0 m ad id [] findFlag typeNameResInfo ty
+        ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 0 m ad id [] findFlag typeNameResInfo ty None
         |> AtMostOneResult m
         |> ForceRaise
 
     ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
     item, rest
 
-let private ResolveLongIdentInTyconRef (ncenv: NameResolver) nenv lookupKind (resInfo: ResolutionInfo) depth m ad id rest typeNameResInfo tcref =
+let private ResolveLongIdentInTyconRef (ncenv: NameResolver) nenv lookupKind (resInfo: ResolutionInfo) depth m ad id rest typeNameResInfo tcref maybeAppliedArgExpr =
 #if !NO_TYPEPROVIDERS
     // No dotting through type generators to get to a member!
     CheckForDirectReferenceToGeneratedType (tcref, PermitDirectReferenceToGeneratedType.No, m)
@@ -2775,20 +2923,21 @@ let private ResolveLongIdentInTyconRef (ncenv: NameResolver) nenv lookupKind (re
         match resInfo.EnclosingTypeInst with
         | [] -> FreshenTycon ncenv m tcref
         | tinstEnclosing -> FreshenTyconWithEnclosingTypeInst ncenv m tinstEnclosing tcref
-    ty |> ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id rest IgnoreOverrides typeNameResInfo
+    ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id rest IgnoreOverrides typeNameResInfo ty maybeAppliedArgExpr
 
-let private ResolveLongIdentInTyconRefs atMostOne (ncenv: NameResolver) nenv lookupKind depth m ad id rest typeNameResInfo idRange tcrefs =
+let private ResolveLongIdentInTyconRefs atMostOne (ncenv: NameResolver) nenv lookupKind depth m ad id rest typeNameResInfo idRange tcrefs maybeAppliedArgExpr =
     tcrefs |> CollectResults2 atMostOne (fun (resInfo: ResolutionInfo, tcref) ->
         let resInfo = resInfo.AddEntity(idRange, tcref)
-        tcref |> ResolveLongIdentInTyconRef ncenv nenv lookupKind resInfo depth m ad id rest typeNameResInfo |> AtMostOneResult m)
+        ResolveLongIdentInTyconRef ncenv nenv lookupKind resInfo depth m ad id rest typeNameResInfo tcref maybeAppliedArgExpr |> AtMostOneResult m)
 
 //-------------------------------------------------------------------------
 // ResolveExprLongIdentInModuleOrNamespace
 //-------------------------------------------------------------------------
 
+[<return: Struct>]
 let (|AccessibleEntityRef|_|) amap m ad (modref: ModuleOrNamespaceRef) mspec =
     let eref = modref.NestedTyconRef mspec
-    if IsEntityAccessible amap m ad eref then Some eref else None
+    if IsEntityAccessible amap m ad eref then ValueSome eref else ValueNone
 
 let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (typeNameResInfo: TypeNameResolutionInfo) ad resInfo depth m modref (mty: ModuleOrNamespaceType) (id: Ident) (rest: Ident list) =
     // resInfo records the modules or namespaces actually relevant to a resolution
@@ -2829,7 +2978,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
                     let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
                     CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
 
-                ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv lookupKind (depth+1) m ad id2 rest2 typeNameResInfo id.idRange tcrefs
+                ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv lookupKind (depth+1) m ad id2 rest2 typeNameResInfo id.idRange tcrefs None
 
             // Check if we've got some explicit type arguments
             | _ ->
@@ -2927,7 +3076,7 @@ let ResolveUnqualifiedTyconRefs nenv tcrefs =
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers
 /// that may represent further actions, e.g. further lookups.
-let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified m ad nenv (typeNameResInfo: TypeNameResolutionInfo) (id: Ident) (rest: Ident list) isOpenDecl =
+let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified m ad nenv (typeNameResInfo: TypeNameResolutionInfo) (id: Ident) (rest: Ident list) isOpenDecl maybeAppliedArgExpr =
 
     let lookupKind = LookupKind.Expr LookupIsInstance.No
 
@@ -2945,9 +3094,9 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
         | [] ->
             raze (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | [next] ->
-            ResolveExprLongIdentPrim sink ncenv false fullyQualified m ad nenv typeNameResInfo next [] isOpenDecl
+            ResolveExprLongIdentPrim sink ncenv false fullyQualified m ad nenv typeNameResInfo next [] isOpenDecl maybeAppliedArgExpr
         | id2 :: rest2 ->
-            ResolveExprLongIdentPrim sink ncenv false FullyQualified m ad nenv typeNameResInfo id2 rest2 isOpenDecl
+            ResolveExprLongIdentPrim sink ncenv false FullyQualified m ad nenv typeNameResInfo id2 rest2 isOpenDecl maybeAppliedArgExpr
     else
         if isNil rest && fullyQualified <> FullyQualified then
             let mutable typeError = None
@@ -3013,33 +3162,50 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match AtMostOneResult m innerSearch with
                     | Result _ as res -> res
                     | _ ->
-                        let failingCase =
-                            match typeError with
-                            | Some e -> raze e
-                            | _ ->
-                                let suggestNamesAndTypes (addToBuffer: string -> unit) =
-                                    for e in nenv.eUnqualifiedItems do
-                                        if canSuggestThisItem e.Value then
-                                            addToBuffer e.Value.DisplayName
 
-                                    for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
-                                        if IsEntityAccessible ncenv.amap m ad e.Value then
-                                            addToBuffer e.Value.DisplayName
+                    match typeError with
+                    | Some e -> raze e
+                    | _ ->
 
-                                    for kv in nenv.ModulesAndNamespaces fullyQualified do
-                                        for modref in kv.Value do
-                                            if IsEntityAccessible ncenv.amap m ad modref then
-                                                addToBuffer modref.DisplayName
+                    let tyconSearch () =
+                        let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
+                        if isNil tcrefs then NoResultsOrUsefulErrors else
 
-                                    // check if the user forgot to use qualified access
-                                    for e in nenv.eTyconsByDemangledNameAndArity do                                    
-                                        let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
-                                        if hasRequireQualifiedAccessAttribute then
-                                            if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
-                                                addToBuffer (e.Value.DisplayName + "." + id.idText)
+                        let tcrefs = ResolveUnqualifiedTyconRefs nenv tcrefs
+                        let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
+                        CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
+                        |> CollectResults success
 
-                                raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
-                        failingCase
+                    match tyconSearch () with
+                    | Result((resInfo, tcref) :: _) ->
+                        let _, _, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+                        let item = Item.Types(id.idText, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
+                        success (resInfo, item)
+                    | _ ->
+
+                    let suggestNamesAndTypes (addToBuffer: string -> unit) =
+                        for e in nenv.eUnqualifiedItems do
+                            if canSuggestThisItem e.Value then
+                                addToBuffer e.Value.DisplayName
+
+                        for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
+                            if IsEntityAccessible ncenv.amap m ad e.Value then
+                                addToBuffer e.Value.DisplayName
+
+                        for kv in nenv.ModulesAndNamespaces fullyQualified do
+                            for modref in kv.Value do
+                                if IsEntityAccessible ncenv.amap m ad modref then
+                                    addToBuffer modref.DisplayName
+
+                        // check if the user forgot to use qualified access
+                        for e in nenv.eTyconsByDemangledNameAndArity do                                    
+                            let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
+                            if hasRequireQualifiedAccessAttribute then
+                                if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
+                                    addToBuffer (e.Value.DisplayName + "." + id.idText)
+
+                    raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
+
                 match res with 
                 | Exception e -> raze e
                 | Result (resInfo, item) -> 
@@ -3067,7 +3233,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
               let moduleSearch ad () =
-                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
+                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl ShouldNotifySink.No
                      (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
               // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
@@ -3082,7 +3248,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     let tcrefs =
                        let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
                        CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
-                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv lookupKind 1 m ad id2 rest2 typeNameResInfo id.idRange tcrefs
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv lookupKind 1 m ad id2 rest2 typeNameResInfo id.idRange tcrefs maybeAppliedArgExpr
                   | _ ->
                     NoResultsOrUsefulErrors
 
@@ -3136,10 +3302,10 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                   ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
                   success (resInfo.EnclosingTypeInst, item, rest)
 
-let ResolveExprLongIdent sink (ncenv: NameResolver) m ad nenv typeNameResInfo lid =
+let ResolveExprLongIdent sink (ncenv: NameResolver) m ad nenv typeNameResInfo lid maybeAppliedArgExpr =
     match lid with
     | [] -> raze (Error(FSComp.SR.nrInvalidExpression(textOfLid lid), m))
-    | id :: rest -> ResolveExprLongIdentPrim sink ncenv true OpenQualified m ad nenv typeNameResInfo id rest false
+    | id :: rest -> ResolveExprLongIdentPrim sink ncenv true OpenQualified m ad nenv typeNameResInfo id rest false maybeAppliedArgExpr
 
 //-------------------------------------------------------------------------
 // Resolve F#/IL "." syntax in patterns
@@ -3177,7 +3343,7 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv nu
         match rest with
         | id2 :: rest2 ->
             let tcrefs = tcrefs.Force()
-            ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult (ncenv: NameResolver) nenv LookupKind.Pattern (depth+1) m ad id2 rest2 numTyArgsOpt id.idRange tcrefs
+            ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult (ncenv: NameResolver) nenv LookupKind.Pattern (depth+1) m ad id2 rest2 numTyArgsOpt id.idRange tcrefs None
         | _ ->
             NoResultsOrUsefulErrors
 
@@ -3258,7 +3424,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                         ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
                         Item.Types (id.idText, [ mkAppTy tcref [] ])
                     | _ ->
-                        match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false with
+                        match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false ShouldNotifySink.Yes with
                         | Result ((_, mref, _) :: _) ->
                             let res = ResolutionInfo.Empty.AddEntity (id.idRange, mref)
                             ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
@@ -3271,7 +3437,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
         // Long identifiers in patterns
         else
             let moduleSearch ad () =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false ShouldNotifySink.Yes
                     (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad)
 
             let tyconSearch ad =
@@ -3280,7 +3446,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                     let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
                     if isNil tcrefs then NoResultsOrUsefulErrors else
                     let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
-                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv LookupKind.Pattern 1 id.idRange ad id2 rest2 numTyArgsOpt id.idRange tcrefs
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv LookupKind.Pattern 1 id.idRange ad id2 rest2 numTyArgsOpt id.idRange tcrefs None
                 | _ ->
                     NoResultsOrUsefulErrors
 
@@ -3377,9 +3543,12 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
         | id :: rest ->
             ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref id rest)
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> true))
-    let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
-    CallNameResolutionSink sink (rangeOfLid lid, nenv, item, emptyTyparInst, ItemOccurence.UseInType, ad)
-    tcref
+
+    let _, tinst, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+    let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
+    CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, ItemOccurence.UseInType, ad)
+
+    tcref, tyargs
 
 /// Create an UndefinedName error with details
 let SuggestTypeLongIdentInModuleOrNamespace depth (modref: ModuleOrNamespaceRef) amap ad m (id: Ident) =
@@ -3494,12 +3663,12 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                         NoResultsOrUsefulErrors
 
             let modulSearch =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false ShouldNotifySink.Yes
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk)
                 |?> List.concat
 
             let modulSearchFailed() =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false ShouldNotifySink.Yes
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
                 |?> List.concat
 
@@ -3523,7 +3692,6 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                 let r = AddResults searchSoFar (modulSearchFailed())
                 AtMostOneResult m2 (r |?> (fun tcrefs -> CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, m)))
 
-
 /// Resolve a long identifier representing a type and report it
 let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurence fullyQualified nenv ad (lid: Ident list) staticResInfo genOk =
     let m = rangeOfLid lid
@@ -3538,15 +3706,20 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurence fullyQualified 
     match res with
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
-        let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
-        CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
-    | _ -> ()
-    res
+
+        let _, tinst, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+        let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
+        CallNameResolutionSink sink (m, nenv, item, tinst, occurence, ad)
+
+        Result(resInfo, tcref, tyargs)
+
+    | Exception exn ->
+        Exception exn
 
 /// Resolve a long identifier representing a type and report it
 let ResolveTypeLongIdent sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk =
     let res = ResolveTypeLongIdentAux sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk
-    (res |?> fun (resInfo, tcref) -> (resInfo.EnclosingTypeInst, tcref))
+    res |?> fun (resInfo, tcref, ttypes) -> (resInfo.EnclosingTypeInst, tcref, ttypes)
 
 //-------------------------------------------------------------------------
 // Resolve F#/IL "." syntax in records etc.
@@ -3571,7 +3744,7 @@ let rec ResolveFieldInModuleOrNamespace (ncenv: NameResolver) nenv ad (resInfo: 
             let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, TypeNameResolutionStaticArgsInfo.Indefinite, modref)
             if isNil tcrefs then NoResultsOrUsefulErrors else
             let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
-            let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField  (depth+1) m ad id2 rest2 typeNameResInfo id.idRange tcrefs
+            let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField  (depth+1) m ad id2 rest2 typeNameResInfo id.idRange tcrefs None
             // choose only fields
             let tyconSearch = tyconSearch |?> List.choose (function resInfo, Item.RecdField(RecdFieldInfo(_, rfref)), rest -> Some(resInfo, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false), rest) | _ -> None)
             tyconSearch
@@ -3700,7 +3873,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
                 let tcrefs = LookupTypeNameInEnvNoArity OpenQualified tn.idText nenv
                 if isNil tcrefs then NoResultsOrUsefulErrors else
                 let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
-                let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id2 rest2 typeNameResInfo tn.idRange tcrefs
+                let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id2 rest2 typeNameResInfo tn.idRange tcrefs None
                 // choose only fields
                 let tyconSearch = tyconSearch |?> List.choose (function resInfo, Item.RecdField(RecdFieldInfo(_, rfref)), rest -> Some(resInfo, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false), rest) | _ -> None)
                 tyconSearch
@@ -3710,7 +3883,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             match lid with
             | [] -> NoResultsOrUsefulErrors
             | id2 :: rest2 ->
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false ShouldNotifySink.Yes
                     (ResolveFieldInModuleOrNamespace ncenv nenv ad)
 
         let resInfo, item, rest =
@@ -3812,7 +3985,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 if isNil tcrefs then
                     NoResultsOrUsefulErrors
                 else
-                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo fieldId.idRange tcrefs
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo fieldId.idRange tcrefs None
                     |?> List.choose (fun x ->
                         match x with
                         | _, (Item.RecdField _ as item), rest -> Some (fieldId, item, rest)
@@ -3823,7 +3996,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             match lid with
             | [] -> NoResultsOrUsefulErrors
             | modOrNsId :: rest ->
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false (ResolveFieldInModuleOrNamespace ncenv nenv ad)
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false ShouldNotifySink.Yes (ResolveFieldInModuleOrNamespace ncenv nenv ad)
                 |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
                     fieldId, Item.RecdField rfinfo, restAfterField)
@@ -3879,9 +4052,9 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
 /// determine any valid members
 //
 // QUERY (instantiationGenerator cleanup): it would be really nice not to flow instantiationGenerator to here.
-let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Ident) rest (typeNameResInfo: TypeNameResolutionInfo) findFlag =
+let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Ident) rest (typeNameResInfo: TypeNameResolutionInfo) findFlag maybeArgExpr =
     let lookupKind = LookupKind.Expr LookupIsInstance.Yes
-    let adhocDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo ty)
+    let adhocDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo ty maybeArgExpr)
     match adhocDotSearchAccessible with
     | Exception _ ->
         // If the dot is not resolved by adhoc overloading then look for a record field
@@ -3901,7 +4074,7 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
 
         let adhocDotSearchAll () =
             let lookupKind = LookupKind.Expr LookupIsInstance.Ambivalent
-            ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode id rest findFlag typeNameResInfo ty
+            ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode id rest findFlag typeNameResInfo ty None
 
         dotFieldIdSearch +++ adhocDotSearchAll
         |> AtMostOneResult m
@@ -3940,6 +4113,11 @@ let NeedsWorkAfterResolution namedItem =
     | Item.ActivePatternCase apref -> not (List.isEmpty apref.ActivePatternVal.Typars)
     | _ -> false
 
+let isWrongItemInExpr item =
+    match item with
+    | Item.Types _ -> true
+    | _ -> false
+
 /// Specifies additional work to do after an item has been processed further in type checking.
 [<RequireQualifiedAccess>]
 type AfterResolution =
@@ -3953,8 +4131,10 @@ type AfterResolution =
 /// Resolve a long identifier occurring in an expression position.
 ///
 /// Called for 'TypeName.Bar' - for VS IntelliSense, we can filter out instance members from method groups
-let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv typeNameResInfo lid =
-    match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid with 
+// maybeAppliedArgExpr is used in context of resolving extension method that would override property name, it may contain argExpr coming from the DelayedApp(argExpr: SynExpr)
+// see RFC-1137
+let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv typeNameResInfo lid (maybeAppliedArgExpr: SynExpr option) =
+    match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid maybeAppliedArgExpr with 
     | Exception e -> Exception e 
     | Result (tinstEnclosing, item1, rest) ->
     let itemRange = ComputeItemRange wholem lid rest
@@ -4000,26 +4180,32 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
         | Some _ ->
             if NeedsWorkAfterResolution item then
                 AfterResolution.RecordResolution(None, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
+
+            elif isWrongItemInExpr item then
+               CallNameResolutionSink sink (itemRange, nenv, item, emptyTyparInst, ItemOccurence.InvalidUse, ad)
+               AfterResolution.DoNothing
+
             else
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
 
     success (tinstEnclosing, item, itemRange, rest, afterResolution)
 
+[<return: Struct>]
 let (|NonOverridable|_|) namedItem =
     match namedItem with
-    |   Item.MethodGroup(_, minfos, _) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
-    |   Item.Property(info = pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
-    |   _ -> Some ()
+    |   Item.MethodGroup(_, minfos, _) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> ValueNone
+    |   Item.Property(info = pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> ValueNone
+    |   _ -> ValueSome ()
 
 /// Called for 'expression.Bar' - for VS IntelliSense, we can filter out static members from method groups
 /// Also called for 'GenericType<Args>.Bar' - for VS IntelliSense, we can filter out non-static members from method groups
-let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv ty lid (typeNameResInfo: TypeNameResolutionInfo) findFlag staticOnly =
+let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv ty lid (typeNameResInfo: TypeNameResolutionInfo) findFlag staticOnly maybeAppliedArgExpr =
     let resolveExpr findFlag =
         let resInfo, item, rest =
             match lid with
             | id :: rest ->
-                ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag
+                ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag maybeAppliedArgExpr
             | _ -> error(InternalError("ResolveExprDotLongIdentAndComputeRange", wholem))
         let itemRange = ComputeItemRange wholem lid rest
         resInfo, item, rest, itemRange
@@ -4258,7 +4444,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not minfo.IsExtensionMember &&
             match minfo.LogicalName with
             | "GetType"  -> false
-            | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentWithHashCompare.TypeDefinitelyHasEquality g ty)
+            | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
             | "ToString" -> false
             | "Equals" ->
                 if not (isObjTy g minfo.ApparentEnclosingType) then
@@ -4266,7 +4452,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                     false
                 elif minfo.IsInstance then
                     // System.Object has only one instance Equals method and we want to suppress it unless Augment.TypeDefinitelyHasEquality is true
-                    not (AugmentWithHashCompare.TypeDefinitelyHasEquality g ty)
+                    not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
                 else
                     // System.Object has only one static Equals method and we always want to suppress it
                     true
@@ -4281,8 +4467,8 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not (MethInfoIsUnseen g m ty minfo) &&
             not minfo.IsConstructor &&
             not minfo.IsClassConstructor &&
-            not (minfo.LogicalName = ".cctor") &&
-            not (minfo.LogicalName = ".ctor") &&
+            (minfo.LogicalName <> ".cctor") &&
+            (minfo.LogicalName <> ".ctor") &&
             isApplicableMeth minfo ty &&
             not (suppressedMethNames.Contains minfo.LogicalName)
 
@@ -4345,7 +4531,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo ->
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
+                                not (nm.Contains "," && methsWithStaticParams |> List.exists (nm.StartsWithOrdinal)))
 #endif
 
                     minfos
@@ -4441,7 +4627,6 @@ let InfosForTyconConstructors (ncenv: NameResolver) m ad (tcref: TyconRef) =
         match ResolveObjectConstructor ncenv (DisplayEnv.Empty g) m ad ty with
         | Result item ->
             match item with
-            | Item.FakeInterfaceCtor _ -> None
             | Item.CtorGroup(nm, ctorInfos) ->
                 let ctors =
                     ctorInfos
@@ -4958,7 +5143,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                     not minfo.IsExtensionMember &&
                     match minfo.LogicalName with
                     | "GetType"  -> false
-                    | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentWithHashCompare.TypeDefinitelyHasEquality g ty)
+                    | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
                     | "ToString" -> false
                     | "Equals" ->
                         if not (isObjTy g minfo.ApparentEnclosingType) then
@@ -4966,7 +5151,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             false
                         elif minfo.IsInstance then
                             // System.Object has only one instance Equals method and we want to suppress it unless Augment.TypeDefinitelyHasEquality is true
-                            not (AugmentWithHashCompare.TypeDefinitelyHasEquality g ty)
+                            not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
                         else
                             // System.Object has only one static Equals method and we always want to suppress it
                             true
@@ -4980,8 +5165,8 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                     not (MethInfoIsUnseen g m ty minfo) &&
                     not minfo.IsConstructor &&
                     not minfo.IsClassConstructor &&
-                    not (minfo.LogicalName = ".cctor") &&
-                    not (minfo.LogicalName = ".ctor") &&
+                    (minfo.LogicalName <> ".cctor") &&
+                    (minfo.LogicalName <> ".ctor") &&
                     not (suppressedMethNames.Contains minfo.LogicalName)
                 result
 
@@ -5038,7 +5223,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             if methsWithStaticParams.IsEmpty then minfos
                             else minfos |> List.filter (fun minfo ->
                                     let nm = minfo.LogicalName
-                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
+                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (nm.StartsWithOrdinal)))
         #endif
 
                         minfos
@@ -5242,7 +5427,6 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
                    | _ -> ()
 
            | Item.DelegateCtor _
-           | Item.FakeInterfaceCtor _
            | Item.CtorGroup _
            | Item.UnqualifiedType _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do

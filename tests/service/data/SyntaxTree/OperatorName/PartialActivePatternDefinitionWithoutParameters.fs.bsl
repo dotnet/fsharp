@@ -11,8 +11,7 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named
                     (SynIdent
                        (|Boolean|_|,
@@ -22,7 +21,7 @@ ImplFile
                     (false,
                      SynLongIdent
                        ([Boolean; parse], [(2,27--2,28)], [None; None]), None,
-                     (2,20--2,33)), (2,4--2,17), Yes (2,0--2,33),
+                     (2,20--2,33)), (2,5--2,16), Yes (2,0--2,33),
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange = Some (2,18--2,19) })], (2,0--2,33))],

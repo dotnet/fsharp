@@ -1104,7 +1104,7 @@ type SynPat =
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
     /// A record pattern
-    | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range
+    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
 
     /// The 'null' pattern
     | Null of range: range
@@ -1195,13 +1195,7 @@ type SynAttributes = SynAttributeList list
 /// Represents extra information about the declaration of a value
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of
-        memberFlags: SynMemberFlags option *
-        valInfo: SynValInfo *
-        thisIdOpt: Ident option *
-        /// Is only populated during type-checking when an property has both a getter and setter.
-        /// It is used to track the fact that the getter and setter are part of the same property when they are desugared.
-        transformedFromProperty: Ident option
+    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
 
     member SynValInfo: SynValInfo
 
@@ -1349,7 +1343,7 @@ type SynTypeDefnSimpleRepr =
         fields: SynField list *
         isConcrete: bool *
         isIncrClass: bool *
-        implicitCtorSynPats: SynSimplePats option *
+        implicitCtorSynPats: SynPat option *
         range: range
 
     /// A type defined by using an IL assembly representation. Only used in FSharp.Core.
@@ -1458,6 +1452,9 @@ type SynField =
         accessibility: SynAccess option *
         range: range *
         trivia: SynFieldTrivia
+
+    /// Gets the syntax range of this construct
+    member Range: range
 
 /// Represents the syntax tree associated with the name of a type definition or module
 /// in signature or implementation.
@@ -1617,7 +1614,7 @@ type SynMemberDefn =
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
-        ctorArgs: SynSimplePats *
+        ctorArgs: SynPat *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
         range: range *

@@ -75,3 +75,95 @@ let ``Visit recursive let binding`` () =
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
     | Some [ SynBinding(valData = SynValData(valInfo = SynValInfo(curriedArgInfos = [ [ SynArgInfo(ident = Some id) ] ]))) ] when id.idText = "n" -> ()
     | _ -> failwith "Did not visit recursive let binding"
+
+[<Fact>]
+let ``Visit ValSig`` () =
+    let visitor =
+        { new SyntaxVisitorBase<_>() with
+            member x.VisitValSig(path, defaultTraverse, SynValSig(ident = SynIdent(ident = valIdent))) =
+                Some valIdent.idText
+        }
+
+    let source = """
+module X
+
+val y: int -> int
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fsi", source)
+
+    match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
+    | Some "y" -> ()
+    | _ -> failwith "Did not visit SynValSig"
+
+[<Fact>]
+let ``Visit nested ValSig`` () =
+    let visitor =
+        { new SyntaxVisitorBase<_>() with
+            member x.VisitValSig(path, defaultTraverse, SynValSig(ident = SynIdent(ident = valIdent))) =
+                Some valIdent.idText
+        }
+
+    let source = """
+module X
+
+module Y =
+    val z: int -> int
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fsi", source)
+
+    match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
+    | Some "z" -> ()
+    | _ -> failwith "Did not visit SynValSig"
+
+[<Fact>]
+let ``Visit Record in SynTypeDefnSig`` () =
+    let visitor =
+        { new SyntaxVisitorBase<_>() with
+            member x.VisitRecordDefn(path, fields, range) =
+                fields
+                |> List.choose (fun (SynField(idOpt = idOpt)) -> idOpt |> Option.map (fun ident -> ident.idText))
+                |> String.concat ","
+                |> Some
+        }
+
+    let source = """
+module X
+
+type Y =
+    {
+        A: int
+        B: char
+        C: string
+    }
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fsi", source)
+
+    match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
+    | Some "A,B,C" -> ()
+    | _ -> failwith "Did not visit SynTypeDefnSimpleRepr.Record in SynTypeDefnSig"
+
+[<Fact>]
+let ``Visit SynValSig in SynMemberSig`` () =
+    let visitor =
+        { new SyntaxVisitorBase<_>() with
+            member x.VisitValSig(path, defaultTraverse, SynValSig(ident = SynIdent(ident = valIdent))) =
+                Some valIdent.idText
+        }
+
+    let source = """
+module Lib
+
+type Meh =
+    new: unit -> Meh
+    member Foo: y: int -> int
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fsi", source)
+    let pos = mkPos 6 4
+
+    match SyntaxTraversal.Traverse(pos, parseTree, visitor) with
+    | Some "Foo" -> ()
+    | _ -> failwith "Did not visit SynValSig in SynMemberSig.Member"

@@ -17,6 +17,8 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Compiler.Xml
 open FSharp.Core.CompilerServices
 
+val getNameOfScopeRef: sref: ILScopeRef -> string
+
 type Stamp = int64
 
 type StampMap<'T> = Map<Stamp, 'T>
@@ -34,7 +36,7 @@ type ValInline =
     | Never
 
     /// Returns true if the implementation of a value must always be inlined
-    member MustInline: bool
+    member ShouldInline: bool
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, type
 /// if the value has been generalized or not as yet.
@@ -109,6 +111,8 @@ type ValFlags =
 
     member InlineInfo: ValInline
 
+    member IsImplied: bool
+
     member IsCompiledAsStaticPropertyWithoutField: bool
 
     member IsCompilerGenerated: bool
@@ -141,6 +145,8 @@ type ValFlags =
     member WithIgnoresByrefScope: ValFlags
 
     member WithInlineIfLambda: ValFlags
+
+    member WithIsImplied: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
@@ -316,9 +322,17 @@ type PublicPath =
 
     member EnclosingPath: string[]
 
+/// Represents the specified visibility of the accessibility -- used to ensure IL visibility
+[<RequireQualifiedAccess>]
+type SyntaxAccess =
+    | Public
+    | Internal
+    | Private
+    | Unknown
+
 /// The information ILXGEN needs about the location of an item
 type CompilationPath =
-    | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
+    | CompPath of ILScopeRef * SyntaxAccess * (string * ModuleOrNamespaceKind) list
 
     /// String 'Module' off an F# module name, if FSharpModuleWithSuffix is used
     static member DemangleEntityName: nm: string -> k: ModuleOrNamespaceKind -> string
@@ -336,6 +350,8 @@ type CompilationPath =
     member MangledPath: string list
 
     member ParentCompPath: CompilationPath
+
+    member SyntaxAccess: SyntaxAccess
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -1420,6 +1436,8 @@ type ModuleOrNamespace = Entity
 /// Represents a type or exception definition in the typed AST
 type Tycon = Entity
 
+val updateSyntaxAccessForCompPath: CompilationPath list -> TypedTree.SyntaxAccess -> CompilationPath list
+
 /// Represents the constraint on access for a construct
 [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Accessibility =
@@ -1427,6 +1445,19 @@ type Accessibility =
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope.
     | TAccess of compilationPaths: CompilationPath list
 
+    member AsILMemberAccess: unit -> ILMemberAccess
+
+    member AsILTypeDefAccess: unit -> ILTypeDefAccess
+
+    member CompilationPaths: CompilationPath list
+
+    member IsPublic: bool
+
+    member IsInternal: bool
+
+    member IsPrivate: bool
+
+    /// Readable rendering of Accessibility
     override ToString: unit -> string
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -1674,13 +1705,15 @@ type TraitWitnessInfo =
 type TraitConstraintInfo =
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
-    /// to store the inferred solution of the constraint.
+    /// to store the inferred solution of the constraint. And a mutable source cell to store
+    /// the name of the type or member that defined the constraint.
     | TTrait of
         tys: TTypes *
         memberName: string *
         memberFlags: Syntax.SynMemberFlags *
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
+        source: string option ref *
         solution: TraitConstraintSln option ref
 
     override ToString: unit -> string
@@ -1714,6 +1747,10 @@ type TraitConstraintInfo =
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
     /// the extension property MemberDisplayNameCore
     member WithMemberKind: SynMemberKind -> TraitConstraintInfo
+
+    member WithSupportTypes: TTypes -> TraitConstraintInfo
+
+    member WithMemberName: string -> TraitConstraintInfo
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]
@@ -1921,6 +1958,8 @@ type Val =
 
     member SetInlineIfLambda: unit -> unit
 
+    member SetIsImplied: unit -> unit
+
     member SetIsCompiledAsStaticPropertyWithoutField: unit -> unit
 
     member SetIsCompilerGenerated: v: bool -> unit
@@ -2033,6 +2072,9 @@ type Val =
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
 
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member IsImplied: bool
+
     /// Indicates if this is a 'base' value?
     member IsBaseVal: bool
 
@@ -2140,8 +2182,8 @@ type Val =
     /// a true body. These cases are often causes of bugs in the compiler.
     member MemberInfo: ValMemberInfo option
 
-    /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
-    member MustInline: bool
+    /// Indicates whether the inline declaration for the value indicates that the value should be inlined.
+    member ShouldInline: bool
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member NumObjArgs: int
@@ -2768,6 +2810,9 @@ type ValRef =
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
 
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member IsImplied: bool
+
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
 
@@ -2852,8 +2897,8 @@ type ValRef =
     /// Is this a member, if so some more data about the member.
     member MemberInfo: ValMemberInfo option
 
-    /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
-    member MustInline: bool
+    /// Indicates whether the inline declaration for the value indicate that the value should be inlined?
+    member ShouldInline: bool
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member NumObjArgs: int
@@ -3001,10 +3046,10 @@ type RecdFieldRef =
     /// Try to dereference the reference
     member TryRecdField: RecdField voption
 
-    /// Get the Entity for the type containing this union case
+    /// Get the Entity for the type containing this record field
     member Tycon: Entity
 
-    /// Get a reference to the type containing this union case
+    /// Get a reference to the type containing this record field
     member TyconRef: TyconRef
 
 /// Represents a type in the typed abstract syntax
@@ -3249,6 +3294,18 @@ type DecisionTreeCase =
     /// Get the discriminator associated with the case
     member Discriminator: DecisionTreeTest
 
+/// Indicating what is returning from an AP
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
+type ActivePatternReturnKind =
+    /// Returning `_ option` or `Choice<_, _, .., _>`
+    | RefTypeWrapper
+    /// Returning `_ voption`
+    | StructTypeWrapper
+    /// Returning bool
+    | Boolean
+
+    member IsStruct: bool
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type DecisionTreeTest =
 
@@ -3269,20 +3326,20 @@ type DecisionTreeTest =
     /// Test if the input to a decision tree is an instance of the given type
     | IsInst of source: TType * target: TType
 
-    /// Test.ActivePatternCase(activePatExpr, activePatResTys, isStructRetTy, activePatIdentity, idx, activePatInfo)
+    /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatRetKind, activePatIdentity, idx, activePatInfo)
     ///
     /// Run the active pattern type bind a successful result to a
     /// variable in the remaining tree.
     ///     activePatExpr -- The active pattern function being called, perhaps applied to some active pattern parameters.
     ///     activePatResTys -- The result types (case types) of the active pattern.
-    ///     isStructRetTy -- Is the active pattern a struct return
+    ///     activePatRetKind -- Indicating what is returning from the active pattern
     ///     activePatIdentity -- The value type the types it is applied to. If there are any active pattern parameters then this is empty.
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of
         activePatExpr: Expr *
         activePatResTys: TTypes *
-        isStructRetTy: bool *
+        activePatRetKind: ActivePatternReturnKind *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
         activePatternInfo: Syntax.PrettyNaming.ActivePatternInfo
@@ -3341,7 +3398,7 @@ type ActivePatternElemRef =
         activePatternInfo: Syntax.PrettyNaming.ActivePatternInfo *
         activePatternVal: ValRef *
         caseIndex: int *
-        isStructRetTy: bool
+        activePatRetKind: ActivePatternReturnKind
 
     override ToString: unit -> string
 
@@ -3358,7 +3415,7 @@ type ActivePatternElemRef =
     member DebugText: string
 
     /// Get a reference to the value for the active pattern being referred to
-    member IsStructReturn: bool
+    member ActivePatternRetKind: ActivePatternReturnKind
 
 /// Records the "extra information" for a value compiled as a method (rather
 /// than a closure or a local), including argument names, attributes etc.
@@ -3512,7 +3569,9 @@ type Expr =
     ///
     | Quote of
         quotedExpr: Expr *
-        quotationInfo: ((ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData) * (ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData)) option ref *
+        quotationInfo:
+            ((ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData) *
+            (ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData)) option ref *
         isFromQueryExpression: bool *
         range: Text.range *
         quotedType: TType

@@ -218,6 +218,10 @@ val mkCompGenLet: range -> Val -> Expr -> Expr -> Expr
 /// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
 val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
+/// Make a mutable let-expression that locally binds a compiler-generated value to an expression, where the expression
+/// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
+val mkCompGenLetMutableIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
+
 /// Make a let-expression that locally binds a value to an expression in an "invisible" way.
 /// Invisible bindings are not given a sequence point and should not have side effects.
 val mkInvisibleLet: range -> Val -> Expr -> Expr -> Expr
@@ -311,6 +315,9 @@ val mkRecdFieldSetViaExprAddr: Expr * RecdFieldRef * TypeInst * Expr * range -> 
 
 /// Make an expression that gets the tag of a union value (via the address of the value if it is a struct)
 val mkUnionCaseTagGetViaExprAddr: Expr * TyconRef * TypeInst * range -> Expr
+
+/// Make an expression which tests that a union value is of a particular union case.
+val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef * TypeInst * range -> Expr
 
 /// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
 val mkUnionCaseProof: Expr * UnionCaseRef * TypeInst * range -> Expr
@@ -1048,7 +1055,7 @@ type GenericParameterStyle =
 type DisplayEnv =
     {
         includeStaticParametersInTypeNames: bool
-        openTopPathsSorted: Lazy<string list list>
+        openTopPathsSorted: InterruptibleLazy<string list list>
         openTopPathsRaw: string list list
         shortTypeNames: bool
         suppressNestedTypes: bool
@@ -1328,6 +1335,12 @@ val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
 /// Make a remapping table for viewing a module or namespace 'from the outside'
 val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
 
+/// Get the value including fsi remapping
+val DoRemapTycon: (Remap * SignatureHidingInfo) list -> Tycon -> Tycon
+
+/// Get the value including fsi remapping
+val DoRemapVal: (Remap * SignatureHidingInfo) list -> Val -> Val
+
 /// Determine if a type definition is hidden by a signature
 val IsHiddenTycon: (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
@@ -1524,6 +1537,9 @@ val mkVoidPtrTy: TcGlobals -> TType
 
 /// Build a single-dimensional array type
 val mkArrayType: TcGlobals -> TType -> TType
+
+/// Determine if a type is a bool type
+val isBoolTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a value option type
 val isValueOptionTy: TcGlobals -> TType -> bool
@@ -1947,6 +1963,12 @@ val mkOne: TcGlobals -> range -> Expr
 val mkTwo: TcGlobals -> range -> Expr
 
 val mkMinusOne: TcGlobals -> range -> Expr
+
+/// Makes an expression holding a constant 0 value of the given numeric type.
+val mkTypedZero: g: TcGlobals -> m: range -> ty: TType -> Expr
+
+/// Makes an expression holding a constant 1 value of the given numeric type.
+val mkTypedOne: g: TcGlobals -> m: range -> ty: TType -> Expr
 
 val destInt32: Expr -> int32 option
 
@@ -2446,10 +2468,11 @@ type PrettyNaming.ActivePatternInfo with
     member DisplayNameByIdx: idx: int -> string
 
     /// Get the result type for the active pattern
-    member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
+    member ResultType: g: TcGlobals -> range -> TType list -> ActivePatternReturnKind -> TType
 
     /// Get the overall type for a function that implements the active pattern
-    member OverallType: g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> isStruct: bool -> TType
+    member OverallType:
+        g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> retKind: ActivePatternReturnKind -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 
@@ -2532,6 +2555,50 @@ val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list option
 val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list option
 
 val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
+
+/// Matches if the given expression is an application
+/// of the range or range-step operator on an integral type
+/// and returns the type, start, step, and finish if so.
+///
+/// start..finish
+///
+/// start..step..finish
+[<return: Struct>]
+val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
+
+[<RequireQualifiedAccess>]
+module IntegralConst =
+    /// Constant 0.
+    [<return: Struct>]
+    val (|Zero|_|): c: Const -> unit voption
+
+/// An expression holding the loop's iteration count.
+type Count = Expr
+
+/// An expression representing the loop's current iteration index.
+type Idx = Expr
+
+/// An expression representing the current loop element.
+type Elem = Expr
+
+/// An expression representing the loop body.
+type Body = Expr
+
+/// An expression representing the overall loop.
+type Loop = Expr
+
+/// Makes an optimized while-loop for a range expression with the given integral start, step, and finish:
+///
+/// start..step..finish
+///
+/// The buildLoop function enables using the precomputed iteration count in an optional initialization step before the loop is executed.
+val mkOptimizedRangeLoop:
+    g: TcGlobals ->
+    mBody: range * mFor: range * mIn: range * spInWhile: DebugPointAtWhile ->
+        rangeTy: TType * rangeExpr: Expr ->
+            start: Expr * step: Expr * finish: Expr ->
+                buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr) ->
+                    Expr
 
 type OptimizeForExpressionOptions =
     | OptimizeIntRangesOnly
@@ -2651,6 +2718,8 @@ val TryBindTyconRefAttribute:
     f3: (obj option list * (string * obj option) list -> 'a option) ->
         'a option
 
+val HasDefaultAugmentationAttribute: g: TcGlobals -> tcref: TyconRef -> bool
+
 val (|ResumableCodeInvoke|_|):
     g: TcGlobals -> expr: Expr -> (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) option
 
@@ -2722,9 +2791,22 @@ type TraitConstraintInfo with
 val (|EmptyModuleOrNamespaces|_|):
     moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
 
-/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the Entity if found via predicate and not already present.
-val tryAddExtensionAttributeIfNotAlreadyPresent:
-    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) -> entity: Entity -> Entity
+val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
+
+/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the module Entity if found via predicate and not already present.
+val tryAddExtensionAttributeIfNotAlreadyPresentForModule:
+    g: TcGlobals ->
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+    moduleEntity: Entity ->
+        Entity
+
+/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the type Entity if found via predicate and not already present.
+val tryAddExtensionAttributeIfNotAlreadyPresentForType:
+    g: TcGlobals ->
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+    moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
+    typeEntity: Entity ->
+        Entity
 
 /// Serialize an entity to a very basic json structure.
 val serializeEntity: path: string -> entity: Entity -> unit

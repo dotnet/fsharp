@@ -38,7 +38,7 @@ let c: System.IFormattable = $"string"
 let a = $"{{hello}} world" : System.FormattableString
 printf $"{a.Format}"
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "{{hello}} world"
@@ -49,7 +49,7 @@ printf $"{a.Format}"
         // printfn "%s" s
         Fsx "let s = $$\"\"\"{{42 + 0}} = {41 + 1}\"\"\"\n\
 printfn \"%s\" s"
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "42 = {41 + 1}"
@@ -58,7 +58,7 @@ printfn \"%s\" s"
     let ``Too many consecutive opening braces in interpolated string result in an error`` () =
         // $$"""{{{{42 - 0}}"""
         Fsx "$$\"\"\"{{{{42 - 0}}\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 1248, Line 1, Col 1, Line 1, Col 10, "The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.")
@@ -67,10 +67,10 @@ printfn \"%s\" s"
     let ``Too many consecutive closing braces in interpolated string result in an error`` () =
         // $$"""{{42 - 0}}}}"""
         Fsx "$$\"\"\"{{42 - 0}}}}\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 1249, Line 1, Col 15, Line 1, Col 21, "The interpolated string contains unmatched closing braces.")
+        |> withSingleDiagnostic (Error 1249, Line 1, Col 14, Line 1, Col 21, "The interpolated string contains unmatched closing braces.")
 
     [<Fact>]
     let ``Percent sign characters in interpolated strings`` () =
@@ -81,7 +81,7 @@ printfn \"%s\" s"
     [<Fact>]
     let ``Double percent sign characters in triple quote interpolated strings`` () =
         Fsx "printfn \"%s\" $$$\"\"\"%%\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "%%"
@@ -89,7 +89,7 @@ printfn \"%s\" s"
     [<Fact>]
     let ``Percent sign after interpolation hole in triple quote strings`` () =
         Fsx "printfn \"%s\" $$\"\"\"{{42}}%\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "42%"
@@ -97,7 +97,7 @@ printfn \"%s\" s"
     [<Fact>]
     let ``Percent sign before format specifier in triple quote interpolated strings`` () =
         Fsx "printfn \"%s\" $$\"\"\"%%%3d{{42}}\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "% 42"
@@ -129,3 +129,48 @@ type Foo () =
         """
         |> compile
         |> shouldSucceed
+
+    [<Theory>]
+    // Test different number of interpolated string parts
+    [<InlineData("$\"\"\"abc{\"d\"}e\"\"\"")>]
+    [<InlineData("$\"\"\"abc{\"d\"}{\"e\"}\"\"\"")>]
+    [<InlineData("$\"\"\"a{\"b\"}c{\"d\"}e\"\"\"")>]
+    let ``Interpolated expressions are strings`` (strToPrint: string) =
+        Fsx $"""
+let x = {strToPrint}
+printfn "%%s" x
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "abcde"
+
+    let ``Multiline interpolated expression is a string`` () =
+        let strToPrint = String.Join(Environment.NewLine, "$\"\"\"a", "b", "c", "{\"d\"}", "e\"\"\"")
+        Fsx $"""
+let x = {strToPrint}
+printfn "%%s" x
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains """a
+b
+c
+d
+e"""
+
+    [<Theory>]
+    [<InlineData("$\"\"\"abc{\"d\"}e\"\"\"", 1)>]
+    [<InlineData("$\"\"\"abc{\"d\"}{\"e\"}\"\"\"", 2)>]
+    [<InlineData("$\"\"\"a{\"b\"}c{\"d\"}e\"\"\"", 2)>]
+    let ``In FormattableString, interpolated expressions are strings`` (formattableStr: string, argCount: int) =
+        Fsx $"""
+let x = {formattableStr} : System.FormattableString
+assert(x.ArgumentCount = {argCount})
+printfn "%%s" (System.Globalization.CultureInfo "en-US" |> x.ToString)
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "abcde"

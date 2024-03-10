@@ -92,7 +92,7 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
                     lock syncRoot (fun () ->
                         if arrivals.Count = 0 then
                             // OK, no arrival so deschedule
-                            savedCont <- Some(fun res -> ctxt.QueueContinuationWithTrampoline res)
+                            savedCont <- Some(ctxt.QueueContinuationWithTrampoline)
                             true
                         else
                             false)
@@ -207,7 +207,7 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
                     | Choice1Of2 true -> return! scan timeoutAsync timeoutCts
                     | Choice1Of2 false ->
                         return failwith "should not happen - waitOneNoTimeoutOrCancellation always returns true"
-                    | Choice2Of2 () ->
+                    | Choice2Of2() ->
                         lock syncRoot (fun () ->
                             // Cancel the outstanding wait for messages installed by waitOneWithCancellation
                             //

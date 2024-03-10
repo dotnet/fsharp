@@ -14,7 +14,7 @@ ImplFile
                    (NoneAtInvisible, Ident _arg1,
                     [SynMatchClause
                        (Record
-                          ([(([], X), (2,8--2,9),
+                          ([(([], X), Some (2,8--2,9),
                              Named
                                (SynIdent (x, None), false, None, (2,10--2,11)))],
                            (2,4--2,13)), None,
@@ -35,14 +35,14 @@ ImplFile
                       WithKeyword = (2,4--2,22) }),
                  Some
                    ([Record
-                       ([(([], X), (2,8--2,9),
+                       ([(([], X), Some (2,8--2,9),
                           Named (SynIdent (x, None), false, None, (2,10--2,11)))],
                         (2,4--2,13))],
                     Match
                       (NoneAtInvisible, Ident _arg1,
                        [SynMatchClause
                           (Record
-                             ([(([], X), (2,8--2,9),
+                             ([(([], X), Some (2,8--2,9),
                                 Named
                                   (SynIdent (x, None), false, None, (2,10--2,11)))],
                               (2,4--2,13)), None,

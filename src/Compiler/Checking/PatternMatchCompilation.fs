@@ -43,7 +43,7 @@ type Pattern =
     | TPat_as of  Pattern * PatternValBinding * range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
     | TPat_disjs of  Pattern list * range
     | TPat_conjs of  Pattern list * range
-    | TPat_query of (Expr * TType list * bool * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
+    | TPat_query of (Expr * TType list * ActivePatternReturnKind * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
     | TPat_exnconstr of TyconRef * Pattern list * range
     | TPat_tuple of  TupInfo * Pattern list * TType list * range
@@ -232,7 +232,7 @@ let RefuteDiscrimSet g m path discrims : Expr * CounterExampleType =
     and mkOneKnown tm n tys =
         let flds = List.mapi (fun i ty -> if i = n then tm ty else (mkUnknown ty, CounterExampleType.WithoutEnum)) tys
         List.map fst flds, List.fold (fun acc (_, eCoversVals) -> acc.Combine(eCoversVals)) CounterExampleType.WithoutEnum flds
-    and mkUnknowns tys = List.map (fun x -> mkUnknown x) tys
+    and mkUnknowns tys = List.map mkUnknown tys
 
     let tm ty =
         match discrims with
@@ -243,24 +243,24 @@ let RefuteDiscrimSet g m path discrims : Expr * CounterExampleType =
         | DecisionTreeTest.Const c :: rest ->
             let consts = Set.ofList (c :: List.choose (function DecisionTreeTest.Const c -> Some c | _ -> None) rest)
             let c' =
-                Seq.tryFind (fun c -> not (consts.Contains c))
+                Seq.tryFind (consts.Contains >> not)
                    (match c with
-                    | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map (fun v -> Const.Bool v)
-                    | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map (fun v -> Const.SByte v)
-                    | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map (fun v -> Const.Int16 v)
-                    | Const.Int32 _ ->  Seq.append (seq { 0 .. System.Int32.MaxValue }) (seq { System.Int32.MinValue .. 0 })|> Seq.map (fun v -> Const.Int32 v)
-                    | Const.Int64 _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.Int64 v)
-                    | Const.IntPtr _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.IntPtr v)
-                    | Const.Byte _ -> seq { 0uy .. System.Byte.MaxValue } |> Seq.map (fun v -> Const.Byte v)
-                    | Const.UInt16 _ -> seq { 0us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.UInt16 v)
-                    | Const.UInt32 _ -> seq { 0u .. System.UInt32.MaxValue } |> Seq.map (fun v -> Const.UInt32 v)
-                    | Const.UInt64 _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UInt64 v)
-                    | Const.UIntPtr _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UIntPtr v)
-                    | Const.Double _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Double(float v))
-                    | Const.Single _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Single(float32 v))
-                    | Const.Char _ -> seq { 32us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.Char(char v))
+                    | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map Const.Bool
+                    | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map Const.SByte
+                    | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map Const.Int16
+                    | Const.Int32 _ ->  Seq.append (seq { 0 .. System.Int32.MaxValue }) (seq { System.Int32.MinValue .. 0 })|> Seq.map Const.Int32
+                    | Const.Int64 _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map Const.Int64
+                    | Const.IntPtr _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map Const.IntPtr
+                    | Const.Byte _ -> seq { 0uy .. System.Byte.MaxValue } |> Seq.map Const.Byte
+                    | Const.UInt16 _ -> seq { 0us .. System.UInt16.MaxValue } |> Seq.map Const.UInt16
+                    | Const.UInt32 _ -> seq { 0u .. System.UInt32.MaxValue } |> Seq.map Const.UInt32
+                    | Const.UInt64 _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map Const.UInt64
+                    | Const.UIntPtr _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map Const.UIntPtr
+                    | Const.Double _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (float >> Const.Double)
+                    | Const.Single _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (float32 >> Const.Single)
+                    | Const.Char _ -> seq { 32us .. System.UInt16.MaxValue } |> Seq.map (char >> Const.Char)
                     | Const.String _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.String(System.String('a', v)))
-                    | Const.Decimal _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Decimal(decimal v))
+                    | Const.Decimal _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (decimal >> Const.Decimal)
                     | _ ->
                         raise CannotRefute)
 
@@ -618,8 +618,8 @@ let getDiscrimOfPattern (g: TcGlobals) tpinst t =
         Some(DecisionTreeTest.UnionCase (c, instTypes tpinst tyargs'))
     | TPat_array (args, ty, _m) ->
         Some(DecisionTreeTest.ArrayLength (args.Length, ty))
-    | TPat_query ((activePatExpr, resTys, isStructRetTy, apatVrefOpt, idx, apinfo), _, _m) ->
-        Some (DecisionTreeTest.ActivePatternCase (activePatExpr, instTypes tpinst resTys, isStructRetTy, apatVrefOpt, idx, apinfo))
+    | TPat_query ((activePatExpr, resTys, retKind, apatVrefOpt, idx, apinfo), _, _m) ->
+        Some (DecisionTreeTest.ActivePatternCase (activePatExpr, instTypes tpinst resTys, retKind, apatVrefOpt, idx, apinfo))
 
     | TPat_error range ->
         Some (DecisionTreeTest.Error range)
@@ -740,19 +740,22 @@ let ChooseInvestigationPointLeftToRight frontiers =
 // This is an initial attempt to remove extra typetests/castclass for simple list pattern matching "match x with h :: t -> ... | [] -> ..."
 // The problem with this technique is that it creates extra locals which inhibit the process of converting pattern matches into linear let bindings.
 
+[<return: Struct>]
 let (|ListConsDiscrim|_|) g = function
      | (DecisionTreeTest.UnionCase (ucref, tinst))
                 (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_ColonColon" -> Some tinst
-     | _ -> None
+                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_ColonColon" -> ValueSome tinst
+     | _ -> ValueNone
 
+[<return: Struct>]
 let (|ListEmptyDiscrim|_|) g = function
      | (DecisionTreeTest.UnionCase (ucref, tinst))
                 (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_Nil" -> Some tinst
-     | _ -> None
+                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_Nil" -> ValueSome tinst
+     | _ -> ValueNone
 #endif
 
+[<return: Struct>]
 let (|ConstNeedsDefaultCase|_|) c =
     match c with
     | Const.Decimal _
@@ -767,8 +770,8 @@ let (|ConstNeedsDefaultCase|_|) c =
     | Const.UInt64 _
     | Const.IntPtr _
     | Const.UIntPtr _
-    | Const.Char _ -> Some ()
-    | _ -> None
+    | Const.Char _ -> ValueSome ()
+    | _ -> ValueNone
 
 /// Build a dtree, equivalent to: TDSwitch("expr", edges, default, m)
 ///
@@ -938,8 +941,8 @@ let rec investigationPoints inpPat =
 
 let rec erasePartialPatterns inpPat =
     match inpPat with
-    | TPat_query ((expr, resTys, isStructRetTy, apatVrefOpt, idx, apinfo), p, m) ->
-         if apinfo.IsTotal then TPat_query ((expr, resTys, isStructRetTy, apatVrefOpt, idx, apinfo), erasePartialPatterns p, m)
+    | TPat_query ((expr, resTys, retKind, apatVrefOpt, idx, apinfo), p, m) ->
+         if apinfo.IsTotal then TPat_query ((expr, resTys, retKind, apatVrefOpt, idx, apinfo), erasePartialPatterns p, m)
          else TPat_disjs ([], m) (* always fail *)
     | TPat_as (p, x, m) -> TPat_as (erasePartialPatterns p, x, m)
     | TPat_disjs (subPats, m) -> TPat_disjs(erasePartials subPats, m)
@@ -1146,6 +1149,8 @@ let CompilePatternBasic
 
     // The main recursive loop of the pattern match compiler.
     let rec InvestigateFrontiers refuted frontiers =
+        Cancellable.CheckAndThrow()
+
         match frontiers with
         | [] -> failwith "CompilePattern: compile - empty clauses: at least the final clause should always succeed"
         | Frontier (i, active, valMap) :: rest ->
@@ -1288,15 +1293,20 @@ let CompilePatternBasic
 
          // Active pattern matches: create a variable to hold the results of executing the active pattern.
          // If a struct return we continue with an expression for taking the address of that location.
-         | EdgeDiscrim(_, DecisionTreeTest.ActivePatternCase(activePatExpr, resTys, isStructRetTy, _apatVrefOpt, _, apinfo), m) :: _ ->
+         | EdgeDiscrim(_, DecisionTreeTest.ActivePatternCase(activePatExpr, resTys, retKind, _apatVrefOpt, _, apinfo), m) :: _ ->
 
              if not (isNil origInputValTypars) then error(InternalError("Unexpected generalized type variables when compiling an active pattern", m))
 
-             let resTy = apinfo.ResultType g m resTys isStructRetTy
+             let resTy = apinfo.ResultType g m resTys retKind
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkApps g ((activePatExpr, tyOfExpr g activePatExpr), [], [argExpr], m)
 
-             let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g isStructRetTy false NeverMutates appExpr None mMatch
+             let mustTakeAddress =
+                match retKind with
+                | ActivePatternReturnKind.StructTypeWrapper -> true
+                | ActivePatternReturnKind.RefTypeWrapper
+                | ActivePatternReturnKind.Boolean -> false
+             let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g mustTakeAddress false NeverMutates appExpr None mMatch
              match vOpt with
              | None -> 
                 let v, vExpr = mkCompGenLocal m ("activePatternResult" + string (newUnique())) resTy
@@ -1352,13 +1362,17 @@ let CompilePatternBasic
                  // Convert active pattern edges to tests on results data
                  let discrim' =
                      match discrim with
-                     | DecisionTreeTest.ActivePatternCase(_pexp, resTys, isStructRetTy, _apatVrefOpt, idx, apinfo) ->
+                     | DecisionTreeTest.ActivePatternCase(_pexp, resTys, retKind, _apatVrefOpt, idx, apinfo) ->
                          let aparity = apinfo.ActiveTags.Length
                          let total = apinfo.IsTotal
                          if not total && aparity > 1 then
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(), m))
 
-                         if not total then DecisionTreeTest.UnionCase(mkAnySomeCase g isStructRetTy, resTys)
+                         if not total then 
+                            match retKind with
+                            | ActivePatternReturnKind.Boolean -> DecisionTreeTest.Const(Const.Bool true)
+                            | ActivePatternReturnKind.RefTypeWrapper -> DecisionTreeTest.UnionCase(mkAnySomeCase g false, resTys)
+                            | ActivePatternReturnKind.StructTypeWrapper -> DecisionTreeTest.UnionCase(mkAnySomeCase g true, resTys)
                          elif aparity <= 1 then DecisionTreeTest.Const(Const.Unit)
                          else DecisionTreeTest.UnionCase(mkChoiceCaseRef g m aparity idx, resTys)
                      | _ -> discrim
@@ -1430,7 +1444,7 @@ let CompilePatternBasic
             let newActives = removeActive path actives
             match patAtActive with
             | TPat_wild _ | TPat_as _ | TPat_tuple _ | TPat_disjs _ | TPat_conjs _ | TPat_recd _ -> failwith "Unexpected projection pattern"
-            | TPat_query ((_, resTys, isStructRetTy, apatVrefOpt, idx, apinfo), p, m) ->
+            | TPat_query ((_, resTys, retKind, apatVrefOpt, idx, apinfo), p, m) ->
                 if apinfo.IsTotal then
                     // Total active patterns always return choice values
                     let hasParam = (match apatVrefOpt with None -> true | Some (vref, _) -> doesActivePatternHaveFreeTypars g vref)
@@ -1458,10 +1472,12 @@ let CompilePatternBasic
                     if i = iInvestigated then
                         let subAccess _j tpinst _ =
                             let expr = Option.get inpExprOpt
-                            if isStructRetTy then 
+                            match retKind with
+                            | ActivePatternReturnKind.Boolean -> expr
+                            | ActivePatternReturnKind.StructTypeWrapper ->
                                 // In this case, the inpExprOpt is already an address-of expression
                                 mkUnionCaseFieldGetProvenViaExprAddr (expr, mkValueSomeCase g, instTypes tpinst resTys, 0, mExpr)
-                            else
+                            | ActivePatternReturnKind.RefTypeWrapper ->
                                 mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, instTypes tpinst resTys, 0, mExpr)
                         mkSubFrontiers path subAccess newActives [p] (fun path j -> PathQuery(path, int64 j))
                     else

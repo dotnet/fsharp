@@ -1118,7 +1118,7 @@ Contains commits from 32b124966 to d7018737c from dotnet/fsharp. Notable changes
 * lowered allocations for several internal compiler structures
 * better error messages for anonymous record mismatches
 * FSharpChecker learned how to keep background symbol uses
-* Project cracker/project cracker tool were removed
+* The tool for parsing projects was removed
 * Better support for consuming C# in-ref parameters
 * new services around simplifying names and finding unused declarations
 * package management in scripts (in preview)

@@ -47,15 +47,15 @@ module QuickInfo =
         let sigHelp = GetQuickInfo code caretPosition
 
         match sigHelp with
-        | Some (ToolTipText elements) when not elements.IsEmpty ->
+        | Some(ToolTipText elements) when not elements.IsEmpty ->
             let documentationBuilder =
                 { new IDocumentationBuilder with
-                    override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-                    override _.AppendDocumentation(_, _, _, _, _, _, _) = ()
+                    override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _, _) = ()
+                    override _.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
                 }
 
             let _, mainDescription, docs =
-                XmlDocumentation.BuildSingleTipText(documentationBuilder, elements.Head, XmlDocumentation.DefaultLineLimits)
+                XmlDocumentation.BuildSingleTipText(documentationBuilder, elements.Head, XmlDocumentation.DefaultLineLimits, true)
 
             let mainTextItems = mainDescription |> Seq.map (fun x -> x.Text)
             let docTextItems = docs |> Seq.map (fun x -> x.Text)

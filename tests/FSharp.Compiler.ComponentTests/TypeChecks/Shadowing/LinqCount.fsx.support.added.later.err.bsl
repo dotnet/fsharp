@@ -1,0 +1,1 @@
+LinqCount.fsx (4,1)-(4,8) typecheck error This value is not a function and cannot be applied.

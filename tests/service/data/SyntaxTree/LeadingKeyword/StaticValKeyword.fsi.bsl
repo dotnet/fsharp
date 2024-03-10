@@ -23,8 +23,9 @@ SigFile
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (5,4--5,29),
                             { LeadingKeyword =
-                               Some (StaticVal ((5,4--5,10), (5,11--5,14))) }),
-                         (5,4--5,29))], (5,4--5,29)), [], (4,5--5,29),
+                               Some (StaticVal ((5,4--5,10), (5,11--5,14)))
+                              MutableKeyword = None }), (5,4--5,29))],
+                     (5,4--5,29)), [], (4,5--5,29),
                   { LeadingKeyword = Type (4,0--4,4)
                     EqualsRange = Some (4,7--4,8)
                     WithKeyword = None })], (4,0--5,29))], PreXmlDocEmpty, [],

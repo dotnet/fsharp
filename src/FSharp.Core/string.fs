@@ -26,7 +26,7 @@ module String =
     [<CompiledName("Concat")>]
     let concat sep (strings: seq<string>) =
 
-        let concatArray sep (strings: string[]) =
+        let concatArray sep (strings: string array) =
             match length sep with
             | 0 -> String.Concat strings
             // following line should be used when this overload becomes part of .NET Standard (it's only in .NET Core)
@@ -34,7 +34,7 @@ module String =
             | _ -> String.Join(sep, strings, 0, strings.Length)
 
         match strings with
-        | :? (string[]) as arr -> concatArray sep arr
+        | :? (string array) as arr -> concatArray sep arr
 
         | :? (string list) as lst -> lst |> List.toArray |> concatArray sep
 
@@ -49,7 +49,7 @@ module String =
     [<CompiledName("IterateIndexed")>]
     let iteri action (str: string) =
         if not (String.IsNullOrEmpty str) then
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
 
             for i = 0 to str.Length - 1 do
                 f.Invoke(i, str.[i])
@@ -76,7 +76,7 @@ module String =
             String.Empty
         else
             let result = str.ToCharArray()
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (mapping)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
 
             let mutable i = 0
 

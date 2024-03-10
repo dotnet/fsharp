@@ -11,7 +11,7 @@ module TestCompilerWarningLevel =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level0.fs"|])>]
     let ``warn_level0_fs --warn:0`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> asExe
         |> withOptions ["--warn:0"]
         |> compileAndRun

@@ -8,6 +8,7 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities
+open Internal.Utilities.Library
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.IO
 
@@ -73,7 +74,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
         let nativeLibraryType: Type =
             Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
 
-        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType () |])
+        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
 
     let loadNativeLibrary path =
         let arguments = [| path :> obj; IntPtr.Zero :> obj |]
@@ -88,7 +89,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
         let isRooted = Path.IsPathRooted name
 
         let useSuffix s =
-            not (name.Contains(s + ".") || name.EndsWith(s)) // linux devs often append version # to libraries I.e mydll.so.5.3.2
+            not (name.Contains(s + ".") || name.EndsWithOrdinal(s)) // linux devs often append version # to libraries I.e mydll.so.5.3.2
 
         let usePrefix =
             name.IndexOf(Path.DirectorySeparatorChar) = -1 // If name has directory information no add no prefix

@@ -32,9 +32,9 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     let isInternalCompPath x = 
         match x with 
-        | CompPath(ILScopeRef.Local, []) -> true 
+        | CompPath(ILScopeRef.Local, _, []) -> true 
         | _ -> false
-    
+
     let (|Public|Internal|Private|) (TAccess p) = 
         match p with 
         | [] -> Public 
@@ -53,7 +53,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     override _.ToString() = 
         let (TAccess paths) = a
-        let mangledTextOfCompPath (CompPath(scoref, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+        let mangledTextOfCompPath (CompPath(scoref, _, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
@@ -122,7 +122,7 @@ module Impl =
                 | ILScopeRef.Assembly aref -> aref.Name 
                 | ILScopeRef.Module mref -> mref.Name
                 | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyName
-            let canAccessCompPathFromCrossProject (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
+            let canAccessCompPathFromCrossProject (CompPath(scoref1, _, cpath1)) (CompPath(scoref2, _, cpath2)) =
                 let rec loop p1 p2  = 
                     match p1, p2 with 
                     | (a1, k1) :: rest1, (a2, k2) :: rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
@@ -141,7 +141,7 @@ module Impl =
         | ILMemberAccess.CompilerControlled
         | ILMemberAccess.FamilyAndAssembly 
         | ILMemberAccess.Assembly -> 
-            taccessPrivate  (CompPath(declaringEntity.CompilationPath.ILScopeRef, []))
+            taccessPrivate  (CompPath(declaringEntity.CompilationPath.ILScopeRef, SyntaxAccess.Unknown, []))
 
         | ILMemberAccess.Private ->
             taccessPrivate  declaringEntity.CompilationPath
@@ -166,7 +166,7 @@ module Impl =
             match td.Access with 
             | ILTypeDefAccess.Public 
             | ILTypeDefAccess.Nested ILMemberAccess.Public -> taccessPublic 
-            | ILTypeDefAccess.Private  -> taccessPrivate  (CompPath(entity.CompilationPath.ILScopeRef, []))
+            | ILTypeDefAccess.Private  -> taccessPrivate  (CompPath(entity.CompilationPath.ILScopeRef, SyntaxAccess.Unknown, []))
             | ILTypeDefAccess.Nested nested -> getApproxFSharpAccessibilityOfMember entity nested
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -204,7 +204,7 @@ module Impl =
 type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) = 
     member _.Contents g = denv g
 
-    static member Empty = FSharpDisplayContext(fun g -> DisplayEnv.Empty g)
+    static member Empty = FSharpDisplayContext DisplayEnv.Empty 
 
     member _.WithShortTypeNames shortNames =
          FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
@@ -292,12 +292,12 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.CtorGroup(_, cinfo :: _) -> 
             FSharpMemberOrFunctionOrValue(cenv, C cinfo, item) :> _
 
-        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> 
-            FSharpEntity(cenv, tcref) :>_ 
+        | Item.DelegateCtor (AbbrevOrAppTy(tcref, tyargs)) 
+        | Item.Types(_, AbbrevOrAppTy(tcref, tyargs) :: _) -> 
+            FSharpEntity(cenv, tcref, tyargs) :>_  
 
-        | Item.UnqualifiedType(tcref :: _)  
-        | Item.Types(_, AbbrevOrAppTy tcref :: _) -> 
-            FSharpEntity(cenv, tcref) :>_  
+        | Item.UnqualifiedType(tcref :: _) ->
+            FSharpEntity(cenv, tcref) :> _
 
         | Item.ModuleOrNamespaces(modref :: _) ->  
             FSharpEntity(cenv, modref) :> _
@@ -331,7 +331,6 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         // TODO: the following don't currently return any interesting subtype
         | Item.ImplicitOp _
         | Item.ILField _ 
-        | Item.FakeInterfaceCtor _
         | Item.NewDef _ -> dflt()
         // These cases cover unreachable cases
         | Item.CustomOperation (_, _, None) 
@@ -356,7 +355,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
     member sym.TryGetAttribute<'T>() =
         sym.Attributes |> Seq.tryFind (fun attr -> attr.IsAttribute<'T>())
 
-type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) = 
+type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
                               checkEntityIsResolved entity
@@ -384,6 +383,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
         | None -> false
         | Some ccu -> ccuEq ccu cenv.g.fslibCcu
 
+    new(cenv: SymbolEnv, tcref: TyconRef) =
+        let _, _, tyargs = FreshenTypeInst cenv.g range0 (tcref.Typars range0)
+        FSharpEntity(cenv, tcref, tyargs)
+
     member _.Entity = entity
         
     member _.LogicalName = 
@@ -406,13 +409,13 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
         checkIsResolved()
         match entity.CompilationPathOpt with 
         | None -> "global" 
-        | Some (CompPath(_, [])) -> "global" 
+        | Some (CompPath(_, _, [])) -> "global" 
         | Some cp -> buildAccessPath (Some cp)
     
     member x.DeclaringEntity = 
         match entity.CompilationPathOpt with 
         | None -> None
-        | Some (CompPath(_, [])) -> None
+        | Some (CompPath(_, _, [])) -> None
         | Some cp -> 
             match x.Assembly.Contents.FindEntityByPath cp.MangledPath with
             | Some res -> Some res
@@ -428,7 +431,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
         checkIsResolved()
         match entity.CompilationPathOpt with 
         | None -> None
-        | Some (CompPath(_, [])) -> None
+        | Some (CompPath(_, _, [])) -> None
         | Some cp when cp.AccessPath |> List.forall (function _, ModuleOrNamespaceKind.Namespace _ -> true | _  -> false) -> 
             Some (buildAccessPath (Some cp))
         | Some _ -> None
@@ -480,6 +483,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
     member _.GenericParameters = 
         checkIsResolved()
         entity.TyparsNoRange |> List.map (fun tp -> FSharpGenericParameter(cenv, tp)) |> makeReadOnlyCollection
+
+    member _.GenericArguments =
+        checkIsResolved()
+        tyargs |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 
     member _.IsMeasure = 
         isResolvedAndFSharp() && (entity.TypeOrMeasureKind = TyparKind.Measure)
@@ -719,7 +726,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
         if isUnresolved() then makeReadOnlyCollection [] else
         entity.ModuleOrNamespaceType.AllEntities 
         |> QueueList.toList
-        |> List.map (fun x -> FSharpEntity(cenv, entity.NestedTyconRef x))
+        |> List.map (fun x -> FSharpEntity(cenv, entity.NestedTyconRef x, tyargs))
         |> makeReadOnlyCollection
 
     member _.UnionCases = 
@@ -767,7 +774,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
 
     member _.AllCompilationPaths =
         checkIsResolved()
-        let (CompPath(_, parts)) = entity.CompilationPath
+        let (CompPath(_, _, parts)) = entity.CompilationPath
         let partsList =
             [ yield parts
               match parts with
@@ -1461,18 +1468,18 @@ type FSharpGenericParameterMemberConstraint(cenv, info: TraitConstraintInfo) =
                           (fun () -> Item.Trait(info)), 
                           (fun _ _ _ad -> true))
 
-    let (TTrait(tys, nm, flags, atys, retTy, _)) = info 
     member _.MemberSources = 
-        tys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
+        info.SupportTypes |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 
-    member _.MemberName = nm
+    member _.MemberName = info.MemberLogicalName
 
-    member _.MemberIsStatic = not flags.IsInstance
+    member _.MemberIsStatic = not info.MemberFlags.IsInstance
 
-    member _.MemberArgumentTypes = atys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
+    member _.MemberArgumentTypes =
+        info.CompiledObjectAndArgumentTypes |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 
     member _.MemberReturnType =
-        match retTy with 
+        match info.CompiledReturnType with 
         | None -> FSharpType(cenv, cenv.g.unit_ty) 
         | Some ty -> FSharpType(cenv, ty) 
     override x.ToString() = "<member constraint info>"
@@ -1670,7 +1677,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let methods =
                     if matchParameterNumber then
                         methodInfos
-                        |> List.filter (fun methodInfo -> not (methodInfo.NumArgs = m.NumArgs) )
+                        |> List.filter (fun methodInfo -> methodInfo.NumArgs <> m.NumArgs )
                     else methodInfos
                 methods
                 |> List.map (fun mi ->
@@ -1689,7 +1696,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | Some v -> v
         | None -> failwith "DeclarationLocation property not available"
 
-    member _.DeclaringEntity = 
+    member _.DeclaringEntity: FSharpEntity option = 
         checkIsResolved()
         match d with 
         | E e -> FSharpEntity(cenv, e.DeclaringTyconRef) |> Some
@@ -1700,12 +1707,16 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | ParentNone -> None
         | Parent p -> FSharpEntity(cenv, p) |> Some
 
-    member _.ApparentEnclosingEntity = 
+    member _.ApparentEnclosingEntity: FSharpEntity = 
+        let createEntity (ttype: TType) =
+            let tcref, tyargs = destAppTy cenv.g ttype
+            FSharpEntity(cenv, tcref, tyargs)
+
         checkIsResolved()
         match d with 
-        | E e -> FSharpEntity(cenv, e.ApparentEnclosingTyconRef)
-        | P p -> FSharpEntity(cenv, p.ApparentEnclosingTyconRef)
-        | M m | C m -> FSharpEntity(cenv, m.ApparentEnclosingTyconRef)
+        | E e -> createEntity e.ApparentEnclosingType
+        | P p -> createEntity p.ApparentEnclosingType
+        | M m | C m -> createEntity m.ApparentEnclosingType
         | V v -> 
         match v.ApparentEnclosingEntity with 
         | ParentNone -> invalidOp "the value or member doesn't have a logical parent" 
@@ -1765,6 +1776,13 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | P p -> mkMethSym p.SetterMethod
         | E _ | M _ | C _ | V _ -> invalidOp "the value or member doesn't have an associated setter method" 
+
+    member _.IsUnionCaseTester =
+        checkIsResolved()
+        match d with
+        | P p -> p.IsUnionCaseTester
+        | M m -> m.IsUnionCaseTester
+        | E _ | C _ | V _ -> invalidOp "the value or member is not a property"
 
     member _.EventAddMethod =
         checkIsResolved()
@@ -2447,7 +2465,7 @@ type FSharpType(cenv, ty:TType) =
     let isUnresolved() = 
        DiagnosticsLogger.protectAssemblyExploration true <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_app (tcref, _, _) -> FSharpEntity(cenv, tcref).IsUnresolved
+        | TType_app (tcref, tyargs, _) -> FSharpEntity(cenv, tcref, tyargs).IsUnresolved
         | TType_measure (Measure.Const tcref) ->  FSharpEntity(cenv, tcref).IsUnresolved
         | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv, cenv.g.measureproduct_tcr).IsUnresolved 
         | TType_measure Measure.One ->  FSharpEntity(cenv, cenv.g.measureone_tcr).IsUnresolved 
@@ -2491,7 +2509,7 @@ type FSharpType(cenv, ty:TType) =
     member _.TypeDefinition = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_app (tcref, _, _) -> FSharpEntity(cenv, tcref) 
+        | TType_app (tcref, tyargs, _) -> FSharpEntity(cenv, tcref, tyargs) 
         | TType_measure (Measure.Const tcref) ->  FSharpEntity(cenv, tcref) 
         | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv, cenv.g.measureproduct_tcr) 
         | TType_measure Measure.One ->  FSharpEntity(cenv, cenv.g.measureone_tcr) 

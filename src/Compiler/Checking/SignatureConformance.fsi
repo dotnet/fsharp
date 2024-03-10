@@ -7,6 +7,7 @@ module internal FSharp.Compiler.SignatureConformance
 open System.Text
 
 open FSharp.Compiler
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -26,9 +27,18 @@ exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase *
 
 exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
-exception FieldNotContained of DisplayEnv * InfoReader * Tycon * RecdField * RecdField * (string * string -> string)
+exception FieldNotContained of
+    DisplayEnv *
+    InfoReader *
+    Tycon *
+    Tycon *
+    RecdField *
+    RecdField *
+    (string * string -> string)
 
 exception InterfaceNotRevealed of DisplayEnv * TType * range
+
+exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
 type Checker =
 

@@ -899,12 +899,12 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy tycr tyargs)
                 E.UnionCaseTag(ConvExpr cenv env arg1, typR) 
 
-            | TOp.TraitCall (TTrait(tys, nm, memFlags, argTys, _retTy, _solution)), _, _                    -> 
-                let tysR = ConvTypes cenv tys
+            | TOp.TraitCall traitInfo, _, _ ->
+                let tysR = ConvTypes cenv traitInfo.SupportTypes
                 let tyargsR = ConvTypes cenv tyargs
-                let argTysR = ConvTypes cenv argTys
+                let argTysR = ConvTypes cenv traitInfo.CompiledObjectAndArgumentTypes
                 let argsR = ConvExprs cenv env args
-                E.TraitCall(tysR, nm, memFlags, argTysR, tyargsR, argsR) 
+                E.TraitCall(tysR, traitInfo.MemberLogicalName, traitInfo.MemberFlags, argTysR, tyargsR, argsR) 
 
             | TOp.RefAddrGet readonly, [ty], [e]  -> 
                 let replExpr = mkRecdFieldGetAddrViaExprAddr(readonly, e, mkRefCellContentsRef g, [ty], m)
@@ -925,11 +925,12 @@ module FSharpExprConvert =
         let witnessInfo = traitInfo.GetWitnessInfo()
         let env = { env with suppressWitnesses = true }
         // First check if this is a witness in ReflectedDefinition code
-        if env.witnessesInScope.ContainsKey witnessInfo then 
-            let witnessArgIdx = env.witnessesInScope[witnessInfo]
+        match env.witnessesInScope.TryGetValue witnessInfo with
+        | true, scopewitnessinfo -> 
+            let witnessArgIdx = scopewitnessinfo
             E.WitnessArg(witnessArgIdx)
         // Otherwise it is a witness in a quotation literal 
-        else
+        | false, _ ->
             //failwith "witness not found"
             E.WitnessArg(-1)
 
@@ -1159,7 +1160,7 @@ module FSharpExprConvert =
                     let ty = if isStatic then ty else mkFunTy g enclosingTy ty 
                     mkForallTyIfNeeded (typars1 @ typars2) ty
 
-                let argCount = List.sum (List.map List.length argTys)  + (if isStatic then 0 else 1)
+                let argCount = (List.sumBy List.length argTys)  + (if isStatic then 0 else 1)
                 let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, Some linkageType)
 
                 let (PubPath p) = tcref.PublicPath.Value
@@ -1266,7 +1267,7 @@ module FSharpExprConvert =
             let acc = 
                 match dfltOpt with 
                 | Some d -> ConvDecisionTreePrim cenv env dtreeRetTy d 
-                | None -> wfail( "FSharp.Compiler.Service cannot yet return this kind of pattern match", m)
+                | None -> E.DecisionTreeSuccess(0, [])
 
             (csl, acc) ||> List.foldBack (ConvDecisionTreeCase (cenv: SymbolEnv) env m inpExpr dtreeRetTy)
 

@@ -75,7 +75,7 @@ exception UnionPatternsBindDifferentNames of range
 
 exception VarBoundTwice of Ident
 
-exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
+exception ValueRestriction of DisplayEnv * InfoReader * Val * Typar * range
 
 exception ValNotMutable of DisplayEnv * ValRef * range
 
@@ -256,7 +256,7 @@ type NormalizedBinding =
     | NormalizedBinding of
         visibility: SynAccess option *
         kind: SynBindingKind *
-        mustInline: bool *
+        shouldInline: bool *
         isMutable: bool *
         attribs: SynAttribute list *
         xmlDoc: XmlDoc *
@@ -430,6 +430,7 @@ val ComputeAccessRights:
 
 /// Compute the available access rights and module/entity compilation path for a paricular location in code
 val ComputeAccessAndCompPath:
+    g: TcGlobals ->
     env: TcEnv ->
     declKindOpt: DeclKind option ->
     m: range ->
@@ -578,6 +579,10 @@ val PublishTypeDefn: cenv: TcFileState -> env: TcEnv -> mspec: Tycon -> unit
 /// Publish a value definition to the module/namespace type accumulator.
 val PublishValueDefn: cenv: TcFileState -> env: TcEnv -> declKind: DeclKind -> vspec: Val -> unit
 
+/// Publish a value definition to the module/namespace type accumulator.
+val PublishValueDefnMaybeInclCompilerGenerated:
+    cenv: TcFileState -> env: TcEnv -> inclCompilerGenerated: bool -> declKind: DeclKind -> vspec: Val -> unit
+
 /// Mark a typar as no longer being an inference type variable
 val SetTyparRigid: DisplayEnv -> range -> Typar -> unit
 
@@ -708,7 +713,8 @@ val TcMatchPattern:
     synWhenExprOpt: SynExpr option ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
 
-val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) option
+[<return: Struct>]
+val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) voption
 
 /// Check a set of let bindings in a class or module
 val TcLetBindings:

@@ -46,8 +46,7 @@ type internal MakeDeclarationMutableCodeFixProvider [<ImportingConstructor>] () 
                     | Some lexerSymbol ->
                         let! sourceText = context.GetSourceTextAsync()
 
-                        let fcsTextLineNumber, textLine =
-                            MutableCodeFixHelper.getLineNumberAndText sourceText position
+                        let! fcsTextLineNumber, textLine = context.GetLineNumberAndText position
 
                         let! parseFileResults, checkFileResults =
                             document.GetFSharpParseAndCheckResultsAsync(nameof MakeDeclarationMutableCodeFixProvider)

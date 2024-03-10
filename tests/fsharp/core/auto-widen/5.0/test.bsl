@@ -855,6 +855,5 @@ but here has type
 
 test.fsx(454,46,454,47): typecheck error FS0001: This expression was expected to have type
     'int64'    
-    'int64'    
 but here has type
     'int'    

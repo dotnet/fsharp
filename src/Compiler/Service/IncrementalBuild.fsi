@@ -22,6 +22,17 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
+open Internal.Utilities.Collections
+
+type internal FrameworkImportsCacheKey =
+    | FrameworkImportsCacheKey of
+        resolvedpath: string list *
+        assemblyName: string *
+        targetFrameworkDirectories: string list *
+        fsharpBinaries: string *
+        langVersion: decimal
+
+    interface ICacheKey<string, FrameworkImportsCacheKey>
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache =
@@ -131,6 +142,20 @@ type internal PartialCheckResults =
     member GetOrComputeSemanticClassificationIfEnabled: unit -> NodeCode<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime
+
+[<Sealed>]
+type internal RawFSharpAssemblyDataBackedByLanguageService =
+    new:
+        tcConfig: TcConfig *
+        tcGlobals: TcGlobals *
+        generatedCcu: CcuThunk *
+        outfile: string *
+        topAttrs: TopAttribs *
+        assemblyName: string *
+        ilAssemRef: FSharp.Compiler.AbstractIL.IL.ILAssemblyRef ->
+            RawFSharpAssemblyDataBackedByLanguageService
+
+    interface IRawFSharpAssemblyData
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]

@@ -17,7 +17,7 @@ ImplFile
                         PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                         SynValData
                           (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                           None, None),
+                           None),
                         Named (SynIdent (e1, None), false, None, (3,4--3,6)),
                         None,
                         Downcast

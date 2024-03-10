@@ -38,6 +38,8 @@ let mkLocalPrivateAttributeWithDefaultConstructor (g: TcGlobals, name: string) =
                 g.AddMethodGeneratedAttributes(mkILNonGenericEmptyCtor (g.ilg.typ_Attribute, None, None))
             ]
 
+    let ilCustomAttrs = mkILCustomAttrsFromArray [| g.CompilerGeneratedAttribute |]
+
     mkILGenericClass (
         name,
         ILTypeDefAccess.Private,
@@ -49,7 +51,7 @@ let mkLocalPrivateAttributeWithDefaultConstructor (g: TcGlobals, name: string) =
         emptyILTypeDefs,
         emptyILProperties,
         emptyILEvents,
-        emptyILCustomAttrs,
+        ilCustomAttrs,
         ILTypeInit.BeforeField
     )
 
@@ -104,6 +106,8 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
             )
         )
 
+    let ilCustomAttrs = mkILCustomAttrsFromArray [| g.CompilerGeneratedAttribute |]
+
     mkILGenericClass (
         name,
         ILTypeDefAccess.Private,
@@ -118,7 +122,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
         emptyILTypeDefs,
         mkILProperties (ilElements |> List.map (fun (_, _, property, _) -> property)),
         emptyILEvents,
-        emptyILCustomAttrs,
+        ilCustomAttrs,
         ILTypeInit.BeforeField
     )
 

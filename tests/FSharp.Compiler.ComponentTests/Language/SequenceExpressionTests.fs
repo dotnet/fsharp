@@ -23,7 +23,7 @@ let rec f () = seq {
         yield! f()
 }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compile
     |> verifyIL ["
       .class auto ansi serializable sealed nested assembly beforefieldinit 'f@3-1'
@@ -351,7 +351,7 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -370,7 +370,7 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -389,7 +389,7 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail    
     |> withDiagnosticMessageMatches "This expression returns a value of type 'int' but is implicitly discarded."
@@ -411,11 +411,11 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withErrorCode 193
-    |> withDiagnosticMessageMatches "Type constraint mismatch"
+    |> withErrorCode 1
+    |> withDiagnosticMessageMatches "This expression was expected to have type"
 
 
 [<Literal>]
@@ -436,9 +436,10 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withErrorCode 30
-    |> withDiagnosticMessageMatches "Value restriction. The value 'typedSeq' has been inferred to have generic type"
+    |> withDiagnosticMessageMatches "Value restriction: The value 'typedSeq' has an inferred generic type"
+    |> withDiagnosticMessageMatches "val typedSeq: '_a seq"
  

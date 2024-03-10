@@ -20,7 +20,6 @@ src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
 src/Compiler/Checking/AugmentWithHashCompare.fs
 src/Compiler/Checking/CheckBasics.fs
-src/Compiler/Checking/CheckComputationExpressions.fs
 src/Compiler/Checking/CheckDeclarations.fs
 src/Compiler/Checking/CheckExpressions.fs
 src/Compiler/Checking/CheckFormatStrings.fs

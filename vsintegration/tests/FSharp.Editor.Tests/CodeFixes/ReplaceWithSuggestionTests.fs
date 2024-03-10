@@ -19,7 +19,7 @@ let song = { Titel = "Jigsaw Falling Into Place" }
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "Replace with 'Title'"
                 FixedCode =
@@ -29,8 +29,9 @@ type Song = { Title : string }
 let song = { Title = "Jigsaw Falling Into Place" }
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code Auto
+    let actual = codeFix |> multiFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -44,7 +45,7 @@ let someSong : Wrong = { Title = "The Narcissist" }
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "Replace with 'Song'"
                 FixedCode =
@@ -54,8 +55,47 @@ type Song = { Title : string }
 let someSong : Song = { Title = "The Narcissist" }
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code Auto
+    let actual = codeFix |> multiFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS0039 - multiple suggestions`` () =
+    let code =
+        """
+type TheType1() = class end
+type TheType3() = class end
+
+let test = TheType2()
+"""
+
+    let expected =
+        [
+            {
+                Message = "Replace with 'TheType1'"
+                FixedCode =
+                    """
+type TheType1() = class end
+type TheType3() = class end
+
+let test = TheType1()
+"""
+            }
+            {
+                Message = "Replace with 'TheType3'"
+                FixedCode =
+                    """
+type TheType1() = class end
+type TheType3() = class end
+
+let test = TheType3()
+"""
+            }
+        ]
+
+    let actual = codeFix |> multiFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -70,9 +110,9 @@ module Module2 =
     let song = { Titel = "Jigsaw Falling Into Place" }
 """
 
-    let expected = None
+    let expected = []
 
-    let actual = codeFix |> tryFix code Auto
+    let actual = codeFix |> multiFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -83,9 +123,9 @@ let ``Doesn't fix FS0039 for random undefined stuff`` () =
 let f = g
 """
 
-    let expected = None
+    let expected = []
 
-    let actual = codeFix |> tryFix code Auto
+    let actual = codeFix |> multiFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -100,7 +140,7 @@ let song = Song(titel = "Under The Milky Way")
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "Replace with 'title'"
                 FixedCode =
@@ -111,7 +151,42 @@ type Song(title: string) =
 let song = Song(title = "Under The Milky Way")
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code Auto
+    let actual = codeFix |> multiFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS1129`` () =
+    let code =
+        """
+type SomeType = { TheField : string }
+
+let f x =
+    match x with
+    | { TheField = "A" } -> true
+    | { TheFiedl = "B" } -> true
+    | _ -> false
+"""
+
+    let expected =
+        [
+            {
+                Message = "Replace with 'TheField'"
+                FixedCode =
+                    """
+type SomeType = { TheField : string }
+
+let f x =
+    match x with
+    | { TheField = "A" } -> true
+    | { TheField = "B" } -> true
+    | _ -> false
+"""
+            }
+        ]
+
+    let actual = codeFix |> multiFix code Auto
 
     Assert.Equal(expected, actual)

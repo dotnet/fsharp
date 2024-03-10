@@ -30,7 +30,7 @@ ImplFile
                                    MemberKind = Member },
                             SynValInfo
                               ([[SynArgInfo ([], false, None)]; []],
-                               SynArgInfo ([], false, None)), None, None),
+                               SynArgInfo ([], false, None)), None),
                          FromParseError (Wild (6,10--6,10), (6,10--6,10)), None,
                          ArbitraryAfterError ("classDefnMember1", (6,10--6,10)),
                          (6,4--6,10), NoneAtInvisible,

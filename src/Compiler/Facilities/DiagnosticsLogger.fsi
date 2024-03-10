@@ -56,6 +56,8 @@ val Error: (int * string) * range -> exn
 
 exception InternalError of message: string * range: range
 
+exception InternalException of exn: Exception * msg: string * range: range
+
 exception UserCompilerMessage of message: string * number: int * range: range
 
 exception LibraryUseOnly of range: range
@@ -241,9 +243,6 @@ module DiagnosticsLoggerExtensions =
 
     /// Instruct the exception not to reset itself when thrown again.
     val PreserveStackTrace: exn: 'T -> unit
-
-    /// Reraise an exception if it is one we want to report to Watson.
-    val ReraiseIfWatsonable: exn: exn -> unit
 
     type DiagnosticsLogger with
 
@@ -464,3 +463,10 @@ type CompilationGlobalsScope =
     member DiagnosticsLogger: DiagnosticsLogger
 
     member BuildPhase: BuildPhase
+
+type CaptureDiagnosticsConcurrently =
+    new: unit -> CaptureDiagnosticsConcurrently
+
+    member GetLoggerForTask: string -> DiagnosticsLogger
+
+    interface IDisposable

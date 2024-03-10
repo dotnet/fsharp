@@ -116,7 +116,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
         with
         | StopProcessing -> ()
         | ReportedError _
-        | WrappedError (ReportedError _, _) ->
+        | WrappedError(ReportedError _, _) ->
             exiter.ExitCode <- 1
             ()
 
@@ -143,7 +143,7 @@ type internal FscCompiler(legacyReferenceResolver) =
     /// Converts short and long issue types to the same CompilationIssue representation
     let convert issue =
         match issue with
-        | FormattedDiagnostic.Short (severity, text) ->
+        | FormattedDiagnostic.Short(severity, text) ->
             {
                 Location = emptyLocation
                 Code = ""
@@ -156,7 +156,7 @@ type internal FscCompiler(legacyReferenceResolver) =
                     else
                         CompilationIssueType.Warning
             }
-        | FormattedDiagnostic.Long (severity, details) ->
+        | FormattedDiagnostic.Long(severity, details) ->
             let loc, file =
                 match details.Location with
                 | Some l when not l.IsEmpty ->

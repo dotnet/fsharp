@@ -163,7 +163,7 @@ module TaskBuilder =
     /// <remarks>
     /// If the task is created on a foreground thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is non-null)
     /// its body is executed on a background thread using <see cref="M:System.Threading.Tasks.Task.Run"/>.
-    /// If created on a background thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is null) it is executed immeidately
+    /// If created on a background thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is null) it is executed
     /// immediately on that thread.
     /// </remarks>
     ///

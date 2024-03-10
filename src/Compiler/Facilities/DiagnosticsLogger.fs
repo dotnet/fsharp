@@ -2,6 +2,7 @@
 
 module FSharp.Compiler.DiagnosticsLogger
 
+open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -12,6 +13,7 @@ open System.Reflection
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open System.Collections.Concurrent
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -26,7 +28,7 @@ type DiagnosticStyle =
 exception WrappedError of exn * range with
     override this.Message =
         match this :> exn with
-        | WrappedError (exn, _) -> "WrappedError(" + exn.Message + ")"
+        | WrappedError(exn, _) -> "WrappedError(" + exn.Message + ")"
         | _ -> "WrappedError"
 
 /// Thrown when immediate, local error recovery is not possible. This indicates
@@ -42,13 +44,13 @@ exception ReportedError of exn option with
             "The exception has been reported. This internal exception should now be caught at an error recovery point on the stack."
 
         match this :> exn with
-        | ReportedError (Some exn) -> msg + " Original message: " + exn.Message + ")"
+        | ReportedError(Some exn) -> msg + " Original message: " + exn.Message + ")"
         | _ -> msg
 
 let rec findOriginalException err =
     match err with
-    | ReportedError (Some err) -> err
-    | WrappedError (err, _) -> findOriginalException err
+    | ReportedError(Some err) -> err
+    | WrappedError(err, _) -> findOriginalException err
     | _ -> err
 
 type Suggestions = (string -> unit) -> unit
@@ -62,7 +64,7 @@ exception StopProcessingExn of exn option with
 
     override this.ToString() =
         match this :> exn with
-        | StopProcessingExn (Some exn) -> "StopProcessingExn, originally (" + exn.ToString() + ")"
+        | StopProcessingExn(Some exn) -> "StopProcessingExn, originally (" + exn.ToString() + ")"
         | _ -> "StopProcessingExn"
 
 let (|StopProcessing|_|) exn =
@@ -76,13 +78,24 @@ let StopProcessing<'T> = StopProcessingExn None
 exception DiagnosticWithText of number: int * message: string * range: range with
     override this.Message =
         match this :> exn with
-        | DiagnosticWithText (_, msg, _) -> msg
+        | DiagnosticWithText(_, msg, _) -> msg
         | _ -> "impossible"
 
 exception InternalError of message: string * range: range with
     override this.Message =
         match this :> exn with
-        | InternalError (msg, m) -> msg + m.ToString()
+        | InternalError(msg, m) -> msg + m.ToString()
+        | _ -> "impossible"
+
+exception InternalException of exn: Exception * msg: string * range: range with
+    override this.Message =
+        match this :> exn with
+        | InternalException(_, msg, _) -> msg
+        | _ -> "impossible"
+
+    override this.ToString() =
+        match this :> exn with
+        | InternalException(exn, _, _) -> exn.ToString()
         | _ -> "impossible"
 
 exception UserCompilerMessage of message: string * number: int * range: range
@@ -102,7 +115,7 @@ exception UnresolvedReferenceError of assemblyName: string * range: range
 exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string with
     override this.Message =
         match this :> exn with
-        | UnresolvedPathReferenceNoRange (assemblyName, path) -> sprintf "Assembly: %s, full path: %s" assemblyName path
+        | UnresolvedPathReferenceNoRange(assemblyName, path) -> sprintf "Assembly: %s, full path: %s" assemblyName path
         | _ -> "impossible"
 
 exception UnresolvedPathReference of assemblyName: string * path: string * range: range
@@ -110,7 +123,7 @@ exception UnresolvedPathReference of assemblyName: string * path: string * range
 exception DiagnosticWithSuggestions of number: int * message: string * range: range * identifier: string * suggestions: Suggestions with // int is e.g. 191 in FS0191
     override this.Message =
         match this :> exn with
-        | DiagnosticWithSuggestions (_, msg, _, _, _) -> msg
+        | DiagnosticWithSuggestions(_, msg, _, _, _) -> msg
         | _ -> "impossible"
 
 /// A diagnostic that is raised when enabled manually, or by default with a language feature
@@ -143,7 +156,7 @@ let inline protectAssemblyExplorationF dflt ([<InlineIfLambda>] f) =
     try
         f ()
     with
-    | UnresolvedPathReferenceNoRange (asmName, path) -> dflt (asmName, path)
+    | UnresolvedPathReferenceNoRange(asmName, path) -> dflt (asmName, path)
     | _ -> reraise ()
 
 let inline protectAssemblyExplorationNoReraise dflt1 dflt2 ([<InlineIfLambda>] f) =
@@ -160,11 +173,11 @@ let rec AttachRange m (exn: exn) =
     else
         match exn with
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException -> AttachRange m exn.InnerException
+        | :? TargetInvocationException -> AttachRange m exn.InnerException
         | UnresolvedReferenceNoRange a -> UnresolvedReferenceError(a, m)
-        | UnresolvedPathReferenceNoRange (a, p) -> UnresolvedPathReference(a, p, m)
-        | Failure msg -> InternalError(msg + " (Failure)", m)
-        | :? ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
+        | UnresolvedPathReferenceNoRange(a, p) -> UnresolvedPathReference(a, p, m)
+        | :? NotSupportedException -> exn
+        | :? SystemException -> InternalException(exn, exn.Message, m)
         | _ -> exn
 
 type Exiter =
@@ -362,7 +375,7 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
-/// Type holds thread-static globals for use by the compile.
+/// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
     [<ThreadStatic; DefaultValue>]
     static val mutable private buildPhase: BuildPhase
@@ -403,7 +416,8 @@ module DiagnosticsLoggerExtensions =
         try
             if not tryAndDetectDev15 then
                 let preserveStackTrace =
-                    typeof<Exception>.GetMethod ("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    typeof<Exception>
+                        .GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
 
                 preserveStackTrace.Invoke(exn, null) |> ignore
         with _ ->
@@ -411,25 +425,12 @@ module DiagnosticsLoggerExtensions =
             Debug.Assert(false, "Could not preserve stack trace for watson exception.")
             ()
 
-    /// Reraise an exception if it is one we want to report to Watson.
-    let ReraiseIfWatsonable (exn: exn) =
-        match exn with
-        // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
-        | :? TargetInvocationException -> ()
-        | :? NotSupportedException -> ()
-        | :? System.IO.IOException -> () // This covers FileNotFoundException and DirectoryNotFoundException
-        | :? UnauthorizedAccessException -> ()
-        | Failure _ // This gives reports for compiler INTERNAL ERRORs
-        | :? SystemException ->
-            PreserveStackTrace exn
-            raise exn
-        | _ -> ()
-
     type DiagnosticsLogger with
 
         member x.EmitDiagnostic(exn, severity) =
             match exn with
-            | InternalError (s, _)
+            | InternalError(s, _)
+            | InternalException(_, s, _)
             | Failure s as exn -> Debug.Assert(false, sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
             | _ -> ()
 
@@ -463,20 +464,19 @@ module DiagnosticsLoggerExtensions =
             match exn with
             // Don't send ThreadAbortException down the error channel
             | :? System.Threading.ThreadAbortException
-            | WrappedError (:? System.Threading.ThreadAbortException, _) -> ()
+            | WrappedError(:? System.Threading.ThreadAbortException, _) -> ()
             | ReportedError _
-            | WrappedError (ReportedError _, _) -> ()
+            | WrappedError(ReportedError _, _) -> ()
             | StopProcessing
-            | WrappedError (StopProcessing, _) ->
+            | WrappedError(StopProcessing, _) ->
                 PreserveStackTrace exn
                 raise exn
             | _ ->
                 try
                     x.ErrorR(AttachRange m exn) // may raise exceptions, e.g. an fsi error sink raises StopProcessing.
-                    ReraiseIfWatsonable exn
                 with
                 | ReportedError _
-                | WrappedError (ReportedError _, _) -> ()
+                | WrappedError(ReportedError _, _) -> ()
 
         member x.StopProcessingRecovery (exn: exn) (m: range) =
             // Do standard error recovery.
@@ -485,15 +485,15 @@ module DiagnosticsLoggerExtensions =
             // Can throw other exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             | StopProcessing
-            | WrappedError (StopProcessing, _) -> () // suppress, so skip error recovery.
+            | WrappedError(StopProcessing, _) -> () // suppress, so skip error recovery.
             | _ ->
                 try
                     x.ErrorRecovery exn m
                 with
                 | StopProcessing
-                | WrappedError (StopProcessing, _) -> () // catch, e.g. raised by DiagnosticSink.
+                | WrappedError(StopProcessing, _) -> () // catch, e.g. raised by DiagnosticSink.
                 | ReportedError _
-                | WrappedError (ReportedError _, _) -> () // catch, but not expected unless ErrorRecovery is changed.
+                | WrappedError(ReportedError _, _) -> () // catch, but not expected unless ErrorRecovery is changed.
 
         member x.ErrorRecoveryNoRange(exn: exn) = x.ErrorRecovery exn range0
 
@@ -635,10 +635,10 @@ let ReportWarnings warns =
 
 let CommitOperationResult res =
     match res with
-    | OkResult (warns, res) ->
+    | OkResult(warns, res) ->
         ReportWarnings warns
         res
-    | ErrorResult (warns, err) ->
+    | ErrorResult(warns, err) ->
         ReportWarnings warns
         error err
 
@@ -654,18 +654,18 @@ let inline ResultD x = OkResult([], x)
 
 let CheckNoErrorsAndGetWarnings res =
     match res with
-    | OkResult (warns, res2) -> Some(warns, res2)
+    | OkResult(warns, res2) -> Some(warns, res2)
     | ErrorResult _ -> None
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline bind f res =
     match res with
-    | OkResult ([], res) -> (* tailcall *) f res
-    | OkResult (warns, res) ->
+    | OkResult([], res) -> (* tailcall *) f res
+    | OkResult(warns, res) ->
         match f res with
-        | OkResult (warns2, res2) -> OkResult(warns @ warns2, res2)
-        | ErrorResult (warns2, err) -> ErrorResult(warns @ warns2, err)
-    | ErrorResult (warns, err) -> ErrorResult(warns, err)
+        | OkResult(warns2, res2) -> OkResult(warns @ warns2, res2)
+        | ErrorResult(warns2, err) -> ErrorResult(warns @ warns2, err)
+    | ErrorResult(warns, err) -> ErrorResult(warns, err)
 
 /// Stop on first error. Accumulate warnings and continue.
 [<DebuggerHidden; DebuggerStepThrough>]
@@ -732,7 +732,7 @@ let rec Iterate2D f xs ys =
 [<DebuggerHidden; DebuggerStepThrough>]
 let TryD f g =
     match f () with
-    | ErrorResult (warns, err) ->
+    | ErrorResult(warns, err) ->
         trackErrors {
             do! OkResult(warns, ())
             return! g err
@@ -770,8 +770,8 @@ let inline MapReduce2D mapper zero reducer xs ys =
 module OperationResult =
     let inline ignore (res: OperationResult<'a>) =
         match res with
-        | OkResult (warnings, _) -> OkResult(warnings, ())
-        | ErrorResult (warnings, err) -> ErrorResult(warnings, err)
+        | OkResult(warnings, _) -> OkResult(warnings, ())
+        | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
 
 // Code below is for --flaterrors flag that is only used by the IDE
 let stringThatIsAProxyForANewlineInFlatErrors = String [| char 29 |]
@@ -860,11 +860,13 @@ type StackGuard(maxDepth: int, name: string) =
             if depth % maxDepth = 0 then
                 let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
                 let buildPhase = DiagnosticsThreadStatics.BuildPhase
+                let ct = Cancellable.Token
 
                 async {
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
                     use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
+                    use _token = Cancellable.UsingToken ct
                     return f ()
                 }
                 |> Async.RunImmediate
@@ -882,3 +884,17 @@ type StackGuard(maxDepth: int, name: string) =
 
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
+
+type CaptureDiagnosticsConcurrently() =
+    let target = DiagnosticsThreadStatics.DiagnosticsLogger
+    let loggers = ResizeArray()
+
+    member _.GetLoggerForTask(name) : DiagnosticsLogger =
+        let logger = CapturingDiagnosticsLogger(name)
+        loggers.Add logger
+        logger
+
+    interface IDisposable with
+        member _.Dispose() =
+            for logger in loggers do
+                logger.CommitDelayedDiagnostics target

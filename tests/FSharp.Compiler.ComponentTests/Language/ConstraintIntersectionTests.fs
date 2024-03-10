@@ -47,7 +47,7 @@ let z (f: #I & #IDisposable & #Task<int> & #seq<string>, name: string) =
     f.Result |> ignore<int>
     f.Dispose ()
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -67,7 +67,7 @@ type C<'t & #seq<int> & #IDisposable, 'y & #seq<'t>> =
             for x in xs do
                 printfn "%d" x
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -78,7 +78,7 @@ type C<'t & #seq<int> & System.IDisposable, 'y & #seq<'t>> = class end
 
 let y (f: #seq<int> & System.IDisposable) = ()
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [

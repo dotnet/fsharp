@@ -10,8 +10,7 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Paren
                     (ListCons
                        (Named (SynIdent (head, None), false, None, (2,5--2,9)),

@@ -8,6 +8,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle
+open Internal.Utilities.Library
 
 [<RequireQualifiedAccess>]
 type OptimizationProcessingMode =
@@ -61,7 +62,7 @@ type OptimizationSettings =
 /// Optimization information
 type ModuleInfo
 
-type LazyModuleInfo = Lazy<ModuleInfo>
+type LazyModuleInfo = InterruptibleLazy<ModuleInfo>
 
 type ImplFileOptimizationInfo = LazyModuleInfo
 

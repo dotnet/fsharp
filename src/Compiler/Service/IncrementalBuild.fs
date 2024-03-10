@@ -335,7 +335,7 @@ type BoundModel private (
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
                     use _ = Activity.start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|Activity.Tags.fileName, fileName|]
                     let sResolutions = sink.GetResolutions()
-                    let builder = ItemKeyStoreBuilder()
+                    let builder = ItemKeyStoreBuilder(tcGlobals)
                     let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
                                                         member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
                                                         member _.GetHashCode o = o.GetHashCode() })
@@ -391,7 +391,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
@@ -485,10 +485,19 @@ type BoundModel private (
             syntaxTreeOpt
         )
 
-
 /// Global service state
-type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
+type FrameworkImportsCacheKey = 
+    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
 
+    interface ICacheKey<string, FrameworkImportsCacheKey> with
+        member this.GetKey() =
+            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+
+        member this.GetLabel() = 
+            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+
+        member this.GetVersion() = this
+        
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
 
@@ -593,6 +602,7 @@ module Utilities =
 /// Constructs the build data (IRawFSharpAssemblyData) representing the assembly when used
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.
+[<Sealed>]
 type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef) =
 
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
@@ -725,7 +735,7 @@ module IncrementalBuilderHelpers =
       }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (initialErrors: SingleFileDiagnostics) (boundModels: GraphNode<BoundModel> seq) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (boundModels: GraphNode<BoundModel> seq) =
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
@@ -820,7 +830,6 @@ module IncrementalBuilderHelpers =
         let diagnostics = [
             diagnosticsLogger.GetDiagnostics()
             yield! partialDiagnostics |> Seq.rev
-            initialErrors
         ]
 
         let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
@@ -927,7 +936,6 @@ type IncrementalBuilderState =
     {
         slots: Slot list
         stampedReferencedAssemblies: ImmutableArray<DateTime>
-        initialBoundModel: GraphNode<BoundModel>
         finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
     }
     member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
@@ -949,7 +957,6 @@ module IncrementalBuilderStateHelpers =
     let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
         GraphNode(node {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
-            let! initialErrors = initialState.initialBoundModel.Diagnostics.GetOrComputeValue()
             let! result = 
                 FinalizeTypeCheckTask 
                     initialState.tcConfig 
@@ -957,7 +964,6 @@ module IncrementalBuilderStateHelpers =
                     initialState.enablePartialTypeChecking
                     initialState.assemblyName 
                     initialState.outfile 
-                    initialErrors
                     boundModels
             return result, DateTime.UtcNow
         })
@@ -1060,16 +1066,15 @@ type IncrementalBuilderState with
         let boundModels = 
             syntaxTrees
             |> Seq.scan createBoundModelGraphNode initialBoundModel
-            |> Seq.skip 1
 
         let slots =
             [
-                for model, syntaxTree, hasSignature in Seq.zip3 boundModels syntaxTrees hasSignature do
+                for model, syntaxTree, hasSignature in Seq.zip3 (boundModels |> Seq.skip 1) syntaxTrees hasSignature do
                     {
                         HasSignature = hasSignature
                         Stamp = DateTime.MinValue
                         LogicalStamp = DateTime.MinValue
-                        Notified = false
+                        Notified = true
                         SyntaxTree = syntaxTree
                         BoundModel = model
                     }
@@ -1079,7 +1084,6 @@ type IncrementalBuilderState with
             {
                 slots = slots
                 stampedReferencedAssemblies = ImmutableArray.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
-                initialBoundModel = initialBoundModel
                 finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
             }
         let state = computeStampedReferencedAssemblies initialState state false cache
@@ -1642,7 +1646,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     Array.ofList delayedLogger.Diagnostics, false
             diagnostics
             |> Array.map (fun (diagnostic, severity) ->
-                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors))
+                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
 
         return builderOpt, diagnostics
       }

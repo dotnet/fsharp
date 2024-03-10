@@ -24,6 +24,7 @@ build -testFSharpQA -c Release -ci -nobl
 build -testFSharpCore -c Release
 build -testScripting -c Release
 build -testVs -c Release
+build -testAOT -c Release
 build -testAll -c Release
 ```
 
@@ -37,6 +38,7 @@ build -testAll -c Release
 | testCambridge | Windows | Runs the Cambridge suite tests |
 | testFSharpQA  | Windows | Runs the FSharpQA tests, requires Perl |
 | testVS        | Windows + VS | Runs all VS integration tests |
+| testAOT       | Windows | Run AOT/Trimming tests |
 | testCompiler  | Windows | Runs a few quick compiler tests |
 | testScripting | Windows | Runs scripting fsx and fsi commandline tests |
 | test          | Windows | Same as testDesktop |

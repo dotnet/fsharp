@@ -29,11 +29,7 @@ type internal HashCompletion =
         }
 
 type internal HashDirectiveCompletionProvider
-    (
-        workspace: Workspace,
-        projectInfoManager: FSharpProjectOptionsManager,
-        completions: HashCompletion list
-    ) =
+    (workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: HashCompletion list) =
 
     inherit FSharpCommonCompletionProviderBase()
 

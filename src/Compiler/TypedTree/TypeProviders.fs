@@ -121,7 +121,7 @@ let CreateTypeProvider (
     let getReferencedAssemblies () =
         resolutionEnvironment.GetReferencedAssemblies() |> Array.distinct
 
-    if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
+    if not(isNull(typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]))) then
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
@@ -146,7 +146,7 @@ let CreateTypeProvider (
 #endif
         protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
 
-    elif typeProviderImplementationType.GetConstructor [| |] <> null then 
+    elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
         protect (fun () -> Activator.CreateInstance typeProviderImplementationType :?> ITypeProvider )
 
     else
@@ -300,7 +300,7 @@ type ProvidedTypeComparer() =
 type ProvidedTypeContext = 
     | NoEntries
     // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
-    | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * Lazy<ConcurrentDictionary<ProvidedType, obj>>
+    | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * InterruptibleLazy<ConcurrentDictionary<ProvidedType, obj>>
 
     static member Empty = NoEntries
 
@@ -334,9 +334,11 @@ type ProvidedTypeContext =
         match ctxt with 
         | NoEntries -> NoEntries
         | Entries(d1, d2) ->
-            Entries(d1, lazy (let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
-                              for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
-                              dict))
+            Entries(d1, InterruptibleLazy(fun _ ->
+                let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
+                for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
+                dict
+            ))
 
 [<AllowNullLiteral; Sealed>]
 type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
@@ -1174,7 +1176,7 @@ let TryResolveProvidedType(resolver: Tainted<ITypeProvider>, m, moduleOrNamespac
         match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
         | Tainted.Null -> None
         | Tainted.NonNull ty -> Some ty
-    with e -> 
+    with RecoverableException e -> 
         errorRecovery e m
         None
 

@@ -35,16 +35,11 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
     }
 }
 
+# NOTE: Trimming now errors out on desktop TFMs, as shown below:
+# error NETSDK1124: Trimming assemblies requires .NET Core 3.0 or higher.
 
 # Check net7.0 trimmed assemblies
-CheckTrim -root "SelfContained_Trimming_Test" -tfm "net7.0" -outputfile "FSharp.Core.dll" -expected_len 287744
+CheckTrim -root "SelfContained_Trimming_Test" -tfm "net8.0" -outputfile "FSharp.Core.dll" -expected_len 284160
 
-# Check net472 trimmed assemblies -- net472 doesn't actually trim, this just checks that everything is usable when published trimmed
-CheckTrim -root "SelfContained_Trimming_Test" -tfm "net472" -outputfile "FSharp.Core.dll" -expected_len -1
-
-# Disabled due to bug:   https://github.com/dotnet/fsharp/issues/15167
-# Check net472 trimmed / static linked assemblies
-CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net472" -outputfile "StaticLinkedFSharpCore_Trimming_Test.exe" -expected_len -1
-
-# Check net7.0 trimmed assemblies
-CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net7.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 8821248
+# Check net8.0 trimmed assemblies
+CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net8.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 8817152

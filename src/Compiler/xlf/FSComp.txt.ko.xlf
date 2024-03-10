@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="alwaysUseTypedStringInterpolation">
         <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
-        <target state="new">Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</target>
+        <target state="translated">보간된 문자열은 형식화되지 않은 식별자를 포함합니다. 형식화된 형식 지정자를 추가하는 것이 좋습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
         <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
-        <target state="new">This expression is an anonymous record, use {{|...|}} instead of {{...}}.</target>
+        <target state="translated">이 식은 익명 레코드입니다. {{...}} 대신 {{|...|}}을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -80,6 +80,11 @@
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">형식이 [&lt;Sealed&gt;] 및 [&lt;AbstractClass&gt;] 특성을 모두 사용하는 경우 정적임을 의미합니다. 인터페이스 구현은 허용되지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="translated">인덱싱된 속성의 getter와 setter의 형식이 같아야 합니다. '{0}' 속성에 '{1}' 형식의 getter가 있지만 '{2}’ 형식의 setter가 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -114,7 +119,17 @@
       </trans-unit>
       <trans-unit id="chkNotTailRecursive">
         <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
-        <target state="new">The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</target>
+        <target state="translated">멤버 또는 함수 '{0}'에 'TailCallAttribute' 특성이 있지만 비상 재귀적인 방식으로 사용되고 있지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="translated">개체 식은 정적 추상 멤버가 있는 인터페이스를 구현하거나 정적 멤버를 선언할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="translated">TailCall 특성은 재귀 함수에만 적용해야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -130,6 +145,11 @@
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">사용 가능한 오버로드:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
+        <target state="translated">'{1}' 형식에는 필수(실제 또는 기본 제공) 멤버 '{2}'이(가) 없기 때문에 '{0}'이(가) 이 형식을 지원하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -174,7 +194,7 @@
       </trans-unit>
       <trans-unit id="csUnmanagedConstraintInconsistent">
         <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
-        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <target state="translated">제약 조건 'unmanaged' 및 'not struct'가 일치하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
@@ -199,7 +219,7 @@
       </trans-unit>
       <trans-unit id="featureAccessorFunctionShorthand">
         <source>underscore dot shorthand for accessor only function</source>
-        <target state="new">underscore dot shorthand for accessor only function</target>
+        <target state="translated">접근자 전용 함수에 대한 밑줄 점 약어</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
@@ -227,6 +247,11 @@
         <target state="translated">'exception' 선언에 대한 'Message' 속성 자동 생성</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
+        <source>Boolean-returning and return-type-directed partial active patterns</source>
+        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">유형, 모듈 선언에 암시적 확장 속성 허용</target>
@@ -234,12 +259,17 @@
       </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
-        <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
+        <target state="translated">멤버 또는 함수에 'TailCall' 특성이 있지만 비상 재귀적인 방식으로 사용되지 않는 경우 경고를 발생합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="translated">'TailCall' 특성이 비 재귀 함수에 사용되는 경우 경고를 발생합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
-        <target state="new">Constraint intersection on flexible types</target>
+        <target state="translated">유연한 형식의 제약 조건 교집합</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -260,6 +290,16 @@
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">점이 없는 float32 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsOnFunctions">
+        <source>Enforce AttributeTargets on functions</source>
+        <target state="new">Enforce AttributeTargets on functions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsUnionCaseDeclarations">
+        <source>Enforce AttributeTargets on union case declarations</source>
+        <target state="new">Enforce AttributeTargets on union case declarations</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -289,12 +329,12 @@
       </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
         <source>extended fixed bindings for byref and GetPinnableReference</source>
-        <target state="new">extended fixed bindings for byref and GetPinnableReference</target>
+        <target state="translated">byref 및 GetPinnableReference에 대한 확장된 고정 바인딩</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="new">Extended string interpolation similar to C# raw string literals.</target>
+        <target state="translated">C# 원시 문자열 리터럴과 유사한 확장 문자열 보간입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -314,7 +354,7 @@
       </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
-        <target state="new">Improved implied argument names</target>
+        <target state="translated">향상된 암시적 인수 이름</target>
         <note />
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
@@ -324,7 +364,7 @@
       </trans-unit>
       <trans-unit id="featureInformationalObjInferenceDiagnostic">
         <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="new">Diagnostic 3559 (warn when obj inferred) at informational level, off by default</target>
+        <target state="translated">정보 수준에서 진단 3559(개체 유추 시 경고), 기본적으로 꺼짐</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInitProperties">
@@ -340,6 +380,16 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">여러 제네릭 인스턴스화가 포함된 인터페이스</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerInterpolatedStringToConcat">
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerIntegralRangesToFastLoops">
+        <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
+        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -397,9 +447,14 @@
         <target state="translated">패키지 관리</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="translated">일반 속성보다 확장 메서드 선호</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
         <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="new">prefer String.GetPinnableReference in fixed bindings</target>
+        <target state="translated">고정 바인딩에서 String.GetPinnableReference 선호</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -437,6 +492,11 @@
         <target state="translated">다시 시작 가능한 상태 시스템</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReuseSameFieldsInStructUnions">
+        <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
+        <target state="translated">이름과 형식이 같으면 [&lt;Struct&gt;] 구분된 공용 구조체에서 기본 필드 공유</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">자체 형식 제약 조건</target>
@@ -449,7 +509,7 @@
       </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
-        <target state="new">Allow static let bindings in union, record, struct, non-incremental-class types</target>
+        <target state="translated">union, record, struct, non-incremental 클래스 형식에서 정적 let 바인딩 허용</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
@@ -459,7 +519,7 @@
       </trans-unit>
       <trans-unit id="featureStrictIndentation">
         <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
-        <target state="new">Raises errors on incorrect indentation, allows better recovery and analysis during editing</target>
+        <target state="translated">잘못된 들여쓰기에 대한 오류를 제기하고 편집 중에 더 나은 복구 및 분석이 가능합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -472,6 +532,11 @@
         <target state="translated">활성 패턴에 대한 구조체 표현</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>Union case test properties</source>
+        <target state="translated">공용 구조체 사례 테스트 속성</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="translated">시퀀스 식에서 try-with 지원</target>
@@ -479,7 +544,12 @@
       </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
-        <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
+        <target state="translated">C#과 F#의 관리되지 않는 제네릭 제약 조건 간의 Interop(추가 modreq 내보내기)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="translated">인덱싱된 속성 getter와 setter의 형식이 같아야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -494,12 +564,12 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
-        <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
+        <target state="translated">필드 이름이 겹치므로 이름 확인 중에 레코드 유형 일치가 여러 개 발견되면 경고가 발생합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWhileBang">
         <source>'while!' expression</source>
-        <target state="new">'while!' expression</target>
+        <target state="translated">'while!' 식</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -604,7 +674,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionWhileBang">
         <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</target>
+        <target state="translated">계산 식에서 조건이 다른 계산 식의 결과인 루프 구문을 도입하는 데 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -614,7 +684,7 @@
       </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="new">Extended string interpolation is not supported in this version of F#.</target>
+        <target state="translated">확장 문자열 보간은 이 버전의 F#에서 지원되지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexIfOCaml">
@@ -624,7 +694,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
         <source>This is not a valid identifier</source>
-        <target state="new">This is not a valid identifier</target>
+        <target state="translated">유효한 식별자가 아닙니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -639,12 +709,12 @@
       </trans-unit>
       <trans-unit id="lexTooManyLBracesInTripleQuote">
         <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
-        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <target state="translated">보간된 삼중 따옴표로 묶인 리터럴을 시작하는 '$' 문자가 부족해 이렇게 많은 연속 여는 중괄호를 콘텐츠로 사용할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexTooManyPercentsInTripleQuote">
         <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
-        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</target>
+        <target state="translated">보간된 삼중 따옴표로 묶인 문자열 리터럴은 이렇게 많은 연속된 '%' 문자를 허용하기에 충분한 '$' 문자로 시작하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
@@ -654,7 +724,7 @@
       </trans-unit>
       <trans-unit id="lexUnmatchedRBracesInTripleQuote">
         <source>The interpolated string contains unmatched closing braces.</source>
-        <target state="new">The interpolated string contains unmatched closing braces.</target>
+        <target state="translated">보간된 문자열에 일치하지 않는 닫는 중괄호가 포함되어 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -767,6 +837,11 @@
         <target state="translated">pdb 출력 파일 이름은 빌드 출력 파일 이름 사용 --pdb:filename.pdb와 일치할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsRealsig">
+        <source>Generate assembly with IL visibility that matches the source code visibility</source>
+        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
         <target state="translated">주 출력으로 전체 어셈블리 대신 참조 어셈블리를 생성합니다.</target>
@@ -794,7 +869,7 @@
       </trans-unit>
       <trans-unit id="optsStrictIndentation">
         <source>Override indentation rules implied by the language version</source>
-        <target state="new">Override indentation rules implied by the language version</target>
+        <target state="translated">언어 버전에 포함된 들여쓰기 규칙 재정의</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -834,7 +909,7 @@
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
         <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
-        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
+        <target state="translated">제약 조건 교차 구문은 유연한 형식(예: '#IDisposable &amp;#ISomeInterface')에서만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -869,17 +944,22 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">식이 필요함</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingField">
+        <source>Expecting record field</source>
+        <target state="translated">레코드 필드 필요</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
-        <target state="new">Expecting pattern</target>
+        <target state="translated">예상되는 패턴</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingType">
         <source>Expecting type</source>
-        <target state="new">Expecting type</target>
+        <target state="translated">예상 형식</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -894,17 +974,17 @@
       </trans-unit>
       <trans-unit id="parsMissingKeyword">
         <source>Missing keyword '{0}'</source>
-        <target state="new">Missing keyword '{0}'</target>
+        <target state="translated">'{0}' 키워드가 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingMemberBody">
         <source>Expecting member body</source>
-        <target state="new">Expecting member body</target>
+        <target state="translated">멤버 본문이 필요한 경우</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
-        <target state="new">Missing union case name</target>
+        <target state="translated">공용 구조체 대/소문자 이름이 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -912,9 +992,14 @@
         <target state="translated">이 구성원 액세스가 모호합니다. 개체 생성 주위에 괄호를 사용하세요. 예: '(새로운 SomeType(인수)).MemberName'</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
-        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
-        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+      <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
+        <source>Only simple patterns are allowed in primary constructors</source>
+        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
+        <target state="translated">정적 구문의 선언이 불완전합니다. 선언에 'static let','static do','static member' 또는 'static val'을 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -939,7 +1024,7 @@
       </trans-unit>
       <trans-unit id="pickleFsharpCoreBackwardsCompatible">
         <source>Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </source>
-        <target state="new">Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </target>
+        <target state="translated">새로 추가된 pickle 상태는 이전 컴파일러+도구에서도 작동해야 하므로 FSharp.Core에서 사용할 수 없습니다. 이 기간은 기능 도입 이후 최소 3년입니다. 위반: {0} . 컨텍스트: \n {1} </target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
@@ -1024,12 +1109,12 @@
       </trans-unit>
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
-        <target state="new">(Suggested name)</target>
+        <target state="translated">(제안된 이름)</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
-        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
+        <target state="translated">여기서 _의 의미가 모호합니다. 삭제된 변수와 동일한 범위의 함수 줄임에는 사용할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
@@ -1049,7 +1134,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="new">This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</target>
+        <target state="translated">이 익명 레코드는 필요한 도형과 정확하게 일치하지 않습니다. 누락된 필드 {0}을(를) 추가하고 추가 필드 {1}을(를) 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -1059,42 +1144,42 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
         <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
-        <target state="new">This anonymous record should have fields {0}; but here has fields {1}.</target>
+        <target state="translated">이 익명 레코드에는 {0} 필드가 있어야 합니다. 그러나 여기에 {1} 필드가 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
         <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
-        <target state="new">This anonymous record should have fields {0}; but here has field '{1}'.</target>
+        <target state="translated">이 익명 레코드에는 {0} 필드가 있어야 합니다. 그러나 여기에 '{1}' 필드가 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
         <source>This anonymous record is missing fields {0}.</source>
-        <target state="new">This anonymous record is missing fields {0}.</target>
+        <target state="translated">이 익명 레코드에 {0} 필드가 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
         <source>This anonymous record has extra fields. Remove fields {0}.</source>
-        <target state="new">This anonymous record has extra fields. Remove fields {0}.</target>
+        <target state="translated">이 익명 레코드에는 추가 필드가 있습니다. {0} 필드를 제거합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
         <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
-        <target state="new">This anonymous record should have field '{0}' but here has fields {1}.</target>
+        <target state="translated">이 익명 레코드에는 '{0}' 필드가 있어야 하지만 여기에 {1} 필드가 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
         <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
-        <target state="new">This anonymous record should have field '{0}' but here has field '{1}'.</target>
+        <target state="translated">이 익명 레코드에는 '{0}' 필드가 있어야 하지만 여기에 '{1}' 필드가 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSubset">
         <source>This anonymous record is missing field '{0}'.</source>
-        <target state="new">This anonymous record is missing field '{0}'.</target>
+        <target state="translated">이 익명 레코드에 '{0}' 필드가 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
         <source>This anonymous record has an extra field. Remove field '{0}'.</source>
-        <target state="new">This anonymous record has an extra field. Remove field '{0}'.</target>
+        <target state="translated">이 익명 레코드에는 추가 필드가 있습니다. '{0}' 필드를 제거합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -1110,6 +1195,11 @@
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
         <target state="translated">이 레코드 복사 및 업데이트 식은 '{0}' 레코드 형식의 모든 필드를 변경합니다. 레코드 생성 구문을 대신 사용하는 것이 좋습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
+        <target state="translated">줄임 람다 구문은 암시적 '_' 인수의 메서드, 속성, 필드 또는 인덱서와 같은 원자성 식에 대해서만 지원됩니다. 예: 'let f = _.Length'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1145,6 +1235,11 @@
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
         <target state="translated">이 식은 암시적 변환 '{0}'을 사용하여 '{1}' 형식을 '{2}' 형식으로 변환 합니다. https://aka.ms/fsharp-implicit-convs 참조. ’#Nowarn \ "3391\"을 (를) 사용하여 이 경고를 사용 하지 않도록 설정할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="translated">공용 구조체 케이스를 음영 처리하는 함수입니다. 원하는 경우 이 경고를 무시하거나 표시하지 않습니다. 공용 구조체 케이스 분해가 되도록 하려면 괄호를 추가합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1229,17 +1324,27 @@
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
         <source>The field '{0}' appears multiple times in this record expression or pattern</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression or pattern</target>
+        <target state="translated">'{0}' 필드가 이 레코드 식 또는 패턴에 여러 번 나타납니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleRecdTypeChoice">
         <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
-        <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
+        <target state="translated">여러 형식 일치 항목이 발견되었습니다.\n{0}\n'{1}' 형식이 사용되었습니다. 필드 이름이 겹치기 때문에\n{2}\n형식 주석을 사용하거나 open 문의 순서를 변경하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">'NoEagerConstraintApplicationAttribute'와 함께 메서드를 사용하려면 /langversion:6.0 이상이 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticMemberFoundForOverride">
+        <source>No static abstract member was found that corresponds to this override</source>
+        <target state="translated">이 재정의에 해당하는 정적 추상 멤버를 찾을 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticPropertyFoundForOverride">
+        <source>No static abstract property was found that corresponds to this override</source>
+        <target state="translated">이 재정의에 해당하는 정적 추상 속성을 찾을 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1274,7 +1379,7 @@
       </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
-        <target state="new">This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
+        <target state="translated">이 재정의는 여러 인수 대신 튜플을 사용합니다. 메서드 정의에 괄호 계층을 더 추가하거나(예: 'member _.Foo((x, y))') 추상 메서드 선언에서 괄호를 제거하세요(예: 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
@@ -1289,7 +1394,7 @@
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</target>
+        <target state="translated">'let! ... and! ...' 구문은 계산 식 작성기에서 '{0}' 메서드 또는 적절한 'MergeSources' 및 'Bind' 메서드를 정의한 경우에만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1329,7 +1434,12 @@
       </trans-unit>
       <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
         <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
-        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <target state="translated">정적 바인딩은 외적 증강에 추가할 수 없습니다. 대신 '정적 멤버'를 사용하는 것이 좋습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
+        <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
+        <target state="translated">멀티캐시 공용 구조체 형식이 구조체이면 이름이 같은 모든 필드의 형식이 같아야 합니다. 이 규칙은 명명되지 않은 필드의 경우 생성된 '항목' 이름에도 적용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1374,7 +1484,7 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
         <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
-        <target state="new">Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</target>
+        <target state="translated">공용 구조체 사례 필드 정의에 예기치 않은 함수 형식이 있습니다. 필드가 함수가 되도록 하려면 함수 시그니처를 구문 분석으로 래핑하는 것이 좋습니다(예: | Case of a -&gt; b into | Case of (a -&gt; b))</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
@@ -1385,6 +1495,11 @@
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
         <target state="translated">\"interfaces with static abstract methods\"를 선언하는 것은 고급 기능입니다. 지침은 https://aka.ms/fsharp-iwsams를 참조하세요. '#nowarn \"3535\"' 또는 '--nowarn:3535'를 사용하여 이 경고를 비활성화할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
+        <source>The type '{0}' has too many methods. Found: '{1}', maximum: '{2}'</source>
+        <target state="translated">'{0}' 형식에 메서드가 너무 많습니다. 찾은 항목: '{1}', 최대: '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1545,6 +1660,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">'return'이 아니라 'return!'를 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="translated">괄호를 제거할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -1774,7 +1894,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
-        <target state="new">Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</target>
+        <target state="translated">인식할 수 없는 옵션: '{0}'. '--help'를 사용하여 인식된 명령줄 옵션에 대해 알아봅니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3429,7 +3549,7 @@
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
         <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
-        <target state="new">When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</target>
+        <target state="translated">속성에 대한 표시 유형을 지정하면 set 또는 get 메서드의 표시 유형을 설정할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -5023,8 +5143,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="needs-review-translation">정적 값 정의는 기본 생성자가 포함된 형식에서만 사용할 수 있습니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보세요.</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="translated">F#7 이하의 경우, 정적 'let', 'do' 및 'member val' 정의는 기본 생성자가 있는 타입('type X(args) = ...')에서만 사용할 수 있습니다. 다른 모든 형식에서 사용하도록 설정하려면 언어 버전 ‘8’ 또는 그 이상을 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -6112,11 +6232,6 @@
         <target state="translated">값 '{0}'이(가) inline으로 표시되었지만 최적화 환경에 바인딩되지 않았습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="optLocalValueNotFoundDuringOptimization">
-        <source>Local value {0} not found during optimization</source>
-        <target state="translated">최적화하는 동안 로컬 값 {0}을(를) 찾을 수 없습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
         <source>A value marked as 'inline' has an unexpected value</source>
         <target state="translated">'inline'으로 표시된 값에 예기치 않은 값이 있습니다.</target>
@@ -6143,8 +6258,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">들여쓰기가 잘못되었을 수 있습니다. 이 토큰은 {0} 위치에서 시작된 컨텍스트를 벗어납니다. 이 토큰을 더 들여쓰거나 표준 서식 규칙을 사용하세요.</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
+        <target state="translated">예기치 않은 구문 또는 잘못된 들여쓰기: 이 토큰은 {0} 위치에서 시작된 컨텍스트의 오프 사이드입니다. 이를 더 들여쓰기해 보세요.\n규정을 준수하지 않는 들여쓰기를 계속 사용하려면 '--strict-indentation-' 플래그를 컴파일러에 전달하거나 언어 버전을 F# 7로 설정합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -7859,7 +7974,7 @@
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
         <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
-        <target state="needs-review-translation">'fixed'를 잘못 사용했습니다. 'fixed'는 식이 배열, 필드의 주소, 배열 요소 또는 문자열의 주소인 경우 'use x = fixed expr' 형식의 선언에만 사용할 수 있습니다.</target>
+        <target state="translated">'fixed'를 잘못 사용했습니다. 'fixed'는 식이 배열, 배열 요소의 주소, 문자열, byref, inref 또는 GetPinnableReference()를 구현하는 형식 중 하나인 'use x = fixed expr' 형식의 선언에서만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8292,11 +8407,6 @@
         <target state="translated">이 값은 함수가 아니며 적용할 수 없습니다. 선언을 종료해야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">시그니처 '{0}'과(와) 구현 '{1}'의 인수 이름이 일치하지 않습니다. 시그니처 파일의 인수 이름이 사용됩니다. 이로 인해 디버깅 또는 프로파일링 시 문제가 발생할 수 있습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">'{0}' 어셈블리의 F# 메타데이터를 읽는 동안 오류가 발생했습니다. 예약 구문이 활용되었습니다. F# 컴파일러를 업그레이드하거나 특정 구문을 사용하지 않는 이전 버전의 어셈블리를 사용해야 할 수 있습니다.</target>
@@ -8433,8 +8543,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">byref 확장 메서드 '{0}'을(를) 호출할 수 없습니다. 첫 번째 매개 변수는 변경할 수 있거나 읽기 전용이 아닌 byref 형식인 값이 필요합니다.</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="translated">byref 확장 메서드 '{0}'을(를) 호출할 수 없습니다. ‘이’ 매개 변수는 변경할 수 있거나 읽기 전용이 아닌 byref 형식인 값이 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8523,8 +8633,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">패키지 관리자 키 '{0}'이(가) {1}에 등록되지 않았습니다. 현재 {2}이(가) 등록되었습니다.</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="translated">패키지 관리자 키 '{0}'이(가) {1}에 등록되지 않았습니다. 현재 등록됨: {2}. 명령줄에 '--compilertool:&lt;extensionsfolder&gt;'를 전달하여 추가 경로를 제공할 수 있습니다. 확장에 대한 자세한 내용은 다음을 참조하세요. https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

@@ -99,7 +99,7 @@ let GetWarningNumber (m, warningNumber: string) =
         //      anything else is ignored None
         if Char.IsDigit(warningNumber[0]) then
             Some(int32 warningNumber)
-        elif warningNumber.StartsWithOrdinal("FS") = true then
+        elif warningNumber.StartsWithOrdinal "FS" then
             raise (ArgumentException())
         else
             None
@@ -267,11 +267,11 @@ and IProjectReference =
 type AssemblyReference =
     | AssemblyReference of range: range * text: string * projectReference: IProjectReference option
 
-    member x.Range = (let (AssemblyReference (m, _, _)) = x in m)
+    member x.Range = (let (AssemblyReference(m, _, _)) = x in m)
 
-    member x.Text = (let (AssemblyReference (_, text, _)) = x in text)
+    member x.Text = (let (AssemblyReference(_, text, _)) = x in text)
 
-    member x.ProjectReference = (let (AssemblyReference (_, _, contents)) = x in contents)
+    member x.ProjectReference = (let (AssemblyReference(_, _, contents)) = x in contents)
 
     member x.SimpleAssemblyNameIs name =
         (String.Compare(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0)
@@ -610,6 +610,8 @@ type TcConfigBuilder =
         mutable typeCheckingConfig: TypeCheckingConfig
 
         mutable dumpSignatureData: bool
+
+        mutable realsig: bool
     }
 
     // Directories to start probing in
@@ -817,6 +819,7 @@ type TcConfigBuilder =
                     DumpGraph = false
                 }
             dumpSignatureData = false
+            realsig = false
             strictIndentation = None
         }
 
@@ -864,7 +867,7 @@ type TcConfigBuilder =
     member tcConfigB.DecideNames sourceFiles =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        if sourceFiles = [] then
+        if List.isEmpty sourceFiles then
             errorR (Error(FSComp.SR.buildNoInputsSpecified (), rangeCmdArgs))
 
         let ext () =
@@ -1211,7 +1214,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         | Some path when FileSystem.DirectoryExistsShim(path) -> yield path
                         | _ -> ()
             ]
-        with e ->
+        with RecoverableException e ->
             errorRecovery e range0
             []
 
@@ -1360,6 +1363,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData
+    member _.realsig = data.realsig
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter
@@ -1408,7 +1412,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         None
                 else
                     Some(m, path)
-            with e ->
+            with RecoverableException e ->
                 errorRecovery e m
                 None
 

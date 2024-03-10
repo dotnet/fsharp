@@ -36,7 +36,5 @@ let ``A0``   = true;;
 let ``A-B``   = true;;
 let ``A B``   = true;;
 let ``base``   = true;;
-let ``or``   = true;;
 
 exit 0;;
-

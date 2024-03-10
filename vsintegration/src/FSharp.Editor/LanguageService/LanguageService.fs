@@ -25,6 +25,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
+open FSharp.Compiler.Text
 
 #nowarn "9" // NativePtr.toNativeInt
 #nowarn "57" // Experimental stuff
@@ -94,11 +95,13 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
             let getSource filename =
                 async {
+                    let! ct = Async.CancellationToken
+
                     match workspace.CurrentSolution.TryGetDocumentFromPath filename with
-                    | Some document ->
-                        let! text = document.GetTextAsync() |> Async.AwaitTask
+                    | ValueSome document ->
+                        let! text = document.GetTextAsync(ct) |> Async.AwaitTask
                         return Some(text.ToFSharpSourceText())
-                    | None -> return None
+                    | ValueNone -> return None
                 }
 
             lock gate (fun () ->
@@ -112,7 +115,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableParallelReferenceResolution =
                                 editorOptions.LanguageServicePerformance.EnableParallelReferenceResolution
 
-                            let enableLiveBuffers = editorOptions.Advanced.IsLiveBuffersEnabled
+                            let enableLiveBuffers = editorOptions.Advanced.IsUseLiveBuffersEnabled
 
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
@@ -145,9 +148,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableBackgroundItemKeyStoreAndSemanticClassification =
                                 editorOptions.LanguageServicePerformance.EnableBackgroundItemKeyStoreAndSemanticClassification
 
-                            // Default should be true
-                            let captureIdentifiersWhenParsing =
-                                editorOptions.LanguageServicePerformance.CaptureIdentifiersWhenParsing
+                            let useTransparentCompiler = editorOptions.Advanced.UseTransparentCompiler
 
                             // Default is false here
                             let solutionCrawler = editorOptions.Advanced.SolutionBackgroundAnalysis
@@ -169,7 +170,8 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof keepAllBackgroundSymbolUses, keepAllBackgroundSymbolUses
                                         nameof enableBackgroundItemKeyStoreAndSemanticClassification,
                                         enableBackgroundItemKeyStoreAndSemanticClassification
-                                        nameof captureIdentifiersWhenParsing, captureIdentifiersWhenParsing
+                                        "captureIdentifiersWhenParsing", enableFastFindReferences
+                                        nameof useTransparentCompiler, useTransparentCompiler
                                         nameof solutionCrawler, solutionCrawler
                                     |],
                                     TelemetryThrottlingStrategy.NoThrottling
@@ -186,16 +188,22 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         enableBackgroundItemKeyStoreAndSemanticClassification,
                                     enablePartialTypeChecking = enablePartialTypeChecking,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
-                                    captureIdentifiersWhenParsing = captureIdentifiersWhenParsing,
+                                    captureIdentifiersWhenParsing = enableFastFindReferences,
                                     documentSource =
                                         (if enableLiveBuffers then
-                                             DocumentSource.Custom getSource
+                                             (DocumentSource.Custom(fun filename ->
+                                                 async {
+                                                     match! getSource filename with
+                                                     | Some source -> return Some(source :> ISourceText)
+                                                     | None -> return None
+                                                 }))
                                          else
                                              DocumentSource.FileSystem),
-                                    useSyntaxTreeCache = useSyntaxTreeCache
+                                    useSyntaxTreeCache = useSyntaxTreeCache,
+                                    useTransparentCompiler = useTransparentCompiler
                                 )
 
-                            if enableLiveBuffers then
+                            if enableLiveBuffers && not useTransparentCompiler then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
                                         cancellableTask {
@@ -267,9 +275,7 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<FSharp.Interactive.FsiPropertyPage>, "F# Tools", "F# Interactive", 6000s, 6001s, true)>] // true = supports automation
 
-
 [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
-
 
 [<ProvideToolWindow(typeof<FSharp.Interactive.FsiToolWindow>,
                     Orientation = ToolWindowOrientation.Bottom,
@@ -279,8 +285,8 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
                     Width = 360,
                     Height = 120,
                     Window = "34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")
-  // The following should place the ToolWindow with the OutputWindow by default.
-  >]
+// The following should place the ToolWindow with the OutputWindow by default.
+>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008", "IntelliSensePageKeywords")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009", "QuickInfoPageKeywords")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010", "CodeFixesPageKeywords")>]
@@ -372,15 +378,12 @@ type internal FSharpPackage() as this =
                 this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
 
             let optionsManager =
-                workspace
-                    .Services
+                workspace.Services
                     .GetService<IFSharpWorkspaceService>()
                     .FSharpProjectOptionsManager
 
             let metadataAsSource =
-                this
-                    .ComponentModel
-                    .DefaultExportProvider
+                this.ComponentModel.DefaultExportProvider
                     .GetExport<FSharpMetadataAsSourceService>()
                     .Value
 
@@ -403,6 +406,10 @@ type internal FSharpPackage() as this =
 
             do
                 SingleFileWorkspaceMap(FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory), rdt)
+                |> ignore
+
+            do
+                LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
                 |> ignore
 
         }
@@ -438,11 +445,9 @@ type internal FSharpLanguageService(package: FSharpPackage) =
         let workspace = package.ComponentModel.GetService<VisualStudioWorkspace>()
 
         let solutionAnalysis =
-            workspace
-                .Services
+            workspace.Services
                 .GetService<EditorOptions>()
-                .Advanced
-                .SolutionBackgroundAnalysis
+                .Advanced.SolutionBackgroundAnalysis
 
         globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
 
@@ -476,10 +481,9 @@ type internal FSharpLanguageService(package: FSharpPackage) =
 
 [<Composition.Shared>]
 [<ComponentModel.Composition.Export(typeof<HackCpsCommandLineChanges>)>]
-type internal HackCpsCommandLineChanges [<ComponentModel.Composition.ImportingConstructor>]
-    (
-        [<ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace
-    ) =
+type internal HackCpsCommandLineChanges
+    [<ComponentModel.Composition.ImportingConstructor>]
+    ([<ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace) =
 
     static let projectDisplayNameOf projectFileName =
         if String.IsNullOrWhiteSpace projectFileName then
@@ -487,10 +491,10 @@ type internal HackCpsCommandLineChanges [<ComponentModel.Composition.ImportingCo
         else
             Path.GetFileNameWithoutExtension projectFileName
 
-    [<ComponentModel.Composition.Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
+    [<ComponentModel.Composition.Export>]
     member _.HandleCommandLineChanges
         (
             path: string,
@@ -533,10 +537,10 @@ type internal HackCpsCommandLineChanges [<ComponentModel.Composition.ImportingCo
 
         let sourcePaths = sources |> Seq.map (fun s -> getFullPath s.Path) |> Seq.toArray
 
-        /// Due to an issue in project system, when we close and reopen solution, it sends the CommandLineChanges twice for every project.
-        /// First time it sends a correct path, sources, references and options.
-        /// Second time it sends a correct path, empty sources, empty references and empty options, and we rewrite our cache, and fail to colourize the document later.
-        /// As a workaround, until we have a fix from PS or will move to Roslyn as a source of truth, we will not overwrite the cache in case of empty lists.
+        // Due to an issue in project system, when we close and reopen solution, it sends the CommandLineChanges twice for every project.
+        // First time it sends a correct path, sources, references and options.
+        // Second time it sends a correct path, empty sources, empty references and empty options, and we rewrite our cache, and fail to colourize the document later.
+        // As a workaround, until we have a fix from PS or will move to Roslyn as a source of truth, we will not overwrite the cache in case of empty lists.
 
         if not (sources.IsEmpty && references.IsEmpty && options.IsEmpty) then
             let workspaceService =

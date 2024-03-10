@@ -31,7 +31,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent
                                  ([this; P1], [(4,21--4,22)], [None; None]),
@@ -61,12 +61,12 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             Named
                               (SynIdent (this, None), false, None, (5,17--5,21)),
                             None,
                             ArbitraryAfterError ("memberCore1", (5,21--5,21)),
-                            (5,4--6,4), NoneAtInvisible,
+                            (5,4--5,21), NoneAtInvisible,
                             { LeadingKeyword = Member (5,10--5,16)
                               InlineKeyword = None
                               EqualsRange = None }), (5,4--5,21));
@@ -90,7 +90,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent
                                  ([this; P3], [(6,21--6,22)], [None; None]),
@@ -109,5 +109,5 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,23)-(6,4) parse error Incomplete structured construct at or before this point in member definition. Expected identifier, '(', '(*)' or other token.
+(5,23)-(6,4) parse error Incomplete structured construct at or before this point in member definition
 (5,23)-(6,4) parse error Expecting member body

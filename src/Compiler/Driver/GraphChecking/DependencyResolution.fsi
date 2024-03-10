@@ -1,7 +1,9 @@
 /// Logic for constructing a file dependency graph for the purposes of parallel type-checking.
 module internal FSharp.Compiler.GraphChecking.DependencyResolution
 
-/// <summary>Query a TrieNode to find a certain path.</summary>
+/// <summary>
+/// Query a TrieNode to find a certain path.
+/// </summary>
 /// <remarks>This code is only used directly in unit tests.</remarks>
 val queryTrie: trie: TrieNode -> path: LongIdentifier -> QueryTrieNodeResult
 

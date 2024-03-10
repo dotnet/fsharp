@@ -15,6 +15,7 @@ open FSharp.Compiler.Syntax
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
+open CancellableTasks
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeTypeofWithNameToNameofExpression"); Shared>]
 type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring [<ImportingConstructor>] () =
@@ -27,6 +28,8 @@ type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring [<Importin
 
             let! parseResults =
                 document.GetFSharpParseResultsAsync(nameof (FSharpChangeTypeofWithNameToNameofExpressionRefactoring))
+                |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
                 |> liftAsync
 
             let selectionRange =

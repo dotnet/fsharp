@@ -669,7 +669,7 @@ module internal SetTree =
 
         loop t []
 
-    let copyToArray s (arr: _[]) i =
+    let copyToArray s (arr: _ array) i =
         let mutable j = i
 
         iter
@@ -834,7 +834,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
             Set(a.Comparer, SetTree.intersection a.Comparer a.Tree b.Tree)
 
     static member Union(sets: seq<Set<'T>>) : Set<'T> =
-        Seq.fold (fun s1 s2 -> s1 + s2) Set<'T>.Empty sets
+        Seq.fold (+) Set<'T>.Empty sets
 
     static member Intersection(sets: seq<Set<'T>>) : Set<'T> =
         Seq.reduce (fun s1 s2 -> Set.Intersection(s1, s2)) sets
@@ -1062,7 +1062,7 @@ module Set =
 
     [<CompiledName("Intersect")>]
     let intersect (set1: Set<'T>) (set2: Set<'T>) =
-        Set<'T>.Intersection (set1, set2)
+        Set<'T>.Intersection(set1, set2)
 
     [<CompiledName("IntersectMany")>]
     let intersectMany sets =

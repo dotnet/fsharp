@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../FSStrings.resx">
     <body>
+      <trans-unit id="ArgumentsInSigAndImplMismatch">
+        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
+        <target state="translated">I nomi degli argomenti nella firma '{0}' e nell'implementazione '{1}' non corrispondono. Verrà usato il nome dell'argomento del file di firma. Questa situazione potrebbe causare problemi durante il debug o la profilatura.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Tipo non corrispondente. È prevista una tupla di lunghezza {0} di tipo\n   {1}    \n, ma è stata specificata una tupla di lunghezza {2} di tipo\n    {3}{4}\n</target>
@@ -15,6 +20,16 @@
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
         <target state="translated">I casi di unione discriminati minuscoli sono consentiti solo quando si usa l'attributo RequireQualifiedAccess</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="translated"> È previsto un membro non statico.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="translated"> È previsto un membro statico.</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -44,7 +59,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
-        <target state="new">keyword 'while!'</target>
+        <target state="translated">parola chiave "while"</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -185,6 +200,16 @@
       <trans-unit id="FieldsFromDifferentTypes">
         <source>The fields '{0}' and '{1}' are from different types</source>
         <target state="translated">I campi '{0}' e '{1}' sono di tipi diversi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction">
+        <source>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">Restrizione del valore: il valore '{0}' ha un tipo generico dedotta\n    {1}\nTuttavia, i valori non possono avere variabili di tipo generico come '_a in "let x: '_a". È possibile eseguire una delle operazioni seguenti:\n- Definirlo come termine di dati semplice come un valore letterale integer, un valore letterale stringa o un case di unione come "let x = 1"\n- Aggiungere un'annotazione di tipo esplicito come "let x : int"\n- Usare il valore come tipo non generico nel codice successivo per l'inferenza del tipo come "do x"\noppure se si vogliono ancora risultati dipendenti dal tipo, è possibile definire '{2}' come funzione eseguendo una delle operazioni seguenti:\n- Aggiungere un parametro di unità come "let x()"\n- Scrivere parametri di tipo esplicito come "let x&lt;'a&gt;".\nQuesto errore è dovuto al fatto che un'associazione let senza parametri definisce un valore, non una funzione. I valori non possono essere generici, perché si presuppone che la lettura di un valore restituisca lo stesso risultato ovunque, ma i parametri di tipo generico possono invalidare questa ipotesi, consentendo risultati dipendenti dal tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestrictionFunction">
+        <source>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">Restrizione del valore: il valore '{0}' ha un tipo di funzione generica dedotta\n    {1}\nTuttavia, i valori non possono avere variabili di tipo generico come '_a in "let f: '_a". È consigliabile definire '{2}' come funzione eseguendo una delle operazioni seguenti:\n- aggiungere un parametro esplicito applicato invece di usare un'applicazione parziale "let f param"\n- Aggiungere un parametro di unità come "let f()"\n- Scrivere parametri di tipo esplicito come "let f&lt;'a&gt;"\no se non si vuole che sia generico, o:\n- Aggiungere un'annotazione di tipo esplicito come "let f : obj -&gt; obj"\n- Applicare argomenti di tipi non generici al valore della funzione nel codice successivo per l'inferenza del tipo come "do f()".\nQuesto errore è dovuto al fatto che un'associazione let senza parametri definisce un valore, non una funzione. I valori non possono essere generici, perché si presuppone che la lettura di un valore restituisca lo stesso risultato ovunque, ma i parametri di tipo generico possono invalidare questa ipotesi, consentendo risultati dipendenti dal tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="VarBoundTwice">
@@ -1515,31 +1540,6 @@
       <trans-unit id="MissingFields">
         <source>The following fields require values: {0}</source>
         <target state="translated">Immissione valori obbligatoria per i campi seguenti: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction1">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Limitazione valore. Il valore '{0}' ha il tipo generico\n    {1}    \nRendere gli argomenti di '{2}' espliciti oppure, se non si intende renderlo generico, aggiungere un'annotazione di tipo.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction2">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Limitazione valore. Il valore '{0}' ha il tipo generico\n    {1}    \nRendere '{2}' una funzione con argomenti espliciti oppure, se non si intende renderlo generico, aggiungere un'annotazione di tipo.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction3">
-        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">Restrizione relativa ai valori. È stato dedotto che il membro ha il tipo generico\n    {0}    \nI getter/setter di proprietà e i costruttori non possono essere più generici del tipo di inclusione. Aggiungere un'annotazione di tipo per indicare i tipi esatti previsti.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction4">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Limitazione valore. È stato dedotto che il valore '{0}' ha il tipo generico\n    {1}    \nRendere gli argomenti di '{2}' espliciti, oppure se non si intende renderlo generico, aggiungere un'annotazione di tipo.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction5">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Limitazione valore. È stato dedotto che il valore '{0}' ha il tipo generico\n    {1}    \nDefinire '{2}' come termine di dati semplice, renderlo una funzione con argomenti espliciti oppure, se non si intende renderlo generico, aggiungere un'annotazione di tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">

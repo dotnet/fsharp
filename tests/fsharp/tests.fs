@@ -1609,13 +1609,10 @@ module VersionTests =
     let ``member-selfidentifier-version4_6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" (FSC_BUILDONLY true) "4.6"
 
     [<Test>]
-    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRun "core/members/self-identifier/version47" (FSC_BUILDONLY true)
+    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRunVersion "core/members/self-identifier/version47" (FSC_BUILDONLY true) "4.7"
 
     [<Test>]
-    let ``indent-version4_6``() = singleTestBuildAndRunVersion "core/indent/version46" (FSC_BUILDONLY true) "4.6"
-
-    [<Test>]
-    let ``indent-version4_7``() = singleTestBuildAndRun "core/indent/version47" (FSC_BUILDONLY true)
+    let ``indent-version4_7``() = singleTestBuildAndRunVersion "core/indent/version47" (FSC_BUILDONLY true) "4.7"
 
     [<Test>]
     let ``nameof-version4_6``() = singleTestBuildAndRunVersion "core/nameof/version46" (FSC_BUILDONLY true) "4.6"
@@ -2344,139 +2341,13 @@ module TypecheckTests =
     let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
 
     [<Test>]
-    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"     
-
-    [<Test>]
-    let ``type check neg118`` () = singleNegTest (testConfig "typecheck/sigs") "neg118"
-
-    [<Test>]
-    let ``type check neg119a`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg119a"
-
-    [<Test>]
-    let ``type check neg119b`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "7.0" "neg119b"
-
-    [<Test>]
-    let ``type check neg120`` () = singleNegTest (testConfig "typecheck/sigs") "neg120"
-
-    [<Test>]
-    let ``type check neg121`` () = singleNegTest (testConfig "typecheck/sigs") "neg121"
-
-    [<Test>]
-    let ``type check neg122`` () = singleNegTest (testConfig "typecheck/sigs") "neg122"
-
-    [<Test>]
-    let ``type check neg123`` () = singleNegTest (testConfig "typecheck/sigs") "neg123"
-
-    [<Test>]
-    let ``type check neg124`` () = singleNegTest (testConfig "typecheck/sigs") "neg124"
-
-    [<Test>]
-    let ``type check neg125`` () = singleNegTest (testConfig "typecheck/sigs") "neg125"
-
-    [<Test>]
-    let ``type check neg126`` () = singleNegTest (testConfig "typecheck/sigs") "neg126"
-
-    [<Test>]
-    let ``type check neg127`` () = singleNegTest (testConfig "typecheck/sigs") "neg127"
-
-    [<Test>]
-    let ``type check neg128`` () = singleNegTest (testConfig "typecheck/sigs") "neg128"
-
-    [<Test>]
-    let ``type check neg129`` () = singleNegTest (testConfig "typecheck/sigs") "neg129"
-
-    [<Test>]
-    let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
-
-    [<Test>]
-    let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg131"
-
-    [<Test>]
-    let ``type check neg132`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "5.0" "neg132"
-    
-    [<Test>]
-    let ``type check neg133`` () = singleNegTest (testConfig "typecheck/sigs") "neg133"
+    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"        
     
     [<Test>]
     let ``type check neg134`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg134"
 
     [<Test>]
-    let ``type check neg135`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg135"
-
-    [<Test>]
-    let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
-
-    [<Test>]
-    let ``type check neg_anon_2`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_2"
-
-    [<Test>]
-    let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"
-
-    [<Test>]
-    let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
-
-    [<Test>]
-    let ``type check neg_byref_2`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_2"
-
-    [<Test>]
-    let ``type check neg_byref_3`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_3"
-
-    [<Test>]
-    let ``type check neg_byref_4`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_4"
-
-    [<Test>]
-    let ``type check neg_byref_5`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_5"
-
-    [<Test>]
-    let ``type check neg_byref_6`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_6"
-
-    [<Test>]
-    let ``type check neg_byref_7`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_7"
-
-    [<Test>]
-    let ``type check neg_byref_8`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_8"
-
-    [<Test>]
-    let ``type check neg_byref_10`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_10"
-
-    [<Test>]
-    let ``type check neg_byref_11`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_11"
-
-    [<Test>]
-    let ``type check neg_byref_12`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_12"
-
-    [<Test>]
-    let ``type check neg_byref_13`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_13"
-
-    [<Test>]
-    let ``type check neg_byref_14`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_14"
-
-    [<Test>]
-    let ``type check neg_byref_15`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_15"
-
-    [<Test>]
-    let ``type check neg_byref_16`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_16"
-
-    [<Test>]
-    let ``type check neg_byref_17`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_17"
-
-    [<Test>]
-    let ``type check neg_byref_18`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_18"
-
-    [<Test>]
-    let ``type check neg_byref_19`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_19"
-
-    [<Test>]
-    let ``type check neg_byref_20`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_20"
-
-    [<Test>]
-    let ``type check neg_byref_21`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_21"
-
-    [<Test>]
-    let ``type check neg_byref_22`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_22"
-
-    [<Test>]
-    let ``type check neg_byref_23`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_23"
+    let ``type check neg135`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg135"  
 
 [<NonParallelizable>]
 module FscTests =

@@ -78,7 +78,7 @@ module List =
     let countByRefType (projection: 'T -> 'Key) (list: 'T list) =
         countByImpl
             RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(projection t))
+            (projection >> RuntimeHelpers.StructBox)
             (fun sb -> sb.Value)
             list
 
@@ -114,7 +114,7 @@ module List =
         | [] -> [], state
         | [ h ] -> let h', s' = mapping h state in [ h' ], s'
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (mapping)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
 
             let rec loop res list =
                 match list, res with
@@ -243,7 +243,7 @@ module List =
 
     [<CompiledName("Iterate2")>]
     let iter2 action list1 list2 =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
 
         let rec loop list1 list2 =
             match list1, list2 with
@@ -258,7 +258,7 @@ module List =
 
     [<CompiledName("IterateIndexed2")>]
     let iteri2 action list1 list2 =
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(action)
 
         let rec loop n list1 list2 =
             match list1, list2 with
@@ -288,7 +288,7 @@ module List =
         match list with
         | [] -> state
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
             let mutable acc = state
 
             for x in list do
@@ -316,7 +316,7 @@ module List =
 
     [<CompiledName("Fold2")>]
     let fold2<'T1, 'T2, 'State> folder (state: 'State) (list1: 'T1 list) (list2: 'T2 list) =
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
 
         let rec loop acc list1 list2 =
             match list1, list2 with
@@ -327,7 +327,7 @@ module List =
 
         loop state list1 list2
 
-    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T[]) start fin acc =
+    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T array) start fin acc =
         let mutable state = acc
 
         for i = fin downto start do
@@ -338,7 +338,7 @@ module List =
     // this version doesn't causes stack overflow - it uses a private stack
     [<CompiledName("FoldBack")>]
     let foldBack<'T, 'State> folder (list: 'T list) (state: 'State) =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
 
         match list with
         | [] -> state
@@ -358,14 +358,14 @@ module List =
         match list with
         | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (reduction)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(reduction)
             let arr = toArray list
             let arrn = arr.Length
             foldArraySubRight f arr 0 (arrn - 2) arr.[arrn - 1]
 
     let scanArraySubRight<'T, 'State>
         (f: OptimizedClosures.FSharpFunc<'T, 'State, 'State>)
-        (arr: _[])
+        (arr: _ array)
         start
         fin
         initState
@@ -385,7 +385,7 @@ module List =
         | [] -> [ state ]
         | [ h ] -> [ folder h state; state ]
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
             // It is faster to allocate and iterate an array than to create all those
             // highly nested stacks.  It also means we won't get stack overflows here.
             let arr = toArray list
@@ -416,7 +416,7 @@ module List =
         match list1, list2 with
         | [], [] -> state
         | h1 :: rest1, k1 :: rest2 ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (folder)
+            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
 
             match rest1, rest2 with
             | [], [] -> f.Invoke(h1, k1, state)
@@ -440,7 +440,7 @@ module List =
         match list1, list2 with
         | [], [] -> true
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (predicate)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
             forall2aux f list1 list2
 
     [<CompiledName("ForAll")>]
@@ -474,7 +474,7 @@ module List =
         match list1, list2 with
         | [], [] -> false
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (predicate)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
             exists2aux f list1 list2
 
     [<CompiledName("Find")>]
@@ -557,11 +557,7 @@ module List =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let groupByRefType (keyf: 'T -> 'Key) (list: 'T list) =
-        groupByImpl
-            RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(keyf t))
-            (fun sb -> sb.Value)
-            list
+        groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (keyf >> RuntimeHelpers.StructBox) (fun sb -> sb.Value) list
 
     [<CompiledName("GroupBy")>]
     let groupBy (projection: 'T -> 'Key) (list: 'T list) =

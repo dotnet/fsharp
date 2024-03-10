@@ -346,7 +346,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
     | TType_var (tp, _) when tp.Solution.IsSome ->
         for cx in tp.Constraints do
             match cx with
-            | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, soln), _) ->
+            | TyparConstraint.MayResolveMember(TTrait(solution=soln), _) ->
                  match visitTraitSolutionOpt, soln.Value with
                  | Some visitTraitSolution, Some sln -> visitTraitSolution sln
                  | _ -> ()
@@ -432,11 +432,11 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.IsReferenceType _
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
-and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env (TTrait(tys, _, _, argTys, retTy, soln))  =
-    CheckTypesDeep cenv f g env tys
-    CheckTypesDeep cenv f g env argTys
-    Option.iter (CheckTypeDeep cenv f g env true ) retTy
-    match visitTraitSolutionOpt, soln.Value with
+and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env traitInfo =
+    CheckTypesDeep cenv f g env traitInfo.SupportTypes
+    CheckTypesDeep cenv f g env traitInfo.CompiledObjectAndArgumentTypes
+    Option.iter (CheckTypeDeep cenv f g env true ) traitInfo.CompiledReturnType
+    match visitTraitSolutionOpt, traitInfo.Solution with
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
 
@@ -1307,14 +1307,14 @@ and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyarg
     match tryTcrefOfAppTy g baseVal.Type with
     | ValueSome tcref when tcref.IsILTycon ->
         try
-            // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
-            // We believe this may be fragile in some situations, since we are using the Abstract IL code to compare
-            // type equality, and it would be much better to remove any F# dependency on that implementation of IL type
-            // equality. It would be better to make this check in tc.fs when we have the Abstract IL metadata for the method to hand.
-            let mdef = resolveILMethodRef tcref.ILTyconRawMetadata ilMethRef
+            let mdef =
+                match tcref.ILTyconInfo with
+                | TILObjectReprData(scoref, _, _) ->
+                    resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
+
             if mdef.IsAbstract then
                 errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(mdef.Name), m))
-        with _ -> () // defensive coding
+        with _ -> ()
     | _ -> ()
 
     CheckTypeInstNoByrefs cenv env m tyargs
@@ -1970,7 +1970,8 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         let (TAccess l) = access
         // FSharp 1.0 bug 1908: Values hidden by signatures are implicitly at least 'internal'
         let scoref = cpath().ILScopeRef
-        TAccess(CompPath(scoref, []) :: l)
+        let sa = cpath().SyntaxAccess
+        TAccess(CompPath(scoref, sa, []) :: l)
     else
         access
 
@@ -2076,7 +2077,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         if cenv.reportErrors && isReturnsResumableCodeTy g v.TauType then
             if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                 error(Error(FSComp.SR.tcResumableCodeNotSupported(), bind.Var.Range))
-            if not v.MustInline then
+            if not v.ShouldInline then
                 warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
 
         if isReturnsResumableCodeTy g v.TauType then
@@ -2084,7 +2085,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         else
             env
 
-    CheckLambdas isTop (Some v) cenv env v.MustInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
+    CheckLambdas isTop (Some v) cenv env v.ShouldInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv env binds =
     for bind in binds do
@@ -2178,8 +2179,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                 // Default augmentation contains the nasty 'Is<UnionCase>' etc.
                 let prefix = "Is"
-                if nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
-                    match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with
+                if not v.IsImplied && nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
+                    match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with 
                     | Some uc -> error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.chkUnionCaseDefaultAugmentation(), uc.DisplayName, uc.Range))
                     | None -> ()
 
@@ -2212,7 +2213,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             match TryChopPropertyName v.DisplayName with
             | Some res -> check true res
             | None -> ()
-        with e -> errorRecovery e v.Range
+        with RecoverableException e -> errorRecovery e v.Range
     end
 
     CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
@@ -2414,11 +2415,14 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             // Check to see if the signatures of the both getter and the setter imply the same property type
 
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer then
+            if pinfo.HasGetter && pinfo.HasSetter then
                 let ty1 = pinfo.DropSetter().GetPropertyType(cenv.amap, m)
                 let ty2 = pinfo.DropGetter().GetPropertyType(cenv.amap, m)
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
-                    errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
+                    if g.langVersion.SupportsFeature(LanguageFeature.WarningIndexedPropertiesGetSetSameType) && pinfo.IsIndexer then
+                        warning(Error(FSComp.SR.chkIndexedGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
+                    if not pinfo.IsIndexer then
+                        errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 
             hashOfImmediateProps[nm] <- pinfo :: others
 

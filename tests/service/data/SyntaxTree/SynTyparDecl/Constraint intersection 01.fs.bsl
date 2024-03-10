@@ -62,7 +62,7 @@ ImplFile
                                  ([[SynArgInfo ([], false, None)];
                                    [SynArgInfo ([], false, Some x);
                                     SynArgInfo ([], false, Some y)]],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent
                                  ([_; G], [(4,12--4,13)], [None; None]), None,

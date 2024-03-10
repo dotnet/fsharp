@@ -3,17 +3,15 @@
 
 <UsageData>
   <IgnorePatterns>
-    <UsagePattern IdentityGlob="Microsoft.SourceBuild.Intermediate.*/*" />
-
     <!-- Ignoring the known prebuilts. -->
-    
+
     <!--
       These will go away when repo updates targeting to net8.0
       Tracked with https://github.com/dotnet/fsharp/issues/14765
     -->
-    <UsagePattern IdentityGlob="Microsoft.AspNetCore.App.Ref/7.0.9" />
-    <UsagePattern IdentityGlob="Microsoft.NETCore.App.Host.linux-x64/7.0.9" />
-    <UsagePattern IdentityGlob="Microsoft.NETCore.App.Ref/7.0.9" />
+    <UsagePattern IdentityGlob="Microsoft.AspNetCore.App.Ref/7.0.11" />
+    <UsagePattern IdentityGlob="Microsoft.NETCore.App.Host.linux-x64/7.0.11" />
+    <UsagePattern IdentityGlob="Microsoft.NETCore.App.Ref/7.0.11" />
     <UsagePattern IdentityGlob="System.Configuration.ConfigurationManager/7.0.0" />
     <UsagePattern IdentityGlob="System.Diagnostics.EventLog/7.0.0" />
     <UsagePattern IdentityGlob="System.Security.Cryptography.ProtectedData/7.0.0" />
