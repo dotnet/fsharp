@@ -60,7 +60,7 @@ module AsyncHelpers =
 
 [<Sealed>]
 [<AutoSerializable(false)>]
-type Mailbox<'Msg>(cancellationSupported: bool) =
+type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: bool) =
     let mutable isDisposed = false
     let mutable inboxStore = null
     let arrivals = Queue<'Msg>()
@@ -176,10 +176,11 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
     member x.Post msg =
         lock syncRoot (fun () ->
             if isDisposed then
-                raise (ObjectDisposedException(nameof Mailbox))
-
-            // Add the message to the arrivals queue
-            arrivals.Enqueue msg
+                if isThrowExceptionAfterDisposed then
+                    raise (ObjectDisposedException(nameof Mailbox))
+            else
+                // Add the message to the arrivals queue
+                arrivals.Enqueue msg
 
             // Cooperatively unblock any waiting reader. If there is no waiting
             // reader we just leave the message in the incoming queue
@@ -357,14 +358,22 @@ type AsyncReplyChannel<'Reply>(replyf: 'Reply -> unit) =
 [<Sealed>]
 [<AutoSerializable(false)>]
 [<CompiledName("FSharpMailboxProcessor`1")>]
-type MailboxProcessor<'Msg>(body, ?cancellationToken) =
+type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationToken) =
 
     let cancellationSupported = cancellationToken.IsSome
     let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-    let mailbox = new Mailbox<'Msg>(cancellationSupported)
+
+    let mailbox =
+        new Mailbox<'Msg>(cancellationSupported, isThrowExceptionAfterDisposed)
+
     let mutable defaultTimeout = Threading.Timeout.Infinite
     let mutable started = false
     let errorEvent = new Event<Exception>()
+
+    new(body, ?cancellationToken: CancellationToken) =
+        match cancellationToken with
+        | None -> new MailboxProcessor<'Msg>(body, false)
+        | Some ct -> new MailboxProcessor<'Msg>(body, false, ct)
 
     member _.CurrentQueueLength = mailbox.CurrentQueueLength // nb. unprotected access gives an approximation of the queue length
 
@@ -516,9 +525,23 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
         mailboxProcessor.Start()
         mailboxProcessor
 
+    static member Start(body, isThrowExceptionAfterDisposed, ?cancellationToken) =
+        let mailboxProcessor =
+            new MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationToken = cancellationToken)
+
+        mailboxProcessor.Start()
+        mailboxProcessor
+
     static member StartImmediate(body, ?cancellationToken) =
         let mailboxProcessor =
             new MailboxProcessor<'Msg>(body, ?cancellationToken = cancellationToken)
+
+        mailboxProcessor.StartImmediate()
+        mailboxProcessor
+
+    static member StartImmediate(body, isThrowExceptionAfterDisposed, ?cancellationToken) =
+        let mailboxProcessor =
+            new MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationToken = cancellationToken)
 
         mailboxProcessor.StartImmediate()
         mailboxProcessor
