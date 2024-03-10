@@ -103,7 +103,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediateWithoutCancellation(graphNode.GetOrComputeValue())
+        Async.RunImmediate(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -219,7 +219,7 @@ module BuildGraphTests =
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        Async.RunImmediateWithoutCancellation(work)
+        Async.RunImmediate(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested

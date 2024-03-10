@@ -173,9 +173,6 @@ module internal PervasiveAutoOpens =
             with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
                 raise (ex.InnerExceptions[0])
 
-        static member RunImmediateWithoutCancellation(computation: Async<'T>) =
-            Async.RunImmediate(computation, CancellationToken.None)
-
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
     let syncObj = obj ()
