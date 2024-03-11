@@ -62,6 +62,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{4E4F41D9-8
 		docs\optimizations.md = docs\optimizations.md
 		docs\optimizations-equality.md = docs\optimizations-equality.md
 		docs\overview.md = docs\overview.md
+		docs\builder-caches.md = docs\builder-caches.md
+		docs\changing-the-ast.md = docs\changing-the-ast.md
+		docs\names.md = docs\names.md
+		docs\perf-discussions-archive.md = docs\perf-discussions-archive.md
+		docs\project-builds.md = docs\project-builds.md
+		docs\representations.md = docs\representations.md
+		docs\running-documentation-locally.md = docs\running-documentation-locally.md
+		docs\tooling-features.md = docs\tooling-features.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcs", "fcs", "{B86EBFF1-E03E-4FAE-89BF-60A4CAE2BC78}"
@@ -79,6 +87,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcs", "fcs", "{B86EBFF1-E03
 		docs\fcs\tokenizer.fsx = docs\fcs\tokenizer.fsx
 		docs\fcs\typedtree.fsx = docs\fcs\typedtree.fsx
 		docs\fcs\untypedtree.fsx = docs\fcs\untypedtree.fsx
+		docs\fcs\untypedtree-apis.fsx = docs\fcs\untypedtree-apis.fsx
 	EndProjectSection
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsc", "src\fsc\fscProject\fsc.fsproj", "{10D15DBB-EFF0-428C-BA83-41600A93EEC4}"
@@ -104,6 +113,56 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Benchmarks.Common", "tests\benchmarks\FSharp.Benchmarks.Common\FSharp.Benchmarks.Common.fsproj", "{7D482560-DF6F-46A5-B50C-20ECF7C38759}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{10F0D468-FD52-4658-811E-7ED6A8318449}"
+	ProjectSection(SolutionItems) = preProject
+		docs\content\fsdocs-theme.css = docs\content\fsdocs-theme.css
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "img", "img", "{99773BD6-F1D7-48E2-AD72-AC48DA6BB293}"
+	ProjectSection(SolutionItems) = preProject
+		docs\img\favicon.ico = docs\img\favicon.ico
+		docs\img\logo.png = docs\img\logo.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "release-notes", "release-notes", "{C28ABF2D-6B43-4B0F-A12B-38570C5D9A81}"
+	ProjectSection(SolutionItems) = preProject
+		docs\release-notes\About.md = docs\release-notes\About.md
+		docs\release-notes\FSharp.Compiler.Service.fsx = docs\release-notes\FSharp.Compiler.Service.fsx
+		docs\release-notes\FSharp.Core.fsx = docs\release-notes\FSharp.Core.fsx
+		docs\release-notes\Language.fsx = docs\release-notes\Language.fsx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".aux", ".aux", "{F1DADFB8-F320-40B6-B430-0ED5C37D3BAC}"
+	ProjectSection(SolutionItems) = preProject
+		docs\release-notes\.aux\Common.fsx = docs\release-notes\.aux\Common.fsx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".FSharp.Compiler.Service", ".FSharp.Compiler.Service", "{01C43145-5289-47BF-A19B-B9F0FB66254D}"
+	ProjectSection(SolutionItems) = preProject
+		docs\release-notes\.FSharp.Compiler.Service\8.0.100.md = docs\release-notes\.FSharp.Compiler.Service\8.0.100.md
+		docs\release-notes\.FSharp.Compiler.Service\8.0.200.md = docs\release-notes\.FSharp.Compiler.Service\8.0.200.md
+		docs\release-notes\.FSharp.Compiler.Service\8.0.202.md = docs\release-notes\.FSharp.Compiler.Service\8.0.202.md
+		docs\release-notes\.FSharp.Compiler.Service\8.0.300.md = docs\release-notes\.FSharp.Compiler.Service\8.0.300.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".FSharp.Core", ".FSharp.Core", "{23798638-A1E9-4DAE-9C9C-F5D87499ADD6}"
+	ProjectSection(SolutionItems) = preProject
+		docs\release-notes\.FSharp.Core\8.0.200.md = docs\release-notes\.FSharp.Core\8.0.200.md
+		docs\release-notes\.FSharp.Core\8.0.300.md = docs\release-notes\.FSharp.Core\8.0.300.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Language", ".Language", "{1478B841-73BD-4E68-8F23-413ABB0B991F}"
+	ProjectSection(SolutionItems) = preProject
+		docs\release-notes\.Language\8.0.md = docs\release-notes\.Language\8.0.md
+		docs\release-notes\.Language\preview.md = docs\release-notes\.Language\preview.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".VisualStudio", ".VisualStudio", "{AF70EC5A-8E7C-4FDA-857D-AF08082CFC64}"
+	ProjectSection(SolutionItems) = preProject
+		docs\release-notes\.VisualStudio\17.9.md = docs\release-notes\.VisualStudio\17.9.md
+		docs\release-notes\.VisualStudio\17.10.md = docs\release-notes\.VisualStudio\17.10.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -433,6 +492,14 @@ Global
 		{BEC6E796-7E53-4888-AAFC-B8FD55C425DF} = {CE70D631-C5DC-417E-9CDA-B16097BEF1AC}
 		{9C7523BA-7AB2-4604-A5FD-653E82C2BAD1} = {CE70D631-C5DC-417E-9CDA-B16097BEF1AC}
 		{7D482560-DF6F-46A5-B50C-20ECF7C38759} = {CE70D631-C5DC-417E-9CDA-B16097BEF1AC}
+		{10F0D468-FD52-4658-811E-7ED6A8318449} = {4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}
+		{99773BD6-F1D7-48E2-AD72-AC48DA6BB293} = {4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}
+		{C28ABF2D-6B43-4B0F-A12B-38570C5D9A81} = {4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}
+		{F1DADFB8-F320-40B6-B430-0ED5C37D3BAC} = {C28ABF2D-6B43-4B0F-A12B-38570C5D9A81}
+		{01C43145-5289-47BF-A19B-B9F0FB66254D} = {C28ABF2D-6B43-4B0F-A12B-38570C5D9A81}
+		{23798638-A1E9-4DAE-9C9C-F5D87499ADD6} = {C28ABF2D-6B43-4B0F-A12B-38570C5D9A81}
+		{1478B841-73BD-4E68-8F23-413ABB0B991F} = {C28ABF2D-6B43-4B0F-A12B-38570C5D9A81}
+		{AF70EC5A-8E7C-4FDA-857D-AF08082CFC64} = {C28ABF2D-6B43-4B0F-A12B-38570C5D9A81}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BD5177C7-1380-40E7-94D2-7768E1A8B1B8}
