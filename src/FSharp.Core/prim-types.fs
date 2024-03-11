@@ -104,7 +104,7 @@ namespace Microsoft.FSharp.Core
     type CLIMutableAttribute() = 
         inherit Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Struct, AllowMultiple=false)>]
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct , AllowMultiple=false)>]
     [<Sealed>]
     type AutoSerializableAttribute(value:bool) = 
         inherit Attribute()
