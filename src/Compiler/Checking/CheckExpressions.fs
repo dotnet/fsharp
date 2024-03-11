@@ -5133,20 +5133,12 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
             | TType_var _ -> true
             | _ -> false
 
+        let valReprInfo =
+            match vref.ValReprInfo with
+            | None -> ValReprInfo.emptyValData
+            | Some info -> info
         // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
-        let dtys, retTy =
-            let rec loop g ty = 
-                if isFunTy g ty then 
-                    let domainTy, rangeTy = destFunTy g ty
-                    if isFunTy g domainTy then
-                        domainTy :: [], rangeTy
-                    else
-                        let more, retTy = loop g rangeTy 
-                        domainTy :: more, retTy
-                else [], ty
-            
-            loop g vExprTy
-
+        let dtys, retTy = GetTopTauTypeInFSharpForm g valReprInfo.ArgInfos vExprTy m
         let paramCount = if dtys.Length = 0 then 0 else dtys.Length - 1
         
         // partial active pattern (returning bool) doesn't have output arg
