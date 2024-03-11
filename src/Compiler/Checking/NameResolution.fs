@@ -573,62 +573,40 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
 /// Get the info for all the .NET-style extension members listed as static members in the type.
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
     let g = amap.g
+
+    let isApplicable =
+        IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass ||
+
+        g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
+        tcrefOfStaticClass.IsLocalRef &&
+        not tcrefOfStaticClass.IsTypeAbbrev
+
+    if not isApplicable then [] else
+
+    let ty = generalizedTyconRef g tcrefOfStaticClass
     let pri = NextExtensionMethodPriority()
-    
-    if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-        let csharpStyleExtensionMembers =
-            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || (tcrefOfStaticClass.IsLocalRef && not tcrefOfStaticClass.IsTypeAbbrev) then
-                protectAssemblyExploration [] (fun () ->
-                    let ty = generalizedTyconRef g tcrefOfStaticClass
-                    GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-                    |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true))
-            else
-                []
 
-        if not csharpStyleExtensionMembers.IsEmpty then
-            [ for minfo in csharpStyleExtensionMembers do
-                let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
+    let methods =
+        protectAssemblyExploration []
+            (fun () -> GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty)
 
-                // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                // So we need to go and crack the type of the 'this' argument.
-                //
-                // This is convoluted because we only need the ILTypeRef of the first argument, and we don't
-                // want to read any other metadata as it can trigger missing-assembly errors. It turns out ImportILTypeRef
-                // is less eager in reading metadata than GetParamTypes.
-                //
-                // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
-                // methods for tuple occur in C# code)
-                let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
-                match thisTyconRef with
-                | None -> ()
-                | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
-                | Some None -> yield Choice2Of2 ilExtMem ]
-        else
-            []
-    else
-        if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass then
-            let ty = generalizedTyconRef g tcrefOfStaticClass
-            let minfos = GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-            
-            [ for minfo in minfos do
-                if IsMethInfoPlainCSharpStyleExtensionMember g m true minfo then
-                    let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
-                    // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                    // So we need to go and crack the type of the 'this' argument.
-                    //
-                    // This is convoluted because we only need the ILTypeRef of the first argument, and we don't
-                    // want to read any other metadata as it can trigger missing-assembly errors. It turns out ImportILTypeRef
-                    // is less eager in reading metadata than GetParamTypes.
-                    //
-                    // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
-                    // methods for tuple occur in C# code)
-                    let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
-                    match thisTyconRef with
-                    | None -> ()
-                    | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
-                    | Some None -> yield Choice2Of2 ilExtMem ]
-        else
-            []
+    [ for minfo in methods do
+        if IsMethInfoPlainCSharpStyleExtensionMember g m true minfo then
+            let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
+            // The results are indexed by the TyconRef of the first 'this' argument, if any.
+            // So we need to go and crack the type of the 'this' argument.
+            //
+            // This is convoluted because we only need the ILTypeRef of the first argument, and we don't
+            // want to read any other metadata as it can trigger missing-assembly errors. It turns out ImportILTypeRef
+            // is less eager in reading metadata than GetParamTypes.
+            //
+            // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
+            // methods for tuple occur in C# code)
+            let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
+            match thisTyconRef with
+            | None -> ()
+            | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
+            | Some None -> yield Choice2Of2 ilExtMem ]
 
 /// Query the declared properties of a type (including inherited properties)
 let IntrinsicPropInfosOfTypeInScope (infoReader: InfoReader) optFilter ad findFlag m ty =
