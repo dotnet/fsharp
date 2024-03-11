@@ -49,9 +49,9 @@ type MailboxProcessor<'Msg> =
     ///
     /// <param name="body">The function to produce an asynchronous computation that will be executed
     /// as the read loop for the MailboxProcessor when Start is called.</param>
-    /// <param name="isThrowExceptionAfterDisposed">A flag denotes will be thrown exception
+    /// <param name="isThrowExceptionAfterDisposed">A flag denoting that an exception will be thrown
     /// when <see cref="F:Microsoft.FSharp.Control.MailboxProcessor.Post"/> is called
-    /// after <see cref="F:Microsoft.FSharp.Control.MailboxProcessor"/> disposed.</param>
+    /// after <see cref="F:Microsoft.FSharp.Control.MailboxProcessor"/> has been disposed.</param>
     /// <param name="cancellationToken">An optional cancellation token for the <c>body</c>.
     /// Defaults to <c>Async.DefaultCancellationToken</c>.</param>
     ///
@@ -83,9 +83,9 @@ type MailboxProcessor<'Msg> =
     ///
     /// <param name="body">The function to produce an asynchronous computation that will be executed
     /// as the read loop for the MailboxProcessor when Start is called.</param>
-    /// <param name="isThrowExceptionAfterDisposed">A flag denotes will be thrown exception
+    /// <param name="isThrowExceptionAfterDisposed">A flag denoting that an exception will be thrown
     /// when <see cref="F:Microsoft.FSharp.Control.MailboxProcessor.Post"/> is called
-    /// after <see cref="F:Microsoft.FSharp.Control.MailboxProcessor"/> disposed.</param>
+    /// after <see cref="F:Microsoft.FSharp.Control.MailboxProcessor"/> has been disposed.</param>
     /// <param name="cancellationToken">An optional cancellation token for the <c>body</c>.
     /// Defaults to <c>Async.DefaultCancellationToken</c>.</param>
     ///
