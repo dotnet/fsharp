@@ -377,6 +377,12 @@ namespace Microsoft.FSharp.Core
     type NoCompilerInliningAttribute() =
         inherit Attribute()
 
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]  
+    [<Sealed>]
+    type WarnOnWithoutNullArgumentAttribute(warningMessage:string) =
+        inherit Attribute()
+        member _.WarningMessage = warningMessage
+        
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
     type TailCallAttribute() =

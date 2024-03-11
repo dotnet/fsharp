@@ -166,6 +166,7 @@ module Option =
         | Some x -> x
 #else
     [<CompiledName("OfObj")>]
+    [<WarnOnWithoutNullArgument("You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value.")>]
     let inline ofObj (value: 'T | null) : 'T option when 'T: not struct and 'T : not null = 
         match value with
         | null -> None
@@ -344,6 +345,7 @@ module ValueOption =
         | ValueSome x -> x
 #else
     [<CompiledName("OfObj")>]
+    [<WarnOnWithoutNullArgument("You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value.")>]
     let inline ofObj (value: 'T | null) : 'T voption when 'T: not struct and 'T : not null  = 
         match value with
         | null -> ValueNone

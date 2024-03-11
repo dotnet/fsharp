@@ -1,3 +1,4 @@
+
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
@@ -953,6 +954,22 @@ namespace Microsoft.FSharp.Core
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoCompilerInliningAttribute</returns>
         new: unit -> NoCompilerInliningAttribute
+
+    /// <summary>When used in a compilation with null-checking enabled, indicates that a function is meant to be used only with potentially-nullable values and warns accordingly.</summary>
+    ///
+    /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type WarnOnWithoutNullArgumentAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <param name="warningMessage">The message displayed when the annotated function is used with a value known to be without null</param>
+        /// <returns>WarnOnWithoutNullArgumentAttribute</returns>
+        new: warningMessage:string -> WarnOnWithoutNullArgumentAttribute
+
+        /// <summary>Warning message displayed when the annotated function is used with a value known to be without null</summary>
+        member WarningMessage: string
 
     /// <summary>Indicates a function that should be called in a tail recursive way inside its recursive scope.
     /// A warning is emitted if the function is analyzed as not tail recursive after the optimization phase.</summary> 
@@ -3448,6 +3465,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullMatchPattern")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<WarnOnWithoutNullArgument("You can remove this |Null|NonNull| pattern usage.")>]
         val inline (|Null|NonNull|) : value: 'T | null -> Choice<unit, 'T>  when 'T : not null and 'T : not struct
         
         /// <summary>Determines whether the given value is null.</summary>
@@ -3463,6 +3481,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The non-null value.</returns>
         [<CompiledName("NonNullQuickPattern")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<WarnOnWithoutNullArgument("You can remove this |NonNullQuick| pattern usage.")>]
         val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
         
         /// <summary>When used in a pattern checks the given value is not null.</summary>
@@ -3510,6 +3529,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The value when it is not null. If the value is null an exception is raised.</returns>
         [<CompiledName("NonNull")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<WarnOnWithoutNullArgument("You can remove this `nonNull` assertion.")>]
         val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
