@@ -56,12 +56,15 @@ let main() =
                | Some outputLogName -> new FileLogger(outputLogName) :> Logger
                | None -> new NullLogger() :> Logger
   let compiledSpec = compileSpec spec logger
-  printfn "        building tables"
-  printfn "        %d states" compiledSpec.states.Length; 
-  printfn "        %d nonterminals" compiledSpec.gotoTable.[0].Length; 
-  printfn "        %d terminals" compiledSpec.actionTable.[0].Length; 
-  printfn "        %d productions" compiledSpec.prods.Length; 
-  printfn "        #rows in action table: %d" compiledSpec.actionTable.Length; 
+
+  // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+  // Enable if needed.
+  //printfn "        building tables"
+  //printfn "        %d states" compiledSpec.states.Length; 
+  //printfn "        %d nonterminals" compiledSpec.gotoTable.[0].Length; 
+  //printfn "        %d terminals" compiledSpec.actionTable.[0].Length; 
+  //printfn "        %d productions" compiledSpec.prods.Length; 
+  //printfn "        #rows in action table: %d" compiledSpec.actionTable.Length; 
 (*
   printfn "#unique rows in action table: %d" (List.length (Array.foldBack (fun row acc -> insert (Array.to_list row) acc) actionTable [])); 
   printfn "maximum #different actions per state: %d" (Array.foldBack (fun row acc ->max (List.length (List.foldBack insert (Array.to_list row) [])) acc) actionTable 0); 
@@ -88,4 +91,3 @@ let result =
     with e -> 
       eprintf "FSYACC: error FSY000: %s\n%s" (match e with Failure s -> s | e -> e.Message) e.StackTrace;
       exit 1
-

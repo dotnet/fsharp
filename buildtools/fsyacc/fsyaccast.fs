@@ -386,7 +386,9 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
     let errorTerminalIdx = termTab.ToIndex "error"
 
     // Compute the FIRST function
-    printf  "computing first function..."; stdout.Flush();
+    // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+    // Enable if needed.
+    //printf  "computing first function..."; stdout.Flush();
 
     let computedFirstTable = 
         let seed = 
@@ -580,8 +582,10 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
               | _ -> ()) 
         Set.ofSeq acc
     
-    // Build the full set of LR(0) kernels 
-    reportTime(); printf "building kernels..."; stdout.Flush();
+    // Build the full set of LR(0) kernels
+    // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+    // Enable if needed.
+    //reportTime(); printf "building kernels..."; stdout.Flush();
     let startItems = List.mapi (fun i _ -> prodIdx_to_item0 (startNonTerminalIdx_to_prodIdx i)) fakeStartNonTerminals
     let startKernels = List.map Set.singleton startItems
     let kernels = 
@@ -599,7 +603,9 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
                     
         !acc |> Seq.toList |> List.map (Set.filter IsKernelItem)
     
-    reportTime(); printf "building kernel table..."; stdout.Flush();
+    // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+    // Enable if needed.
+    //reportTime(); printf "building kernel table..."; stdout.Flush();
     // Give an index to each LR(0) kernel, and from now on refer to them only by index 
     let kernelTab = KernelTable(kernels)
     let startKernelIdxs = List.map kernelTab.Index startKernels
@@ -663,8 +669,10 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
     //   - Clarify and comment what's going on here
     //   - verify if we really have to do these enormouos closure computations
     //   - assess if it's possible to use the symbol we're looking for to help trim the jset
-    
-    reportTime(); printf "computing lookahead relations..."; stdout.Flush();
+
+    // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+    // Enable if needed.
+    // reportTime(); printf "computing lookahead relations..."; stdout.Flush();
 
         
     let spontaneous, propagate  =
@@ -676,7 +684,8 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
         let count = ref 0 
 
         for kernelIdx in kernelTab.Indexes do
-            printf  "."; stdout.Flush();
+           
+            //printf  "."; stdout.Flush();
             //printf  "kernelIdx = %d\n" kernelIdx; stdout.Flush();
             let kernel = kernelTab.Kernel(kernelIdx)
             for item0 in kernel do  
@@ -707,8 +716,10 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
    
     //exit 0;
     // Repeatedly use the "spontaneous" and "propagate" maps to build the full set 
-    // of lookaheads for each LR(0) kernelItem.   
-    reportTime(); printf  "building lookahead table..."; stdout.Flush();
+    // of lookaheads for each LR(0) kernelItem.
+    // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+    // Enable if needed.
+    // reportTime(); printf  "building lookahead table..."; stdout.Flush();
     let lookaheadTable = 
 
         // Seed the table with the startKernelItems and the spontaneous info
@@ -732,7 +743,9 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
 
     //printf  "built lookahead table, #lookaheads = %d\n" lookaheadTable.Count; stdout.Flush();
 
-    reportTime(); printf "building action table..."; stdout.Flush();
+    // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+    // Enable if needed.
+    // reportTime(); printf "building action table..."; stdout.Flush();
     let shiftReduceConflicts = ref 0
     let reduceReduceConflicts = ref 0
     let actionTable, immediateActionTable = 
@@ -776,7 +789,10 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
                         an, "{" + pstr + " " + astr + "}"
                     let a1n, astr1 = reportAction x1
                     let a2n, astr2 = reportAction x2
-                    printfn "        %s/%s error at state %d on terminal %s between %s and %s - assuming the former because %s" a1n a2n kernelIdx (termTab.OfIndex termIdx) astr1 astr2 reason
+                    ignore (a1n, a2n, astr1, astr2)
+                    // This was practically useless for majority of cases,
+                    // but was adding "time" b/c of printing a lot of stuff.
+                    // printfn "        %s/%s error at state %d on terminal %s between %s and %s - assuming the former because %s" a1n a2n kernelIdx (termTab.OfIndex termIdx) astr1 astr2 reason
                 match itemSoFar,itemNew with 
                 | (_,Shift _),(_, Shift _) -> 
                    if actionSoFar <> actionNew then 
@@ -892,22 +908,26 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
 
     // The goto table is much simpler - it is based on LR(0) kernels alone. 
 
-    reportTime(); printf  "        building goto table..."; stdout.Flush();
+    // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+    // Enable if needed.
+    // reportTime(); printf  "        building goto table..."; stdout.Flush();
     let gotoTable = 
          let gotos kernelIdx = Array.ofList (List.map (fun nt -> gotoKernel (GotoItemIdx(kernelIdx,PNonTerminal nt))) ntTab.Indexes)
          Array.ofList (List.map gotos kernelTab.Indexes)
 
-    reportTime(); printfn  "        returning tables."; stdout.Flush();
-    if !shiftReduceConflicts > 0 then printfn  "        %d shift/reduce conflicts" !shiftReduceConflicts; stdout.Flush();
-    if !reduceReduceConflicts > 0 then printfn  "        %d reduce/reduce conflicts" !reduceReduceConflicts; stdout.Flush();
-    if !shiftReduceConflicts > 0 || !reduceReduceConflicts > 0 then printfn  "        consider setting precedences explicitly using %%left %%right and %%nonassoc on terminals and/or setting explicit precedence on rules using %%prec"
+    // Printing is nopt useful for day-to-day compiler dev and was just taking time and space in output.
+    // Enable if needed.
+    // reportTime(); printfn  "        returning tables."; stdout.Flush();
+    //if !shiftReduceConflicts > 0 then printfn  "        %d shift/reduce conflicts" !shiftReduceConflicts; stdout.Flush();
+    //if !reduceReduceConflicts > 0 then printfn  "        %d reduce/reduce conflicts" !reduceReduceConflicts; stdout.Flush();
+    //if !shiftReduceConflicts > 0 || !reduceReduceConflicts > 0 then printfn  "        consider setting precedences explicitly using %%left %%right and %%nonassoc on terminals and/or setting explicit precedence on rules using %%prec"
 
     /// The final results
     let states = kernels |> Array.ofList 
     let prods = Array.ofList (List.map (fun (Production(nt,_,syms,code)) -> (nt, ntTab.ToIndex nt, syms,code)) prods)
 
     logf (fun logStream -> 
-        printfn  "writing tables to log"; stdout.Flush();
+        //printfn  "writing tables to log"; stdout.Flush();
         OutputLalrTables logStream     (prods, states, startKernelIdxs, actionTable, immediateActionTable, gotoTable, (termTab.ToIndex endOfInputTerminal), errorTerminalIdx));
 
     let states = states |> Array.map (Set.toList >> List.map prodIdx_of_item0)

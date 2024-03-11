@@ -40,7 +40,12 @@ type Writer(outputFileName, outputFileInterface) =
     member x.WriteCode (code, pos: Position) =
         if pos <> Position.Empty  // If bottom code is unspecified, then position is empty.
         then
-            x.WriteLine "# %d \"%s\"" pos.Line pos.FileName
+            let filename = pos.FileName
+            // This is the full path to the output file.
+            // We want to make it relative to current directory,
+            // so it's portable and doesn't need to be updated on the induvidual developers' machines unless really changed.
+            let outputFileName = outputFileName
+            x.WriteLine "# %d \"%s\"" pos.Line filename
             x.WriteLine "%s" code
             let numLines = code.Replace("\r","").Split([| '\n' |]).Length
             lineCount  <- lineCount + numLines

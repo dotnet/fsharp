@@ -58,11 +58,13 @@ let main() =
                | _ -> e.Message)
             exit 1
 
-    printfn "compiling to dfas (can take a while...)"
+    // The verbose output is not very useful for day-to-day compiler dev, and just slowing things down by just printing it.
+    // Uncomment if needed.
+    //printfn "compiling to dfas (can take a while...)"
     let perRuleData, dfaNodes = compileSpec spec parseContext
-    printfn "%d states" dfaNodes.Length
+    //printfn "%d states" dfaNodes.Length
 
-    printfn "writing output"
+    //printfn "writing output"
 
     let output =
         match out with
