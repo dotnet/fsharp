@@ -162,7 +162,7 @@ module internal PervasiveAutoOpens =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
 
             let ts =
-                TaskCompletionSource<'T>(TaskCreationOptions.RunContinuationsAsynchronously)
+                TaskCompletionSource<'T>()
 
             let task = ts.Task
 

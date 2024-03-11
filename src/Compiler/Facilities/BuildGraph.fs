@@ -83,7 +83,7 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                         | ValueSome value -> return value
                         | _ ->
                             let tcs =
-                                TaskCompletionSource<'T>(TaskCreationOptions.RunContinuationsAsynchronously)
+                                TaskCompletionSource<'T>()
 
                             Async.StartWithContinuations(
                                 async {
@@ -100,13 +100,17 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                                 ct
                             )
 
-                            return! tcs.Task |> Async.AwaitTask |> Async.FlattenException
+                            let! result = tcs.Task |> Async.AwaitTask
+                            do! Async.SwitchToThreadPool()
+
+                            return result
                     finally
                         if taken then
                             semaphore.Release() |> ignore
                 finally
                     Interlocked.Decrement(&requestCount) |> ignore
             }
+            |> Async.FlattenException
 
     member _.TryPeekValue() = cachedResult
 
