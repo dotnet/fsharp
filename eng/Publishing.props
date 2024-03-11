@@ -6,7 +6,9 @@
 
   <ItemGroup>
     <_PackagesToPublish Remove="@(_PackagesToPublish)" />
-    <!-- Additional packages needed to avoid prebuilts in VMR. -->
+    <!--
+      Additional packages needed to avoid prebuilts in VMR - https://github.com/dotnet/source-build/issues/4203
+    -->
     <_PackagesToPublish Include="$(ArtifactsPackagesDir)Dependency\**\*.nupkg" UploadPathSegment="Runtime" Condition="'$(DotNetBuildSourceOnly)' == 'true'" />
   </ItemGroup>
 
