@@ -5138,15 +5138,6 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
         let dtys, retTy = stripFunTy g vExprTy
         let paramCount = if dtys.Length = 0 then 0 else dtys.Length - 1
 
-        // "real" paramCount and retTy
-        // doesn't take (_ -> _) -> (_ -> _) as (_ -> _) -> _ -> _
-        let valReprInfo =
-            match vref.ValReprInfo with
-            | None -> ValReprInfo.emptyValData
-            | Some info -> info
-        let dtysReal, retTyReal = GetTopTauTypeInFSharpForm g valReprInfo.ArgInfos vExprTy m
-        let paramCountReal = if dtysReal.Length = 0 then 0 else dtysReal.Length - 1
-        
         // partial active pattern (returning bool) doesn't have output arg
         if (not apinfo.IsTotal && isBoolTy g retTy) then
             checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
@@ -5155,10 +5146,9 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
             else
                 error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 0, args.Length, 0), m))
 
-        // check single case active pattern use real paramCount and retTy
-        elif apinfo.IsTotal && apinfo.ActiveTags.Length = 1 && paramCountReal = args.Length && canOmit retTyReal then
-            args, SynPat.Const(SynConst.Unit, m)
-        elif apinfo.IsTotal && apinfo.ActiveTags.Length = 1 && dtysReal.Length = args.Length then
+        // for single case active pattern, if not all parameter provided, output will be a function
+        // that takes the remaining parameter as input
+        elif apinfo.IsTotal && apinfo.ActiveTags.Length = 1 && dtys.Length >= args.Length && not args.IsEmpty then
             List.frontAndBack args
 
         // active pattern (returning unit or 'Boxed<unit>) can omit output arg 
@@ -5169,6 +5159,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                  elif isChoiceTy g retTy then destChoiceTy g retTy idx
                  else retTy
 
+             // only 0 parameter single case active pattern can omit output arg 
              if canOmit caseRetTy then
                 args, SynPat.Const(SynConst.Unit, m)
              else
@@ -5177,6 +5168,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
         // active pattern (returning unknown things) can not omit output arg
         elif IsNotSolved vExprTy then
             List.frontAndBack args
+
         // active pattern (returning 'a or 'Boxed<'a>) can not omit output arg
         elif dtys.Length > args.Length then
             error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 1, args.Length, 0), m))
