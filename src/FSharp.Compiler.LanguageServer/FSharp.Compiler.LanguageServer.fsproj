@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+	</PropertyGroup>
+
+	<ItemGroup Label="Package References">
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+		<PackageReference Include="Microsoft.CommonLanguageServerProtocol.Framework" Version="4.10.0-2.24105.6" />
+		<!--<PackageReference Include="Microsoft.CodeAnalysis.LanguageServer.Protocol" Version="4.10.0-1.24067.1" />-->
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.10.13-preview" />
+		<PackageReference Include="StreamJsonRpc" Version="2.17.13" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)" Condition="'$(VersionSuffix)'==''" />
+		<NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+		<ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+		<PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="Utils.fs" />
+		<Compile Include="FSharpWorkspace.fs" />
+		<Compile Include="FSharpLanguageServer.fs" />
+		<Compile Include="Executable.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <!--<ProjectReference Include="..\..\..\roslyn\src\Features\LanguageServer\Microsoft.CommonLanguageServerProtocol.Framework\Microsoft.CommonLanguageServerProtocol.Framework.csproj" />-->
+	  <ProjectReference Include="..\Compiler\FSharp.Compiler.Service.fsproj" />
+	</ItemGroup>
+
+</Project>
