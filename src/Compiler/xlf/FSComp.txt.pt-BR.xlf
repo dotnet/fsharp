@@ -2277,11 +2277,6 @@
         <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois a assinatura declara um {2} enquanto a implementação declara um {3}</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois as abreviações são diferentes: {2} versus {3}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because an abbreviation is being hidden by a signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature.</source>
         <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois uma abreviação está sendo ocultada por uma assinatura. A abreviação deve estar visível a outras linguagens CLIs. Considere deixar a abreviação visível na assinatura.</target>
