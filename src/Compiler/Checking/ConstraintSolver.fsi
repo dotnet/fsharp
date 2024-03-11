@@ -189,30 +189,31 @@ exception ArgDoesNotMatchError of
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
 type ConstraintSolverState =
-    { 
-      g: TcGlobals
+    {
+        g: TcGlobals
 
-      amap: ImportMap 
+        amap: ImportMap
 
-      InfoReader: InfoReader
+        InfoReader: InfoReader
 
-      /// The function used to freshen values we encounter during trait constraint solving
-      TcVal: TcValF
+        /// The function used to freshen values we encounter during trait constraint solving
+        TcVal: TcValF
 
-      /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
-      /// That is, there will be one entry in this table for each free type variable in 
-      /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved 
-      /// each time a solution to an index variable is found. 
-      mutable ExtraCxs: Internal.Utilities.Collections.HashMultiMap<Stamp, TraitConstraintInfo * range>
+        /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
+        /// That is, there will be one entry in this table for each free type variable in
+        /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved
+        /// each time a solution to an index variable is found.
+        mutable ExtraCxs: Internal.Utilities.Collections.HashMultiMap<Stamp, TraitConstraintInfo * range>
 
-      /// Checks to run after all inference is complete, but before defaults are applied and internal unknowns solved
-      PostInferenceChecksPreDefaults: ResizeArray<unit -> unit>
+        /// Checks to run after all inference is complete, but before defaults are applied and internal unknowns solved
+        PostInferenceChecksPreDefaults: ResizeArray<unit -> unit>
 
-      /// Checks to run after all inference is complete.
-      PostInferenceChecksFinal: ResizeArray<unit -> unit>
+        /// Checks to run after all inference is complete.
+        PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
-      WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+        WarnWhenUsingWithoutNullOnAWithNullTarget: string option
     }
+
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
     /// Add a post-inference check to run at the end of inference
