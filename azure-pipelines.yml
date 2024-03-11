@@ -29,7 +29,7 @@ variables:
   # Should be 'current' branch name, i.e. 'main' in dotnet/fsharp/refs/main or 'release/dev17.10' in dotnet/fsharp/refs/release/dev17.10
   - name: FSharpReleaseBranchName
     value: 1espm
-  # VS Insertion branch name
+  # VS Insertion branch name (NOT the same as F# branch)
   # Should be previous release branch in 'main' and 'main' in release branch
   # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
   # i.e. 'rel/d17.9' in dotnet/fsharp/refs/main and 'main' in F# dotnet/fsharp/refs/release/dev17.10
