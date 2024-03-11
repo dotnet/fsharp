@@ -2277,11 +2277,6 @@
         <target state="translated">시그니처가 {2}을(를) 선언하지만 구현은 {3}을(를) 선언하므로 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">약어가 {2}과(와) {3}(으)로 서로 다르므로 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because an abbreviation is being hidden by a signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature.</source>
         <target state="translated">시그니처에 의해 약어가 숨겨져 있으므로 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다. 약어는 다른 CLI 언어에 표시되어야 합니다. 시그니처에서 약어를 표시하세요.</target>

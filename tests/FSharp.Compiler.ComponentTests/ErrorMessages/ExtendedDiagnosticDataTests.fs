@@ -1,6 +1,7 @@
 ﻿module ErrorMessages.ExtendedDiagnosticData
 #nowarn "57"
 
+open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Diagnostics.ExtendedData
 open FSharp.Test
@@ -205,3 +206,38 @@ id
        (193, "This expression is a function value, i.e. is missing arguments. Its type is 'a -> 'a.")
        (fun (wrongType: ExpressionIsAFunctionExtendedData) ->
         Assert.Equal("type 'a -> 'a", wrongType.ActualType.ToString()))
+
+let private assertRange
+    (expectedStartLine: int, expectedStartColumn: int)
+    (expectedEndLine: int, expectedEndColumn: int)
+    (actualRange: range)
+    : unit =
+    Assert.Equal(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
+    Assert.Equal(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
+
+[<Theory>]
+[<InlineData true>]
+[<InlineData false>]
+let ``DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData 01`` useTransparentCompiler =
+    let signature =
+        Fsi """
+namespace Project
+
+type Foo = {| bar: int |}
+    """
+
+    let implementation =
+        FsSource """
+namespace Project
+
+type  Foo = {| bar: int; x: int |}
+    """
+
+    signature
+    |> withAdditionalSourceFile implementation
+    |> typecheckProject true useTransparentCompiler
+    |> checkDiagnostic
+       (318, "The type definitions for type 'Foo' in the signature and implementation are not compatible because the abbreviations differ:\n    {| bar: int; x: int |}\nversus\n    {| bar: int |}")
+       (fun (fieldsData: DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData) ->
+        assertRange (4,5) (4,8) fieldsData.SignatureRange
+        assertRange (4,6) (4,9) fieldsData.ImplementationRange)
