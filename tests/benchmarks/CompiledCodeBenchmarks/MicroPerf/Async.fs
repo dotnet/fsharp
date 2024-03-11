@@ -2,7 +2,7 @@ module Async
 
 open BenchmarkDotNet.Attributes
 
-[<SimpleJob(launchCount = 2, warmupCount = 1, targetCount = 2)>]
+[<SimpleJob(launchCount = 2, warmupCount = 1, iterationCount = 2)>]
 [<GcServer(true)>]
 [<MemoryDiagnoser>]
 [<MarkdownExporterAttribute.GitHub>]

@@ -1,6 +1,8 @@
 ### Added
 
+
 * Support for nullable reference types ([PR #15181](https://github.com/dotnet/fsharp/pull/15181))
+* Lower integral ranges to fast loops in more cases and optimize list and array construction from ranges. ([PR #16650](https://github.com/dotnet/fsharp/pull/16650))
 * Better generic unmanaged structs handling. ([Language suggestion #692](https://github.com/fsharp/fslang-suggestions/issues/692), [PR #12154](https://github.com/dotnet/fsharp/pull/12154))
 * Bidirectional F#/C# interop for 'unmanaged' constraint. ([PR #12154](https://github.com/dotnet/fsharp/pull/12154))
 * Make `.Is*` discriminated union properties visible. ([Language suggestion #222](https://github.com/fsharp/fslang-suggestions/issues/222), [PR #16341](https://github.com/dotnet/fsharp/pull/16341))
