@@ -6656,6 +6656,11 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         if isNaked && TypeFeasiblySubsumesType 0 g cenv.amap mWholeCall g.system_IDisposable_ty NoCoerce objTy then
             warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(), mWholeCall))
 
+        let valRefs = minfos |> List.collect (fun minfo -> minfo.ApparentEnclosingTyconRef.MembersOfFSharpTyconSorted)
+
+        for valRef in valRefs do
+            CheckValAttributes g valRef mItem  |> CommitOperationResult
+
         // Check the type is not abstract
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape
         if not (superInit || AreWithinCtorShape env)

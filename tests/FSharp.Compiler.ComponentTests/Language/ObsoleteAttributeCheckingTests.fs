@@ -1262,3 +1262,19 @@ let f (x: IFirst) = x.F()
             (Error 101, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
             (Error 72, Line 13, Col 21, Line 13, Col 24, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
+        
+    [<Fact>]
+    let ``Obsolete attribute is ignored in constructor property assignment`` () =
+        Fsx """
+open System
+type JsonSerializerOptions() =
+    [<Obsolete("This is bad")>]
+    member val DefaultOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = true)
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+        ]
