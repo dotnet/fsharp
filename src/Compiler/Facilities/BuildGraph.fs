@@ -79,11 +79,13 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                                 )
                             |> Async.AwaitTask
 
+                        // Prevent deadlocks.
+                        do! Async.SwitchToThreadPool()
+
                         match cachedResult with
                         | ValueSome value -> return value
                         | _ ->
-                            let tcs =
-                                TaskCompletionSource<'T>()
+                            let tcs = TaskCompletionSource<'T>()
 
                             Async.StartWithContinuations(
                                 async {
@@ -100,10 +102,7 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                                 ct
                             )
 
-                            let! result = tcs.Task |> Async.AwaitTask
-                            do! Async.SwitchToThreadPool()
-
-                            return result
+                            return! tcs.Task |> Async.AwaitTask
                     finally
                         if taken then
                             semaphore.Release() |> ignore
