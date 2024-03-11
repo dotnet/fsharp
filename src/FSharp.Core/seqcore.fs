@@ -169,7 +169,7 @@ module internal IEnumerator =
                       f()
         }
 
-    let inline checkNonNull argName arg =
+    let inline checkNonNull argName (arg: 'T when 'T : null) =
         if isNull arg then
             nullArg argName
 
