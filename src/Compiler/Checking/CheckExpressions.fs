@@ -6649,17 +6649,30 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
 
     if isInterfaceTy g objTy then
         error(Error((if superInit then FSComp.SR.tcInheritCannotBeUsedOnInterfaceType() else FSComp.SR.tcNewCannotBeUsedOnInterfaceType()), mWholeCall))
+        
+    let rec getConstructorArgs expr =
+        match expr with
+        | SynExpr.Paren(expr = SynExpr.App(funcExpr = expr)) ->
+            getConstructorArgs expr
+        | SynExpr.Paren(expr = SynExpr.Tuple(exprs = synExprs)) ->
+            synExprs
+            |> List.collect getConstructorArgs
+        | SynExpr.App(funcExpr = expr1; argExpr = expr2) ->
+            getConstructorArgs expr1 @ getConstructorArgs expr2
+        | SynExpr.Ident(id) -> [id]
+        | _ -> []
 
     match item, args with
-    | Item.CtorGroup(methodName, minfos), _ ->
+    | Item.CtorGroup(methodName, minfos), exprArgs ->
         let meths = List.map (fun minfo -> minfo, None) minfos
         if isNaked && TypeFeasiblySubsumesType 0 g cenv.amap mWholeCall g.system_IDisposable_ty NoCoerce objTy then
             warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(), mWholeCall))
-
         let valRefs = minfos |> List.collect (fun minfo -> minfo.ApparentEnclosingTyconRef.MembersOfFSharpTyconSorted)
-
-        for valRef in valRefs do
-            CheckValAttributes g valRef mItem  |> CommitOperationResult
+        let ctorArgs = exprArgs |> List.collect getConstructorArgs
+        
+        if not ctorArgs.IsEmpty then
+            for valRef in valRefs do
+                CheckValAttributes g valRef mItem |> CommitOperationResult
 
         // Check the type is not abstract
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape

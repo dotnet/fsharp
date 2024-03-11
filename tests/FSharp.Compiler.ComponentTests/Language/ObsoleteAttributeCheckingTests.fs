@@ -1264,16 +1264,17 @@ let f (x: IFirst) = x.F()
         ]
         
     [<Fact>]
-    let ``Obsolete attribute is ignored in constructor property assignment`` () =
+    let ``Obsolete attribute warning is taken into account in a constructor property assigment`` () =
         Fsx """
 open System
 type JsonSerializerOptions() =
     [<Obsolete("This is bad")>]
     member val DefaultOptions = false with get, set
     
-let options = JsonSerializerOptions(DefaultOptions = true)
+    member val UseCustomOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = true, UseCustomOptions = false)
         """
-        |> ignoreWarnings
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
