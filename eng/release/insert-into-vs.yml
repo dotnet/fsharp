@@ -34,20 +34,27 @@ stages:
     - download: current
       artifact: VSSetup
     - task: PowerShell@2
+      displayName: List Workspace
+      inputs:
+        targetType: 'inline'
+        pwsh: true
+        script: |
+          Tree $(Pipeline.Workspace) /F
+    - task: PowerShell@2
       displayName: Get Publish URLs
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetPublishUrls.ps1
-        arguments: -accessToken $(System.AccessToken) -buildId $(Build.BuildId) -insertionDir $(Build.ArtifactStagingDirectory)\VSSetup
+        arguments: -accessToken $(System.AccessToken) -buildId $(Build.BuildId) -insertionDir $(Pipeline.Workspace)\VSSetup
     - task: PowerShell@2
       displayName: Get versions for default.config
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetDefaultConfigVersions.ps1
-        arguments: -packagesDir $(Build.ArtifactStagingDirectory)\VSSetup\DevDivPackages
+        arguments: -packagesDir $(Pipeline.Workspace)\VSSetup\DevDivPackages
     - task: PowerShell@2
       displayName: Get versions for AssemblyVersions.tt
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetAssemblyVersions.ps1
-        arguments: -assemblyVersionsPath $(Build.ArtifactStagingDirectory)\VSSetup\DevDivPackages\DependentAssemblyVersions.csv
+        arguments: -assemblyVersionsPath $(Pipeline.Workspace)\VSSetup\DevDivPackages\DependentAssemblyVersions.csv
     - task: PowerShell@2
       displayName: Calculate autocompletion state
       inputs:
