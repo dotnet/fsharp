@@ -36,8 +36,8 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(BUILDING_USING_DOTNET)' != 'true'">
-    <OtherFlags Condition="'$(TestingLegacyInternalSignature)' != 'true'">$(OtherFlags) --realsig-</OtherFlags>
-    <OtherFlags Condition="'$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig+</OtherFlags>
+    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(TestingLegacyInternalSignature)' != 'true'">$(OtherFlags) --realsig-</OtherFlags>
+    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup>
