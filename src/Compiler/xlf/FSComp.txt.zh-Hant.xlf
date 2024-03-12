@@ -2277,11 +2277,6 @@
         <target state="translated">簽章與實作中類型 '{1}' 的 {0} 定義不相容，因為簽章宣告 {2}，而實作則宣告 {3}</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">簽章與實作中類型 '{1}' 的 {0} 定義不相容，因為縮寫不同: {2} 與 {3}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because an abbreviation is being hidden by a signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature.</source>
         <target state="translated">簽章與實作中類型 '{1}' 的 {0} 定義不相容，因為簽章隱藏了某縮寫。其他 CLI 語言必須可看見該縮寫。請考慮使縮寫在簽章中可見。</target>

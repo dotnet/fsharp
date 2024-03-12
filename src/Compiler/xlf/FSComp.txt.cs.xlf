@@ -2277,11 +2277,6 @@
         <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože signatura deklaruje {2}, ale implementace deklaruje {3}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože se liší zkratky: {2} oproti {3}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because an abbreviation is being hidden by a signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature.</source>
         <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože signatura skrývá zkratku. Zkratka musí být viditelná pro ostatní jazyky CLI. Zvažte zviditelnění zkratky v signatuře.</target>
