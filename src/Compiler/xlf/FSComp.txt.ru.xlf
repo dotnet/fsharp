@@ -2277,11 +2277,6 @@
         <target state="translated">Определения {0} для типа "{1}" в сигнатуре и реализации несовместимы, так как сигнатура объявляет {2}, а реализация — {3}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">Определения {0} для типа "{1}" в сигнатуре и реализации несовместимы, так как сокращения различаются: {2} в сравнении с {3}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because an abbreviation is being hidden by a signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature.</source>
         <target state="translated">Определения {0} для типа "{1}" в сигнатуре и реализации несовместимы, так как сокращение скрывается сигнатурой. Сокращение должно быть видимым для других языков CLI. Попробуйте сделать сокращение видимым в сигнатуре.</target>
