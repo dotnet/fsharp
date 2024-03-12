@@ -234,8 +234,8 @@ extends:
     #---------------------------------------------------------------------------------------------------------------------#
     - template: eng/release/insert-into-vs.yml@self
       parameters:
-        componentBranchName: refs/heads/$(FSharpReleaseBranchName)
-        insertTargetBranch: $(VSInsertionBranchName)
+        componentBranchName: refs/heads/${{ FSharpReleaseBranchName }}
+        insertTargetBranch: ${{ VSInsertionBranchName }}
         insertTeamEmail: fsharpteam@microsoft.com
         insertTeamName: 'F#'
         completeInsertion: 'auto'
