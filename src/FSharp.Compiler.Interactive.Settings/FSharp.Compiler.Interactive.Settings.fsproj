@@ -11,8 +11,11 @@
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
   <!-- If building FCS solution directly, set paths explicitly -->

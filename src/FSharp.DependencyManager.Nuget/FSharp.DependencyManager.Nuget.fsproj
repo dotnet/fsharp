@@ -14,9 +14,11 @@
   </PropertyGroup>
 
   <!--  The FSharp.DependencyManager.Nuget dll does not provide a referencable public interface although it's used for testing -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <PropertyGroup>
     <NoOptimizationData>true</NoOptimizationData>
-    <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">

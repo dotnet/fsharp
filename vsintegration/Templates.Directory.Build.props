@@ -31,4 +31,11 @@
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>false</CompressMetadata>
+    <OtherFlags>$(OtherFlags) --realsig+</OtherFlags>
+  </PropertyGroup>
+
 </Project>

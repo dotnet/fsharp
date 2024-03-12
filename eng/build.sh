@@ -227,8 +227,6 @@ function BuildSolution {
   BUILDING_USING_DOTNET=false
   BuildCategory="Build"
   BuildMessage="Error preparing build"
-  local solution="FSharp.sln"
-  echo "$solution:"
 
   InitializeToolset
   local toolset_build_proj=$_InitializeToolset
@@ -238,7 +236,13 @@ function BuildSolution {
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
 
-  local projects="$repo_root/$solution"
+  local projects="$repo_root/FSharp.sln"
+
+  if [["$source_build" = true ]]; then
+    projects="$repo_root/Sourcebuild.sln"
+  fi
+
+  echo "$projects:"
 
   # https://github.com/dotnet/roslyn/issues/23736
   local enable_analyzers=!$skip_analyzers
@@ -295,7 +299,7 @@ function BuildSolution {
     fi
   fi
 
-  if [[ "$skip_build" != true ]]; then
+  if [[ "$skip_build" != true && "$source_build != true" ]]; then
     # do real build
     BuildMessage="Error building solution"
     MSBuild $toolset_build_proj \
