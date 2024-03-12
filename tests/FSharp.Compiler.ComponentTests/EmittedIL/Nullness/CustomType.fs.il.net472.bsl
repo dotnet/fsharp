@@ -26,6 +26,7 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
   .class auto ansi serializable nested public Myassembly
          extends [runtime]System.Object
   {
@@ -66,8 +67,7 @@
       IL_001e:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance string  get_Nullable() cil managed
+    .method public hidebysig specialname instance string  get_Nullable() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -80,8 +80,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance string  get_NonNullable() cil managed
+    .method public hidebysig specialname instance string  get_NonNullable() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -92,8 +91,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance int32  get_JustSomeInt() cil managed
+    .method public hidebysig specialname instance int32  get_JustSomeInt() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -122,16 +120,14 @@
       IL_0005:  ret
     } 
 
-    .method public hidebysig instance void 
-            UnitFunc() cil managed
+    .method public hidebysig instance void UnitFunc() cil managed
     {
       
       .maxstack  8
       IL_0000:  ret
     } 
 
-    .method public hidebysig instance class MyTestModule/Myassembly 
-            GetThis() cil managed
+    .method public hidebysig instance class MyTestModule/Myassembly GetThis() cil managed
     {
       
       .maxstack  8
@@ -139,8 +135,7 @@
       IL_0001:  ret
     } 
 
-    .method public hidebysig instance class MyTestModule/Myassembly 
-            GetThisOrNull() cil managed
+    .method public hidebysig instance class MyTestModule/Myassembly GetThisOrNull() cil managed
     {
       .param [0]
       .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
@@ -150,8 +145,7 @@
       IL_0001:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance string  get_Item(string index) cil managed
+    .method public hidebysig specialname instance string  get_Item(string index) cil managed
     {
       .param [0]
       .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
@@ -209,8 +203,7 @@
       IL_0033:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -219,6 +212,28 @@
       IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
       IL_000b:  pop
       IL_000c:  ret
+    } 
+
+    .method assembly specialname static void staticInitialization@() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldstr      ""
+      IL_0005:  stsfld     string MyTestModule/Myassembly::uglyGlobalMutableString
+      IL_000a:  ldc.i4.2
+      IL_000b:  volatile.
+      IL_000d:  stsfld     int32 MyTestModule/Myassembly::init@6
+      IL_0012:  ldnull
+      IL_0013:  stsfld     string MyTestModule/Myassembly::uglyGlobalMutableNullableString
+      IL_0018:  ldc.i4.3
+      IL_0019:  volatile.
+      IL_001b:  stsfld     int32 MyTestModule/Myassembly::init@6
+      IL_0020:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::Empty<string,string>()
+      IL_0025:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> MyTestModule/Myassembly::dict
+      IL_002a:  ldc.i4.4
+      IL_002b:  volatile.
+      IL_002d:  stsfld     int32 MyTestModule/Myassembly::init@6
+      IL_0032:  ret
     } 
 
     .property instance string Nullable()
@@ -243,6 +258,25 @@
     } 
   } 
 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void MyTestModule/Myassembly::staticInitialization@()
+    IL_0005:  ret
+  } 
+
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$MyTestModule
@@ -253,27 +287,12 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldstr      ""
-    IL_0005:  stsfld     string MyTestModule/Myassembly::uglyGlobalMutableString
-    IL_000a:  ldc.i4.2
-    IL_000b:  volatile.
-    IL_000d:  stsfld     int32 MyTestModule/Myassembly::init@6
-    IL_0012:  ldnull
-    IL_0013:  stsfld     string MyTestModule/Myassembly::uglyGlobalMutableNullableString
-    IL_0018:  ldc.i4.3
-    IL_0019:  volatile.
-    IL_001b:  stsfld     int32 MyTestModule/Myassembly::init@6
-    IL_0020:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::Empty<string,string>()
-    IL_0025:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> MyTestModule/Myassembly::dict
-    IL_002a:  ldc.i4.4
-    IL_002b:  volatile.
-    IL_002d:  stsfld     int32 MyTestModule/Myassembly::init@6
-    IL_0032:  ret
+    IL_0000:  call       void MyTestModule::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 
@@ -285,8 +304,7 @@
   .field public uint8[] NullableFlags
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 scalarByteValue) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8 scalarByteValue) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -305,8 +323,7 @@
     IL_0016:  ret
   } 
 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8[] NullableFlags) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8[] NullableFlags) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -329,8 +346,7 @@
   .field public uint8 Flag
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 Flag) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8 Flag) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 

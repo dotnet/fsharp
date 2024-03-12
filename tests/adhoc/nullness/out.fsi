@@ -188,7 +188,7 @@ module Extractions0e =
 
 module Extractions1 =
     
-    val mutable x: string
+    val mutable x: string | null
 
 module InteropBasics =
     
