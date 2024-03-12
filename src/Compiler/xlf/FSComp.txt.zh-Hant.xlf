@@ -912,11 +912,6 @@
         <target state="translated">「套件管理」功能需要語言版本 5.0 或更新版本</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile">
-        <source>The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</source>
-        <target state="new">The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
         <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
         <target state="translated">條件約束交集語法只能搭配彈性類型使用，例如「#IDisposable 與 #ISomeInterface'」。</target>

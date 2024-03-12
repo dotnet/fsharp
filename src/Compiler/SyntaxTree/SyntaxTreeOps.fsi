@@ -359,3 +359,5 @@ val (|TypesForTypar|): t: SynType -> SynType list
 /// Generated get_XYZ or set_XYZ ident text
 [<return: Struct>]
 val (|Get_OrSet_Ident|_|): Ident -> unit voption
+
+val getGetterSetterAccess: SynValSigAccess -> SynMemberKind -> Features.LanguageVersion -> SynAccess option * SynAccess option

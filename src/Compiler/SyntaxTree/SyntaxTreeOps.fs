@@ -1068,3 +1068,41 @@ let (|Get_OrSet_Ident|_|) (ident: Ident) =
     if ident.idText.StartsWithOrdinal("get_") then ValueSome()
     elif ident.idText.StartsWithOrdinal("set_") then ValueSome()
     else ValueNone
+
+let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.LanguageVersion) =
+    match synValSigAccess with
+    | SynValSigAccess.Single(access) -> access, access
+    | SynValSigAccess.GetSet(access, getterAccess, setterAccess) ->
+        match memberKind with
+        | SynMemberKind.PropertyGetSet ->
+            match access with
+            | Some _ ->
+                match getterAccess, setterAccess with
+                | None, None -> access, access
+                | Some x, _
+                | _, Some x -> 
+                    errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                    None, None
+            | None ->
+                match getterAccess, setterAccess with
+                | Some x, _
+                | _, Some x ->
+                    checkLanguageFeatureAndRecover langVersion Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
+                    getterAccess, setterAccess
+                | _, _ -> None, None
+        | SynMemberKind.PropertySet ->
+            match access, setterAccess with
+            | Some _, Some x -> 
+                errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                None, None
+            | _, None -> None, access
+            | None, _ -> None, setterAccess
+        | SynMemberKind.Member
+        | SynMemberKind.PropertyGet
+        | _ ->
+            match access, getterAccess with
+            | Some _, Some x -> 
+                errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                None, None
+            | _, None -> access, None
+            | None, _ -> getterAccess, None

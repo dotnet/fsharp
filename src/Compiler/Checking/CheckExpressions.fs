@@ -12507,8 +12507,22 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     let valinfos, tpenv = TcValSpec cenv env declKind newOk containerInfo memFlagsOpt None tpenv synValSig attrs
     let denv = env.DisplayEnv
+    let viss = 
+        match memFlagsOpt with
+        | Some ({MemberKind = SynMemberKind.PropertyGetSet as propKind}) ->
+            let getterAccess, setterAccess = getGetterSetterAccess vis propKind g.langVersion
+            [getterAccess; setterAccess]
+        | Some ({MemberKind = SynMemberKind.PropertyGet as propKind}) ->
+            let getterAccess, _ = getGetterSetterAccess vis propKind g.langVersion
+            [getterAccess]
+        | Some ({MemberKind = SynMemberKind.PropertySet as propKind}) ->
+            let _, setterAccess = getGetterSetterAccess vis propKind g.langVersion
+            [setterAccess]
+        | _ ->
+            [vis.SingleAccess()]
+    let valinfos = List.zip valinfos viss
 
-    (tpenv, valinfos) ||> List.mapFold (fun tpenv valSpecResult ->
+    (tpenv, valinfos) ||> List.mapFold (fun tpenv (valSpecResult, vis) ->
 
         let (ValSpecResult (altActualParent, memberInfoOpt, id, enclosingDeclaredTypars, declaredTypars, ty, prelimValReprInfo, declKind)) = valSpecResult
 

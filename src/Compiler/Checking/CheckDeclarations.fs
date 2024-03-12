@@ -4359,7 +4359,7 @@ module TcDeclarations =
         let rec postAutoProps memb =
             match memb with 
             | SynMemberDefn.AutoProperty(ident = id) when String.IsNullOrEmpty(id.idText) -> []
-            | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; trivia = { GetSetKeywords = mGetSetOpt }; accessibility = access; getterAccessibility = getterAccess; setterAccessibility = setterAccess) ->
+            | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; trivia = { GetSetKeywords = mGetSetOpt }; accessibility = access) ->
                 let mMemberPortion = id.idRange
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
@@ -4373,40 +4373,7 @@ module TcDeclarations =
                 | SynMemberKind.PropertySet, Some getSetKeywords -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), getSetKeywords.Range))
                 | _ -> ()
 
-                let getterAccess, setterAccess =
-                    match propKind with
-                    | SynMemberKind.PropertyGetSet ->
-                        match access with
-                        | Some _ ->
-                            match getterAccess, setterAccess with
-                            | None, None -> access, access
-                            | Some x, _
-                            | _, Some x -> 
-                                errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
-                                None, None
-                        | None ->
-                            match getterAccess, setterAccess with
-                            | Some x, _
-                            | _, Some x ->
-                                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
-                                getterAccess, setterAccess
-                            | _, _ -> None, None
-                    | SynMemberKind.PropertySet ->
-                        match access, setterAccess with
-                        | Some _, Some x -> 
-                            errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
-                            None, None
-                        | _, None -> None, access
-                        | None, _ -> None, setterAccess
-                    | SynMemberKind.Member
-                    | SynMemberKind.PropertyGet
-                    | _ ->
-                        match access, getterAccess with
-                        | Some _, Some x -> 
-                            errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
-                            None, None
-                        | _, None -> access, None
-                        | None, _ -> getterAccess, None
+                let getterAccess, setterAccess = getGetterSetterAccess access propKind g.langVersion
                 [ 
                     match propKind with 
                     | SynMemberKind.Member

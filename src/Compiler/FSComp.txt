@@ -1748,4 +1748,3 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3864,tooManyMethodsInDotNetTypeWritingAssembly,"The type '%s' has too many methods. Found: '%d', maximum: '%d'"
 3865,parsOnlySimplePatternsAreAllowedInConstructors,"Only simple patterns are allowed in primary constructors"
 featureAllowAccessModifiersToAutoPropertiesGettersAndSetters,"Allow access modifiers to auto properties getters and setters"
-3866,parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile,"The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file."

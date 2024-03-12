@@ -729,6 +729,7 @@ valSpfn:
   | opt_attributes opt_access VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), (mEquals, konst: SynExpr option) = ($1), ($4), (Option.isSome $5), (Option.isSome $6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
+        let vis2 = SynValSigAccess.Single(vis2)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
         let m =
             rhs2 parseState 1 11
@@ -874,7 +875,9 @@ tyconSpfnRhs:
      { let m = lhs parseState
        let ty, arity = $3
        let flags = AbstractMemberFlags true SynMemberKind.Member
-       let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
+       let vis2 = SynValSigAccess.Single(None)
+
+       let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, vis2, None, m, SynValSigTrivia.Zero)
        let invoke = SynMemberSig.Member(valSig, flags, m, SynMemberSigMemberTrivia.Zero)
        (fun leadingKeyword nameRange nameInfo mEquals augmentation ->
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
@@ -950,12 +953,10 @@ classMemberSpfn:
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), (mEquals, optLiteralValue) = (Option.isSome $4), grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
        let mWith, (getSet, getSetRangeOpt, getterAccess, setterAccess) = $10
-       match getterAccess with
-       | Some(x: SynAccess) -> warning(Error(FSComp.SR.parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile(), x.Range))
-       | _ -> ()
-       match setterAccess with
-       | Some(x: SynAccess) -> warning(Error(FSComp.SR.parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile(), x.Range))
-       | _ -> ()
+       let vis2 =
+           match getterAccess, setterAccess with
+           | None, None -> SynValSigAccess.Single(vis2) 
+           | _ -> SynValSigAccess.GetSet(vis2, getterAccess, setterAccess)
 
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole =
@@ -1017,11 +1018,12 @@ classMemberSpfn:
 
   | opt_attributes opt_access NEW COLON topTypeWithTypeConstraints
      { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
+       let vis2 = SynValSigAccess.Single(vis)
        let mNew = rhs parseState 3
        let m = unionRanges (rhs parseState 1) ty.Range |> unionRangeWithXmlDoc doc
        let isInline = false
        let trivia: SynValSigTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; WithKeyword = None; EqualsRange = None }
-       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m, trivia)
+       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis2, None, m, trivia)
        SynMemberSig.Member(valSpfn, CtorMemberFlags, m, SynMemberSigMemberTrivia.Zero) }
 
 
@@ -1766,7 +1768,8 @@ tyconDefnRhs:
      { let m = lhs parseState
        let ty, arity = $3
        (fun nameRange augmentation ->
-           let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
+           let vis2 = SynValSigAccess.Single(None)
+           let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, vis2, None, m, SynValSigTrivia.Zero)
            let flags = AbstractMemberFlags true SynMemberKind.Member
            let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m, SynMemberDefnAbstractSlotTrivia.Zero)
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
@@ -2053,7 +2056,8 @@ classDefnMember:
        then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
        let mkFlags, leadingKeyword = $3
        let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $4; WithKeyword = mWith; EqualsRange = None }
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
+       let vis2 = SynValSigAccess.Single(None)
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, None, mWhole, trivia)
        let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeywords = getSetRangeOpt }
        [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole, trivia) ] }
 

@@ -1102,6 +1102,7 @@ let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, 
 
 let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDoc attribs flags rangeStart =
     let mWith, (getSet, getSetOpt, getterAccess, setterAccess) = accessors
+    let access = SynValSigAccess.GetSet(access, getterAccess, setterAccess)
 
     let memberRange =
         match getSetOpt with
@@ -1135,8 +1136,6 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
         memberFlagsForSet,
         xmlDoc,
         access,
-        getterAccess,
-        setterAccess,
         expr,
         memberRange,
         trivia
