@@ -2091,6 +2091,9 @@ Microsoft.FSharp.Core.ValueOption: TState Fold[T,TState](Microsoft.FSharp.Core.F
 Microsoft.FSharp.Core.ValueOption: T[] ToArray[T](Microsoft.FSharp.Core.FSharpValueOption`1[T])
 Microsoft.FSharp.Core.ValueOption: Void Iterate[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpValueOption`1[T])
 Microsoft.FSharp.Core.VolatileFieldAttribute: Void .ctor()
+Microsoft.FSharp.Core.WarnOnWithoutNullArgumentAttribute: System.String WarningMessage
+Microsoft.FSharp.Core.WarnOnWithoutNullArgumentAttribute: System.String get_WarningMessage()
+Microsoft.FSharp.Core.WarnOnWithoutNullArgumentAttribute: Void .ctor(System.String)
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToByte[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToUInt8$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], System.Nullable`1[T])
