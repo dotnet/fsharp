@@ -7,6 +7,11 @@
         <target state="translated">Názvy argumentů v signatuře {0} a implementaci {1} si neodpovídají. Použije se název argumentu ze souboru signatury. To může způsobit problémy při ladění nebo profilování.</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Neshoda typů Očekává se řazená kolekce členů o délce {0} typu\n    {1}    \nale odevzdala se řazená kolekce členů o délce {2} typu\n    {3}{4}\n</target>
