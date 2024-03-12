@@ -26,13 +26,14 @@ trigger:
 
 variables:
   # Release branch for F#
-  # Should be 'current' branch name, i.e. 'main' in dotnet/fsharp/refs/main or 'release/dev17.10' in dotnet/fsharp/refs/release/dev17.10
+  # Should be 'current' release branch name, i.e. 'release/dev17.10' in dotnet/fsharp/refs/heads/main, 'release/dev17.10' in dotnet/fsharp/refs/heads/release/dev17.10 and 'release/dev17.9' in dotnet/fsharp/refs/heads/release/dev17.9
+  # Should **never** be 'main' in dotnet/fsharp/refs/heads/main, since it will start inserting to VS twice.
   - name: FSharpReleaseBranchName
-    value: 1espm
+    value: 1espm #release/dev17.10
   # VS Insertion branch name (NOT the same as F# branch)
   # Should be previous release branch in 'main' and 'main' in release branch
   # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
-  # i.e. 'rel/d17.9' in dotnet/fsharp/refs/main and 'main' in F# dotnet/fsharp/refs/release/dev17.10
+  # i.e. 'rel/d17.9' in dotnet/fsharp/refs/heads/main and 'main' in F# dotnet/fsharp/refs/heads/release/dev17.10
   - name: VSInsertionTargetBranchName
     value: main
   - name: _TeamName

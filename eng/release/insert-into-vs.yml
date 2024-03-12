@@ -70,6 +70,18 @@ stages:
           $autoCompleteStr = if ($autoComplete) { 'true' } else { 'false' }
           Write-Host "Setting InsertAutoComplete to '$autoCompleteStr'"
           Write-Host "##vso[task.setvariable variable=InsertAutoComplete]$autoCompleteStr"
+    - task: PowerShell@2
+      displayName: Log insertion details
+      env:
+        BuildSourceBranch: $(Build.SourceBranch)
+      inputs:
+        targetType: 'inline'
+        pwsh: true
+        script: |
+          $componentBranchName = '$ {{ parameters.componentBranchName }}'
+          $insertBranchName = $env:INSERTTARGETBRANCH
+          $buildSourceBranch = $env:BUILDSOURCEBRANCH
+          Write-Host "ComponentBranchName: $componentBranchName; InsertBranchName:$insertBranchName; BuildSourceBranch: $buildSourceBranch"
     - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@3
       displayName: 'Insert VS Payload'
       inputs:
