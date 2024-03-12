@@ -12511,15 +12511,15 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         match memFlagsOpt with
         | Some ({MemberKind = SynMemberKind.PropertyGetSet as propKind}) ->
             let getterAccess, setterAccess = getGetterSetterAccess vis propKind g.langVersion
-            [getterAccess; setterAccess]
+            List.init valinfos.Length (fun i -> if i = 0 then getterAccess else setterAccess)
         | Some ({MemberKind = SynMemberKind.PropertyGet as propKind}) ->
             let getterAccess, _ = getGetterSetterAccess vis propKind g.langVersion
-            [getterAccess]
+            List.init valinfos.Length (fun _ -> getterAccess)
         | Some ({MemberKind = SynMemberKind.PropertySet as propKind}) ->
             let _, setterAccess = getGetterSetterAccess vis propKind g.langVersion
-            [setterAccess]
+            List.init valinfos.Length (fun _ -> setterAccess)
         | _ ->
-            [vis.SingleAccess()]
+            List.init valinfos.Length (fun _ -> vis.SingleAccess())
     let valinfos = List.zip valinfos viss
 
     (tpenv, valinfos) ||> List.mapFold (fun tpenv (valSpecResult, vis) ->
