@@ -125,19 +125,14 @@ type A =
     new: unit -> A
     member internal B: int
     member internal C: int with get, set    
-    // will warning
     member D: int with internal get, private set
     abstract E: int with get, set
-    // will warning
     abstract F: int with get, private set""" 
     |> withLangVersionPreview
     |> verifyCompile
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
-        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
-        (Warning 3866, Line 11, Col 31, Line 11, Col 38, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
-        (Error 240, Line 1, Col 1, Line 11, Col 42, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
+        (Error 240, Line 1, Col 1, Line 9, Col 42, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
     ]
 
 [<Fact>]
@@ -148,30 +143,21 @@ let ``Signature And Implement File Test`` () =
 type A() =
     member val B: int = 0 with internal get, internal set
     member val C: int = 0 with internal get, internal set
-    member val D: int = 0 with internal get, private set"""
+    member val D: int = 0 with internal get, private set
+    member val E: int = 0 with internal get, private set"""
     Fsi """module Program
 
 type A =
     new: unit -> A
     member internal B: int
-    member internal C: int with get, set    
-    // will warning
-    member D: int with internal get, private set""" 
+    member internal C: int with get, set
+    member D: int with internal get, private set
+    member E: int with get, set""" 
     |> withAdditionalSourceFile encodeFs
     |> withLangVersionPreview
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3866, Line 8, Col 24, Line 8, Col 32, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
-        (Warning 3866, Line 8, Col 38, Line 8, Col 45, "The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.")
-        (Error 0034, Line 6, Col 16, Line 6, Col 17, "Module 'Program' contains
-    member private A.D: int with set    
-but its signature specifies
-    member A.D: int with set    
-The accessibility specified in the signature is more than that specified in the implementation")
-        (Error 0034, Line 6, Col 16, Line 6, Col 17, "Module 'Program' contains
-    member internal A.D: int    
-but its signature specifies
-    member A.D: int    
-The accessibility specified in the signature is more than that specified in the implementation")
+        (Error 0034, Line 7, Col 16, Line 7, Col 17, "Module 'Program' contains    member private A.E: int with set    but its signature specifies    member    A.E: int with set    The accessibility specified in the signature is more than that specified in the implementation")
+        (Error 0034, Line 7, Col 16, Line 7, Col 17, "Module 'Program' contains    member internal A.E: int    but its signature specifies    member A.E: int  t    The accessibility specified in the signature is more than that specified in the implementation")
     ]
