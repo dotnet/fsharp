@@ -1769,6 +1769,30 @@ type PropInfo =
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
 #endif
 
+
+    member x.GetterAccessibility =
+        match x with
+        | ILProp ilpinfo -> if ilpinfo.HasGetter then Some taccessPublic else None
+
+        | FSProp(_, _, Some getter, _) -> Some getter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.SetterAccessibility =
+        match x with
+        | ILProp ilpinfo -> if ilpinfo.HasSetter then Some taccessPublic else None
+
+        | FSProp(_, _, _, Some setter) -> Some setter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    
     member x.IsSetterInitOnly =
         match x with
         | ILProp ilpinfo -> ilpinfo.IsSetterInitOnly
