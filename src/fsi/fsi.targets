@@ -18,10 +18,11 @@
   </PropertyGroup>
 
   <!--  The fsi application does not provide a referencable public interface  -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <NoOptimizationData>true</NoOptimizationData>
-      <NoInterfaceData>true</NoInterfaceData>
-      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>true</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>

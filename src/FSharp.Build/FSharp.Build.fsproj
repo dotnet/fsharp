@@ -17,9 +17,11 @@
   </PropertyGroup>
 
   <!--  The FSharp.Build dll does not provide a referencable public interface although it's used for testing -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
-      <NoOptimizationData>true</NoOptimizationData>
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
