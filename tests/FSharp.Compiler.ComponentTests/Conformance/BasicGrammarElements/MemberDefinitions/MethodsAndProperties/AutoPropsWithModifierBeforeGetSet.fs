@@ -158,6 +158,14 @@ type A =
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        (Error 0034, Line 7, Col 16, Line 7, Col 17, "Module 'Program' contains    member private A.E: int with set    but its signature specifies    member    A.E: int with set    The accessibility specified in the signature is more than that specified in the implementation")
-        (Error 0034, Line 7, Col 16, Line 7, Col 17, "Module 'Program' contains    member internal A.E: int    but its signature specifies    member A.E: int  t    The accessibility specified in the signature is more than that specified in the implementation")
+        (Error 0034, Line 7, Col 16, Line 7, Col 17, "Module 'Program' contains
+    member private A.E: int with set    
+but its signature specifies
+    member A.E: int with set    
+The accessibility specified in the signature is more than that specified in the implementation")
+        (Error 0034, Line 7, Col 16, Line 7, Col 17, "Module 'Program' contains
+    member internal A.E: int    
+but its signature specifies
+    member A.E: int with get    
+The accessibility specified in the signature is more than that specified in the implementation")
     ]

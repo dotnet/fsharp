@@ -333,7 +333,7 @@ module NavigationImpl =
                              createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access)
                          ]
                      | SynMemberDefn.AutoProperty(ident = id; accessibility = access; propKind = propKind) ->
-                         let getterAccessibility,setterAccessibility = access.GetSetAccessNoCheck()
+                         let getterAccessibility, setterAccessibility = access.GetSetAccessNoCheck()
 
                          [
                              match propKind with
@@ -572,16 +572,16 @@ module NavigationImpl =
             [
                 for memb in members do
                     match memb with
-                    | SynMemberSig.Member(memberSig = SynValSig.SynValSig(ident = SynIdent(id, _); accessibility = access; range = m); flags = {MemberKind = propKind}) ->
-                        let getterAccessibility,setterAccessibility = access.GetSetAccessNoCheck()
+                    | SynMemberSig.Member(memberSig = SynValSig.SynValSig(ident = SynIdent(id, _); accessibility = access; range = m); flags = { MemberKind = propKind }) ->
+                        let getterAccessibility, setterAccessibility = access.GetSetAccessNoCheck()
+
                         match propKind with
                         | SynMemberKind.PropertyGetSet ->
                             yield createMember (id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, getterAccessibility)
                             yield createMember (id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, setterAccessibility)
                         | SynMemberKind.PropertySet ->
                             yield createMember (id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, setterAccessibility)
-                        | _ ->
-                            yield createMember (id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, getterAccessibility)
+                        | _ -> yield createMember (id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, getterAccessibility)
                     | SynMemberSig.ValField(SynField(idOpt = Some rcid; fieldType = ty; accessibility = access), _) ->
                         yield createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, ty.Range, NavigationEntityKind.Class, false, access)
                     | _ -> ()

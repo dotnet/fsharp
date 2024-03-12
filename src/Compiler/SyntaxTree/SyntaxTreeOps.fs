@@ -1080,20 +1080,24 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.Lang
                 match getterAccess, setterAccess with
                 | None, None -> access, access
                 | Some x, _
-                | _, Some x -> 
-                    errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+                | _, Some x ->
+                    errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), x.Range))
                     None, None
             | None ->
                 match getterAccess, setterAccess with
                 | Some x, _
                 | _, Some x ->
-                    checkLanguageFeatureAndRecover langVersion Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
+                    checkLanguageFeatureAndRecover
+                        langVersion
+                        Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+                        x.Range
+
                     getterAccess, setterAccess
                 | _, _ -> None, None
         | SynMemberKind.PropertySet ->
             match access, setterAccess with
-            | Some _, Some x -> 
-                errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+            | Some _, Some x ->
+                errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), x.Range))
                 None, None
             | _, None -> None, access
             | None, _ -> None, setterAccess
@@ -1101,8 +1105,8 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.Lang
         | SynMemberKind.PropertyGet
         | _ ->
             match access, getterAccess with
-            | Some _, Some x -> 
-                errorR(Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet(), x.Range))
+            | Some _, Some x ->
+                errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), x.Range))
                 None, None
             | _, None -> access, None
             | None, _ -> getterAccess, None

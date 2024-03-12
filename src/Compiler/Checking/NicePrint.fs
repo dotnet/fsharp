@@ -1339,12 +1339,11 @@ module PrintTastMemberOrVals =
                     let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv vref typarInst argInfos retTy
                     let resL =
                         if short then
-                            if isNil argInfos then tauL
-                            else tauL --- (WordL.keywordWith ^^ layoutAccessibilityCore denv vref.Accessibility ^^ WordL.keywordGet)
+                            tauL --- (WordL.keywordWith ^^ layoutAccessibilityCore denv vref.Accessibility ^^ WordL.keywordGet)
                         else
                             let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled false
                             let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
-                            stat --- ((nameL |> addColonL) ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ layoutAccessibilityCore denv vref.Accessibility ^^ WordL.keywordGet)))
+                            stat --- ((nameL |> addColonL) ^^ (tauL --- (WordL.keywordWith ^^ layoutAccessibilityCore denv vref.Accessibility ^^ WordL.keywordGet)))
                     prettyTyparInst, resL
 
             | SynMemberKind.PropertySet ->
@@ -1822,7 +1821,11 @@ module TastDefinitionPrinting =
         
         match pinfo.ArbitraryValRef with
         | Some vref ->
-            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader (vref)
+            let vref =
+                if pinfo.HasGetter then pinfo.GetterMethod.ArbitraryValRef |> Option.defaultValue vref
+                elif pinfo.HasSetter then pinfo.SetterMethod.ArbitraryValRef |> Option.defaultValue vref
+                else vref
+            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
             if pinfo.HasGetter && pinfo.HasSetter then
                 let getterAccess, setterAccess =
                     pinfo.GetterMethod.ArbitraryValRef |> Option.map _.Accessibility |> Option.defaultValue taccessPublic,
@@ -1830,16 +1833,14 @@ module TastDefinitionPrinting =
                 let getSet =
                     WordL.keywordWith ^^ layoutAccessibilityCore denv getterAccess ^^ WordL.keywordGet ^^ RightL.comma --- layoutAccessibilityCore denv setterAccess ^^ WordL.keywordSet
                 let propL =
-                    if pinfo.IsIndexer then
-                        let rec replaceWithTo newLayout layout =
-                            match layout with
-                            | Node(Leaf (text = text), _, _) when text.Text = "with" -> newLayout
-                            | Node(l, r, i) -> Node(l, replaceWithTo newLayout r, i)
-                            | Attr(text, attr, l) -> Attr(text, attr, replaceWithTo newLayout l)
-                            | Leaf _
-                            | ObjLeaf _ -> layout
-                        replaceWithTo getSet propL
-                    else propL --- getSet
+                    let rec ``replace 'with'`` layout newLayout =
+                        match layout with
+                        | Node(Leaf (text = text), _, _) when text.Text = "with" -> newLayout
+                        | Node(l, r, i) -> Node(l, ``replace 'with'`` r newLayout , i)
+                        | Attr(text, attr, l) -> Attr(text, attr, ``replace 'with'`` l newLayout )
+                        | Leaf _
+                        | ObjLeaf _ -> layout
+                    ``replace 'with'`` propL getSet
                 [ propL ]
             else
                 [ propL ]

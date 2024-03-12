@@ -1481,7 +1481,11 @@ type SynComponentInfo =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynValSigAccess =
     | Single of accessibility: SynAccess option
-    | GetSet of accessibility: SynAccess option * getterAccessibility: SynAccess option * setterAccessibility: SynAccess option
+    | GetSet of
+        accessibility: SynAccess option *
+        getterAccessibility: SynAccess option *
+        setterAccessibility: SynAccess option
+
     member SingleAccess: unit -> SynAccess option
     member GetSetAccessNoCheck: unit -> SynAccess option * SynAccess option
 

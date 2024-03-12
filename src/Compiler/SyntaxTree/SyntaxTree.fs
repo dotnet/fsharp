@@ -1312,19 +1312,19 @@ type SynComponentInfo =
 type SynValSigAccess =
     | Single of accessibility: SynAccess option
     | GetSet of accessibility: SynAccess option * getterAccessibility: SynAccess option * setterAccessibility: SynAccess option
-    
-    member this.SingleAccess () =
+
+    member this.SingleAccess() =
         match this with
         | Single(access)
         | GetSet(accessibility = access) -> access
-        
-    member this.GetSetAccessNoCheck () =
+
+    member this.GetSetAccessNoCheck() =
         match this with
         | SynValSigAccess.Single(access) -> access, access
         | SynValSigAccess.GetSet(access, getterAccess, setterAccess) ->
-             let getterAccess = getterAccess |> Option.orElse access
-             let setterAccess = setterAccess |> Option.orElse access
-             getterAccess, setterAccess
+            let getterAccess = getterAccess |> Option.orElse access
+            let setterAccess = setterAccess |> Option.orElse access
+            getterAccess, setterAccess
 
 [<NoEquality; NoComparison>]
 type SynValSig =
