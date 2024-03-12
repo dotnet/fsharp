@@ -2277,11 +2277,6 @@
         <target state="translated">İmzada {2} bildirilirken uygulamada {3} bildirildiğinden, imza ve uygulamadaki '{1}' türü için {0} tanımları uyumlu değil</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">Kısaltmalar farklı olduğundan ({2} ve {3}), imza ve uygulamadaki '{1}' türü için {0} tanımları uyumlu değil</target>
-        <note />
-      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because an abbreviation is being hidden by a signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature.</source>
         <target state="translated">Bir kısaltma imza ile gizlendiğinden, imza ve uygulamadaki '{1}' türü için {0} tanımları uyumlu değil. Kısaltmanın diğer CLI dilleri tarafından görünebilir olması gerekir. Kısaltmayı imzada görünür yapmayı düşünün.</target>
