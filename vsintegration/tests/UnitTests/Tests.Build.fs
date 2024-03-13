@@ -175,6 +175,7 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--realsig-" + Environment.NewLine +
                      "--warnaserror-:52,109" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -190,6 +191,7 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--realsig-" + Environment.NewLine +
                      "--versionfile:src/version" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -545,6 +547,7 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--realsig-" + Environment.NewLine +
                      "--win32manifest:foo.manifest" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
