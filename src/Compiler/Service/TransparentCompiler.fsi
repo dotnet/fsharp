@@ -75,7 +75,8 @@ type internal BootstrapInfo =
       InitialTcInfo: TcInfo
       LoadedSources: (range * ProjectSnapshot.FSharpFileSnapshot) list
       LoadClosure: LoadClosure option
-      LastFileName: string }
+      LastFileName: string
+      ImportsInvalidatedByTypeProvider: Event<unit> }
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
@@ -117,7 +118,7 @@ type internal CompilerCaches =
     member ParseAndCheckAllFilesInProject: AsyncMemoizeDisabled<obj, obj, obj>
 
     member ParseAndCheckFileInProject:
-        AsyncMemoize<(string * (string * string)), string, (FSharpParseFileResults * FSharpCheckFileAnswer)>
+        AsyncMemoize<(string * (string * string)), string * string, (FSharpParseFileResults * FSharpCheckFileAnswer)>
 
     member ParseAndCheckProject: AsyncMemoize<(string * string), string, FSharpCheckProjectResults>
 
@@ -131,6 +132,8 @@ type internal CompilerCaches =
     member SizeFactor: int
 
     member TcIntermediate: AsyncMemoize<(string * (string * string)), (string * int), TcIntermediate>
+
+    member ScriptClosure: AsyncMemoize<(string * (string * string)), string, LoadClosure>
 
     member TcLastFile: AsyncMemoizeDisabled<obj, obj, obj>
 

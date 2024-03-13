@@ -49,7 +49,7 @@ Install the latest released [Visual Studio](https://visualstudio.microsoft.com/v
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
-You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
+You will also need .NET SDK installed from [here](https://dotnet.microsoft.com/download/dotnet), exact version can be found in the global.json file in the root of the repository.
 
 Building is simple:
 
@@ -76,7 +76,7 @@ If you are just developing the core compiler and library then building ``FSharp.
 We recommend installing the latest Visual Studio preview and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
 * [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
-* [.NET 7](https://dotnet.microsoft.com/download/dotnet/7.0)
+* [.NET SDK](https://dotnet.microsoft.com/download/dotnet) (see exact version in global.json file in the repository root).
 
 You'll need to pass an additional flag to the build script:
 
@@ -130,7 +130,7 @@ Once the "proto" compiler is built, it won't be built again, so you may want to 
 
 ## Using your custom compiler to build other projects
 
-Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`. 
+Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`.
 
 To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to your project's `.fsproj` file, adjusted to point at your local build directory, build configuration, and target framework as appropriate:
 
@@ -138,6 +138,25 @@ To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to y
 <PropertyGroup>
     <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net8.0\fsc.dll</DotnetFscCompilerPath>
 </PropertyGroup>
+```
+
+### Changes in FSharp.Core
+
+The FSharp compiler uses an implicit FSharp.Core. This means that if you introduce changes to FSharp.Core and want to use it in a project, you need to disable the implicit version used by the compiler, and add a reference to your custom FSharp.Core dll. Both are done in the `.fsproj` file of your project.
+
+Disabling the implicit FSharp.Core is done with
+```
+  <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+```
+and referencing your custom FSharp.Core, available after you build the compiler, is done with
+```
+  <ItemGroup>
+    <Reference Include="FSharp.Core">
+      <HintPath>D:\Git\fsharp\artifacts\bin\FSharp.Core\Debug\netstandard2.1\FSharp.Core.dll<\HintPath>
+    </Reference>
+  </ItemGroup>
 ```
 
 ## Updating FSComp.fs, FSComp.resx and XLF

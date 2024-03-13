@@ -7,6 +7,11 @@
         <target state="translated">Os nomes de argumento na assinatura '{0}' e na implementação '{1}' não coincidem. O nome do argumento do arquivo da assinatura será usado. Isso pode causar problemas durante a depuração ou a criação de perfil.</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Tipo incompatível. Esperando uma tupla de comprimento {0} do tipo\n    {1}    \nmas recebeu uma tupla de comprimento {2} do tipo\n    {3}{4}\n</target>

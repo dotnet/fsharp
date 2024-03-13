@@ -244,7 +244,6 @@ let _ =
             async {
                 return 
                  1
-                
             }
             "
 
@@ -313,6 +312,152 @@ let _ =
             "x :: ([])", "x :: []"
 
             """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2)
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2
+                )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            // We could remove here, but we'd need to update
+            // the "sensitive indentation" logic to differentiate between
+            // an outer offsides column established by an open paren (as here)
+            // and an outer offsides column established by, say, the leftmost
+            // column of a binding, e.g.:
+            //
+            //     let _ = (
+            //     ↑
+            //     )
+            //
+            //     static member M () = (
+            //     ↑
+            //     )
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+            longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+            longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+        longFunctionName
+            longVarName1
+            longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+        longFunctionName
+            longVarName1
+            longVarName2
+            )
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (+longFunctionName
+                longVarName1
+                longVarName2)
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            +longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2 in (
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2 in 
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            """
+
+            """
             let x = (printfn $"{y}"
                      2)
             in x
@@ -347,6 +492,7 @@ let _ =
             in x
             "
 
+            // The extra spaces in this test are intentional.
             "
             let x =
      
@@ -534,7 +680,6 @@ in x
             x <
                 2
               + 3
-               
             "
 
             // LetOrUse
@@ -542,6 +687,83 @@ in x
             "let x = 3 in let y = 4 in (x + y)", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y =(4) in x + y", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y=(4) in x + y", "let x = 3 in let y=4 in x + y"
+
+            "
+            let _ =
+                let _ = 3
+                (
+                    44
+                )
+            ",
+            "
+            let _ =
+                let _ = 3
+                44
+            "
+
+            "
+            let (++++++) = (+)
+            let x =
+             ()
+             (
+                2
+         ++++++ 2
+             )
+            in x
+            ",
+            "
+            let (++++++) = (+)
+            let x =
+             ()
+             2
+      ++++++ 2
+            in x
+            "
+
+            "
+            let (!+++++) = (+)
+            let x =
+             ()
+             (
+              !+++++2
+             )
+            in x
+            ",
+            "
+            let (!+++++) = (+)
+            let x =
+             ()
+             !+++++2
+            in x
+            "
+
+            "
+            let _ =
+                (
+             printfn \"\"
+             +2
+                )
+            ",
+            "
+            let _ =
+                printfn \"\"
+                +2
+            "
+
+            "
+            let _ =
+                let x = 3
+                (
+                    let y = 99
+                    y - x
+                )
+            ",
+            "
+            let _ =
+                let x = 3
+                let y = 99
+                y - x
+            "
 
             // TryWith
             "try (raise null) with _ -> reraise ()", "try raise null with _ -> reraise ()"
@@ -568,6 +790,82 @@ in x
             """ (printfn "1"); printfn "2" """, """ printfn "1"; printfn "2" """
             """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
+
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            ",
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            "
+
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x
+            ",
+            "
+            let _ =
+                let y = 100
+                let x = 3
+                let y = 99
+                ignore (y - x)
+                x
+            "
+
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            ",
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x + y
+            "
+
+            "
+            let f y =
+                let x = 3
+                (
+                    let y = 99
+                    ignore (y - x)
+                )
+                x
+            ",
+            "
+            let f y =
+                let x = 3
+                let y = 99
+                ignore (y - x)
+                x
+            "
 
             // IfThenElse
             "if (3 = 3) then 3 else 3", "if 3 = 3 then 3 else 3"
@@ -817,6 +1115,10 @@ in x
             "$\"{(x <- 3),-3}\"", "$\"{(x <- 3),-3}\""
             "$\"{(1, 2):N0}\"", "$\"{(1, 2):N0}\""
             "$\"{(1, 2),-3}\"", "$\"{(1, 2),-3}\""
+
+            "$\"{((); ())}\"", "$\"{((); ())}\""
+            "$\"{(do (); ())}\"", "$\"{do (); ()}\""
+            "$\"{(let x = 3 in ignore x; 99)}\"", "$\"{let x = 3 in ignore x; 99}\""
 
             """
             $"{(3 + LanguagePrimitives.GenericZero<int>):N0}"

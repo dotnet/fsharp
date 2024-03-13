@@ -3627,8 +3627,7 @@ atomicPattern:
             mkSynPatMaybeVar lidwd vis (lhs parseState)
         else
            let synIdent = List.head lidwd.IdentsWithTrivia
-           let (SynIdent(id, _)) = synIdent
-           SynPat.Named(synIdent, false, vis, id.idRange) }
+           SynPat.Named(synIdent, false, vis, synIdent.Range) }
 
   | constant
       { SynPat.Const(fst $1, snd $1) }
@@ -6776,8 +6775,8 @@ interpolatedStringParts:
   | INTERP_STRING_END
      { [ SynInterpolatedStringPart.String(fst $1, rhs parseState 1) ] }
 
-    | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
-        { SynInterpolatedStringPart.String(fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
+  | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
+     { SynInterpolatedStringPart.String(fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
 
   | INTERP_STRING_PART interpolatedStringParts
      { let rbrace = parseState.InputEndPosition 1
