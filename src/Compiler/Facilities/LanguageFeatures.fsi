@@ -79,6 +79,7 @@ type LanguageFeature =
     | EnforceAttributeTargetsOnFunctions
     | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
+    | EnforceAttributeTargetsOnStructAndClasses
     | LowerIntegralRangesToFastLoops
 
 /// LanguageVersion management
