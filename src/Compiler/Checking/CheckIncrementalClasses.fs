@@ -176,7 +176,7 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
         // NOTE: no attributes can currently be specified for the implicit constructor 
         let attribs =
             // Implicit constructors can only target AttributeTargets.Constructor
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnImplicitConstructors) then
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
                 TcAttributes cenv env AttributeTargets.Constructor attrs
             else
                 TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
