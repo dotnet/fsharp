@@ -7534,6 +7534,8 @@ FSharp.Compiler.Syntax.SynField: System.String ToString()
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.SynIdent NewSynIdent(FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia])
+FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynIdent: Int32 Tag
 FSharp.Compiler.Syntax.SynIdent: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynIdent: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia] get_trivia()
