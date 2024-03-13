@@ -1,23 +1,13 @@
 <Project>
-  <PropertyGroup>
-    <PublishingVersion>3</PublishingVersion>
-    <PublishDependsOnTargets>$(PublishDependsOnTargets);_PublishPackages</PublishDependsOnTargets>
-  </PropertyGroup>
 
   <ItemGroup>
-    <_PackagesToPublish Remove="@(_PackagesToPublish)" />
     <!--
       Additional packages needed to avoid prebuilts in VMR - https://github.com/dotnet/source-build/issues/4203
     -->
-    <_PackagesToPublish Include="$(ArtifactsPackagesDir)Dependency\**\*.nupkg" UploadPathSegment="Runtime" Condition="'$(DotNetBuildSourceOnly)' == 'true'" />
+    <ItemsToPushToBlobFeed Include="$(ArtifactsPackagesDir)Dependency\**\*.nupkg"
+                           IsShipping="true"
+                           UploadPathSegment="Runtime"
+                           Condition="'$(DotNetBuildSourceOnly)' == 'true'" />
   </ItemGroup>
-
-  <Target Name="_PublishPackages">
-    <ItemGroup>
-      <ItemsToPushToBlobFeed Include="@(_PackagesToPublish)">
-        <IsShipping>true</IsShipping>
-      </ItemsToPushToBlobFeed>
-    </ItemGroup>
-  </Target>
 
 </Project>
