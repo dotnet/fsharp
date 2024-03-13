@@ -72,11 +72,18 @@ module ILChecker =
             |> unifyRuntimeAssemblyName
             |> unifyImageBase
 
+
+        let stripManagedResources (text: string) =
+            let result = Regex.Replace(text, "\.mresource public .*\r?\n{\s*}\r?\n", "", RegexOptions.Multiline)
+            result
+        
         ilCode.Trim()
         |> normalizeNewLines
         |> stripComments
         |> unifyingAssemblyNames
         |> unifyMethodLine
+        |> stripManagedResources
+
 
     let private generateIlFile dllFilePath ildasmArgs =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
@@ -111,6 +118,7 @@ module ILChecker =
 
         let prepareLines (s: string) =
             s.Split('\n')
+                // Skip emitted managed resources
                 |> Array.map(fun e -> e.Trim('\r'))
                 |> Array.skipWhile(String.IsNullOrWhiteSpace)
                 |> Array.rev
