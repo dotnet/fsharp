@@ -2277,11 +2277,6 @@
         <target state="translated">シグネチャは {2} を宣言していますが、実装では {3} を宣言しているため、シグネチャおよび実装内の型 '{1}' の {0} 定義は互換性がありません</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">シグネチャおよび実装内の型 '{1}' の {0} 定義は、省略形が異なるため ({2} と {3})、互換性がありません</target>
-        <note />
-      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because an abbreviation is being hidden by a signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature.</source>
         <target state="translated">省略形がシグネチャによって隠ぺいされているため、シグネチャおよび実装の型 '{1}' の {0} 定義に互換性がありません。省略形は他の CLI 言語から参照できるようにする必要があります。シグネチャ内の省略形を参照できるようにしてください。</target>
