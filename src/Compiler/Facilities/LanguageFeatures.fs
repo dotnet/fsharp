@@ -88,6 +88,7 @@ type LanguageFeature =
     | EnforceAttributeTargetsOnFunctions
     | EnforceAttributeTargetsUnionCaseDeclarations
     | LowerInterpolatedStringToConcat
+    | EnforceAttributeTargetsOnStructAndClasses
     | LowerIntegralRangesToFastLoops
 
 /// LanguageVersion management
@@ -204,6 +205,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EnforceAttributeTargetsOnFunctions, previewVersion
                 LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
+                LanguageFeature.EnforceAttributeTargetsOnStructAndClasses, previewVersion
                 LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
             ]
 
@@ -351,6 +353,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
         | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations -> FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
+        | LanguageFeature.EnforceAttributeTargetsOnStructAndClasses -> FSComp.SR.featureEnforceAttributeTargetsOnStructAndClasses ()
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
 
     /// Get a version string associated with the given feature.

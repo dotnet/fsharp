@@ -297,6 +297,11 @@
         <target state="new">Enforce AttributeTargets on functions</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsOnStructAndClasses">
+        <source>Enforce AttributeTargets on structs and classes</source>
+        <target state="new">Enforce AttributeTargets on structs and classes</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureEnforceAttributeTargetsUnionCaseDeclarations">
         <source>Enforce AttributeTargets on union case declarations</source>
         <target state="new">Enforce AttributeTargets on union case declarations</target>
@@ -2275,11 +2280,6 @@
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature declares a {2} while the implementation declares a {3}</source>
         <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože signatura deklaruje {2}, ale implementace deklaruje {3}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože se liší zkratky: {2} oproti {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
