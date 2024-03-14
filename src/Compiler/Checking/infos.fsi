@@ -820,7 +820,7 @@ type PropInfo =
 
     member SetterAccessibility: Accessibility option
 
-    member IsProtectedAccessibility: struct(bool * bool)
+    member IsProtectedAccessibility: struct (bool * bool)
 
     /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
     member IsSetterInitOnly: bool
