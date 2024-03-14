@@ -492,7 +492,7 @@ module PrintTypes =
             | Const.Zero -> tagKeyword(if isRefTy g ty then "null" else "default")
         wordL str
 
-    let layoutAccessibilityCoreWithProtect (denv: DisplayEnv) isProtect accessibility =
+    let layoutAccessibilityCoreWithProtected (denv: DisplayEnv) isProtected accessibility =
         let isInternalCompPath x = 
             match x with 
             | CompPath(ILScopeRef.Local, _, []) -> true 
@@ -503,14 +503,14 @@ module PrintTypes =
             | _ when List.forall isInternalCompPath p -> Internal 
             | _ -> Private
         match denv.contextAccessibility, accessibility with
-        | _ when isProtect -> wordL (tagKeyword "protect")
+        | _ when isProtected -> wordL (tagKeyword "protected")
         | Public, Internal -> WordL.keywordInternal
         | Public, Private -> WordL.keywordPrivate
         | Internal, Private -> WordL.keywordPrivate
         | _ -> emptyL
 
     let layoutAccessibilityCore (denv: DisplayEnv) accessibility = 
-        layoutAccessibilityCoreWithProtect denv false accessibility
+        layoutAccessibilityCoreWithProtected denv false accessibility
 
     let layoutAccessibility (denv: DisplayEnv) accessibility itemL =
         layoutAccessibilityCore denv accessibility ++ itemL
@@ -1688,8 +1688,8 @@ module InfoMemberPrinting =
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> wordL) pinfo.PropertyName
         let struct(isGetterProtect, isSetterProtect) = pinfo.IsProtectedAccessibility
         let getterAccess, setterAccess = 
-            PrintTypes.layoutAccessibilityCoreWithProtect denv isGetterProtect (Option.defaultValue taccessPublic pinfo.GetterAccessibility),
-            PrintTypes.layoutAccessibilityCoreWithProtect denv isSetterProtect (Option.defaultValue taccessPublic pinfo.SetterAccessibility)
+            PrintTypes.layoutAccessibilityCoreWithProtected denv isGetterProtect (Option.defaultValue taccessPublic pinfo.GetterAccessibility),
+            PrintTypes.layoutAccessibilityCoreWithProtected denv isSetterProtect (Option.defaultValue taccessPublic pinfo.SetterAccessibility)
         let getterSetter =
             match pinfo.HasGetter, pinfo.HasSetter with
             | true, false ->
