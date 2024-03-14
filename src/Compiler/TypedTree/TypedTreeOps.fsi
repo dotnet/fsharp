@@ -686,7 +686,7 @@ val tryAnyParTyOption: TcGlobals -> TType -> Typar option
 
 val isMeasureTy: TcGlobals -> TType -> bool
 
-val mkAppTy: TyconRef -> TypeInst -> TType
+val mkWoNullAppTy: TyconRef -> TypeInst -> TType
 
 val mkProvenUnionCaseTy: UnionCaseRef -> TypeInst -> TType
 

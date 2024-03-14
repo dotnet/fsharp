@@ -863,7 +863,7 @@ let isMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure _ -> true 
 
 let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
-let mkAppTy tcref tyargs = TType_app(tcref, tyargs, KnownWithoutNull) // TODO NULLNESS - check various callers
+let mkWoNullAppTy tcref tyargs = TType_app(tcref, tyargs, KnownWithoutNull)
 
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref, tyargs)
 
@@ -923,7 +923,7 @@ let convertToTypeWithMetadataIfPossible g ty =
         mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
     elif isFunTy g ty then 
         let a,b = destFunTy g ty
-        mkAppTy g.fastFunc_tcr [a; b]
+        mkWoNullAppTy g.fastFunc_tcr [a; b]
     else ty
  
 //---------------------------------------------------------------------------
@@ -6636,7 +6636,7 @@ let rec tyOfExpr g expr =
         | TOp.ILCall (_, _, _, _, _, _, _, _, _, _, retTypes) | TOp.ILAsm (_, retTypes) -> (match retTypes with [h] -> h | _ -> g.unit_ty)
         | TOp.UnionCase uc -> actualResultTyOfUnionCase tinst uc 
         | TOp.UnionCaseProof uc -> mkProvenUnionCaseTy uc tinst  
-        | TOp.Recd (_, tcref) -> mkAppTy tcref tinst
+        | TOp.Recd (_, tcref) -> mkWoNullAppTy tcref tinst
         | TOp.ExnConstr _ -> g.exn_ty
         | TOp.Bytes _ -> mkByteArrayTy g
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
@@ -7628,7 +7628,7 @@ let permuteExprList (sigma: int[]) (exprs: Expr list) (ty: TType list) (names: s
 /// We still need to sort by index. 
 let mkRecordExpr g (lnk, tcref, tinst, unsortedRecdFields: RecdFieldRef list, unsortedFieldExprs, m) =  
     // Remove any abbreviations 
-    let tcref, tinst = destAppTy g (mkAppTy tcref tinst)
+    let tcref, tinst = destAppTy g (mkWoNullAppTy tcref tinst)
     
     let sortedRecdFields = unsortedRecdFields |> List.indexed |> Array.ofList |> Array.sortBy (fun (_, r) -> r.Index)
     let sigma = Array.create sortedRecdFields.Length -1
@@ -7913,9 +7913,9 @@ let TryEliminateDesugaredConstants g m c =
     | _ -> 
         None
 
-let mkSeqTy (g: TcGlobals) ty = mkAppTy g.seq_tcr [ty] 
+let mkSeqTy (g: TcGlobals) ty = mkWoNullAppTy g.seq_tcr [ty] 
 
-let mkIEnumeratorTy (g: TcGlobals) ty = mkAppTy g.tcref_System_Collections_Generic_IEnumerator [ty] 
+let mkIEnumeratorTy (g: TcGlobals) ty = mkWoNullAppTy g.tcref_System_Collections_Generic_IEnumerator [ty] 
 
 let mkCallSeqCollect g m alphaTy betaTy arg1 arg2 = 
     let enumty2 = try rangeOfFunTy g (tyOfExpr g arg1) with _ -> (* defensive programming *) (mkSeqTy g betaTy)
@@ -9392,7 +9392,7 @@ let mkChoiceTy (g: TcGlobals) m tinst =
      match List.length tinst with 
      | 0 -> g.unit_ty
      | 1 -> List.head tinst
-     | length -> mkAppTy (mkChoiceTyconRef g m length) tinst
+     | length -> mkWoNullAppTy (mkChoiceTyconRef g m length) tinst
 
 let mkChoiceCaseRef g m n i = 
      mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)

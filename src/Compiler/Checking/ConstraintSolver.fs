@@ -1536,7 +1536,7 @@ and DepthCheck ndeep m =
 and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     match getMeasureOfType csenv.g ty with
     | Some (tcref, _) -> 
-        SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkAppTy tcref [TType_measure Measure.One])
+        SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkWoNullAppTy tcref [TType_measure Measure.One])
     | None ->
         CompleteD
 
@@ -1641,8 +1641,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     match getMeasureOfType g argTy1 with
                     | Some (tcref, ms1) ->
                         let ms2 = freshMeasure ()
-                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 (mkAppTy tcref [TType_measure ms2])
-                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
+                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 (mkWoNullAppTy tcref [TType_measure ms2])
+                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
                         return TTraitBuiltIn
 
                     | _ ->
@@ -1650,8 +1650,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                         match getMeasureOfType g argTy2 with
                         | Some (tcref, ms2) ->
                             let ms1 = freshMeasure ()
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkAppTy tcref [TType_measure ms1]) 
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkWoNullAppTy tcref [TType_measure ms1]) 
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
                             return TTraitBuiltIn
 
                         | _ ->
@@ -1785,8 +1785,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     match getMeasureOfType g argTy1 with
                         | Some (tcref, _) -> 
                             let ms1 = freshMeasure () 
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure ms1])
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkWoNullAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure ms1])
                             return TTraitBuiltIn
                         | None -> 
                             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
@@ -1838,7 +1838,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
                     match getMeasureOfType g argTy1 with
                     | None -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
-                    | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure Measure.One])
+                    | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure Measure.One])
                     return TTraitBuiltIn
 
                 | _ -> 

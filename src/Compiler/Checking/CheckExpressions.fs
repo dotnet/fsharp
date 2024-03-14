@@ -830,10 +830,10 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
         let measureTy =
             match synConst with
             | SynConst.Measure(synMeasure = SynMeasure.Anon _) ->
-              (mkAppTy tcr [TType_measure (Measure.Var (NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No)))])
+              (mkWoNullAppTy tcr [TType_measure (Measure.Var (NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No)))])
 
-            | SynConst.Measure(synMeasure = ms) -> mkAppTy tcr [TType_measure (tcMeasure ms)]
-            | _ -> mkAppTy tcr [TType_measure Measure.One]
+            | SynConst.Measure(synMeasure = ms) -> mkWoNullAppTy tcr [TType_measure (tcMeasure ms)]
+            | _ -> mkWoNullAppTy tcr [TType_measure Measure.One]
         unif measureTy
 
     let expandedMeasurablesEnabled =
@@ -853,7 +853,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
         unif g.float_ty
         Const.Double f
     | SynConst.Decimal f ->
-        unif (mkAppTy g.decimal_tcr [])
+        unif (mkWoNullAppTy g.decimal_tcr [])
         Const.Decimal f
     | SynConst.SByte i ->
         unif g.sbyte_ty
@@ -3419,7 +3419,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
     match probe exprTyAsSeq with
     | Some res -> res
     | None ->
-    let ienumerable = mkAppTy g.tcref_System_Collections_IEnumerable []
+    let ienumerable = mkWoNullAppTy g.tcref_System_Collections_IEnumerable []
     match probe ienumerable with
     | Some res -> res
     | None ->
@@ -5025,7 +5025,7 @@ and TcProvidedTypeApp (cenv: cenv) env tpenv tcref args m =
     // We put the type name check after the 'isDirectReferenceToGenerated' check because we need the 'isDirectReferenceToGenerated' error to be shown for generated types
     checkTypeName()
     if hasNoArgs then
-        mkAppTy tcref [], tpenv
+        mkWoNullAppTy tcref [], tpenv
     else
         let ty = Import.ImportProvidedType cenv.amap m providedTypeAfterStaticArguments
         ty, tpenv
@@ -7642,7 +7642,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                 | None -> []
                 | Some(tinst, tcref, _, fldsList) ->
 
-                let gtyp = mkAppTy tcref tinst
+                let gtyp = mkWoNullAppTy tcref tinst
                 UnifyTypes cenv env mWholeExpr overallTy gtyp
 
                 [ for n, v in fldsList do
@@ -12105,7 +12105,7 @@ and TcLetrecBinding
             | None ->
                 let reqdThisValTy = if isByrefTy g reqdThisValTy then destByrefTy g reqdThisValTy else reqdThisValTy
                 let enclosingTyconRef = tcrefOfAppTy g reqdThisValTy
-                reqdThisValTy, (mkAppTy enclosingTyconRef (List.map mkTyparTy enclosingDeclaredTypars)), vspec.Range
+                reqdThisValTy, (mkWoNullAppTy enclosingTyconRef (List.map mkTyparTy enclosingDeclaredTypars)), vspec.Range
             | Some thisVal ->
                 reqdThisValTy, thisVal.Type, thisVal.Range
         if not (AddCxTypeEqualsTypeUndoIfFailed envRec.DisplayEnv cenv.css rangeForCheck actualThisValTy reqdThisValTy) then
