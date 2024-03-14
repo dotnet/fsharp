@@ -2382,39 +2382,57 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | FSMeth(valRef = vref) -> NicePrint.stringValOrMember displayEnv cenv.infoReader vref
             | _ -> NicePrint.stringOfMethInfoFSharpStyle cenv.infoReader m displayEnv methInfo
 
-        let stringValOfPropInfo (p: PropInfo) =                
-            let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
-                let isInternalCompPath x = 
-                    match x with 
-                    | CompPath(ILScopeRef.Local, _, []) -> true 
-                    | _ -> false
-                let (|Public|Internal|Private|) (TAccess p) = 
-                    match p with 
-                    | [] -> Public 
-                    | _ when List.forall isInternalCompPath p -> Internal 
-                    | _ -> Private
-                match denv.contextAccessibility, accessibility with
-                | Public, Internal -> "internal "
-                | Public, Private -> "private "
-                | Internal, Private -> "private "
-                | _ -> String.Empty
+        let stringValOfPropInfo (p: PropInfo) =
+            let supportAccessModifiersBeforeGetSet =
+                cenv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+            if not supportAccessModifiersBeforeGetSet then
+                match p with
+                | DifferentGetterAndSetter(getValRef, setValRef) ->
+                    let g = NicePrint.stringValOrMember displayEnv cenv.infoReader getValRef
+                    let s = NicePrint.stringValOrMember displayEnv cenv.infoReader setValRef
+                    $"{g}\n{s}"
+                | _ ->
+                    let t = p.GetPropertyType(cenv.amap, m) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+                    let withGetSet =
+                        if p.HasGetter && p.HasSetter then "with get, set"
+                        elif p.HasGetter then "with get"
+                        elif p.HasSetter then "with set"
+                        else ""
 
-            let getterAccess, setterAccess = 
-                layoutAccessibilityCore displayEnv (Option.defaultValue taccessPublic p.GetterAccessibility),
-                layoutAccessibilityCore displayEnv (Option.defaultValue taccessPublic p.SetterAccessibility)
-            let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
-            let withGetSet =
-                match p.HasGetter, p.HasSetter with
-                | true, false ->
-                    $"with %s{getterAccess}get"
-                | false, true ->
-                    $"with %s{setterAccess}set"
-                | true, true ->
-                    $"with %s{getterAccess}get, %s{setterAccess}set"
-                | false, false ->
-                    String.Empty
+                    $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
+            else
+                let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
+                    let isInternalCompPath x = 
+                        match x with 
+                        | CompPath(ILScopeRef.Local, _, []) -> true 
+                        | _ -> false
+                    let (|Public|Internal|Private|) (TAccess p) = 
+                        match p with 
+                        | [] -> Public 
+                        | _ when List.forall isInternalCompPath p -> Internal 
+                        | _ -> Private
+                    match denv.contextAccessibility, accessibility with
+                    | Public, Internal -> "internal "
+                    | Public, Private -> "private "
+                    | Internal, Private -> "private "
+                    | _ -> String.Empty
 
-            $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
+                let getterAccess, setterAccess = 
+                    layoutAccessibilityCore displayEnv (Option.defaultValue taccessPublic p.GetterAccessibility),
+                    layoutAccessibilityCore displayEnv (Option.defaultValue taccessPublic p.SetterAccessibility)
+                let t = p.GetPropertyType(cenv.amap, m) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+                let withGetSet =
+                    match p.HasGetter, p.HasSetter with
+                    | true, false ->
+                        $"with %s{getterAccess}get"
+                    | false, true ->
+                        $"with %s{setterAccess}set"
+                    | true, true ->
+                        $"with %s{getterAccess}get, %s{setterAccess}set"
+                    | false, false ->
+                        String.Empty
+
+                $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
 
         match d with
         | E _ -> None
