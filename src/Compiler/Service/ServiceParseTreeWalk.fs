@@ -382,7 +382,8 @@ module SyntaxTraversal =
             /// Sequential expressions are more likely than
             /// most other expression kinds to be deeply nested,
             /// e.g., in very large list or array expressions.
-            /// We treat them specially to avoid blowing the stack.
+            /// We treat them specially to avoid blowing the stack,
+            /// since traverseSynExpr itself is not tail-recursive.
             let rec traverseSequentials path expr =
                 seq {
                     match expr with
@@ -398,7 +399,7 @@ module SyntaxTraversal =
                         yield! traverseSequentials path expr2
 
                     | _ ->
-                        // It's not a sequential expression.
+                        // It's not a nested sequential expression.
                         // Traverse it normally.
                         yield dive expr expr.Range (traverseSynExpr path)
                 }
