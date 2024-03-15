@@ -67,8 +67,8 @@ resources:
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:
-    #featureFlags:
-    #  autoBaseline: true
+    featureFlags:
+      autoBaseline: true
     sdl:
       binskim:
         enabled: true
@@ -76,7 +76,7 @@ extends:
         enabled: true
       sbom:
         enabled: false # VS SBOM is generated with other steps
-        justificationForDisabling: 'SBOM for F# is generated via build process.'
+        justificationForDisabling: 'SBOM for F# is generated via build process. Will be migrated at later date.'
       sourceAnalysisPool:
         name: NetCore1ESPool-Svc-Internal
         image: 1es-windows-2022-pt
