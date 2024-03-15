@@ -386,8 +386,8 @@ module SyntaxTraversal =
             let rec traverseSequentials path expr =
                 seq {
                     match expr with
-                    | SynExpr.Sequential(expr1 = expr1; expr2 = expr2) ->
-                        // It's a sequential expression.
+                    | SynExpr.Sequential(expr1 = expr1; expr2 = SynExpr.Sequential _ as expr2) ->
+                        // It's a nested sequential expression.
                         // Visit it, but make defaultTraverse do nothing,
                         // since we're going to traverse its descendants ourselves.
                         yield dive expr expr.Range (fun expr -> visitor.VisitExpr(path, traverseSynExpr path, (fun _ -> None), expr))
