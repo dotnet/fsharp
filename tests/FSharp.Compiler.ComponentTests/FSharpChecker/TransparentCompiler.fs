@@ -1061,6 +1061,13 @@ let ``The script load closure should always be evaluated`` useTransparentCompile
     async {
         // The LoadScriptClosure uses the file system shim so we need to reset that.
         let currentFileSystem = FileSystemAutoOpens.FileSystem
+        let assumeDotNetFramework =
+            // The old BackgroundCompiler uses assumeDotNetFramework = true
+            // This is not always correctly loading when this test runs on non-Windows.
+            if not ( System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform( System.Runtime.InteropServices.OSPlatform.Windows)) then
+                Some false
+            else
+                None 
 
         try
             let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
@@ -1072,7 +1079,8 @@ let ``The script load closure should always be evaluated`` useTransparentCompile
                 checker.GetProjectSnapshotFromScript(
                     "a.fsx",
                     SourceTextNew.ofString fileSystemShim.aFsx,
-                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource
+                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
+                    ?assumeDotNetFramework = assumeDotNetFramework
                 )
 
             // File b.fsx should also be included in the snapshot.
@@ -1093,7 +1101,8 @@ let ``The script load closure should always be evaluated`` useTransparentCompile
                 checker.GetProjectSnapshotFromScript(
                     "a.fsx",
                     SourceTextNew.ofString fileSystemShim.aFsx,
-                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource
+                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
+                    ?assumeDotNetFramework = assumeDotNetFramework
                 )
 
             Assert.Equal(3, secondSnapshot.SourceFiles.Length)
