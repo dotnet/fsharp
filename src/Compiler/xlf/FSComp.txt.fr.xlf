@@ -6417,12 +6417,12 @@
         <target state="translated">Nombre à virgule flottante non valide</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideDecimal">
+      <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
         <target state="translated">Ce nombre se trouve en dehors de la plage autorisée pour les littéraux décimaux</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideThirtyTwoBitFloat">
+      <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
         <target state="translated">Ce nombre se trouve en dehors de la plage autorisée pour les valeurs float 32 bits</target>
         <note />
