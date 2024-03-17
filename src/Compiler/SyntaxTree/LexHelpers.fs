@@ -222,16 +222,32 @@ let addUnicodeChar buf c = addIntChar buf (int c)
 
 let addByteChar buf (c: char) = addIntChar buf (int32 c % 256)
 
+type LargerThanOneByte = int
+type LargerThan127ButInsideByte = int
+
 /// Sanity check that high bytes are zeros. Further check each low byte <= 127
-let stringBufferIsBytes (buf: ByteBuffer) =
+let errorsInByteStringBuffer (buf: ByteBuffer) =
     let bytes = buf.AsMemory()
-    let mutable ok = true
+    assert (bytes.Length % 2 = 0)
+
+    // Enhancement?: return faulty values?
+    //     But issue: we don't know range of values -> no direct mapping from value to range & notation
+
+    // values with high byte <> 0
+    let mutable largerThanOneByteCount = 0
+    // values with high byte = 0, but low byte > 127
+    let mutable largerThan127ButSingleByteCount = 0
 
     for i = 0 to bytes.Length / 2 - 1 do
         if bytes.Span[i * 2 + 1] <> 0uy then
-            ok <- false
+            largerThanOneByteCount <- largerThanOneByteCount + 1
+        elif bytes.Span[i * 2] > 127uy then
+            largerThan127ButSingleByteCount <- largerThan127ButSingleByteCount + 1
 
-    ok
+    if largerThanOneByteCount + largerThan127ButSingleByteCount > 0 then
+        Some(largerThanOneByteCount, largerThan127ButSingleByteCount)
+    else
+        None
 
 let newline (lexbuf: LexBuffer<_>) = lexbuf.EndPos <- lexbuf.EndPos.NextLine
 

@@ -137,10 +137,14 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
                 if kind.IsInterpolated then
                     fail args lexbuf (FSComp.SR.lexByteStringMayNotBeInterpolated()) ()
                     BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
-                elif Lexhelp.stringBufferIsBytes buf then
-                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
                 else
-                    fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode()) ()
+                    match Lexhelp.errorsInByteStringBuffer buf with
+                    | Some (largerThanOneByte, largerThan127) ->
+                        if largerThanOneByte > 0 then
+                            fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode(largerThanOneByte)) ()
+                        if largerThan127 > 0 then
+                            warning (Error(FSComp.SR.lexByteArrayOutisdeAscii(largerThan127), lexbuf.LexemeRange))
+                    | None -> ()
                     BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
             elif kind.IsInterpolated then
                 let s = Lexhelp.stringBufferAsString buf
@@ -518,7 +522,7 @@ rule token (args: LexArgs) (skip: bool) = parse
      { let s = lexeme lexbuf
        let x = int32 (if s.[1] = '\\' then escape s.[2] else s.[1])
        if x < 0 || x > 127 then
-           fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
+           fail args lexbuf (FSComp.SR.lexInvalidAsciiByteLiteral()) (UINT8(byte 0))
        else
            UINT8 (byte(x))  }
 
@@ -535,25 +539,49 @@ rule token (args: LexArgs) (skip: bool) = parse
      { let s = lexeme lexbuf
        let x = int32 (trigraph s.[2] s.[3] s.[4])
        if x < 0 || x > 255 then
-           fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
+           fail args lexbuf (FSComp.SR.lexInvalidAsciiByteLiteral()) (UINT8(byte 0))
+       elif x > 127 then
+           // TODO: Promote to Error:
+           // * Adjust range check in `if` above to `x > 127`
+           // * Remove this `elif` expression
+           // * Remove `lexInvalidTrigraphAsciiByteLiteral` from `FSComp.txt`
+           warning (Error(FSComp.SR.lexInvalidTrigraphAsciiByteLiteral(), lexbuf.LexemeRange))
+           UINT8 (byte(x))
        else
            UINT8 (byte(x))  }
+
+ | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
 
  | '\'' unicodeGraphShort '\''  'B'
      { let x = int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 2))
        if x < 0 || x > 127 then
-           fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
+           fail args lexbuf (FSComp.SR.lexInvalidAsciiByteLiteral()) (UINT8(byte 0))
        else
            UINT8 (byte(x))  }
 
  | '\'' hexGraphShort '\'' { CHAR (char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
 
- | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
+ | '\'' hexGraphShort '\'' 'B'
+     { let x = int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 2))
+      if x < 0 || x > 127 then
+           fail args lexbuf (FSComp.SR.lexInvalidAsciiByteLiteral()) (UINT8(byte 0))
+      else
+           UINT8 (byte(x))  }
 
  | '\'' unicodeGraphLong '\''
      { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
        | SingleChar(c) -> CHAR (char c)
        | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
+
+ | '\'' unicodeGraphLong '\'' 'B'
+     { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 2) with
+       | SingleChar(c) -> 
+            let x = int32 c
+            if x < 0 || x > 127 then
+                fail args lexbuf (FSComp.SR.lexInvalidAsciiByteLiteral()) (UINT8(byte 0))
+            else
+                UINT8 (byte(x))
+       | _ -> fail args lexbuf  (FSComp.SR.lexInvalidAsciiByteLiteral()) (UINT8(byte 0)) }
 
  | "(*IF-FSHARP"
      { if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
@@ -1201,11 +1229,26 @@ and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
  | trigraph
     { let (buf, _fin, m, kind, args) = sargs
       let s = lexeme lexbuf
-      addByteChar buf (trigraph s.[1] s.[2] s.[3])
-      if not skip then
-          STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.interpolationDelimiterLength, m))
+      let result() =
+          if not skip then
+              STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.interpolationDelimiterLength, m))
+          else
+              singleQuoteString sargs skip lexbuf
+      let c = trigraph s.[1] s.[2] s.[3]
+      let x = int c
+      if x < 0 || x > 255 then
+          // TODO: Promote to Error:
+          // * remove `addByteChar ...`
+          // * remove `warning ...`
+          // * Adjust `lexInvalidCharLiteralInString` in `FSComp.txt`: remove `Note` (incl. 2nd placeholder) 
+          // * uncomment `fail ...`
+          addByteChar buf c
+          warning (Error(FSComp.SR.lexInvalidCharLiteralInString (s[0..3], sprintf "\\%03i" (x % 256)), lexbuf.LexemeRange))
+          //fail args lexbuf (FSComp.SR.lexInvalidCharLiteralInString (s[0..3])) ()
+          result()
       else
-          singleQuoteString sargs skip lexbuf }
+          addByteChar buf c
+          result() }
 
  | hexGraphShort
     { let (buf, _fin, m, kind, args) = sargs
@@ -1233,7 +1276,8 @@ and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
               singleQuoteString sargs skip lexbuf
       match unicodeGraphLong hexChars with
       | Invalid ->
-          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result())
+          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) ()
+          result()
       | SingleChar(c) ->
           addUnicodeChar buf (int c)
           result()
