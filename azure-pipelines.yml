@@ -3,7 +3,6 @@ trigger:
   branches:
     include:
     - main
-    - dev16.1
     - feature/*
     - release/*
   paths:
@@ -25,34 +24,26 @@ trigger:
     - release-notes.md
     - TESTGUIDE.md
 
-pr:
-  branches:
-    include:
-    - main
-    - dev16.1
-    - feature/*
-    - release/*
-  paths:
-    include:
-    - '*'
-    exclude:
-    - .github/*
-    - docs/
-    - attributions.md
-    - CODE_OF_CONDUCT.md
-    - DEVGUIDE.md
-    - INTERNAL.md
-    - Language-Version-History.md
-    - License.txt
-    - README.md
-    - release-notes.md
-    - TESTGUIDE.md
-
 variables:
+  # Release branch for F#
+  # Should be 'current' release branch name, i.e. 'release/dev17.10' in dotnet/fsharp/refs/heads/main, 'release/dev17.10' in dotnet/fsharp/refs/heads/release/dev17.10 and 'release/dev17.9' in dotnet/fsharp/refs/heads/release/dev17.9
+  # Should **never** be 'main' in dotnet/fsharp/refs/heads/main, since it will start inserting to VS twice.
+  - name: FSharpReleaseBranchName
+    value: release/dev17.10
+  # VS Insertion branch name (NOT the same as F# branch)
+  # Should be previous release branch in 'main' and 'main' in release branch
+  # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
+  # i.e. 'rel/d17.9' in dotnet/fsharp/refs/heads/main and 'main' in F# dotnet/fsharp/refs/heads/release/dev17.10
+  - name: VSInsertionTargetBranchName
+    value: main
   - name: _TeamName
+    value: FSharp
+  - name: TeamName
     value: FSharp
   - name: _BuildConfig
     value: Release
+  - name: _SignType
+    value: Real
   - name: _PublishUsingPipelines
     value: true
   - name: _DotNetArtifactsCategory
@@ -61,833 +52,190 @@ variables:
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
     value: true
-  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - name: _DotNetValidationArtifactsCategory
-      value: .NETCoreValidation
-    - group: DotNet-FSharp-SDLValidation-Params
-  - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
-    - name: RunningAsPullRequest
-      value: true
-  # Pick up pool provider name behavior from shared yaml template
-  - template: /eng/common/templates/variables/pool-providers.yml
+  - name: _DotNetValidationArtifactsCategory
+    value: .NETCoreValidation
+  - group: DotNet-FSharp-SDLValidation-Params
+  - template: /eng/common/templates-official/variables/pool-providers.yml@self
 
-# Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
-# Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
-#variables:
-#- name: SkipTests
-#  defaultValue: false
+resources:
+  repositories:
+  - repository: MicroBuildTemplate
+    type: git
+    name: 1ESPipelineTemplates/MicroBuildTemplate
+    ref: refs/tags/release
 
-stages:
-- stage: build
-  displayName: Build
-  jobs:
-
-  #-------------------------------------------------------------------------------------------------------------------#
-  #                                                  Signed build                                                     #
-  #-------------------------------------------------------------------------------------------------------------------#
-  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.10') }}:
-      - template: /eng/common/templates/job/onelocbuild.yml
+extends:
+  template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
+  parameters:
+    featureFlags:
+      autoBaseline: true
+    sdl:
+      binskim:
+        enabled: true
+      policheck:
+        enabled: true
+      sbom:
+        enabled: false # VS SBOM is generated with other steps
+        justificationForDisabling: 'SBOM for F# is generated via build process. Will be migrated at later date.'
+      sourceAnalysisPool:
+        name: NetCore1ESPool-Svc-Internal
+        image: 1es-windows-2022-pt
+        os: windows
+    stages:
+    - stage: build
+      displayName: Build
+      jobs:
+      #-------------------------------------------------------------------------------------------------------------------#
+      #                                                  Signed build                                                     #
+      #-------------------------------------------------------------------------------------------------------------------#
+      # Localization: we only run it for specific release branches
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.10') }}:
+        - template: /eng/common/templates-official/job/onelocbuild.yml@self
+          parameters:
+            MirrorRepo: fsharp
+            MirrorBranch: $(FSharpReleaseBranchName)
+            LclSource: lclFilesfromPackage
+            LclPackageId: 'LCL-JUNO-PROD-FSHARP'
+      - template: /eng/common/templates-official/jobs/jobs.yml@self
         parameters:
-          MirrorRepo: fsharp
-          MirrorBranch: release/dev17.10
-          LclSource: lclFilesfromPackage
-          LclPackageId: 'LCL-JUNO-PROD-FSHARP'
-    - template: /eng/common/templates/jobs/jobs.yml
+          enableMicrobuild: true
+          enablePublishBuildArtifacts: true
+          enablePublishTestResults: false
+          enablePublishBuildAssets: true
+          enablePublishUsingPipelines: $(_PublishUsingPipelines)
+          enableSourceBuild: true
+          enableTelemetry: true
+          helixRepo: dotnet/fsharp
+          jobs:
+          - job: Full_Signed
+            pool:
+              name: NetCore1ESPool-Svc-Internal
+              image: windows.vs2022preview.amd64
+            timeoutInMinutes: 300
+            templateContext:
+              mb:
+                signing:
+                  enabled: true
+                  feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
+                  signType: $(_SignType)
+                  zipSources: false
+
+            variables:
+            - group: DotNet-Symbol-Server-Pats
+            - group: DotNet-DevDiv-Insertion-Workflow-Variables
+            - name: _SignType
+              value: Real
+            steps:
+            - checkout: self
+              clean: true
+            - template: /eng/restore-internal-tools.yml
+            - script: eng\CIBuild.cmd
+                      -configuration $(_BuildConfig)
+                      -prepareMachine
+                      -testAllButIntegration
+                      -officialSkipTests $(SkipTests)
+                      /p:SignType=$(_SignType)
+                      /p:DotNetSignType=$(_SignType)
+                      /p:MicroBuild_SigningEnabled=true
+                      /p:OverridePackageSource=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+                      /p:TeamName=$(_TeamName)
+                      /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
+                      /p:DotNetArtifactsCategory=$(_DotNetArtifactsCategory)
+                      /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
+                      /p:DotNetSymbolServerTokenSymWeb=$(symweb-symbol-server-pat)
+                      /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
+                      /p:PublishToSymbolServer=true
+                      /p:VisualStudioDropName=$(VisualStudioDropName)
+                      /p:GenerateSbom=true
+              env:
+                  NativeToolsOnMachine: true
+            - task: PublishTestResults@2
+              displayName: Publish Test Results
+              inputs:
+                testResultsFormat: 'NUnit'
+                testResultsFiles: '*.xml'
+                searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              continueOnError: true
+              condition: ne(variables['SkipTests'], 'true')
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Test Logs
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)'
+                artifactName: 'Test Logs'
+                publishLocation: Container
+              continueOnError: true
+              condition: ne(variables['SkipTests'], 'true')
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Packages
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+                artifactName: 'Packages'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact VSSetup
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                artifactName: 'VSSetup'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Nightly
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix'
+                artifactName: 'Nightly'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Symbols
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
+                artifactName: 'NativeSymbols'
+              condition: succeeded()
+            - task: 1ES.MicroBuildVstsDrop@1
+              displayName: Upload VSTS Drop
+              inputs:
+                dropName: $(VisualStudioDropName)
+                dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                dropRetentionDays: 90
+                accessToken: $(dn-bot-devdiv-drop-rw-code-rw)
+                dropServiceUri: 'https://devdiv.artifacts.visualstudio.com'
+                vsDropServiceUri: 'https://vsdrop.corp.microsoft.com/file/v1'
+
+              condition: succeeded()
+
+    #---------------------------------------------------------------------------------------------------------------------#
+    #                                                    Post Build                                                       #
+    #---------------------------------------------------------------------------------------------------------------------#
+    - template: eng/common/templates-official/post-build/post-build.yml@self
       parameters:
-        enableMicrobuild: true
-        enablePublishBuildArtifacts: true
-        enablePublishTestResults: false
-        enablePublishBuildAssets: true
-        enablePublishUsingPipelines: $(_PublishUsingPipelines)
-        enableSourceBuild: true
-        enableTelemetry: true
-        helixRepo: dotnet/fsharp
-        jobs:
-        - job: Full_Signed
-          pool:
-            name: $(DncEngInternalBuildPool)
-            demands: ImageOverride -equals windows.vs2022preview.amd64
-          timeoutInMinutes: 300
-          variables:
-          - group: DotNet-Symbol-Server-Pats
-          - group: DotNet-DevDiv-Insertion-Workflow-Variables
-          - name: _SignType
-            value: Real
-          steps:
-          - checkout: self
-            clean: true
-          - template: /eng/restore-internal-tools.yml
-          - script: eng\CIBuild.cmd
-                    -configuration $(_BuildConfig)
-                    -prepareMachine
-                    -testAllButIntegration
-                    -officialSkipTests $(SkipTests)
-                    /p:SignType=$(_SignType)
-                    /p:DotNetSignType=$(_SignType)
-                    /p:MicroBuild_SigningEnabled=true
-                    /p:OverridePackageSource=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
-                    /p:TeamName=$(_TeamName)
-                    /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
-                    /p:DotNetArtifactsCategory=$(_DotNetArtifactsCategory)
-                    /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
-                    /p:DotNetSymbolServerTokenSymWeb=$(symweb-symbol-server-pat)
-                    /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
-                    /p:PublishToSymbolServer=true
-                    /p:VisualStudioDropName=$(VisualStudioDropName)
-                    /p:GenerateSbom=true
-            env:
-                NativeToolsOnMachine: true
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
-            displayName: End to end build tests
-            continueOnError: true
-            condition: always()
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: ne(variables['SkipTests'], 'true')
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)'
-              ArtifactName: 'Test Logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: ne(variables['SkipTests'], 'true')
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Artifact Packages
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
-              ArtifactName: 'Packages'
-            condition: succeeded()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Artifact VSSetup
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
-              ArtifactName: 'VSSetup'
-            condition: succeeded()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Artifact Nightly
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix'
-              ArtifactName: 'Nightly'
-            condition: succeeded()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Artifact Symbols
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
-              ArtifactName: 'NativeSymbols'
-            condition: succeeded()
-          - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
-            displayName: Upload VSTS Drop
-            inputs:
-              DropName: $(VisualStudioDropName)
-              DropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
-              AccessToken: $(dn-bot-devdiv-drop-rw-code-rw)
-            condition: succeeded()
+        publishingInfraVersion: 3
+        # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
+        enableSymbolValidation: false
+        # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
+        enableSourceLinkValidation: false
+        # Enable SDL validation, passing through values from the 'DotNet-FSharp-SDLValidation-Params' group.
+        SDLValidationParameters:
+          enable: true
+          params: >-
+            -SourceToolsList @("policheck","credscan")
+            -ArtifactToolsList @("binskim")
+            -BinskimAdditionalRunConfigParams @("IgnorePdbLoadError < True","Recurse < True")
+            -TsaInstanceURL $(_TsaInstanceURL)
+            -TsaProjectName $(_TsaProjectName)
+            -TsaNotificationEmail $(_TsaNotificationEmail)
+            -TsaCodebaseAdmin $(_TsaCodebaseAdmin)
+            -TsaBugAreaPath $(_TsaBugAreaPath)
+            -TsaIterationPath $(_TsaIterationPath)
+            -TsaRepositoryName "FSharp"
+            -TsaCodebaseName "FSharp-GitHub"
+            -TsaPublish $True
+            -PoliCheckAdditionalRunConfigParams @("UserExclusionPath < $(Build.SourcesDirectory)/eng/policheck_exclusions.xml")
 
-  #-------------------------------------------------------------------------------------------------------------------#
-  #                            PR builds without logs publishing                                                      #
-  #-------------------------------------------------------------------------------------------------------------------#
-  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
-    - template: /eng/common/templates/jobs/jobs.yml
+    #---------------------------------------------------------------------------------------------------------------------#
+    #                                                   VS Insertion                                                      #
+    #---------------------------------------------------------------------------------------------------------------------#
+    - template: eng/release/insert-into-vs.yml@self
       parameters:
-        enableMicrobuild: false
-        enablePublishBuildArtifacts: false
-        enablePublishTestResults: false
-        enablePublishBuildAssets: false
-        enablePublishUsingPipelines: $(_PublishUsingPipelines)
-        enableSourceBuild: false
-        enableTelemetry: true
-        helixRepo: dotnet/fsharp
-        jobs:
-          # Determinism, we want to run it only in PR builds
-        - job: Determinism_Debug
-          condition: eq(variables['Build.Reason'], 'PullRequest')
-          variables:
-          - name: _SignType
-            value: Test
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 90
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
-          steps:
-          - checkout: self
-            clean: true
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: false
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Build.SourcesDirectory)/.dotnet
-          - script: .\eng\test-determinism.cmd -configuration Debug
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
-            displayName: Determinism tests with Debug configuration
-          - task: PublishPipelineArtifact@1
-            displayName: Publish Determinism Logs
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
-              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
-            continueOnError: true
-            condition: not(succeeded())
-
-          # Check FSComp.txt error code sorting and code formatting
-        - job: CheckCodeFormatting
-          pool:
-            vmImage: $(UbuntuMachineQueueName)
-          steps:
-          - checkout: self
-            clean: true
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet tool restore
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Install tools
-          - script: dotnet fsi src/Compiler/FSCompCheck.fsx
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check error code sorting in src/Compiler/FSComp.txt
-          - script: dotnet fantomas . --check
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check code formatting (run 'dotnet fantomas .' to fix)
-
-        # Check whether package with current version has been published to nuget.org
-        # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
-        # NOTE: The check now runs on all branches (not just release),
-        #       because we want to catch cases when version is desynched and we didn't update it.
-        #       It is also helping the release notes automation to be up to date with packages versions.
-        - job: Check_Published_Package_Versions
-          # condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), or(startsWith(variables['System.PullRequest.SourceBranch'], 'release/dev'), startsWith(variables['System.PullRequest.TargetBranch'], 'release/dev')))
-          pool:
-            vmImage: $(UbuntuMachineQueueName)
-          strategy:
-            maxParallel: 2
-            matrix:
-              FCS:
-                _project: "FSharp.Compiler.Service_notshipped.fsproj"
-              FSCore:
-                _project: "FSharp.Core_notshipped.fsproj"
-          steps:
-          - checkout: self
-            clean: true
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
-          - pwsh: ./check.ps1 -project $(_project)
-            workingDirectory: $(Build.SourcesDirectory)/buildtools/checkpackages
-            env:
-                DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check published package version
-
-
-  #-------------------------------------------------------------------------------------------------------------------#
-  #                                                    PR builds                                                      #
-  #-------------------------------------------------------------------------------------------------------------------#
-  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
-    - template: /eng/common/templates/jobs/jobs.yml
-      parameters:
-        enableMicrobuild: true
-        enablePublishBuildArtifacts: true
-        enablePublishTestResults: false
-        enablePublishBuildAssets: true
-        enablePublishUsingPipelines: $(_PublishUsingPipelines)
-        enableSourceBuild: true
-        enableTelemetry: true
-        helixRepo: dotnet/fsharp
-        jobs:
-
-        - job: WindowsLangVersionPreview
-          pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
-            env:
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsNoRealsig_testCoreclr
-          pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testCoreclr -configuration Release
-            env:
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsNoRealsig_testDesktop
-          pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testDesktop -configuration Release
-            env:
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsStrictIndentation
-          pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
-            env:
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsNoStrictIndentation
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
-            env:
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-
-        # Windows With Compressed Metadata
-        - job: WindowsCompressedMetadata
-          variables:
-          - name: XUNIT_LOGS
-            value: $(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)
-          - name: __VSNeverShowWhatsNew
-            value: 1
-          pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          strategy:
-            maxParallel: 5
-            matrix:
-              desktop_release:
-                _configuration: Release
-                _testKind: testDesktop
-              coreclr_release:
-                _configuration: Release
-                _testKind: testCoreclr
-              fsharpqa_release:
-                _configuration: Release
-                _testKind: testFSharpQA
-              vs_release:
-                _configuration: Release
-                _testKind: testVs
-              transparent_compiler_release:
-                _configuration: Release
-                _testKind: testCoreclr
-
-              ${{ if eq(variables['Build.Reason'], 'Flaky, disabled, was PullRequest') }}:
-                inttests_release:
-                  _configuration: Release
-                  _testKind: testIntegration
-          steps:
-          - checkout: self
-            clean: true
-
-          - powershell: eng\SetupVSHive.ps1
-            displayName: Setup VS Hive
-            condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
-
-          # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
-            env:
-              NativeToolsOnMachine: true
-            displayName: Build / Test
-            condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'transparent_compiler_release') )
-
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
-            env:
-              TEST_TRANSPARENT_COMPILER: 1
-              NativeToolsOnMachine: true
-            displayName: Build / Test Transparent Compiler
-            condition: and( eq(variables['System.JobName'], 'transparent_compiler_release'), ne(variables['_testKind'], 'testIntegration') )
-
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
-            env:
-              NativeToolsOnMachine: true
-            displayName: Build / Integration Test
-            continueOnError: true
-            condition: eq(variables['_testKind'], 'testIntegration')
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
-            continueOnError: true
-            condition: ne(variables['_testKind'], 'testFSharpQA')
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Tests BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) test binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
-              ArtifactName: 'Windows $(_configuration) $(_testKind) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: always()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-
-        # Mock official build
-        - job: MockOfficial
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          steps:
-          - checkout: self
-            clean: true
-          - pwsh: .\eng\MockBuild.ps1
-            displayName: Build with OfficialBuildId
-
-        # Linux
-        - job: Linux
-          pool:
-            vmImage: $(UbuntuMachineQueueName)
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: always()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-
-        # MacOS
-        - job: MacOS
-          pool:
-            vmImage: macos-11
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            env:
-              COMPlus_DefaultStackSize: 1000000
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: always()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'MacOS $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Mac'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-
-        # End to end build
-        - job: EndToEndBuildTests
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
-          steps:
-          - checkout: self
-            clean: true
-          - script: .\Build.cmd -c Release -pack
-            env:
-              NativeToolsOnMachine: true
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
-            displayName: End to end build tests
-
-        # Up-to-date - disabled due to it being flaky
-        #- job: UpToDate_Windows
-        #  pool:
-        #    vmImage: windows-latest
-        #  steps:
-        #  - checkout: self
-        #    clean: true
-        #  - task: PowerShell@2
-        #    displayName: Run up-to-date build check
-        #    inputs:
-        #      filePath: eng\tests\UpToDate.ps1
-        #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
-
-        # Run Build with Fsharp Experimental Features
-        # Possible change: --times:$(Build.SourcesDirectory)/artifacts/log/Release/compiler_timing.csv
-
-        # Plain FCS build Windows
-        - job: Plain_Build_Windows
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          variables:
-          - name: _BuildConfig
-            value: Debug
-          steps:
-          - checkout: self
-            clean: true
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
-            condition: always()
-
-        # Plain FCS build Linux
-        - job: Plain_Build_Linux
-          pool:
-            vmImage: $(UbuntuMachineQueueName)
-          variables:
-          - name: _BuildConfig
-            value: Debug
-          steps:
-          - checkout: self
-            clean: true
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
-            condition: always()
-
-        # Plain FCS build Mac
-        - job: Plain_Build_MacOS
-          pool:
-            vmImage: macos-11
-          variables:
-          - name: _BuildConfig
-            value: Debug
-          steps:
-          - checkout: self
-            clean: true
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
-            condition: always()
-
-        # Build and run fast benchmarks
-        - job: Benchmarks
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          variables:
-          - name: _BuildConfig
-            value: Release
-          steps:
-          - checkout: self
-            clean: true
-          - script: eng\CIBuild.cmd -configuration $(_BuildConfig) -testBenchmarks
-            displayName: Smoke test fast benchmarks
-            continueOnError: true
-            condition: always()
-
-        # Test trimming on Windows
-        - job: Build_And_Test_AOT_Windows
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          strategy:
-            maxParallel: 2
-            matrix:
-              compressed_metadata:
-                _kind: "-compressAllMetadata"
-              classic_metadata:
-                _kind: ""
-          variables:
-          - name: _BuildConfig
-            value: Release
-          steps:
-          - checkout: self
-            clean: true
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
-          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
-            env:
-              NativeToolsOnMachine: true
-            displayName: Initial build and prepare packages.
-          - script: $(Build.SourcesDirectory)/tests/AheadOfTime/check.cmd
-            displayName: Build, trim, publish and check the state of the trimmed app.
-            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime
-          - task: PublishPipelineArtifact@1
-            displayName: Publish Trim Tests Logs
-            inputs:
-              targetPath: './artifacts/log/Release/AheadOfTime/Trimming/'
-              artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
-            continueOnError: true
-            condition: always()
-
-    # Arcade-powered source build
-    # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
-    # - template: /eng/common/templates/jobs/jobs.yml
-    #   parameters:
-    #     enablePublishUsingPipelines: true
-    #     enablePublishBuildArtifacts: true
-    #     enablePublishBuildAssets: true
-    #     artifacts:
-    #       publish:
-    #         artifacts: true
-    #         manifests: true
-    #     runSourceBuild: true
-    #     sourceBuildParameters:
-    #       includeDefaultManagedPlatform: true
-
-#---------------------------------------------------------------------------------------------------------------------#
-#                                                    Post Build                                                       #
-#---------------------------------------------------------------------------------------------------------------------#
-- ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-  - template: eng/common/templates/post-build/post-build.yml
-    parameters:
-      publishingInfraVersion: 3
-      # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
-      enableSymbolValidation: false
-      # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
-      enableSourceLinkValidation: false
-      # Enable SDL validation, passing through values from the 'DotNet-FSharp-SDLValidation-Params' group.
-      SDLValidationParameters:
-        enable: true
-        params: >-
-          -SourceToolsList @("policheck","credscan")
-          -ArtifactToolsList @("binskim")
-          -BinskimAdditionalRunConfigParams @("IgnorePdbLoadError < True","Recurse < True")
-          -TsaInstanceURL $(_TsaInstanceURL)
-          -TsaProjectName $(_TsaProjectName)
-          -TsaNotificationEmail $(_TsaNotificationEmail)
-          -TsaCodebaseAdmin $(_TsaCodebaseAdmin)
-          -TsaBugAreaPath $(_TsaBugAreaPath)
-          -TsaIterationPath $(_TsaIterationPath)
-          -TsaRepositoryName "FSharp"
-          -TsaCodebaseName "FSharp-GitHub"
-          -TsaPublish $True
-          -PoliCheckAdditionalRunConfigParams @("UserExclusionPath < $(Build.SourcesDirectory)/eng/policheck_exclusions.xml")
-
-#---------------------------------------------------------------------------------------------------------------------#
-#                                                   VS Insertion                                                      #
-#---------------------------------------------------------------------------------------------------------------------#
-- ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-  - template: eng/release/insert-into-vs.yml
-    parameters:
-      componentBranchName: refs/heads/release/dev17.10
-      insertTargetBranch: main
-      insertTeamEmail: fsharpteam@microsoft.com
-      insertTeamName: 'F#'
-      completeInsertion: 'auto'
+        componentBranchName: refs/heads/${{ variables.FSharpReleaseBranchName }}
+        insertTargetBranch: ${{ variables.VSInsertionTargetBranchName }}
+        insertTeamEmail: fsharpteam@microsoft.com
+        insertTeamName: 'F#'
+        completeInsertion: 'auto'
