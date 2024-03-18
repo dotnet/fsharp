@@ -350,7 +350,7 @@ namespace Microsoft.FSharp.Core
     type RequiresExplicitTypeArgumentsAttribute() =
         inherit Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit Attribute()

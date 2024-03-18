@@ -6407,12 +6407,12 @@
         <target state="translated">Недопустимое число с плавающей точкой</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideDecimal">
+      <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
         <target state="translated">Это число находится вне допустимого диапазона для десятичных литералов</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideThirtyTwoBitFloat">
+      <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
         <target state="translated">Это число находится вне допустимого диапазона для 32-битных чисел с плавающей точкой</target>
         <note />
