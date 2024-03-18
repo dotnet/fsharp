@@ -6409,12 +6409,12 @@
       </trans-unit>
       <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="translated">Ta liczba jest poza dozwolonym zakresem literałów dziesiętnych</target>
+        <target state="new">This number is outside the allowable range for decimal literals</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="translated">Ta liczba jest poza dozwolonym zakresem 32-bitowych liczb zmiennoprzecinkowych</target>
+        <target state="new">This number is outside the allowable range for 32-bit floats</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
