@@ -9,7 +9,7 @@ let typeCheckWithStrictNullness cu =
     |> withCheckNulls
     |> withWarnOn 3261
     |> withOptions ["--warnaserror+"]
-    |> compile
+    |> typecheck
 
     
 [<Fact>]
@@ -184,3 +184,105 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withErrorCode 3261
+    
+[<Fact>]
+let ``WithNull used on anon type`` () = 
+    FSharp """module MyLibrary
+
+let strictFunc(arg: 'x when 'x : not null) = arg.ToString()    
+let looseFunc(arg: _ | null) = arg
+
+strictFunc({|ZZ=15;YZ="a"|}) |> ignore
+looseFunc({|ZZ=15;YZ="a"|}) |> ignore
+
+let maybeAnon : _ | null = {|Hello="there"|}
+let maybeAnon2 : _ | null = null
+
+strictFunc(maybeAnon) |> ignore
+looseFunc(maybeAnon) |> ignore
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+    
+    
+[<Fact>]
+let ``WithNull on a DU`` () = 
+    FSharp """module MyLibrary
+type MyDu = A | B
+
+
+let strictFunc(arg: 'x when 'x : not null) =
+    printfn "%A" arg
+    arg
+    
+let looseFunc(arg: _ | null) = arg
+
+strictFunc(A) |> ignore
+looseFunc(A) |> ignore
+
+let maybeDu : _ | null = MyDu.A
+let maybeDu2 : _ | null = null
+
+strictFunc(maybeDu) |> ignore
+strictFunc(maybeDu2) |> ignore
+
+looseFunc(maybeDu2) |> ignore
+looseFunc(maybeDu2) |> ignore
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+    
+[<Fact>]
+let ``Nullnesss support for F# types`` () = 
+    FSharp """module MyLibrary
+type MyDu = A | B
+type MyRecord = {X:int;Y:string}
+
+let strictFunc(arg: 'x when 'x : not null) =
+    printfn "%A" arg
+    arg
+    
+let looseFunc(arg: _ | null) = arg
+
+strictFunc(A) |> ignore
+strictFunc({X=1;Y="a"}) |> ignore
+strictFunc({|ZZ=15;YZ="a"|}) |> ignore
+strictFunc((1,2,3)) |> ignore
+
+looseFunc(A) |> ignore
+looseFunc({X=1;Y="a"}) |> ignore
+looseFunc({|ZZ=15;YZ="a"|}) |> ignore
+looseFunc((1,2,3)) |> ignore
+
+strictFunc(null) |> ignore
+looseFunc(null) |> ignore
+
+let maybeDu : _ | null = MyDu.A
+let maybeRecd : MyRecord | null = {X=1;Y="a"}
+let maybeAnon : _ | null = {|Hello="there"|}
+let maybeTuple : (int*int) | null = null
+
+strictFunc(maybeDu) |> ignore
+strictFunc(maybeRecd) |> ignore
+strictFunc(maybeAnon) |> ignore
+strictFunc(maybeTuple) |> ignore
+
+looseFunc(maybeDu) |> ignore
+looseFunc(maybeRecd) |> ignore
+looseFunc(maybeAnon) |> ignore
+looseFunc(maybeTuple) |> ignore
+
+type Maybe<'T> = 'T | null
+let maybeTuple2 : Maybe<int*int> = null
+strictFunc(maybeTuple2) |> ignore
+looseFunc(maybeTuple2) |> ignore
+
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
