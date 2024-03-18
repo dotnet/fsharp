@@ -1064,10 +1064,10 @@ let ``The script load closure should always be evaluated`` useTransparentCompile
         let assumeDotNetFramework =
             // The old BackgroundCompiler uses assumeDotNetFramework = true
             // This is not always correctly loading when this test runs on non-Windows.
-            if not ( System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform( System.Runtime.InteropServices.OSPlatform.Windows)) then
-                Some false
+            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework") then
+                None
             else
-                None 
+                Some false 
 
         try
             let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
