@@ -385,7 +385,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type MeasureOne
 
     /// <summary>Place on a class that implements ITypeProvider to extend the compiler</summary>
-    [<AttributeUsageAttribute(AttributeTargets.Class, AllowMultiple = false)>]
+    [<AttributeUsageAttribute(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false)>]
     type TypeProviderAttribute =
         inherit System.Attribute
 

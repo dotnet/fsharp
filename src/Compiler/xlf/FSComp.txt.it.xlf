@@ -312,14 +312,9 @@
         <target state="translated">valore letterale float32 senza punti</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEnforceAttributeTargetsOnFunctions">
-        <source>Enforce AttributeTargets on functions</source>
-        <target state="new">Enforce AttributeTargets on functions</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEnforceAttributeTargetsUnionCaseDeclarations">
-        <source>Enforce AttributeTargets on union case declarations</source>
-        <target state="new">Enforce AttributeTargets on union case declarations</target>
+      <trans-unit id="featureEnforceAttributeTargets">
+        <source>Enforce AttributeTargets</source>
+        <target state="new">Enforce AttributeTargets</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -6452,12 +6447,12 @@
         <target state="translated">Numero a virgola mobile non valido</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideDecimal">
+      <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
         <target state="translated">Questo numero non è compreso nell'intervallo consentito per valori letterali decimali</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideThirtyTwoBitFloat">
+      <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
         <target state="translated">Questo numero non è compreso nell'intervallo consentito per valori float a 32 bit</target>
         <note />

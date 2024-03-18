@@ -488,14 +488,14 @@ rule token (args: LexArgs) (skip: bool) = parse
           let d = System.Decimal.Parse(s,System.Globalization.NumberStyles.AllowExponent ||| System.Globalization.NumberStyles.Number,System.Globalization.CultureInfo.InvariantCulture)
           DECIMAL d
        with
-          e -> fail args lexbuf (FSComp.SR.lexOusideDecimal()) (DECIMAL (decimal 0))
+          e -> fail args lexbuf (FSComp.SR.lexOutsideDecimal()) (DECIMAL (decimal 0))
      }
  | xieee32
      {
        let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        // Even though the intermediate step is an int64, display the "invalid float" message, since it will be less confusing to the user
        let n64 = (try (int64 s) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L)
-       if n64 > 0xFFFFFFFFL || n64 < 0L then fail args lexbuf (FSComp.SR.lexOusideThirtyTwoBitFloat()) (IEEE32 0.0f) else
+       if n64 > 0xFFFFFFFFL || n64 < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitFloat()) (IEEE32 0.0f) else
        IEEE32 (System.BitConverter.ToSingle(System.BitConverter.GetBytes(int32 (uint32 (uint64 n64))),0)) }
 
  | xieee64
