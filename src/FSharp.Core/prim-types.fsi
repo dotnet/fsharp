@@ -898,7 +898,7 @@ namespace Microsoft.FSharp.Core
     /// type require explicit qualified access.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type RequireQualifiedAccessAttribute =
         inherit Attribute
