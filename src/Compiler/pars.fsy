@@ -3627,8 +3627,7 @@ atomicPattern:
             mkSynPatMaybeVar lidwd vis (lhs parseState)
         else
            let synIdent = List.head lidwd.IdentsWithTrivia
-           let (SynIdent(id, _)) = synIdent
-           SynPat.Named(synIdent, false, vis, id.idRange) }
+           SynPat.Named(synIdent, false, vis, synIdent.Range) }
 
   | constant
       { SynPat.Const(fst $1, snd $1) }

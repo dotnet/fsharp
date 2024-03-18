@@ -40,6 +40,14 @@ exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
+exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
+    denv: DisplayEnv *
+    implTycon: Tycon *
+    sigTycon: Tycon *
+    implTypeAbbrev: TType *
+    sigTypeAbbrev: TType *
+    range: range
+
 type Checker =
 
     new:
