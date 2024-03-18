@@ -2514,6 +2514,10 @@ FSharp.Compiler.Diagnostics.ExtendedData+ArgumentsInSigAndImplMismatchExtendedDa
 FSharp.Compiler.Diagnostics.ExtendedData+ArgumentsInSigAndImplMismatchExtendedData: System.String SignatureName
 FSharp.Compiler.Diagnostics.ExtendedData+ArgumentsInSigAndImplMismatchExtendedData: System.String get_ImplementationName()
 FSharp.Compiler.Diagnostics.ExtendedData+ArgumentsInSigAndImplMismatchExtendedData: System.String get_SignatureName()
+FSharp.Compiler.Diagnostics.ExtendedData+DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData: FSharp.Compiler.Text.Range ImplementationRange
+FSharp.Compiler.Diagnostics.ExtendedData+DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData: FSharp.Compiler.Text.Range SignatureRange
+FSharp.Compiler.Diagnostics.ExtendedData+DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData: FSharp.Compiler.Text.Range get_ImplementationRange()
+FSharp.Compiler.Diagnostics.ExtendedData+DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData: FSharp.Compiler.Text.Range get_SignatureRange()
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo+Tags: Int32 CollectionElement
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo+Tags: Int32 DowncastUsedInsteadOfUpcast
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo+Tags: Int32 ElseBranchResult
@@ -2615,6 +2619,7 @@ FSharp.Compiler.Diagnostics.ExtendedData+ValueNotContainedDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData+ValueNotContainedDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue get_ImplementationValue()
 FSharp.Compiler.Diagnostics.ExtendedData+ValueNotContainedDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue get_SignatureValue()
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ArgumentsInSigAndImplMismatchExtendedData
+FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ExpressionIsAFunctionExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData
@@ -7529,6 +7534,8 @@ FSharp.Compiler.Syntax.SynField: System.String ToString()
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.SynIdent NewSynIdent(FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia])
+FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynIdent: Int32 Tag
 FSharp.Compiler.Syntax.SynIdent: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynIdent: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia] get_trivia()

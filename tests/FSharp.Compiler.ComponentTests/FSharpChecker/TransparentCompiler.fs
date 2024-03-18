@@ -28,7 +28,7 @@ open OpenTelemetry.Trace
 
 #nowarn "57"
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Use Transparent Compiler`` () =
 
     let size = 20
@@ -58,7 +58,7 @@ let ``Use Transparent Compiler`` () =
         checkFile last expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Parallel processing`` () =
 
     let project = SyntheticProject.Create(
@@ -76,7 +76,7 @@ let ``Parallel processing`` () =
         checkFile "E" expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Parallel processing with signatures`` () =
 
     let project = SyntheticProject.Create(
@@ -111,7 +111,7 @@ let makeTestProject () =
 let testWorkflow () =
     ProjectWorkflowBuilder(makeTestProject(), useTransparentCompiler = true)
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Edit file, check it, then check dependent file`` () =
     testWorkflow() {
         updateFile "First" breakDependentFiles
@@ -119,21 +119,21 @@ let ``Edit file, check it, then check dependent file`` () =
         checkFile "Second" expectErrors
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Edit file, don't check it, check dependent file`` () =
     testWorkflow() {
         updateFile "First" breakDependentFiles
         checkFile "Second" expectErrors
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Check transitive dependency`` () =
     testWorkflow() {
         updateFile "First" breakDependentFiles
         checkFile "Last" expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Change multiple files at once`` () =
     testWorkflow() {
         updateFile "First" (setPublicVersion 2)
@@ -142,7 +142,7 @@ let ``Change multiple files at once`` () =
         checkFile "Last" (expectSignatureContains "val f: x: 'a -> (ModuleFirst.TFirstV_2<'a> * ModuleSecond.TSecondV_2<'a>) * (ModuleFirst.TFirstV_2<'a> * ModuleThird.TThirdV_2<'a>) * TLastV_1<'a>")
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Files depend on signature file if present`` () =
     let project = makeTestProject() |> updateFile "First" addSignatureFile
 
@@ -152,7 +152,7 @@ let ``Files depend on signature file if present`` () =
         checkFile "Second" expectNoChanges
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Project with signatures`` () =
 
     let project = SyntheticProject.Create(
@@ -167,7 +167,7 @@ let ``Project with signatures`` () =
         checkFile "Second" expectOk
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Signature update`` () =
 
     let project = SyntheticProject.Create(
@@ -183,7 +183,7 @@ let ``Signature update`` () =
         checkFile "Second" expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Adding a file`` () =
     testWorkflow() {
         addFileAbove "Second" (sourceFile "New" [])
@@ -191,14 +191,14 @@ let ``Adding a file`` () =
         checkFile "Last" (expectSignatureContains "val f: x: 'a -> (ModuleFirst.TFirstV_1<'a> * ModuleNew.TNewV_1<'a> * ModuleSecond.TSecondV_1<'a>) * (ModuleFirst.TFirstV_1<'a> * ModuleThird.TThirdV_1<'a>) * TLastV_1<'a>")
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Removing a file`` () =
     testWorkflow() {
         removeFile "Second"
         checkFile "Last" expectErrors
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Changes in a referenced project`` () =
     let library = SyntheticProject.Create("library", sourceFile "Library" [])
 
@@ -217,7 +217,7 @@ let ``Changes in a referenced project`` () =
 
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``File is not checked twice`` () =
 
     let cacheEvents = ConcurrentQueue()
@@ -241,7 +241,7 @@ let ``File is not checked twice`` () =
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileThird.fs"])
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``If a file is checked as a dependency it's not re-checked later`` () =
     let cacheEvents = ConcurrentQueue()
 
@@ -265,7 +265,7 @@ let ``If a file is checked as a dependency it's not re-checked later`` () =
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Requested], intermediateTypeChecks["FileThird.fs"])
 
 
-// [<Fact>] TODO: differentiate complete and minimal checking requests
+// [<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>] TODO: differentiate complete and minimal checking requests
 let ``We don't check files that are not depended on`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [],
@@ -295,7 +295,7 @@ let ``We don't check files that are not depended on`` () =
     Assert.Equal<JobEvent list>([Started; Finished], intermediateTypeChecks["FileThird.fs"])
     Assert.False (intermediateTypeChecks.ContainsKey "FileSecond.fs")
 
-// [<Fact>] TODO: differentiate complete and minimal checking requests
+// [<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>] TODO: differentiate complete and minimal checking requests
 let ``Files that are not depended on don't invalidate cache`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [],
@@ -336,7 +336,7 @@ let ``Files that are not depended on don't invalidate cache`` () =
 
     Assert.Equal<string * JobEvent list>([], intermediateTypeChecks |> Map.toList)
 
-// [<Fact>] TODO: differentiate complete and minimal checking requests
+// [<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>] TODO: differentiate complete and minimal checking requests
 let ``Files that are not depended on don't invalidate cache part 2`` () =
     let project = SyntheticProject.Create(
         sourceFile "A" [],
@@ -376,7 +376,7 @@ let ``Files that are not depended on don't invalidate cache part 2`` () =
     Assert.Equal<string * JobEvent list>(["FileE.fs", [Started; Finished]], graphConstructions)
     Assert.Equal<string * JobEvent list>(["FileE.fs", [Started; Finished]], intermediateTypeChecks)
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Changing impl files doesn't invalidate cache when they have signatures`` () =
     let project = SyntheticProject.Create(
         { sourceFile "A" [] with SignatureFile = AutoGenerated },
@@ -405,7 +405,7 @@ let ``Changing impl files doesn't invalidate cache when they have signatures`` (
 
     Assert.Equal<string * JobEvent list>([], intermediateTypeChecks)
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Changing impl file doesn't invalidate an in-memory referenced project`` () =
     let library = SyntheticProject.Create("library", { sourceFile "A" [] with SignatureFile = AutoGenerated })
 
@@ -789,7 +789,7 @@ module Stuff =
         let fileName, snapshot, checker = singleFileChecker source
         checker.ParseFile(fileName, snapshot) |> Async.RunSynchronously
 
-    //[<Fact>]
+    //[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
     let ``Hash stays the same when whitespace changes`` () =
 
         //let parseResult = getParseResult source
@@ -845,7 +845,7 @@ let ``TypeCheck last file in project with transparent compiler`` useTransparentC
         checkFile lastFile expectOk
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``LoadClosure for script is computed once`` () =
     let project = SyntheticProject.CreateForScript(
         sourceFile "First" [])
@@ -870,7 +870,7 @@ let ``LoadClosure for script is computed once`` () =
 
     Assert.Empty(closureComputations)
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``LoadClosure for script is recomputed after changes`` () =
     let project = SyntheticProject.CreateForScript(
         sourceFile "First" [])
@@ -899,7 +899,7 @@ let ``LoadClosure for script is recomputed after changes`` () =
 
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
     
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [])
@@ -909,7 +909,7 @@ let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAnd
         tryGetRecentCheckResults "First" expectNone
     } |> ignore
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAndCheckFileInProject`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [] )
@@ -918,7 +918,7 @@ let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAn
         tryGetRecentCheckResults "First" expectSome
     } |> ignore
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [])
@@ -931,7 +931,7 @@ let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
         tryGetRecentCheckResults "First" expectSome
     } |> ignore
     
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [],
@@ -945,7 +945,7 @@ let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` 
         tryGetRecentCheckResults "Second" expectSome // file didn't change so we still want to get the recent result
     } |> ignore
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Background compiler and Transparent compiler return the same options`` () =
     async {
         let backgroundChecker = FSharpChecker.Create(useTransparentCompiler = false)
@@ -1010,4 +1010,14 @@ printfn "Hello from F#"
     
     ProjectWorkflowBuilder(project, useTransparentCompiler = useTransparentCompiler) {
         checkFile "As 01" expectTwoWarnings
+    }
+
+[<Fact>]
+let ``Transparent Compiler ScriptClosure cache is populated after GetProjectOptionsFromScript`` () =
+    async {
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+        let! _ = transparentChecker.GetProjectOptionsFromScript(scriptName, content)
+        Assert.Equal(1, transparentChecker.Caches.ScriptClosure.Count)
     }

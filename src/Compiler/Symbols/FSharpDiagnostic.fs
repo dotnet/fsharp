@@ -106,6 +106,13 @@ module ExtendedData =
         member x.ImplementationName = implArg.idText
         member x.SignatureRange = sigArg.idRange
         member x.ImplementationRange = implArg.idRange
+        
+    [<Class; Experimental("This FCS API is experimental and subject to change.")>]
+    type DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData
+        internal(signatureType: Tycon, implementationType: Tycon) =
+        interface IFSharpDiagnosticExtendedData
+        member x.SignatureRange: range = signatureType.Range
+        member x.ImplementationRange: range = implementationType.Range
 
 open ExtendedData
 
@@ -190,6 +197,9 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
             | ArgumentsInSigAndImplMismatch(sigArg, implArg) ->
                 Some(ArgumentsInSigAndImplMismatchExtendedData(sigArg, implArg))
+
+            | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(implTycon = implTycon; sigTycon = sigTycon) ->
+                Some(DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData(sigTycon, implTycon))
 
             | _ -> None
 
