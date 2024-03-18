@@ -7,6 +7,11 @@
         <target state="translated">签名“{0}”和实现“{1}”中的参数名称不匹配。将使用签名文件中的参数名称。在进行调试或分析时这可能会导致问题。</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarning">
         <source>Nullness warning: {0}.</source>
         <target state="new">Nullness warning: {0}.</target>
