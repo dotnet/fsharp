@@ -6407,12 +6407,12 @@
         <target state="translated">浮動小数点数が無効です</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideDecimal">
+      <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
         <target state="translated">この数値は、10 進リテラルに使用できる範囲から外れています</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideThirtyTwoBitFloat">
+      <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
         <target state="translated">この数値は、32 ビット浮動小数点に使用できる範囲から外れています</target>
         <note />

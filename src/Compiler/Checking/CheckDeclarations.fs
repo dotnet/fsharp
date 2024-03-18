@@ -2940,7 +2940,9 @@ module EstablishTypeDefinitionCores =
 
                     TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData kind)
 
-            | SynTypeDefnSimpleRepr.Enum _ -> 
+            | SynTypeDefnSimpleRepr.Enum _ ->
+                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                    TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Enum synAttrs |> ignore
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpEnum)
 
         // OK, now fill in the (partially computed) type representation
