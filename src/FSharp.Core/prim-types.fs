@@ -106,7 +106,7 @@ namespace Microsoft.FSharp.Core
     type CLIMutableAttribute() = 
         inherit Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct , AllowMultiple=false)>]
     [<Sealed>]
     type AutoSerializableAttribute(value:bool) = 
         inherit Attribute()
@@ -129,19 +129,19 @@ namespace Microsoft.FSharp.Core
     type ReferenceEqualityAttribute() = 
         inherit Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralComparisonAttribute() = 
         inherit Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralEqualityAttribute() = 
         inherit Attribute()
 
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface |||
                       AttributeTargets.Delegate ||| AttributeTargets.Struct |||
-                      AttributeTargets.Enum, AllowMultiple=false)>]  
+                      AttributeTargets.Enum, AllowMultiple=false)>]
     [<Sealed>]
     type NoEqualityAttribute() = 
         inherit Attribute()
@@ -163,9 +163,9 @@ namespace Microsoft.FSharp.Core
     type NoComparisonAttribute() = 
         inherit Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter |||
-                      AttributeTargets.Method ||| AttributeTargets.Property |||
-                      AttributeTargets.Constructor, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct |||
+                      AttributeTargets.Parameter ||| AttributeTargets.Method |||
+                      AttributeTargets.Property ||| AttributeTargets.Constructor, AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute(includeValue: bool) =
         inherit Attribute()
@@ -352,12 +352,12 @@ namespace Microsoft.FSharp.Core
     type RequiresExplicitTypeArgumentsAttribute() =
         inherit Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute(path:string) =
         inherit Attribute()

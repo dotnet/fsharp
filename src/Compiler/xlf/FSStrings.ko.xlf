@@ -7,6 +7,11 @@
         <target state="translated">시그니처 '{0}'과(와) 구현 '{1}'의 인수 이름이 일치하지 않습니다. 시그니처 파일의 인수 이름이 사용됩니다. 이로 인해 디버깅 또는 프로파일링 시 문제가 발생할 수 있습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarning">
         <source>Nullness warning: {0}.</source>
         <target state="new">Nullness warning: {0}.</target>

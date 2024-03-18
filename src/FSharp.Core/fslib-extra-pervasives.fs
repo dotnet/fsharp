@@ -363,7 +363,7 @@ type MeasureOne =
     class
     end
 
-[<AttributeUsage(AttributeTargets.Class, AllowMultiple = false)>]
+[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false)>]
 type TypeProviderAttribute() =
     inherit System.Attribute()
 

@@ -1011,3 +1011,13 @@ printfn "Hello from F#"
     ProjectWorkflowBuilder(project, useTransparentCompiler = useTransparentCompiler) {
         checkFile "As 01" expectTwoWarnings
     }
+
+[<Fact>]
+let ``Transparent Compiler ScriptClosure cache is populated after GetProjectOptionsFromScript`` () =
+    async {
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+        let! _ = transparentChecker.GetProjectOptionsFromScript(scriptName, content)
+        Assert.Equal(1, transparentChecker.Caches.ScriptClosure.Count)
+    }

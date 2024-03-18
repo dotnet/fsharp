@@ -574,7 +574,7 @@ module TcRecdUnionAndEnumDeclarations =
                     type SomeUnion =
                     | Case1 // Compiles down to a static property
             *)
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations) then
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
                 let target = if rfields.IsEmpty then AttributeTargets.Property else AttributeTargets.Method
                 TcAttributes cenv env target synAttrs
             else
@@ -2926,15 +2926,23 @@ module EstablishTypeDefinitionCores =
                 | _ -> 
                     let kind = 
                         match kind with
-                        | SynTypeDefnKind.Class -> TFSharpClass
+                        | SynTypeDefnKind.Class ->
+                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
+                            TFSharpClass
                         | SynTypeDefnKind.Interface -> TFSharpInterface
                         | SynTypeDefnKind.Delegate _ -> TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
-                        | SynTypeDefnKind.Struct -> TFSharpStruct 
+                        | SynTypeDefnKind.Struct ->
+                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                            TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
 
                     TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData kind)
 
-            | SynTypeDefnSimpleRepr.Enum _ -> 
+            | SynTypeDefnSimpleRepr.Enum _ ->
+                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                    TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Enum synAttrs |> ignore
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpEnum)
 
         // OK, now fill in the (partially computed) type representation

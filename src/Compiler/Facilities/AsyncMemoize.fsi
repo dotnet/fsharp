@@ -75,6 +75,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member OnEvent: ((JobEvent * (string * 'TKey * 'TVersion) -> unit) -> unit)
 
+    member Count: int
+
 /// A drop-in replacement for AsyncMemoize that disables caching and just runs the computation every time.
 type internal AsyncMemoizeDisabled<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality> =
 
