@@ -1125,3 +1125,4 @@ let ``The script load closure should always be evaluated`` useTransparentCompile
             | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
         finally
             FileSystemAutoOpens.FileSystem <- currentFileSystem
+    }

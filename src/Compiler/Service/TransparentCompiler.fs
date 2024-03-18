@@ -2208,6 +2208,7 @@ type internal TransparentCompiler
                     bc.GetProjectSnapshotFromScript(
                         fileName,
                         SourceTextNew.ofISourceText sourceText,
+                        DocumentSource.FileSystem,
                         previewEnabled,
                         loadedTimeStamp,
                         otherFlags,
