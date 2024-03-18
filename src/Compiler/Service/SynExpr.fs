@@ -437,6 +437,14 @@ module SynExpr =
                 | SynExpr.IfThenElse _ as expr -> Some expr
                 | _ -> None)
 
+        /// Matches a dangling let or use construct.
+        [<return: Struct>]
+        let (|LetOrUse|_|) =
+            dangling (function
+                | SynExpr.LetOrUse _
+                | SynExpr.LetOrUseBang _ as expr -> Some expr
+                | _ -> None)
+
         /// Matches a dangling sequential expression.
         [<return: Struct>]
         let (|Sequential|_|) =
@@ -610,13 +618,23 @@ module SynExpr =
         //
         //     o.M((x = y))
         //     o.N((x = y), z)
+        //
+        // Likewise, double parens must stay around a tuple, since we don't know whether
+        // the method being invoked might have a signature like
+        //
+        //     val TryGetValue : 'Key * outref<'Value> -> bool
+        //
+        // where 'Key is 'a * 'b, in which case the double parens are required.
         | SynExpr.Paren(expr = InfixApp(Relational(OriginalNotation "="), _)),
           SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
         | InfixApp(Relational(OriginalNotation "="), _),
           SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
         | InfixApp(Relational(OriginalNotation "="), _),
           SyntaxNode.SynExpr(SynExpr.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(
-              funcExpr = SynExpr.LongIdent _)) :: _ -> true
+              funcExpr = SynExpr.LongIdent _)) :: _
+        | SynExpr.Paren(expr = SynExpr.Tuple(isStruct = false)), SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
+        | SynExpr.Tuple(isStruct = false),
+          SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _ -> true
 
         // Already parenthesized.
         | _, SyntaxNode.SynExpr(SynExpr.Paren _) :: _ -> false
@@ -794,13 +812,17 @@ module SynExpr =
             match outer, inner with
             | ConfusableWithTypeApp, _ -> true
 
-            | SynExpr.IfThenElse _, Dangling.Sequential _ -> true
+            | SynExpr.IfThenElse(trivia = trivia), Dangling.LetOrUse letOrUse ->
+                Position.posLt letOrUse.Range.Start trivia.ThenKeyword.Start
 
-            | SynExpr.IfThenElse(trivia = trivia), Dangling.IfThen ifThenElse when
-                problematic ifThenElse.Range trivia.ThenKeyword
-                || trivia.ElseKeyword |> Option.exists (problematic ifThenElse.Range)
-                ->
-                true
+            | SynExpr.IfThenElse(trivia = trivia), Dangling.IfThen dangling
+            | SynExpr.IfThenElse(trivia = trivia), Dangling.Match dangling ->
+                problematic dangling.Range trivia.ThenKeyword
+                || trivia.ElseKeyword |> Option.exists (problematic dangling.Range)
+
+            | SynExpr.IfThenElse(ifExpr = expr), Dangling.Sequential dangling
+            | SynExpr.While(whileExpr = expr), Dangling.Problematic dangling
+            | SynExpr.ForEach(enumExpr = expr), Dangling.Problematic dangling -> Range.rangeContainsRange expr.Range dangling.Range
 
             | SynExpr.TryFinally(trivia = trivia), Dangling.Try tryExpr when problematic tryExpr.Range trivia.FinallyKeyword -> true
 

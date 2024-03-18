@@ -151,6 +151,42 @@ let _ =
                 1
             "
 
+            "
+            let (a,
+                 b,
+                 c,
+                 d,
+                 e,
+                 f) = g
+            ",
+            "
+            let a,
+                b,
+                c,
+                d,
+                e,
+                f = g
+            "
+
+            "
+            let (a,
+                 b,
+                 c,
+                 d,
+                 e,
+                 f) =
+                 g
+            ",
+            "
+            let (a,
+                 b,
+                 c,
+                 d,
+                 e,
+                 f) =
+                 g
+            "
+
             // AnonymousRecord
             "{| A = (1) |}", "{| A = 1 |}"
             "{| A = (1); B = 2 |}", "{| A = 1; B = 2 |}"
@@ -188,6 +224,7 @@ let _ =
             // While
             "while (true) do ()", "while true do ()"
             "while true do (ignore 3)", "while true do ignore 3"
+            "while (match () with _ -> true) do ()", "while (match () with _ -> true) do ()"
 
             // For
             "for x = (0) to 1 do ()", "for x = 0 to 1 do ()"
@@ -200,6 +237,7 @@ let _ =
             "for (x) in [] do ()", "for x in [] do ()"
             "for x in ([]) do ()", "for x in [] do ()"
             "for x in [] do (ignore 3)", "for x in [] do ignore 3"
+            "for x in (try [] with _ -> []) do ()", "for x in (try [] with _ -> []) do ()"
 
             // ArrayOrListComputed
             "[1; 2; (if x then 3 else 4); 5]", "[1; 2; (if x then 3 else 4); 5]"
@@ -291,6 +329,63 @@ let _ =
             3 > match x with
                 | 1
                 | _ -> 3
+            "
+
+            "
+            3 > ( match x with
+                | 1
+                | _ -> 3)
+            ",
+            "
+            3 > match x with
+                | 1
+                | _ -> 3
+            "
+
+            "
+            3 > (match x with
+                | 1
+                | _ -> 3)
+            ",
+            "
+            3 > match x with
+                | 1
+                | _ -> 3
+            "
+
+            "
+            3 > (match x with
+                 // Lol.
+                | 1
+                | _ -> 3)
+            ",
+            "
+            3 > match x with
+                 // Lol.
+                | 1
+                | _ -> 3
+            "
+
+            "
+            3 >(match x with
+               | 1
+               | _ -> 3)
+            ",
+            "
+            3 >match x with
+               | 1
+               | _ -> 3
+            "
+
+            "
+            f(match x with
+             | 1
+             | _ -> 3)
+            ",
+            "
+            f(match x with
+             | 1
+             | _ -> 3)
             "
 
             // Do
@@ -903,6 +998,11 @@ in x
                 ()
             """
 
+            "if (match () with _ -> true) then ()", "if (match () with _ -> true) then ()"
+
+            "if (match () with _ -> true) && (match () with _ -> true) then ()",
+            "if (match () with _ -> true) && (match () with _ -> true) then ()"
+
             // LongIdent
             "(|Failure|_|) null", "(|Failure|_|) null"
 
@@ -1237,6 +1337,14 @@ in x
                 "id (x, y)", "id (x, y)"
                 "id (struct (x, y))", "id struct (x, y)"
                 "id<struct (_ * _)> (x, y)", "id<struct (_ * _)> (x, y)"
+
+                // We can't tell syntactically whether the method might have the signature
+                //
+                //     val TryGetValue : 'Key * outref<'Value> -> bool
+                //
+                // where 'Key is 'a * 'b, in which case the double parens are required.
+                // We could look this up in the typed tree, but we don't currently.
+                "x.TryGetValue((y, z))", "x.TryGetValue((y, z))"
 
                 // AnonRecd
                 "id ({||})", "id {||}"
@@ -2551,6 +2659,39 @@ module Patterns =
                 new (x) = T (x, 3)
                 new (x, y, z) = T (x, y)
                 member _.Z = x + y
+            "
+
+            "
+            match 1, 2 with
+            | _, (1 | 2 as x) -> ()
+            | _ -> ()
+            ",
+            "
+            match 1, 2 with
+            | _, (1 | 2 as x) -> ()
+            | _ -> ()
+            "
+
+            "
+            match 1, [2] with
+            | _, (1 | 2 as x :: _) -> ()
+            | _ -> ()
+            ",
+            "
+            match 1, [2] with
+            | _, (1 | 2 as x :: _) -> ()
+            | _ -> ()
+            "
+
+            "
+            match 1, [2] with
+            | _, (1 as x :: _ :: _) -> ()
+            | _ -> ()
+            ",
+            "
+            match 1, [2] with
+            | _, (1 as x :: _ :: _) -> ()
+            | _ -> ()
             "
         }
 

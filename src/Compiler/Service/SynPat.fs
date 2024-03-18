@@ -55,6 +55,24 @@ module SynPat =
         | SynPat.Tuple(isStruct = false; elementPats = Last(Rightmost pat)) -> pat
         | pat -> pat
 
+    /// Matches a nested as pattern.
+    [<return: Struct>]
+    let rec (|DanglingAs|_|) pat =
+        let (|AnyDanglingAs|_|) =
+            List.tryPick (function
+                | DanglingAs -> Some()
+                | _ -> None)
+
+        match pat with
+        | SynPat.As _ -> ValueSome()
+        | SynPat.Or(lhsPat = DanglingAs)
+        | SynPat.Or(rhsPat = DanglingAs)
+        | SynPat.ListCons(lhsPat = DanglingAs)
+        | SynPat.ListCons(rhsPat = DanglingAs)
+        | SynPat.Ands(pats = AnyDanglingAs)
+        | SynPat.Tuple(isStruct = false; elementPats = AnyDanglingAs) -> ValueSome()
+        | _ -> ValueNone
+
     /// Matches if the given pattern is atomic.
     [<return: Struct>]
     let (|Atomic|_|) pat =
@@ -114,6 +132,23 @@ module SynPat =
         | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _),
           SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
               typeRepr = SynTypeDefnRepr.ObjectModel(members = AnyGenericInheritOrInterfaceImpl))) :: _ -> true
+
+        // Not required:
+        //
+        //     let (a,
+        //          b,
+        //          c) = …
+        //
+        // Required:
+        //
+        //     let (a,
+        //          b,
+        //          c) =
+        //         …
+        | SynPat.Tuple(isStruct = false; range = innerRange), SyntaxNode.SynBinding(SynBinding(expr = body)) :: _ ->
+            innerRange.StartLine <> innerRange.EndLine
+            && innerRange.StartLine < body.Range.StartLine
+            && body.Range.StartColumn <= innerRange.StartColumn
 
         // Parens are required around the atomic argument of
         // any additional `new` constructor that is not the last.
@@ -204,9 +239,9 @@ module SynPat =
             // A | (B as C)
             // A & (B as C)
             // A, (B as C)
-            | SynPat.Or _, SynPat.As _
-            | SynPat.Ands _, SynPat.As _
-            | SynPat.Tuple _, SynPat.As _
+            | SynPat.Or _, (SynPat.As _ | DanglingAs)
+            | SynPat.Ands _, (SynPat.As _ | DanglingAs)
+            | SynPat.Tuple _, (SynPat.As _ | DanglingAs)
 
             // x, (y, z)
             // x & (y, z)

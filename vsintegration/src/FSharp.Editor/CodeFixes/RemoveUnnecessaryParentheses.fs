@@ -15,6 +15,43 @@ open CancellableTasks
 module private Patterns =
     let inline toPat f x = if f x then ValueSome() else ValueNone
 
+    /// Starts with //.
+    [<return: Struct>]
+    let (|StartsWithSingleLineComment|_|) (s: string) =
+        if s.AsSpan().TrimStart(' ').StartsWith("//".AsSpan()) then
+            ValueSome StartsWithSingleLineComment
+        else
+            ValueNone
+
+    /// Starts with (*.
+    [<return: Struct>]
+    let (|StartsWithMultilineComment|_|) (s: string) =
+        let depth =
+            s.TrimStart ' '
+            |> Seq.pairwise
+            |> Seq.sumBy (function
+                | '(', '*' -> 1
+                | '*', ')' -> -1
+                | _ -> 0)
+
+        if depth > 0 then
+            ValueSome(StartsWithMultilineComment depth)
+        else
+            ValueNone
+
+    /// Starts with match, e.g.,
+    ///
+    ///     (match … with
+    ///     | … -> …)
+    [<return: Struct>]
+    let (|StartsWithMatch|_|) (s: string) =
+        let s = s.AsSpan().TrimStart ' '
+
+        if s.StartsWith("match".AsSpan()) && (s.Length = 5 || s[5] = ' ') then
+            ValueSome StartsWithMatch
+        else
+            ValueNone
+
     [<AutoOpen>]
     module Char =
         [<return: Struct>]
@@ -137,11 +174,38 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                                     match line.AsSpan(startCol).IndexOfAnyExcept(' ', ')') with
                                     | -1 -> loop innerOffsides (lineNo + 1) 0
                                     | i ->
-                                        match innerOffsides with
-                                        | NoneYet -> loop (FirstLine(i + startCol)) (lineNo + 1) 0
-                                        | FirstLine innerOffsides -> loop (FollowingLine(innerOffsides, i + startCol)) (lineNo + 1) 0
-                                        | FollowingLine(firstLine, innerOffsides) ->
-                                            loop (FollowingLine(firstLine, min innerOffsides (i + startCol))) (lineNo + 1) 0
+                                        match line[i + startCol ..] with
+                                        | StartsWithMatch
+                                        | StartsWithSingleLineComment -> loop innerOffsides (lineNo + 1) 0
+                                        | StartsWithMultilineComment depth ->
+                                            let rec skip depth lineNo =
+                                                if lineNo <= endLineNo then
+                                                    let line = sourceText.Lines[lineNo].ToString()
+
+                                                    let delta =
+                                                        line.TrimStart ' '
+                                                        |> Seq.pairwise
+                                                        |> Seq.sumBy (function
+                                                            | '(', '*' -> 1
+                                                            | '*', ')' -> -1
+                                                            | _ -> 0)
+
+                                                    if depth + delta = 0 then
+                                                        loop innerOffsides (lineNo + 1) 0
+                                                    else
+                                                        skip depth (lineNo + 1)
+                                                else
+                                                    innerOffsides
+
+                                            skip depth (lineNo + 1)
+                                        | _ ->
+                                            match innerOffsides with
+                                            | NoneYet -> loop (FirstLine(i + startCol)) (lineNo + 1) 0
+
+                                            | FirstLine inner -> loop (FollowingLine(inner, i + startCol)) (lineNo + 1) 0
+
+                                            | FollowingLine(firstLine, innerOffsides) ->
+                                                loop (FollowingLine(firstLine, min innerOffsides (i + startCol))) (lineNo + 1) 0
                                 else
                                     innerOffsides
 
@@ -165,21 +229,24 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
                     let newText =
                         let (|ShouldPutSpaceBefore|_|) (s: string) =
-                            // ……(……)
-                            // ↑↑ ↑
-                            match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[0] with
-                            | _, _, ('\n' | '\r') -> None
-                            | '[', '|', (Punctuation | LetterOrDigit) -> None
-                            | _, '[', '<' -> Some ShouldPutSpaceBefore
-                            | _, ('(' | '[' | '{'), _ -> None
-                            | _, '>', _ -> Some ShouldPutSpaceBefore
-                            | ' ', '=', _ -> Some ShouldPutSpaceBefore
-                            | _, '=', ('(' | '[' | '{') -> None
-                            | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                            | _, LetterOrDigit, '(' -> None
-                            | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
-                            | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                            | _ -> None
+                            match s with
+                            | StartsWithMatch -> None
+                            | _ ->
+                                // ……(……)
+                                // ↑↑ ↑
+                                match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[0] with
+                                | _, _, ('\n' | '\r') -> None
+                                | '[', '|', (Punctuation | LetterOrDigit) -> None
+                                | _, '[', '<' -> Some ShouldPutSpaceBefore
+                                | _, ('(' | '[' | '{'), _ -> None
+                                | _, '>', _ -> Some ShouldPutSpaceBefore
+                                | ' ', '=', _ -> Some ShouldPutSpaceBefore
+                                | _, '=', ('(' | '[' | '{') -> None
+                                | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
+                                | _, LetterOrDigit, '(' -> None
+                                | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
+                                | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
+                                | _ -> None
 
                         let (|ShouldPutSpaceAfter|_|) (s: string) =
                             // (……)…
