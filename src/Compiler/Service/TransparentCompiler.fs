@@ -2201,19 +2201,27 @@ type internal TransparentCompiler
                 optionsStamp: int64 option,
                 userOpName: string
             ) : Async<FSharpProjectOptions * FSharpDiagnostic list> =
-            backgroundCompiler.GetProjectOptionsFromScript(
-                fileName,
-                sourceText,
-                previewEnabled,
-                loadedTimeStamp,
-                otherFlags,
-                useFsiAuxLib,
-                useSdkRefs,
-                sdkDirOverride,
-                assumeDotNetFramework,
-                optionsStamp,
-                userOpName
-            )
+            async {
+                let bc = this :> IBackgroundCompiler
+
+                let! snapshot, diagnostics =
+                    bc.GetProjectSnapshotFromScript(
+                        fileName,
+                        SourceTextNew.ofISourceText sourceText,
+                        previewEnabled,
+                        loadedTimeStamp,
+                        otherFlags,
+                        useFsiAuxLib,
+                        useSdkRefs,
+                        sdkDirOverride,
+                        assumeDotNetFramework,
+                        optionsStamp,
+                        userOpName
+                    )
+
+                let projectOptions = snapshot.ToOptions()
+                return projectOptions, diagnostics
+            }
 
         member this.GetProjectSnapshotFromScript
             (

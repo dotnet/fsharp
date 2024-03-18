@@ -1013,6 +1013,17 @@ printfn "Hello from F#"
         checkFile "As 01" expectTwoWarnings
     }
 
+[<Fact>]
+let ``Transparent Compiler ScriptClosure cache is populated after GetProjectOptionsFromScript`` () =
+    async {
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+        let! _ = transparentChecker.GetProjectOptionsFromScript(scriptName, content)
+        Assert.Equal(1, transparentChecker.Caches.ScriptClosure.Count)
+
+    }
+
 type private LoadClosureTestShim(currentFileSystem: IFileSystem) =
     inherit DefaultFileSystem()
     let mutable bDidUpdate = false
@@ -1114,4 +1125,3 @@ let ``The script load closure should always be evaluated`` useTransparentCompile
             | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
         finally
             FileSystemAutoOpens.FileSystem <- currentFileSystem
-    }
