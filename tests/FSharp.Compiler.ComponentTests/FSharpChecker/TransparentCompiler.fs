@@ -3,6 +3,7 @@
 open System.Collections.Concurrent
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
@@ -1020,4 +1021,108 @@ let ``Transparent Compiler ScriptClosure cache is populated after GetProjectOpti
         let content = SourceTextNew.ofString ""
         let! _ = transparentChecker.GetProjectOptionsFromScript(scriptName, content)
         Assert.Equal(1, transparentChecker.Caches.ScriptClosure.Count)
+
+    }
+
+type private LoadClosureTestShim(currentFileSystem: IFileSystem) =
+    inherit DefaultFileSystem()
+    let mutable bDidUpdate = false
+    let asStream (v:string) = new MemoryStream(System.Text.Encoding.UTF8.GetBytes v)
+    let knownFiles = set [ "a.fsx"; "b.fsx"; "c.fsx" ]
+    
+    member val aFsx = "#load \"b.fsx\""
+    member val  bFsxInitial = ""
+    member val  bFsxUpdate = "#load \"c.fsx\""
+    member val  cFsx = ""
+    
+    member x.DocumentSource (fileName: string) =
+        async {
+            if not (knownFiles.Contains fileName) then
+                return None
+            else
+                match fileName with
+                | "a.fsx" -> return Some (SourceText.ofString x.aFsx)
+                | "b.fsx" ->  return Some (SourceText.ofString (if bDidUpdate then x.bFsxUpdate else x.bFsxInitial))
+                | "c.fsx" -> return Some (SourceText.ofString x.cFsx)
+                | _ -> return  None
+        }
+
+    member x.UpdateB () = bDidUpdate <- true
+    
+    override _.FileExistsShim(path) =
+        if knownFiles.Contains path then true else currentFileSystem.FileExistsShim(path)
+    override _.GetFullPathShim(fileName) =
+        if knownFiles.Contains fileName then fileName else currentFileSystem.GetFullPathShim(fileName)
+    override x.OpenFileForReadShim(fileName, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) =
+        match fileName with
+        | "a.fsx" -> asStream x.aFsx
+        | "b.fsx" ->  asStream (if bDidUpdate then x.bFsxUpdate else x.bFsxInitial)
+        | "c.fsx" -> asStream x.cFsx
+        | _ ->
+            currentFileSystem.OpenFileForReadShim(
+                fileName,
+                ?useMemoryMappedFile = useMemoryMappedFile,
+                ?shouldShadowCopy = shouldShadowCopy
+            )
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``The script load closure should always be evaluated`` useTransparentCompiler =
+    async {
+        // The LoadScriptClosure uses the file system shim so we need to reset that.
+        let currentFileSystem = FileSystemAutoOpens.FileSystem
+        let assumeDotNetFramework =
+            // The old BackgroundCompiler uses assumeDotNetFramework = true
+            // This is not always correctly loading when this test runs on non-Windows.
+            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework") then
+                None
+            else
+                Some false 
+
+        try
+            let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+            let fileSystemShim = LoadClosureTestShim(currentFileSystem)
+            // Override the file system shim for loading b.fsx
+            FileSystem <- fileSystemShim
+
+            let! initialSnapshot, _ =
+                checker.GetProjectSnapshotFromScript(
+                    "a.fsx",
+                    SourceTextNew.ofString fileSystemShim.aFsx,
+                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
+                    ?assumeDotNetFramework = assumeDotNetFramework
+                )
+
+            // File b.fsx should also be included in the snapshot.
+            Assert.Equal(2, initialSnapshot.SourceFiles.Length)
+
+            let! checkResults = checker.ParseAndCheckFileInProject("a.fsx", initialSnapshot)
+
+            match snd checkResults with
+            | FSharpCheckFileAnswer.Aborted -> failwith "Did not expected FSharpCheckFileAnswer.Aborted"
+            | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
+            
+            // Update b.fsx, it should now load c.fsx
+            fileSystemShim.UpdateB()
+
+            // The constructed key for the load closure will the exactly the same as the first GetProjectSnapshotFromScript call.
+            // However, a none cached version will be computed first in GetProjectSnapshotFromScript and update the cache afterwards.
+            let! secondSnapshot, _ =
+                checker.GetProjectSnapshotFromScript(
+                    "a.fsx",
+                    SourceTextNew.ofString fileSystemShim.aFsx,
+                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
+                    ?assumeDotNetFramework = assumeDotNetFramework
+                )
+
+            Assert.Equal(3, secondSnapshot.SourceFiles.Length)
+
+            let! checkResults = checker.ParseAndCheckFileInProject("a.fsx", secondSnapshot)
+
+            match snd checkResults with
+            | FSharpCheckFileAnswer.Aborted -> failwith "Did not expected FSharpCheckFileAnswer.Aborted"
+            | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
+        finally
+            FileSystemAutoOpens.FileSystem <- currentFileSystem
     }
