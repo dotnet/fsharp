@@ -2693,6 +2693,19 @@ module Patterns =
             | _, (1 as x :: _ :: _) -> ()
             | _ -> ()
             "
+
+            "
+            type T () =
+                member this.Item
+                    with get (y : int) = 3
+                    and set (x : int) (y : int) = ignore (x, y)
+            ",
+            "
+            type T () =
+                member this.Item
+                    with get (y : int) = 3
+                    and set (x : int) (y : int) = ignore (x, y)
+            "
         }
 
     [<Theory; MemberData(nameof miscellaneous)>]

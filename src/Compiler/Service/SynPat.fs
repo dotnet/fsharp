@@ -106,6 +106,8 @@ module SynPat =
         //     fun (x, y, …) -> …
         //     fun (x: …) -> …
         //     fun (Pattern …) -> …
+        //     set (x: …) = …
+        //     set (x: …, y: …) = …
         | SynPat.Typed _, SyntaxNode.SynPat(Rightmost(SynPat.Paren(Is pat, _))) :: SyntaxNode.SynMatchClause _ :: _
         | Rightmost(SynPat.Typed _), SyntaxNode.SynMatchClause _ :: _
         | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
@@ -116,7 +118,23 @@ module SynPat =
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynBinding _ :: _
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynExpr(SynExpr.Lambda _) :: _
         | SynPat.Tuple(isStruct = false), SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _
-        | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _ -> true
+        | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _
+        | SynPat.Typed _,
+          SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.GetSetMember _) :: _
+        | SynPat.Typed _,
+          SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.GetSetMember _) :: _
+        | SynPat.Typed _,
+          SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding(SynBinding(
+              valData = SynValData(
+                  memberFlags = Some {
+                                         MemberKind = SynMemberKind.PropertyGetSet | SynMemberKind.PropertyGet | SynMemberKind.PropertySet
+                                     }))) :: _
+        | SynPat.Typed _,
+          SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding(SynBinding(
+              valData = SynValData(
+                  memberFlags = Some {
+                                         MemberKind = SynMemberKind.PropertyGetSet | SynMemberKind.PropertyGet | SynMemberKind.PropertySet
+                                     }))) :: _ -> true
 
         // () is parsed as this.
         | SynPat.Const(SynConst.Unit, _), _ -> true
