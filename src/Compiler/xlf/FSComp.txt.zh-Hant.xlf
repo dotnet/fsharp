@@ -312,14 +312,9 @@
         <target state="translated">無點號的 float32 常值</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEnforceAttributeTargetsOnFunctions">
-        <source>Enforce AttributeTargets on functions</source>
-        <target state="new">Enforce AttributeTargets on functions</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEnforceAttributeTargetsUnionCaseDeclarations">
-        <source>Enforce AttributeTargets on union case declarations</source>
-        <target state="new">Enforce AttributeTargets on union case declarations</target>
+      <trans-unit id="featureEnforceAttributeTargets">
+        <source>Enforce AttributeTargets</source>
+        <target state="new">Enforce AttributeTargets</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -2315,11 +2310,6 @@
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature declares a {2} while the implementation declares a {3}</source>
         <target state="translated">簽章與實作中類型 '{1}' 的 {0} 定義不相容，因為簽章宣告 {2}，而實作則宣告 {3}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">簽章與實作中類型 '{1}' 的 {0} 定義不相容，因為縮寫不同: {2} 與 {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -6457,12 +6447,12 @@
         <target state="translated">無效的浮點數</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideDecimal">
+      <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
         <target state="translated">這個數字已經超出十進位常值允許的範圍</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideThirtyTwoBitFloat">
+      <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
         <target state="translated">這個數字已經超出 32 位元浮點數允許的範圍</target>
         <note />

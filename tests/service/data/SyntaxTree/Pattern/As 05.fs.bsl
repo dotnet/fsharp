@@ -21,5 +21,5 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,0)-(5,0) parse error Incomplete structured construct at or before this point in pattern
-(3,13)-(3,17) parse error Unexpected end of input in 'match' or 'try' expression
+(4,4)-(4,6) parse error Expecting pattern
+(5,0)-(5,0) parse error Incomplete structured construct at or before this point in pattern matching. Expected '->' or other token.

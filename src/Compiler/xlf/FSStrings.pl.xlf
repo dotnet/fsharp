@@ -7,24 +7,9 @@
         <target state="translated">Nazwy argumentów w podpisie „{0}” i implementacji „{1}” nie są zgodne. Używana będzie nazwa argumentu z pliku podpisu. Może to spowodować problemy podczas debugowania lub profilowania.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ConstraintSolverNullnessWarning">
-        <source>Nullness warning: {0}.</source>
-        <target state="new">Nullness warning: {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
-        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
-        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverNullnessWarningWithType">
-        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
-        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
-        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
-        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
@@ -50,11 +35,6 @@
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
         <target state="translated"> Oczekiwano statycznego elementu członkowskiego.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
-        <source>symbol '|' (directly before 'null')</source>
-        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
