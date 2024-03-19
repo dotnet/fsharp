@@ -3501,7 +3501,12 @@ let TryFindLocalizedFSharpStringAttribute g nm attrs =
     match TryFindFSharpAttribute g nm attrs with
     | Some(Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) -> 
         match namedArgs with 
-        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
+        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> 
+            #if PROTO
+            b
+            #else
+            FSComp.SR.GetTextOpt(b)
+            #endif
         | _ -> Some b
     | _ -> None
     
