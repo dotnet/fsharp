@@ -267,6 +267,9 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val ParseFile = AsyncMemoize(keepStrongly = 50 * sf, keepWeakly = 20 * sf, name = "ParseFile")
 
+    member val ParseFileWithoutProject =
+        AsyncMemoize<string, string, FSharpParseFileResults>(keepStrongly = 10 * sf, keepWeakly = 5 * sf, name = "ParseFileWithoutProject")
+
     member val ParseAndCheckFileInProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckFileInProject")
 
     member val ParseAndCheckAllFilesInProject = AsyncMemoizeDisabled(sf, 2 * sf, name = "ParseAndCheckFullProject")
@@ -1999,6 +2002,70 @@ type internal TransparentCompiler
             return parseResult
         }
 
+    member _.ParseFileWithoutProject
+        (
+            fileName: string,
+            sourceText: ISourceText,
+            options: FSharpParsingOptions,
+            cache: bool,
+            flatErrors: bool,
+            userOpName: string
+        ) : Async<FSharpParseFileResults> =
+        let parseFileAsync =
+            async {
+                let! ct = Async.CancellationToken
+
+                let diagnostics, parsedInput, anyErrors =
+                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, flatErrors, false, ct)
+
+                return FSharpParseFileResults(diagnostics, parsedInput, anyErrors, Array.empty)
+            }
+
+        if not cache then
+            parseFileAsync
+        else
+            let cacheKey =
+                let sourceText = SourceTextNew.ofISourceText sourceText
+
+                { new ICacheKey<_, _> with
+                    member _.GetLabel() = shortPath fileName
+
+                    member _.GetKey() = fileName
+
+                    member _.GetVersion() =
+                        Md5Hasher.empty
+                        |> Md5Hasher.addStrings
+                            [
+                                yield fileName
+                                yield! options.ConditionalDefines
+                                yield! options.SourceFiles
+                                yield options.LangVersionText
+                            ]
+                        |> Md5Hasher.addBytes (sourceText.GetChecksum().ToArray())
+                        |> Md5Hasher.addIntegers
+                            [
+                                yield options.DiagnosticOptions.WarnLevel
+                                yield! options.DiagnosticOptions.WarnOff
+                                yield! options.DiagnosticOptions.WarnOn
+                                yield! options.DiagnosticOptions.WarnAsError
+                                yield! options.DiagnosticOptions.WarnAsWarn
+                            ]
+                        |> Md5Hasher.addBooleans
+                            [
+                                yield options.ApplyLineDirectives
+                                yield options.DiagnosticOptions.GlobalWarnAsError
+                                yield options.IsInteractive
+                                yield! (Option.toList options.IndentationAwareSyntax)
+                                yield! (Option.toList options.StrictIndentation)
+                                yield options.CompilingFSharpCore
+                                yield options.IsExe
+                            ]
+                        |> Md5Hasher.toString
+                }
+
+            caches.ParseFileWithoutProject.Get(cacheKey, NodeCode.AwaitAsync parseFileAsync)
+            |> Async.AwaitNodeCode
+
     member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: ProjectSnapshot, userOpName: string) =
         ignore userOpName
         ComputeParseAndCheckFileInProject fileName projectSnapshot
@@ -2450,8 +2517,8 @@ type internal TransparentCompiler
                 cache: bool,
                 flatErrors: bool,
                 userOpName: string
-            ) =
-            backgroundCompiler.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
+            ) : Async<FSharpParseFileResults> =
+            this.ParseFileWithoutProject(fileName, sourceText, options, cache, flatErrors, userOpName)
 
         member this.TryGetRecentCheckResultsForFile
             (
