@@ -1910,7 +1910,7 @@ memberCore:
            let memberRange = unionRanges rangeStart mEnd |> unionRangeWithXmlDoc xmlDoc
            [ SynMemberDefn.Member (binding, memberRange) ] }
 
-  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints recover
+  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints ends_coming_soon_or_recover
      { let optReturnType = $3
        let bindingPat, mBindLhs = $2
        let mEnd =
@@ -1918,6 +1918,7 @@ memberCore:
            | Some(_, ty) -> ty.Range.EndRange
            | _ -> bindingPat.Range.EndRange
        let expr = arbExpr ("memberCore2", mEnd)
+       errorR (Error(FSComp.SR.parsMissingMemberBody(), rhs parseState 4))
 
        fun vis flagsBuilderAndLeadingKeyword attrs rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
@@ -3717,6 +3718,12 @@ parenPattern:
   | parenPattern AS recover
       { let mAs = rhs parseState 2
         let pat2 = SynPat.Wild(mAs.EndRange)
+        SynPat.As($1, pat2, rhs2 parseState 1 2) }
+
+  | parenPattern AS
+      { let mAs = rhs parseState 2
+        let pat2 = SynPat.Wild(mAs.EndRange)
+        reportParseErrorAt mAs (FSComp.SR.parsExpectingPattern ())
         SynPat.As($1, pat2, rhs2 parseState 1 2) }
 
   | parenPattern BAR parenPattern
