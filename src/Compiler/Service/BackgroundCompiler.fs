@@ -126,6 +126,7 @@ type internal IBackgroundCompiler =
     abstract GetProjectSnapshotFromScript:
         fileName: string *
         sourceText: ISourceTextNew *
+        documentSource: DocumentSource *
         previewEnabled: bool option *
         loadedTimeStamp: System.DateTime option *
         otherFlags: string array option *
@@ -1627,6 +1628,7 @@ type internal BackgroundCompiler
             (
                 fileName: string,
                 sourceText: ISourceTextNew,
+                documentSource: DocumentSource,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
                 otherFlags: string array option,
@@ -1653,7 +1655,7 @@ type internal BackgroundCompiler
                         userOpName
                     )
 
-                let! snapshot = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem)
+                let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
                 return snapshot, diagnostics
             }
 

@@ -3730,6 +3730,12 @@ parenPattern:
         let pat2 = SynPat.Wild(mAs.EndRange)
         SynPat.As($1, pat2, rhs2 parseState 1 2) }
 
+  | parenPattern AS
+      { let mAs = rhs parseState 2
+        let pat2 = SynPat.Wild(mAs.EndRange)
+        reportParseErrorAt mAs (FSComp.SR.parsExpectingPattern ())
+        SynPat.As($1, pat2, rhs2 parseState 1 2) }
+
   | parenPattern barCanBeRightBeforeNull parenPattern %prec  BAR
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
