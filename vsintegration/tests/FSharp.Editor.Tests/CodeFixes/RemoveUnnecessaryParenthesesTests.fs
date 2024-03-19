@@ -1788,6 +1788,20 @@ in x
                 "System.Threading.Tasks.Task.CompletedTask.ConfigureAwait((x = x))"
 
                 "x.M(y).N((z = z))", "x.M(y).N((z = z))"
+
+                """
+                dprintn ("The local method '"+(String.concat "." (tenc@[tname]))+"'::'"+mdkey.Name+"' was referenced but not declared")
+                """,
+                """
+                dprintn ("The local method '"+(String.concat "." (tenc@[tname]))+"'::'"+mdkey.Name+"' was referenced but not declared")
+                """
+
+                """
+                ""+(Unchecked.defaultof<string>)+""
+                """,
+                """
+                ""+(Unchecked.defaultof<string>)+""
+                """
             }
 
         [<Theory; MemberData(nameof functionApplications)>]
