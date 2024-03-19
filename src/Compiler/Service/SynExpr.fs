@@ -876,9 +876,10 @@ module SynExpr =
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), _ when innerBindingsWouldShadowOuter inner expr2 ->
                 true
 
-            | SynExpr.InterpolatedString _, SynExpr.Sequential _ -> true
+            | SynExpr.InterpolatedString _, SynExpr.Sequential _
+            | SynExpr.InterpolatedString _, SynExpr.Tuple(isStruct = false) -> true
 
-            | SynExpr.InterpolatedString(contents = contents), (SynExpr.Tuple(isStruct = false) | Dangling.Problematic _) ->
+            | SynExpr.InterpolatedString(contents = contents), Dangling.Problematic _ ->
                 contents
                 |> List.exists (function
                     | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true
