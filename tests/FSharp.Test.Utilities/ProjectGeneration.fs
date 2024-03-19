@@ -934,7 +934,8 @@ type ProjectWorkflowBuilder
         ?useTransparentCompiler,
         ?runTimeout,
         ?autoStart,
-        ?isExistingProject
+        ?isExistingProject,
+        ?enablePartialTypeChecking
     ) =
 
     let useTransparentCompiler = defaultArg useTransparentCompiler CompilerAssertHelpers.UseTransparentCompiler
@@ -955,7 +956,7 @@ type ProjectWorkflowBuilder
             (FSharpChecker.Create(
                 keepAllBackgroundSymbolUses = true,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                enablePartialTypeChecking = true,
+                enablePartialTypeChecking = defaultArg enablePartialTypeChecking true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
                 useSyntaxTreeCache = defaultArg useSyntaxTreeCache false,

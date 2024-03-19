@@ -38,6 +38,9 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
 
     member GetValues: unit -> (string * 'TVersion * 'TValue) seq
 
+    /// Gets the number of items in the cache
+    member Count: int
+
     member Remove: key: 'TKey -> unit
 
     member Remove: key: 'TKey * version: 'TVersion -> unit

@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CheckIncrementalClasses
 open System
 
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -173,7 +174,13 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
         let ctorTy = mkFunTy g argTy objTy    
 
         // NOTE: no attributes can currently be specified for the implicit constructor 
-        let attribs = TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
+        let attribs =
+            // Implicit constructors can only target AttributeTargets.Constructor
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                TcAttributes cenv env AttributeTargets.Constructor attrs
+            else
+                TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
+
         let memberFlags = CtorMemberFlags
                                   
         let synArgInfos = List.map (SynInfo.InferSynArgInfoFromSimplePat []) spats
