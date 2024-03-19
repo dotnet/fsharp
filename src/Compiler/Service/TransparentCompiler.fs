@@ -268,7 +268,7 @@ type internal CompilerCaches(sizeFactor: int) =
     member val ParseFile = AsyncMemoize(keepStrongly = 50 * sf, keepWeakly = 20 * sf, name = "ParseFile")
 
     member val ParseFileWithoutProject =
-        AsyncMemoize<string, string, FSharpParseFileResults>(keepStrongly = 10 * sf, keepWeakly = 5 * sf, name = "ParseFileWithoutProject")
+        AsyncMemoize<string, string, FSharpParseFileResults>(keepStrongly = 5 * sf, keepWeakly = 2 * sf, name = "ParseFileWithoutProject")
 
     member val ParseAndCheckFileInProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckFileInProject")
 
