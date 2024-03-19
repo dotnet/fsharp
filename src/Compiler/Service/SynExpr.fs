@@ -697,6 +697,15 @@ module SynExpr =
           SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(HighPrecedenceApp | SynExpr.Assert _ | SynExpr.InferredUpcast _ | SynExpr.InferredDowncast _) :: _ ->
             true
 
+        // Parens must be kept in a scenario like
+        //
+        //     !x.M(y)
+        //     ~~~x.M(y)
+        //
+        // since prefix ! or ~~~ (with no space) have higher
+        // precedence than regular function application.
+        | _, SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(PrefixApp High) :: _ -> true
+
         // Parens are never required around suffixed or infixed numeric literals, e.g.,
         //
         //     (1l).ToString()

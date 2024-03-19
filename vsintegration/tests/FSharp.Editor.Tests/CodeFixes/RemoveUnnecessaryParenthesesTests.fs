@@ -1627,6 +1627,7 @@ in x
                 """(id("x")).Length""", """(id "x").Length"""
                 """(id "x").Length""", """(id "x").Length"""
                 """(3L.ToString("x")).Length""", """(3L.ToString "x").Length"""
+                "~~TypedResults.Ok<string>(maybe.Value)", "~~TypedResults.Ok<string>(maybe.Value)"
 
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
