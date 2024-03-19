@@ -254,6 +254,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                             match s[s.Length - 1], sourceText[min context.Span.End (sourceText.Length - 1)] with
                             | '>', ('|' | ']') -> Some ShouldPutSpaceAfter
                             | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
+                            | _, ('+' | '-' | '%' | '&' | '!' | '~') -> None
                             | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
                             | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
                             | _ -> None
