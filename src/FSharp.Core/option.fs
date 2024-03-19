@@ -165,7 +165,7 @@ module Option =
         | None -> null
         | Some x -> x
 #else
-    [<CompiledName("OfObj")>]
+    [<CompiledName("OfObj")>]  
     let inline ofObj (value: 'T | null) : 'T option when 'T: not struct and 'T : not null = 
         match value with
         | null -> None
@@ -343,7 +343,7 @@ module ValueOption =
         | ValueNone -> null
         | ValueSome x -> x
 #else
-    [<CompiledName("OfObj")>]
+    [<CompiledName("OfObj")>]  
     let inline ofObj (value: 'T | null) : 'T voption when 'T: not struct and 'T : not null  = 
         match value with
         | null -> ValueNone

@@ -268,6 +268,7 @@ type ConstraintSolverState =
       /// Checks to run after all inference is complete.
       PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
+      WarnWhenUsingWithoutNullOnAWithNullTarget: string option
     }
 
     static member New(g, amap, infoReader, tcVal) = 
@@ -277,7 +278,8 @@ type ConstraintSolverState =
           InfoReader = infoReader
           TcVal = tcVal
           PostInferenceChecksPreDefaults = ResizeArray()
-          PostInferenceChecksFinal = ResizeArray() } 
+          PostInferenceChecksFinal = ResizeArray()
+          WarnWhenUsingWithoutNullOnAWithNullTarget = None } 
 
     member this.PushPostInferenceCheck (preDefaults, check) =
         if preDefaults then
@@ -1041,6 +1043,9 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | _, NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
+        // Warn for 'strict "must pass null"` APIs like Option.ofObj
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))    
         // Allow expected of WithNull and actual of WithoutNull
         // TODO NULLNESS:  this is not sound in contravariant cases etc. It is assuming covariance.
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
@@ -1076,8 +1081,12 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | _, NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
+        // Warn for 'strict "must pass null"` APIs like Option.ofObj
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))
         // Allow target of WithNull and actual of WithoutNull
-        | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
+            CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then 
                 if not (isObjTy csenv.g ty1) || not (isObjTy csenv.g ty2) then 
@@ -3968,7 +3977,8 @@ let CreateCodegenState tcVal g amap =
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
       InfoReader = InfoReader(g, amap)
       PostInferenceChecksPreDefaults = ResizeArray() 
-      PostInferenceChecksFinal = ResizeArray() }
+      PostInferenceChecksFinal = ResizeArray()
+      WarnWhenUsingWithoutNullOnAWithNullTarget = None}
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
@@ -4063,7 +4073,8 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
               InfoReader = InfoReader(g, amap)
               PostInferenceChecksPreDefaults = ResizeArray() 
-              PostInferenceChecksFinal = ResizeArray() }
+              PostInferenceChecksFinal = ResizeArray()
+              WarnWhenUsingWithoutNullOnAWithNullTarget = None}
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with

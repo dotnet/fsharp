@@ -1573,6 +1573,7 @@ type TcGlobals(
   member val attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
   member val attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
   member val attrib_NoCompilerInliningAttribute            = mk_MFCore_attrib "NoCompilerInliningAttribute"
+  member val attrib_WarnOnWithoutNullArgumentAttribute      = mk_MFCore_attrib "WarnOnWithoutNullArgumentAttribute"
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"

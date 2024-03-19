@@ -377,6 +377,13 @@ namespace Microsoft.FSharp.Core
     type NoCompilerInliningAttribute() =
         inherit Attribute()
 
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]  
+    [<Sealed>]
+    type WarnOnWithoutNullArgumentAttribute(warningMessage:string) =
+        inherit Attribute()
+        member _.WarningMessage = warningMessage
+        member val internal Localize = false with get, set
+        
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
     type TailCallAttribute() =
