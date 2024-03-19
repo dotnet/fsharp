@@ -626,15 +626,18 @@ module SynExpr =
         //
         // where 'Key is 'a * 'b, in which case the double parens are required.
         | SynExpr.Paren(expr = InfixApp(Relational(OriginalNotation "="), _)),
-          SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
+          SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _
         | InfixApp(Relational(OriginalNotation "="), _),
-          SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
+          SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(
+              funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _
         | InfixApp(Relational(OriginalNotation "="), _),
           SyntaxNode.SynExpr(SynExpr.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(
-              funcExpr = SynExpr.LongIdent _)) :: _
-        | SynExpr.Paren(expr = SynExpr.Tuple(isStruct = false)), SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
+              funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _
+        | SynExpr.Paren(expr = SynExpr.Tuple(isStruct = false)),
+          SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _
         | SynExpr.Tuple(isStruct = false),
-          SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _ -> true
+          SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(
+              funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _ -> true
 
         // Already parenthesized.
         | _, SyntaxNode.SynExpr(SynExpr.Paren _) :: _ -> false

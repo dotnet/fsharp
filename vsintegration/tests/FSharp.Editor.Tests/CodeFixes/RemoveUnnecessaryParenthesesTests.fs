@@ -1346,6 +1346,12 @@ in x
                 // We could look this up in the typed tree, but we don't currently.
                 "x.TryGetValue((y, z))", "x.TryGetValue((y, z))"
 
+                "valInfosForFslib.Force(g).TryGetValue((vref, vref.Deref.GetLinkageFullKey()))",
+                "valInfosForFslib.Force(g).TryGetValue((vref, vref.Deref.GetLinkageFullKey()))"
+
+                "SemanticClassificationItem((m, SemanticClassificationType.Printf))",
+                "SemanticClassificationItem((m, SemanticClassificationType.Printf))"
+
                 // AnonRecd
                 "id ({||})", "id {||}"
                 "{| A = (fun () -> ()) |}", "{| A = fun () -> () |}"
@@ -1719,6 +1725,8 @@ in x
                 // Miscellaneous
                 "System.Threading.Tasks.Task.CompletedTask.ConfigureAwait((x = x))",
                 "System.Threading.Tasks.Task.CompletedTask.ConfigureAwait((x = x))"
+
+                "x.M(y).N((z = z))", "x.M(y).N((z = z))"
             }
 
         [<Theory; MemberData(nameof functionApplications)>]
@@ -2661,6 +2669,25 @@ module Patterns =
                 member _.Z = x + y
             "
 
+            // The parens could be required by a signature file like this:
+            //
+            //     type SemanticClassificationItem =
+            //         val Range: range
+            //         val Type: SemanticClassificationType
+            //         new: (range * SemanticClassificationType) -> SemanticClassificationItem
+            "
+            type SemanticClassificationItem =
+                val Range: range
+                val Type: SemanticClassificationType
+                new((range, ty)) = { Range = range; Type = ty }
+            ",
+            "
+            type SemanticClassificationItem =
+                val Range: range
+                val Type: SemanticClassificationType
+                new((range, ty)) = { Range = range; Type = ty }
+            "
+
             "
             match 1, 2 with
             | _, (1 | 2 as x) -> ()
@@ -2705,6 +2732,19 @@ module Patterns =
                 member this.Item
                     with get (y : int) = 3
                     and set (x : int) (y : int) = ignore (x, y)
+            "
+
+            "
+            let _ =
+                { new IEquatable<int * int * int> with
+                    member this.GetHashCode ((x, y, z)) = x + y + z
+                    member this.Equals ((x, y, z), (x', y', z')) = false }
+            ",
+            "
+            let _ =
+                { new IEquatable<int * int * int> with
+                    member this.GetHashCode ((x, y, z)) = x + y + z
+                    member this.Equals ((x, y, z), (x', y', z')) = false }
             "
         }
 
