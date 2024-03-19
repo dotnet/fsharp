@@ -705,13 +705,15 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.Sequential(expr1 = synExpr1; expr2 = synExpr2) ->
+                // Nested sequentials.
+                | SynExpr.Sequential(expr1 = synExpr1; expr2 = synExpr2 & SynExpr.Sequential _) ->
                     [
                         dive synExpr1 synExpr1.Range traverseSynExpr
                         yield! traverseSequentials path synExpr2
                     ]
                     |> pick expr
 
+                | SynExpr.Sequential(expr1 = synExpr1; expr2 = synExpr2)
                 | SynExpr.Set(targetExpr = synExpr1; rhsExpr = synExpr2)
                 | SynExpr.DotSet(targetExpr = synExpr1; rhsExpr = synExpr2)
                 | SynExpr.TryFinally(tryExpr = synExpr1; finallyExpr = synExpr2)
