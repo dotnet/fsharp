@@ -129,7 +129,7 @@ namespace Microsoft.FSharp.Core
     /// for use at runtime.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute =
         inherit Attribute
@@ -385,7 +385,7 @@ namespace Microsoft.FSharp.Core
     /// 'System.Object.GetHashCode()' for the type. </summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralEqualityAttribute =
         inherit Attribute
@@ -398,7 +398,7 @@ namespace Microsoft.FSharp.Core
     /// automatic generation of implementations for 'System.IComparable' for the type.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralComparisonAttribute =
         inherit Attribute
@@ -604,7 +604,7 @@ namespace Microsoft.FSharp.Core
     /// type Serializable by default.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type AutoSerializableAttribute =
         inherit Attribute
@@ -898,7 +898,7 @@ namespace Microsoft.FSharp.Core
     /// type require explicit qualified access.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type RequireQualifiedAccessAttribute =
         inherit Attribute
@@ -920,7 +920,7 @@ namespace Microsoft.FSharp.Core
     /// </remarks>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute =
         inherit Attribute

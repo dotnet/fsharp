@@ -227,11 +227,6 @@
         <target state="translated">conversões direcionadas por tipos adicionais</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
-        <source>Allow access modifiers to auto properties getters and setters</source>
-        <target state="new">Allow access modifiers to auto properties getters and setters</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">expressões de computação aplicáveis</target>
@@ -297,14 +292,9 @@
         <target state="translated">literal float32 sem ponto</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEnforceAttributeTargetsOnFunctions">
-        <source>Enforce AttributeTargets on functions</source>
-        <target state="new">Enforce AttributeTargets on functions</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEnforceAttributeTargetsUnionCaseDeclarations">
-        <source>Enforce AttributeTargets on union case declarations</source>
-        <target state="new">Enforce AttributeTargets on union case declarations</target>
+      <trans-unit id="featureEnforceAttributeTargets">
+        <source>Enforce AttributeTargets</source>
+        <target state="new">Enforce AttributeTargets</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -910,11 +900,6 @@
       <trans-unit id="packageManagementRequiresVFive">
         <source>The 'package management' feature requires language version 5.0 or above</source>
         <target state="translated">O recurso 'gerenciamento de pacotes' requer a versão 5.0 ou superior do idioma</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsAccessModifiersBeforeGettersAndSettersNotAllowedInSigFile">
-        <source>The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</source>
-        <target state="new">The modifier will be ignored because access modifiers before getters and setters are not allowed in signature file.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
@@ -2285,11 +2270,6 @@
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature declares a {2} while the implementation declares a {3}</source>
         <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois a assinatura declara um {2} enquanto a implementação declara um {3}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois as abreviações são diferentes: {2} versus {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -6427,12 +6407,12 @@
         <target state="translated">Número do ponto flutuante inválido</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideDecimal">
+      <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
         <target state="translated">Este número está fora do intervalo permitido para literais decimais</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideThirtyTwoBitFloat">
+      <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
         <target state="translated">Este número está fora do intervalo permitido para floats de 32-bit</target>
         <note />

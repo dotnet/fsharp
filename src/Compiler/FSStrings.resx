@@ -1113,6 +1113,9 @@
   <data name="ArgumentsInSigAndImplMismatch" xml:space="preserve">
     <value>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</value>
   </data>
+  <data name="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer" xml:space="preserve">
+    <value>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</value>
+  </data>
   <data name="Parser.TOKEN.WHILE.BANG" xml:space="preserve">
     <value>keyword 'while!'</value>
   </data>

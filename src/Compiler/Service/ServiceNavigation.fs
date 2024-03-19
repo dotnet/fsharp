@@ -332,19 +332,9 @@ module NavigationImpl =
                          [
                              createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access)
                          ]
-                     | SynMemberDefn.AutoProperty(
-                         ident = id; accessibility = access; getterAccessibility = getterAccessibility; setterAccessibility = setterAccessibility; propKind = propKind) ->
-                         let getterAccessibility = getterAccessibility |> Option.orElse access
-                         let setterAccessibility = setterAccessibility |> Option.orElse access
-
+                     | SynMemberDefn.AutoProperty(ident = id; accessibility = access) ->
                          [
-                             match propKind with
-                             | SynMemberKind.PropertyGetSet ->
-                                 yield createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, getterAccessibility)
-                                 yield createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, setterAccessibility)
-                             | SynMemberKind.PropertySet ->
-                                 yield createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, setterAccessibility)
-                             | _ -> yield createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, getterAccessibility)
+                             createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access)
                          ]
                      | SynMemberDefn.AbstractSlot(slotSig = SynValSig(ident = SynIdent(id, _); synType = ty; accessibility = access)) ->
                          [
