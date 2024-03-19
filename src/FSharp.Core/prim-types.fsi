@@ -971,6 +971,8 @@ namespace Microsoft.FSharp.Core
         /// <summary>Warning message displayed when the annotated function is used with a value known to be without null</summary>
         member WarningMessage: string
 
+        member internal Localize: bool with get,set 
+
     /// <summary>Indicates a function that should be called in a tail recursive way inside its recursive scope.
     /// A warning is emitted if the function is analyzed as not tail recursive after the optimization phase.</summary> 
     ///
@@ -3465,7 +3467,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullMatchPattern")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<WarnOnWithoutNullArgument("You can remove this |Null|NonNull| pattern usage.")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullToNonNullAP", Localize=true)>]
         val inline (|Null|NonNull|) : value: 'T | null -> Choice<unit, 'T>  when 'T : not null and 'T : not struct
         
         /// <summary>Determines whether the given value is null.</summary>
@@ -3481,7 +3483,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The non-null value.</returns>
         [<CompiledName("NonNullQuickPattern")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<WarnOnWithoutNullArgument("You can remove this |NonNullQuick| pattern usage.")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullToNonNullQuickAP", Localize=true)>]
         val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
         
         /// <summary>When used in a pattern checks the given value is not null.</summary>
@@ -3529,7 +3531,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The value when it is not null. If the value is null an exception is raised.</returns>
         [<CompiledName("NonNull")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        [<WarnOnWithoutNullArgument("You can remove this `nonNull` assertion.")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullTononNullFunction", Localize=true)>]
         val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>

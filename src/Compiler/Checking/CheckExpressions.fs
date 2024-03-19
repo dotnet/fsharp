@@ -5167,7 +5167,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let (APElemRef (apinfo, vref, idx, isStructRetTy)) = apref
 
     let cenv = 
-        match g.checkNullness,TryFindFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
+        match g.checkNullness,TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
         | true, (Some _ as warnMsg) -> {cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = warnMsg}
         | _ -> cenv
 
@@ -8447,7 +8447,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                         { env with eIsControlFlow = true },cenv
                     | ApplicableExpr(expr=Expr.Val (valRef=vref))
                     | ApplicableExpr(expr=Expr.App (funcExpr=Expr.Val (valRef=vref))) ->
-                        match TryFindFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
+                        match TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
                         | Some _ as msg -> env,{ cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}  
                         | None -> env,cenv                                                      
                     | _ -> env,cenv

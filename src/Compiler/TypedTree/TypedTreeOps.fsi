@@ -2286,6 +2286,8 @@ val TryFindFSharpBoolAttributeAssumeFalse: TcGlobals -> BuiltinAttribInfo -> Att
 
 val TryFindFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
 
+val TryFindLocalizedFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
+
 val TryFindFSharpInt32Attribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> int32 option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.

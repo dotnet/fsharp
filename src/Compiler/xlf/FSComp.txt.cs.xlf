@@ -1427,6 +1427,31 @@
         <target state="new">Value known to be without null passed to a function meant for nullables: {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToNonNullAP">
+        <source>You can remove this |Null|NonNull| pattern usage.</source>
+        <target state="new">You can remove this |Null|NonNull| pattern usage.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToNonNullQuickAP">
+        <source>You can remove this |NonNullQuick| pattern usage.</source>
+        <target state="new">You can remove this |NonNullQuick| pattern usage.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToOptionOfObj">
+        <source>You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value.</source>
+        <target state="new">You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToValueOptionOfObj">
+        <source>You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value.</source>
+        <target state="new">You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullTononNullFunction">
+        <source>You can remove this `nonNull` assertion.</source>
+        <target state="new">You can remove this `nonNull` assertion.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
         <target state="translated">Konstrukt „let! ... and! ...“ se dá použít jen v případě, že tvůrce výpočetních výrazů definuje buď metodu „{0}“, nebo vhodné metody „MergeSource“ a „Bind“.</target>

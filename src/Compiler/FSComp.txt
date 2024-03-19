@@ -1527,6 +1527,11 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 #3261 reserved for ConstraintSolverNullnessWarningWithType
 #3261 reserved for ConstraintSolverNullnessWarning
 3262,tcPassingWithoutNullToANullableExpectingFunc,"Value known to be without null passed to a function meant for nullables: %s"
+tcPassingWithoutNullToOptionOfObj,"You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+tcPassingWithoutNullToValueOptionOfObj,"You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value."
+tcPassingWithoutNullToNonNullAP,"You can remove this |Null|NonNull| pattern usage."
+tcPassingWithoutNullToNonNullQuickAP,"You can remove this |NonNullQuick| pattern usage."
+tcPassingWithoutNullTononNullFunction,"You can remove this `nonNull` assertion."
 3268,csNullNotNullConstraintInconsistent,"The constraints 'null' and 'not null' are inconsistent"
 3271,tcNullnessCheckingNotEnabled,"The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored."
 csTypeHasNullAsTrueValue,"The type '%s' uses 'null' as a representation value but a non-null type is expected"

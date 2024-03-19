@@ -444,7 +444,7 @@ module Option =
     val inline ofObj: value: 'T -> 'T option  when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    [<WarnOnWithoutNullArgument("You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value.")>]
+    [<WarnOnWithoutNullArgument("tcPassingWithoutNullToOptionOfObj", Localize=true)>]
     val inline ofObj: value: 'T | null -> 'T option  when 'T : not null and 'T : not struct
 #endif
 
@@ -903,7 +903,7 @@ module ValueOption =
     val inline ofObj: value: 'T -> 'T voption  when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    [<WarnOnWithoutNullArgument("You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value.")>]
+    [<WarnOnWithoutNullArgument("tcPassingWithoutNullToValueOptionOfObj", Localize=true)>]
     val inline ofObj: value: 'T | null -> 'T voption  when 'T : not struct and 'T : not null
 #endif
 
