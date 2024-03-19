@@ -163,7 +163,8 @@ namespace Microsoft.FSharp.Core
 
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct |||
                       AttributeTargets.Parameter ||| AttributeTargets.Method |||
-                      AttributeTargets.Property ||| AttributeTargets.Constructor, AllowMultiple=false)>]  
+                      AttributeTargets.Property ||| AttributeTargets.Constructor |||
+                      AttributeTargets.Delegate, AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute(includeValue: bool) =
         inherit Attribute()
@@ -350,7 +351,7 @@ namespace Microsoft.FSharp.Core
     type RequiresExplicitTypeArgumentsAttribute() =
         inherit Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit Attribute()

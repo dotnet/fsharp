@@ -566,6 +566,7 @@ type FSharpChecker
         (
             fileName,
             source,
+            ?documentSource,
             ?previewEnabled,
             ?loadedTimeStamp,
             ?otherFlags,
@@ -577,10 +578,12 @@ type FSharpChecker
             ?userOpName: string
         ) =
         let userOpName = defaultArg userOpName "Unknown"
+        let documentSource = defaultArg documentSource DocumentSource.FileSystem
 
         backgroundCompiler.GetProjectSnapshotFromScript(
             fileName,
             source,
+            documentSource,
             previewEnabled,
             loadedTimeStamp,
             otherFlags,
