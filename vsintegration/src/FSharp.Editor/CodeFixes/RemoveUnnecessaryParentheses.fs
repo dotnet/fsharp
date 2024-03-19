@@ -259,19 +259,37 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                             | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
                             | _ -> None
 
+                        let (|WouldTurnInfixIntoPrefix|_|) (s: string) =
+                            // (……)…
+                            //   ↑ ↑
+                            match s[s.Length - 1], sourceText[min context.Span.End (sourceText.Length - 1)] with
+                            | (Punctuation | Symbol), ('+' | '-' | '%' | '&' | '!' | '~') ->
+                                let linePos = sourceText.Lines.GetLinePosition context.Span.End
+                                let line = sourceText.Lines[linePos.Line].ToString()
+
+                                // (……)+…
+                                //      ↑
+                                match line.AsSpan(linePos.Character).IndexOfAnyExcept("*/%-+:^@><=!|$.?".AsSpan()) with
+                                | -1 -> None
+                                | i when line[linePos.Character + i] <> ' ' -> Some WouldTurnInfixIntoPrefix
+                                | _ -> None
+                            | _ -> None
+
                         match adjusted with
-                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter -> " " + adjusted + " "
-                        | ShouldPutSpaceBefore -> " " + adjusted
-                        | ShouldPutSpaceAfter -> adjusted + " "
-                        | adjusted -> adjusted
+                        | WouldTurnInfixIntoPrefix -> ValueNone
+                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter -> ValueSome(" " + adjusted + " ")
+                        | ShouldPutSpaceBefore -> ValueSome(" " + adjusted)
+                        | ShouldPutSpaceAfter -> ValueSome(adjusted + " ")
+                        | adjusted -> ValueSome adjusted
 
                     return
-                        ValueSome
+                        newText
+                        |> ValueOption.map (fun newText ->
                             {
                                 Name = CodeFix.RemoveUnnecessaryParentheses
                                 Message = title
                                 Changes = [ TextChange(context.Span, newText) ]
-                            }
+                            })
 
                 | notParens ->
                     System.Diagnostics.Debug.Fail $"%A{notParens} <> ('(', ')')"
