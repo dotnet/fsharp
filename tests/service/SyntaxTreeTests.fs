@@ -190,7 +190,7 @@ let ParseFile fileName =
     let equals = expected = actual
     let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
-    if true then
+    if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" && not equals then
         File.WriteAllText(bslPath, actual)
     elif not equals then
         File.WriteAllText(actualPath, actual)
