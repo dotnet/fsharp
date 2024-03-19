@@ -1532,6 +1532,65 @@ in x
                 "(id <| match x with _ -> x) |> id", "(id <| match x with _ -> x) |> id"
                 "id <| (match x with _ -> x) |> id", "id <| (match x with _ -> x) |> id"
 
+                "
+                match () with
+                | _ when
+                    (true &&
+                     let x = 3
+                     match x with
+                     | 3 | _ -> true) -> ()
+                | _ -> ()
+                ",
+                "
+                match () with
+                | _ when
+                    (true &&
+                     let x = 3
+                     match x with
+                     | 3 | _ -> true) -> ()
+                | _ -> ()
+                "
+
+                "
+                match () with
+                | _ when
+                    true &&
+                    let x = 3
+                    (match x with
+                     | 3 | _ -> true) -> ()
+                | _ -> ()
+                ",
+                "
+                match () with
+                | _ when
+                    true &&
+                    let x = 3
+                    (match x with
+                     | 3 | _ -> true) -> ()
+                | _ -> ()
+                "
+
+                "
+                match () with
+                | _ when
+                    true &&
+                    let x = 3
+                    (let y = false
+                     match x with
+                     | 3 | _ -> y) -> ()
+                | _ -> ()
+                ",
+                "
+                match () with
+                | _ when
+                    true &&
+                    let x = 3
+                    (let y = false
+                     match x with
+                     | 3 | _ -> y) -> ()
+                | _ -> ()
+                "
+
                 // Do
                 "id (do ())", "id (do ())"
 

@@ -858,6 +858,25 @@ module SynExpr =
                 ->
                 true
 
+            // A match-like construct could be problematically nested like this:
+            //
+            //     match () with
+            //     | _ when
+            //         p &&
+            //         let x = f ()
+            //         (let y = z
+            //          match x with
+            //          | 3 | _ -> y) -> ()
+            //     | _ -> ()
+            | _, Dangling.Match matchOrTry when
+                let line = getSourceLineStr matchOrTry.Range.EndLine
+                let endCol = matchOrTry.Range.EndColumn
+
+                line.Length > endCol + 1
+                && line.AsSpan(endCol + 1).TrimStart(' ').StartsWith("->".AsSpan())
+                ->
+                true
+
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), Dangling.Problematic _ when
                 problematic inner.Range expr2.Range
                 ->
