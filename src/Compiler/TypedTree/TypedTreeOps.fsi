@@ -1547,6 +1547,9 @@ val isValueOptionTy: TcGlobals -> TType -> bool
 /// Determine if a type is an option type
 val isOptionTy: TcGlobals -> TType -> bool
 
+/// Determine if a type is an Choice type
+val isChoiceTy: TcGlobals -> TType -> bool
+
 /// Take apart an option type
 val destOptionTy: TcGlobals -> TType -> TType
 
@@ -1555,6 +1558,12 @@ val tryDestOptionTy: TcGlobals -> TType -> TType voption
 
 /// Try to take apart an option type
 val destValueOptionTy: TcGlobals -> TType -> TType
+
+/// Take apart an Choice type
+val tryDestChoiceTy: TcGlobals -> TType -> int -> TType voption
+
+/// Try to take apart an Choice type
+val destChoiceTy: TcGlobals -> TType -> int -> TType
 
 /// Determine is a type is a System.Nullable type
 val isNullableTy: TcGlobals -> TType -> bool

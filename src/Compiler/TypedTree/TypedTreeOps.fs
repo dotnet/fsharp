@@ -3689,6 +3689,17 @@ let isOptionTy (g: TcGlobals) ty =
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.option_tcr_canon tcref
 
+let isChoiceTy (g: TcGlobals) ty = 
+    match tryTcrefOfAppTy g ty with 
+    | ValueNone -> false
+    | ValueSome tcref ->
+        tyconRefEq g g.choice2_tcr tcref ||
+        tyconRefEq g g.choice3_tcr tcref ||
+        tyconRefEq g g.choice4_tcr tcref ||
+        tyconRefEq g g.choice5_tcr tcref ||
+        tyconRefEq g g.choice6_tcr tcref ||
+        tyconRefEq g g.choice7_tcr tcref
+
 let tryDestOptionTy g ty = 
     match argsOfAppTy g ty with 
     | [ty1] when isOptionTy g ty -> ValueSome ty1
@@ -3697,6 +3708,11 @@ let tryDestOptionTy g ty =
 let tryDestValueOptionTy g ty = 
     match argsOfAppTy g ty with 
     | [ty1] when isValueOptionTy g ty -> ValueSome ty1
+    | _ -> ValueNone
+
+let tryDestChoiceTy g ty idx = 
+    match argsOfAppTy g ty with 
+    | ls when isChoiceTy g ty && ls.Length > idx -> ValueSome ls[idx]
     | _ -> ValueNone
 
 let destOptionTy g ty = 
@@ -3708,6 +3724,11 @@ let destValueOptionTy g ty =
     match tryDestValueOptionTy g ty with 
     | ValueSome ty -> ty
     | ValueNone -> failwith "destValueOptionTy: not a value option type"
+
+let destChoiceTy g ty idx = 
+    match tryDestChoiceTy g ty idx with 
+    | ValueSome ty -> ty
+    | ValueNone -> failwith "destChoiceTy: not a Choice type"
 
 let isNullableTy (g: TcGlobals) ty = 
     match tryTcrefOfAppTy g ty with 
