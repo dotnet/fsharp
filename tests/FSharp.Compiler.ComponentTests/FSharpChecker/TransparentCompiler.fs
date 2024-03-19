@@ -1126,3 +1126,44 @@ let ``The script load closure should always be evaluated`` useTransparentCompile
         finally
             FileSystemAutoOpens.FileSystem <- currentFileSystem
     }
+
+[<Fact>]
+let ``Parsing without cache and without project snapshot`` () =
+    async {
+        let checker = FSharpChecker.Create(useTransparentCompiler = true)
+        let fileName = "Temp.fs"
+        let sourceText = "let a = 0" |> SourceText.ofString
+        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| fileName |]; IsExe = true }
+        let! parseResult = checker.ParseFile(fileName, sourceText, parsingOptions, cache = false)
+        Assert.False(parseResult.ParseHadErrors)
+        Assert.True(Array.isEmpty parseResult.Diagnostics)
+        Assert.Equal(0, checker.Caches.ParseFile.Count)
+        Assert.Equal(0, checker.Caches.ParseFileWithoutProject.Count)
+    }
+
+// In this scenario, the user is typing something in file B.fs.
+// The idea is that the IDE will introduce an additional (fake) identifier in order to have a potential complete syntax tree.
+// The user never wrote this code so we need to ensure nothing is added to checker.Caches.ParseFile
+[<Fact>]
+let ``Parsing with cache and without project snapshot`` () =
+    async {
+        let checker = FSharpChecker.Create(useTransparentCompiler = true)
+        let fileName = "B.fs"
+        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| "A.fs"; fileName; "C.fs" |] }        
+        let sourceText =
+            SourceText.ofString """
+module B
+
+let b : int = ExtraIdentUserNeverWroteRulezzz
+"""
+        let! parseResult = checker.ParseFile(fileName, sourceText, parsingOptions, cache = true)
+        Assert.False(parseResult.ParseHadErrors)
+        Assert.True(Array.isEmpty parseResult.Diagnostics)
+        
+        let! parseAgainResult = checker.ParseFile(fileName, sourceText, parsingOptions, cache = true)
+        Assert.False(parseAgainResult.ParseHadErrors)
+        Assert.True(Array.isEmpty parseAgainResult.Diagnostics)
+
+        Assert.Equal(0, checker.Caches.ParseFile.Count)
+        Assert.Equal(1, checker.Caches.ParseFileWithoutProject.Count)
+    }
