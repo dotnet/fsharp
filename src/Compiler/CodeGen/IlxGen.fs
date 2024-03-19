@@ -2920,7 +2920,8 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
         let lowering =
             if compileSequenceExpressions then
-                LowerComputedCollectionExpressions.LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr
+                let ilTyForTy ty = GenType cenv expr.Range eenv.tyenv ty
+                LowerComputedCollectionExpressions.LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap ilTyForTy expr
             else
                 None
 
