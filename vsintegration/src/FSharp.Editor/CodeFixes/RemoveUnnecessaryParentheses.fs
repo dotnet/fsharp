@@ -23,22 +23,6 @@ module private Patterns =
         else
             ValueNone
 
-    /// Starts with (*.
-    [<return: Struct>]
-    let (|StartsWithMultilineComment|_|) (s: string) =
-        let depth =
-            s.TrimStart ' '
-            |> Seq.pairwise
-            |> Seq.sumBy (function
-                | '(', '*' -> 1
-                | '*', ')' -> -1
-                | _ -> 0)
-
-        if depth > 0 then
-            ValueSome(StartsWithMultilineComment depth)
-        else
-            ValueNone
-
     /// Starts with match, e.g.,
     ///
     ///     (match … with
@@ -177,27 +161,6 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                                         match line[i + startCol ..] with
                                         | StartsWithMatch
                                         | StartsWithSingleLineComment -> loop innerOffsides (lineNo + 1) 0
-                                        | StartsWithMultilineComment depth ->
-                                            let rec skip depth lineNo =
-                                                if lineNo <= endLineNo then
-                                                    let line = sourceText.Lines[lineNo].ToString()
-
-                                                    let delta =
-                                                        line.TrimStart ' '
-                                                        |> Seq.pairwise
-                                                        |> Seq.sumBy (function
-                                                            | '(', '*' -> 1
-                                                            | '*', ')' -> -1
-                                                            | _ -> 0)
-
-                                                    if depth + delta = 0 then
-                                                        loop innerOffsides (lineNo + 1) 0
-                                                    else
-                                                        skip depth (lineNo + 1)
-                                                else
-                                                    innerOffsides
-
-                                            skip depth (lineNo + 1)
                                         | _ ->
                                             match innerOffsides with
                                             | NoneYet -> loop (FirstLine(i + startCol)) (lineNo + 1) 0
