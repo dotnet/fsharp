@@ -376,6 +376,76 @@ type internal TransparentCompiler
         )
         :> IBackgroundCompiler
 
+    let ComputeScriptClosureInner
+        (fileName: string)
+        (source: ISourceTextNew)
+        (defaultFSharpBinariesDir: string)
+        (useSimpleResolution: bool)
+        (useFsiAuxLib: bool)
+        (useSdkRefs: bool)
+        (sdkDirOverride: string option)
+        (assumeDotNetFramework: bool)
+        (otherOptions: string list)
+        =
+        let reduceMemoryUsage = ReduceMemoryFlag.Yes
+
+        let applyCompilerOptions tcConfig =
+            let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
+            ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
+
+        let closure =
+            LoadClosure.ComputeClosureOfScriptText(
+                legacyReferenceResolver,
+                defaultFSharpBinariesDir,
+                fileName,
+                source,
+                CodeContext.Editing,
+                useSimpleResolution,
+                useFsiAuxLib,
+                useSdkRefs,
+                sdkDirOverride,
+                Lexhelp.LexResourceManager(),
+                applyCompilerOptions,
+                assumeDotNetFramework,
+                tryGetMetadataSnapshot,
+                reduceMemoryUsage,
+                dependencyProviderForScripts
+            )
+
+        closure
+
+    let mkScriptClosureCacheKey
+        (fileName: string)
+        (source: ISourceTextNew)
+        (useSimpleResolution: bool)
+        (useFsiAuxLib: bool)
+        (useSdkRefs: bool)
+        (assumeDotNetFramework: bool)
+        (projectIdentifier: ProjectIdentifier)
+        (otherOptions: string list)
+        (stamp: int64 option)
+        =
+        { new ICacheKey<string * ProjectIdentifier, string> with
+            member _.GetKey() = fileName, projectIdentifier
+            member _.GetLabel() = $"ScriptClosure for %s{fileName}"
+
+            member _.GetVersion() =
+                Md5Hasher.empty
+                |> Md5Hasher.addStrings
+                    [|
+                        yield! otherOptions
+                        match stamp with
+                        | None -> ()
+                        | Some stamp -> string stamp
+                    |]
+                |> Md5Hasher.addBytes (source.GetChecksum().ToArray())
+                |> Md5Hasher.addBool useSimpleResolution
+                |> Md5Hasher.addBool useFsiAuxLib
+                |> Md5Hasher.addBool useSdkRefs
+                |> Md5Hasher.addBool assumeDotNetFramework
+                |> Md5Hasher.toString
+        }
+
     let ComputeScriptClosure
         (fileName: string)
         (source: ISourceTextNew)
@@ -393,57 +463,32 @@ type internal TransparentCompiler
         let useSdkRefs = defaultArg useSdkRefs true
         let assumeDotNetFramework = defaultArg assumeDotNetFramework false
 
-        let key =
-            { new ICacheKey<string * ProjectIdentifier, string> with
-                member _.GetKey() = fileName, projectIdentifier
-                member _.GetLabel() = $"ScriptClosure for %s{fileName}"
-
-                member _.GetVersion() =
-                    Md5Hasher.empty
-                    |> Md5Hasher.addStrings
-                        [|
-                            yield! otherOptions
-                            match stamp with
-                            | None -> ()
-                            | Some stamp -> string stamp
-                        |]
-                    |> Md5Hasher.addBytes (source.GetChecksum().ToArray())
-                    |> Md5Hasher.addBool useFsiAuxLib
-                    |> Md5Hasher.addBool useFsiAuxLib
-                    |> Md5Hasher.addBool useSdkRefs
-                    |> Md5Hasher.addBool assumeDotNetFramework
-                    |> Md5Hasher.toString
-            }
+        let key: ICacheKey<string * ProjectIdentifier, string> =
+            mkScriptClosureCacheKey
+                fileName
+                source
+                useSimpleResolution
+                useFsiAuxLib
+                useSdkRefs
+                assumeDotNetFramework
+                projectIdentifier
+                otherOptions
+                stamp
 
         caches.ScriptClosure.Get(
             key,
             node {
-                let reduceMemoryUsage = ReduceMemoryFlag.Yes
-
-                let applyCompilerOptions tcConfig =
-                    let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
-                    ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
-
-                let closure =
-                    LoadClosure.ComputeClosureOfScriptText(
-                        legacyReferenceResolver,
-                        defaultFSharpBinariesDir,
-                        fileName,
-                        source,
-                        CodeContext.Editing,
-                        useSimpleResolution,
-                        useFsiAuxLib,
-                        useSdkRefs,
-                        sdkDirOverride,
-                        Lexhelp.LexResourceManager(),
-                        applyCompilerOptions,
-                        assumeDotNetFramework,
-                        tryGetMetadataSnapshot,
-                        reduceMemoryUsage,
-                        dependencyProviderForScripts
-                    )
-
-                return closure
+                return
+                    ComputeScriptClosureInner
+                        fileName
+                        source
+                        defaultFSharpBinariesDir
+                        useSimpleResolution
+                        useFsiAuxLib
+                        useSdkRefs
+                        sdkDirOverride
+                        assumeDotNetFramework
+                        otherOptions
             }
         )
 
@@ -676,8 +721,13 @@ type internal TransparentCompiler
                 (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 
             let! (loadClosureOpt: LoadClosure option) =
-                match projectSnapshot.SourceFiles, projectSnapshot.UseScriptResolutionRules with
-                | [ fsxFile ], true -> // assuming UseScriptResolutionRules and a single source file means we are doing this for a script
+                let lastScriptFile =
+                    match List.tryLast projectSnapshot.SourceFiles with
+                    | None -> None
+                    | Some file -> if IsScript file.FileName then Some file else None
+
+                match lastScriptFile, projectSnapshot.UseScriptResolutionRules with
+                | Some fsxFile, true -> // assuming UseScriptResolutionRules and a single source file means we are doing this for a script
                     node {
                         let! source = fsxFile.GetSource() |> NodeCode.AwaitTask
 
@@ -2151,24 +2201,34 @@ type internal TransparentCompiler
                 optionsStamp: int64 option,
                 userOpName: string
             ) : Async<FSharpProjectOptions * FSharpDiagnostic list> =
-            backgroundCompiler.GetProjectOptionsFromScript(
-                fileName,
-                sourceText,
-                previewEnabled,
-                loadedTimeStamp,
-                otherFlags,
-                useFsiAuxLib,
-                useSdkRefs,
-                sdkDirOverride,
-                assumeDotNetFramework,
-                optionsStamp,
-                userOpName
-            )
+            async {
+                let bc = this :> IBackgroundCompiler
+
+                let! snapshot, diagnostics =
+                    bc.GetProjectSnapshotFromScript(
+                        fileName,
+                        SourceTextNew.ofISourceText sourceText,
+                        DocumentSource.FileSystem,
+                        previewEnabled,
+                        loadedTimeStamp,
+                        otherFlags,
+                        useFsiAuxLib,
+                        useSdkRefs,
+                        sdkDirOverride,
+                        assumeDotNetFramework,
+                        optionsStamp,
+                        userOpName
+                    )
+
+                let projectOptions = snapshot.ToOptions()
+                return projectOptions, diagnostics
+            }
 
         member this.GetProjectSnapshotFromScript
             (
                 fileName: string,
                 sourceText: ISourceTextNew,
+                documentSource: DocumentSource,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
                 otherFlags: string array option,
@@ -2191,7 +2251,8 @@ type internal TransparentCompiler
                 let previewEnabled = defaultArg previewEnabled false
 
                 // Do we assume .NET Framework references for scripts?
-                let assumeDotNetFramework = defaultArg assumeDotNetFramework true
+                // No, because the bootstrap info call also doesn't
+                let assumeDotNetFramework = defaultArg assumeDotNetFramework false
 
                 let extraFlags =
                     if previewEnabled then
@@ -2211,20 +2272,22 @@ type internal TransparentCompiler
                 let currentSourceFile =
                     FSharpFileSnapshot.Create(fileName, sourceText.GetHashCode().ToString(), (fun () -> Task.FromResult sourceText))
 
-                let! loadClosure =
-                    ComputeScriptClosure
+                let otherFlags = List.ofArray otherFlags
+
+                // Always perform the load closure as we cannot be sure that the incoming file does not load any new additional files.
+                // Consider the scenario where a.fsx loads b.fsx. Based purely on a.fsx, we cannot know if b.fsx loads another file.
+                // Therefore we cannot rely on any caching for the script closure in this API.
+                let loadClosure =
+                    ComputeScriptClosureInner
                         fileName
                         sourceText
                         FSharpCheckerResultsSettings.defaultFSharpBinariesDir
                         useSimpleResolution
-                        (Some useFsiAuxLib)
-                        (Some useSdkRefs)
+                        useFsiAuxLib
+                        useSdkRefs
                         sdkDirOverride
-                        (Some assumeDotNetFramework)
-                        (projectFileName, fileName)
-                        (List.ofArray otherFlags)
-                        optionsStamp
-                    |> Async.AwaitNodeCode
+                        assumeDotNetFramework
+                        otherFlags
 
                 let otherFlags =
                     [
@@ -2235,13 +2298,31 @@ type internal TransparentCompiler
                             yield "--nowarn:" + code
                     ]
 
+                // Once we do have the script closure, we can populate the cache to re-use can later.
+                let loadClosureKey =
+                    mkScriptClosureCacheKey
+                        fileName
+                        sourceText
+                        useSimpleResolution
+                        useFsiAuxLib
+                        useSdkRefs
+                        assumeDotNetFramework
+                        (projectFileName, "")
+                        otherFlags
+                        optionsStamp
+
+                // Populate the cache.
+                let! _ =
+                    caches.ScriptClosure.Get(loadClosureKey, node { return loadClosure })
+                    |> Async.AwaitNodeCode
+
                 let sourceFiles =
                     loadClosure.SourceFiles
                     |> List.map (fun (sf, _) ->
                         if sf = fileName then
                             currentSourceFile
                         else
-                            FSharpFileSnapshot.CreateFromFileSystem sf)
+                            FSharpFileSnapshot.CreateFromDocumentSource(sf, documentSource))
 
                 let references =
                     loadClosure.References

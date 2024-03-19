@@ -155,13 +155,12 @@ let GetAllUsesOfAllSymbols() =
     let result =
         async {
             let project = makeTestProject()
-            let checker = ProjectWorkflowBuilder(project, useGetSource=true, useChangeNotifications = true).Checker
+            let checker = ProjectWorkflowBuilder(project, useGetSource=true, useChangeNotifications = true, enablePartialTypeChecking = false).Checker
             do! saveProject project false checker
             let options = project.GetProjectOptions checker
             let! checkProjectResults = checker.ParseAndCheckProject(options)
             return checkProjectResults.GetAllUsesOfAllSymbols()
         } |> Async.RunSynchronously
-
 
     traceProvider.ForceFlush() |> ignore
     traceProvider.Dispose()

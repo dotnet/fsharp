@@ -3628,8 +3628,7 @@ atomicPattern:
             mkSynPatMaybeVar lidwd vis (lhs parseState)
         else
            let synIdent = List.head lidwd.IdentsWithTrivia
-           let (SynIdent(id, _)) = synIdent
-           SynPat.Named(synIdent, false, vis, id.idRange) }
+           SynPat.Named(synIdent, false, vis, synIdent.Range) }
 
   | constant
       { SynPat.Const(fst $1, snd $1) }
@@ -3719,6 +3718,12 @@ parenPattern:
   | parenPattern AS recover
       { let mAs = rhs parseState 2
         let pat2 = SynPat.Wild(mAs.EndRange)
+        SynPat.As($1, pat2, rhs2 parseState 1 2) }
+
+  | parenPattern AS
+      { let mAs = rhs parseState 2
+        let pat2 = SynPat.Wild(mAs.EndRange)
+        reportParseErrorAt mAs (FSComp.SR.parsExpectingPattern ())
         SynPat.As($1, pat2, rhs2 parseState 1 2) }
 
   | parenPattern BAR parenPattern
