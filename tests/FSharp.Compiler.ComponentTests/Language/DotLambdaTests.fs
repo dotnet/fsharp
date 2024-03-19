@@ -291,3 +291,30 @@ let _ = asQ.Select _.Length
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
+
+[<Fact>]
+    let ``Error when property has same name as DU case`` () =
+        Fsx """
+type MyId =
+    | IdA of int
+    | IdB of string
+
+    member this.IdA =
+        match this with
+        | IdA x -> Some x
+        | _ -> None
+        
+    member this.IdX =
+        match this with
+        | IdB x -> Some x
+        | _ -> None
+
+let onlyIdX (ids: MyId list) = ids |> List.choose _.IdX
+let onlyIdA (ids: MyId list) = ids |> List.choose _.IdA
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 23, Line 17, Col 51, Line 17, Col 56, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module")
+        ]

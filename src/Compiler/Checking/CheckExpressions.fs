@@ -9407,6 +9407,16 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         TcTraitItemThen cenv overallTy env (Some objExpr) traitInfo tpenv mItem delayed
 
     | Item.DelegateCtor _ -> error (Error (FSComp.SR.tcConstructorsCannotBeFirstClassValues(), mItem))
+    
+    | Item.UnionCase(info, _) ->
+        let clashingName =
+            info.TyconRef.MembersOfFSharpTyconSorted |> List.tryFind (fun mem -> mem.DisplayNameCore = info.DisplayNameCore)
+
+        match clashingName with
+        | None -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
+        | Some value ->
+            let kind = (if value.IsMember then "member" else "value")
+            error(NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, mItem, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, mItem))
 
     // These items are not expected here - they can't be the result of a instance member dot-lookup "expr.Ident"
     | Item.ActivePatternResult _
@@ -9417,7 +9427,6 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
     | Item.ModuleOrNamespaces _
     | Item.TypeVar _
     | Item.Types _
-    | Item.UnionCase _
     | Item.UnionCaseField _
     | Item.UnqualifiedType _
     | Item.Value _
