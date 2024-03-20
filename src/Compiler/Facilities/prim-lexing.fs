@@ -52,7 +52,7 @@ type StringText(str: string) =
                 yield line
                 line <- reader.ReadLine()
 
-            if str.EndsWith("\n", StringComparison.Ordinal) then
+            if str.Length > 0 && str[str.Length - 1] = '\n' then
                 // last trailing space not returned
                 // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
                 yield String.Empty

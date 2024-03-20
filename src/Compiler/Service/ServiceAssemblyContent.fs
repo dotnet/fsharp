@@ -72,7 +72,7 @@ type Parent =
         let removeGenericParamsCount (idents: ShortIdents) =
             idents 
             |> Array.map (fun ident ->
-                if ident.Length > 0 && Char.IsDigit ident[ident.Length - 1] then
+                if ident.Length > 0 && isDigit ident[ident.Length - 1] then
                     let lastBacktickIndex = ident.LastIndexOf '`' 
                     if lastBacktickIndex <> -1 then
                         ident.Substring(0, lastBacktickIndex)

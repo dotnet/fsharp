@@ -114,6 +114,8 @@ module internal PervasiveAutoOpens =
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
     type String with
+        // char overload
+        member inline x.Contains(value: char) = x.IndexOf value <> -1
 
         member inline x.StartsWithOrdinal value =
             x.StartsWith(value, StringComparison.Ordinal)
@@ -132,6 +134,9 @@ module internal PervasiveAutoOpens =
 
         member inline x.IndexOfOrdinal(value, startIndex, count) =
             x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
+
+    // Backport of Char.IsAsciiDigit. Do not use Char.IsDigit
+    let inline isDigit (c: char) = uint (c - '0') <= uint ('9' - '0')
 
     /// Get an initialization hole
     let getHole (r: _ ref) =
@@ -601,7 +606,7 @@ module List =
         | [] -> failwith "headAndTail"
         | h :: t -> (h, t)
 
-    // WARNING: not tail-recursive
+    /// WARNING: not tail-recursive
     let mapHeadTail fhead ftail =
         function
         | [] -> []
@@ -785,13 +790,13 @@ module String =
             match Array.tryHead strArr with
             | None -> str
             | Some c ->
-                strArr[0] <- Char.ToLower c
+                strArr[0] <- Char.ToLowerInvariant c
                 String strArr
 
     let extractTrailingIndex (str: string) =
         let charr = str.ToCharArray()
         Array.revInPlace charr
-        let digits = Array.takeWhile Char.IsDigit charr
+        let digits = Array.takeWhile isDigit charr
         Array.revInPlace digits
 
         String digits

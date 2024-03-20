@@ -284,7 +284,7 @@ type TypeBuilder with
 type OpCode with
 
     member opcode.RefEmitName =
-        (string (Char.ToUpper(opcode.Name[0])) + opcode.Name[1..])
+        (string (Char.ToUpperInvariant(opcode.Name[0])) + opcode.Name[1..])
             .Replace(".", "_")
             .Replace("_i4", "_I4")
 

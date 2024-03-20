@@ -275,7 +275,7 @@ type Item =
             | ValueSome tcref -> tcref.DisplayNameCore
             | _ -> nm
             |> DemangleGenericTypeName
-        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
+        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName
         | Item.DelegateCtor ty ->
             match ty with 
             | AbbrevOrAppTy(tcref, _) -> tcref.DisplayNameCore
@@ -2708,14 +2708,14 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                         | None -> success [resInfo, x, rest]
                         | Some _argExpr ->
                             // RFC-1137 prefer extension method when ...
-        
+
                             let ignoreProperty (p: PropInfo) =
                                 // do not hide properties if:
                                 // * is indexed property e.g.:
                                 // ```fsharp
-                                // member x.Prop with 
+                                // member x.Prop with
                                 //     get (indexPiece1:int,indexPiece2: string) = ...
-                                //     and set (indexPiece1:int,indexPiece2: string) value = ... 
+                                //     and set (indexPiece1:int,indexPiece2: string) value = ...
                                 // ```
                                 // which is called like this: obj.Prop(1,"a") or obj.Prop(1,"a") <- someValue
                                 // * is function type e.g.:
@@ -2731,7 +2731,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                                     | TType_var(typar={typar_solution = Some (TType_fun _) }) ->
                                         true
                                     | _ -> false
-                            
+
                             match x with
                             | Item.Property(info=ps) when ps |> List.exists ignoreProperty ->
                                 success [resInfo, x, rest]
@@ -2746,7 +2746,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 | None ->
                     // todo: consider if we should check extension method, but we'd probably won't have matched
                     // `Some(PropertyItem psets) when isLookUpExpr` in the first place.
-                    raze (UndefinedName (depth, FSComp.SR.undefinedNameFieldConstructorOrMember, id, NoSuggestions))     
+                    raze (UndefinedName (depth, FSComp.SR.undefinedNameFieldConstructorOrMember, id, NoSuggestions))
 
             | Some(MethodItem msets) when isLookUpExpr ->
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
@@ -3176,7 +3176,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                                     addToBuffer modref.DisplayName
 
                         // check if the user forgot to use qualified access
-                        for e in nenv.eTyconsByDemangledNameAndArity do                                    
+                        for e in nenv.eTyconsByDemangledNameAndArity do
                             let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
                             if hasRequireQualifiedAccessAttribute then
                                 if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
@@ -4112,7 +4112,7 @@ type AfterResolution =
 // maybeAppliedArgExpr is used in context of resolving extension method that would override property name, it may contain argExpr coming from the DelayedApp(argExpr: SynExpr)
 // see RFC-1137
 let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv typeNameResInfo lid (maybeAppliedArgExpr: SynExpr option) =
-    match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid maybeAppliedArgExpr with 
+    match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid maybeAppliedArgExpr with
     | Exception e -> Exception e 
     | Result (tinstEnclosing, item1, rest) ->
     let itemRange = ComputeItemRange wholem lid rest
@@ -4509,7 +4509,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo ->
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (nm.StartsWithOrdinal)))
+                                not (nm.Contains ',' && methsWithStaticParams |> List.exists nm.StartsWithOrdinal))
 #endif
 
                     minfos
@@ -4715,7 +4715,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
     | [] ->
          let tycons =
              mty.TypeDefinitions |> List.filter (fun tcref ->
-                 not (tcref.LogicalName.Contains ",") &&
+                 not (tcref.LogicalName.Contains ',') &&
                  not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
 
          // Collect up the accessible values in the module, excluding the members
@@ -4843,7 +4843,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
        let tycons =
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
            |> Seq.filter (fun tcref ->
-               not (tcref.LogicalName.Contains ",") &&
+               not (tcref.LogicalName.Contains ',') &&
                not tcref.IsFSharpException &&
                not (IsTyconUnseen ad g ncenv.amap m tcref))
            |> Seq.map (ItemOfTyconRef ncenv m)
@@ -4923,7 +4923,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
        let tycons =
            mty.TypeDefinitions
            |> List.filter (fun tcref ->
-               not (tcref.LogicalName.Contains ",") &&
+               not (tcref.LogicalName.Contains ',') &&
                tcref.IsRecordTycon &&
                not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
 
@@ -4997,7 +4997,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
        let recdTyCons =
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
            |> Seq.filter (fun tcref ->
-               not (tcref.LogicalName.Contains ",") &&
+               not (tcref.LogicalName.Contains ',') &&
                tcref.IsRecordTycon &&
                not (IsTyconUnseen ad g ncenv.amap m tcref))
            |> Seq.map (ItemOfTyconRef ncenv m)
@@ -5201,7 +5201,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             if methsWithStaticParams.IsEmpty then minfos
                             else minfos |> List.filter (fun minfo ->
                                     let nm = minfo.LogicalName
-                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (nm.StartsWithOrdinal)))
+                                    not (nm.Contains ',' && methsWithStaticParams |> List.exists nm.StartsWithOrdinal))
         #endif
 
                         minfos
@@ -5319,7 +5319,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                  let tycons =
                      mty.TypeDefinitions
                      |> List.filter (fun tcref ->
-                         not (tcref.LogicalName.Contains ",") &&
+                         not (tcref.LogicalName.Contains ',') &&
                          not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
 
                  // Get all the types and .NET constructor groups accessible from here
@@ -5393,7 +5393,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
            | Item.Types _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do
                    if not tcref.IsFSharpException
-                      && not (tcref.LogicalName.Contains ",")
+                      && not (tcref.LogicalName.Contains ',')
                       && not (IsTyconUnseen ad g ncenv.amap m tcref)
                    then yield ItemOfTyconRef ncenv m tcref
 

@@ -58,7 +58,7 @@ module internal PrintUtilities =
     let isDiscard (name: string) = name.StartsWithOrdinal("_")
 
     let ensureFloat (s: string) =
-        if String.forall (fun c -> Char.IsDigit c || c = '-') s then
+        if String.forall (fun c -> isDigit c || c = '-') s then
             s + ".0" 
         else s
 
@@ -925,7 +925,7 @@ module PrintTypes =
               if not denv.includeStaticParametersInTypeNames then
                   None, args
               else
-                  let regex = System.Text.RegularExpressions.Regex(@"\`\d+")
+                  let regex = System.Text.RegularExpressions.Regex(@"\`\d+", System.Text.RegularExpressions.RegexOptions.ECMAScript)
                   let path, skip =
                       (0, tc.CompilationPath.DemangledPath)
                       ||> List.mapFold (fun skip path ->
@@ -1962,7 +1962,7 @@ module TastDefinitionPrinting =
                 not (impliedNames.Contains minfo.DisplayName) &&
                 IsMethInfoAccessible amap m ad minfo &&
                 // Discard method impls such as System.IConvertible.ToBoolean
-                not (minfo.IsILMethod && minfo.DisplayName.Contains(".")) &&
+                not (minfo.IsILMethod && minfo.DisplayName.Contains('.')) &&
                 not minfo.IsUnionCaseTester &&
                 not (minfo.DisplayName.Split('.') |> Array.exists isDiscard))
 
@@ -2440,7 +2440,7 @@ module InferredSigPrinting =
             | TMDefLet(bind, _) -> 
                 ([bind.Var] 
                     |> List.filter filterVal 
-                    |> List.map (mkLocalValRef >> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader) 
+                    |> List.map (mkLocalValRef >> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader)
                     |> aboveListL)
 
             | TMDefOpens _ -> emptyL

@@ -97,7 +97,7 @@ let GetWarningNumber (m, warningNumber: string) =
         //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
         //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
         //      anything else is ignored None
-        if Char.IsDigit(warningNumber[0]) then
+        if isDigit (warningNumber[0]) then
             Some(int32 warningNumber)
         elif warningNumber.StartsWithOrdinal "FS" then
             raise (ArgumentException())
@@ -274,11 +274,11 @@ type AssemblyReference =
     member x.ProjectReference = (let (AssemblyReference(_, _, contents)) = x in contents)
 
     member x.SimpleAssemblyNameIs name =
-        (String.Compare(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0)
-        || not (x.Text.Contains "/")
-           && not (x.Text.Contains "\\")
-           && not (x.Text.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
-           && not (x.Text.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase))
+        String.Equals(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase)
+        || not (x.Text.Contains '/')
+           && not (x.Text.Contains '\\')
+           && not (x.Text.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+           && not (x.Text.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
            && (try
                    let aname = System.Reflection.AssemblyName x.Text in aname.Name = name
                with _ ->

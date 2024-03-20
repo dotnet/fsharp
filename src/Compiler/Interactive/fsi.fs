@@ -992,7 +992,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                     | PlatformID.Unix -> StringComparison.Ordinal
                     | _ -> StringComparison.OrdinalIgnoreCase
 
-                if String.Compare(processFileName, commandLineExecutableFileName, stringComparison) = 0 then
+                if String.Equals(processFileName, commandLineExecutableFileName, stringComparison) then
                     processFileName
                 else
                     sprintf "%s %s" processFileName commandLineExecutableFileName
@@ -1526,7 +1526,7 @@ let ConvReflectionTypeToILTypeRef (reflectionTy: Type) =
     let scoref = ILScopeRef.Assembly aref
 
     let fullName = reflectionTy.FullName
-    let index = fullName.IndexOfOrdinal("[")
+    let index = fullName.IndexOf('[')
 
     let fullName =
         if index = -1 then
@@ -3354,16 +3354,16 @@ type internal MagicAssemblyResolution() =
                                                         assemblyReference.Text
 
                                                 if
-                                                    String.Compare(
+                                                    String.Equals(
                                                         FileSystemUtils.fileNameOfPath assemblyReference.Text,
                                                         assemblyReferenceTextDll,
                                                         StringComparison.OrdinalIgnoreCase
-                                                    ) = 0
-                                                    || String.Compare(
+                                                    )
+                                                    || String.Equals(
                                                         FileSystemUtils.fileNameOfPath assemblyReference.Text,
                                                         assemblyReferenceTextExe,
                                                         StringComparison.OrdinalIgnoreCase
-                                                    ) = 0
+                                                    )
                                                 then
                                                     Some(
                                                         tcImports.TryResolveAssemblyReference(
@@ -3550,7 +3550,7 @@ type FsiStdinLexerProvider
         match str with
         | Null -> str
         | NonNull str ->
-            if str.Contains("\000") then
+            if str.Contains('\000') then
                 String(str |> Seq.filter (fun c -> c <> '\000') |> Seq.toArray)
             else
                 str
@@ -4346,7 +4346,7 @@ type FsiInteractionProcessor
 
     member _.CompletionsForPartialLID(istate, prefix: string) =
         let lid, stem =
-            if prefix.IndexOf(".", StringComparison.Ordinal) >= 0 then
+            if prefix.Contains '.' then
                 let parts = prefix.Split('.')
                 let n = parts.Length
                 Array.sub parts 0 (n - 1) |> Array.toList, parts[n - 1]
