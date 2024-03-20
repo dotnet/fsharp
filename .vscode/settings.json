@@ -53,5 +53,6 @@
         }
     },
     "editor.inlayHints.enabled": "offUnlessPressed",
-    "dotnet.defaultSolution": "FSharp.Compiler.Service.sln"
+    "dotnet.defaultSolution": "FSharp.Compiler.Service.sln",
+    "cmake.configureOnOpen": false
 }
