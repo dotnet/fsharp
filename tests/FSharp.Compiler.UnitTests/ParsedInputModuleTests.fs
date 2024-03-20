@@ -1,4 +1,4 @@
-module Tests.Service.ParsedInputModuleTests
+module Tests.Service.ParsedInputModule.Tests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
