@@ -5481,7 +5481,6 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
     | None ->
         let! ct = Cancellable.token ()
         let result = TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ([], env, env) synModuleDecls ct
-        //let! compiledDefs, envAtEnd = TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ([], env, env) synModuleDecls ct
 
         match result with
         | ValueOrCancelled.Value(compiledDefs, envAtEnd) ->
