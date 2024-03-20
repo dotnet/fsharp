@@ -1012,6 +1012,9 @@ in x
             // DotGet
             "([]).Length", "[].Length"
             "([] : int list).Length", "([] : int list).Length"
+            "Debug.Assert((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)", "Debug.Assert((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)"
+            "Debug.Assert ((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)", "Debug.Assert (xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel"
+            "Assert((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)", "Assert((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)"
 
             // DotLambda
             """_.ToString("x")""", """_.ToString("x")"""

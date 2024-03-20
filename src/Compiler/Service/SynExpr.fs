@@ -344,6 +344,7 @@ module SynExpr =
         | InfixApp(prec, side) -> ValueSome(prec, side)
         | SynExpr.App(argExpr = SynExpr.ComputationExpr _) -> ValueSome(UnaryPrefix, Left)
         | SynExpr.App(funcExpr = SynExpr.Paren(expr = SynExpr.App _)) -> ValueSome(Apply, Left)
+        | SynExpr.App(flag = ExprAtomicFlag.Atomic) -> ValueSome(Dot, Non)
         | SynExpr.App _ -> ValueSome(Apply, Non)
         | SynExpr.DotSet(targetExpr = SynExpr.Paren(expr = Is inner)) -> ValueSome(Dot, Left)
         | SynExpr.DotSet(rhsExpr = SynExpr.Paren(expr = Is inner)) -> ValueSome(Set, Right)
