@@ -1,4 +1,4 @@
-# run.pl
+#!/usr/bin/env perl
 
 use strict;
 use IO::Socket;

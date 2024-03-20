@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 # Runall head version 245 edited 17 Mar 2006
 
 ###
