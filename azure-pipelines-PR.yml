@@ -94,8 +94,8 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            name: NetCore1ESPool-Svc-Internal
-            demands: ImageOverride -equals build.windows.10.amd64.vs2019
+            name: $(DncEngInternalBuildPool)
+            demands: ImageOverride -equals windows.vs2022.amd64
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
@@ -199,11 +199,7 @@ stages:
         # Windows
         - job: Windows
           pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Build.Windows.10.Amd64.VS2019.Open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
-            name: NetCore1ESPool-Svc-Public
+            name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
@@ -259,7 +255,8 @@ stages:
         # Mock official build
         - job: MockOfficial
           pool:
-            vmImage: windows-latest
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
@@ -269,7 +266,7 @@ stages:
         # Linux
         - job: Linux
           pool:
-            vmImage: ubuntu-latest
+            vmImage: $(UbuntuMachineQueueName)
           variables:
           - name: _SignType
             value: Test
@@ -309,7 +306,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macOS-latest
+            vmImage: macos-11
           variables:
           - name: _SignType
             value: Test
@@ -349,7 +346,8 @@ stages:
         # End to end build
         - job: EndToEndBuildTests
           pool:
-            vmImage: windows-latest
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
@@ -373,7 +371,8 @@ stages:
         # Plain build Windows
         - job: Plain_Build_Windows
           pool:
-            vmImage: windows-latest
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -405,7 +404,7 @@ stages:
         # Plain build Linux
         - job: Plain_Build_Linux
           pool:
-            vmImage: ubuntu-latest
+            vmImage: $(UbuntuMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -437,7 +436,7 @@ stages:
         # Plain build Mac
         - job: Plain_Build_MacOS
           pool:
-            vmImage: macos-latest
+            vmImage: macos-11
           variables:
           - name: _BuildConfig
             value: Debug
