@@ -7,6 +7,11 @@
         <target state="translated">I nomi degli argomenti nella firma '{0}' e nell'implementazione '{1}' non corrispondono. Verrà usato il nome dell'argomento del file di firma. Questa situazione potrebbe causare problemi durante il debug o la profilatura.</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarning">
         <source>Nullness warning: {0}.</source>
         <target state="new">Nullness warning: {0}.</target>
