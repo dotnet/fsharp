@@ -11,7 +11,7 @@
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
-    }
+    },
     "xcopy-msbuild": "16.8.0"
   },
   "native-tools": {
