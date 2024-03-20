@@ -189,22 +189,13 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
 let ``WithNull used on anon type`` () = 
     FSharp """module MyLibrary
 
-let strictFunc(arg: 'x when 'x : not null) = arg.ToString()    
-let looseFunc(arg: _ | null) = arg
-
-strictFunc({|ZZ=15;YZ="a"|}) |> ignore
-looseFunc({|ZZ=15;YZ="a"|}) |> ignore
-
-let maybeAnon : _ | null = {|Hello="there"|}
-let maybeAnon2 : _ | null = null
-
-strictFunc(maybeAnon) |> ignore
-looseFunc(maybeAnon) |> ignore
-
+//let maybeAnon : _ | null = {|Hello="there"|}
+let maybeAnon2 : {|Hello:string|} | null = null
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldSucceed
+    |> shouldFail
+    |> withDiagnostics []
     
     
 [<Fact>]
@@ -234,7 +225,8 @@ looseFunc(maybeDu2) |> ignore
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldSucceed
+    |> shouldFail
+    |> withDiagnostics []
     
 [<Fact>]
 let ``Nullnesss support for F# types`` () = 
@@ -285,4 +277,5 @@ looseFunc(maybeTuple2) |> ignore
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldSucceed
+    |> shouldFail
+    |> withDiagnostics []

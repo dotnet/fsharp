@@ -2614,6 +2614,18 @@ and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: O
                     return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
     }
 
+and SolveTypeCanCarryNullness (csenv: ConstraintSolverEnv)  ty nullness =
+    trackErrors {
+        let g = csenv.g
+        let m = csenv.m
+        let strippedTy = stripTyEqnsA g true ty
+        match tryAddNullnessToTy nullness strippedTy with
+        | Some _ -> ()
+        | None -> 
+            let tyString = NicePrint.minimalStringOfType csenv.DisplayEnv strippedTy
+            return! ErrorD(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m))
+    }
+
 and SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     let g = csenv.g
     let m = csenv.m
@@ -3875,6 +3887,12 @@ let AddCxTypeUseSupportsNull denv css m trace ty =
         (fun csenv -> SolveTypeUseSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
+
+let AddCxTypeCanCarryNullnessInfo denv css m ty nullness =
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let canCarryNullnessCheck() = SolveTypeCanCarryNullness csenv ty nullness |> RaiseOperationResult
+    csenv.SolverState.PushPostInferenceCheck (preDefaults=false, check = canCarryNullnessCheck)
+
 
 let AddCxTypeMustSupportComparison denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
