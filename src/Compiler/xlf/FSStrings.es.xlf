@@ -7,6 +7,11 @@
         <target state="translated">Los nombres de argumento en la firma "{0}" y la implementación "{1}" no coinciden. Se utilizará el nombre del argumento desde el archivo de firma. Esto puede causar problemas durante la depuración o la generación de perfiles.</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarning">
         <source>Nullness warning: {0}.</source>
         <target state="new">Nullness warning: {0}.</target>

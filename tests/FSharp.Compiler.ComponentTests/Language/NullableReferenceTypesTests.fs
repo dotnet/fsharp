@@ -189,7 +189,7 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
 let ``WithNull used on anon type`` () = 
     FSharp """module MyLibrary
 
-//let maybeAnon : _ | null = {|Hello="there"|}
+let maybeAnon : _ | null = {|Hello="there"|}
 let maybeAnon2 : {|Hello:string|} | null = null
 """
     |> asLibrary

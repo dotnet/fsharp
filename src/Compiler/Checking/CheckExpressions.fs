@@ -5168,9 +5168,13 @@ and ConvSynPatToSynExpr synPat =
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags patEnv ty (mLongId, item, apref, args, m) =
     let g = cenv.g
-
     let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
     let (APElemRef (apinfo, vref, idx, isStructRetTy)) = apref
+
+    let cenv = 
+        match g.checkNullness,TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
+        | true, (Some _ as warnMsg) -> {cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = warnMsg}
+        | _ -> cenv
 
     // Report information about the 'active recognizer' occurrence to IDE
     CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.eAccessRights)
@@ -8433,11 +8437,11 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     SynExpr.ComputationExpr (true, comp, m)
                 | _ -> synArg
 
-            let arg, tpenv =
+            let (arg, tpenv), cenv =
                 // treat left and right of '||' and '&&' as control flow, so for example
                 //     f expr1 && g expr2
                 // will have debug points on "f expr1" and "g expr2"
-                let env =
+                let env,cenv =
                     match leftExpr with
                     | ApplicableExpr(expr=Expr.Val (vref, _, _))
                     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [_], _))
@@ -8445,10 +8449,15 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                            || valRefEq g vref g.and2_vref 
                            || valRefEq g vref g.or_vref
                            || valRefEq g vref g.or2_vref ->
-                        { env with eIsControlFlow = true }
-                    | _ -> env
+                        { env with eIsControlFlow = true },cenv
+                    | ApplicableExpr(expr=Expr.Val (valRef=vref))
+                    | ApplicableExpr(expr=Expr.App (funcExpr=Expr.Val (valRef=vref))) ->
+                        match TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
+                        | Some _ as msg -> env,{ cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}  
+                        | None -> env,cenv                                                      
+                    | _ -> env,cenv
 
-                TcExprFlex2 cenv domainTy env false tpenv synArg
+                TcExprFlex2 cenv domainTy env false tpenv synArg, cenv
 
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed

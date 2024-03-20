@@ -315,7 +315,7 @@ let rec stripTyparEqnsAux nullness0 canShortcut ty =
             addNullnessToTy nullness0 ty
     | TType_measure unt -> 
         TType_measure (stripUnitEqnsAux canShortcut unt)
-    | _ -> ty
+    | _ -> addNullnessToTy nullness0 ty
 
 let stripTyparEqns ty = stripTyparEqnsAux KnownWithoutNull false ty
 
