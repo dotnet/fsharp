@@ -189,7 +189,7 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
 let ``WithNull used on anon type`` () = 
     FSharp """module MyLibrary
 
-//let maybeAnon : _ | null = {|Hello="there"|}
+let maybeAnon : _ | null = {|Hello="there"|}
 let maybeAnon2 : {|Hello:string|} | null = null
 """
     |> asLibrary
@@ -279,3 +279,118 @@ looseFunc(maybeTuple2) |> ignore
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics []
+
+
+[<Fact>]
+let ``Static member on Record with null arg`` () =
+    FSharp """module MyLibrary
+type MyRecord = {X:string;Y:int}
+    with static member Create(x:string) = {X=x;Y = 42}
+let thisWorks = MyRecord.Create("xx")
+let thisShouldWarn = MyRecord.Create(null)
+let maybeNull : string | null = "abc"
+let thisShouldAlsoWarn = MyRecord.Create(maybeNull)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics  
+        [Error 3261, Line 7, Col 38, Line 7, Col 42, "Nullness warning: The type 'string' does not support 'null'."
+         Error 3261, Line 9, Col 42, Line 9, Col 51, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+
+
+[<Fact>]
+let ``Option ofObj should remove nullness when used in a function`` () = 
+    FSharp """module MyLibrary
+let processOpt2 (s: string | null) : string option = Option.ofObj s"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Option ofObj should remove nullness when piping`` () = 
+    FSharp """module MyLibrary
+let processOpt (s: string | null) : string option =
+    let stringOpt = Option.ofObj s
+    stringOpt
+let processOpt3 (s: string | null) : string option = s |> Option.ofObj
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Option ofObj called in a useless way raises warning`` () = 
+    FSharp """module MyLibrary
+let processOpt1 (s: string) = Option.ofObj s
+let processOpt2 (s: string) : option<string> = 
+    Option.ofObj s
+let processOpt3 (s: string) : string option = 
+    let sOpt = Option.ofObj s
+    sOpt
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+        [ Error 3262, Line 3, Col 44, Line 3, Col 45, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+          Error 3262, Line 5, Col 18, Line 5, Col 19, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+          Error 3262, Line 7, Col 29, Line 7, Col 30, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
+
+
+[<Fact>]
+let ``Option ofObj called on a string literal`` () = 
+    FSharp """module MyLibrary
+let whatIsThis = Option.ofObj "abc123"
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withErrorCodes [3262]
+
+[<Fact>]
+let ``Useless null pattern match`` () = 
+    FSharp """module MyLibrary
+let clearlyNotNull = "42"
+let mappedVal = 
+    match clearlyNotNull with
+    | null -> 42
+    | _ -> 43
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 6, Col 7, Line 6, Col 11, "Nullness warning: The type 'string' does not support 'null'."]
+
+[<Fact>]
+let ``Useless usage of nonNull utility from fscore`` () = 
+    FSharp """module MyLibrary
+let clearlyNotNull = "42"
+let mappedVal = nonNull clearlyNotNull
+let maybeNull : string | null = null
+let mappedMaybe = nonNull maybeNull
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3262, Line 4, Col 25, Line 4, Col 39, "Value known to be without null passed to a function meant for nullables: You can remove this `nonNull` assertion."]
+
+[<Fact>]
+let ``Useless usage of null active patterns from fscore`` () = 
+    FSharp """module MyLibrary
+let clearlyNotNull = "42"
+let mapped1 = 
+    match clearlyNotNull with
+    | NonNullQuick safe -> safe
+let mapped2 =
+    match clearlyNotNull with
+    |Null -> 0
+    |NonNull _ -> 1
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+        [ Error 3262, Line 6, Col 7, Line 6, Col 24, "Value known to be without null passed to a function meant for nullables: You can remove this |NonNullQuick| pattern usage."
+          Error 3262, Line 10, Col 6, Line 10, Col 10, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."
+          Error 3262, Line 11, Col 6, Line 11, Col 15, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."]
