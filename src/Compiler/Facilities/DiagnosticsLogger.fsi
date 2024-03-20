@@ -450,10 +450,12 @@ type StackGuard =
     new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
-    member Guard: f: (unit -> 'T) 
-                    * [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string
-                    * [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string
-                    * [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int -> 'T
+    member Guard:
+        f: (unit -> 'T) *
+        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string *
+        [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string *
+        [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
+            'T
 
     static member GetDepthOption: string -> int
 
