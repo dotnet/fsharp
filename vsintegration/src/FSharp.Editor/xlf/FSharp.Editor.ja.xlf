@@ -35,13 +35,13 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (experimental);
 Display inline parameter name hints (experimental);Beer</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (experimental);
-Display inline parameter name hints (experimental);Beer</target>
+        <target state="translated">ブロック構造ガイド;
+F# コードの構造ガイドラインを表示します。
+アウトライン;
+F# コードのアウトラインと折りたたみ可能なノードを表示します。
+インライン ヒント;
+インライン型のヒントを表示する (試験段階);
+インライン パラメーター名のヒントを表示する (試験段階);ビール</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -156,15 +156,15 @@ Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental)</target>
+        <target state="translated">F# プロジェクトとキャッシュのパフォーマンス オプション;
+メモリ内のプロジェクト間参照を有効にする。
+IntelliSense パフォーマンス オプション;
+IntelliSense 機能の古いデータを有効にする。
+古い結果が使用されるまでの時間 (ミリ秒);
+並列化 (再起動が必要);
+署名ファイルを使用して並列型チェックを有効にする。
+並列参照解決を有効にする;
+高速検索参照の有効化と名前の変更 (試験段階)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -178,11 +178,11 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">ナビゲーション リンク;
+ナビゲーション リンクを次のように表示します。
+塗りつぶしの下線;
+ドットの下線;
+ダッシュ下線;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

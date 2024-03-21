@@ -1514,27 +1514,27 @@
       </trans-unit>
       <trans-unit id="ValueRestriction1">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'에 제네릭 형식\n    {1}이(가) 있습니다.    \n'{2}'에 대한 인수를 명시적으로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction2">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'에 제네릭 형식\n    {1}이(가) 있습니다.    \n'{2}'을(를) 명시적 인수가 포함된 함수로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction3">
         <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="new">Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</target>
+        <target state="translated">값 제한이 있습니다. 이 멤버는 제네릭 형식\n    {0}을(를) 가지는 것으로 유추되었습니다.    \n생성자 및 속성 getter/setter는 바깥쪽 형식보다 일반적일 수 없습니다. 형식 주석을 추가하여 관련 형식을 정확히 나타내세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction4">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'은(는) 제네릭 형식\n    {1}을(를) 가지는 것으로 유추되었습니다.    \n'{2}'에 대한 인수를 명시적으로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction5">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'은(는) 제네릭 형식\n    {1}을(를) 가지는 것으로 유추되었습니다.    \n'{2}'을(를) 단순 데이터 용어로 정의하거나, 명시적 인수가 포함된 함수로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">

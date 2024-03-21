@@ -1514,27 +1514,27 @@
       </trans-unit>
       <trans-unit id="ValueRestriction1">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">值限制。值“{0}”具有泛型类型\n    {1}    \n使“{2}”的参数成为显式参数，或添加类型批注(如果您不希望它是泛型的)。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction2">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">值限制。值“{0}”具有泛型类型\n    {1}    \n使“{2}”成为具有显式参数的函数，或添加类型批注(如果您不希望它是泛型的)。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction3">
         <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="new">Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</target>
+        <target state="translated">值限制。已推理出此成员具有泛型类型\n    {0}    \n构造函数和属性 Getter/Setter 不能比封闭类型更通用。    添加类型批注以指示涉及到的确切类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction4">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">值限制。已推理出值“{0}”具有泛型类型\n    {1}    \n使“{2}”的参数成为显式参数，或添加类型批注(如果您不希望它是泛型的)。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction5">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">值限制。已推理出值“{0}”具有泛型类型\n    {1}    \n将“{2}”定义为简单的数据条目，使其成为具有显式参数的函数，或添加类型批注(如果您不希望它是泛型的)。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">

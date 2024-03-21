@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
-        <target state="translated">只有在使用 RequireQualifiedAccess 屬性時，才允許小寫區分聯結案例</target>
+        <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -1514,27 +1514,27 @@
       </trans-unit>
       <trans-unit id="ValueRestriction1">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">值限制。值 '{0}' 具有泛型類型\n    {1}    \n請將 '{2}' 的引數設為明確的，或者如果不想將它設為泛型，請加入類型註釋。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction2">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">值限制。值 '{0}' 具有泛型類型\n    {1}    \n請將 '{2}' 設為具有明確引數的函式，或者如果不想將它設為泛型，請加入類型註釋。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction3">
         <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="new">Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</target>
+        <target state="translated">值限制。這個成員已被推斷為具有泛型類型\n    {0}    \n建構函式和屬性 getter/setter 不能比封入類型更為泛型。請加入類型註釋，以指示涉及的確切類型。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction4">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">值限制。值 '{0}' 已被推斷為具有泛型類型\n    {1}    \n請將 '{2}' 的引數設為明確的，或者如果不想將它設為泛型，請加入類型註釋。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction5">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">值限制。值 '{0}' 已被推斷為具有泛型類型\n    {1}    \n請將 '{2}' 定義為簡單資料項、將它設為具有明確引數的函式，或者如果不想將它設為泛型，請加入類型註釋。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">

@@ -164,7 +164,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Allow arithmetic and logical operations in literals</source>
-        <target state="new">Allow arithmetic and logical operations in literals</target>
+        <target state="translated">Autoriser les opérations arithmétiques et logiques dans les littéraux</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -684,7 +684,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">Jeton inattendu dans la définition de type. Signe '=' attendu après le type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
@@ -694,12 +694,12 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated"> Expression attendue</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
-        <target state="new">Expecting pattern</target>
+        <target state="translated">Modèle attendu</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -824,17 +824,17 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <target state="translated">Il s'agit de l'enregistrement anonyme incorrect. Il doit contenir les champs {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <target state="translated">Cet enregistrement anonyme ne contient pas suffisamment de champs. Ajoutez les champs manquants {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <target state="translated">Cet enregistrement anonyme a trop de champs. Supprimez les champs supplémentaires {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -1014,7 +1014,7 @@
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <target state="translated">La construction 'let! ... and! ...' peut uniquement être utilisée si le générateur d'expressions de calcul définit une méthode '{0}' ou les méthodes 'MergeSource' et 'Bind' appropriées</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1484,7 +1484,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'</source>
-        <target state="new">Unrecognized option: '{0}'</target>
+        <target state="translated">Option non reconnue : '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -1869,7 +1869,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</target>
+        <target state="translated">Les {0} définitions pour le type '{1}' dans la signature et l'implémentation ne sont pas compatibles, car les abréviations sont différentes : {2} par opposition à {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -3139,7 +3139,7 @@
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
         <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="new">Multiple accessibilities given for property getter or setter</target>
+        <target state="translated">Plusieurs accessibilités fournies pour la méthode getter ou setter de la propriété</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -3604,7 +3604,7 @@
       </trans-unit>
       <trans-unit id="tcFieldAppearsTwiceInRecord">
         <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="new">The field '{0}' appears twice in this record expression or pattern</target>
+        <target state="translated">Le champ '{0}' apparaît à deux reprises dans cette expression ou ce modèle d'enregistrement</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnknownUnion">
@@ -3914,7 +3914,7 @@
       </trans-unit>
       <trans-unit id="tcUseWhenPatternGuard">
         <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="new">Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</target>
+        <target state="translated">Les correspondances de plages de caractères ont été supprimées de F#. Utilisez une garde par modèle 'when' à la place.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -4584,7 +4584,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="new">Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</target>
+        <target state="translated">Les interfaces ne peuvent pas contenir de définitions de membres concrets. Vous pouvez définir un constructeur sur votre type pour indiquer que le type est une classe.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
@@ -4744,7 +4744,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="new">Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</target>
+        <target state="translated">Les définitions de valeur statiques peuvent uniquement être utilisées dans les types comportant un constructeur principal. Ajoutez des arguments à la définition de type, par exemple 'type X(args) = …'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -5834,7 +5834,7 @@
       </trans-unit>
       <trans-unit id="optLocalValueNotFoundDuringOptimization">
         <source>Local value {0} not found during optimization</source>
-        <target state="new">Local value {0} not found during optimization</target>
+        <target state="translated">Valeur locale {0} introuvable durant l'optimisation</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
@@ -5864,7 +5864,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="new">Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</target>
+        <target state="translated">Mise en retrait éventuellement incorrecte : ce jeton est situé hors du contexte qui débute à la position {0}. Essayez d'effectuer une mise en retrait supplémentaire de ce jeton ou d'utiliser des conventions de mise en forme standard.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -7579,7 +7579,7 @@
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
         <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="new">Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</target>
+        <target state="translated">Utilisation non valide de 'fixed'. Utilisez uniquement 'fixed' dans une déclaration de la forme 'use x = fixed expr' où l'expression est un tableau, l'adresse d'un champ, l'adresse d'un élément de tableau ou une chaîne</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8014,7 +8014,7 @@
       </trans-unit>
       <trans-unit id="ArgumentsInSigAndImplMismatch">
         <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="new">The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</target>
+        <target state="translated">Les noms d'arguments dans la signature '{0}' et l'implémentation '{1}' ne correspondent pas. Le nom d'argument du fichier de signature va être utilisé. Cela peut entraîner des problèmes durant le débogage ou le profilage.</target>
         <note />
       </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
@@ -8159,7 +8159,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <target state="translated">Impossible d’appeler la méthode d’extension byref « {0} ». Le premier paramètre nécessite que la valeur soit mutable ou un type byref autre qu'en lecture seule.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8249,7 +8249,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <target state="translated">La clé '{0}' du gestionnaire de packages n'était pas inscrite dans {1}. L'inscription a été effectuée : {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

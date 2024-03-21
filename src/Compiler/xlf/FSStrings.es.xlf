@@ -1514,27 +1514,27 @@
       </trans-unit>
       <trans-unit id="ValueRestriction1">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">Restricción de valor. El valor '{0}' tiene el tipo genérico\n    {1}    \nConvierta los argumentos de '{2}' en explícitos o, si su intención no es que sea genérico, agregue una anotación de tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction2">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">Restricción de valor. El valor '{0}' tiene el tipo genérico\n    {1}    \nConvierta '{2}' en una función con argumentos explícitos o, si su intención no es que sea genérico, agregue una anotación de tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction3">
         <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="new">Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</target>
+        <target state="translated">Restricción de valor. Se ha inferido que este miembro tiene el tipo genérico\n    {0}    \nLos constructores y los captadores y establecedores de propiedades no pueden ser más genéricos que el tipo envolvente. Agregue una anotación de tipo para indicar los tipos exactos implicados.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction4">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">Restricción de valor. Se ha inferido que el valor '{0}' tiene el tipo genérico\n    {1}    \nConvierta los argumentos de '{2}' en explícitos o, si su intención no es que sea genérico, agregue una anotación de tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction5">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <target state="translated">Restricción de valor. Se ha inferido que el valor '{0}' tiene el tipo genérico\n    {1}    \nDefina '{2}' como un término de datos simple, conviértalo en una función con argumentos explícitos o, si su intención no es que sea genérico, agregue una anotación de tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">
