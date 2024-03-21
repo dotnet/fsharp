@@ -4392,7 +4392,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         // Get description for Expr.Var
         let (CompletionItem(_, _, _, descrFunc, _)) = completions |> Array.find (fun (CompletionItem(name, _, _, _, _)) -> name = "Start")
         let occurrences = this.CountMethodOccurrences(descrFunc(), "Start")
-        AssertEqualWithMessage(1, occurrences, sprintf "Found wrong number of overloads for 'MailboxProcessor.Start'.  Found %A." completions)
+        AssertEqualWithMessage(2, occurrences, sprintf "Found wrong number of overloads for 'MailboxProcessor.Start'.  Found %A." completions)
        
     [<Test;Category("Repro")>]
     member public this.``WithinMatchClause.Bug1603``() =        

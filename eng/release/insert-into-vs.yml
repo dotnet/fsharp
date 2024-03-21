@@ -73,5 +73,5 @@ stages:
     - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@3
       displayName: 'Insert VS Payload'
       inputs:
-        LinkWorkItemsToPR: true
+        LinkWorkItemsToPR: false
       condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'), eq(variables['Build.SourceBranch'], 'refs/heads/${{ parameters.componentBranchName }}')))
