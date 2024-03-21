@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
-        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <target state="translated">약어가 다르기 때문에 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다.\n    {2}\n 대 \n    {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">

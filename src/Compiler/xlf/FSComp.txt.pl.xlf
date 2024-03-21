@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
         <source>Boolean-returning and return-type-directed partial active patterns</source>
-        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <target state="translated">Zwracane wartości logiczne i zwracane częściowe wzorce aktywne kierowane do typu zwrotnego</target>
         <note />
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
@@ -379,12 +379,12 @@
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
-        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <target state="translated">Optymalizuje ciągi interpolowane w niektórych przypadkach, obniżając do łączenia</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerIntegralRangesToFastLoops">
         <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
-        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
+        <target state="translated">Optymalizuje niektóre zastosowania operatorów zakresu całkowitego (..) i krok-zakresu (.. .), aby przyspieszyć pętle while.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -834,7 +834,7 @@
       </trans-unit>
       <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <target state="translated">Generuj zestaw z widocznością IL zgodną z widocznością kodu źródłowego</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -989,7 +989,7 @@
       </trans-unit>
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
-        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <target state="translated">Tylko proste wzorce są dozwolone w konstruktorach podstawowych</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
@@ -6409,12 +6409,12 @@
       </trans-unit>
       <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="new">This number is outside the allowable range for decimal literals</target>
+        <target state="translated">Ta liczba jest poza dozwolonym zakresem literałów dziesiętnych</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="new">This number is outside the allowable range for 32-bit floats</target>
+        <target state="translated">Ta liczba jest poza dozwolonym zakresem 32-bitowych liczb zmiennoprzecinkowych</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">

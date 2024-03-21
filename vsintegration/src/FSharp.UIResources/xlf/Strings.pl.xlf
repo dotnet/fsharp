@@ -204,37 +204,37 @@
       </trans-unit>
       <trans-unit id="TransparentCompiler">
         <source>Transparent Compiler (experimental)</source>
-        <target state="new">Transparent Compiler (experimental)</target>
+        <target state="translated">Kompilator przezroczysty (eksperymentalny)</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer1">
         <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
+        <target state="translated">OSTRZEŻENIE! Kompilator przezroczysty nie obsługuje jeszcze wszystkich funkcji i może powodować awarie lub dawać niepoprawne wyniki.</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer2">
         <source>Use at your own risk!</source>
-        <target state="new">Use at your own risk!</target>
+        <target state="translated">Używaj na własne ryzyko!</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer3">
         <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
+        <target state="translated">Zaznaczając to pole wyboru, możesz również zdecydować się na dodatkowe dane telemetryczne dotyczące wydajności</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
         <source>Transparent Compiler Cache Factor</source>
-        <target state="new">Transparent Compiler Cache Factor</target>
+        <target state="translated">Współczynnik pamięci podręcznej kompilatora przezroczystego</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
         <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
-        <target state="new">Higher number means more memory will be used for caching. Changing the value wipes cache.</target>
+        <target state="translated">Większa liczba oznacza, że na potrzeby buforowania będzie używana większa ilość pamięci. Zmiana wartości powoduje wyczyszczenie pamięci podręcznej.</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
         <source>Create new project snapshots from existing ones</source>
-        <target state="new">Create new project snapshots from existing ones</target>
+        <target state="translated">Utwórz nowe migawki projektu na podstawie istniejących</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -324,7 +324,7 @@
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
         <source>Use Transparent Compiler (restart required)</source>
-        <target state="new">Use Transparent Compiler (restart required)</target>
+        <target state="translated">Użyj kompilatora przezroczystego (wymagane ponowne uruchomienie)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
