@@ -164,7 +164,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">Povolit aritmetické a logické operace v literálech</target>
+        <target state="new">Allow arithmetic and logical operations in literals</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -684,7 +684,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">Neočekávaný token v definici typu. Za typem {0} se očekává =.</target>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
@@ -694,12 +694,12 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="translated">Byl očekáván výraz.</target>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
-        <target state="translated">Očekává se vzorek.</target>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -824,17 +824,17 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">Toto je nesprávný anonymní záznam. Měl by mít pole {0}.</target>
+        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">Tento anonymní záznam nemá dost polí. Přidejte chybějící pole {0}.</target>
+        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">Tento anonymní záznam má příliš mnoho polí. Odeberte nadbytečná pole {0}.</target>
+        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -1014,7 +1014,7 @@
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">Konstrukt let! ... and! ... se dá použít jen v případě, že tvůrce výpočetních výrazů definuje buď metodu {0}, nebo vhodné metody MergeSource a Bind.</target>
+        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1484,7 +1484,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'</source>
-        <target state="translated">Nerozpoznaná možnost: {0}</target>
+        <target state="new">Unrecognized option: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -1869,7 +1869,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože se liší zkratky: {2} oproti {3}</target>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -3139,7 +3139,7 @@
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
         <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Zadali jste víc dostupností pro metodu getter nebo setter vlastnosti.</target>
+        <target state="new">Multiple accessibilities given for property getter or setter</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -3604,7 +3604,7 @@
       </trans-unit>
       <trans-unit id="tcFieldAppearsTwiceInRecord">
         <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">Pole {0} se v tomto výrazu záznamu nebo vzoru vyskytuje dvakrát.</target>
+        <target state="new">The field '{0}' appears twice in this record expression or pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnknownUnion">
@@ -3914,7 +3914,7 @@
       </trans-unit>
       <trans-unit id="tcUseWhenPatternGuard">
         <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Porovnání rozsahu znaků se už v F# nepoužívá. Zvažte možnost použít místo toho ochrannou vazbu vzoru when.</target>
+        <target state="new">Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -4584,7 +4584,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">Rozhraní nemůžou obsahovat definice konkrétních členů. Možná bude potřeba definovat u typu konstruktor, který bude vyjadřovat, že jde o třídu.</target>
+        <target state="new">Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
@@ -4744,7 +4744,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">Statické definice hodnot se dají použít jenom u typů s primárním konstruktorem. Zvažte přidání argumentů do definice typu, třeba type X(args) = ...</target>
+        <target state="new">Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -5834,7 +5834,7 @@
       </trans-unit>
       <trans-unit id="optLocalValueNotFoundDuringOptimization">
         <source>Local value {0} not found during optimization</source>
-        <target state="translated">Lokální hodnota {0} se během optimalizace nenašla.</target>
+        <target state="new">Local value {0} not found during optimization</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
@@ -5864,7 +5864,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">Je možné, že máte nesprávné odsazení: tento token leží mimo odsazení kontextu, který začíná na pozici {0}. Zkuste tento token odsadit víc nebo použijte standardní konvence formátování.</target>
+        <target state="new">Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -6024,12 +6024,12 @@
       </trans-unit>
       <trans-unit id="lexOusideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="translated">Toto číslo je mimo povolený rozsah pro desítkové literály.</target>
+        <target state="new">This number is outside the allowable range for decimal literals</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOusideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="translated">Toto číslo je mimo povolený rozsah pro 32bitové číslo s plovoucí desetinnou čárkou.</target>
+        <target state="new">This number is outside the allowable range for 32-bit floats</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
@@ -7579,7 +7579,7 @@
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
         <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">Neplatné použití fixed. fixed se dá použít jenom v deklaraci ve tvaru use x = fixed expr, kde výraz je pole, adresa pole nebo adresa prvku pole nebo řetězce.</target>
+        <target state="new">Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8014,7 +8014,7 @@
       </trans-unit>
       <trans-unit id="ArgumentsInSigAndImplMismatch">
         <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">Názvy argumentů v signatuře {0} a implementaci {1} si neodpovídají. Použije se název argumentu ze souboru signatury. To může způsobit problémy při ladění nebo profilování.</target>
+        <target state="new">The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</target>
         <note />
       </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
@@ -8159,7 +8159,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">Nejde volat metodu rozšíření byref {0}. První parametr vyžaduje, aby hodnota byla měnitelná nebo typu byref, která není jen pro čtení.</target>
+        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8249,7 +8249,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">Klíč správce balíčků {0} nebyl zaregistrován v {1}. Aktuálně registrováno: {2}</target>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
