@@ -44,17 +44,17 @@ Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Use Transparent Compiler (experimental);
-Live Buffers;
-Use live (unsaved) buffers for analysis</target>
+        <target state="translated">Guías de estructura de bloques;
+Mostrar guías de estructura para código F#;
+Esquema;
+Mostrar esquema y nodos colapsables para código F#;
+Sugerencias insertadas;
+Mostrar sugerencias de tipo insertadas (vista previa);
+Mostrar sugerencias de tipo de valor devuelto (vista previa);
+Mostrar sugerencias de nombres de parámetro insertadas (vista previa)
+Usar compilador transparente (experimental);
+Búferes activos;
+Usar búferes activos (no guardados) para el análisis</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">

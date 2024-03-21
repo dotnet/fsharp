@@ -44,17 +44,17 @@ Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Use Transparent Compiler (experimental);
-Live Buffers;
-Use live (unsaved) buffers for analysis</target>
+        <target state="translated">ブロック構造のガイド;
+F# コードの構造のガイドラインを表示;
+アウトライン表示;
+F# コードのアウトラインおよび折りたたみ可能なノードを表示する;
+インライン ヒント;
+インライン型のヒントを表示する (プレビュー);
+戻り値型のヒントを表示する (プレビュー);
+インライン パラメーター名のヒントを表示 (プレビュー);
+Transparent Compiler を使用する (試験段階);
+ライブ バッファー;
+分析にライブ (未保存) バッファーを使用する</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
