@@ -9,27 +9,27 @@
       </trans-unit>
       <trans-unit id="CodeLens">
         <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+        <target state="new">CodeLens</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Replace_LineLens">
         <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">선 위가 아니라 오른쪽에 주석 표시</target>
+        <target state="new">Show annotations to the right instead of above the line</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Switch">
         <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">CodeLens 사용(실험적)</target>
+        <target state="new">Enable CodeLens (Experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Prefix">
         <source>Annotation prefix</source>
-        <target state="translated">주석 접두사</target>
+        <target state="new">Annotation prefix</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_UseColors">
         <source>Use colors in annotations</source>
-        <target state="translated">주석에서 색 사용</target>
+        <target state="new">Use colors in annotations</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
         <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">메모리에 데이터가 캐시된 프로젝트 수</target>
+        <target state="new">Number of projects whose data is cached in memory</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -169,7 +169,7 @@
       </trans-unit>
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">프로젝트 데이터가 IDE 기능에 대해 캐시됩니다. 값이 클수록 프로제트가 더 많이 캐시되므로 메모리를 더 많이 사용합니다. 이 값을 조정해도 중소 규모 솔루션에 영향을 미치지 않습니다.</target>
+        <target state="new">Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

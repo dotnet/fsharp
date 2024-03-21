@@ -9,27 +9,27 @@
       </trans-unit>
       <trans-unit id="CodeLens">
         <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+        <target state="new">CodeLens</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Replace_LineLens">
         <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Zobrazí poznámky napravo místo nad řádkem.</target>
+        <target state="new">Show annotations to the right instead of above the line</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Switch">
         <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Povolit funkci CodeLens (experimentální)</target>
+        <target state="new">Enable CodeLens (Experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Prefix">
         <source>Annotation prefix</source>
-        <target state="translated">Předpona poznámky</target>
+        <target state="new">Annotation prefix</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_UseColors">
         <source>Use colors in annotations</source>
-        <target state="translated">Použít barvy v poznámkách</target>
+        <target state="new">Use colors in annotations</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
         <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Počet projektů, jejichž data jsou uložená v mezipaměti</target>
+        <target state="new">Number of projects whose data is cached in memory</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -169,7 +169,7 @@
       </trans-unit>
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">Projektová data jsou uložená v mezipaměti pro funkce IDE. Vyšší hodnoty znamenají využití více paměti, protože je uloženo více projektů. Vyladění této hodnoty by nemělo mít vliv na malá a středně velká řešení.</target>
+        <target state="new">Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

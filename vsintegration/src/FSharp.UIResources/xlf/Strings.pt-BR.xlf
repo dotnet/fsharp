@@ -9,27 +9,27 @@
       </trans-unit>
       <trans-unit id="CodeLens">
         <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+        <target state="new">CodeLens</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Replace_LineLens">
         <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Mostrar anotações à direita da linha, em vez de acima dela</target>
+        <target state="new">Show annotations to the right instead of above the line</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Switch">
         <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Habilitar CodeLens (Experimental)</target>
+        <target state="new">Enable CodeLens (Experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Prefix">
         <source>Annotation prefix</source>
-        <target state="translated">Prefixo da anotação</target>
+        <target state="new">Annotation prefix</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_UseColors">
         <source>Use colors in annotations</source>
-        <target state="translated">Usar cores em anotações</target>
+        <target state="new">Use colors in annotations</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
         <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Número de projetos cujos dados estão em cache na memória</target>
+        <target state="new">Number of projects whose data is cached in memory</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -169,7 +169,7 @@
       </trans-unit>
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">Os dados do projeto são colocados em cache para os recursos do IDE. Os valores mais altos utilizam mais memória porque mais projetos são colocados em cache. O ajuste desses valores não deve afetar as soluções de pequeno ou médio porte.</target>
+        <target state="new">Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">
