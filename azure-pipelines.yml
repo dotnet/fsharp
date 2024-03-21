@@ -140,8 +140,6 @@ stages:
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
-            env:
-                NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
             displayName: End to end build tests
           - task: PublishTestResults@2
@@ -309,8 +307,6 @@ stages:
           - checkout: self
             clean: true
           - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
-            env:
-                NativeToolsOnMachine: true
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
@@ -369,8 +365,6 @@ stages:
           - checkout: self
             clean: true
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
-            env:
-                NativeToolsOnMachine: true
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
