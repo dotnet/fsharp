@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="translated">L’accès au type interne, à la méthode ou au champ «{0}» d’une évaluation précédente dans F# Interactive est déconseillé et peut entraîner des erreurs d’accès ultérieures. Pour activer la génération héritée d’un assemblée dynamique unique qui peut accéder aux éléments internes, utilisez l’option « --multiemit- ».</target>
+        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">Émettre plusieurs assemblées (désactivé par défaut pour .NET Framework)</target>
+        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
