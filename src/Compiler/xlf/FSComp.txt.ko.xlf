@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
         <source>Boolean-returning and return-type-directed partial active patterns</source>
-        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <target state="translated">부울 반환 및 반환 형식 지향 부분 활성 패턴</target>
         <note />
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
@@ -379,12 +379,12 @@
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
-        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <target state="translated">특정 경우에 보간된 문자열을 연결로 낮추어 최적화합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerIntegralRangesToFastLoops">
         <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
-        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
+        <target state="translated">정수 계열 범위(..) 및 범위 단계(.. ..) 연산자의 특정 사용을 빠른 while 루프에 최적화합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -834,7 +834,7 @@
       </trans-unit>
       <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <target state="translated">소스 코드 표시 유형과 일치하는 IL 표시 유형을 사용하여 어셈블리 생성</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -989,7 +989,7 @@
       </trans-unit>
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
-        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <target state="translated">기본 생성자에서는 단순 패턴만 허용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
@@ -6409,12 +6409,12 @@
       </trans-unit>
       <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="new">This number is outside the allowable range for decimal literals</target>
+        <target state="translated">이 숫자는 10진 리터럴에 대해 허용 가능한 범위를 벗어납니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="new">This number is outside the allowable range for 32-bit floats</target>
+        <target state="translated">이 숫자는 32비트 부동 수에 대해 허용 가능한 범위를 벗어납니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">

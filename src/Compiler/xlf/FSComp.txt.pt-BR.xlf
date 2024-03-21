@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
         <source>Boolean-returning and return-type-directed partial active patterns</source>
-        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <target state="translated">Padrões ativos parciais com retorno booleano e direcionados por tipo de retorno</target>
         <note />
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
-        <target state="new">Enforce AttributeTargets</target>
+        <target state="translated">Impor AttributeTargets</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -379,12 +379,12 @@
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
-        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <target state="translated">Otimiza cadeias de caracteres interpoladas em determinados casos, diminuindo a concatenação</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerIntegralRangesToFastLoops">
         <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
-        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
+        <target state="translated">Otimiza determinados usos dos operadores de intervalo integral (...) e de etapa de intervalo (... ..) para loops while rápidos.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -834,7 +834,7 @@
       </trans-unit>
       <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <target state="translated">Gerar um assembly com visibilidade IL que corresponda à visibilidade do código-fonte.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -989,7 +989,7 @@
       </trans-unit>
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
-        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <target state="translated">Somente padrões simples são permitidos em construtores primários</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
@@ -6409,12 +6409,12 @@
       </trans-unit>
       <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="new">This number is outside the allowable range for decimal literals</target>
+        <target state="translated">Este número está fora do intervalo permitido para literais decimais</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="new">This number is outside the allowable range for 32-bit floats</target>
+        <target state="translated">Este número está fora do intervalo permitido para floats de 32-bit</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
