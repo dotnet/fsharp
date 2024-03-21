@@ -484,7 +484,7 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="translated">发出引用程序集的使用无效，请勿同时使用“--staticlink”或“--refonly”和“--refout”。</target>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
@@ -589,7 +589,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">类型定义中出现意外标记。类型“{0}”后应为 "="。</target>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -604,7 +604,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="translated">应为表达式</target>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -719,17 +719,17 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">此匿名记录不正确。它应具有字段 {0}。</target>
+        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">此匿名记录没有足够的字段。请添加缺少的字段 {0}。</target>
+        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">此匿名记录的字段太多。请删除额外的字段 {0}。</target>
+        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -909,7 +909,7 @@
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">仅当计算表达式生成器定义了 "{0}" 方法或适当的 "MergeSource" 和 "Bind" 方法时，才可以使用 "let! ... and! ..." 构造</target>
+        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1309,7 +1309,7 @@
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
         <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">无法解析“{1}”所需的程序集“{0}”</target>
+        <target state="new">Could not resolve assembly '{0}' required by '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
@@ -1379,7 +1379,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'</source>
-        <target state="translated">无法识别的选项:“{0}”</target>
+        <target state="new">Unrecognized option: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -1764,7 +1764,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">签名和实现中类型“{1}”的 {0} 定义不兼容，因为缩写不同: {2} 与 {3}</target>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -3034,7 +3034,7 @@
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
         <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">为属性 Getter 或 Setter 给定了多个可访问性</target>
+        <target state="new">Multiple accessibilities given for property getter or setter</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -3499,7 +3499,7 @@
       </trans-unit>
       <trans-unit id="tcFieldAppearsTwiceInRecord">
         <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">字段“{0}”在此记录表达式或模式中出现了两次</target>
+        <target state="new">The field '{0}' appears twice in this record expression or pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnknownUnion">
@@ -3784,7 +3784,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
         <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">此联合用例需要 {0} 个元组格式的参数</target>
+        <target state="new">This union case expects {0} arguments in tupled form</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -3809,7 +3809,7 @@
       </trans-unit>
       <trans-unit id="tcUseWhenPatternGuard">
         <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">在 F# 中，已删除字符范围匹配。请考虑改用“when”模式保护。</target>
+        <target state="new">Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -4479,7 +4479,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">接口不能包含具体成员的定义。您可能需要定义类型的构造函数来指示该类型是类。</target>
+        <target state="new">Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
@@ -4639,7 +4639,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">静态值定义只能在具有主构造函数的类型中使用。请考虑向类型定义添加参数，例如“type X(args) = ...”。</target>
+        <target state="new">Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -5599,22 +5599,22 @@
       </trans-unit>
       <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
         <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">已由 AssemblyFolders 注册表项找到</target>
+        <target state="new">Found by AssemblyFolders registry key</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
         <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">已由 AssemblyFoldersEx 注册表项找到</target>
+        <target state="new">Found by AssemblyFoldersEx registry key</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionNetFramework">
         <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
+        <target state="new">.NET Framework</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionGAC">
         <source>Global Assembly Cache</source>
-        <target state="translated">全局程序集缓存</target>
+        <target state="new">Global Assembly Cache</target>
         <note />
       </trans-unit>
       <trans-unit id="recursiveClassHierarchy">
@@ -5749,7 +5749,7 @@
       </trans-unit>
       <trans-unit id="optLocalValueNotFoundDuringOptimization">
         <source>Local value {0} not found during optimization</source>
-        <target state="translated">优化过程中未找到本地值 {0}</target>
+        <target state="new">Local value {0} not found during optimization</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
@@ -5779,7 +5779,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">缩进可能不正确: 此标记位于从位置 {0} 开始的上下文的右侧。请尝试进一步缩进此标记，或使用标准格式设置约定。</target>
+        <target state="new">Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -5939,12 +5939,12 @@
       </trans-unit>
       <trans-unit id="lexOusideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="translated">此数字在允许的十进制文本范围之外</target>
+        <target state="new">This number is outside the allowable range for decimal literals</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOusideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="translated">此数字在允许的 32 位浮点数范围之外</target>
+        <target state="new">This number is outside the allowable range for 32-bit floats</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
@@ -7484,7 +7484,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
         <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">如果联合类型有多个用例且为结构，则必须赋予此联合类型中的所有字段唯一的名称。</target>
+        <target state="new">If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
@@ -7494,7 +7494,7 @@
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
         <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">无效的 "fixed" 使用。"fixed" 只能用在 "use x = fixed expr" 形式的声明中，其中表达式为数组、字段的地址、数组元素或字符串的地址</target>
+        <target state="new">Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -7934,7 +7934,7 @@
       </trans-unit>
       <trans-unit id="ArgumentsInSigAndImplMismatch">
         <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">签名“{0}”和实现“{1}”中的参数名称不匹配。将使用签名文件中的参数名称。在进行调试或分析时这可能会导致问题。</target>
+        <target state="new">The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</target>
         <note />
       </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
@@ -8079,7 +8079,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">无法调用 byref 扩展方法 "{0}"。第一个参数要求该值是可变的或非只读的 byref 类型。</target>
+        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8169,7 +8169,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">未在 {1} 中注册包管理器密钥“{0}”。当前注册: {2}</target>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

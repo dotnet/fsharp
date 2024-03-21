@@ -1509,27 +1509,27 @@
       </trans-unit>
       <trans-unit id="ValueRestriction1">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Restriction de valeur. La valeur '{0}' a le type générique\n    {1}    \nRendez les arguments de '{2}' explicites ou, si votre but n'est pas d'utiliser un type générique, ajoutez une annotation de type.</target>
+        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction2">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Restriction de valeur. La valeur '{0}' a le type générique\n    {1}    \nChangez '{2}' en fonction avec des arguments explicites ou, si votre but n'est pas d'utiliser un type générique, ajoutez une annotation de type.</target>
+        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction3">
         <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">Restriction de valeur. Il a été déduit que ce membre avait un type générique\n    {0}    \nLes constructeurs, ainsi que les méthodes getter/setter d'une propriété ne peuvent pas être plus génériques que le type englobant. Ajoutez une annotation de type pour indiquer les types exacts impliqués.</target>
+        <target state="new">Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction4">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Restriction de valeur. Il a été déduit que la valeur '{0}' avait le type générique\n    {1}    \nRendez les arguments de '{2}' explicites ou, si votre but n'est pas d'utiliser un type générique, ajoutez une annotation de type.</target>
+        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction5">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Restriction de valeur. Il a été déduit que la valeur '{0}' avait le type générique\n    {1}    \nDéfinissez '{2}' en tant que terme de données simple, faites-en une fonction avec des arguments explicites ou, si votre but n'est pas d'utiliser un type générique, ajoutez une annotation de type.</target>
+        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">
@@ -1559,7 +1559,7 @@
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
         <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">Les implémentations d'interfaces dans les augmentations sont désormais déconseillées. Les implémentations d'interfaces doivent être fournies dans la déclaration initiale d'un type.</target>
+        <target state="new">Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
