@@ -110,10 +110,13 @@ stages:
             demands: ImageOverride -equals windows.vs2022.amd64
           timeoutInMinutes: 300
           variables:
+          - group: DotNet-Blob-Feed
           - group: DotNet-Symbol-Server-Pats
           - group: DotNet-DevDiv-Insertion-Workflow-Variables
           - name: _SignType
             value: Real
+          - name: _DotNetPublishToBlobFeed
+            value: true
           steps:
           - checkout: self
             clean: true
@@ -127,6 +130,9 @@ stages:
                     /p:MicroBuild_SigningEnabled=true
                     /p:OverridePackageSource=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
                     /p:TeamName=$(_TeamName)
+                    /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
+                    /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+                    /p:DotNetPublishToBlobFeed=true
                     /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
                     /p:DotNetArtifactsCategory=$(_DotNetArtifactsCategory)
                     /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
@@ -138,8 +144,6 @@ stages:
                 NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
             displayName: End to end build tests
-            continueOnError: true
-            condition: always()
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
