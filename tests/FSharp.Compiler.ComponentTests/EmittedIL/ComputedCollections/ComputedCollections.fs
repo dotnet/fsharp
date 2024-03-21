@@ -34,3 +34,13 @@ module ComputedCollections =
     let ``UInt64RangeLists_fs`` compilation =
         compilation
         |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForNInRangeArrays.fs"|])>]
+    let ``ForNInRangeArrays_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForNInRangeLists.fs"|])>]
+    let ``ForNInRangeLists_fs`` compilation =
+        compilation
+        |> verifyCompilation

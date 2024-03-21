@@ -81,3 +81,10 @@ let myFancyFunc (x:string) =
     x 
     |> _.ToL"""
     assertHasItemWithNames ["ToLower"] info
+
+[<Test>]
+let ``Type decl - Record - Field type 01`` () =
+    let info = getCompletionInfo "type Record = { Field:  }" (2, 23)  """
+type Record = { Field:  }
+"""
+    assertHasItemWithNames ["string"] info

@@ -258,7 +258,7 @@ let (|SeqToArray|_|) g expr =
 
 module List =
     /// Makes an expression that will build a list from an integral range.
-    let mkFromIntegralRange tcVal (g: TcGlobals) amap m overallElemTy overallSeqExpr start step finish =
+    let mkFromIntegralRange tcVal (g: TcGlobals) amap m rangeTy overallElemTy rangeExpr start step finish body =
         let collectorTy = g.mk_ListCollector_ty overallElemTy
 
         /// let collector = ListCollector () in
@@ -267,7 +267,16 @@ module List =
         let mkListInit mkLoop =
             mkCompGenLetMutableIn m "collector" collectorTy (mkDefault (m, collectorTy)) (fun (_, collector) ->
                 let reader = InfoReader (g, amap)
-                let loop = mkLoop (fun _idxVar loopVar -> mkCallCollectorAdd tcVal g reader m collector loopVar)
+
+                let loop =
+                    mkLoop (fun _idxVar loopVar ->
+                        let body =
+                            body
+                            |> Option.map (fun (loopVal, body) -> mkInvisibleLet m loopVal loopVar body)
+                            |> Option.defaultValue loopVar
+
+                        mkCallCollectorAdd tcVal g reader m collector body)
+
                 let close = mkCallCollectorClose tcVal g reader m collector
                 mkSequential m loop close
             )
@@ -275,7 +284,7 @@ module List =
         mkOptimizedRangeLoop
             g
             (m, m, m, DebugPointAtWhile.No)
-            (overallElemTy, overallSeqExpr)
+            (rangeTy, rangeExpr)
             (start, step, finish)
             (fun count mkLoop ->
                 match count with
@@ -301,7 +310,7 @@ module Array =
         | NoCheckOvf
 
     /// Makes an expression that will build an array from an integral range.
-    let mkFromIntegralRange g m overallElemTy overallSeqExpr start step finish =
+    let mkFromIntegralRange g m rangeTy ilTy overallElemTy rangeExpr start step finish body =
         let arrayTy = mkArrayType g overallElemTy
 
         let convToNativeInt ovf expr =
@@ -324,21 +333,21 @@ module Array =
             else
                 expr
 
-        let ilTy, ilBasicTy =
-            let ty = stripMeasuresFromTy g overallElemTy
-
-            if typeEquiv g ty g.int32_ty then g.ilg.typ_Int32, DT_I4
-            elif typeEquiv g ty g.int64_ty then g.ilg.typ_Int64, DT_I8
-            elif typeEquiv g ty g.uint64_ty then g.ilg.typ_UInt64, DT_U8
-            elif typeEquiv g ty g.uint32_ty then g.ilg.typ_UInt32, DT_U4
-            elif typeEquiv g ty g.nativeint_ty then g.ilg.typ_IntPtr, DT_I
-            elif typeEquiv g ty g.unativeint_ty then g.ilg.typ_UIntPtr, DT_U
-            elif typeEquiv g ty g.int16_ty then g.ilg.typ_Int16, DT_I2
-            elif typeEquiv g ty g.uint16_ty then g.ilg.typ_UInt16, DT_U2
-            elif typeEquiv g ty g.sbyte_ty then g.ilg.typ_SByte, DT_I1
-            elif typeEquiv g ty g.byte_ty then g.ilg.typ_Byte, DT_U1
-            elif typeEquiv g ty g.char_ty then g.ilg.typ_Char, DT_U2
-            else error (InternalError ($"Unable to find IL type for integral type '{overallElemTy}'.", m))
+        let stelem =
+            if ilTy = g.ilg.typ_Int32 then I_stelem DT_I4
+            elif ilTy = g.ilg.typ_Int64 then I_stelem DT_I8
+            elif ilTy = g.ilg.typ_UInt64 then I_stelem DT_U8
+            elif ilTy = g.ilg.typ_UInt32 then I_stelem DT_U4
+            elif ilTy = g.ilg.typ_IntPtr then I_stelem DT_I
+            elif ilTy = g.ilg.typ_UIntPtr then I_stelem DT_U
+            elif ilTy = g.ilg.typ_Int16 then I_stelem DT_I2
+            elif ilTy = g.ilg.typ_UInt16 then I_stelem DT_U2
+            elif ilTy = g.ilg.typ_SByte then I_stelem DT_I1
+            elif ilTy = g.ilg.typ_Byte then I_stelem DT_U1
+            elif ilTy = g.ilg.typ_Char then I_stelem DT_U2
+            elif ilTy = g.ilg.typ_Double then I_stelem DT_R8
+            elif ilTy = g.ilg.typ_Single then I_stelem DT_R4
+            else I_stelem_any (ILArrayShape.SingleDimensional, ilTy)
 
         /// (# "newarr !0" type ('T) count : 'T array #)
         let mkNewArray count =
@@ -356,13 +365,21 @@ module Array =
         /// array
         let mkArrayInit count mkLoop =
             mkCompGenLetIn m "array" arrayTy (mkNewArray count) (fun (_, array) ->
-                let loop = mkLoop (fun idxVar loopVar -> mkAsmExpr ([I_stelem ilBasicTy], [], [array; convToNativeInt NoCheckOvf idxVar; loopVar], [], m))
+                let loop =
+                    mkLoop (fun idxVar loopVar ->
+                        let body =
+                            body
+                            |> Option.map (fun (loopVal, body) -> mkInvisibleLet m loopVal loopVar body)
+                            |> Option.defaultValue loopVar
+
+                        mkAsmExpr ([stelem], [], [array; convToNativeInt NoCheckOvf idxVar; body], [], m))
+
                 mkSequential m loop array)
 
         mkOptimizedRangeLoop
             g
             (m, m, m, DebugPointAtWhile.No)
-            (overallElemTy, overallSeqExpr)
+            (rangeTy, rangeExpr)
             (start, step, finish)
             (fun count mkLoop ->
                 match count with
@@ -399,7 +416,64 @@ module Array =
                     )
             )
 
-let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
+/// f (); …; Seq.singleton x
+///
+/// E.g., in [for x in … do f (); …; yield x]
+[<return: Struct>]
+let (|SimpleSequential|_|) g expr =
+    let rec loop expr cont =
+        match expr with
+        | Expr.Sequential (expr1, DebugPoints (ValApp g g.seq_singleton_vref (_, [body], _), debug), kind, m) ->
+            ValueSome (cont (expr1, debug body, kind, m))
+
+        | Expr.Sequential (expr1, body, kind, m) ->
+            loop body (cont >> fun body -> Expr.Sequential (expr1, body, kind, m))
+
+        | _ -> ValueNone
+
+    loop expr Expr.Sequential
+
+/// The representation used for
+///
+/// for … in … -> …
+///
+/// and
+///
+/// for … in … do yield …
+[<return: Struct>]
+let (|SeqMap|_|) g expr =
+    match expr with
+    | ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _) ->
+        ValueSome (ty1, ty2, input, mapping, loopVal, body)
+    | _ -> ValueNone
+
+/// The representation used for
+///
+/// for … in … do f (); …; yield …
+[<return: Struct>]
+let (|SeqCollectSingle|_|) g expr =
+    match expr with
+    | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = SimpleSequential g body) as mapping; input], _) ->
+        ValueSome (ty1, ty2, input, mapping, loopVal, body)
+    | _ -> ValueNone
+
+/// for … in … -> …
+/// for … in … do yield …
+/// for … in … do f (); …; yield …
+[<return: Struct>]
+let (|SimpleMapping|_|) g expr =
+    match expr with
+    // for … in … -> …
+    // for … in … do yield …
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = SeqMap g (ty1, ty2, input, mapping, loopVal, body))], _)
+
+    // for … in … do f (); …; yield …
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = SeqCollectSingle g (ty1, ty2, input, mapping, loopVal, body))], _) ->
+        ValueSome (ty1, ty2, input, mapping, loopVal, body)
+
+    | _ -> ValueNone
+
+let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
     if g.ListCollector_tcr.CanDeref then
         match overallExpr with
@@ -408,8 +482,17 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             match overallSeqExpr with
             // [start..finish]
             // [start..step..finish]
-            | IntegralRange g (_, (start, step, finish)) when g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops ->
-                Some (List.mkFromIntegralRange tcVal g amap m overallElemTy overallSeqExpr start step finish)
+            | IntegralRange g (rangeTy, (start, step, finish)) when
+                g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
+                ->
+                Some (List.mkFromIntegralRange tcVal g amap m rangeTy overallElemTy overallSeqExpr start step finish None)
+
+            // [for … in start..finish -> …]
+            // [for … in start..step..finish -> …]
+            | SimpleMapping g (_, _, rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), _, loopVal, body) when
+                g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
+                ->
+                Some (List.mkFromIntegralRange tcVal g amap m rangeTy overallElemTy rangeExpr start step finish (Some (loopVal, body)))
 
             // [(* Anything more complex. *)]
             | _ ->
@@ -421,8 +504,17 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
             match overallSeqExpr with
             // [|start..finish|]
             // [|start..step..finish|]
-            | IntegralRange g (_, (start, step, finish)) when g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops ->
-                Some (Array.mkFromIntegralRange g m overallElemTy overallSeqExpr start step finish)
+            | IntegralRange g (rangeTy, (start, step, finish)) when
+                g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
+                ->
+                Some (Array.mkFromIntegralRange g m rangeTy (ilTyForTy overallElemTy) overallElemTy overallSeqExpr start step finish None)
+
+            // [|for … in start..finish -> …|]
+            // [|for … in start..step..finish -> …|]
+            | SimpleMapping g (_, _, rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), _, loopVal, body) when
+                g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
+                ->
+                Some (Array.mkFromIntegralRange g m rangeTy (ilTyForTy overallElemTy) overallElemTy rangeExpr start step finish (Some (loopVal, body)))
 
             // [|(* Anything more complex. *)|]
             | _ ->
