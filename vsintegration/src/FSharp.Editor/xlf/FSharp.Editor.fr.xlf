@@ -35,13 +35,13 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (experimental);
 Display inline parameter name hints (experimental);Beer</source>
-        <target state="translated">Repères de structure de bloc ;
-Afficher les instructions de structure pour le code F# ;
-Décrivant;
-Afficher les nœuds plan et réductibles pour le code F# ;
-Indicateurs inline ;
-Afficher les indicateurs de type inline (expérimental);
-Afficher les indicateurs de nom de paramètre inline (expérimental); Bière</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (experimental);
+Display inline parameter name hints (experimental);Beer</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -156,15 +156,15 @@ Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental)</source>
-        <target state="translated">Options de performances du projet F# et de la mise en cache ;
-Activer les références entre projets en mémoire ;
-Options de performances IntelliSense ;
-Activer les données périmées pour les fonctionnalités IntelliSense ;
-Durée d’utilisation des résultats périmés (en millisecondes) ;
-Parallélisation (redémarrage nécessaire);
-Activer la vérification de type parallèle avec les fichiers de signature ;
-Activer la résolution de référence parallèle ;
-Activer les références de recherche rapide et renommer (expérimental)</target>
+        <target state="new">F# Project and Caching Performance Options;
+Enable in-memory cross project references;
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -178,11 +178,11 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="translated">Liens de navigation ;
-Afficher les liens de navigation en tant que ;
-Soulignement uni ;
-Soulignement pointé ;
-Soulignement en tirets ;</target>
+        <target state="new">Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

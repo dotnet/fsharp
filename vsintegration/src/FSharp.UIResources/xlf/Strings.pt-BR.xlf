@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
         <source>Enable parallel type checking with signature files</source>
-        <target state="translated">Habilitar a verificação de tipo paralelo com arquivos de assinatura</target>
+        <target state="new">Enable parallel type checking with signature files</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
@@ -74,12 +74,12 @@
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (experimental)</source>
-        <target state="translated">Exibir dicas de nome de parâmetro embutidas (experimental)</target>
+        <target state="new">Display inline parameter name hints (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (experimental)</source>
-        <target state="translated">Exibir as dicas de tipo embutido (experimental)</target>
+        <target state="new">Display inline type hints (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
