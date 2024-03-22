@@ -10,6 +10,7 @@ module GeneratedIterators =
         compilation
         |> withOptions [ "--test:EmitFeeFeeAs100001" ]
         |> asExe
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withNoOptimize
         |> withEmbeddedPdb
         |> withEmbedAllSource
