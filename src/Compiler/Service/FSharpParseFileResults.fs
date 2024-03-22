@@ -298,7 +298,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
         SyntaxTraversal.Traverse(pos, input, visitor)
 
-    member _.GetAllArgumentsForFunctionApplicationAtPostion pos =
+    member _.GetAllArgumentsForFunctionApplicationAtPosition pos =
         SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
 
     member _.TryRangeOfParenEnclosingOpEqualsGreaterUsage opGreaterEqualPos =

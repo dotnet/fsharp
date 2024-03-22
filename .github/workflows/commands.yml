@@ -1,0 +1,122 @@
+name: Commands on PR
+on:
+  issue_comment:
+    types: [created]
+  schedule:
+    # once a day at 13:00 UTC
+    - cron: '0 13 * * *'
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  cleanup_old_runs:
+    if: github.event.schedule == '0 13 * * *'
+    runs-on: ubuntu-20.04
+    permissions:
+      actions: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+    - name: Delete old workflow runs
+      run: |
+        _UrlPath="/repos/$GITHUB_REPOSITORY/actions/workflows"
+        _CurrentWorkflowID="$(gh api -X GET "$_UrlPath" | jq '.workflows[] | select(.name == '\""$GITHUB_WORKFLOW"\"') | .id')"
+
+        # delete workitems which are 'completed'. (other candidate values of status field are: 'queued' and 'in_progress')
+
+        gh api -X GET "$_UrlPath/$_CurrentWorkflowID/runs" --paginate \
+          | jq '.workflow_runs[] | select(.status == "completed") | .id' \
+          | xargs -I{} gh api -X DELETE "/repos/$GITHUB_REPOSITORY/actions/runs"/{}
+
+  run_command:
+    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/run')
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Extract command to run
+      uses: actions/github-script@v3
+      id: command-extractor
+      with:
+        result-encoding: string
+        script: |
+          if (context.eventName !== "issue_comment") throw "Error: This action only works on issue_comment events.";
+
+          // extract the command to run, allowed characters: a-z, A-Z, digits, hyphen, underscore
+          const regex = /^\/run ([a-zA-Z\d\-\_]+)/;
+          command = regex.exec(context.payload.comment.body);
+          if (command == null) throw "Error: No command found in the trigger phrase.";
+
+          return command[1];
+    - name: Get github ref
+      uses: actions/github-script@v3
+      id: get-pr
+      with:
+        script: |
+          const result = await github.pulls.get({
+            pull_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          return { "ref": result.data.head.ref, "repository": result.data.head.repo.full_name};
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ fromJson(steps.get-pr.outputs.result).repository }}
+        ref: ${{ fromJson(steps.get-pr.outputs.result).ref }}
+        fetch-depth: 0
+    - name: Install dotnet
+      uses: actions/setup-dotnet@v3
+      with:
+        global-json-file: global.json
+    - name: Install dotnet tools
+      run: dotnet tool restore
+    - name: Process fantomas command
+      if: steps.command-extractor.outputs.result == 'fantomas'
+      id: fantomas
+      run: dotnet fantomas src -r
+    - name: Process fantomas command
+      if: steps.command-extractor.outputs.result == 'xlf'
+      id: xlf
+      run: dotnet build src\Compiler /t:UpdateXlf
+    - name: Commit and push changes
+      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success'
+      run: |
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git commit -a -m 'Automated command ran: ${{ steps.command-extractor.outputs.result }}
+
+          Co-authored-by: ${{ github.event.comment.user.login }} <${{ github.event.comment.user.id }}+${{ github.event.comment.user.login }}@users.noreply.github.com>'
+        git push
+    - name: Post command comment
+      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success'
+      uses: actions/github-script@v3
+      with:
+        script: |
+          // Probably, there's more universal way of getting outputs, but my gh-actions-fu is not that good.
+          var output = ""
+          if ("${{steps.command-extractor.outputs.result}}" == 'fantomas') {
+            output = "${{steps.fantomas.outputs.result}}"
+          } else if("${{steps.command-extractor.outputs.result}}" == 'xlf') {
+            output = "${{steps.xlf.outputs.result}}"
+          }
+          const body = `Ran ${{ steps.command-extractor.outputs.result }}: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}\n${output}`;
+          await github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+    - name: Post command failed comment
+      if: failure()
+      uses: actions/github-script@v3
+      with:
+        script: |
+          const body = `Failed to run ${{ steps.command-extractor.outputs.result }}: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+          await github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });

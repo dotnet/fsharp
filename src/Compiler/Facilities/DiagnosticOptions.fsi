@@ -22,3 +22,5 @@ type FSharpDiagnosticOptions =
       WarnAsWarn: int list }
 
     static member Default: FSharpDiagnosticOptions
+
+    member CheckXmlDocs: bool

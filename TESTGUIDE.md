@@ -106,8 +106,9 @@ The F# tests are split as follows:
 
 * [FSharp.Compiler.ComponentTests](tests/FSharp.Compiler.ComponentTests) - Validation of compiler APIs.
 
-* [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Visual F# Tools IDE Unit Test Suite
-  This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
+* [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Validation of a wide range of behaviors in the F# Visual Studio project system and language service (including the legacy one).
+
+* [FSharp.Editor.Tests](vsintegration/tests/FSharp.Editor.Tests) - Visual F# Tools IDE Test Suite.
 
 ### FSharp Suite
 
@@ -148,9 +149,9 @@ Tags are in the left column, paths to to corresponding test folders are in the r
 
 If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and adjust `ttags` [run.fsharpqa.test.fsx script](tests/fsharpqa/run.fsharpqa.test.fsx) and run it.
 
-### FSharp.Compiler.UnitTests, FSharp.Core.UnitTests, VisualFSharp.UnitTests
+### FSharp.Compiler.UnitTests, FSharp.Core.UnitTests, VisualFSharp.UnitTests, FSharp.Editor.Tests
 
-These are all NUnit tests. You can execute these tests individually via the Visual Studio NUnit3 runner
+These are all currently NUnit tests (we hope to migrate them to xUnit). You can execute these tests individually via the Visual Studio NUnit3 runner
 extension or the command line via `nunit3-console.exe`.
 
 Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process,

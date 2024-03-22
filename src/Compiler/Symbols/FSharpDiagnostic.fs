@@ -158,13 +158,18 @@ type DiagnosticsScope()  =
             | None -> err ""
 
 /// A diagnostics logger that capture diagnostics, filtering them according to warning levels etc.
-type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDiagnosticOptions) = 
+type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDiagnosticOptions, ?preprocess: (PhasedDiagnostic -> PhasedDiagnostic)) =
     inherit DiagnosticsLogger("CompilationDiagnosticLogger("+debugName+")")
             
     let mutable errorCount = 0
     let diagnostics = ResizeArray<_>()
 
     override _.DiagnosticSink(diagnostic, severity) = 
+        let diagnostic =
+            match preprocess with
+            | Some f -> f diagnostic
+            | None -> diagnostic
+
         if diagnostic.ReportAsError (options, severity) then
             diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
@@ -172,7 +177,7 @@ type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDia
             diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Warning)
         elif diagnostic.ReportAsInfo (options, severity) then
             diagnostics.Add(diagnostic, severity)
-    
+
     override _.ErrorCount = errorCount
 
     member _.GetDiagnostics() = diagnostics.ToArray()

@@ -412,7 +412,7 @@ module Zmap =
         | Some y -> y
         | None -> failwithf "Zmap.force: %s: x = %+A" str x
 
-let equalTypes (s: Type) (t: Type) = s.Equals t
+let equalTypes (s: Type) (t: Type) = Type.op_Equality (s, t)
 
 let equalTypeLists (tys1: Type list) (tys2: Type list) =
     List.lengthsEqAndForall2 equalTypes tys1 tys2
@@ -505,7 +505,7 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
     match tref.Scope with
     | ILScopeRef.Assembly asmref -> convResolveAssemblyRef cenv asmref qualifiedName
     | ILScopeRef.Module _
-    | ILScopeRef.Local _ ->
+    | ILScopeRef.Local ->
         let typT = Type.GetType qualifiedName
 
         match typT with
@@ -820,7 +820,8 @@ let TypeBuilderInstantiationT =
     ty
 
 let typeIsNotQueryable (ty: Type) =
-    (ty :? TypeBuilder) || ((ty.GetType()).Equals(TypeBuilderInstantiationT))
+    (ty :? TypeBuilder)
+    || Type.op_Equality (ty.GetType(), TypeBuilderInstantiationT)
 
 let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
     let res =

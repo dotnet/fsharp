@@ -15,6 +15,9 @@ open System.Threading
 let mutable timeoutAppShowMessageOnTimeOut = true
 
 open Microsoft.FSharp.Control
+open FSharp.Compiler.Interactive
+open FSharp.Compiler.Interactive.CtrlBreakHandlers
+
 // Wrapper around ManualResetEvent which will ignore Sets on disposed object
 type internal EventWrapper() =
     let waitHandle = new ManualResetEvent(false)
@@ -129,7 +132,7 @@ let catchAll trigger x =
     try trigger x  
     with err -> System.Windows.Forms.MessageBox.Show(err.ToString()) |> ignore
 
-let determineFsiPath () =    
+let determineFsiPath () =
     if SessionsProperties.fsiUseNetCore then
         let pf = Environment.GetEnvironmentVariable("ProgramW6432")
         let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
@@ -137,7 +140,7 @@ let determineFsiPath () =
         let arg = "fsi"
         if not (File.Exists exe) then
             raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe exe))
-        exe, arg, false, false
+        exe, arg, false
     else
         let fsiExeName () = 
             if SessionsProperties.useAnyCpuVersion then
@@ -152,9 +155,9 @@ let determineFsiPath () =
             let thisAssemblyDirectory = typeof<EventWrapper>.Assembly.Location |> Path.GetDirectoryName
             Path.Combine(thisAssemblyDirectory,fsiExeName() )
 
-        // This path is relative to the location of "FSharp.Compiler.Interactive.Settings.dll"
+        // This path is relative to the location of "FSharp.Compiler.Service.dll"
         let determineFsiRelativePath2 () =
-            let thisAssembly : System.Reflection.Assembly = typeof<FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
+            let thisAssembly : System.Reflection.Assembly = typeof<CtrlBreakClient>.Assembly
             let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
             // Use the quick-development path if available    
             Path.Combine(thisAssemblyDirectory, "Tools", fsiExeName() )
@@ -175,7 +178,7 @@ let determineFsiPath () =
 
             // Otherwise give up
             raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
-        fsiExe, "", true, true
+        fsiExe, "", true
 
 let readOutputAsync (reader: StreamReader) trigger =
     let buffer = StringBuilder(1024)
@@ -234,7 +237,7 @@ let readOutputAsync (reader: StreamReader) trigger =
 
 let fsiStartInfo channelName sourceFile =
     let procInfo = new ProcessStartInfo()
-    let fsiPath, fsiFirstArgs, fsiSupportsServer, fsiSupportsShadowcopy  = determineFsiPath () 
+    let fsiPath, fsiFirstArgs, fsiSupportsShadowcopy  = determineFsiPath () 
 
     procInfo.FileName  <- fsiPath
 
@@ -278,7 +281,7 @@ let fsiStartInfo channelName sourceFile =
     if Directory.Exists(initialPath) then
         procInfo.WorkingDirectory <- initialPath
 
-    procInfo, fsiSupportsServer
+    procInfo
 
 
 let nonNull = function null -> false | (s:string) -> true
@@ -286,13 +289,13 @@ let nonNull = function null -> false | (s:string) -> true
 /// Represents an active F# Interactive process to which Visual Studio is connected via stdin/stdout/stderr and a remoting channel
 type FsiSession(sourceFile: string) = 
     let randomSalt = System.Random()
-    let channelName = 
-        let pid  = System.Diagnostics.Process.GetCurrentProcess().Id
-        let tick = System.Environment.TickCount
+    let channelName =
+        let pid  = Process.GetCurrentProcess().Id
+        let tick = Environment.TickCount
         let salt = randomSalt.Next()
         sprintf "FSIChannel_%d_%d_%d" pid tick salt
 
-    let procInfo, fsiSupportsServer = fsiStartInfo channelName sourceFile
+    let procInfo = fsiStartInfo channelName sourceFile
 
     let usingNetCore = SessionsProperties.fsiUseNetCore
 
@@ -349,24 +352,19 @@ type FsiSession(sourceFile: string) =
 
     do cmdProcess.EnableRaisingEvents <- true
 
-    let clientConnection   = 
-        if fsiSupportsServer then
-            try Some (FSharp.Compiler.Server.Shared.FSharpInteractiveServer.StartClient(channelName))
-            with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
-        else
-            None
+    let client =
+        try
+            new CtrlBreakClient(channelName)
+        with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
 
-    /// interrupt timeout in miliseconds 
-    let interruptTimeoutMS   = 1000 
+    /// interrupt timeout in miliseconds
+    let interruptTimeoutMS = 1000
 
     // Create session object 
     member _.Interrupt() = 
-       match clientConnection with
-       | None -> false
-       | Some client ->
-           match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
-           | Some () -> true
-           | None    -> false
+        match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
+        | Some () -> true
+        | None    -> false
 
     member _.SendInput (str: string) = inputQueue.Post(str)
 
@@ -378,7 +376,7 @@ type FsiSession(sourceFile: string) =
 
     member _.Alive       = not cmdProcess.HasExited
 
-    member _.SupportsInterrupt = not cmdProcess.HasExited && clientConnection.IsSome // clientConnection not on .NET Core
+    member _.SupportsInterrupt = not cmdProcess.HasExited
 
     member _.ProcessID   =
         // When using .NET Core, allow up to 2 seconds to allow detection of process ID

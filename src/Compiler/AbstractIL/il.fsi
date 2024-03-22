@@ -1134,6 +1134,7 @@ type ILMethodDef =
     member internal WithHideBySig: bool -> ILMethodDef
     member internal WithFinal: bool -> ILMethodDef
     member internal WithAbstract: bool -> ILMethodDef
+    member internal WithVirtual: bool -> ILMethodDef
     member internal WithAccess: ILMemberAccess -> ILMethodDef
     member internal WithNewSlot: ILMethodDef
     member internal WithSecurity: bool -> ILMethodDef

@@ -55,6 +55,34 @@ module ExceptionDefinition =
         |> compileExeAndRun
         |> shouldSucceed
 
+        // SOURCE=AddMessageProperty.fs                                                               # AddMessageProperty
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AddMessageProperty.fs"|])>]
+    let``AddMessageProperty`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+     // SOURCE=ManualMessagePropertyWinsOverAutomaticOne.fs                                                               # ManualMessagePropertyWinsOverAutomaticOne
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ManualMessagePropertyWinsOverAutomaticOne.fs"|])>]
+    let``ManualMessagePropertyWinsOverAutomaticOne`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+     // SOURCE=PrivateMessagePropertyIsNotReplacingBuiltinMessage.fs                                                               # PrivateMessagePropertyIsNotReplacingBuiltinMessage
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PrivateMessagePropertyIsNotReplacingBuiltinMessage.fs"|])>]
+    let``PrivateMessagePropertyIsNotReplacingBuiltinMessage`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> ignoreWarnings
+        |> compileExeAndRun
+        |> shouldSucceed
+
     // SOURCE=CatchWOTypecheck01.fs                                                            # CatchWOTypeCheck01
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CatchWOTypecheck01.fs"|])>]
     let``CatchWOTypecheck01_fs`` compilation =

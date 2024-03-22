@@ -394,44 +394,6 @@ let test() =
         ]
 
     [<Test>]
-    let ``Can't use both --refonly and --staticlink``() =
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let test() =
-    Console.WriteLine("Hello World!")
-            """
-
-        FSharp src
-        |> withOptions ["--staticlink:foo"; "--refonly"]
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.")
-        |> ignore
-
-    [<Test>]
-    let ``Can't use both --refoout and --staticlink``() =
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let test() =
-    Console.WriteLine("Hello World!")
-            """
-
-        FSharp src
-        |> withOptions ["--staticlink:foo"; "--refout:foo"]
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.")
-        |> ignore
-
-    [<Test>]
     let ``Internal DU type doesn't generate any properties/methods without IVT`` () =
         FSharp """
 module ReferenceAssembly

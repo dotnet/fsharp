@@ -229,6 +229,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     interface IEnumerable<'T>
     interface System.Collections.IEnumerable
     interface System.IComparable
+    interface System.Collections.IStructuralEquatable
     interface IReadOnlyCollection<'T>
     override Equals: obj -> bool
 

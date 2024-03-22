@@ -171,6 +171,9 @@ type public FSharpSymbolUse =
     /// Indicates if the reference is in open statement
     member IsFromOpenStatement: bool
 
+    /// Indicates if the reference is used for example at a call site
+    member IsFromUse: bool
+
     /// The file name the reference occurs in
     member FileName: string
 

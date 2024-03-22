@@ -1,0 +1,7 @@
+# -------------------------------------------------------------------------------
+# use a completely new error number and keep messages in their surrounding groups
+# -------------------------------------------------------------------------------
+assemblyResolutionFoundByAssemblyFoldersKey,"Found by AssemblyFolders registry key"
+assemblyResolutionFoundByAssemblyFoldersExKey,"Found by AssemblyFoldersEx registry key"
+assemblyResolutionNetFramework,".NET Framework"
+assemblyResolutionGAC,"Global Assembly Cache"

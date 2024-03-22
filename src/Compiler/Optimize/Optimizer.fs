@@ -1575,7 +1575,7 @@ let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
 
 let IsDiscardableEffectExpr expr = 
     match stripDebugPoints expr with 
-    | Expr.Op (TOp.LValueOp (LByrefGet _, _), [], [], _) -> true 
+    | Expr.Op (TOp.LValueOp (LByrefGet, _), [], [], _) -> true 
     | _ -> false
 
 /// Checks is a value binding is non-discardable

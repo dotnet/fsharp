@@ -242,14 +242,14 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member _.IsFromDispatchSlotImplementation = itemOcc = ItemOccurence.Implemented
 
+    member _.IsFromUse = itemOcc = ItemOccurence.Use
+
     member _.IsFromComputationExpression =
         match symbol.Item, itemOcc with
         // 'seq' in 'seq { ... }' gets colored as keywords
         | Item.Value vref, ItemOccurence.Use when valRefEq denv.g denv.g.seq_vref vref -> true
         // custom builders, custom operations get colored as keywords
-        | (Item.CustomBuilder _
-          | Item.CustomOperation _),
-          ItemOccurence.Use -> true
+        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use -> true
         | _ -> false
 
     member _.IsFromOpenStatement = itemOcc = ItemOccurence.Open
@@ -261,11 +261,25 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
     member this.IsPrivateToFile =
         let isPrivate =
             match this.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
+            | :? FSharpMemberOrFunctionOrValue as m ->
+                let fileSignatureLocation =
+                    m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation)
+
+                let fileDeclarationLocation =
+                    m.DeclaringEntity |> Option.map (fun e -> e.DeclarationLocation)
+
+                let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
+
+                let symbolIsNotInSignatureFile = m.SignatureLocation = Some m.DeclarationLocation
+
+                fileHasSignatureFile && symbolIsNotInSignatureFile
+                || not m.IsModuleValueOrMember
+                || m.Accessibility.IsPrivate
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
             | :? FSharpGenericParameter -> true
             | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
             | :? FSharpField as m -> m.Accessibility.IsPrivate
+            | :? FSharpActivePatternCase as m -> m.Accessibility.IsPrivate
             | _ -> false
 
         let declarationLocation =
@@ -820,7 +834,7 @@ type internal TypeCheckInfo
             if p >= 0 then Some p else None
 
     /// Build a CompetionItem
-    let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
+    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
         let kind =
             match item.Item with
             | Item.FakeInterfaceCtor _
@@ -2306,14 +2320,8 @@ module internal ParseAndCheckFile =
 
                     matchBraces stackAfterMatch
 
-                | LPAREN
-                  | LBRACE _
-                  | LBRACK
-                  | LBRACE_BAR
-                  | LBRACK_BAR
-                  | LQUOTE _
-                  | LBRACK_LESS as tok,
-                  _ -> matchBraces ((tok, lexbuf.LexemeRange) :: stack)
+                | LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS as tok, _ ->
+                    matchBraces ((tok, lexbuf.LexemeRange) :: stack)
 
                 // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string
                 //
@@ -2322,9 +2330,7 @@ module internal ParseAndCheckFile =
                 //   interpolation expression)
                 //
                 // Either way we start a new potential match at the last character
-                | INTERP_STRING_BEGIN_PART _
-                  | INTERP_STRING_PART _ as tok,
-                  _ ->
+                | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
                     let m = lexbuf.LexemeRange
 
                     let m2 =
@@ -2332,9 +2338,7 @@ module internal ParseAndCheckFile =
 
                     matchBraces ((tok, m2) :: stack)
 
-                | (EOF _
-                  | LEX_FAILURE _),
-                  _ -> ()
+                | (EOF _ | LEX_FAILURE _), _ -> ()
                 | _ -> matchBraces stack
 
             matchBraces [])
@@ -2343,6 +2347,9 @@ module internal ParseAndCheckFile =
 
     let parseFile (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
+
+        use act =
+            Activity.start "ParseAndCheckFile.parseFile" [| Activity.Tags.fileName, fileName |]
 
         let errHandler =
             DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
@@ -2498,7 +2505,13 @@ module internal ParseAndCheckFile =
         ) =
 
         cancellable {
-            use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
+            use _ =
+                Activity.start
+                    "ParseAndCheckFile.CheckOneFile"
+                    [|
+                        Activity.Tags.fileName, mainInputFileName
+                        Activity.Tags.length, sourceText.Length.ToString()
+                    |]
 
             let parsedMainInput = parseResults.ParseTree
 
@@ -2652,9 +2665,9 @@ type FSharpCheckFileResults
         ToolTipText.ToolTipText
             [
                 for kw in names do
-                    match Tokenization.FSharpKeywords.KeywordsDescriptionLookup.TryGetValue kw with
-                    | false, _ -> ()
-                    | true, kwDescription ->
+                    match Tokenization.FSharpKeywords.KeywordsDescriptionLookup kw with
+                    | None -> ()
+                    | Some kwDescription ->
                         let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
                         let kwTip = ToolTipElementData.Create(kwText, FSharpXmlDoc.None)
 

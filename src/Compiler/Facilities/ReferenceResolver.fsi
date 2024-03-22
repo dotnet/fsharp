@@ -4,17 +4,17 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 
-exception internal LegacyResolutionFailure
+exception LegacyResolutionFailure
 
 [<RequireQualifiedAccess>]
-type internal LegacyResolutionEnvironment =
+type LegacyResolutionEnvironment =
     /// Indicates a script or source being edited or compiled. Uses reference assemblies (not implementation assemblies).
     | EditingOrCompilation of isEditing: bool
 
     /// Indicates a script or source being dynamically compiled and executed. Uses implementation assemblies.
     | CompilationAndEvaluation
 
-type internal LegacyResolvedFile =
+type LegacyResolvedFile =
     {
         /// Item specification.
         itemSpec: string
@@ -27,7 +27,7 @@ type internal LegacyResolvedFile =
     }
 
 [<AllowNullLiteral>]
-type internal ILegacyReferenceResolver =
+type ILegacyReferenceResolver =
     /// Get the "v4.5.1"-style moniker for the highest installed .NET Framework version.
     /// This is the value passed back to Resolve if no explicit "mscorlib" has been given.
     ///
@@ -59,5 +59,5 @@ type internal ILegacyReferenceResolver =
 // outside FSharp.Compiler.Service
 [<Class; AllowNullLiteral; Obsolete("This API is obsolete and not for external use")>]
 type LegacyReferenceResolver =
-    internal new: impl: ILegacyReferenceResolver -> LegacyReferenceResolver
+    new: impl: ILegacyReferenceResolver -> LegacyReferenceResolver
     member internal Impl: ILegacyReferenceResolver

@@ -15,6 +15,7 @@
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+	<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
   </ItemGroup>
 
   <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->

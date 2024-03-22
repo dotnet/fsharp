@@ -14,4 +14,8 @@
     </Otherwise>
   </Choose>
 
+  <PropertyGroup>
+     <!-- Override the setting for the Arcade UserRuntimeConfig for fsc on .NET Core -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
 </Project>

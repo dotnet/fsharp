@@ -2847,9 +2847,7 @@ let ComputeDebugPointForBinding g bind =
         | DebugPointAtBinding.NoneAtDo, _ -> false, None
         | DebugPointAtBinding.NoneAtLet, _ -> false, None
         // Don't emit debug points for lambdas.
-        | _,
-          (Expr.Lambda _
-          | Expr.TyLambda _) -> false, None
+        | _, (Expr.Lambda _ | Expr.TyLambda _) -> false, None
         | DebugPointAtBinding.Yes m, _ -> false, Some m
 
 //-------------------------------------------------------------------------
@@ -4157,7 +4155,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
     | Expr.Val (v, _, m), _, [ arg ] when valRefEq g v g.methodhandleof_vref ->
         let (|OptionalCoerce|) x =
             match stripDebugPoints x with
-            | Expr.Op (TOp.Coerce _, _, [ arg ], _) -> arg
+            | Expr.Op (TOp.Coerce, _, [ arg ], _) -> arg
             | x -> x
 
         let (|OptionalTyapp|) x =
@@ -4702,7 +4700,7 @@ and eligibleForFilter (cenv: cenv) expr =
         | Expr.Op (TOp.UnionCaseFieldGet _, _, _, _) -> true
         | Expr.Op (TOp.ValFieldGet _, _, _, _) -> true
         | Expr.Op (TOp.TupleFieldGet _, _, _, _) -> true
-        | Expr.Op (TOp.Coerce _, _, _, _) -> true
+        | Expr.Op (TOp.Coerce, _, _, _) -> true
         | Expr.Val _ -> true
         | _ -> false
 
@@ -5141,21 +5139,10 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
     // For these we can just generate the argument and change the test (from a brfalse to a brtrue and vice versa)
     | ([ AI_ceq ],
        [ arg1
-         Expr.Const ((Const.Bool false
-                     | Const.SByte 0y
-                     | Const.Int16 0s
-                     | Const.Int32 0
-                     | Const.Int64 0L
-                     | Const.Byte 0uy
-                     | Const.UInt16 0us
-                     | Const.UInt32 0u
-                     | Const.UInt64 0UL),
+         Expr.Const ((Const.Bool false | Const.SByte 0y | Const.Int16 0s | Const.Int32 0 | Const.Int64 0L | Const.Byte 0uy | Const.UInt16 0us | Const.UInt32 0u | Const.UInt64 0UL),
                      _,
                      _) ],
-       CmpThenBrOrContinue (1,
-                            [ I_brcmp ((BI_brfalse
-                                       | BI_brtrue) as bi,
-                                       label1) ]),
+       CmpThenBrOrContinue (1, [ I_brcmp ((BI_brfalse | BI_brtrue) as bi, label1) ]),
        _) ->
 
         let bi =
@@ -7594,7 +7581,7 @@ and GenDecisionTreeSwitch
 
     // Use GenDecisionTreeTest to generate a single test for null (when no box required) where the success
     // is going to the immediate first node in the tree
-    | TCase (DecisionTreeTest.IsNull _, (TDSuccess ([], 0) as successTree)) :: rest when
+    | TCase (DecisionTreeTest.IsNull, (TDSuccess ([], 0) as successTree)) :: rest when
         rest.Length = (match defaultTargetOpt with
                        | None -> 1
                        | Some _ -> 0)
@@ -7910,9 +7897,7 @@ and GenDecisionTreeTest
             // If so, emit the failure logic, then came back and do the success target, then
             // do any postponed failure target.
             match successTree, failureTree with
-            | TDSuccess _,
-              (TDBind _
-              | TDSwitch _) ->
+            | TDSuccess _, (TDBind _ | TDSwitch _) ->
 
                 // OK, there is more logic in the decision tree on the failure branch
                 let success = CG.GenerateDelayMark cgbuf "testSuccess"
@@ -10648,10 +10633,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     | None -> None
                     | Some memberInfo ->
                         match name, memberInfo.MemberFlags.MemberKind with
-                        | ("Item"
-                          | "op_IndexedLookup"),
-                          (SynMemberKind.PropertyGet
-                          | SynMemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal g vref.Deref)) ->
+                        | ("Item" | "op_IndexedLookup"), (SynMemberKind.PropertyGet | SynMemberKind.PropertySet) when
+                            not (isNil (ArgInfosOfPropertyVal g vref.Deref))
+                            ->
                             Some(
                                 mkILCustomAttribute (
                                     g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute",
@@ -11445,7 +11429,13 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                     let ilFieldName = ComputeFieldName exnc fld
 
                     let ilMethodDef =
-                        mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, [])
+                        let def =
+                            mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, [])
+
+                        if ilPropName = "Message" then
+                            def.WithVirtual(true)
+                        else
+                            def
 
                     let ilFieldDef =
                         mkILInstanceField (ilFieldName, ilPropType, None, ILMemberAccess.Assembly)
@@ -11532,6 +11522,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                     cenv.g.langVersion.SupportsFeature(LanguageFeature.BetterExceptionPrinting)
                     && not (exnc.HasMember g "get_Message" [])
                     && not (exnc.HasMember g "Message" [])
+                    && not (fspecs |> List.exists (fun rf -> rf.DisplayNameCore = "Message"))
                 then
                     yield! GenPrintingMethod cenv eenv "get_Message" ilThisTy m
             ]

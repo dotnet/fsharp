@@ -46,7 +46,7 @@ match () with
     assertHasSymbolUsages ["x"; "y"; "CompiledNameAttribute"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
         "(3,2--3,25): Attributes are not allowed within patterns"
-        "(3,4--3,16): This attribute is not valid for use on this language element"
+        "(3,4--3,23): This attribute is not valid for use on this language element"
     ]
 
 
@@ -78,26 +78,6 @@ match 1, 2 with
     dumpDiagnostics checkResults |> shouldEqual [
         "(3,2--3,6): The type '(int * int)' does not have 'null' as a proper value"
         "(2,6--2,10): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
-    ]
-
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
-let ``Union case 01 - Missing field`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of int * int * int
-
-match A with
-| B (x, _) -> let y = x + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,10): This union case expects 3 arguments in tupled form"        
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
 
@@ -197,47 +177,6 @@ match A with
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
-let ``Union case 07 - Named args - Name used twice`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of field: int * int
-
-match A with
-| B (field = x; field = z) -> let y = x + z + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,16--7,21): Union case/exception field 'field' cannot be used more than once."
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
-    ]
-
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
-let ``Union case 08 - Multiple tupled args`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of field: int * int
-
-match A with
-| B x z -> let y = x + z + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,7): This union case expects 2 arguments in tupled form"
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
-    ]
-
-
 [<Test>]
 let ``Union case 09 - Single arg`` () =
     let _, checkResults = getParseAndCheckResults """
@@ -248,7 +187,6 @@ match None with
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
     ]
-
 
 [<Test>]
 #if !NETCOREAPP
@@ -781,6 +719,7 @@ let z as =
 """
     dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
+        "(10,5--10,6): Expecting pattern"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
         "(13,8--13,10): Unexpected keyword 'as' in binding"
@@ -801,6 +740,7 @@ let z as =
         "(6,4--6,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
         "(8,29--8,30): This expression was expected to have type 'unit' but here has type 'int'"
         "(9,26--9,27): This expression was expected to have type 'unit' but here has type 'int'"
+        "(10,14--10,15): This expression was expected to have type ''a * 'b' but here has type 'int'"
         "(15,4--15,5): The pattern discriminator 'r' is not defined."
         "(15,4--15,12): Incomplete pattern matches on this expression."
     ]
@@ -1182,6 +1122,7 @@ let as :? z =
 """
     dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
+        "(10,5--10,6): Expecting pattern"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
         "(13,8--13,10): Unexpected keyword 'as' in binding"
@@ -1209,6 +1150,8 @@ let as :? z =
         "(8,25--8,29): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
         "(9,25--9,26): The type 'g' is not defined."
         "(9,22--9,26): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
+        "(10,13--10,14): The type 'i' is not defined."
+        "(10,10--10,14): The type ''a * 'b' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
         "(16,4--16,5): The pattern discriminator 't' is not defined."
         "(16,14--16,15): The type 'u' is not defined."
         "(16,11--16,15): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."

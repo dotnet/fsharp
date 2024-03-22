@@ -80,7 +80,6 @@ namespace FSharpTest
 """
         |> compile
         |> shouldSucceed
-        |> ignore
 
     [<Fact>]
     let ``CheckingSyntacticTypes - TcTyconDefnCore_CheckForCyclicStructsAndInheritance - Non-Struct DU Tree Cyclic Tree`` () =

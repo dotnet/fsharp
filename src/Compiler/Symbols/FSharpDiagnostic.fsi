@@ -106,7 +106,9 @@ type internal CompilationDiagnosticLogger =
     inherit DiagnosticsLogger
 
     /// Create the diagnostics logger
-    new: debugName: string * options: FSharpDiagnosticOptions -> CompilationDiagnosticLogger
+    new:
+        debugName: string * options: FSharpDiagnosticOptions * ?preprocess: (PhasedDiagnostic -> PhasedDiagnostic) ->
+            CompilationDiagnosticLogger
 
     /// Get the captured diagnostics
     member GetDiagnostics: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]

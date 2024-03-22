@@ -937,6 +937,19 @@ namespace Microsoft.FSharp.Core
         /// or an enclosing module opened.</summary>
         member Path: string
 
+    /// <summary>Indicates a value or a function that must not be inlined by the F# compiler,
+    /// but may be inlined by the JIT compiler.</summary>
+    ///
+    /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
+    [<Sealed>]
+    type NoCompilerInliningAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>NoCompilerInliningAttribute</returns>
+        new: unit -> NoCompilerInliningAttribute
+
     /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to

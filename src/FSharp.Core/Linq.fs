@@ -44,9 +44,9 @@ module LeafExpressionConverter =
     let equivHeadTypes (ty1:Type) (ty2:Type) =
         isNamedType(ty1) &&
         if ty1.IsGenericType then
-            ty2.IsGenericType && (ty1.GetGenericTypeDefinition()).Equals(ty2.GetGenericTypeDefinition())
+            ty2.IsGenericType && Type.op_Equality(ty1.GetGenericTypeDefinition(), ty2.GetGenericTypeDefinition())
         else
-            ty1.Equals(ty2)
+            Type.op_Equality(ty1, ty2)
 
     let isFunctionType typ = equivHeadTypes typ (typeof<(int -> int)>)
 
@@ -458,7 +458,7 @@ module LeafExpressionConverter =
             let converted = ConvExprToLinqInContext env x
 
             // Most of conversion scenarios in C# are covered by Expression.Convert
-            if x.Type.Equals toTy then converted // source and target types match - do nothing
+            if Type.op_Equality(x.Type, toTy) then converted // source and target types match - do nothing
             elif not (x.Type.IsValueType || toTy.IsValueType) && toTy.IsAssignableFrom x.Type then converted // converting reference type to supertype - do nothing
             else Expression.Convert(converted, toTy) |> asExpr // emit Expression.Convert
 
@@ -522,7 +522,10 @@ module LeafExpressionConverter =
                 Expression.New(ctor, argsR, [| for p in props -> (p :> MemberInfo) |]) |> asExpr
 
             // Do the same thing as C# compiler for string addition
-            | PlusQ (_, GenericArgs [|ty1; ty2; ty3|], [x1; x2]) when ty1 = typeof<string> && ty2 = typeof<string> && ty3 = typeof<string> ->
+            | PlusQ (_, GenericArgs [|ty1; ty2; ty3|], [x1; x2])
+                when Type.op_Equality(ty1, typeof<string>) &&
+                     Type.op_Equality(ty2, typeof<string>) &&
+                     Type.op_Equality(ty3, typeof<string>) ->
                  Expression.Add(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2, StringConcat) |> asExpr
 
             // LanguagePrimitives.PhysicalEquality's generic constraint of both sides being the same reference type is already sufficient for Linq Expressions' requirements

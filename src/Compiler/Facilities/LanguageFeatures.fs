@@ -54,7 +54,14 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
-
+    | MatchNotAllowedForUnionCaseWithNoData
+    | CSharpExtensionAttributeNotRequired
+    | ErrorForNonVirtualMembersOverrides
+    | WarningWhenInliningMethodImplNoInlineMarkedFunction
+    | EscapeDotnetFormattableStrings
+    | ArithmeticInLiterals
+    | ErrorReportingOnStaticClasses
+ 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
 
@@ -124,6 +131,14 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
+                LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
+                LanguageFeature.CSharpExtensionAttributeNotRequired, previewVersion
+                LanguageFeature.ErrorForNonVirtualMembersOverrides, previewVersion
+                LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction, previewVersion
+                LanguageFeature.EscapeDotnetFormattableStrings, previewVersion
+                LanguageFeature.ArithmeticInLiterals, previewVersion
+                LanguageFeature.ErrorReportingOnStaticClasses, previewVersion
+
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -230,6 +245,13 @@ type LanguageVersion(versionText) =
         | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
         | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
+        | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
+        | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired  ()
+        | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides  ()
+        | LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction -> FSComp.SR.featureWarningWhenInliningMethodImplNoInlineMarkedFunction ()
+        | LanguageFeature.EscapeDotnetFormattableStrings -> FSComp.SR.featureEscapeBracesInFormattableString ()
+        | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
+        | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

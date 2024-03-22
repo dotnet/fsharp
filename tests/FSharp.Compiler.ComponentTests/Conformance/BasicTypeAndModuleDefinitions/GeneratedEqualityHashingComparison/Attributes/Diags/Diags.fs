@@ -17,7 +17,7 @@ module Diags =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 3, Line 7, Col 23, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 7, Col 3, Line 7, Col 30, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
         ]
 
     // SOURCE=E_AdjustUses01b.fs SCFLAGS=--test:ErrorRanges                 # E_AdjustUses01b.fs
@@ -28,6 +28,6 @@ module Diags =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 3, Line 7, Col 23, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 7, Col 3, Line 7, Col 30, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
         ]
 

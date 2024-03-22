@@ -54,6 +54,9 @@ type NegativeClass() =
    abstract M2 : 'T with get, set
    abstract M3 : 'T with set
    abstract M4 : 'T with get
+   abstract M5<'T> : 'T with get, set
+   abstract M6<'T> : 'T with set
+   abstract M7<'T> : 'T with get
 
 type NegativeRecord =
    { v : 'T }

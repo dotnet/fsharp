@@ -281,7 +281,7 @@ type internal FSharpSignatureHelpProvider
                     let numDefinedArgs = definedArgs.Length
 
                     let curriedArgsInSource =
-                        parseResults.GetAllArgumentsForFunctionApplicationAtPostion symbolUse.Range.Start
+                        parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
                         |> Option.defaultValue []
                         |> Array.ofList
 

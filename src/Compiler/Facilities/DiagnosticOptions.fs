@@ -31,3 +31,6 @@ type FSharpDiagnosticOptions =
             WarnAsError = []
             WarnAsWarn = []
         }
+
+    member x.CheckXmlDocs =
+        List.contains 3390 x.WarnOn && not (List.contains 3390 x.WarnOff)

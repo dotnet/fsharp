@@ -54,6 +54,7 @@
     <Compile Include="Compiler\Language\CompilerDirectiveTests.fs" />
     <Compile Include="Compiler\Language\DefaultInterfaceMemberTests.fs" />
     <Compile Include="Compiler\Language\OptionalInteropTests.fs" />
+    <Compile Include="Compiler\Language\StaticNameResolutionTests.fs" />
     <Compile Include="Compiler\Language\UIntTests.fs" />
     <Compile Include="Compiler\Language\FixedIndexSliceTests.fs" />
     <Compile Include="Compiler\Language\SlicingQuotationTests.fs" />

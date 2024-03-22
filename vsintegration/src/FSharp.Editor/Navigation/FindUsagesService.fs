@@ -121,9 +121,8 @@ type internal FSharpFindUsagesService
                     // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
                     // In order to find all its usages we have to check all F# projects.
                     | _ -> Seq.toList document.Project.Solution.Projects
-                
-                let! _ = SymbolHelpers.getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound) |> liftAsync
-                ()
+                let! ct = Async.CancellationToken |> liftAsync
+                do! SymbolHelpers.getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound, ct) |> Async.AwaitTask |> liftAsync
         } |> Async.Ignore
 
     interface IFSharpFindUsagesService with

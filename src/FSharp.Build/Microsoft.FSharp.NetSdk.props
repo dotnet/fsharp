@@ -67,6 +67,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <DotnetFsiCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsi.dll"</DotnetFsiCompilerPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(ManagePackageVersionsCentrally)' == 'true' ">
+    <DisableImplicitSystemValueTupleReference Condition="'$(DisableImplicitSystemValueTupleReference)' == ''">true</DisableImplicitSystemValueTupleReference>
+    <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
                         and ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp')
                         and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0' )">

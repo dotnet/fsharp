@@ -882,6 +882,41 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     override this.GetHashCode() =
         this.ComputeHashCode()
 
+    interface IStructuralEquatable with
+        member this.Equals(that, comparer) =
+            match that with
+            | :? Map<'Key, 'Value> as that ->
+                use e1 = (this :> seq<_>).GetEnumerator()
+                use e2 = (that :> seq<_>).GetEnumerator()
+
+                let rec loop () =
+                    let m1 = e1.MoveNext()
+                    let m2 = e2.MoveNext()
+
+                    (m1 = m2)
+                    && (not m1
+                        || (let e1c = e1.Current
+                            let e2c = e2.Current
+
+                            (comparer.Equals(e1c.Key, e2c.Key)
+                             && comparer.Equals(e1c.Value, e2c.Value)
+                             && loop ())))
+
+                loop ()
+            | _ -> false
+
+        member this.GetHashCode(comparer) =
+            let combineHash x y =
+                (x <<< 1) + y + 631
+
+            let mutable res = 0
+
+            for (KeyValue (x, y)) in this do
+                res <- combineHash res (comparer.GetHashCode x)
+                res <- combineHash res (comparer.GetHashCode y)
+
+            res
+
     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
         member _.GetEnumerator() =
             MapTree.mkIEnumerator tree

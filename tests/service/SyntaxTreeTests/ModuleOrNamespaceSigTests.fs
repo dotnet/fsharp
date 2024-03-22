@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.ModuleOrNamespaceSigTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 [<Test>]
@@ -67,7 +68,9 @@ val a: int
 
     match parseResults with
     | ParsedInput.SigFile (ParsedSigFileInput (contents = [
-        SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.NamedModule; trivia = { ModuleKeyword = Some mModule; NamespaceKeyword = None }) ])) ->
+        SynModuleOrNamespaceSig(
+            kind = SynModuleOrNamespaceKind.NamedModule
+            trivia = { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Module mModule }) ])) ->
         assertRange (2, 0) (2, 6) mModule
     | _ -> Assert.Fail "Could not get valid AST"
 
@@ -83,6 +86,8 @@ val a: int
 
     match parseResults with
     | ParsedInput.SigFile (ParsedSigFileInput (contents = [
-        SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.DeclaredNamespace; trivia = { ModuleKeyword = None; NamespaceKeyword = Some mNamespace }) ])) ->
+        SynModuleOrNamespaceSig(
+            kind = SynModuleOrNamespaceKind.DeclaredNamespace
+            trivia = { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Namespace mNamespace }) ])) ->
         assertRange (2, 0) (2, 9) mNamespace
     | _ -> Assert.Fail "Could not get valid AST"

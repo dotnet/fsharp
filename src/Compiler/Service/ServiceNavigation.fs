@@ -118,7 +118,7 @@ module NavigationImpl =
         match fldspec with
         | SynUnionCaseKind.Fields (flds) ->
             flds
-            |> List.fold (fun st (SynField (_, _, _, _, _, _, _, m)) -> unionRangesChecked m st) range.Zero
+            |> List.fold (fun st (SynField (range = m)) -> unionRangesChecked m st) range.Zero
         | SynUnionCaseKind.FullType (ty, _) -> ty.Range
 
     let bodyRange mBody decls =
@@ -292,7 +292,7 @@ module NavigationImpl =
                 | SynTypeDefnSimpleRepr.Record (_, fields, mBody) ->
                     let fields =
                         [
-                            for SynField (_, _, id, _, _, _, _, m) in fields do
+                            for SynField (idOpt = id; range = m) in fields do
                                 match id with
                                 | Some ident -> yield createMember (ident, NavigationItemKind.Field, FSharpGlyph.Field, m, NavigationEntityKind.Record, false, access)
                                 | _ -> ()
@@ -328,7 +328,7 @@ module NavigationImpl =
                      | SynMemberDefn.GetSetMember (Some bind, None, _, _)
                      | SynMemberDefn.GetSetMember (None, Some bind, _, _)
                      | SynMemberDefn.Member (bind, _) -> processBinding true enclosingEntityKind false bind
-                     | SynMemberDefn.ValField (SynField (_, _, Some (rcid), _, _, _, access, range), _) ->
+                     | SynMemberDefn.ValField(fieldInfo = SynField (idOpt = Some rcid; accessibility = access; range = range)) ->
                          [
                              createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access)
                          ]
@@ -336,7 +336,7 @@ module NavigationImpl =
                          [
                              createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access)
                          ]
-                     | SynMemberDefn.AbstractSlot (SynValSig (ident = SynIdent (id, _); synType = ty; accessibility = access), _, _) ->
+                     | SynMemberDefn.AbstractSlot(slotSig = SynValSig (ident = SynIdent (id, _); synType = ty; accessibility = access)) ->
                          [
                              createMember (id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access)
                          ]
@@ -534,7 +534,7 @@ module NavigationImpl =
                     | SynTypeDefnSimpleRepr.Record (_, fields, mBody) ->
                         let fields =
                             [
-                                for SynField (_, _, id, _, _, _, _, m) in fields do
+                                for SynField (idOpt = id; range = m) in fields do
                                     match id with
                                     | Some ident -> yield createMember (ident, NavigationItemKind.Field, FSharpGlyph.Field, m, NavigationEntityKind.Record, false, access)
                                     | _ -> ()
@@ -557,9 +557,9 @@ module NavigationImpl =
             [
                 for memb in members do
                     match memb with
-                    | SynMemberSig.Member (SynValSig.SynValSig (ident = SynIdent (id, _); accessibility = access; range = m), _, _) ->
+                    | SynMemberSig.Member(memberSig = SynValSig.SynValSig (ident = SynIdent (id, _); accessibility = access; range = m)) ->
                         createMember (id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, access)
-                    | SynMemberSig.ValField (SynField (_, _, Some (rcid), ty, _, _, access, _), _) ->
+                    | SynMemberSig.ValField (SynField (idOpt = Some rcid; fieldType = ty; accessibility = access), _) ->
                         createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, ty.Range, NavigationEntityKind.Class, false, access)
                     | _ -> ()
             ]
@@ -767,7 +767,7 @@ module NavigateTo =
             addIdent kind id isSig container
 
         let addField synField isSig container =
-            let (SynField (_, _, id, _, _, _, _, _)) = synField
+            let (SynField (idOpt = id)) = synField
 
             match id with
             | Some id -> addIdent NavigableItemKind.Field id isSig container
@@ -882,7 +882,7 @@ module NavigateTo =
 
         and walkSynMemberSig (synMemberSig: SynMemberSig) container =
             match synMemberSig with
-            | SynMemberSig.Member (valSig, memberFlags, _) -> addMember valSig memberFlags true container
+            | SynMemberSig.Member (memberSig = valSig; flags = memberFlags) -> addMember valSig memberFlags true container
             | SynMemberSig.ValField (synField, _) -> addField synField true container
             | SynMemberSig.NestedType (synTypeDef, _) -> walkSynTypeDefnSig synTypeDef container
             | SynMemberSig.Inherit _
@@ -980,7 +980,7 @@ module NavigateTo =
 
         and walkSynMemberDefn (memberDefn: SynMemberDefn) container =
             match memberDefn with
-            | SynMemberDefn.AbstractSlot (synValSig, memberFlags, _) -> addMember synValSig memberFlags false container
+            | SynMemberDefn.AbstractSlot (slotSig = synValSig; flags = memberFlags) -> addMember synValSig memberFlags false container
             | SynMemberDefn.AutoProperty (ident = id) -> addIdent NavigableItemKind.Property id false container
             | SynMemberDefn.Interface (members = members) ->
                 match members with
@@ -993,7 +993,7 @@ module NavigateTo =
                 Option.iter (fun b -> addBinding b None container) getBinding
                 Option.iter (fun b -> addBinding b None container) setBinding
             | SynMemberDefn.NestedType (typeDef, _, _) -> walkSynTypeDefn typeDef container
-            | SynMemberDefn.ValField (field, _) -> addField field false container
+            | SynMemberDefn.ValField (fieldInfo = field) -> addField field false container
             | SynMemberDefn.LetBindings (bindings, _, _, _) ->
                 bindings
                 |> List.iter (fun binding -> addBinding binding (Some NavigableItemKind.Field) container)

@@ -81,10 +81,11 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
 
     | _ -> None
 
-let elimFastIntegerForLoop (spFor, spTo, id, start, dir, finish, innerExpr, m) = 
+let elimFastIntegerForLoop (spFor, spTo, id, start: SynExpr, dir, finish: SynExpr, innerExpr, m: range) =
+    let mOp = (unionRanges start.Range finish.Range).MakeSynthetic()
     let pseudoEnumExpr = 
-        if dir then mkSynInfix m start ".." finish
-        else mkSynTrifix m ".. .." start (SynExpr.Const (SynConst.Int32 -1, start.Range)) finish
+        if dir then mkSynInfix mOp start ".." finish
+        else mkSynTrifix mOp ".. .." start (SynExpr.Const (SynConst.Int32 -1, mOp)) finish
     SynExpr.ForEach (spFor, spTo, SeqExprOnly false, true, mkSynPatVar None id, pseudoEnumExpr, innerExpr, m)
 
 /// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
@@ -1671,6 +1672,9 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let bindCall = mkSynCall bindName bindRange (bindArgs @ [consumeExpr])
                 translatedCtxt (bindCall |> addBindDebugPoint))
 
+    /// This function is for desugaring into .Bind{N}Return calls if possible
+    /// The outer option indicates if .BindReturn is possible. When it returns None, .BindReturn cannot be used
+    /// The inner option indicates if a custom operation is involved inside
     and convertSimpleReturnToExpr varSpace innerComp =
         match innerComp with 
         | SynExpr.YieldOrReturn ((false, _), returnExpr, m) ->
@@ -1696,7 +1700,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             | Some (thenExpr, None) ->
             let elseExprOptOpt  = 
                 match elseCompOpt with 
-                | None -> Some None 
+                // When we are missing an 'else' part alltogether in case of 'if cond then return exp', we fallback from BindReturn into regular Bind+Return
+                | None -> None 
                 | Some elseComp -> 
                     match convertSimpleReturnToExpr varSpace elseComp with
                     | None -> None // failure

@@ -37,7 +37,7 @@ type ResolutionEnvironment =
         ShowResolutionMessages: bool
 
         /// All referenced assemblies, including the type provider itself, and possibly other type providers.
-        ReferencedAssemblies: string[]
+        GetReferencedAssemblies: unit -> string[]
 
         /// The folder for temporary files
         TemporaryFolder: string

@@ -21,7 +21,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -1500,8 +1499,7 @@ let u_MemberFlags st : SynMemberFlags=
       IsOverrideOrExplicitImpl=x5
       IsFinal=x6
       GetterOrSetterIsCompilerGenerated=false
-      MemberKind=x7
-      Trivia = SynMemberFlagsTrivia.Zero }
+      MemberKind=x7 }
 
 let fill_u_Expr_hole, u_expr_fwd = u_hole()
 let fill_p_Expr_hole, p_expr_fwd = p_hole()

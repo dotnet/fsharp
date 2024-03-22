@@ -4,6 +4,7 @@ module internal FSharp.Compiler.CheckBasics
 
 open System.Collections.Generic
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
@@ -310,6 +311,8 @@ type TcFileState =
 
       isInternalTestSpanStackReferring: bool
 
+      diagnosticOptions: FSharpDiagnosticOptions
+
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
@@ -328,7 +331,7 @@ type TcFileState =
 
     /// Create a new compilation environment
     static member Create
-         (g, isScript, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
+         (g, isScript, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring, diagnosticOptions,
           tcPat,
           tcSimplePats,
           tcSequenceExpressionEntry,
@@ -358,6 +361,7 @@ type TcFileState =
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFSharpCore
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
+          diagnosticOptions = diagnosticOptions
           TcPat = tcPat
           TcSimplePats = tcSimplePats
           TcSequenceExpressionEntry = tcSequenceExpressionEntry

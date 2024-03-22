@@ -22,7 +22,6 @@ type options =
       signer: ILStrongNameSigner option
       emitTailcalls: bool
       deterministic: bool
-      showTimes: bool
       dumpDebugInfo: bool
       referenceAssemblyOnly: bool
       referenceAssemblyAttribOpt: ILAttribute option

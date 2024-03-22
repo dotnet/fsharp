@@ -107,7 +107,7 @@ module TcResolutionsExtensions =
             | TFSharpInterface -> SemanticClassificationType.Interface
             | TFSharpStruct -> SemanticClassificationType.ValueType
             | TFSharpDelegate _ -> SemanticClassificationType.Delegate
-            | TFSharpEnum _ -> SemanticClassificationType.Enumeration
+            | TFSharpEnum -> SemanticClassificationType.Enumeration
         | TFSharpRecdRepr _
         | TFSharpUnionRepr _ ->
             if isStructTyconRef g tcref then
@@ -149,9 +149,9 @@ module TcResolutionsExtensions =
                         match occ with
                         | ItemOccurence.UseInType
                         | ItemOccurence.UseInAttribute
-                        | ItemOccurence.Use _
-                        | ItemOccurence.Binding _
-                        | ItemOccurence.Pattern _
+                        | ItemOccurence.Use
+                        | ItemOccurence.Binding
+                        | ItemOccurence.Pattern
                         | ItemOccurence.Open -> Some()
                         | _ -> None
 
@@ -212,10 +212,8 @@ module TcResolutionsExtensions =
                     resolutions
                     |> Array.iter (fun cnr ->
                         match cnr.Item, cnr.ItemOccurence, cnr.Range with
-                        | (Item.CustomBuilder _
-                          | Item.CustomOperation _),
-                          ItemOccurence.Use,
-                          m -> add m SemanticClassificationType.ComputationExpression
+                        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
+                            add m SemanticClassificationType.ComputationExpression
 
                         | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 

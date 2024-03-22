@@ -40,7 +40,7 @@ type public FSharpParseFileResults =
     member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> range option
 
     /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
-    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
+    member GetAllArgumentsForFunctionApplicationAtPosition: pos: pos -> range list option
 
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the

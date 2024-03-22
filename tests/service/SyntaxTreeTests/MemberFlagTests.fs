@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.MemberFlagTestsTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 
@@ -25,14 +26,12 @@ type Y =
     | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(types =[
             SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[
-                SynMemberSig.Member(flags={ Trivia= { AbstractRange = Some mAbstract1 } })
-                SynMemberSig.Member(flags={ Trivia= { AbstractRange = Some mAbstract2
-                                                      MemberRange = Some mMember1 } })
-                SynMemberSig.Member(flags={ Trivia= { StaticRange = Some mStatic3
-                                                      MemberRange = Some mMember3 } })
-                SynMemberSig.Member(flags={ Trivia= { MemberRange = Some mMember4 } })
-                SynMemberSig.Member(flags={ Trivia= { OverrideRange = Some mOverride5 } })
-                SynMemberSig.Member(flags={ Trivia= { DefaultRange = Some mDefault6 } })
+                SynMemberSig.Member(memberSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.Abstract mAbstract1 }))
+                SynMemberSig.Member(memberSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.AbstractMember(mAbstract2, mMember1) }))
+                SynMemberSig.Member(memberSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.StaticMember(mStatic3, mMember3) }))
+                SynMemberSig.Member(memberSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.Member mMember4 }))
+                SynMemberSig.Member(memberSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.Override mOverride5 }))
+                SynMemberSig.Member(memberSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.Default mDefault6 }))
             ]))
         ])
     ]) ])) ->
@@ -60,9 +59,8 @@ type Foo =
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members=[
-                    SynMemberDefn.AbstractSlot(flags={ Trivia = { AbstractRange = Some mAbstract1 } })
-                    SynMemberDefn.AbstractSlot(flags={ Trivia = { AbstractRange = Some mAbstract2
-                                                                  MemberRange = Some mMember2 } })
+                    SynMemberDefn.AbstractSlot(slotSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.Abstract mAbstract1 }))
+                    SynMemberDefn.AbstractSlot(slotSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.AbstractMember(mAbstract2, mMember2) }))
                 ]))
             ], _)
         ])
@@ -84,31 +82,36 @@ type Foo =
 """
                     |> getParseResults
 
+    let (|LeadingKeyword|_|) md =
+        match md with
+        | SynMemberDefn.AutoProperty(trivia = { LeadingKeyword = lk }) -> Some lk
+        | _ -> None
+    
     match ast with
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members=[
-                    SynMemberDefn.AutoProperty(memberFlags= flags1)
-                    SynMemberDefn.AutoProperty(memberFlags= flags2)
-                    SynMemberDefn.AutoProperty(memberFlags= flags3)
-                    SynMemberDefn.AutoProperty(memberFlags= flags4)
+                    LeadingKeyword(SynLeadingKeyword.StaticMemberVal(mStatic1, mMember1, mVal1))
+                    LeadingKeyword(SynLeadingKeyword.MemberVal(mMember2, mVal2))
+                    LeadingKeyword(SynLeadingKeyword.OverrideVal(mOverride3, mVal3))
+                    LeadingKeyword(SynLeadingKeyword.DefaultVal(mDefault4, mVal4))
                 ]))
             ], _)
         ])
       ])) ->
-        let ({ Trivia = flagsTrivia1 } : SynMemberFlags) = flags1
-        assertRange (3, 4) (3, 10) flagsTrivia1.StaticRange.Value
-        assertRange (3, 11) (3, 17) flagsTrivia1.MemberRange.Value
+        assertRange (3, 4) (3, 10) mStatic1
+        assertRange (3, 11) (3, 17) mMember1
+        assertRange (3, 18) (3, 21) mVal1
 
-        let ({ Trivia = flagsTrivia2 } : SynMemberFlags) = flags2
-        assertRange (4, 4) (4, 10) flagsTrivia2.MemberRange.Value
+        assertRange (4, 4) (4, 10) mMember2
+        assertRange (4, 11) (4, 14) mVal2
         
-        let ({ Trivia = flagsTrivia3 } : SynMemberFlags) = flags3
-        assertRange (5, 4) (5, 12) flagsTrivia3.OverrideRange.Value
+        assertRange (5, 4) (5, 12) mOverride3
+        assertRange (5, 13) (5, 16) mVal3
         
-        let ({ Trivia = flagsTrivia4 } : SynMemberFlags) = flags4
-        assertRange (6, 4) (6, 11) flagsTrivia4.DefaultRange.Value
+        assertRange (6, 4) (6, 11) mDefault4
+        assertRange (6, 12) (6, 15) mVal4
     | _ ->
         Assert.Fail "Could not get valid AST"
 
@@ -123,16 +126,20 @@ type Foo =
 """
                     |> getParseResults
 
+    let (|LeadingKeyword|_|) md =
+        match md with
+        | SynMemberDefn.Member(memberDefn = SynBinding(trivia = { LeadingKeyword = lk })) -> Some lk
+        | _ -> None
+    
     match ast with
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members=[
-                    SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some { Trivia = { StaticRange = Some mStatic1
-                                                                                                                MemberRange = Some mMember1 } })))
-                    SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some { Trivia = { MemberRange = Some mMember2 } })))
-                    SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some { Trivia = { OverrideRange = Some mOverride3 } })))
-                    SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some { Trivia = { DefaultRange = Some mDefaultRange4 } })))
+                    LeadingKeyword(SynLeadingKeyword.StaticMember(mStatic1, mMember1))
+                    LeadingKeyword(SynLeadingKeyword.Member(mMember2))
+                    LeadingKeyword(SynLeadingKeyword.Override(mOverride3))
+                    LeadingKeyword(SynLeadingKeyword.Default mDefaultRange4)
                 ]))
             ], _)
         ])
@@ -163,11 +170,11 @@ let meh =
             SynModuleDecl.Let (bindings = [
                 SynBinding(expr=SynExpr.ObjExpr(
                     members=[
-                        SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some { Trivia = { OverrideRange = Some mOverride1 } })))
-                        SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some { Trivia = { MemberRange = Some mMember2 } })))
+                        SynMemberDefn.Member(memberDefn=SynBinding(trivia = { LeadingKeyword = SynLeadingKeyword.Override mOverride1 }))
+                        SynMemberDefn.Member(memberDefn=SynBinding(trivia = { LeadingKeyword = SynLeadingKeyword.Member mMember2 }))
                     ]
                     extraImpls=[ SynInterfaceImpl(members=[
-                        SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some { Trivia = { MemberRange = Some mMember3 } })))
+                        SynMemberDefn.Member(memberDefn=SynBinding(trivia = { LeadingKeyword = SynLeadingKeyword.Member mMember3 }))
                     ]) ]))
             ])
       ]) ])) ->
