@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
         <source>Boolean-returning and return-type-directed partial active patterns</source>
-        <target state="translated">Částečné aktivní vzory vracející logickou hodnotu a s návratovým typem</target>
+        <target state="translated">Částečné aktivní vzory vracející logickou hodnotu a směrované návratovým typem</target>
         <note />
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
-        <target state="new">Enforce AttributeTargets</target>
+        <target state="translated">Vynutit AttributeTargets</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -379,12 +379,12 @@
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
-        <target state="translated">Optimalizuje interpolované řetězce v určitých případech snížením na zřetězení.</target>
+        <target state="translated">Optimalizuje v určitých případech interpolované řetězce snížením na zřetězení.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerIntegralRangesToFastLoops">
         <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
-        <target state="translated">Optimalizuje určitá použití integrálního rozsahu (..) a operátorů range-step (.. ..) pro rychlé smyčky while.</target>
+        <target state="translated">Optimalizuje určitá použití operátorů integrálního rozsahu (..) a kroku rozsahu (.. ..) pro rychlé smyčky while.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -834,7 +834,7 @@
       </trans-unit>
       <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="translated">Generovat sestavení s viditelností IL, které odpovídá viditelnosti zdrojového kódu</target>
+        <target state="translated">Vygenerovat sestavení s viditelností IL, které odpovídá viditelnosti zdrojového kódu</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
