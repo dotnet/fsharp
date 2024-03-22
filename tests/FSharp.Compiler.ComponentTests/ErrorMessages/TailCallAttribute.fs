@@ -1522,3 +1522,42 @@ namespace N
               Message =
                 "The member or function 'reverse' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for yield! call of tail rec func`` () =
+        """
+namespace N
+
+module M =
+
+    type SynExpr =
+        | Sequential of expr1 : SynExpr * expr2 : SynExpr
+        | NotSequential
+        member _.Range = 99
+
+    type SyntaxNode = SynExpr of SynExpr
+
+    type SyntaxVisitor () = member _.VisitExpr _ = None
+
+    let visitor = SyntaxVisitor ()
+    let dive expr range f = range, fun () -> Some expr
+    let traverseSynExpr _ expr = Some expr
+
+    [<TailCall>]
+    let rec traverseSequentials path expr =
+        seq {
+            match expr with
+            | SynExpr.Sequential(expr1 = expr1; expr2 = SynExpr.Sequential _ as expr2) ->
+                yield dive expr expr.Range (fun expr -> visitor.VisitExpr(path, traverseSynExpr path, (fun _ -> None), expr))
+                let path = SyntaxNode.SynExpr expr :: path
+                yield dive expr1 expr1.Range (traverseSynExpr path)
+                yield! traverseSequentials path expr2   // should not warn
+
+            | _ ->
+                yield dive expr expr.Range (traverseSynExpr path)
+        }
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
