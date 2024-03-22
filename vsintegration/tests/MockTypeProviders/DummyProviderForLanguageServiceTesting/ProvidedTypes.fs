@@ -2961,7 +2961,6 @@ namespace ProviderImplementation.ProvidedTypes.AssemblyReader
         override _.ToString() = "<ILGlobals>"
 
     [<AutoOpen>]
-
     [<Struct>]
     type ILTableName(idx: int) =
         member _.Index = idx

@@ -344,6 +344,7 @@ module SynExpr =
         | InfixApp(prec, side) -> ValueSome(prec, side)
         | SynExpr.App(argExpr = SynExpr.ComputationExpr _) -> ValueSome(UnaryPrefix, Left)
         | SynExpr.App(funcExpr = SynExpr.Paren(expr = SynExpr.App _)) -> ValueSome(Apply, Left)
+        | SynExpr.App(flag = ExprAtomicFlag.Atomic) -> ValueSome(Dot, Non)
         | SynExpr.App _ -> ValueSome(Apply, Non)
         | SynExpr.DotSet(targetExpr = SynExpr.Paren(expr = Is inner)) -> ValueSome(Dot, Left)
         | SynExpr.DotSet(rhsExpr = SynExpr.Paren(expr = Is inner)) -> ValueSome(Set, Right)
@@ -435,6 +436,14 @@ module SynExpr =
         let (|IfThen|_|) =
             dangling (function
                 | SynExpr.IfThenElse _ as expr -> Some expr
+                | _ -> None)
+
+        /// Matches a dangling let or use construct.
+        [<return: Struct>]
+        let (|LetOrUse|_|) =
+            dangling (function
+                | SynExpr.LetOrUse _
+                | SynExpr.LetOrUseBang _ as expr -> Some expr
                 | _ -> None)
 
         /// Matches a dangling sequential expression.
@@ -610,13 +619,26 @@ module SynExpr =
         //
         //     o.M((x = y))
         //     o.N((x = y), z)
+        //
+        // Likewise, double parens must stay around a tuple, since we don't know whether
+        // the method being invoked might have a signature like
+        //
+        //     val TryGetValue : 'Key * outref<'Value> -> bool
+        //
+        // where 'Key is 'a * 'b, in which case the double parens are required.
         | SynExpr.Paren(expr = InfixApp(Relational(OriginalNotation "="), _)),
-          SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
+          SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _
         | InfixApp(Relational(OriginalNotation "="), _),
-          SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
+          SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(
+              funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _
         | InfixApp(Relational(OriginalNotation "="), _),
           SyntaxNode.SynExpr(SynExpr.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(
-              funcExpr = SynExpr.LongIdent _)) :: _ -> true
+              funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _
+        | SynExpr.Paren(expr = SynExpr.Tuple(isStruct = false)),
+          SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _
+        | SynExpr.Tuple(isStruct = false),
+          SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(SynExpr.App(
+              funcExpr = SynExpr.LongIdent _ | SynExpr.DotGet _ | SynExpr.Ident _)) :: _ -> true
 
         // Already parenthesized.
         | _, SyntaxNode.SynExpr(SynExpr.Paren _) :: _ -> false
@@ -675,6 +697,15 @@ module SynExpr =
         | (PrefixApp _ | StartsWithSymbol),
           SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(HighPrecedenceApp | SynExpr.Assert _ | SynExpr.InferredUpcast _ | SynExpr.InferredDowncast _) :: _ ->
             true
+
+        // Parens must be kept in a scenario like
+        //
+        //     !x.M(y)
+        //     ~~~x.M(y)
+        //
+        // since prefix ! or ~~~ (with no space) have higher
+        // precedence than regular function application.
+        | _, SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(PrefixApp High) :: _ -> true
 
         // Parens are never required around suffixed or infixed numeric literals, e.g.,
         //
@@ -794,13 +825,17 @@ module SynExpr =
             match outer, inner with
             | ConfusableWithTypeApp, _ -> true
 
-            | SynExpr.IfThenElse _, Dangling.Sequential _ -> true
+            | SynExpr.IfThenElse(trivia = trivia), Dangling.LetOrUse letOrUse ->
+                Position.posLt letOrUse.Range.Start trivia.ThenKeyword.Start
 
-            | SynExpr.IfThenElse(trivia = trivia), Dangling.IfThen ifThenElse when
-                problematic ifThenElse.Range trivia.ThenKeyword
-                || trivia.ElseKeyword |> Option.exists (problematic ifThenElse.Range)
-                ->
-                true
+            | SynExpr.IfThenElse(trivia = trivia), Dangling.IfThen dangling
+            | SynExpr.IfThenElse(trivia = trivia), Dangling.Match dangling ->
+                problematic dangling.Range trivia.ThenKeyword
+                || trivia.ElseKeyword |> Option.exists (problematic dangling.Range)
+
+            | SynExpr.IfThenElse(ifExpr = expr), Dangling.Sequential dangling
+            | SynExpr.While(whileExpr = expr), Dangling.Problematic dangling
+            | SynExpr.ForEach(enumExpr = expr), Dangling.Problematic dangling -> Range.rangeContainsRange expr.Range dangling.Range
 
             | SynExpr.TryFinally(trivia = trivia), Dangling.Try tryExpr when problematic tryExpr.Range trivia.FinallyKeyword -> true
 
@@ -824,6 +859,25 @@ module SynExpr =
                 ->
                 true
 
+            // A match-like construct could be problematically nested like this:
+            //
+            //     match () with
+            //     | _ when
+            //         p &&
+            //         let x = f ()
+            //         (let y = z
+            //          match x with
+            //          | 3 | _ -> y) -> ()
+            //     | _ -> ()
+            | _, Dangling.Match matchOrTry when
+                let line = getSourceLineStr matchOrTry.Range.EndLine
+                let endCol = matchOrTry.Range.EndColumn
+
+                line.Length > endCol + 1
+                && line.AsSpan(endCol + 1).TrimStart(' ').StartsWith("->".AsSpan())
+                ->
+                true
+
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), Dangling.Problematic _ when
                 problematic inner.Range expr2.Range
                 ->
@@ -842,9 +896,10 @@ module SynExpr =
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), _ when innerBindingsWouldShadowOuter inner expr2 ->
                 true
 
-            | SynExpr.InterpolatedString _, SynExpr.Sequential _ -> true
+            | SynExpr.InterpolatedString _, SynExpr.Sequential _
+            | SynExpr.InterpolatedString _, SynExpr.Tuple(isStruct = false) -> true
 
-            | SynExpr.InterpolatedString(contents = contents), (SynExpr.Tuple(isStruct = false) | Dangling.Problematic _) ->
+            | SynExpr.InterpolatedString(contents = contents), Dangling.Problematic _ ->
                 contents
                 |> List.exists (function
                     | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true

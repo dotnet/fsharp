@@ -97,7 +97,7 @@ type public FSharpChecker =
     /// <param name="fileName">The path for the file. The file name is used as a module name for implicit top level modules (e.g. in scripts).</param>
     /// <param name="sourceText">The source to be parsed.</param>
     /// <param name="options">Parsing options for the project or script.</param>
-    /// <param name="cache">Store the parse in a size-limited cache assocaited with the FSharpChecker. Default: true</param>
+    /// <param name="cache">Store the parse in a size-limited cache associated with the FSharpChecker. Default: true</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseFile:
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?cache: bool * ?userOpName: string ->
@@ -253,6 +253,7 @@ type public FSharpChecker =
 
     /// <param name="fileName">Used to differentiate between scripts, to consider each script a separate project. Also used in formatted error messages.</param>
     /// <param name="source">The source for the file.</param>
+    /// <param name="documentSource">DocumentSource to load any additional files.</param>
     /// <param name="previewEnabled">Is the preview compiler enabled.</param>
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
@@ -268,6 +269,7 @@ type public FSharpChecker =
     member GetProjectSnapshotFromScript:
         fileName: string *
         source: ISourceTextNew *
+        ?documentSource: DocumentSource *
         ?previewEnabled: bool *
         ?loadedTimeStamp: DateTime *
         ?otherFlags: string[] *
