@@ -32,11 +32,6 @@
         <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
-        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">유형 불일치. 형식이 \n    {1}이고 길이가 {0}인 튜플이 필요합니다.    \n그러나 형식이 \n    {3}이고 길이가 {2}인 튜플이 제공되었습니다.{4}\n</target>

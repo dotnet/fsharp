@@ -32,11 +32,6 @@
         <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
         <note />
       </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
-        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">類型不符。必須是類型為\n    {1}    \n 的元組長度 {0}，但提供的是類型為\n    {3}{4}\n 的元組長度 {2}</target>

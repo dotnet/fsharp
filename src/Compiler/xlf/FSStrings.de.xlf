@@ -10,7 +10,7 @@
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
         <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
-       <note />
+        <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarning">
         <source>Nullness warning: {0}.</source>
@@ -30,11 +30,6 @@
       <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
         <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
         <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
-        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
