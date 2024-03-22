@@ -222,7 +222,7 @@ and CheckCall cenv args ctxts (tailCall: TailCall) =
             | Expr.App _ -> Some(TailCall.YesFromExpr cenv.g e)
             | IsAppInLambdaBody t -> Some t
             | _ -> None
-        | Expr.App(_funcExpr, _formalType, _typeArgs, args, _range) ->
+        | Expr.App(args = args) ->
             args
             |> List.tryPick (fun a ->
                 match a with
