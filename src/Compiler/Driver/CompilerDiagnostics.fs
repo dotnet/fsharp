@@ -79,6 +79,7 @@ type Exception with
 
     member exn.DiagnosticRange =
         match exn with
+        | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(range = m) -> Some m
         | ArgumentsInSigAndImplMismatch(_, implArg) -> Some implArg.idRange
         | ErrorFromAddingConstraint(_, exn2, _) -> exn2.DiagnosticRange
 #if !NO_TYPEPROVIDERS
@@ -320,7 +321,7 @@ type Exception with
         | BadEventTransformation _ -> 91
         | HashLoadedScriptConsideredSource _ -> 92
         | UnresolvedConversionOperator _ -> 93
-        | ArgumentsInSigAndImplMismatch _ -> 3218
+
         // avoid 94-100 for safety
         | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
@@ -328,6 +329,9 @@ type Exception with
         | TypeProviders.ProvidedTypeResolution _ -> 103
 #endif
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
+        | Failure _ -> 192
+        | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer _ -> 318
+        | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
@@ -335,7 +339,6 @@ type Exception with
         | DiagnosticWithText(n, _, _) -> n
         | DiagnosticWithSuggestions(n, _, _, _, _) -> n
         | DiagnosticEnabledWithLanguageFeature(n, _, _, _) -> n
-        | Failure _ -> 192
         | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar))
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Number
@@ -605,6 +608,9 @@ module OldStyleMessages =
     let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
     let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
     let ArgumentsInSigAndImplMismatchE () = Message("ArgumentsInSigAndImplMismatch", "%s%s")
+
+    let DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE () =
+        Message("DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer", "%s%s%s%s")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -1856,6 +1862,17 @@ type Exception with
 
         | ArgumentsInSigAndImplMismatch(sigArg, implArg) ->
             os.AppendString(ArgumentsInSigAndImplMismatchE().Format sigArg.idText implArg.idText)
+
+        | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(denv, implTycon, _sigTycon, implTypeAbbrev, sigTypeAbbrev, _m) ->
+            let s1, s2, _ = NicePrint.minimalStringsOfTwoTypes denv implTypeAbbrev sigTypeAbbrev
+
+            os.AppendString(
+                DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE().Format
+                    (implTycon.TypeOrMeasureKind.ToString())
+                    implTycon.DisplayName
+                    s1
+                    s2
+            )
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)

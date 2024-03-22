@@ -18,6 +18,15 @@ let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
         Assert.That(Set.contains name itemNames, $"{name} not found in {itemNames}")
 
 [<Test>]
+let ``Expr - After record decl`` () =
+    let info = getCompletionInfo "{ Fi }" (4, 0)  """
+type Record = { Field: int }
+
+
+"""
+    assertHasItemWithNames ["ignore"] info
+
+[<Test>]
 let ``Expr - record - field 01 - anon module`` () =
     let info = getCompletionInfo "{ Fi }" (4, 3)  """
 type Record = { Field: int }
@@ -72,3 +81,10 @@ let myFancyFunc (x:string) =
     x 
     |> _.ToL"""
     assertHasItemWithNames ["ToLower"] info
+
+[<Test>]
+let ``Type decl - Record - Field type 01`` () =
+    let info = getCompletionInfo "type Record = { Field:  }" (2, 23)  """
+type Record = { Field:  }
+"""
+    assertHasItemWithNames ["string"] info
