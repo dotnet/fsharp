@@ -209,7 +209,7 @@
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer1">
         <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="translated">UPOZORNĚNÍ! Transparentní kompilátor zatím nepodporuje všechny funkce a může způsobit chybové ukončení nebo poskytnout nesprávné výsledky.</target>
+        <target state="translated">UPOZORNĚNÍ! Transparentní kompilátor zatím nepodporuje všechny funkce a může způsobit chybové ukončení nebo předat nesprávné výsledky.</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer2">
@@ -219,22 +219,22 @@
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer3">
         <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="translated">Když tuto možnost zaškrtnete, přihlásíte se i k další telemetrii výkonu.</target>
+        <target state="translated">Zaškrtnutím tohoto políčka také udělíte výslovný souhlas s další telemetrií výkonu</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
         <source>Transparent Compiler Cache Factor</source>
-        <target state="translated">Faktor transparentní mezipaměti kompilátoru</target>
+        <target state="translated">Faktor mezipaměti transparentního kompilátoru</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
         <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
-        <target state="translated">Vyšší číslo znamená, že pro ukládání do mezipaměti bude použita více paměti. Změna hodnoty vymaže mezipaměť.</target>
+        <target state="translated">Vyšší počet znamená, že pro ukládání do mezipaměti se bude používat více paměti. Změna hodnoty vymaže mezipaměť.</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
         <source>Create new project snapshots from existing ones</source>
-        <target state="translated">Vytvořit nové snímky projektů z existujících</target>
+        <target state="translated">Vytvořit nové snímky projektu z existujících</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -324,7 +324,7 @@
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
         <source>Use Transparent Compiler (restart required)</source>
-        <target state="translated">Použít průhledný kompilátor (vyžaduje se restartování)</target>
+        <target state="translated">Použít transparentní kompilátor (vyžaduje se restart)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
