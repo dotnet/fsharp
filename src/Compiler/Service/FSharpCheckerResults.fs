@@ -2909,11 +2909,6 @@ module internal ParseAndCheckFile =
             // update the error handler with the modified tcConfig
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
 
-            // Play background errors and warnings for this file.
-            do
-                for err, severity in backgroundDiagnostics do
-                    diagnosticSink (err, severity)
-
             // If additional references were brought in by the preprocessor then we need to process them
             ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)
 
@@ -2956,6 +2951,11 @@ module internal ParseAndCheckFile =
 
                         return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
                 }
+
+            // Play background errors and warnings for this file.
+            do
+                for err, severity in backgroundDiagnostics do
+                    diagnosticSink (err, severity)
 
             let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
 
