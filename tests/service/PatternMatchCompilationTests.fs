@@ -1263,9 +1263,6 @@ let f : obj -> _ =
     ]
 
 [<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
 let ``Unresolved name - Qualifier 01`` () =
     let _, checkResults = getParseAndCheckResults """
 match None with
