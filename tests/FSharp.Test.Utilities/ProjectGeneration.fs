@@ -725,6 +725,19 @@ module ProjectOperations =
             then
                 failwith "Expected errors, but there were none"
 
+    let expectErrorCodes codes parseAndCheckResults _ =
+        let (parseResult: FSharpParseFileResults), _checkResult = parseAndCheckResults
+
+        if not parseResult.ParseHadErrors then
+            let checkResult = getTypeCheckResult parseAndCheckResults
+            let actualCodes = checkResult.Diagnostics |> Seq.map (fun d -> d.ErrorNumberText) |> Set
+            let codes = Set.ofSeq codes
+            if actualCodes <> codes then
+                failwith $"Expected error codes {codes} but got {actualCodes}. \n%A{checkResult.Diagnostics}"
+
+        else
+            failwith $"There were parse errors: %A{parseResult.Diagnostics}"
+
     let expectSignatureChanged result (oldSignature: string, newSignature: string) =
         expectOk result ()
         Assert.NotEqual<string>(oldSignature, newSignature)
