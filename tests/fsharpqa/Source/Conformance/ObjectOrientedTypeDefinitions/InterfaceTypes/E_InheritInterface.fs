@@ -1,12 +1,10 @@
 // #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
 // Regression test for FSHARP1.0:5962
-//<Expects status="error" span="(10,21-10,22)" id="FS1207">Interfaces inherited by other interfaces should be declared using 'inherit \.\.\.' instead of 'interface \.\.\.'$</Expects>
+// Verify ability to inherit from interface with "interface", which allows to specify implementations for static abstracts
 
 module M
 
 type I = interface
          end
 
-type I' = interface I
-
-         
+type I' = interface I         

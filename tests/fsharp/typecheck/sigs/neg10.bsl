@@ -1,17 +1,11 @@
 
 neg10.fsi(9,6,9,7): typecheck error FS0249: Two type definitions named 'x' occur in namespace 'N' in two parts of this assembly
 
-neg10.fs(11,17,11,27): typecheck error FS0946: Cannot inherit from interface type. Use interface ... with instead.
-
 neg10.fs(13,17,13,26): typecheck error FS0945: Cannot inherit a sealed type
 
 neg10.fs(15,22,15,32): typecheck error FS0887: The type 'C1' is not an interface type
 
-neg10.fs(16,32,16,34): typecheck error FS1207: Interfaces inherited by other interfaces should be declared using 'inherit ...' instead of 'interface ...'
-
 neg10.fs(16,32,16,34): typecheck error FS0887: The type 'C1' is not an interface type
-
-neg10.fs(16,32,16,34): typecheck error FS1207: Interfaces inherited by other interfaces should be declared using 'inherit ...' instead of 'interface ...'
 
 neg10.fs(17,28,17,30): typecheck error FS0887: The type 'C1' is not an interface type
 
