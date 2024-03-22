@@ -87,9 +87,9 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
     match TryGetActivePatternInfo vref with
     | Some apinfo ->
         
-        let isStructRetTy = 
+        let retKind = 
             if apinfo.IsTotal then
-                false
+                ActivePatternReturnKind.RefTypeWrapper
             else
                 let _, apReturnTy = stripFunTy g vref.TauType
                 let hasStructAttribute() = 
@@ -97,8 +97,10 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
                     |> List.exists (function 
                         | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> IsMatchingFSharpAttribute g g.attrib_StructAttribute a  
                         | _ -> false)
-                isStructTy g apReturnTy || hasStructAttribute()
-        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, isStructRetTy))
+                if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnKind.StructTypeWrapper
+                elif isBoolTy g apReturnTy then ActivePatternReturnKind.Boolean
+                else ActivePatternReturnKind.RefTypeWrapper
+        apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i, retKind))
     | None -> []
 
 /// Try to make a reference to a value in a module.
@@ -276,7 +278,7 @@ type Item =
         | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
         | Item.DelegateCtor ty ->
             match ty with 
-            | AbbrevOrAppTy tcref -> tcref.DisplayNameCore
+            | AbbrevOrAppTy(tcref, _) -> tcref.DisplayNameCore
             // This case is not expected
             | _ -> "" 
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayNameCore
@@ -307,7 +309,7 @@ type Item =
         | Item.Property(info = pinfo :: _) -> pinfo.DisplayName
         | Item.Event einfo -> einfo.DisplayName
         | Item.MethodGroup(_, minfo :: _, _) -> minfo.DisplayName
-        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayName
+        | Item.DelegateCtor (AbbrevOrAppTy(tcref, _)) -> tcref.DisplayName
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
         | Item.TypeVar (nm, _) -> nm |> ConvertLogicalNameToDisplayName
@@ -571,62 +573,40 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
 /// Get the info for all the .NET-style extension members listed as static members in the type.
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
     let g = amap.g
+
+    let isApplicable =
+        IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass ||
+
+        g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
+        tcrefOfStaticClass.IsLocalRef &&
+        not tcrefOfStaticClass.IsTypeAbbrev
+
+    if not isApplicable then [] else
+
+    let ty = generalizedTyconRef g tcrefOfStaticClass
     let pri = NextExtensionMethodPriority()
-    
-    if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-        let csharpStyleExtensionMembers =
-            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || (tcrefOfStaticClass.IsLocalRef && not tcrefOfStaticClass.IsTypeAbbrev) then
-                protectAssemblyExploration [] (fun () ->
-                    let ty = generalizedTyconRef g tcrefOfStaticClass
-                    GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-                    |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true))
-            else
-                []
 
-        if not csharpStyleExtensionMembers.IsEmpty then
-            [ for minfo in csharpStyleExtensionMembers do
-                let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
+    let methods =
+        protectAssemblyExploration []
+            (fun () -> GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty)
 
-                // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                // So we need to go and crack the type of the 'this' argument.
-                //
-                // This is convoluted because we only need the ILTypeRef of the first argument, and we don't
-                // want to read any other metadata as it can trigger missing-assembly errors. It turns out ImportILTypeRef
-                // is less eager in reading metadata than GetParamTypes.
-                //
-                // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
-                // methods for tuple occur in C# code)
-                let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
-                match thisTyconRef with
-                | None -> ()
-                | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
-                | Some None -> yield Choice2Of2 ilExtMem ]
-        else
-            []
-    else
-        if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass then
-            let ty = generalizedTyconRef g tcrefOfStaticClass
-            let minfos = GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-            
-            [ for minfo in minfos do
-                if IsMethInfoPlainCSharpStyleExtensionMember g m true minfo then
-                    let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
-                    // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                    // So we need to go and crack the type of the 'this' argument.
-                    //
-                    // This is convoluted because we only need the ILTypeRef of the first argument, and we don't
-                    // want to read any other metadata as it can trigger missing-assembly errors. It turns out ImportILTypeRef
-                    // is less eager in reading metadata than GetParamTypes.
-                    //
-                    // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
-                    // methods for tuple occur in C# code)
-                    let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
-                    match thisTyconRef with
-                    | None -> ()
-                    | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
-                    | Some None -> yield Choice2Of2 ilExtMem ]
-        else
-            []
+    [ for minfo in methods do
+        if IsMethInfoPlainCSharpStyleExtensionMember g m true minfo then
+            let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
+            // The results are indexed by the TyconRef of the first 'this' argument, if any.
+            // So we need to go and crack the type of the 'this' argument.
+            //
+            // This is convoluted because we only need the ILTypeRef of the first argument, and we don't
+            // want to read any other metadata as it can trigger missing-assembly errors. It turns out ImportILTypeRef
+            // is less eager in reading metadata than GetParamTypes.
+            //
+            // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
+            // methods for tuple occur in C# code)
+            let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
+            match thisTyconRef with
+            | None -> ()
+            | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
+            | Some None -> yield Choice2Of2 ilExtMem ]
 
 /// Query the declared properties of a type (including inherited properties)
 let IntrinsicPropInfosOfTypeInScope (infoReader: InfoReader) optFilter ad findFlag m ty =
@@ -1870,11 +1850,11 @@ let (|EntityUse|_|) (item: Item) =
     match item with
     | Item.UnqualifiedType (tcref :: _) -> ValueSome tcref
     | Item.ExnCase tcref -> ValueSome tcref
-    | Item.Types(_, [AbbrevOrAppTy tcref])
-    | Item.DelegateCtor(AbbrevOrAppTy tcref) -> ValueSome tcref
+    | Item.Types(_, [AbbrevOrAppTy(tcref, _)])
+    | Item.DelegateCtor(AbbrevOrAppTy(tcref, _)) -> ValueSome tcref
     | Item.CtorGroup(_, ctor :: _) ->
         match ctor.ApparentEnclosingType with
-        | AbbrevOrAppTy tcref -> ValueSome tcref
+        | AbbrevOrAppTy(tcref, _) -> ValueSome tcref
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -1956,7 +1936,7 @@ let ItemsAreEffectivelyEqual g orig other =
             not tp1.IsCompilerGenerated && not tp1.IsFromError &&
             not tp2.IsCompilerGenerated && not tp2.IsFromError &&
             equals tp1.Range tp2.Range
-         | AbbrevOrAppTy tcref1, AbbrevOrAppTy tcref2 ->
+         | AbbrevOrAppTy(tcref1, _), AbbrevOrAppTy(tcref2, _) ->
             tyconRefDefnEq g tcref1 tcref2
          | _ -> false)
 

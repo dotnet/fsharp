@@ -5,6 +5,7 @@ namespace FSharp.Test
 #nowarn "57"
 
 open System
+open System.Globalization
 open System.IO
 open System.Text
 open System.Reflection
@@ -23,6 +24,42 @@ open Microsoft.CodeAnalysis.CSharp
 open NUnit.Framework
 open TestFramework
 open System.Collections.Immutable
+
+
+#if !NETCOREAPP
+module AssemblyResolver =
+
+    let probingPaths = [|
+        AppDomain.CurrentDomain.BaseDirectory
+        Path.GetDirectoryName(typeof<FactForDESKTOPAttribute>.Assembly.Location)
+    |]
+
+    let addResolver () =
+        AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
+            let found () =
+                (probingPaths ) |> Seq.tryPick(fun p ->
+                    try
+                        let name = AssemblyName(args.Name)
+                        let codebase = Path.GetFullPath(Path.Combine(p, name.Name))
+                        if File.Exists(codebase + ".dll") then
+                            name.CodeBase <- codebase  + ".dll"
+                            name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                            name.Version <- Unchecked.defaultof<Version>
+                            Some (name)
+                        elif File.Exists(codebase + ".exe") then
+                                name.CodeBase <- codebase + ".exe"
+                                name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                                name.Version <- Unchecked.defaultof<Version>
+                                Some (name)
+                        else None
+                    with | _ -> None
+                    )
+            match found() with
+            | None -> Unchecked.defaultof<Assembly>
+            | Some name -> Assembly.Load(name) )
+
+    do addResolver()
+#endif
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -259,8 +296,11 @@ and Compilation =
 
 module rec CompilerAssertHelpers =
 
-    let useTransparentCompiler = FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically
-    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=useTransparentCompiler)
+    let UseTransparentCompiler =
+        FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
+        not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
+
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=UseTransparentCompiler)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
     let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
@@ -399,9 +439,10 @@ module rec CompilerAssertHelpers =
                     | Some text ->
                         // In memory source file copy it to the build directory
                         let source = item.ChangeExtension
-                        File.WriteAllText (source.GetSourceFileName, text)
-                        disposals.Add(disposeFile source.GetSourceFileName)
-                        yield source
+                        let destFileName = Path.Combine(outputDirectory.FullName, Path.GetFileName(source.GetSourceFileName))
+                        File.WriteAllText (destFileName, text)
+                        disposals.Add(disposeFile destFileName)
+                        yield source.WithFileName(destFileName)
                     | None ->
                         // On Disk file
                         let sourceFileName = item.GetSourceFileName
@@ -621,6 +662,7 @@ module rec CompilerAssertHelpers =
         let timeout = 30000
         let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
+
 open CompilerAssertHelpers
 
 [<Sealed;AbstractClass>]

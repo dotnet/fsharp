@@ -1,4 +1,4 @@
-﻿(** ---
+(** ---
 category: Release Notes
 categoryindex: 600
 index: 3
@@ -14,7 +14,7 @@ open System.IO
 open Markdig
 open Common
 
-let path = Path.Combine(__SOURCE_DIRECTORY__, ".FSharp.Compiler.Service")
+let path = Path.Combine(__SOURCE_DIRECTORY__, ".FSharp.Core")
 let nugetPackage = "FSharp.Core"
 let availableNuGetVersions = getAvailableNuGetVersions nugetPackage
 

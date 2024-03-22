@@ -11,8 +11,11 @@ open System
 open System.Diagnostics
 open System.Reflection
 open System.Threading
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open System.Collections.Concurrent
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -852,7 +855,25 @@ type StackGuard(maxDepth: int, name: string) =
     let mutable depth = 1
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Guard(f) =
+    member _.Guard
+        (
+            f,
+            [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
+            [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
+            [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
+        ) =
+        use _ =
+            Activity.start
+                "DiagnosticsLogger.StackGuard.Guard"
+                [|
+                    Activity.Tags.stackGuardName, name
+                    Activity.Tags.stackGuardCurrentDepth, string depth
+                    Activity.Tags.stackGuardMaxDepth, string maxDepth
+                    Activity.Tags.callerMemberName, memberName
+                    Activity.Tags.callerFilePath, path
+                    Activity.Tags.callerLineNumber, string line
+                |]
+
         depth <- depth + 1
 
         try
@@ -883,3 +904,17 @@ type StackGuard(maxDepth: int, name: string) =
 
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
+
+type CaptureDiagnosticsConcurrently() =
+    let target = DiagnosticsThreadStatics.DiagnosticsLogger
+    let loggers = ResizeArray()
+
+    member _.GetLoggerForTask(name) : DiagnosticsLogger =
+        let logger = CapturingDiagnosticsLogger(name)
+        loggers.Add logger
+        logger
+
+    interface IDisposable with
+        member _.Dispose() =
+            for logger in loggers do
+                logger.CommitDelayedDiagnostics target

@@ -327,7 +327,7 @@ open System
         findSymbolUseByName "IDisposable" checkResults |> ignore
 
     
-    [<Test; Explicit>]
+    [<Test>]
     let ``Interface 04 - Type arg`` () =
         let _, checkResults = getParseAndCheckResults """
 open System.Collections.Generic
@@ -335,7 +335,8 @@ open System.Collections.Generic
 IList<int>
 """
         let symbolUse = findSymbolUseByName "IList`1" checkResults
-        let _, typeArg = symbolUse.GenericArguments[0]
+        let symbol = symbolUse.Symbol :?> FSharpEntity
+        let typeArg = symbol.GenericArguments[0]
         typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
 
     [<Test>]
@@ -351,7 +352,8 @@ type I<'T> =
             getSymbolUses checkResults
             |> Seq.findBack (fun symbolUse -> symbolUse.Symbol.DisplayName = "I")
 
-        let _, typeArg = symbolUse.GenericArguments[0]
+        let symbol = symbolUse.Symbol :?> FSharpEntity
+        let typeArg = symbol.GenericArguments[0]
         typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
 
     [<Test>]
@@ -367,8 +369,17 @@ type I<'T> =
             getSymbolUses checkResults
             |> Seq.findBack (fun symbolUse -> symbolUse.Symbol.DisplayName = "I")
 
-        let _, typeArg = symbolUse.GenericArguments[0]
+        let symbol = symbolUse.Symbol :?> FSharpEntity
+        let typeArg = symbol.GenericArguments[0]
         typeArg.Format(symbolUse.DisplayContext) |> shouldEqual "int"
+
+    [<Test>]
+    let ``Operator 01 - Type arg`` () =
+        let _, checkResults = getParseAndCheckResults """
+[1] |> ignore
+"""
+        let symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile()
+        ()
 
     [<Test>]
     let ``FSharpType.Format can use prefix representations`` () =
@@ -1203,3 +1214,24 @@ type T() =
     let i = 1
 """
         assertHasSymbolUsages ["i"] checkResults
+
+module Event =
+    [<Test>]
+    let ``CLIEvent member does not produce additional property symbol`` () =
+        let _, checkResults = getParseAndCheckResults """
+type T() = 
+    [<CLIEvent>]
+    member this.Event = Event<int>().Publish
+"""
+        let allSymbols =
+            checkResults.GetSymbolUsesAtLocation(4, 21, "    member this.Event = Event<int>().Publish", [ "Event" ])
+
+        let hasPropertySymbols =
+            allSymbols
+            |> List.exists (fun su ->
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.IsProperty
+                | _ -> false
+            )
+
+        Assert.False hasPropertySymbols

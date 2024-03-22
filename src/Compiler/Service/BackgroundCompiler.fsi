@@ -102,6 +102,21 @@ type internal IBackgroundCompiler =
         userOpName: string ->
             Async<FSharpProjectOptions * FSharpDiagnostic list>
 
+    abstract GetProjectSnapshotFromScript:
+        fileName: string *
+        sourceText: ISourceTextNew *
+        documentSource: DocumentSource *
+        previewEnabled: bool option *
+        loadedTimeStamp: System.DateTime option *
+        otherFlags: string array option *
+        useFsiAuxLib: bool option *
+        useSdkRefs: bool option *
+        sdkDirOverride: string option *
+        assumeDotNetFramework: bool option *
+        optionsStamp: int64 option *
+        userOpName: string ->
+            Async<FSharpProjectSnapshot * FSharpDiagnostic list>
+
     abstract GetSemanticClassificationForFile:
         fileName: string * snapshot: FSharpProjectSnapshot * userOpName: string ->
             NodeCode<FSharp.Compiler.EditorServices.SemanticClassificationView option>
@@ -111,6 +126,8 @@ type internal IBackgroundCompiler =
             NodeCode<FSharp.Compiler.EditorServices.SemanticClassificationView option>
 
     abstract InvalidateConfiguration: options: FSharpProjectOptions * userOpName: string -> unit
+
+    abstract InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * userOpName: string -> unit
 
     abstract NotifyFileChanged: fileName: string * options: FSharpProjectOptions * userOpName: string -> NodeCode<unit>
 
@@ -152,6 +169,10 @@ type internal IBackgroundCompiler =
     abstract TryGetRecentCheckResultsForFile:
         fileName: string * options: FSharpProjectOptions * sourceText: ISourceText option * userOpName: string ->
             (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option
+
+    abstract TryGetRecentCheckResultsForFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
+            (FSharpParseFileResults * FSharpCheckFileResults) option
 
     abstract BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions>
 

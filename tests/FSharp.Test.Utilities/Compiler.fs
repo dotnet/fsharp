@@ -207,7 +207,7 @@ module rec Compiler =
         | Arm = 5
         | Arm64 = 6
 
-    let private defaultOptions : string list = []
+    let public defaultOptions : string list = ["--realsig+"]
 
     let normalizePathSeparator (text:string) = text.Replace(@"\", "/")
 
@@ -365,6 +365,10 @@ module rec Compiler =
 
     let FSharp (source: string) : CompilationUnit =
         Fs source
+
+    let FSharpWithFileName name (source: string) : CompilationUnit =
+        fsFromString (SourceCodeFileKind.Fs({FileName=name; SourceText=Some source }))
+        |> FS
 
     let FsFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path)
@@ -583,6 +587,16 @@ module rec Compiler =
         | FS x -> FS { x with OutputType = outputType }
         | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
+
+    let withRealInternalSignatureOff (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realsig-"] }
+        | _ -> failwith "withRealInternalSignatureOff only supported by f#"
+
+    let withRealInternalSignatureOn (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realsig+"] }
+        | _ -> failwith "withRealInternalSignatureOn only supported by f#"
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit
@@ -1112,7 +1126,9 @@ Actual:
     
     let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
         printfn $"creating baseline error file for convenience: {baselineFile.FilePath}, expected: {baselineFile.BslSource}"
-        FileSystem.OpenFileForWriteShim(baselineFile.FilePath).Write(actualErrors)
+        let file = FileSystem.OpenFileForWriteShim(baselineFile.FilePath)
+        file.SetLength(0)
+        file.WriteAllText(actualErrors)
 
     let private verifyFSBaseline fs : unit =
         match fs.Baseline with
@@ -1156,6 +1172,18 @@ Actual:
             | Some p -> func p il
         | CompilationResult.Failure f -> failwith $"Result should be \"Success\" in order to get IL. Failure: {Environment.NewLine}{f}"
 
+    let withILContains expected result : CompilationResult =
+        match result with
+        | CompilationResult.Success s ->
+            match s.OutputPath with
+            | None -> failwith "Operation didn't produce any output!"
+            | Some p ->
+                match ILChecker.verifyILAndReturnActual [] p expected with
+                | true, _, _ -> result
+                | false, errorMsg, _actualIL -> CompilationResult.Failure( {s with Output = Some (ExecutionOutput { StdOut = errorMsg; ExitCode = 0; StdErr = "" })} )
+
+        | CompilationResult.Failure f -> failwith $"Result should be \"Success\" in order to get IL. Failure: {Environment.NewLine}{f}"
+
     let verifyIL = doILCheck ILChecker.checkIL
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
@@ -1170,7 +1198,7 @@ Actual:
                 match baseline.ILBaseline.Content with
                 | Some b -> b
                 | None ->  String.Empty
-            let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual p expectedIL
+            let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual [] p [expectedIL]
 
             if not success then
                 // Failed try update baselines if required
@@ -1348,13 +1376,13 @@ Actual:
         if documents <> expectedDocuments then
             failwith $"Expected documents are different from PDB.\nExpected: %A{expectedDocuments}\nActual: %A{documents}"
 
-
-    let private verifyPdbOptions reader options =
+    let private verifyPdbOptions optOutputPath reader options =
+        let outputPath = Path.GetDirectoryName(optOutputPath |> Option.defaultValue ".")
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
-            | VerifyDocuments docs -> verifyDocuments reader docs
+            | VerifyDocuments docs -> verifyDocuments reader (docs |> List.map(fun doc -> Path.Combine(outputPath, doc)))
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
@@ -1373,7 +1401,7 @@ Actual:
                 | _ -> failwith "Only F# compilations are supported when verifying PDBs."
 
             verifyPdbFormat reader compilationType
-            verifyPdbOptions reader options
+            verifyPdbOptions result.OutputPath reader options
         | _ -> failwith "Output path is not set, please make sure compilation was successfull."
 
         ()
@@ -1418,7 +1446,7 @@ Actual:
         let private getErrorInfo (info: ErrorInfo) : string =
             sprintf "%A %A" info.Error info.Message
 
-        let inline private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
+        let private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
             if (List.length source) <> (List.length expected) then
                 failwith (sprintf "Expected list of issues differ from compilation result:\nExpected:\n %A\nActual:\n %A" expected (List.map getErrorInfo source))
             ()
@@ -1546,8 +1574,6 @@ Actual:
             let withResult (expectedResult: SimpleErrorInfo ) (result: CompilationResult) : CompilationResult =
                 withResults [expectedResult] result
 
-
-
         module TextBasedDiagnosticAsserts =
             open FSharp.Compiler.Text.Range
 
@@ -1674,26 +1700,35 @@ Actual:
                 | _ -> failwith "Cannot check exit code on this run result."
             result
 
-        let private checkOutput (category: string) (substring: string) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
+        let private checkOutputInOrder (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None -> failwith (sprintf "Execution output is missing cannot check \"%A\"" category)
             | Some o ->
                 match o with
                 | ExecutionOutput e ->
                     let where = selector e
-                    if not (where.Contains(substring)) then
-                        failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                    let mutable searchPos = 0
+                    for substring in substrings do
+                        match where.IndexOf(substring, searchPos) with
+                        | -1 -> failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                        | pos -> searchPos <- pos + substring.Length
                 | _ -> failwith "Cannot check output on this run result."
             result
 
-        let withOutputContains (substring: string) (result: CompilationResult) : CompilationResult =
-            checkOutput "STDERR/STDOUT" substring (fun o -> o.StdOut + "\n" + o.StdErr) result
+        let withOutputContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrder "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
 
         let withStdOutContains (substring: string) (result: CompilationResult) : CompilationResult =
-            checkOutput "STDOUT" substring (fun o -> o.StdOut) result
+            checkOutputInOrder "STDOUT" [substring] (fun o -> o.StdOut) result
+
+        let withStdOutContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrder "STDOUT" substrings (fun o -> o.StdOut) result
+
+        let withStdErrContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrder "STDERR" substrings (fun o -> o.StdErr) result
 
         let withStdErrContains (substring: string) (result: CompilationResult) : CompilationResult =
-            checkOutput "STDERR" substring (fun o -> o.StdErr) result
+            checkOutputInOrder "STDERR" [substring] (fun o -> o.StdErr) result
 
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
@@ -1752,5 +1787,3 @@ Actual:
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
-        
-          

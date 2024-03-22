@@ -84,6 +84,10 @@ type LanguageFeature =
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
+    | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | EnforceAttributeTargets
+    | LowerInterpolatedStringToConcat
+    | LowerIntegralRangesToFastLoops
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -195,6 +199,10 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningIndexedPropertiesGetSetSameType, previewVersion
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
                 LanguageFeature.UnionIsPropertiesVisible, previewVersion
+                LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
+                LanguageFeature.EnforceAttributeTargets, previewVersion
+                LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
+                LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -336,6 +344,11 @@ type LanguageVersion(versionText) =
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
         | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
+        | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
+            FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
+        | LanguageFeature.EnforceAttributeTargets -> FSComp.SR.featureEnforceAttributeTargets ()
+        | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
+        | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

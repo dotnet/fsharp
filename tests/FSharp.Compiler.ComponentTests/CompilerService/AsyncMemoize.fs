@@ -18,6 +18,14 @@ let waitFor (mre: ManualResetEvent) =
     if not <| mre.WaitOne timeout then 
         failwith "waitFor timed out"
 
+let waitUntil condition value =
+    task {
+        let sw = Stopwatch.StartNew()
+        while not <| condition value do
+            if sw.Elapsed > timeout then
+                failwith "waitUntil timed out"
+            do! Task.Delay 10
+    }
 
 let rec internal spinFor (duration: TimeSpan) =
     node {
@@ -29,6 +37,26 @@ let rec internal spinFor (duration: TimeSpan) =
     }
 
 
+type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality>(memoize: AsyncMemoize<'a,'b,'c>) as self =
+
+    let events = ConcurrentQueue()
+
+    do memoize.OnEvent self.Add
+
+    member _.Add (e, (_label, k, _version)) = events.Enqueue (e, k)
+
+    member _.Received value = events |> Seq.exists (fst >> (=) value)
+
+    member _.CountOf value count = events |> Seq.filter (fst >> (=) value) |> Seq.length |> (=) count
+
+    member _.ShouldBe (expected) =
+        let expected = expected |> Seq.toArray
+        let actual = events |> Seq.toArray
+        Assert.Equal<_ array>(expected, actual)
+
+    member _.Sequence = events |> Seq.map id
+
+
 [<Fact>]
 let ``Basics``() =
 
@@ -37,10 +65,8 @@ let ``Basics``() =
         return key * 2
     }
 
-    let eventLog = ConcurrentBag()
-
     let memoize = AsyncMemoize<int, int, int>()
-    memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Add (e, k))
+    let events = EventRecorder(memoize)
 
     let result =
         seq {
@@ -58,7 +84,9 @@ let ``Basics``() =
 
     Assert.Equal<int array>(expected, result)
 
-    let groups = eventLog |> Seq.groupBy snd |> Seq.toList
+    (waitUntil (events.CountOf Finished) 3).Wait()
+
+    let groups = events.Sequence |> Seq.groupBy snd |> Seq.toList
     Assert.Equal(3, groups.Length)
     for key, events in groups do
         Assert.Equal<Set<(JobEvent * int)>>(Set [ Requested, key; Started, key; Finished, key ], Set events)
@@ -69,21 +97,14 @@ let ``We can cancel a job`` () =
 
         let jobStarted = new ManualResetEvent(false)
 
-        let jobCanceled = new ManualResetEvent(false)
-
         let computation action = node {
             action() |> ignore
             do! spinFor timeout 
             failwith "Should be canceled before it gets here"
         }
 
-        let eventLog = ConcurrentQueue()
-        let memoize = AsyncMemoize<int, int, _>()
-        memoize.OnEvent(fun (e, (_label, k, _version)) -> 
-            eventLog.Enqueue (e, k)
-            if e = Canceled then
-                jobCanceled.Set() |> ignore
-            )
+        let memoize = AsyncMemoize<_, int, _>()
+        let events = EventRecorder(memoize)
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -96,13 +117,10 @@ let ``We can cancel a job`` () =
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
-        let jobRequested = new ManualResetEvent(false)
-        memoize.OnEvent(fun (e, _) -> if e = Requested then jobRequested.Set() |> ignore)
-
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation ignore), ct = cts3.Token)
 
-        waitFor jobRequested
+        do! waitUntil (events.CountOf Requested) 3
 
         cts1.Cancel()
         cts2.Cancel()
@@ -111,16 +129,16 @@ let ``We can cancel a job`` () =
 
         cts3.Cancel()
 
-        waitFor jobCanceled
+        do! waitUntil events.Received Canceled
 
-        Assert.Equal<(JobEvent * int) array>([|
+        events.ShouldBe [
             Requested, key
             Started, key
             Requested, key
             Requested, key
             Restarted, key
             Canceled, key
-        |], eventLog |> Seq.toArray )
+        ]
     }
 
 [<Fact>]
@@ -136,9 +154,9 @@ let ``Job is restarted if first requestor cancels`` () =
             return key * 2
         }
 
-        let eventLog = ConcurrentStack()
-        let memoize = AsyncMemoize<int, int, _>()
-        memoize.OnEvent(fun (e, (_, k, _version)) -> eventLog.Push (e, k))
+        let memoize = AsyncMemoize<_, int, _>()
+        let events = EventRecorder(memoize)
+
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -151,13 +169,10 @@ let ``Job is restarted if first requestor cancels`` () =
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
-        let jobRequested = new ManualResetEvent(false)
-        memoize.OnEvent(fun (e, _) -> if e = Requested then jobRequested.Set() |> ignore)
-
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
-        waitFor jobRequested
+        do! waitUntil (events.CountOf Requested) 3
 
         cts1.Cancel()
 
@@ -168,16 +183,13 @@ let ``Job is restarted if first requestor cancels`` () =
         let! result = _task2
         Assert.Equal(2, result)
 
-        let orderedLog = eventLog |> Seq.rev |> Seq.toList
-        let expected = [
+        events.ShouldBe [
             Requested, key
             Started, key
             Requested, key
             Requested, key
             Restarted, key
             Finished, key ]
-
-        Assert.Equal<_ list>(expected, orderedLog)
     }
 
 [<Fact>]
@@ -192,10 +204,10 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
             waitFor jobCanComplete
             return key * 2
         }
+        
+        let memoize = AsyncMemoize<_, int, _>()
+        let events = EventRecorder(memoize)
 
-        let eventLog = ConcurrentStack()
-        let memoize = AsyncMemoize<int, int, _>()
-        memoize.OnEvent(fun (e, (_label, k, _version)) -> eventLog.Push (e, k))
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
@@ -208,13 +220,10 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
         waitFor jobStarted
         jobStarted.Reset() |> ignore
 
-        let jobRequested = new ManualResetEvent(false)
-        memoize.OnEvent(fun (e, _) -> if e = Requested then jobRequested.Set() |> ignore)
-
         let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
         let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
-        waitFor jobRequested
+        do! waitUntil (events.CountOf Requested) 3
 
         cts1.Cancel()
 
@@ -227,16 +236,13 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
         let! result = _task3
         Assert.Equal(2, result)
 
-        let orderedLog = eventLog |> Seq.rev |> Seq.toList
-        let expected = [
+        events.ShouldBe [
             Requested, key
             Started, key
             Requested, key
             Requested, key
             Restarted, key
             Finished, key ]
-
-        Assert.Equal<_ list>(expected, orderedLog)
     }
 
 
