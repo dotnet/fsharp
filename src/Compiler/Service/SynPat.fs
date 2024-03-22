@@ -55,6 +55,24 @@ module SynPat =
         | SynPat.Tuple(isStruct = false; elementPats = Last(Rightmost pat)) -> pat
         | pat -> pat
 
+    /// Matches a nested as pattern.
+    [<return: Struct>]
+    let rec (|DanglingAs|_|) pat =
+        let (|AnyDanglingAs|_|) =
+            List.tryPick (function
+                | DanglingAs -> Some()
+                | _ -> None)
+
+        match pat with
+        | SynPat.As _ -> ValueSome()
+        | SynPat.Or(lhsPat = DanglingAs)
+        | SynPat.Or(rhsPat = DanglingAs)
+        | SynPat.ListCons(lhsPat = DanglingAs)
+        | SynPat.ListCons(rhsPat = DanglingAs)
+        | SynPat.Ands(pats = AnyDanglingAs)
+        | SynPat.Tuple(isStruct = false; elementPats = AnyDanglingAs) -> ValueSome()
+        | _ -> ValueNone
+
     /// Matches if the given pattern is atomic.
     [<return: Struct>]
     let (|Atomic|_|) pat =
@@ -88,6 +106,7 @@ module SynPat =
         //     fun (x, y, …) -> …
         //     fun (x: …) -> …
         //     fun (Pattern …) -> …
+        //     set (x: …, y: …) = …
         | SynPat.Typed _, SyntaxNode.SynPat(Rightmost(SynPat.Paren(Is pat, _))) :: SyntaxNode.SynMatchClause _ :: _
         | Rightmost(SynPat.Typed _), SyntaxNode.SynMatchClause _ :: _
         | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
@@ -98,22 +117,61 @@ module SynPat =
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynBinding _ :: _
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynExpr(SynExpr.Lambda _) :: _
         | SynPat.Tuple(isStruct = false), SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _
-        | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _ -> true
+        | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _
+        | SynPat.Typed _,
+          SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.GetSetMember _) :: _
+        | SynPat.Typed _,
+          SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding(SynBinding(
+              valData = SynValData(
+                  memberFlags = Some {
+                                         MemberKind = SynMemberKind.PropertyGetSet | SynMemberKind.PropertyGet | SynMemberKind.PropertySet
+                                     }))) :: _ -> true
 
         // () is parsed as this.
         | SynPat.Const(SynConst.Unit, _), _ -> true
 
         // (()) is required when overriding a generic member
-        // where unit is the generic type argument:
+        // where unit or a tuple type is the generic type argument:
         //
         //     type C<'T> = abstract M : 'T -> unit
         //     let _ = { new C<unit> with override _.M (()) = () }
-        | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _),
+        //     let _ = { new C<int * int> with override _.M ((x, y)) = () }
+        | SynPat.Paren((SynPat.Const(SynConst.Unit, _) | SynPat.Tuple(isStruct = false)), _),
           SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.ObjExpr(
               objType = SynType.App(typeArgs = _ :: _) | SynType.LongIdentApp(typeArgs = _ :: _))) :: _
-        | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _),
+        | SynPat.Tuple(isStruct = false),
+          SyntaxNode.SynPat(SynPat.Paren _) :: SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.ObjExpr(
+              objType = SynType.App(typeArgs = _ :: _) | SynType.LongIdentApp(typeArgs = _ :: _))) :: _
+        | SynPat.Paren((SynPat.Const(SynConst.Unit, _) | SynPat.Tuple(isStruct = false)), _),
           SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
               typeRepr = SynTypeDefnRepr.ObjectModel(members = AnyGenericInheritOrInterfaceImpl))) :: _ -> true
+
+        // Not required:
+        //
+        //     let (a,
+        //          b,
+        //          c) = …
+        //
+        // Required:
+        //
+        //     let (a,
+        //          b,
+        //          c) =
+        //         …
+        | SynPat.Tuple(isStruct = false; range = innerRange), SyntaxNode.SynBinding(SynBinding(expr = body)) :: _ ->
+            innerRange.StartLine <> innerRange.EndLine
+            && innerRange.StartLine < body.Range.StartLine
+            && body.Range.StartColumn <= innerRange.StartColumn
+
+        // The parens could be required by a signature file like this:
+        //
+        //     type SemanticClassificationItem =
+        //         new: (range * SemanticClassificationType) -> SemanticClassificationItem
+        | SynPat.Paren(SynPat.Tuple(isStruct = false), _),
+          SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ]))) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn _ :: _
+        | SynPat.Tuple(isStruct = false),
+          SyntaxNode.SynPat(SynPat.Paren _) :: SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ]))) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn _ :: _ ->
+            true
 
         // Parens are required around the atomic argument of
         // any additional `new` constructor that is not the last.
@@ -204,9 +262,9 @@ module SynPat =
             // A | (B as C)
             // A & (B as C)
             // A, (B as C)
-            | SynPat.Or _, SynPat.As _
-            | SynPat.Ands _, SynPat.As _
-            | SynPat.Tuple _, SynPat.As _
+            | SynPat.Or _, (SynPat.As _ | DanglingAs)
+            | SynPat.Ands _, (SynPat.As _ | DanglingAs)
+            | SynPat.Tuple _, (SynPat.As _ | DanglingAs)
 
             // x, (y, z)
             // x & (y, z)
