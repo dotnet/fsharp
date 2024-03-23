@@ -15,6 +15,27 @@ open CancellableTasks
 module private Patterns =
     let inline toPat f x = if f x then ValueSome() else ValueNone
 
+    /// Starts with //.
+    [<return: Struct>]
+    let (|StartsWithSingleLineComment|_|) (s: string) =
+        if s.AsSpan().TrimStart(' ').StartsWith("//".AsSpan()) then
+            ValueSome StartsWithSingleLineComment
+        else
+            ValueNone
+
+    /// Starts with match, e.g.,
+    ///
+    ///     (match … with
+    ///     | … -> …)
+    [<return: Struct>]
+    let (|StartsWithMatch|_|) (s: string) =
+        let s = s.AsSpan().TrimStart ' '
+
+        if s.StartsWith("match".AsSpan()) && (s.Length = 5 || s[5] = ' ') then
+            ValueSome StartsWithMatch
+        else
+            ValueNone
+
     [<AutoOpen>]
     module Char =
         [<return: Struct>]
@@ -137,11 +158,17 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                                     match line.AsSpan(startCol).IndexOfAnyExcept(' ', ')') with
                                     | -1 -> loop innerOffsides (lineNo + 1) 0
                                     | i ->
-                                        match innerOffsides with
-                                        | NoneYet -> loop (FirstLine(i + startCol)) (lineNo + 1) 0
-                                        | FirstLine innerOffsides -> loop (FollowingLine(innerOffsides, i + startCol)) (lineNo + 1) 0
-                                        | FollowingLine(firstLine, innerOffsides) ->
-                                            loop (FollowingLine(firstLine, min innerOffsides (i + startCol))) (lineNo + 1) 0
+                                        match line[i + startCol ..] with
+                                        | StartsWithMatch
+                                        | StartsWithSingleLineComment -> loop innerOffsides (lineNo + 1) 0
+                                        | _ ->
+                                            match innerOffsides with
+                                            | NoneYet -> loop (FirstLine(i + startCol)) (lineNo + 1) 0
+
+                                            | FirstLine inner -> loop (FollowingLine(inner, i + startCol)) (lineNo + 1) 0
+
+                                            | FollowingLine(firstLine, innerOffsides) ->
+                                                loop (FollowingLine(firstLine, min innerOffsides (i + startCol))) (lineNo + 1) 0
                                 else
                                     innerOffsides
 
@@ -165,21 +192,24 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
                     let newText =
                         let (|ShouldPutSpaceBefore|_|) (s: string) =
-                            // ……(……)
-                            // ↑↑ ↑
-                            match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[0] with
-                            | _, _, ('\n' | '\r') -> None
-                            | '[', '|', (Punctuation | LetterOrDigit) -> None
-                            | _, '[', '<' -> Some ShouldPutSpaceBefore
-                            | _, ('(' | '[' | '{'), _ -> None
-                            | _, '>', _ -> Some ShouldPutSpaceBefore
-                            | ' ', '=', _ -> Some ShouldPutSpaceBefore
-                            | _, '=', ('(' | '[' | '{') -> None
-                            | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                            | _, LetterOrDigit, '(' -> None
-                            | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
-                            | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                            | _ -> None
+                            match s with
+                            | StartsWithMatch -> None
+                            | _ ->
+                                // ……(……)
+                                // ↑↑ ↑
+                                match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[0] with
+                                | _, _, ('\n' | '\r') -> None
+                                | '[', '|', (Punctuation | LetterOrDigit) -> None
+                                | _, '[', '<' -> Some ShouldPutSpaceBefore
+                                | _, ('(' | '[' | '{'), _ -> None
+                                | _, '>', _ -> Some ShouldPutSpaceBefore
+                                | ' ', '=', _ -> Some ShouldPutSpaceBefore
+                                | _, '=', ('(' | '[' | '{') -> None
+                                | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
+                                | _, LetterOrDigit, '(' -> None
+                                | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
+                                | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
+                                | _ -> None
 
                         let (|ShouldPutSpaceAfter|_|) (s: string) =
                             // (……)…
@@ -187,23 +217,42 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                             match s[s.Length - 1], sourceText[min context.Span.End (sourceText.Length - 1)] with
                             | '>', ('|' | ']') -> Some ShouldPutSpaceAfter
                             | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
+                            | _, ('+' | '-' | '%' | '&' | '!' | '~') -> None
                             | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
                             | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
                             | _ -> None
 
+                        let (|WouldTurnInfixIntoPrefix|_|) (s: string) =
+                            // (……)…
+                            //   ↑ ↑
+                            match s[s.Length - 1], sourceText[min context.Span.End (sourceText.Length - 1)] with
+                            | (Punctuation | Symbol), ('+' | '-' | '%' | '&' | '!' | '~') ->
+                                let linePos = sourceText.Lines.GetLinePosition context.Span.End
+                                let line = sourceText.Lines[linePos.Line].ToString()
+
+                                // (……)+…
+                                //      ↑
+                                match line.AsSpan(linePos.Character).IndexOfAnyExcept("*/%-+:^@><=!|$.?".AsSpan()) with
+                                | -1 -> None
+                                | i when line[linePos.Character + i] <> ' ' -> Some WouldTurnInfixIntoPrefix
+                                | _ -> None
+                            | _ -> None
+
                         match adjusted with
-                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter -> " " + adjusted + " "
-                        | ShouldPutSpaceBefore -> " " + adjusted
-                        | ShouldPutSpaceAfter -> adjusted + " "
-                        | adjusted -> adjusted
+                        | WouldTurnInfixIntoPrefix -> ValueNone
+                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter -> ValueSome(" " + adjusted + " ")
+                        | ShouldPutSpaceBefore -> ValueSome(" " + adjusted)
+                        | ShouldPutSpaceAfter -> ValueSome(adjusted + " ")
+                        | adjusted -> ValueSome adjusted
 
                     return
-                        ValueSome
+                        newText
+                        |> ValueOption.map (fun newText ->
                             {
                                 Name = CodeFix.RemoveUnnecessaryParentheses
                                 Message = title
                                 Changes = [ TextChange(context.Span, newText) ]
-                            }
+                            })
 
                 | notParens ->
                     System.Diagnostics.Debug.Fail $"%A{notParens} <> ('(', ')')"

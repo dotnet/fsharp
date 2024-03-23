@@ -75,6 +75,7 @@
     </Compile>
     <Compile Include="TreeVisitorTests.fs" />
     <Compile Include="ParsedInputModuleTests.fs" />
+    <Compile Include="ParsedInputModuleTests.VeryBigArrayExprTest.fs" />
   </ItemGroup>
 
   <ItemGroup>

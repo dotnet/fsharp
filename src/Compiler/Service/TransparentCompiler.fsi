@@ -125,6 +125,8 @@ type internal CompilerCaches =
     member ParseFile:
         AsyncMemoize<((string * string) * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
 
+    member ParseFileWithoutProject: AsyncMemoize<string, string, FSharpParseFileResults>
+
     member ProjectExtras: AsyncMemoizeDisabled<obj, obj, obj>
 
     member SemanticClassification: AsyncMemoize<(string * (string * string)), string, SemanticClassificationView option>

@@ -75,62 +75,44 @@
     .maxstack  5
     .locals init (class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
              valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
-             class [runtime]System.Collections.Generic.IEnumerator`1<int32> V_2,
-             class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_3,
-             int32 V_4,
-             class [runtime]System.IDisposable V_5)
-    IL_0000:  nop
-    IL_0001:  ldc.i4.0
-    IL_0002:  ldc.i4.1
-    IL_0003:  ldc.i4.s   10
-    IL_0005:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                     int32,
-                                                                                                                                                                     int32)
-    IL_000a:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-    IL_000f:  stloc.2
-    .try
-    {
-      IL_0010:  br.s       IL_0027
+             uint64 V_2,
+             int32 V_3,
+             int32 V_4)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.2
+    IL_0003:  ldc.i4.0
+    IL_0004:  stloc.3
+    IL_0005:  br.s       IL_0020
 
-      IL_0012:  ldloc.2
-      IL_0013:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0018:  stloc.s    V_4
-      IL_001a:  ldloca.s   V_1
-      IL_001c:  ldloc.s    V_4
-      IL_001e:  ldloc.s    V_4
-      IL_0020:  mul
-      IL_0021:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-      IL_0026:  nop
-      IL_0027:  ldloc.2
-      IL_0028:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-      IL_002d:  brtrue.s   IL_0012
+    IL_0007:  ldloca.s   V_1
+    IL_0009:  ldloc.3
+    IL_000a:  stloc.s    V_4
+    IL_000c:  ldloc.s    V_4
+    IL_000e:  ldloc.s    V_4
+    IL_0010:  mul
+    IL_0011:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0016:  nop
+    IL_0017:  ldloc.3
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.3
+    IL_001b:  ldloc.2
+    IL_001c:  ldc.i4.1
+    IL_001d:  conv.i8
+    IL_001e:  add
+    IL_001f:  stloc.2
+    IL_0020:  ldloc.2
+    IL_0021:  ldc.i4.s   11
+    IL_0023:  conv.i8
+    IL_0024:  blt.un.s   IL_0007
 
-      IL_002f:  ldnull
-      IL_0030:  stloc.3
-      IL_0031:  leave.s    IL_0048
-
-    }  
-    finally
-    {
-      IL_0033:  ldloc.2
-      IL_0034:  isinst     [runtime]System.IDisposable
-      IL_0039:  stloc.s    V_5
-      IL_003b:  ldloc.s    V_5
-      IL_003d:  brfalse.s  IL_0047
-
-      IL_003f:  ldloc.s    V_5
-      IL_0041:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_0046:  endfinally
-      IL_0047:  endfinally
-    }  
-    IL_0048:  ldloc.3
-    IL_0049:  pop
-    IL_004a:  ldloca.s   V_1
-    IL_004c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_0051:  dup
-    IL_0052:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::squaresOfOneToTenD@4
-    IL_0057:  stloc.0
-    IL_0058:  ret
+    IL_0026:  ldloca.s   V_1
+    IL_0028:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_002d:  dup
+    IL_002e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::squaresOfOneToTenD@4
+    IL_0033:  stloc.0
+    IL_0034:  ret
   } 
 
 } 
