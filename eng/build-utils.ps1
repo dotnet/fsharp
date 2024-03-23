@@ -250,6 +250,7 @@ function Make-BootstrapBuild() {
         $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
         $args += " /bl:`"$logFilePath`""
     }
+    Write-Host "$dotnetExe $args"
     Exec-Console $dotnetExe $args
 
     Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\$fsharpNetCoreProductTfm" -Destination "$dir\fslex" -Force -Recurse
@@ -263,6 +264,7 @@ function Make-BootstrapBuild() {
         $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
         $args += " /bl:`"$logFilePath`""
     }
+    Write-Host "$dotnetExe $args"
     Exec-Console $dotnetExe $args
 
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsc" -Force -Recurse

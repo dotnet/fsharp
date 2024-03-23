@@ -9,7 +9,7 @@
   <ItemGroup>
     <Projects Include="fslex\fslex.fsproj" />
     <Projects Include="fsyacc\fsyacc.fsproj" />
-    <Projects Include="AssemblyCheck\AssemblyCheck.fsproj" />
+    <Projects Include="AssemblyCheck\AssemblyCheck.fsproj" Condition="'$(ArcadeBuildFromSource)' != 'true'" />
   </ItemGroup>
 
   <Target Name="Build">
