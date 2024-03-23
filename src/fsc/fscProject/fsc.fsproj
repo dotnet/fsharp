@@ -9,9 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
+    <TargetFrameworks>$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
