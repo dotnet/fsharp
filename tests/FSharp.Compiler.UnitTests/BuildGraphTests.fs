@@ -3,27 +3,29 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Xunit
 open FSharp.Test
-open FSharp.Test.Compiler
 open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
+open FSharp.Compiler.Diagnostics
+
 
 module BuildGraphTests =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let private createNode () =
         let o = obj ()
-        GraphNode(node { 
+        GraphNode(async { 
             Assert.shouldBeTrue (o <> null)
             return 1 
         }), WeakReference(o)
 
     [<Fact>]
     let ``Intialization of graph node should not have a computed value``() =
-        let node = GraphNode(node { return 1 })
+        let node = GraphNode(async { return 1 })
         Assert.shouldBeTrue(node.TryPeekValue().IsNone)
         Assert.shouldBeFalse(node.HasValue)
 
@@ -33,23 +35,23 @@ module BuildGraphTests =
         let resetEventInAsync = new ManualResetEvent(false)
 
         let graphNode = 
-            GraphNode(node { 
+            GraphNode(async { 
                 resetEventInAsync.Set() |> ignore
-                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
+                let! _ = Async.AwaitWaitHandle(resetEvent)
                 return 1 
             })
 
         let task1 =
-            node {
+            async {
                 let! _ = graphNode.GetOrComputeValue()
                 ()
-            } |> NodeCode.StartAsTask_ForTesting
+            } |> Async.StartAsTask
 
         let task2 =
-            node {
+            async {
                 let! _ = graphNode.GetOrComputeValue()
                 ()
-            } |> NodeCode.StartAsTask_ForTesting
+            } |> Async.StartAsTask
 
         resetEventInAsync.WaitOne() |> ignore
         resetEvent.Set() |> ignore
@@ -66,12 +68,12 @@ module BuildGraphTests =
         let mutable computationCount = 0
 
         let graphNode = 
-            GraphNode(node { 
+            GraphNode(async { 
                 computationCount <- computationCount + 1
                 return 1 
             })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
         Async.RunImmediate(work)
         |> ignore
@@ -82,9 +84,9 @@ module BuildGraphTests =
     let ``Many requests to get a value asynchronously should get the correct value``() =
         let requests = 10000
 
-        let graphNode = GraphNode(node { return 1 })
+        let graphNode = GraphNode(async { return 1 })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
         let result = Async.RunImmediate(work)
 
@@ -101,7 +103,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        NodeCode.RunImmediateWithoutCancellation(graphNode.GetOrComputeValue())
+        Async.RunImmediate(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -118,7 +120,7 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode)))
+        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -128,21 +130,21 @@ module BuildGraphTests =
     [<Fact>]
     let ``A request can cancel``() =
         let graphNode = 
-            GraphNode(node { 
+            GraphNode(async { 
                 return 1 
             })
 
         use cts = new CancellationTokenSource()
 
         let work =
-            node {
+            async {
                 cts.Cancel()
                 return! graphNode.GetOrComputeValue()
             }
 
         let ex =
             try
-                NodeCode.RunImmediate(work, ct = cts.Token)
+                Async.RunImmediate(work, cancellationToken = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -156,23 +158,23 @@ module BuildGraphTests =
         let resetEvent = new ManualResetEvent(false)
 
         let graphNode = 
-            GraphNode(node { 
-                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
+            GraphNode(async { 
+                let! _ = Async.AwaitWaitHandle(resetEvent)
                 return 1 
             })
 
         use cts = new CancellationTokenSource()
 
         let task =
-            node {
+            async {
                 cts.Cancel()
                 resetEvent.Set() |> ignore
             }
-            |> NodeCode.StartAsTask_ForTesting
+            |> Async.StartAsTask
 
         let ex =
             try
-                NodeCode.RunImmediate(graphNode.GetOrComputeValue(), ct = cts.Token)
+                Async.RunImmediate(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -190,9 +192,9 @@ module BuildGraphTests =
         let mutable computationCount = 0
 
         let graphNode = 
-            GraphNode(node { 
+            GraphNode(async { 
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
-                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
+                let! _ = Async.AwaitWaitHandle(resetEvent)
                 computationCount <- computationCount + 1
                 return 1 
             })
@@ -200,7 +202,7 @@ module BuildGraphTests =
         use cts = new CancellationTokenSource()
 
         let work = 
-            node { 
+            async { 
                 let! _ = graphNode.GetOrComputeValue()
                 ()
             }
@@ -209,15 +211,15 @@ module BuildGraphTests =
 
         for i = 0 to requests - 1 do
             if i % 10 = 0 then
-                NodeCode.StartAsTask_ForTesting(work, ct = cts.Token)
+                Async.StartAsTask(work, cancellationToken = cts.Token)
                 |> tasks.Add
             else
-                NodeCode.StartAsTask_ForTesting(work)
+                Async.StartAsTask(work)
                 |> tasks.Add
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        NodeCode.RunImmediateWithoutCancellation(work)
+        Async.RunImmediate(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
@@ -243,21 +245,21 @@ module BuildGraphTests =
             let rng = Random()
             fun n -> rng.Next n
     
-        let job phase i = node {
-            do! random 10 |> Async.Sleep |> NodeCode.AwaitAsync
+        let job phase i = async {
+            do! random 10 |> Async.Sleep
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
-            |> Assert.shouldBe $"DiagnosticsLogger(NodeCode.Parallel {i})"
+            |> Assert.shouldBe $"DiagnosticsLogger(CaptureDiagnosticsConcurrently {i})"
 
             errorR (ExampleException $"job {i}")
         }
     
         let work (phase: BuildPhase) =
-            node {
+            async {
                 let n = 8
                 let logger = CapturingDiagnosticsLogger("test NodeCode")
                 use _ = new CompilationGlobalsScope(logger, phase)
-                let! _ = Seq.init n (job phase) |> NodeCode.Parallel
+                let! _ = Seq.init n (job phase) |> MultipleDiagnosticsLoggers.Parallel
 
                 let diags = logger.Diagnostics |> List.map fst
 
@@ -284,6 +286,159 @@ module BuildGraphTests =
     
         let pickRandomPhase _ = phases[random phases.Length]
         Seq.init 100 pickRandomPhase
-        |> Seq.map (work >> Async.AwaitNodeCode)
+        |> Seq.map work
         |> Async.Parallel
         |> Async.RunSynchronously
+
+    exception TestException
+
+    type internal SimpleConcurrentLogger(name) =
+        inherit DiagnosticsLogger(name)
+
+        let mutable errorCount = 0
+
+        override _.DiagnosticSink(d, s) =
+            if s = FSharpDiagnosticSeverity.Error then Interlocked.Increment(&errorCount) |> ignore
+
+        override this.ErrorCount = errorCount
+
+    [<Fact>]
+    let ``AsyncLocal diagnostics context flows correctly`` () =
+
+        let loggerShouldBe logger =
+            DiagnosticsThreadStatics.DiagnosticsLogger |> Assert.shouldBe logger
+
+        let errorCountShouldBe ec =
+            DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount |> Assert.shouldBe ec
+
+        let work logger = async {
+            SetThreadDiagnosticsLoggerNoUnwind logger
+
+            errorR TestException
+
+            loggerShouldBe logger
+            errorCountShouldBe 1
+
+            do! Async.SwitchToNewThread()
+
+            errorR TestException
+
+            loggerShouldBe logger
+            errorCountShouldBe 2
+
+            do! Async.SwitchToThreadPool()
+
+            errorR TestException
+
+            loggerShouldBe logger
+            errorCountShouldBe 3
+
+            let workInner = async {
+                    do! async.Zero()
+                    errorR TestException
+                    loggerShouldBe logger
+                }
+
+            let! child = workInner |> Async.StartChild
+            let! childTask = workInner |> Async.StartChildAsTask
+
+            do! child
+            do! childTask |> Async.AwaitTask
+            errorCountShouldBe 5
+        }
+
+        let init n =
+            let name = $"AsyncLocal test {n}"
+            let logger = SimpleConcurrentLogger name
+            work logger
+
+        Seq.init 10 init |> Async.Parallel |> Async.RunSynchronously |> ignore
+
+        let logger = SimpleConcurrentLogger "main"
+        use _ =  UseDiagnosticsLogger logger
+
+        errorCountShouldBe 0
+
+        let btask = backgroundTask {
+            errorR TestException
+            do! Task.Yield()
+            errorR TestException
+            loggerShouldBe logger
+        }
+
+        let noErrorsTask = backgroundTask {
+            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger
+            errorR TestException
+            do! Task.Yield()
+            errorR TestException
+            loggerShouldBe DiscardErrorsLogger
+        }
+
+        let task = task {
+            errorR TestException
+            do! Task.Yield()
+            errorR TestException
+            loggerShouldBe logger
+        }
+
+        let thread = Thread(ThreadStart(fun () ->
+            errorR TestException
+            errorR TestException
+            loggerShouldBe logger))
+        thread.Start()
+        thread.Join()
+
+        Task.WaitAll(noErrorsTask, btask, task)
+
+        Seq.init 11 (fun _ -> async { errorR TestException; loggerShouldBe logger } ) |> Async.Parallel |> Async.RunSynchronously |> ignore
+
+        loggerShouldBe logger
+        errorCountShouldBe 17
+
+        async {
+            // Async.Parallel continues context from the last computation that finished.
+            do! 
+                [ async {
+                    do! Async.SwitchToNewThread()
+                    SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
+                |> Async.Parallel
+                |> Async.Ignore
+            loggerShouldBe DiscardErrorsLogger
+
+            do! async {
+                do! Async.SwitchToNewThread()
+                SetThreadDiagnosticsLoggerNoUnwind logger
+            }
+
+            loggerShouldBe logger
+        }
+        |> Async.RunImmediate
+
+        // Synchronus code will affect current context:
+
+        // This is synchrouous, caller's context is affected
+        async {
+            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger
+            do! Async.SwitchToNewThread()
+            loggerShouldBe DiscardErrorsLogger
+        }
+        |> Async.RunImmediate
+        loggerShouldBe DiscardErrorsLogger
+
+        SetThreadDiagnosticsLoggerNoUnwind logger
+        // This runs in async continuation, so the context is forked.
+        async {
+            do! Async.Sleep 0
+            SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger
+            do! Async.SwitchToNewThread()
+            loggerShouldBe DiscardErrorsLogger
+        }
+        |> Async.RunImmediate
+        loggerShouldBe logger
+
+
+
+
+
+
+

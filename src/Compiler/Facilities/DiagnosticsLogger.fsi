@@ -234,8 +234,6 @@ type DiagnosticsThreadStatics =
 
     static member BuildPhase: BuildPhase with get, set
 
-    static member BuildPhaseUnchecked: BuildPhase
-
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
 [<AutoOpen>]
@@ -280,7 +278,7 @@ module DiagnosticsLoggerExtensions =
 val UseBuildPhase: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> DiagnosticsLogger) -> IDisposable
 
 val UseDiagnosticsLogger: newLogger: DiagnosticsLogger -> IDisposable
 
@@ -465,15 +463,23 @@ type StackGuard =
 type CompilationGlobalsScope =
     new: diagnosticsLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
 
+    /// When dispoed, restores caller's diagnostics logger and build phase.
+    new: unit -> CompilationGlobalsScope
+
     interface IDisposable
 
     member DiagnosticsLogger: DiagnosticsLogger
 
     member BuildPhase: BuildPhase
 
-type CaptureDiagnosticsConcurrently =
-    new: unit -> CaptureDiagnosticsConcurrently
+module MultipleDiagnosticsLoggers =
 
-    member GetLoggerForTask: string -> DiagnosticsLogger
+    /// Execute computations using Async.Parallel.
+    /// Captures the diagnostics in correct order and keeps a common error count for all computations.
+    /// When done, restores caller's build phase and diagnostics logger, commiting captured diagnostics.
+    val Parallel: computations: Async<'T> seq -> Async<'T array>
 
-    interface IDisposable
+    /// Execute computations using Async.Sequential.
+    /// Captures the diagnostics in correct order and keeps a common error count for all computations.
+    /// When done, restores caller's build phase and diagnostics logger, commiting captured diagnostics.
+    val Sequential: computations: Async<'T> seq -> Async<'T array>

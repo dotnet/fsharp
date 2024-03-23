@@ -136,7 +136,7 @@ module IncrementalBuildSyntaxTree =
             ), sourceRange, fileName, [||]
 
         let parse (source: FSharpSource) =
-            node {
+            async {
                 IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
                 use _ =
                     Activity.start "IncrementalBuildSyntaxTree.parse"
@@ -149,9 +149,9 @@ module IncrementalBuildSyntaxTree =
                     let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
                     // Return the disposable object that cleans up
                     use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
-                    use! text = source.GetTextContainer() |> NodeCode.AwaitAsync
+                    use! text = source.GetTextContainer()
                     let input =
-                        match text :?> TextContainer with
+                        match text with
                         | TextContainer.Stream(stream) ->
                             ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
                         | TextContainer.SourceText(sourceText) ->
@@ -252,8 +252,8 @@ type BoundModel private (
         ?tcStateOpt: GraphNode<TcInfo> * GraphNode<TcInfoExtras>
     ) =
 
-    let getTypeCheck (syntaxTree: SyntaxTree) : NodeCode<TypeCheck> =
-        node {
+    let getTypeCheck (syntaxTree: SyntaxTree) : Async<TypeCheck> =
+        async {
             let! input, _sourceRange, fileName, parseErrors = syntaxTree.ParseNode.GetOrComputeValue()
             use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, fileName|]
 
@@ -277,7 +277,7 @@ type BoundModel private (
                         None,
                         TcResultsSink.WithSink sink,
                         prevTcInfo.tcState, input )
-                |> NodeCode.FromCancellable
+                |> Cancellable.toAsync
 
             fileChecked.Trigger fileName
 
@@ -322,13 +322,13 @@ type BoundModel private (
         | _ -> None
 
     let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
-        node {
+        async {
             let! tcInfo , _, _, _, _ = typeCheck.GetOrComputeValue()
             return tcInfo
         } |> GraphNode
 
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
-        node {
+        async {
             let! _ , sink, implFile, fileName, _ = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
@@ -366,17 +366,17 @@ type BoundModel private (
                 }
         } |> GraphNode
 
-    let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree", [||] }
+    let defaultTypeCheck = async { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree", [||] }
     let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
     let tcInfoExtras = getTcInfoExtras typeCheckNode
     let diagnostics  =
-        node {
+        async {
             let! _, _, _, _, diags = typeCheckNode.GetOrComputeValue()
             return diags
         } |> GraphNode
 
     let startComputingFullTypeCheck =
-        node {
+        async {
             let! _ = tcInfoExtras.GetOrComputeValue()
             return! diagnostics.GetOrComputeValue()
         }
@@ -391,7 +391,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Catch |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
@@ -417,13 +417,13 @@ type BoundModel private (
     
     member this.GetOrComputeTcInfoExtras = this.TcInfoExtras.GetOrComputeValue
     
-    member this.GetOrComputeTcInfoWithExtras() = node {
+    member this.GetOrComputeTcInfoWithExtras() = async {
         let! tcInfo = this.TcInfo.GetOrComputeValue()
         let! tcInfoExtras = this.TcInfoExtras.GetOrComputeValue()
         return tcInfo, tcInfoExtras
     }
 
-    member this.Next(syntaxTree) = node {
+    member this.Next(syntaxTree) = async {
         let! tcInfo = this.TcInfo.GetOrComputeValue()
         return
             BoundModel(
@@ -442,7 +442,7 @@ type BoundModel private (
     }
 
     member this.Finish(finalTcDiagnosticsRev, finalTopAttribs) =
-        node {
+        async {
             let! tcInfo = this.TcInfo.GetOrComputeValue()
             let finishState = { tcInfo with tcDiagnosticsRev = finalTcDiagnosticsRev; topAttribs = finalTopAttribs }
             return
@@ -536,7 +536,7 @@ type FrameworkImportsCache(size) =
                 match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
                 | Some lazyWork -> lazyWork
                 | None ->
-                    let lazyWork = GraphNode(node {
+                    let lazyWork = GraphNode(async {
                         let tcConfigP = TcConfigProvider.Constant tcConfig
                         return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                     })
@@ -548,7 +548,7 @@ type FrameworkImportsCache(size) =
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member this.Get(tcConfig: TcConfig) =
-      node {
+      async {
         // Split into installed and not installed.
         let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
         let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
@@ -579,13 +579,13 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime, projectTi
     member _.GetOrComputeTcInfoWithExtras() = boundModel.GetOrComputeTcInfoWithExtras()
 
     member _.GetOrComputeItemKeyStoreIfEnabled() =
-        node {
+        async {
             let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.itemKeyStore
         }
 
     member _.GetOrComputeSemanticClassificationIfEnabled() =
-        node {
+        async {
             let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.semanticClassificationKeyStore
         }
@@ -658,14 +658,14 @@ module IncrementalBuilderHelpers =
 #if !NO_TYPEPROVIDERS
         ,importsInvalidatedByTypeProvider: Event<unit>
 #endif
-        ) : NodeCode<BoundModel * SingleFileDiagnostics> =
+        ) : Async<BoundModel * SingleFileDiagnostics> =
 
-      node {
+      async {
         let diagnosticsLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
         let! tcImports =
-          node {
+          async {
             try
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
 #if !NO_TYPEPROVIDERS
@@ -736,28 +736,28 @@ module IncrementalBuilderHelpers =
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (boundModels: GraphNode<BoundModel> seq) =
-      node {
+      async {
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
-        let! computedBoundModels = boundModels |> Seq.map (fun g -> g.GetOrComputeValue()) |> NodeCode.Sequential
+        let! computedBoundModels = boundModels |> Seq.map (fun g -> g.GetOrComputeValue()) |> MultipleDiagnosticsLoggers.Sequential
 
         let! tcInfos =
             computedBoundModels
-            |> Seq.map (fun boundModel -> node { return! boundModel.GetOrComputeTcInfo() })
-            |> NodeCode.Sequential
+            |> Seq.map (fun boundModel -> async { return! boundModel.GetOrComputeTcInfo() })
+            |> MultipleDiagnosticsLoggers.Sequential
 
         // tcInfoExtras can be computed in parallel. This will check any previously skipped implementation files in parallel, too.
         let! latestImplFiles =
             computedBoundModels
-            |> Seq.map (fun boundModel -> node {
+            |> Seq.map (fun boundModel -> async {
                     if partialCheck then
                         return None
                     else
                         let! tcInfoExtras = boundModel.GetOrComputeTcInfoExtras()
                         return tcInfoExtras.latestImplFile
                 })
-            |> NodeCode.Parallel
+            |> MultipleDiagnosticsLoggers.Parallel
 
         let results = [
             for tcInfo, latestImplFile in Seq.zip tcInfos latestImplFiles ->
@@ -826,7 +826,7 @@ module IncrementalBuilderHelpers =
         let! partialDiagnostics =
             computedBoundModels
             |> Seq.map (fun m -> m.Diagnostics.GetOrComputeValue())
-            |> NodeCode.Parallel
+            |> MultipleDiagnosticsLoggers.Parallel
         let diagnostics = [
             diagnosticsLogger.GetDiagnostics()
             yield! partialDiagnostics |> Seq.rev
@@ -949,13 +949,13 @@ module IncrementalBuilderStateHelpers =
     type BuildStatus = Invalidated | Good
 
     let createBoundModelGraphNode (prevBoundModel: GraphNode<BoundModel>) syntaxTree =
-        GraphNode(node {
+        GraphNode(async {
             let! prevBoundModel = prevBoundModel.GetOrComputeValue()
             return! prevBoundModel.Next(syntaxTree)
         })
 
     let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
-        GraphNode(node {
+        GraphNode(async {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
             let! result = 
                 FinalizeTypeCheckTask 
@@ -1123,7 +1123,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             tryGetSlot state (slot - 1)
 
     let evalUpToTargetSlot (state: IncrementalBuilderState) targetSlot =
-        node {
+        async {
             if targetSlot < 0 then
                 return Some(initialBoundModel, defaultTimeStamp)
             else
@@ -1155,8 +1155,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     let mutable currentState = state 
 
     let setCurrentState state cache (ct: CancellationToken) =
-        node {
-            do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
+        async {
+            do! semaphore.WaitAsync(ct) |> Async.AwaitTask
             try
                 ct.ThrowIfCancellationRequested()
                 currentState <- computeStampedFileNames initialState state cache
@@ -1165,8 +1165,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         }
 
     let checkFileTimeStamps (cache: TimeStampCache) =
-        node {
-            let! ct = NodeCode.CancellationToken
+        async {
+            let! ct = Async.CancellationToken
             do! setCurrentState currentState cache ct
         }
 
@@ -1196,7 +1196,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member _.AllDependenciesDeprecated = allDependencies
 
     member _.PopulatePartialCheckingResults () =
-      node {
+      async {
         let cache = TimeStampCache defaultTimeStamp // One per step
         do! checkFileTimeStamps cache
         let! _ = currentState.finalizedBoundModel.GetOrComputeValue()
@@ -1238,7 +1238,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         (builder.TryGetCheckResultsBeforeFileInProject fileName).IsSome
 
     member builder.GetCheckResultsBeforeSlotInProject slotOfFile =
-      node {
+      async {
         let cache = TimeStampCache defaultTimeStamp
         do! checkFileTimeStamps cache
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
@@ -1250,7 +1250,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
       }
 
     member builder.GetFullCheckResultsBeforeSlotInProject slotOfFile =
-      node {
+      async {
         let cache = TimeStampCache defaultTimeStamp
         do! checkFileTimeStamps cache
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
@@ -1275,7 +1275,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         builder.GetFullCheckResultsBeforeSlotInProject slotOfFile
 
     member builder.GetFullCheckResultsAfterFileInProject fileName =
-        node {
+        async {
             let slotOfFile = builder.GetSlotOfFileName fileName + 1
             let! result = builder.GetFullCheckResultsBeforeSlotInProject(slotOfFile)
             return result
@@ -1285,7 +1285,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         builder.GetCheckResultsBeforeSlotInProject(builder.GetSlotsCount())
 
     member builder.GetCheckResultsAndImplementationsForProject() =
-      node {
+      async {
         let cache = TimeStampCache(defaultTimeStamp)
         do! checkFileTimeStamps cache
         let! result = currentState.finalizedBoundModel.GetOrComputeValue()
@@ -1297,7 +1297,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
       }
 
     member builder.GetFullCheckResultsAndImplementationsForProject() =
-        node {
+        async {
             let! result = builder.GetCheckResultsAndImplementationsForProject()
             let results, _, _, _ = result
             let! _ = results.GetOrComputeTcInfoWithExtras() // Make sure we forcefully evaluate the info
@@ -1342,14 +1342,13 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let slotOfFile = builder.GetSlotOfFileName fileName
         let syntaxTree = currentState.slots[slotOfFile].SyntaxTree
         syntaxTree.ParseNode.GetOrComputeValue()
-        |> Async.AwaitNodeCode
         |> Async.RunSynchronously
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
-        node {
+        async {
             let slotOfFile = builder.GetSlotOfFileName fileName        
             let cache = TimeStampCache defaultTimeStamp
-            let! ct = NodeCode.CancellationToken
+            let! ct = Async.CancellationToken
             do! setCurrentState
                     { currentState with 
                         slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
@@ -1388,14 +1387,14 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
-      node {
+      async {
 
         // Trap and report diagnostics from creation.
         let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
         use _ = new CompilationGlobalsScope(delayedLogger, BuildPhase.Parameter)
 
         let! builderOpt =
-         node {
+         async {
           try
 
             // Create the builder.
