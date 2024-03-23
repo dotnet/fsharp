@@ -17,7 +17,7 @@ module Scripting =
 
     let executeProcess fileName arguments =
         let processWriteMessage (chan:TextWriter) (message:string) =
-            if message <> null then 
+            if not (isNull message) then 
                 chan.WriteLine(message) 
         printfn "%s %s" fileName arguments
         let info = ProcessStartInfo(Arguments=arguments, UseShellExecute=false, 
@@ -122,7 +122,7 @@ module Scripting =
             cmdArgs.RedirectOutput|> Option.iter (fun f ->
                 processInfo.RedirectStandardOutput <- true
                 p.OutputDataReceived.Add (fun ea -> 
-                    if ea.Data <> null then 
+                    if not (isNull (ea.Data)) then 
                         out.Append(ea.Data + Environment.NewLine) |> ignore
                         f ea.Data)
             )
@@ -130,7 +130,7 @@ module Scripting =
             cmdArgs.RedirectError |> Option.iter (fun f ->
                 processInfo.RedirectStandardError <- true
                 p.ErrorDataReceived.Add (fun ea -> 
-                    if ea.Data <> null then 
+                    if not (isNull (ea.Data)) then 
                         err.Append(ea.Data + Environment.NewLine) |> ignore
                         f ea.Data)
             )

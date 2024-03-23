@@ -9,7 +9,7 @@ module Tests.Service.ProjectAnalysisTests
 
 #nowarn "57" // Experimental stuff
 
-let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
+let runningOnMono = try not (isNull (System.Type.GetType("Mono.Runtime"))) with e ->  false
 
 open NUnit.Framework
 open FsUnit

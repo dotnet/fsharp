@@ -695,7 +695,7 @@ type StructUnion =
         
         for i=1 to countOfCases do
             let t = basicTypes[i%basicTypes.Length]
-            if t = "" then 
+            if System.String.IsNullOrEmpty t then 
                 codeSb.AppendLine($"  | Case{i}") |> ignore
             else
                 codeSb.AppendLine($"  | Case{i} of field1_{i}:{t} * field2_{i}:{t}") |> ignore

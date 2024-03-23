@@ -296,9 +296,9 @@ module internal String =
     /// Splits a string into substrings based on the strings in the array separators
     val split: options: StringSplitOptions -> separator: string[] -> value: string -> string[]
 
-    val (|StartsWith|_|): pattern: string -> value: string -> unit option
+    val (|StartsWith|_|): pattern: string -> value: string -> unit voption
 
-    val (|Contains|_|): pattern: string -> value: string -> unit option
+    val (|Contains|_|): pattern: string -> value: string -> unit voption
 
     val getLines: str: string -> string[]
 
