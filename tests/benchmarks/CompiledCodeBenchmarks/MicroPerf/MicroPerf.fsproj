@@ -14,6 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="ComputedCollections\Arrays\IntegralRanges.fs" />
+    <Compile Include="ComputedCollections\Lists\IntegralRanges.fs" />
     <Compile Include="Equality\BasicTypes.fs" />
     <Compile Include="Equality\FSharpCoreFunctions.fs" />
     <Compile Include="Equality\Arrays.fs" />
@@ -23,6 +25,7 @@
     <Compile Include="Equality\Misc.fs" />
     <Compile Include="Equality\Structs.fs" />
     <Compile Include="Equality\OptionsAndCo.fs" />
+    <Compile Include="ForLoops\IntegralRanges.fs" />
     <Compile Include="Async.fs" />
     <Compile Include="Conditions.fs" />
     <Compile Include="Collections.fs" />
