@@ -1,11 +1,16 @@
-namespace MicroPerf
+module MicroPerf.Program
 
+open System
+open System.Reflection
+open BenchmarkDotNet.Configs
+open BenchmarkDotNet.Jobs
 open BenchmarkDotNet.Running
 
-module Main =
+let config =
+    DefaultConfig.Instance
+        .AddJob(Job.Default.WithId("Current").WithArguments([|MsBuildArgument "/p:BUILDING_USING_DOTNET=true"|]).AsBaseline())
+        .AddJob(Job.Default.WithId("Preview").WithArguments([|MsBuildArgument "/p:BUILDING_USING_DOTNET=true"|]).WithCustomBuildConfiguration "Preview")
+        .WithOptions(ConfigOptions.JoinSummary)
+        .HideColumns("BuildConfiguration")
 
-    [<EntryPoint>]
-    let main args = 
-        printfn "Running benchmarks..."
-        BenchmarkSwitcher.FromAssembly(typeof<Equality.FSharpCoreFunctions>.Assembly).Run(args) |> ignore
-        0
+ignore (BenchmarkSwitcher.FromAssembly(Assembly.GetExecutingAssembly()).Run(Environment.GetCommandLineArgs(), config))
