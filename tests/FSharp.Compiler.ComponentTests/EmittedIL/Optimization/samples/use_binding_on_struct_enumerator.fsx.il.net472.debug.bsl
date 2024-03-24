@@ -5,17 +5,11 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern System.Collections
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 8:0:0:0
-}
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:1:0:0
+  .ver 2:0:0:0
 }
-.assembly extern runtime { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -81,7 +75,7 @@
       IL_0012:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
                                                                                       class [netstandard]System.IFormatProvider)
       IL_0017:  call       string [runtime]System.String::Concat(string,
-                                                                        string)
+                                                                  string)
       IL_001c:  ret
     } 
 
@@ -97,11 +91,11 @@
 
   } 
 
-  .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T71036_24Bytes@ field71037@ at I_0000395F
+  .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T71036_24Bytes@ field71037@ at I_00003917
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public static !!State  FoldStrong<State,T,(class [runtime]System.Collections.Generic.IEnumerator`1<!!T>) TEnumerator>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!State,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!T,!!State>> folder,
-                                                                                                                                       !!State state,
-                                                                                                                                       !!TEnumerator enumerator) cil managed
+                                                                                                                                 !!State state,
+                                                                                                                                 !!TEnumerator enumerator) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
@@ -141,8 +135,8 @@
   } 
 
   .method public static !!State  Fold<State,T,TSeq,(class [runtime]System.Collections.Generic.IEnumerator`1<!!T>) TEnumerator>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!State,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!T,!!State>> folder,
-                                                                                                                                      !!State state,
-                                                                                                                                      !!TSeq source) cil managed
+                                                                                                                                !!State state,
+                                                                                                                                !!TSeq source) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
@@ -195,9 +189,9 @@
   } 
 
   .method public static !!State  Fold$W<State,T,TSeq,(class [runtime]System.Collections.Generic.IEnumerator`1<!!T>) TEnumerator>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!TSeq,!!TEnumerator> getEnumerator,
-                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!State,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!T,!!State>> folder,
-                                                                                                                                        !!State state,
-                                                                                                                                        !!TSeq source) cil managed
+                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!State,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!T,!!State>> folder,
+                                                                                                                                  !!State state,
+                                                                                                                                  !!TSeq source) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
@@ -245,9 +239,9 @@
   {
     
     .maxstack  5
-    .locals init (class [System.Collections]System.Collections.Generic.List`1<int32> V_0,
+    .locals init (class [runtime]System.Collections.Generic.List`1<int32> V_0,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,string>> V_1,
-             valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<int32> V_2,
+             valuetype [runtime]System.Collections.Generic.List`1/Enumerator<int32> V_2,
              string V_3,
              class [runtime]System.IDisposable V_4)
     IL_0000:  ldc.i4.6
@@ -255,22 +249,22 @@
     IL_0006:  dup
     IL_0007:  ldtoken    field valuetype '<PrivateImplementationDetails$assembly>'/T71036_24Bytes@ Use_binding_on_struct_enumerator::field71037@
     IL_000c:  call       void [runtime]System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(class [runtime]System.Array,
-                                                                                                              valuetype [runtime]System.RuntimeFieldHandle)
-    IL_0011:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<int32>::.ctor(class [runtime]System.Collections.Generic.IEnumerable`1<!0>)
+                                                                                                        valuetype [runtime]System.RuntimeFieldHandle)
+    IL_0011:  newobj     instance void class [runtime]System.Collections.Generic.List`1<int32>::.ctor(class [runtime]System.Collections.Generic.IEnumerable`1<!0>)
     IL_0016:  stloc.0
     IL_0017:  ldsfld     class Use_binding_on_struct_enumerator/testFoldOnListT@32 Use_binding_on_struct_enumerator/testFoldOnListT@32::@_instance
     IL_001c:  stloc.1
     IL_001d:  ldloc.0
-    IL_001e:  callvirt   instance valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!0> class [System.Collections]System.Collections.Generic.List`1<int32>::GetEnumerator()
+    IL_001e:  callvirt   instance valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!0> class [runtime]System.Collections.Generic.List`1<int32>::GetEnumerator()
     IL_0023:  stloc.2
     .try
     {
       IL_0024:  ldloc.1
       IL_0025:  ldstr      ""
       IL_002a:  ldloc.2
-      IL_002b:  call       !!0 Use_binding_on_struct_enumerator::FoldStrong<string,int32,valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,!!0>>,
-                                                                                                                                                                            !!0,
-                                                                                                                                                                            !!2)
+      IL_002b:  call       !!0 Use_binding_on_struct_enumerator::FoldStrong<string,int32,valuetype [runtime]System.Collections.Generic.List`1/Enumerator<int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,!!0>>,
+                                                                                                                                                                  !!0,
+                                                                                                                                                                  !!2)
       IL_0030:  stloc.3
       IL_0031:  leave.s    IL_004d
 
@@ -278,7 +272,7 @@
     finally
     {
       IL_0033:  ldloc.2
-      IL_0034:  box        valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<int32>
+      IL_0034:  box        valuetype [runtime]System.Collections.Generic.List`1/Enumerator<int32>
       IL_0039:  isinst     [runtime]System.IDisposable
       IL_003e:  stloc.s    V_4
       IL_0040:  ldloc.s    V_4
@@ -341,7 +335,7 @@
 
 
 
-.data cil I_0000395F = bytearray (
+.data cil I_00003917 = bytearray (
                  01 00 00 00 01 00 00 00 02 00 00 00 03 00 00 00
                  05 00 00 00 08 00 00 00) 
 
