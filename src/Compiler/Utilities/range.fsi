@@ -3,6 +3,7 @@
 // The Range and Pos types form part of the public API of FSharp.Compiler.Service
 namespace FSharp.Compiler.Text
 
+open System
 open System.Collections.Generic
 
 /// An index into a global tables of filenames
@@ -182,6 +183,9 @@ module internal FileIndex =
     val fileOfFileIndex: FileIndex -> string
 
     val startupFileName: string
+
+    val mutable internal testSource: string option
+    val internal setTestSource: string -> IDisposable
 
 module Range =
 
