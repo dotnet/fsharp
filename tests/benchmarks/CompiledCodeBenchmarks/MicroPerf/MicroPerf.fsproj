@@ -29,7 +29,7 @@
     <Compile Include="Async.fs" />
     <Compile Include="Conditions.fs" />
     <Compile Include="Collections.fs" />
-    <Compile Include="Benchmarks.fs" />
+    <Compile Include="Program.fs" />
     <ProjectReference Include="CS\MicroPerfCSharp.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
   </ItemGroup>
