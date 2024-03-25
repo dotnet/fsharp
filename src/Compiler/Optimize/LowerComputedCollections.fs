@@ -473,6 +473,16 @@ let (|SimpleMapping|_|) g expr =
 
     | _ -> ValueNone
 
+[<return: Struct>]
+let (|Array|_|) g (OptionalCoerce expr) =
+    if isArray1DTy g (tyOfExpr g expr) then ValueSome expr
+    else ValueNone
+
+[<return: Struct>]
+let (|List|_|) g (OptionalCoerce expr) =
+    if isListTy g (tyOfExpr g expr) then ValueSome expr
+    else ValueNone
+
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
     if g.ListCollector_tcr.CanDeref then
@@ -480,6 +490,12 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
         // […]
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             match overallSeqExpr with
+            // [for … in xs -> …] (* When xs is a list. *)
+            | SimpleMapping g (ty1, ty2, List g list, mapping, _, _) when
+                g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
+                ->
+                Some (mkCallListMap g m ty1 ty2 mapping list)
+
             // [start..finish]
             // [start..step..finish]
             | IntegralRange g (rangeTy, (start, step, finish)) when
@@ -502,6 +518,12 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
         // [|…|]
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             match overallSeqExpr with
+            // [|for … in xs -> …|] (* When xs is an array. *)
+            | SimpleMapping g (ty1, ty2, Array g array, mapping, _, _) when
+                g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
+                ->
+                Some (mkCallArrayMap g m ty1 ty2 mapping array)
+
             // [|start..finish|]
             // [|start..step..finish|]
             | IntegralRange g (rangeTy, (start, step, finish)) when
