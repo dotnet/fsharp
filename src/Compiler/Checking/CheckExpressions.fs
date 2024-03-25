@@ -6666,16 +6666,31 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         let meths = List.map (fun minfo -> minfo, None) minfos
         if isNaked && TypeFeasiblySubsumesType 0 g cenv.amap mWholeCall g.system_IDisposable_ty NoCoerce objTy then
             warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(), mWholeCall))
-            
+
+        let ctorArgs = argExprs |> List.collect getConstructorArgs
+
         let valRefs =
             minfos
             |> List.collect (fun minfo-> minfo.ApparentEnclosingTyconRef.MembersOfFSharpTyconSorted)
             |> List.filter (fun v -> CheckFSharpAttributesForObsolete g v.Attribs)
+
         for vref in valRefs do
-            let ctorArgs = argExprs |> List.collect getConstructorArgs
             for arg in ctorArgs do
                 if arg.idText = vref.DisplayName then
                     CheckValAttributes g vref arg.idRange |> CommitOperationResult
+
+        let propInfos =
+            [   
+                for minfo in minfos do
+                    if not (TryFindILAttribute g.attrib_SystemObsolete (minfo.GetCustomAttrs())) then
+                        GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 minfo.ApparentEnclosingType
+            ]
+            |> List.collect id
+
+        for propInfo in propInfos do
+            for arg in ctorArgs do
+                if arg.idText = propInfo.DisplayName then
+                    CheckPropInfoAttributes propInfo arg.idRange  |> CommitOperationResult
 
         // Check the type is not abstract
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape

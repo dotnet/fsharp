@@ -1262,7 +1262,7 @@ let f (x: IFirst) = x.F()
             (Error 101, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
             (Error 72, Line 13, Col 21, Line 13, Col 24, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
-                
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account in a constructor property assignment`` () =
         Fsx """
@@ -1284,7 +1284,7 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
             (Warning 44, Line 10, Col 61, Line 10, Col 75, "This construct is deprecated. This is bad")
             (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account in a constructor property assignment`` () =
         Fsx """
@@ -1303,4 +1303,18 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
         |> withDiagnostics [
             (Error 101, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad")
             (Error 101, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
-        ]    
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account in a constructor property assignment`` () =
+        Fsx """
+open System.Text.Json
+
+let options = JsonSerializerOptions(JsonSerializerDefaults.Web, IgnoreNullValues = true)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 4, Col 65, Line 4, Col 81, "This construct is deprecated. JsonSerializerOptions.IgnoreNullValues is obsolete. To ignore null values when serializing, set DefaultIgnoreCondition to JsonIgnoreCondition.WhenWritingNull.")
+        ]
+            
