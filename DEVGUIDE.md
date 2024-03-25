@@ -124,7 +124,7 @@ Running any of the above will build the latest changes and run tests against the
 
 ## Using your custom compiler to build this repository
 
-By removing all the subfolders called `Bootstrap` under `artifacts` and running the `build` script again, the proto (= bootstrap) compiler will include your changes.
+By removing all the subfolders called `Bootstrap` under `artifacts` and running the `build` script again, the proto compiler will include your changes.
 
 Once the "proto" compiler is built, it won't be built again, so you may want to perform those steps again to ensure your changes don't break building the compiler itself.
 
