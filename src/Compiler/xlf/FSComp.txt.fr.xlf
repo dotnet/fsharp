@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
-        <target state="new">Enforce AttributeTargets</target>
+        <target state="translated">Appliquer AttributeTargets</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
