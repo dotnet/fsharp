@@ -9,7 +9,8 @@ module internal Utils =
     /// Return file name with one directory above it
     val shortPath: path: string -> string
 
-    val (|TaskCancelled|_|): ex: exn -> TaskCanceledException option
+    [<return: Struct>]
+    val (|TaskCancelled|_|): ex: exn -> TaskCanceledException voption
 
 type internal JobEvent =
     | Requested

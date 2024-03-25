@@ -30,15 +30,16 @@ module internal Utils =
 
     let replayDiagnostics (logger: DiagnosticsLogger) = Seq.iter ((<|) logger.DiagnosticSink)
 
+    [<return: Struct>]
     let (|TaskCancelled|_|) (ex: exn) =
         match ex with
-        | :? System.Threading.Tasks.TaskCanceledException as tce -> Some tce
+        | :? System.Threading.Tasks.TaskCanceledException as tce -> ValueSome tce
         //| :? System.AggregateException as ae ->
         //    if ae.InnerExceptions |> Seq.forall (fun e -> e :? System.Threading.Tasks.TaskCanceledException) then
         //        ae.InnerExceptions |> Seq.tryHead |> Option.map (fun e -> e :?> System.Threading.Tasks.TaskCanceledException)
         //    else
         //        None
-        | _ -> None
+        | _ -> ValueNone
 
 type internal StateUpdate<'TValue> =
     | CancelRequest
