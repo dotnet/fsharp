@@ -1262,9 +1262,9 @@ let f (x: IFirst) = x.F()
             (Error 101, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
             (Error 72, Line 13, Col 21, Line 13, Col 24, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
-        
+                
     [<Fact>]
-    let ``Obsolete attribute warning is taken into account in a constructor property assigment`` () =
+    let ``Obsolete attribute warning is taken into account in a constructor property assignment`` () =
         Fsx """
 open System
 type JsonSerializerOptions() =
@@ -1274,8 +1274,33 @@ type JsonSerializerOptions() =
     member val UseCustomOptions = false with get, set
     
 let options = JsonSerializerOptions(DefaultOptions = true, UseCustomOptions = false)
+let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = false)
         """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            (Warning 44, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad")
+            (Warning 44, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
+            (Warning 44, Line 10, Col 61, Line 10, Col 75, "This construct is deprecated. This is bad")
+            (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value")
         ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account in a constructor property assignment`` () =
+        Fsx """
+open System
+type JsonSerializerOptions() =
+    [<Obsolete("This is bad", true)>]
+    member val DefaultOptions = false with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = true, UseCustomOptions = false)
+let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = false)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad")
+            (Error 101, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
+        ]    

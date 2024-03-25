@@ -6655,24 +6655,27 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         | SynExpr.Paren(expr = SynExpr.App(funcExpr = expr)) ->
             getConstructorArgs expr
         | SynExpr.Paren(expr = SynExpr.Tuple(exprs = synExprs)) ->
-            synExprs
-            |> List.collect getConstructorArgs
+            synExprs |> List.collect getConstructorArgs
         | SynExpr.App(funcExpr = expr1; argExpr = expr2) ->
             getConstructorArgs expr1 @ getConstructorArgs expr2
-        | SynExpr.Ident(id) -> [id]
+        | SynExpr.Ident(id) -> [ id ]
         | _ -> []
 
     match item, args with
-    | Item.CtorGroup(methodName, minfos), exprArgs ->
+    | Item.CtorGroup(methodName, minfos), argExprs ->
         let meths = List.map (fun minfo -> minfo, None) minfos
         if isNaked && TypeFeasiblySubsumesType 0 g cenv.amap mWholeCall g.system_IDisposable_ty NoCoerce objTy then
             warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(), mWholeCall))
-        let valRefs = minfos |> List.collect (fun minfo -> minfo.ApparentEnclosingTyconRef.MembersOfFSharpTyconSorted)
-        let ctorArgs = exprArgs |> List.collect getConstructorArgs
-        
-        if not ctorArgs.IsEmpty then
-            for valRef in valRefs do
-                CheckValAttributes g valRef mItem |> CommitOperationResult
+            
+        let valRefs =
+            minfos
+            |> List.collect (fun minfo-> minfo.ApparentEnclosingTyconRef.MembersOfFSharpTyconSorted)
+            |> List.filter (fun v -> CheckFSharpAttributesForObsolete g v.Attribs)
+        for vref in valRefs do
+            let ctorArgs = argExprs |> List.collect getConstructorArgs
+            for arg in ctorArgs do
+                if arg.idText = vref.DisplayName then
+                    CheckValAttributes g vref arg.idRange |> CommitOperationResult
 
         // Check the type is not abstract
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape
