@@ -195,12 +195,15 @@ let maybeAnon2 : {|Hello:string|} | null = null
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics []
+    |> withDiagnostics 
+            [ Error 3260, Line 4, Col 18, Line 4, Col 41, "The type '{| Hello: string |}' does not support a nullness qualitification."
+              Error 3261, Line 4, Col 44, Line 4, Col 48, "Nullness warning: The type '{| Hello: string |}' does not support 'null'."]
     
     
 [<Fact>]
 let ``WithNull on a DU`` () = 
     FSharp """module MyLibrary
+
 type MyDu = A | B
 
 
@@ -226,7 +229,30 @@ looseFunc(maybeDu2) |> ignore
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics []
+    |> withDiagnostics [
+        Error 3261, Line 18, Col 12, Line 18, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
+        Error 3261, Line 19, Col 12, Line 19, Col 20, "Nullness warning: The type ''a | null' supports 'null' but a non-null type is expected."]
+    
+[<Fact>]
+let ``Regression strict func`` () = 
+    FSharp """module MyLibrary
+let strictFunc(arg: 'x when 'x : not null) =
+    printfn "%A" arg
+    arg
+ 
+strictFunc({|Anon=5|}) |> ignore
+strictFunc("hi") |> ignore
+strictFunc(null) |> ignore
+strictFunc(null:(string|null)) |> ignore
+strictFunc(null:obj) |> ignore
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ ]
+                
     
 [<Fact>]
 let ``Nullnesss support for F# types`` () = 
@@ -278,14 +304,20 @@ looseFunc(maybeTuple2) |> ignore
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics []
-
-
+    |> withDiagnostics     
+            [ Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualitification."
+              Error 3261, Line 27, Col 37, Line 27, Col 41, "Nullness warning: The type '(int * int)' does not support 'null'."
+              Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 40, Col 36, Line 40, Col 40, "Nullness warning: The type 'Maybe<int * int>' does not support 'null'."]
+                
 [<Fact>]
 let ``Static member on Record with null arg`` () =
     FSharp """module MyLibrary
+
 type MyRecord = {X:string;Y:int}
     with static member Create(x:string) = {X=x;Y = 42}
+
 let thisWorks = MyRecord.Create("xx")
 let thisShouldWarn = MyRecord.Create(null)
 let maybeNull : string | null = "abc"
@@ -322,6 +354,7 @@ let processOpt3 (s: string | null) : string option = s |> Option.ofObj
 [<Fact>]
 let ``Option ofObj called in a useless way raises warning`` () = 
     FSharp """module MyLibrary
+
 let processOpt1 (s: string) = Option.ofObj s
 let processOpt2 (s: string) : option<string> = 
     Option.ofObj s
@@ -351,6 +384,7 @@ let whatIsThis = Option.ofObj "abc123"
 [<Fact>]
 let ``Useless null pattern match`` () = 
     FSharp """module MyLibrary
+
 let clearlyNotNull = "42"
 let mappedVal = 
     match clearlyNotNull with
@@ -365,6 +399,7 @@ let mappedVal =
 [<Fact>]
 let ``Useless usage of nonNull utility from fscore`` () = 
     FSharp """module MyLibrary
+
 let clearlyNotNull = "42"
 let mappedVal = nonNull clearlyNotNull
 let maybeNull : string | null = null
@@ -378,10 +413,12 @@ let mappedMaybe = nonNull maybeNull
 [<Fact>]
 let ``Useless usage of null active patterns from fscore`` () = 
     FSharp """module MyLibrary
+
 let clearlyNotNull = "42"
 let mapped1 = 
     match clearlyNotNull with
     | NonNullQuick safe -> safe
+
 let mapped2 =
     match clearlyNotNull with
     |Null -> 0
