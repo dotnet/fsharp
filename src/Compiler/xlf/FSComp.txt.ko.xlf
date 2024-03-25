@@ -12,6 +12,16 @@
         <target state="translated">배열의 모든 요소는 첫 번째 요소의 형식으로 암시적으로 변환할 수 있어야 합니다. 여기서는 형식이 \n    {1}이고 길이가 {0}인 튜플입니다.    \n이 요소는 형식이 \n    {3}이고 길이가 {2}인 튜플입니다.    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="augInvalidAttrForFSharpObjectModelType">
+        <source>The attribute {0} is only meant for discriminated unions or record types.</source>
+        <target state="new">The attribute {0} is only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="augInvalidAttrsForFSharpObjectModelType">
+        <source>The attributes {0} are only meant for discriminated unions or record types.</source>
+        <target state="new">The attributes {0} are only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
         <target state="translated">'{0}' 원본 파일(위치: {1}/{2})이 이미 컴파일 목록에 있습니다(위치{3}/{4}). 프로젝트 파일에 한 번만 포함되어 있는지 확인하세요.</target>

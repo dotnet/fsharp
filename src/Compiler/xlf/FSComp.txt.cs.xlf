@@ -12,6 +12,16 @@
         <target state="translated">Všechny prvky pole musí být implicitně převoditelné na typ prvního elementu, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTento element je řazená kolekce členů o délce {2} typu\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="augInvalidAttrForFSharpObjectModelType">
+        <source>The attribute {0} is only meant for discriminated unions or record types.</source>
+        <target state="new">The attribute {0} is only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="augInvalidAttrsForFSharpObjectModelType">
+        <source>The attributes {0} are only meant for discriminated unions or record types.</source>
+        <target state="new">The attributes {0} are only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
         <target state="translated">Zdrojový soubor {0} (na pozici {1}/{2}) se už zobrazil v seznamu kompilací (na pozici {3}/{4}). Ověřte prosím, že je v souboru projektu zahrnutý jen jednou.</target>
