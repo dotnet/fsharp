@@ -1,5 +1,6 @@
 namespace Language
 
+open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -1304,17 +1305,51 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
             (Error 101, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad")
             (Error 101, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
         ]
-
+            
     [<Fact>]
-    let ``Obsolete attribute is taken into account in a constructor property assignment`` () =
-        Fsx """
-open System.Text.Json
+    let ``Obsolete attribute warning is taken into account in a constructor property assignment from a csharp class`` () =
+        let CSLib =
+            CSharp """
+using System;
+public class JsonProtocolTestData {
+    [Obsolete("Use Json instead")]
+    public bool IgnoreNullValues { get; set; }
+}
+        """ |> withName "CSLib"
 
-let options = JsonSerializerOptions(JsonSerializerDefaults.Web, IgnoreNullValues = true)
-        """
-        |> typecheck
+        let app =
+            FSharp """
+module ObsoleteStruct.FS
+let res = JsonProtocolTestData(IgnoreNullValues = false)
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 4, Col 65, Line 4, Col 81, "This construct is deprecated. JsonSerializerOptions.IgnoreNullValues is obsolete. To ignore null values when serializing, set DefaultIgnoreCondition to JsonIgnoreCondition.WhenWritingNull.")
+            (Warning 44, Line 3, Col 32, Line 3, Col 48, "This construct is deprecated. Use Json instead")
         ]
-            
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account in a constructor property assignment from a csharp class`` () =
+        let CSLib =
+            CSharp """
+using System;
+public class JsonProtocolTestData {
+    [Obsolete("Use Json instead", true)]
+    public bool IgnoreNullValues { get; set; }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteStruct.FS
+let res = JsonProtocolTestData(IgnoreNullValues = false)
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 3, Col 32, Line 3, Col 48, "This construct is deprecated. Use Json instead")
+        ]
