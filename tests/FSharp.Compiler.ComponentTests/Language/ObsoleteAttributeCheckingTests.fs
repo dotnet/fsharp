@@ -1305,6 +1305,53 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
             (Error 101, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad")
             (Error 101, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
         ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account in a nested constructor property assignment`` () =
+        Fsx """
+open System
+type JsonSerializer1Options() =
+    [<Obsolete("This is bad")>]
+    member val DefaultOptions = false with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+type JsonSerializerOptions() =
+    member val DefaultOptions = JsonSerializer1Options() with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = JsonSerializer1Options(DefaultOptions = true), UseCustomOptions = false)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 14, Col 77, Line 14, Col 91, "This construct is deprecated. This is bad")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account in a nested constructor property assignment`` () =
+        Fsx """
+open System
+type JsonSerializer1Options() =
+    [<Obsolete("This is bad", true)>]
+    member val DefaultOptions = false with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+type JsonSerializerOptions() =
+    member val DefaultOptions = JsonSerializer1Options() with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = JsonSerializer1Options(DefaultOptions = true), UseCustomOptions = false)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 14, Col 77, Line 14, Col 91, "This construct is deprecated. This is bad")
+        ]
+            
             
     [<Fact>]
     let ``Obsolete attribute warning is taken into account in a constructor property assignment from a csharp class`` () =
