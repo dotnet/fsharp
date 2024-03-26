@@ -40,12 +40,11 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'impl@21-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit impl@6
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<uint64,uint64,uint64>
   {
-    .field static assembly initonly class Tailcall_last_expression_parens/'impl@21-3' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .field static assembly initonly class Tailcall_last_expression_parens/impl@6 @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -63,31 +62,39 @@
       
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  ldarg.2
-      IL_0002:  tail.
-      IL_0004:  call       uint64 Tailcall_last_expression_parens::'impl@21-2'(uint64,
-                                                                               uint64)
-      IL_0009:  ret
+      IL_0001:  brtrue.s   IL_0005
+
+      IL_0003:  ldarg.2
+      IL_0004:  ret
+
+      IL_0005:  ldarg.1
+      IL_0006:  ldc.i4.1
+      IL_0007:  conv.i8
+      IL_0008:  sub
+      IL_0009:  ldarg.1
+      IL_000a:  ldarg.2
+      IL_000b:  mul
+      IL_000c:  starg.s    acc
+      IL_000e:  starg.s    x
+      IL_0010:  br.s       IL_0000
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
-      IL_0000:  newobj     instance void Tailcall_last_expression_parens/'impl@21-3'::.ctor()
-      IL_0005:  stsfld     class Tailcall_last_expression_parens/'impl@21-3' Tailcall_last_expression_parens/'impl@21-3'::@_instance
+      IL_0000:  newobj     instance void Tailcall_last_expression_parens/impl@6::.ctor()
+      IL_0005:  stsfld     class Tailcall_last_expression_parens/impl@6 Tailcall_last_expression_parens/impl@6::@_instance
       IL_000a:  ret
     } 
 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'impl@29-5'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'impl@14-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<uint64,uint64,uint64>
   {
-    .field static assembly initonly class Tailcall_last_expression_parens/'impl@29-5' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .field static assembly initonly class Tailcall_last_expression_parens/'impl@14-1' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -105,173 +112,227 @@
       
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  ldarg.2
-      IL_0002:  call       uint64 Tailcall_last_expression_parens::'impl@29-4'(uint64,
-                                                                               uint64)
-      IL_0007:  ret
+      IL_0001:  brtrue.s   IL_0005
+
+      IL_0003:  ldarg.2
+      IL_0004:  ret
+
+      IL_0005:  ldarg.1
+      IL_0006:  ldc.i4.1
+      IL_0007:  conv.i8
+      IL_0008:  sub
+      IL_0009:  ldarg.1
+      IL_000a:  ldarg.2
+      IL_000b:  mul
+      IL_000c:  starg.s    acc
+      IL_000e:  starg.s    x
+      IL_0010:  br.s       IL_0000
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
-      IL_0000:  newobj     instance void Tailcall_last_expression_parens/'impl@29-5'::.ctor()
-      IL_0005:  stsfld     class Tailcall_last_expression_parens/'impl@29-5' Tailcall_last_expression_parens/'impl@29-5'::@_instance
+      IL_0000:  newobj     instance void Tailcall_last_expression_parens/'impl@14-1'::.ctor()
+      IL_0005:  stsfld     class Tailcall_last_expression_parens/'impl@14-1' Tailcall_last_expression_parens/'impl@14-1'::@_instance
       IL_000a:  ret
     } 
 
   } 
 
-  .method assembly static uint64  impl@5(uint64 x,
-                                         uint64 acc) cil managed
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'impl@22-2'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<uint64,uint64,uint64>
   {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  brtrue.s   IL_0005
+    .field static assembly initonly class Tailcall_last_expression_parens/'impl@22-2' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<uint64,uint64,uint64>::.ctor()
+      IL_0006:  ret
+    } 
 
-    IL_0003:  ldarg.1
-    IL_0004:  ret
+    .method public strict virtual instance uint64 
+            Invoke(uint64 x,
+                   uint64 acc) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  brtrue.s   IL_0005
 
-    IL_0005:  ldarg.0
-    IL_0006:  ldc.i4.1
-    IL_0007:  conv.i8
-    IL_0008:  sub
-    IL_0009:  ldarg.0
-    IL_000a:  ldarg.1
-    IL_000b:  mul
-    IL_000c:  starg.s    acc
-    IL_000e:  starg.s    x
-    IL_0010:  br.s       IL_0000
+      IL_0003:  ldarg.2
+      IL_0004:  ret
+
+      IL_0005:  ldarg.0
+      IL_0006:  ldarg.1
+      IL_0007:  ldc.i4.1
+      IL_0008:  conv.i8
+      IL_0009:  sub
+      IL_000a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>>::Invoke(!0)
+      IL_000f:  ldarg.1
+      IL_0010:  ldarg.2
+      IL_0011:  mul
+      IL_0012:  tail.
+      IL_0014:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>::Invoke(!0)
+      IL_0019:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void Tailcall_last_expression_parens/'impl@22-2'::.ctor()
+      IL_0005:  stsfld     class Tailcall_last_expression_parens/'impl@22-2' Tailcall_last_expression_parens/'impl@22-2'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'impl@30-3'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<uint64,uint64,uint64>
+  {
+    .field static assembly initonly class Tailcall_last_expression_parens/'impl@30-3' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<uint64,uint64,uint64>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance uint64 
+            Invoke(uint64 x,
+                   uint64 acc) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  brtrue.s   IL_0005
+
+      IL_0003:  ldarg.2
+      IL_0004:  ret
+
+      IL_0005:  ldarg.0
+      IL_0006:  ldarg.1
+      IL_0007:  ldc.i4.1
+      IL_0008:  conv.i8
+      IL_0009:  sub
+      IL_000a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>>::Invoke(!0)
+      IL_000f:  ldarg.1
+      IL_0010:  ldarg.2
+      IL_0011:  mul
+      IL_0012:  tail.
+      IL_0014:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>::Invoke(!0)
+      IL_0019:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void Tailcall_last_expression_parens/'impl@30-3'::.ctor()
+      IL_0005:  stsfld     class Tailcall_last_expression_parens/'impl@30-3' Tailcall_last_expression_parens/'impl@30-3'::@_instance
+      IL_000a:  ret
+    } 
+
   } 
 
   .method public static uint64  factorialOk1(uint64 x) cil managed
   {
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.1
-    IL_0002:  conv.i8
-    IL_0003:  call       uint64 Tailcall_last_expression_parens::impl@5(uint64,
-                                                                        uint64)
-    IL_0008:  ret
-  } 
-
-  .method assembly static uint64  'impl@13-1'(uint64 x,
-                                              uint64 acc) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  brtrue.s   IL_0005
-
-    IL_0003:  ldarg.1
-    IL_0004:  ret
-
-    IL_0005:  ldarg.0
-    IL_0006:  ldc.i4.1
-    IL_0007:  conv.i8
-    IL_0008:  sub
-    IL_0009:  ldarg.0
-    IL_000a:  ldarg.1
-    IL_000b:  mul
-    IL_000c:  starg.s    acc
-    IL_000e:  starg.s    x
-    IL_0010:  br.s       IL_0000
+    .maxstack  5
+    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>> V_0)
+    IL_0000:  ldsfld     class Tailcall_last_expression_parens/impl@6 Tailcall_last_expression_parens/impl@6::@_instance
+    IL_0005:  stloc.0
+    IL_0006:  ldloc.0
+    IL_0007:  ldarg.0
+    IL_0008:  ldc.i4.1
+    IL_0009:  conv.i8
+    IL_000a:  tail.
+    IL_000c:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>::InvokeFast<uint64>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                      !0,
+                                                                                                                      !1)
+    IL_0011:  ret
   } 
 
   .method public static uint64  factorialOk2(uint64 x) cil managed
   {
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.1
-    IL_0002:  conv.i8
-    IL_0003:  call       uint64 Tailcall_last_expression_parens::'impl@13-1'(uint64,
-                                                                             uint64)
-    IL_0008:  ret
-  } 
-
-  .method assembly static uint64  'impl@21-2'(uint64 x,
-                                              uint64 acc) cil managed
-  {
-    
     .maxstack  5
     .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>> V_0)
-    IL_0000:  ldsfld     class Tailcall_last_expression_parens/'impl@21-3' Tailcall_last_expression_parens/'impl@21-3'::@_instance
+    IL_0000:  ldsfld     class Tailcall_last_expression_parens/'impl@14-1' Tailcall_last_expression_parens/'impl@14-1'::@_instance
     IL_0005:  stloc.0
-    IL_0006:  ldarg.0
-    IL_0007:  brtrue.s   IL_000b
-
-    IL_0009:  ldarg.1
-    IL_000a:  ret
-
-    IL_000b:  ldloc.0
-    IL_000c:  ldarg.0
-    IL_000d:  ldc.i4.1
-    IL_000e:  conv.i8
-    IL_000f:  sub
-    IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>>::Invoke(!0)
-    IL_0015:  ldarg.0
-    IL_0016:  ldarg.1
-    IL_0017:  mul
-    IL_0018:  tail.
-    IL_001a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>::Invoke(!0)
-    IL_001f:  ret
+    IL_0006:  ldloc.0
+    IL_0007:  ldarg.0
+    IL_0008:  ldc.i4.1
+    IL_0009:  conv.i8
+    IL_000a:  tail.
+    IL_000c:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>::InvokeFast<uint64>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                      !0,
+                                                                                                                      !1)
+    IL_0011:  ret
   } 
 
   .method public static uint64  factorialNotOk1(uint64 x) cil managed
   {
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.1
-    IL_0002:  conv.i8
-    IL_0003:  tail.
-    IL_0005:  call       uint64 Tailcall_last_expression_parens::'impl@21-2'(uint64,
-                                                                             uint64)
-    IL_000a:  ret
-  } 
-
-  .method assembly static uint64  'impl@29-4'(uint64 x,
-                                              uint64 acc) cil managed
-  {
-    
     .maxstack  5
     .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>> V_0)
-    IL_0000:  ldsfld     class Tailcall_last_expression_parens/'impl@29-5' Tailcall_last_expression_parens/'impl@29-5'::@_instance
+    IL_0000:  ldsfld     class Tailcall_last_expression_parens/'impl@22-2' Tailcall_last_expression_parens/'impl@22-2'::@_instance
     IL_0005:  stloc.0
-    IL_0006:  ldarg.0
-    IL_0007:  brtrue.s   IL_000b
-
-    IL_0009:  ldarg.1
-    IL_000a:  ret
-
-    IL_000b:  ldloc.0
-    IL_000c:  ldarg.0
-    IL_000d:  ldc.i4.1
-    IL_000e:  conv.i8
-    IL_000f:  sub
-    IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>>::Invoke(!0)
-    IL_0015:  ldarg.0
-    IL_0016:  ldarg.1
-    IL_0017:  mul
-    IL_0018:  tail.
-    IL_001a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>::Invoke(!0)
-    IL_001f:  ret
+    IL_0006:  ldloc.0
+    IL_0007:  ldarg.0
+    IL_0008:  ldc.i4.1
+    IL_0009:  conv.i8
+    IL_000a:  tail.
+    IL_000c:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>::InvokeFast<uint64>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                      !0,
+                                                                                                                      !1)
+    IL_0011:  ret
   } 
 
   .method public static uint64  factorialNotOk2(uint64 x) cil managed
   {
     
+    .maxstack  5
+    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>> V_0)
+    IL_0000:  ldsfld     class Tailcall_last_expression_parens/'impl@30-3' Tailcall_last_expression_parens/'impl@30-3'::@_instance
+    IL_0005:  stloc.0
+    IL_0006:  ldloc.0
+    IL_0007:  ldarg.0
+    IL_0008:  ldc.i4.1
+    IL_0009:  conv.i8
+    IL_000a:  tail.
+    IL_000c:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<uint64,uint64>::InvokeFast<uint64>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                      !0,
+                                                                                                                      !1)
+    IL_0011:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
     .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.1
-    IL_0002:  conv.i8
-    IL_0003:  call       uint64 Tailcall_last_expression_parens::'impl@29-4'(uint64,
-                                                                             uint64)
-    IL_0008:  ret
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Tailcall_last_expression_parens$fsx::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Tailcall_last_expression_parens$fsx::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void [runtime]System.Console::WriteLine()
+    IL_0005:  ret
   } 
 
 } 
@@ -283,16 +344,16 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  call       void [runtime]System.Console::WriteLine()
+    IL_0000:  call       void Tailcall_last_expression_parens::staticInitialization@()
     IL_0005:  ret
   } 
 
 } 
+
 
 
 

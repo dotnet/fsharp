@@ -46,8 +46,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class Static_init_field/S`1<!T> empty
     .field static assembly int32 init@5
-    .method public specialname rtspecialname 
-            instance void  .ctor(!T[] x) cil managed
+    .method public specialname rtspecialname instance void  .ctor(!T[] x) cil managed
     {
       
       .maxstack  8
@@ -58,8 +57,7 @@
       IL_0008:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -72,8 +70,7 @@
       IL_0013:  ret
     } 
 
-    .method public specialname static class Static_init_field/S`1<!T> 
-            get_Empty() cil managed
+    .method public specialname static class Static_init_field/S`1<!T> get_Empty() cil managed
     {
       
       .maxstack  8
@@ -109,8 +106,7 @@
     .field static assembly object empty
     .field static assembly int32 'init@10-1'
     .field assembly !T[] x
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(valuetype Static_init_field/S2`1<!T> obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(valuetype Static_init_field/S2`1<!T> obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -127,8 +123,7 @@
       IL_0019:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -172,8 +167,7 @@
       IL_001c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -201,8 +195,7 @@
       IL_001e:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  GetHashCode() cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -243,8 +236,7 @@
       IL_0026:  ret
     } 
 
-    .method public specialname rtspecialname 
-            instance void  .ctor(!T[] x) cil managed
+    .method public specialname rtspecialname instance void  .ctor(!T[] x) cil managed
     {
       
       .maxstack  8
@@ -254,8 +246,7 @@
       IL_0007:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -283,8 +274,7 @@
       IL_0016:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(valuetype Static_init_field/S2`1<!T> obj) cil managed
+    .method public hidebysig virtual final instance bool  Equals(valuetype Static_init_field/S2`1<!T> obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -299,8 +289,7 @@
       IL_0014:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -331,6 +320,25 @@
 
   } 
 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Static_init_field$fsx::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Static_init_field$fsx::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void [runtime]System.Console::WriteLine()
+    IL_0005:  ret
+  } 
+
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$Static_init_field$fsx
@@ -340,16 +348,16 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  call       void [runtime]System.Console::WriteLine()
+    IL_0000:  call       void Static_init_field::staticInitialization@()
     IL_0005:  ret
   } 
 
 } 
+
 
 
 

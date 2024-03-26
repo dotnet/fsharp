@@ -48,8 +48,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,int32,string>
   {
     .field static assembly initonly class Use_binding_on_struct_enumerator/testFoldOnListT@32 @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -79,8 +78,7 @@
       IL_001c:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -91,7 +89,7 @@
 
   } 
 
-  .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T71036_24Bytes@ field71037@ at I_00003917
+  .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T71284_24Bytes@ field71285@ at I_00003947
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public static !!State  FoldStrong<State,T,(class [runtime]System.Collections.Generic.IEnumerator`1<!!T>) TEnumerator>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!State,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!T,!!State>> folder,
                                                                                                                                  !!State state,
@@ -247,7 +245,7 @@
     IL_0000:  ldc.i4.6
     IL_0001:  newarr     [runtime]System.Int32
     IL_0006:  dup
-    IL_0007:  ldtoken    field valuetype '<PrivateImplementationDetails$assembly>'/T71036_24Bytes@ Use_binding_on_struct_enumerator::field71037@
+    IL_0007:  ldtoken    field valuetype '<PrivateImplementationDetails$assembly>'/T71284_24Bytes@ Use_binding_on_struct_enumerator::field71285@
     IL_000c:  call       void [runtime]System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(class [runtime]System.Array,
                                                                                                         valuetype [runtime]System.RuntimeFieldHandle)
     IL_0011:  newobj     instance void class [runtime]System.Collections.Generic.List`1<int32>::.ctor(class [runtime]System.Collections.Generic.IEnumerable`1<!0>)
@@ -287,8 +285,7 @@
     IL_004e:  ret
   } 
 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
@@ -297,6 +294,15 @@
     IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Use_binding_on_struct_enumerator$fsx::init@
     IL_000b:  pop
     IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       string Use_binding_on_struct_enumerator::testFoldOnListT()
+    IL_0005:  call       void [runtime]System.Console::WriteLine(string)
+    IL_000a:  ret
   } 
 
 } 
@@ -308,14 +314,12 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  call       string Use_binding_on_struct_enumerator::testFoldOnListT()
-    IL_0005:  call       void [runtime]System.Console::WriteLine(string)
-    IL_000a:  ret
+    IL_0000:  call       void Use_binding_on_struct_enumerator::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 
@@ -323,7 +327,7 @@
 .class private abstract auto ansi sealed beforefieldinit '<PrivateImplementationDetails$assembly>'
        extends [runtime]System.Object
 {
-  .class explicit ansi sealed nested assembly beforefieldinit T71036_24Bytes@
+  .class explicit ansi sealed nested assembly beforefieldinit T71284_24Bytes@
          extends [runtime]System.ValueType
   {
     .pack 0
@@ -335,7 +339,7 @@
 
 
 
-.data cil I_00003917 = bytearray (
+.data cil I_00003947 = bytearray (
                  01 00 00 00 01 00 00 00 02 00 00 00 03 00 00 00
                  05 00 00 00 08 00 00 00) 
 

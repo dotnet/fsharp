@@ -63,8 +63,7 @@
       IL_0014:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(!b v) cil managed
+    .method public strict virtual instance bool Invoke(!b v) cil managed
     {
       
       .maxstack  8
@@ -93,8 +92,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(int32[] vs) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(int32[] vs) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -108,8 +106,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> r) cil managed
+    .method public strict virtual instance bool Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> r) cil managed
     {
       
       .maxstack  7
@@ -158,8 +155,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -173,8 +169,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(int32 v) cil managed
+    .method public strict virtual instance bool Invoke(int32 v) cil managed
     {
       
       .maxstack  8
@@ -196,11 +191,214 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .class auto ansi serializable sealed nested assembly beforefieldinit thisIsNotInlined2@35
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>
+    {
+      .field public int32[] vs
+      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .method assembly specialname rtspecialname instance void  .ctor(int32[] vs) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>::.ctor()
+        IL_0006:  ldarg.0
+        IL_0007:  ldarg.1
+        IL_0008:  stfld      int32[] Lambda_inlining/Test/thisIsNotInlined2@35::vs
+        IL_000d:  ret
+      } 
+
+      .method public strict virtual instance bool Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> r) cil managed
+      {
+        
+        .maxstack  7
+        .locals init (int32 V_0)
+        IL_0000:  ldc.i4.0
+        IL_0001:  stloc.0
+        IL_0002:  br.s       IL_0008
+
+        IL_0004:  ldloc.0
+        IL_0005:  ldc.i4.1
+        IL_0006:  add
+        IL_0007:  stloc.0
+        IL_0008:  ldloc.0
+        IL_0009:  ldarg.0
+        IL_000a:  ldfld      int32[] Lambda_inlining/Test/thisIsNotInlined2@35::vs
+        IL_000f:  ldlen
+        IL_0010:  conv.i4
+        IL_0011:  bge.s      IL_0027
+
+        IL_0013:  ldarg.1
+        IL_0014:  ldarg.0
+        IL_0015:  ldfld      int32[] Lambda_inlining/Test/thisIsNotInlined2@35::vs
+        IL_001a:  ldloc.0
+        IL_001b:  ldelem     [runtime]System.Int32
+        IL_0020:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
+        IL_0025:  br.s       IL_0028
+
+        IL_0027:  ldc.i4.0
+        IL_0028:  brtrue.s   IL_0004
+
+        IL_002a:  ldloc.0
+        IL_002b:  ldarg.0
+        IL_002c:  ldfld      int32[] Lambda_inlining/Test/thisIsNotInlined2@35::vs
+        IL_0031:  ldlen
+        IL_0032:  conv.i4
+        IL_0033:  ceq
+        IL_0035:  ret
+      } 
+
+    } 
+
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'thisIsNotInlined2@35-1'
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
+    {
+      .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s
+      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
+        IL_0006:  ldarg.0
+        IL_0007:  ldarg.1
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/Test/'thisIsNotInlined2@35-1'::s
+        IL_000d:  ret
+      } 
+
+      .method public strict virtual instance bool Invoke(int32 v) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/Test/'thisIsNotInlined2@35-1'::s
+        IL_0006:  ldarg.0
+        IL_0007:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/Test/'thisIsNotInlined2@35-1'::s
+        IL_000c:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+        IL_0011:  ldarg.1
+        IL_0012:  add
+        IL_0013:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
+        IL_0018:  ldc.i4.1
+        IL_0019:  ret
+      } 
+
+    } 
+
+    .class auto ansi serializable sealed nested assembly beforefieldinit thisIsNotInlined3@36
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>
+    {
+      .field public int32[] vs
+      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .method assembly specialname rtspecialname instance void  .ctor(int32[] vs) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>::.ctor()
+        IL_0006:  ldarg.0
+        IL_0007:  ldarg.1
+        IL_0008:  stfld      int32[] Lambda_inlining/Test/thisIsNotInlined3@36::vs
+        IL_000d:  ret
+      } 
+
+      .method public strict virtual instance bool Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> r) cil managed
+      {
+        
+        .maxstack  7
+        .locals init (int32 V_0)
+        IL_0000:  ldc.i4.0
+        IL_0001:  stloc.0
+        IL_0002:  br.s       IL_0008
+
+        IL_0004:  ldloc.0
+        IL_0005:  ldc.i4.1
+        IL_0006:  add
+        IL_0007:  stloc.0
+        IL_0008:  ldloc.0
+        IL_0009:  ldarg.0
+        IL_000a:  ldfld      int32[] Lambda_inlining/Test/thisIsNotInlined3@36::vs
+        IL_000f:  ldlen
+        IL_0010:  conv.i4
+        IL_0011:  bge.s      IL_0027
+
+        IL_0013:  ldarg.1
+        IL_0014:  ldarg.0
+        IL_0015:  ldfld      int32[] Lambda_inlining/Test/thisIsNotInlined3@36::vs
+        IL_001a:  ldloc.0
+        IL_001b:  ldelem     [runtime]System.Int32
+        IL_0020:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
+        IL_0025:  br.s       IL_0028
+
+        IL_0027:  ldc.i4.0
+        IL_0028:  brtrue.s   IL_0004
+
+        IL_002a:  ldloc.0
+        IL_002b:  ldarg.0
+        IL_002c:  ldfld      int32[] Lambda_inlining/Test/thisIsNotInlined3@36::vs
+        IL_0031:  ldlen
+        IL_0032:  conv.i4
+        IL_0033:  ceq
+        IL_0035:  ret
+      } 
+
+    } 
+
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'thisIsNotInlined3@36-1'
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
+    {
+      .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s
+      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
+        IL_0006:  ldarg.0
+        IL_0007:  ldarg.1
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/Test/'thisIsNotInlined3@36-1'::s
+        IL_000d:  ret
+      } 
+
+      .method public strict virtual instance bool Invoke(int32 v) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/Test/'thisIsNotInlined3@36-1'::s
+        IL_0006:  ldarg.0
+        IL_0007:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/Test/'thisIsNotInlined3@36-1'::s
+        IL_000c:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+        IL_0011:  ldarg.1
+        IL_0012:  add
+        IL_0013:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
+        IL_0018:  ldc.i4.1
+        IL_0019:  ret
+      } 
+
+    } 
+
     .field assembly int32[] _values
     .field static assembly int32[] _svalues
     .field static assembly int32 init@26
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -221,8 +419,7 @@
       IL_0024:  ret
     } 
 
-    .method public hidebysig instance int32 
-            thisIsInlined2() cil managed
+    .method public hidebysig instance int32 thisIsInlined2() cil managed
     {
       
       .maxstack  4
@@ -269,8 +466,7 @@
       IL_0036:  ret
     } 
 
-    .method public hidebysig instance int32 
-            thisIsInlined3() cil managed
+    .method public hidebysig instance int32 thisIsInlined3() cil managed
     {
       
       .maxstack  8
@@ -281,8 +477,7 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig instance int32 
-            thisIsNotInlined2() cil managed
+    .method public hidebysig instance int32 thisIsNotInlined2() cil managed
     {
       
       .maxstack  4
@@ -293,14 +488,14 @@
       IL_0001:  ldfld      int32[] Lambda_inlining/Test::_values
       IL_0006:  stloc.1
       IL_0007:  ldloc.1
-      IL_0008:  newobj     instance void Lambda_inlining/thisIsNotInlined2@35::.ctor(int32[])
+      IL_0008:  newobj     instance void Lambda_inlining/Test/thisIsNotInlined2@35::.ctor(int32[])
       IL_000d:  stloc.0
       IL_000e:  ldc.i4.0
       IL_000f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
       IL_0014:  stloc.2
       IL_0015:  ldloc.0
       IL_0016:  ldloc.2
-      IL_0017:  newobj     instance void Lambda_inlining/'thisIsNotInlined2@35-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
+      IL_0017:  newobj     instance void Lambda_inlining/Test/'thisIsNotInlined2@35-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
       IL_001c:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>::Invoke(!0)
       IL_0021:  pop
       IL_0022:  ldloc.2
@@ -308,8 +503,7 @@
       IL_0028:  ret
     } 
 
-    .method public hidebysig instance int32 
-            thisIsNotInlined3() cil managed
+    .method public hidebysig instance int32 thisIsNotInlined3() cil managed
     {
       
       .maxstack  4
@@ -327,14 +521,14 @@
       IL_0011:  ldsfld     int32[] Lambda_inlining/Test::_svalues
       IL_0016:  stloc.1
       IL_0017:  ldloc.1
-      IL_0018:  newobj     instance void Lambda_inlining/thisIsNotInlined3@36::.ctor(int32[])
+      IL_0018:  newobj     instance void Lambda_inlining/Test/thisIsNotInlined3@36::.ctor(int32[])
       IL_001d:  stloc.0
       IL_001e:  ldc.i4.0
       IL_001f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
       IL_0024:  stloc.2
       IL_0025:  ldloc.0
       IL_0026:  ldloc.2
-      IL_0027:  newobj     instance void Lambda_inlining/'thisIsNotInlined3@36-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
+      IL_0027:  newobj     instance void Lambda_inlining/Test/'thisIsNotInlined3@36-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
       IL_002c:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>::Invoke(!0)
       IL_0031:  pop
       IL_0032:  ldloc.2
@@ -342,8 +536,7 @@
       IL_0038:  ret
     } 
 
-    .method assembly hidebysig instance int32 
-            'array'(int32[] vs) cil managed
+    .method assembly hidebysig instance int32 'array'(int32[] vs) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -391,8 +584,7 @@
       IL_002a:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -403,220 +595,29 @@
       IL_000c:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit thisIsNotInlined2@35
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>
-  {
-    .field public int32[] vs
-    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(int32[] vs) cil managed
+    .method assembly specialname static void staticInitialization@() cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      int32[] Lambda_inlining/thisIsNotInlined2@35::vs
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance bool 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> r) cil managed
-    {
-      
-      .maxstack  7
-      .locals init (int32 V_0)
       IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  br.s       IL_0008
-
-      IL_0004:  ldloc.0
-      IL_0005:  ldc.i4.1
-      IL_0006:  add
-      IL_0007:  stloc.0
-      IL_0008:  ldloc.0
-      IL_0009:  ldarg.0
-      IL_000a:  ldfld      int32[] Lambda_inlining/thisIsNotInlined2@35::vs
-      IL_000f:  ldlen
-      IL_0010:  conv.i4
-      IL_0011:  bge.s      IL_0027
-
-      IL_0013:  ldarg.1
-      IL_0014:  ldarg.0
-      IL_0015:  ldfld      int32[] Lambda_inlining/thisIsNotInlined2@35::vs
-      IL_001a:  ldloc.0
-      IL_001b:  ldelem     [runtime]System.Int32
-      IL_0020:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
-      IL_0025:  br.s       IL_0028
-
-      IL_0027:  ldc.i4.0
-      IL_0028:  brtrue.s   IL_0004
-
-      IL_002a:  ldloc.0
-      IL_002b:  ldarg.0
-      IL_002c:  ldfld      int32[] Lambda_inlining/thisIsNotInlined2@35::vs
-      IL_0031:  ldlen
-      IL_0032:  conv.i4
-      IL_0033:  ceq
-      IL_0035:  ret
+      IL_0001:  ldc.i4.1
+      IL_0002:  ldc.i4     0x2710
+      IL_0007:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
+                                                                                                                                                                             int32,
+                                                                                                                                                                             int32)
+      IL_000c:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0011:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0016:  stsfld     int32[] Lambda_inlining/Test::_svalues
+      IL_001b:  ldc.i4.2
+      IL_001c:  volatile.
+      IL_001e:  stsfld     int32 Lambda_inlining/Test::init@26
+      IL_0023:  ret
     } 
 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'thisIsNotInlined2@35-1'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s
-    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/'thisIsNotInlined2@35-1'::s
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance bool 
-            Invoke(int32 v) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/'thisIsNotInlined2@35-1'::s
-      IL_0006:  ldarg.0
-      IL_0007:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/'thisIsNotInlined2@35-1'::s
-      IL_000c:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-      IL_0011:  ldarg.1
-      IL_0012:  add
-      IL_0013:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
-      IL_0018:  ldc.i4.1
-      IL_0019:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit thisIsNotInlined3@36
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>
-  {
-    .field public int32[] vs
-    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(int32[] vs) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,bool>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      int32[] Lambda_inlining/thisIsNotInlined3@36::vs
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance bool 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> r) cil managed
-    {
-      
-      .maxstack  7
-      .locals init (int32 V_0)
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  br.s       IL_0008
-
-      IL_0004:  ldloc.0
-      IL_0005:  ldc.i4.1
-      IL_0006:  add
-      IL_0007:  stloc.0
-      IL_0008:  ldloc.0
-      IL_0009:  ldarg.0
-      IL_000a:  ldfld      int32[] Lambda_inlining/thisIsNotInlined3@36::vs
-      IL_000f:  ldlen
-      IL_0010:  conv.i4
-      IL_0011:  bge.s      IL_0027
-
-      IL_0013:  ldarg.1
-      IL_0014:  ldarg.0
-      IL_0015:  ldfld      int32[] Lambda_inlining/thisIsNotInlined3@36::vs
-      IL_001a:  ldloc.0
-      IL_001b:  ldelem     [runtime]System.Int32
-      IL_0020:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
-      IL_0025:  br.s       IL_0028
-
-      IL_0027:  ldc.i4.0
-      IL_0028:  brtrue.s   IL_0004
-
-      IL_002a:  ldloc.0
-      IL_002b:  ldarg.0
-      IL_002c:  ldfld      int32[] Lambda_inlining/thisIsNotInlined3@36::vs
-      IL_0031:  ldlen
-      IL_0032:  conv.i4
-      IL_0033:  ceq
-      IL_0035:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'thisIsNotInlined3@36-1'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s
-    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> s) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/'thisIsNotInlined3@36-1'::s
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance bool 
-            Invoke(int32 v) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/'thisIsNotInlined3@36-1'::s
-      IL_0006:  ldarg.0
-      IL_0007:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> Lambda_inlining/'thisIsNotInlined3@36-1'::s
-      IL_000c:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-      IL_0011:  ldarg.1
-      IL_0012:  add
-      IL_0013:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
-      IL_0018:  ldc.i4.1
-      IL_0019:  ret
-    } 
-
-  } 
-
+  .field static assembly int32[] values@17
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public static bool  ofArray<a>(!!a[] vs,
                                          class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,bool> r) cil managed
   {
@@ -686,12 +687,11 @@
     IL_001b:  ret
   } 
 
-  .method public specialname static int32[] 
-          get_values() cil managed
+  .method public specialname static int32[] get_values() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     int32[] '<StartupCode$assembly>'.$Lambda_inlining$fsx::values@17
+    IL_0000:  ldsfld     int32[] Lambda_inlining::values@17
     IL_0005:  ret
   } 
 
@@ -831,24 +831,18 @@
     IL_0038:  ret
   } 
 
-  .property int32[] values()
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get int32[] Lambda_inlining::get_values()
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Lambda_inlining$fsx::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Lambda_inlining$fsx::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
-} 
 
-.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Lambda_inlining$fsx
-       extends [runtime]System.Object
-{
-  .field static assembly initonly int32[] values@17
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly int32 init@
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method assembly specialname static void staticInitialization@() cil managed
   {
     
     .maxstack  8
@@ -860,23 +854,35 @@
                                                                                                                                                                            int32)
     IL_000c:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0011:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0016:  stsfld     int32[] '<StartupCode$assembly>'.$Lambda_inlining$fsx::values@17
-    IL_001b:  ldc.i4.0
-    IL_001c:  ldc.i4.1
-    IL_001d:  ldc.i4     0x2710
-    IL_0022:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                           int32,
-                                                                                                                                                                           int32)
-    IL_0027:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_002c:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0031:  stsfld     int32[] Lambda_inlining/Test::_svalues
-    IL_0036:  ldc.i4.2
-    IL_0037:  volatile.
-    IL_0039:  stsfld     int32 Lambda_inlining/Test::init@26
-    IL_003e:  ret
+    IL_0016:  stsfld     int32[] Lambda_inlining::values@17
+    IL_001b:  call       void Lambda_inlining/Test::staticInitialization@()
+    IL_0020:  ret
+  } 
+
+  .property int32[] values()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32[] Lambda_inlining::get_values()
+  } 
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Lambda_inlining$fsx
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void Lambda_inlining::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 
+
 
 
 

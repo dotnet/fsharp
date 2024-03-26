@@ -5,6 +5,7 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
+.assembly extern runtime { }
 .assembly extern System.Collections
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
@@ -15,7 +16,6 @@
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
   .ver 2:1:0:0
 }
-.assembly extern runtime { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -54,8 +54,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -66,8 +65,7 @@
       IL_0008:  ret
     } 
 
-    .method public hidebysig instance void 
-            M() cil managed
+    .method public hidebysig instance void M() cil managed
     {
       
       .maxstack  3
@@ -91,6 +89,25 @@
 
   } 
 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Typedefof$fsx::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Typedefof$fsx::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void [runtime]System.Console::WriteLine()
+    IL_0005:  ret
+  } 
+
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$Typedefof$fsx
@@ -100,16 +117,16 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  call       void [runtime]System.Console::WriteLine()
+    IL_0000:  call       void Typedefof::staticInitialization@()
     IL_0005:  ret
   } 
 
 } 
+
 
 
 

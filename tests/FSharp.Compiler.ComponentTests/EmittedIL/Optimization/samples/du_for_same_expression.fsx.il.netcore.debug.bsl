@@ -73,8 +73,7 @@
     IL_002f:  ret
   } 
 
-  .method public static valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<string,!!b> 
-          ff<a,b>(valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<!!a,!!b> x) cil managed
+  .method public static valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<string,!!b> ff<a,b>(valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<!!a,!!b> x) cil managed
   {
     
     .maxstack  3
@@ -104,8 +103,7 @@
     IL_0035:  ret
   } 
 
-  .method public static valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<!!a,!!b> 
-          ffs<a,b>(valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<!!a,!!b> x) cil managed
+  .method public static valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<!!a,!!b> ffs<a,b>(valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<!!a,!!b> x) cil managed
   {
     
     .maxstack  3
@@ -131,17 +129,18 @@
     IL_002c:  ret
   } 
 
-} 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Du_for_same_expression$fsx::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Du_for_same_expression$fsx::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
 
-.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Du_for_same_expression$fsx
-       extends [runtime]System.Object
-{
-  .field static assembly int32 init@
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method assembly specialname static void staticInitialization@() cil managed
   {
     
     .maxstack  3
@@ -169,6 +168,24 @@
   } 
 
 } 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Du_for_same_expression$fsx
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void Du_for_same_expression::staticInitialization@()
+    IL_0005:  ret
+  } 
+
+} 
+
 
 
 

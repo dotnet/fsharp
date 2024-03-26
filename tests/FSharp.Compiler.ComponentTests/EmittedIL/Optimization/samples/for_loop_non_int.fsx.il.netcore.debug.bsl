@@ -39,51 +39,38 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method assembly specialname static class [runtime]System.Collections.Generic.IEnumerable`1<int64> 
-          get_inputSequence@4() cil managed
+  .field static assembly class [runtime]System.Collections.Generic.IEnumerable`1<int64> inputSequence@4
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly class [runtime]System.Collections.Generic.IEnumerator`1<int64> enumerator@4
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .method assembly specialname static class [runtime]System.Collections.Generic.IEnumerable`1<int64> get_inputSequence@4() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class [runtime]System.Collections.Generic.IEnumerable`1<int64> '<StartupCode$assembly>'.$For_loop_non_int$fsx::inputSequence@4
+    IL_0000:  ldsfld     class [runtime]System.Collections.Generic.IEnumerable`1<int64> For_loop_non_int::inputSequence@4
     IL_0005:  ret
   } 
 
-  .method assembly specialname static class [runtime]System.Collections.Generic.IEnumerator`1<int64> 
-          get_enumerator@4() cil managed
+  .method assembly specialname static class [runtime]System.Collections.Generic.IEnumerator`1<int64> get_enumerator@4() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class [runtime]System.Collections.Generic.IEnumerator`1<int64> '<StartupCode$assembly>'.$For_loop_non_int$fsx::enumerator@4
+    IL_0000:  ldsfld     class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::enumerator@4
     IL_0005:  ret
   } 
 
-  .property class [runtime]System.Collections.Generic.IEnumerable`1<int64>
-          inputSequence@4()
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [runtime]System.Collections.Generic.IEnumerable`1<int64> For_loop_non_int::get_inputSequence@4()
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$For_loop_non_int$fsx::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$For_loop_non_int$fsx::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
-  .property class [runtime]System.Collections.Generic.IEnumerator`1<int64>
-          enumerator@4()
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::get_enumerator@4()
-  } 
-} 
 
-.class private abstract auto ansi sealed '<StartupCode$assembly>'.$For_loop_non_int$fsx
-       extends [runtime]System.Object
-{
-  .field static assembly initonly class [runtime]System.Collections.Generic.IEnumerable`1<int64> inputSequence@4
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly initonly class [runtime]System.Collections.Generic.IEnumerator`1<int64> enumerator@4
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly int32 init@
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method assembly specialname static void staticInitialization@() cil managed
   {
     
     .maxstack  5
@@ -98,10 +85,10 @@
     IL_0007:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt64(int64,
                                                                                                                                                                            int64,
                                                                                                                                                                            int64)
-    IL_000c:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<int64> '<StartupCode$assembly>'.$For_loop_non_int$fsx::inputSequence@4
+    IL_000c:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<int64> For_loop_non_int::inputSequence@4
     IL_0011:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int64> For_loop_non_int::get_inputSequence@4()
     IL_0016:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int64>::GetEnumerator()
-    IL_001b:  stsfld     class [runtime]System.Collections.Generic.IEnumerator`1<int64> '<StartupCode$assembly>'.$For_loop_non_int$fsx::enumerator@4
+    IL_001b:  stsfld     class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::enumerator@4
     .try
     {
       IL_0020:  br.s       IL_003d
@@ -136,7 +123,37 @@
     IL_0061:  ret
   } 
 
+  .property class [runtime]System.Collections.Generic.IEnumerable`1<int64>
+          inputSequence@4()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get class [runtime]System.Collections.Generic.IEnumerable`1<int64> For_loop_non_int::get_inputSequence@4()
+  } 
+  .property class [runtime]System.Collections.Generic.IEnumerator`1<int64>
+          enumerator@4()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::get_enumerator@4()
+  } 
 } 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$For_loop_non_int$fsx
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void For_loop_non_int::staticInitialization@()
+    IL_0005:  ret
+  } 
+
+} 
+
 
 
 
