@@ -1351,8 +1351,7 @@ let options = JsonSerializerOptions(DefaultOptions = JsonSerializer1Options(Defa
         |> withDiagnostics [
             (Error 101, Line 14, Col 77, Line 14, Col 91, "This construct is deprecated. This is bad")
         ]
-            
-            
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account in a constructor property assignment from a csharp class`` () =
         let CSLib =

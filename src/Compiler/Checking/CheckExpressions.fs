@@ -6649,15 +6649,12 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
 
     if isInterfaceTy g objTy then
         error(Error((if superInit then FSComp.SR.tcInheritCannotBeUsedOnInterfaceType() else FSComp.SR.tcNewCannotBeUsedOnInterfaceType()), mWholeCall))
-        
+
     let rec getConstructorArgs expr =
         match expr with
-        | SynExpr.Paren(expr = SynExpr.App(funcExpr = expr)) ->
-            getConstructorArgs expr
-        | SynExpr.Paren(expr = SynExpr.Tuple(exprs = synExprs)) ->
-            synExprs |> List.collect getConstructorArgs
-        | SynExpr.App(funcExpr = expr1; argExpr = expr2) ->
-            getConstructorArgs expr1 @ getConstructorArgs expr2
+        | SynExpr.Paren(expr = SynExpr.App(funcExpr = expr)) -> getConstructorArgs expr
+        | SynExpr.Paren(expr = SynExpr.Tuple(exprs = synExprs)) -> synExprs |> List.collect getConstructorArgs
+        | SynExpr.App(funcExpr = expr1; argExpr = expr2) -> [ expr1 ; expr2 ] |> List.collect getConstructorArgs
         | SynExpr.Ident(id) -> [ id ]
         | _ -> []
 
