@@ -1285,7 +1285,47 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
             (Warning 44, Line 10, Col 61, Line 10, Col 75, "This construct is deprecated. This is bad")
             (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value")
         ]
+        
+    [<Fact>] // This should fail, Needs more investigation
+    let ``Obsolete attribute warning is not taken into account in prop setters that can be included in methods which are not constructors`` () =
+        Fsx """
+open System
 
+type JsonSerializerOptions() =
+    [<Obsolete("This is bad", true)>]
+    member val DefaultOptions = false with get, set
+    member val UseCustomOptions = false with get, set
+    member this.With() = this
+    
+let options = JsonSerializerOptions()
+let options2 =
+    options
+        .With(DefaultOptions = true)
+        .With(UseCustomOptions = false)
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>] // This should fail, Needs more investigation
+    let ``Obsolete attribute error is not taken into account in prop setters that can be included in methods which are not constructors`` () =
+        Fsx """
+open System
+
+type JsonSerializerOptions() =
+    [<Obsolete("This is bad", true)>]
+    member val DefaultOptions = false with get, set
+    member val UseCustomOptions = false with get, set
+    member this.With() = this
+    
+let options = JsonSerializerOptions()
+let options2 =
+    options
+        .With(DefaultOptions = true)
+        .With(UseCustomOptions = false)
+        """
+        |> typecheck
+        |> shouldSucceed
+        
     [<Fact>]
     let ``Obsolete attribute error is taken into account in a constructor property assignment`` () =
         Fsx """
