@@ -157,13 +157,46 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
     {
         var ws = this.Extensibility.Workspaces();
-        //var result = what.QueryProjectsAsync(project => project.With(p => p.Kind == "6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705"), cancellationToken).Result;
-        IQueryResults<IProjectSnapshot>? result = await ws.QueryProjectsAsync(project => project.With(p => new { p.ActiveConfigurations, p.Id, p.Guid }), cancellationToken);
 
-        var x = await ws.QuerySolutionAsync(solution => solution.With(s => new { s.Path, s.Guid, s.ActiveConfiguration, s.ActivePlatform }), cancellationToken);
+        IQueryResults<IProjectSnapshot>? result = await ws.QueryProjectsAsync(project => project
+            .With(p => p.ActiveConfigurations
+                .With(c => c.RuleResultsByRuleName("CompilerCommandLineArgs")
+                    .With(r => r.RuleName)
+                    .With(r => r.Items)))
+            .With(p => new { p.ActiveConfigurations, p.Id, p.Guid }), cancellationToken);
 
+
+        List<(string, string)> projectsAndCommandLineArgs = [];
         foreach (var project in result)
         {
+            project.Id.TryGetValue("ProjectPath", out var projectPath);
+
+            List<string> commandLineArgs = [];
+            if (projectPath != null)
+            {
+                // There can be multiple Active Configurations, e.g. one for net8.0 and one for net472
+                // TODO For now taking any single one of them, but we might actually want to pick specific one
+                var config = project.ActiveConfigurations.FirstOrDefault();
+                if (config != null)
+                {
+                    foreach (var ruleResults in config.RuleResults)
+                    {
+                        // XXX Idk why `.Where` does not work with these IAsyncQuerable type
+                        if (ruleResults?.RuleName == "CompilerCommandLineArguments")
+                        {
+                            // XXX Not sure why there would be more than one item for this rule result
+                            // Taking first one, ignoring the rest
+                            var args = ruleResults?.Items?.FirstOrDefault()?.Name;
+                            if (args != null) commandLineArgs.Add(args);
+                        }
+                    }
+                }
+                if (commandLineArgs.Count > 0)
+                {
+                    projectsAndCommandLineArgs.Add((projectPath, commandLineArgs[0]));
+                }
+            }
+
             try
             {
                 this.ProcessProject(project);
@@ -178,15 +211,17 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
 
         try
         {
-            // Some hardcoded projects before we create them from the ProjectQuery
-            var projectsRoot = @"D:\code";
-            var giraffe = FSharpProjectSnapshot.FromResponseFile(
-                new FileInfo(Path.Combine(projectsRoot, @"Giraffe\src\Giraffe\Giraffe.rsp")),
-                Path.Combine(projectsRoot, @"Giraffe\src\Giraffe\Giraffe.fsproj"));
-            var giraffeTests = FSharpProjectSnapshot.FromResponseFile(
-                new FileInfo(Path.Combine(projectsRoot, @"Giraffe\tests\Giraffe.Tests\Giraffe.Tests.rsp")),
-                Path.Combine(projectsRoot, @"Giraffe\tests\Giraffe.Tests\Giraffe.Tests.fsproj"));
-            workspace = FSharpWorkspace.Create([giraffe, giraffeTests]);
+            List<FSharpProjectSnapshot> snapshots = [];
+            foreach(var args in projectsAndCommandLineArgs)
+            {
+                var lines = args.Item2.Split(';'); // XXX Probably not robust enough
+                var path = args.Item1;
+
+                var snapshot = FSharpProjectSnapshot.FromCommandLineArgs(
+                    lines, Path.GetDirectoryName(path), Path.GetFileName(path));
+                snapshots.Add(snapshot);
+            }
+            workspace = FSharpWorkspace.Create(snapshots);
         }
         catch
         {
