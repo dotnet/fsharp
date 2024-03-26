@@ -238,6 +238,8 @@ type DiagnosticsThreadStatics =
 
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
+    static member DiagnosticsLoggerNodeCode: DiagnosticsLogger with get, set
+
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
 
@@ -464,6 +466,8 @@ type StackGuard =
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope =
     new: diagnosticsLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
+
+    new: unit -> CompilationGlobalsScope
 
     interface IDisposable
 

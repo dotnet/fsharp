@@ -463,6 +463,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member this.Get'(key, computation) =
 
+        failwith "AsyncMemoize"
+
         let wrappedKey =
             { new ICacheKey<_, _> with
                 member _.GetKey() = key
@@ -473,6 +475,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         this.Get(wrappedKey, computation)
 
     member _.Get(key: ICacheKey<_, _>, computation) =
+
+        failwith "AsyncMemoize"
 
         let key =
             {

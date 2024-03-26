@@ -377,6 +377,25 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
+let currentDiagnosticsLogger = AsyncLocal<DiagnosticsLogger voption>()
+
+let checkIfSame threadStatic =
+    match currentDiagnosticsLogger.Value with
+
+    // Big hurdle in testing this is the fact that threadstatics leak from one unrelated test to another.
+    // At least that's what happens in VS test runner. In effect, at the beginning of some computation when we expect
+    // to see uninitialized threadstatic, we get some value that stayed alive from another test function.
+    // Especially FinalizeTypeCheckTask shows up here a lot.
+    // That's why we have to disregard the threadstatics at the beggining of each execution context,
+    // up to the moment of proper initialization (the first call of UseDiagnosticsLogger usually).
+    | ValueNone -> threadStatic
+
+    | ValueSome asyncLocal ->
+        match asyncLocal, threadStatic with
+        | a, t when a = t -> t // Good.
+        | _ when threadStatic = AssertFalseDiagnosticsLogger -> threadStatic // AsyncLocal is always good on thread switches. ThreadStatic needs to catch up.
+        | _ -> failwith $"AsyncLocal does not match ThreadStatic. a: {asyncLocal.DebugDisplay()} t: {threadStatic.DebugDisplay()}"
+
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
     [<ThreadStatic; DefaultValue>]
@@ -395,6 +414,15 @@ type internal DiagnosticsThreadStatics =
         and set v = DiagnosticsThreadStatics.buildPhase <- v
 
     static member DiagnosticsLogger
+        with get () =
+            match box DiagnosticsThreadStatics.diagnosticsLogger with
+            | Null -> AssertFalseDiagnosticsLogger
+            | _ -> checkIfSame DiagnosticsThreadStatics.diagnosticsLogger
+        and set v =
+            currentDiagnosticsLogger.Value <- ValueSome v
+            DiagnosticsThreadStatics.diagnosticsLogger <- v
+
+    static member DiagnosticsLoggerNodeCode
         with get () =
             match box DiagnosticsThreadStatics.diagnosticsLogger with
             | Null -> AssertFalseDiagnosticsLogger
@@ -534,6 +562,8 @@ let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
 type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: BuildPhase) =
     let unwindEL = UseDiagnosticsLogger diagnosticsLogger
     let unwindBP = UseBuildPhase buildPhase
+
+    new() = new CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase
