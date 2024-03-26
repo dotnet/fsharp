@@ -351,7 +351,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EnforceAttributeTargets -> FSComp.SR.featureEnforceAttributeTargets ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
-        | LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap -> FSComp.SR.featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap ()
+        | LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap ->
+            FSComp.SR.featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
