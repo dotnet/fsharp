@@ -6668,29 +6668,29 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
             warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(), mWholeCall))
 
         let ctorArgs = argExprs |> List.collect getConstructorArgs
+        
+        if not ctorArgs.IsEmpty then
+            // Here we will have the ValRefs(Members, Properties) from F# types
+            let valRefs =
+                minfos
+                |> List.collect (fun minfo-> minfo.ApparentEnclosingTyconRef.MembersOfFSharpTyconSorted)
+                |> List.filter (fun v -> CheckFSharpAttributesForObsolete g v.Attribs)
 
-        let valRefs =
-            minfos
-            |> List.collect (fun minfo-> minfo.ApparentEnclosingTyconRef.MembersOfFSharpTyconSorted)
-            |> List.filter (fun v -> CheckFSharpAttributesForObsolete g v.Attribs)
+            if valRefs.IsEmpty then
+                // Here we will have the PropInfos from C# types
+                let propInfos =
+                    minfos
+                    |> List.collect (fun minfo -> GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 minfo.ApparentEnclosingType)
 
-        for vref in valRefs do
-            for arg in ctorArgs do
-                if arg.idText = vref.DisplayName then
-                    CheckValAttributes g vref arg.idRange |> CommitOperationResult
-
-        let propInfos =
-            [   
-                for minfo in minfos do
-                    if not (TryFindILAttribute g.attrib_SystemObsolete (minfo.GetCustomAttrs())) then
-                        GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 minfo.ApparentEnclosingType
-            ]
-            |> List.collect id
-
-        for propInfo in propInfos do
-            for arg in ctorArgs do
-                if arg.idText = propInfo.DisplayName then
-                    CheckPropInfoAttributes propInfo arg.idRange  |> CommitOperationResult
+                for propInfo in propInfos do
+                    for arg in ctorArgs do
+                        if arg.idText = propInfo.DisplayName then
+                            CheckPropInfoAttributes propInfo arg.idRange  |> CommitOperationResult
+            else
+                for vref in valRefs do
+                    for arg in ctorArgs do
+                        if arg.idText = vref.DisplayName then
+                            CheckValAttributes g vref arg.idRange |> CommitOperationResult
 
         // Check the type is not abstract
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape
