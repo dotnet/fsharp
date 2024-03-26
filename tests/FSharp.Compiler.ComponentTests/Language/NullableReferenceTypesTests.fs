@@ -9,7 +9,7 @@ let typeCheckWithStrictNullness cu =
     |> withCheckNulls
     |> withWarnOn 3261
     |> withOptions ["--warnaserror+"]
-    |> typecheck
+    |> compile
 
     
 [<Fact>]
