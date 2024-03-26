@@ -236,9 +236,7 @@ looseFunc(maybeDu2) |> ignore
 [<Fact>]
 let ``Regression strict func`` () = 
     FSharp """module MyLibrary
-let strictFunc(arg: 'x when 'x : not null) =
-    printfn "%A" arg
-    arg
+let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString())
  
 strictFunc({|Anon=5|}) |> ignore
 strictFunc("hi") |> ignore
@@ -251,7 +249,7 @@ strictFunc(null:obj) |> ignore
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ ]
+            [ Error 3261, Line 7, Col 12, Line 7, Col 30, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected." ]
                 
     
 [<Fact>]
