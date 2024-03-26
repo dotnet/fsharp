@@ -679,6 +679,9 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
         let compilerArgs = File.ReadAllLines responseFile.FullName
 
+        FSharpProjectSnapshot.FromCommandLineArgs(compilerArgs, responseFile.DirectoryName, projectFileName)
+
+    static member FromCommandLineArgs(compilerArgs: string array, directoryPath: string, projectFileName) =
         let fsharpFileExtensions = set [| ".fs"; ".fsi"; ".fsx" |]
 
         let isFSharpFile (file: string) =
@@ -693,7 +696,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                     None
                 else
 
-                    let fullPath = Path.Combine(responseFile.DirectoryName, line)
+                    let fullPath = Path.Combine(directoryPath, line)
                     if not (File.Exists fullPath) then None else Some fullPath)
             |> Array.toList
 
