@@ -8,6 +8,7 @@ let typeCheckWithStrictNullness cu =
     |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
+    |> withWarnOn 3262
     |> withOptions ["--warnaserror+"]
     |> compile
 
