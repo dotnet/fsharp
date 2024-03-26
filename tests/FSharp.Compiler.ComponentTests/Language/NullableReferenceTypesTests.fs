@@ -8,6 +8,7 @@ let typeCheckWithStrictNullness cu =
     |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
+    |> withWarnOn 3262
     |> withOptions ["--warnaserror+"]
     |> compile
 
@@ -184,8 +185,131 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withErrorCode 3261
+    
+[<Fact>]
+let ``WithNull used on anon type`` () = 
+    FSharp """module MyLibrary
+
+let maybeAnon : _ | null = {|Hello="there"|}
+let maybeAnon2 : {|Hello:string|} | null = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+            [ Error 3260, Line 4, Col 18, Line 4, Col 41, "The type '{| Hello: string |}' does not support a nullness qualitification."
+              Error 3261, Line 4, Col 44, Line 4, Col 48, "Nullness warning: The type '{| Hello: string |}' does not support 'null'."]
+    
+    
+[<Fact>]
+let ``WithNull on a DU`` () = 
+    FSharp """module MyLibrary
+
+type MyDu = A | B
 
 
+let strictFunc(arg: 'x when 'x : not null) =
+    printfn "%A" arg
+    arg
+    
+let looseFunc(arg: _ | null) = arg
+
+strictFunc(A) |> ignore
+looseFunc(A) |> ignore
+
+let maybeDu : _ | null = MyDu.A
+let maybeDu2 : _ | null = null
+
+strictFunc(maybeDu) |> ignore
+strictFunc(maybeDu2) |> ignore
+
+looseFunc(maybeDu2) |> ignore
+looseFunc(maybeDu2) |> ignore
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 18, Col 12, Line 18, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
+        Error 3261, Line 19, Col 12, Line 19, Col 20, "Nullness warning: The type ''a | null' supports 'null' but a non-null type is expected."]
+    
+[<Fact>]
+let ``Regression strict func`` () = 
+    FSharp """module MyLibrary
+let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString())
+ 
+strictFunc({|Anon=5|}) |> ignore
+strictFunc("hi") |> ignore
+strictFunc(null) |> ignore
+strictFunc(null:(string|null)) |> ignore
+strictFunc(null:obj) |> ignore
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ Error 3261, Line 7, Col 12, Line 7, Col 30, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected." ]
+                
+    
+[<Fact>]
+let ``Nullnesss support for F# types`` () = 
+    FSharp """module MyLibrary
+type MyDu = A | B
+type MyRecord = {X:int;Y:string}
+
+let strictFunc(arg: 'x when 'x : not null) =
+    printfn "%A" arg
+    arg
+    
+let looseFunc(arg: _ | null) = arg
+
+strictFunc(A) |> ignore
+strictFunc({X=1;Y="a"}) |> ignore
+strictFunc({|ZZ=15;YZ="a"|}) |> ignore
+strictFunc((1,2,3)) |> ignore
+
+looseFunc(A) |> ignore
+looseFunc({X=1;Y="a"}) |> ignore
+looseFunc({|ZZ=15;YZ="a"|}) |> ignore
+looseFunc((1,2,3)) |> ignore
+
+strictFunc(null) |> ignore
+looseFunc(null) |> ignore
+
+let maybeDu : _ | null = MyDu.A
+let maybeRecd : MyRecord | null = {X=1;Y="a"}
+let maybeAnon : _ | null = {|Hello="there"|}
+let maybeTuple : (int*int) | null = null
+
+strictFunc(maybeDu) |> ignore
+strictFunc(maybeRecd) |> ignore
+strictFunc(maybeAnon) |> ignore
+strictFunc(maybeTuple) |> ignore
+
+looseFunc(maybeDu) |> ignore
+looseFunc(maybeRecd) |> ignore
+looseFunc(maybeAnon) |> ignore
+looseFunc(maybeTuple) |> ignore
+
+type Maybe<'T> = 'T | null
+let maybeTuple2 : Maybe<int*int> = null
+strictFunc(maybeTuple2) |> ignore
+looseFunc(maybeTuple2) |> ignore
+
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualitification."
+              Error 3261, Line 27, Col 37, Line 27, Col 41, "Nullness warning: The type '(int * int)' does not support 'null'."
+              Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 40, Col 36, Line 40, Col 40, "Nullness warning: The type 'Maybe<int * int>' does not support 'null'."]
+                
 [<Fact>]
 let ``Static member on Record with null arg`` () =
     FSharp """module MyLibrary
@@ -197,7 +321,6 @@ let thisWorks = MyRecord.Create("xx")
 let thisShouldWarn = MyRecord.Create(null)
 let maybeNull : string | null = "abc"
 let thisShouldAlsoWarn = MyRecord.Create(maybeNull)
-
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -210,7 +333,6 @@ let thisShouldAlsoWarn = MyRecord.Create(maybeNull)
 [<Fact>]
 let ``Option ofObj should remove nullness when used in a function`` () = 
     FSharp """module MyLibrary
-
 let processOpt2 (s: string | null) : string option = Option.ofObj s"""
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -222,7 +344,6 @@ let ``Option ofObj should remove nullness when piping`` () =
 let processOpt (s: string | null) : string option =
     let stringOpt = Option.ofObj s
     stringOpt
-
 let processOpt3 (s: string | null) : string option = s |> Option.ofObj
 """
     |> asLibrary
@@ -252,7 +373,6 @@ let processOpt3 (s: string) : string option =
 [<Fact>]
 let ``Option ofObj called on a string literal`` () = 
     FSharp """module MyLibrary
-
 let whatIsThis = Option.ofObj "abc123"
 """
     |> asLibrary
@@ -283,7 +403,6 @@ let clearlyNotNull = "42"
 let mappedVal = nonNull clearlyNotNull
 let maybeNull : string | null = null
 let mappedMaybe = nonNull maybeNull
-
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -311,4 +430,3 @@ let mapped2 =
         [ Error 3262, Line 6, Col 7, Line 6, Col 24, "Value known to be without null passed to a function meant for nullables: You can remove this |NonNullQuick| pattern usage."
           Error 3262, Line 10, Col 6, Line 10, Col 10, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."
           Error 3262, Line 11, Col 6, Line 11, Col 15, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."]
-   

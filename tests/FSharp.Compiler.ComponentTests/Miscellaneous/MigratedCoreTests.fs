@@ -78,11 +78,11 @@ let ``auto-widen-minimal``() =
 
 [<Fact>]
 let ``auto-widen-version-preview-warns-on``() = 
-    singleVersionedNegTestAux "core/auto-widen/preview" ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
+    singleVersionedNegTestAux "core/auto-widen/preview" ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.V80 "test"
 
 [<Fact>]
 let ``auto-widen-version-preview-default-warns``() = 
-    singleVersionedNegTestAux "core/auto-widen/preview-default-warns" ["--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
+    singleVersionedNegTestAux "core/auto-widen/preview-default-warns" ["--warnaserror+";"--define:NEGATIVE"] LangVersion.V80 "test"
 
 [<Fact>]
 let ``comprehensions-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions" FSC_DEBUG

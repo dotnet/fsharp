@@ -584,7 +584,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.ExnConstr tcref, _, args    ->
             let _rgtypR = ConvTyconRef cenv tcref m
-            let _typ = mkAppTy tcref []
+            let _typ = mkWoNullAppTy tcref []
             let parentTyconR = ConvTyconRef cenv tcref m
             let argTys = tcref |> recdFieldsOfExnDefRef  |> List.map (fun rfld -> rfld.FormalType)
             let methArgTypesR = ConvTypes cenv env m argTys

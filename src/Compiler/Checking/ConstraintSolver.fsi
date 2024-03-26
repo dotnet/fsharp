@@ -291,6 +291,8 @@ val AddCxTypeDefnNotSupportsNull: DisplayEnv -> ConstraintSolverState -> range -
 
 val AddCxTypeUseSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
+val AddCxTypeCanCarryNullnessInfo: DisplayEnv -> ConstraintSolverState -> range -> TType -> Nullness -> unit
+
 val AddCxTypeMustSupportComparison: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
 val AddCxTypeMustSupportEquality: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit

@@ -201,10 +201,10 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
         // However since F# 2.0 we have always reported these interfaces for all measure-annotated types.
 
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIComparable_tcref [reprTy])) skipUnref g amap m ty then
-        mkAppTy g.system_GenericIComparable_tcref [ty]
+        mkWoNullAppTy g.system_GenericIComparable_tcref [ty]
 
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIEquatable_tcref [reprTy])) skipUnref g amap m ty then
-        mkAppTy g.system_GenericIEquatable_tcref [ty]
+        mkWoNullAppTy g.system_GenericIEquatable_tcref [ty]
     ]
 
 // Check for any System.Numerics type in the interface hierarchy

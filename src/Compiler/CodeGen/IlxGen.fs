@@ -1382,7 +1382,7 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
         if isCtor || cctor then ILType.Void else ilRetTy
 
     let ilTy =
-        GenType cenv m tyenvUnderTypars (mkAppTy parentTcref (List.map mkTyparTy ctps))
+        GenType cenv m tyenvUnderTypars (mkWoNullAppTy parentTcref (List.map mkTyparTy ctps))
 
     let nm = vref.CompiledName g.CompilerGlobalState
 
@@ -2195,9 +2195,9 @@ type AnonTypeGenerationTable() =
                 [
                     (g.mk_IStructuralComparable_ty, true, m)
                     (g.mk_IComparable_ty, true, m)
-                    (mkAppTy g.system_GenericIComparable_tcref [ ty ], true, m)
+                    (mkWoNullAppTy g.system_GenericIComparable_tcref [ ty ], true, m)
                     (g.mk_IStructuralEquatable_ty, true, m)
-                    (mkAppTy g.system_GenericIEquatable_tcref [ ty ], true, m)
+                    (mkWoNullAppTy g.system_GenericIEquatable_tcref [ ty ], true, m)
                 ]
 
             let vspec1, vspec2 = AugmentTypeDefinitions.MakeValsForEqualsAugmentation g tcref
@@ -5451,7 +5451,7 @@ and CommitCallSequel cenv eenv m cloc cgbuf mustGenerateUnitAfterCall sequel =
 
 and MakeNotSupportedExnExpr cenv eenv (argExpr, m) =
     let g = cenv.g
-    let ety = mkAppTy (g.FindSysTyconRef [ "System" ] "NotSupportedException") []
+    let ety = mkWoNullAppTy (g.FindSysTyconRef [ "System" ] "NotSupportedException") []
     let ilTy = GenType cenv m eenv.tyenv ety
     let mref = mkILCtorMethSpecForTy(ilTy, [ g.ilg.typ_String ]).MethodRef
     Expr.Op(TOp.ILCall(false, false, false, true, NormalValUse, false, false, mref, [], [], [ ety ]), [], [ argExpr ], m)

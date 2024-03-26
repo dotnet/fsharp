@@ -446,7 +446,7 @@ and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
 
-    let gtyp = mkAppTy tcref tinst
+    let gtyp = mkWoNullAppTy tcref tinst
     let inst = List.zip (tcref.Typars m) tinst
 
     UnifyTypes cenv env m ty gtyp
