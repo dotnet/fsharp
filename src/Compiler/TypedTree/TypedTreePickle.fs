@@ -360,9 +360,6 @@ let inline u_tup6 p1 p2 p3 p4 p5 p6 (st: ReaderState) =
 let inline u_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in  (a, b, c, d, e, f, x7, x8)
 
-let inline u_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in let x9 = p9 st in (a, b, c, d, e, f, x7, x8, x9)
-
 let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
@@ -460,15 +457,6 @@ let p_option f x st =
     match x with
     | None -> p_byte 0 st
     | Some h -> p_byte 1 st; f h st
-
-let _p_option2 f1 f2 x st =
-    match x with
-    | None -> p_byte 0 st
-    | Some h -> 
-        if true then
-            p_byte 2 st; f2 h st
-        else
-            p_byte 1 st; f1 h st
 
 // Pickle lazy values in such a way that they can, in some future F# compiler version, be read back
 // lazily. However, a lazy reader is not used in this version because the value may contain the definitions of some
@@ -577,14 +565,6 @@ let u_option f st =
     | 0 -> None
     | 1 -> Some (f st)
     | n -> ufailwith st ("u_option: found number " + string n)
-
-let u_option2 f1 f2 st =
-    let tag = u_byte st
-    match tag with
-    | 0 -> None
-    | 1 -> Some (f1 st)
-    | 2 -> Some (f2 st)
-    | n -> ufailwith st ("u_option2: found number " + string n)
 
 // Boobytrap an OSGN node with a force of a lazy load of a bunch of pickled data
 #if LAZY_UNPICKLE
@@ -2259,23 +2239,18 @@ and u_entity_spec_data st : Entity =
     }
 
 and u_tcaug st =
-    let a1, a2, a3, b2, c, d, e, g, _space =
-      u_tup9
-        (u_option (u_tup2 u_vref u_vref))
-        (u_option u_vref)
-        (u_option2 
-            (fun st -> let v1, v2, v3 = u_tup3 u_vref u_vref u_vref st in (v1, v2, v3, None)) 
-            (fun st -> let v1, v2, v3, v4 = u_tup4 u_vref u_vref u_vref u_vref st in (v1, v2, v3, Some v4)))
-        (u_option (u_tup2 u_vref u_vref))
-        (u_list (u_tup2 u_string u_vref))
-        (u_list (u_tup3 u_ty u_bool u_dummy_range))
-        (u_option u_ty)
-        u_bool
-        (u_space 1)
-        st
+    let a1 = u_option (u_tup2 u_vref u_vref) st
+    let a2 = u_option u_vref st
+    let a3 = u_option (u_tup3 u_vref u_vref u_vref) st
+    let b2 = u_option (u_tup2 u_vref u_vref) st
+    let c = u_list (u_tup2 u_string u_vref) st
+    let d = u_list (u_tup3 u_ty u_bool u_dummy_range) st
+    let e = u_option u_ty st
+    let g = u_bool st
+    let _space = u_space 1 st
     {tcaug_compare=a1
      tcaug_compare_withc=a2
-     tcaug_hash_and_equals_withc=a3
+     tcaug_hash_and_equals_withc=a3 |> Option.map (fun (a,b,c) -> (a,b,c,None))
      tcaug_equals=b2
      // only used for code generation and checking - hence don't care about the values when reading back in
      tcaug_hasObjectGetHashCode=false

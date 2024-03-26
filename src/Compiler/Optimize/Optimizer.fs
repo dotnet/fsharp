@@ -3247,6 +3247,27 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_withc_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
+        | Some (_, _, _, Some withcEqualsVal), [comp; x; y] -> 
+            // push the comparer to the end
+            let args2 = [x; mkRefTupledNoTypes g m [y; comp]]
+            Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+        | Some (_, _, _, None), [comp; x; y] -> 
+            let equalsMethods = tcref.MembersOfFSharpTyconByName.TryFind("Equals")
+            match equalsMethods with
+            | Some [_vref1; _vref2; _vref3; vref4] ->
+                if true then // vref....) then
+                    let withcEqualsVal = vref4
+                    let args2 = [x; mkRefTupledNoTypes g m [y; comp]]
+                    Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+                else
+                    None
+            | _ -> None
+        | _ -> None 
+      
+    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerFast
+    | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_withc_inner_vref ty args ->
+        let tcref, tyargs = StripToNominalTyconRef cenv ty
+        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
         | Some (_, _, withcEqualsVal, _), [comp; x; y] -> 
             // push the comparer to the end and box the argument
             let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]

@@ -1258,7 +1258,13 @@ type Entity =
           | Some (vref1, vref2) -> yield vref1; yield vref2
           match x.GeneratedHashAndEqualsWithComparerValues with
           | None -> ()
-          | Some (vref1, vref2, vref3, _) -> yield vref1; yield vref2; yield vref3 ]
+          | Some (vref1, vref2, vref3, vref4opt) ->
+              yield vref1
+              yield vref2
+              yield vref3
+              match vref4opt with
+              | None -> ()
+              | Some vref4 -> yield vref4 ]
     
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
