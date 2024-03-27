@@ -17,7 +17,7 @@ open System.Runtime.CompilerServices
 module internal Utils =
 
     /// Return file name with one directory above it
-    let shortPath path =
+    let shortPath (path:string) =
         let dirPath = Path.GetDirectoryName path
 
         let dir =
@@ -280,12 +280,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         |> saveRegistration key
 
                         let cts = new CancellationTokenSource()
-
+                        
                         cache.Set(
                             key.Key,
                             key.Version,
                             key.Label,
-                            (Running(TaskCompletionSource(), cts, computation, DateTime.Now, ResizeArray()))
+                            (Running(TaskCompletionSource<'TValue>(), cts, computation, DateTime.Now, ResizeArray()))
                         )
 
                         otherVersions

@@ -88,6 +88,11 @@ module internal PervasiveAutoOpens =
 #if NO_CHECKNULLS
     type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 
+    let inline (^) (a: 'a) ([<InlineIfLambda>] b: 'a -> 'b) : 'b =
+        match a with
+        | null -> Unchecked.defaultof<'b>
+        | _ -> b a
+
     let inline (|NonNullQuick|) (x: 'T MaybeNull) =
         match x with
         | null -> raise (NullReferenceException())
@@ -109,6 +114,11 @@ module internal PervasiveAutoOpens =
         | v -> v
 #else
     type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
+
+    let inline (^) (a: 'a | null) ([<InlineIfLambda>] b: 'a -> 'b) : ('b | null) =
+        match a with
+        | Null -> null
+        | NonNull v -> b v
 
 #endif
 
@@ -174,8 +184,8 @@ module internal PervasiveAutoOpens =
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
     let syncObj = obj ()
 
-    let mutable arrayStore = null
-    let mutable dictStore = null
+    let mutable arrayStore : _ array MaybeNull = null
+    let mutable dictStore : _ MaybeNull = null
 
     let mutable func = f
 
@@ -189,11 +199,11 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                 match arrayStore with
                 | NonNull value -> value
                 | _ ->
-
-                    arrayStore <- func ()
+                    let freshArray = func ()
+                    arrayStore <- freshArray
 
                     func <- Unchecked.defaultof<_>
-                    arrayStore
+                    freshArray
             finally
                 Monitor.Exit(syncObj)
 

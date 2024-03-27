@@ -67,6 +67,8 @@ type internal ControlledExecution(isInteractive: bool) =
 
     static member StripTargetInvocationException(exn: Exception) =
         match exn with
-        | :? TargetInvocationException as e when not (isNull e.InnerException) ->
-            ControlledExecution.StripTargetInvocationException(e.InnerException)
+        | :? TargetInvocationException as e ->
+            match e.InnerException with
+            | Null -> exn
+            | NonNull innerEx -> ControlledExecution.StripTargetInvocationException(innerEx)            
         | _ -> exn

@@ -13,6 +13,7 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <CheckNulls>true</CheckNulls>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
@@ -91,9 +92,10 @@
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
-
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
+    <Compile Include="Utilities\illib.fsi" />
+    <Compile Include="Utilities\illib.fs" />
     <Compile Include="Utilities\sformat.fsi" />
     <Compile Include="Utilities\sformat.fs" />
     <Compile Include="Utilities\sr.fsi" />
@@ -106,8 +108,6 @@
     <Compile Include="Utilities\EditDistance.fs" />
     <Compile Include="Utilities\TaggedCollections.fsi" />
     <Compile Include="Utilities\TaggedCollections.fs" />
-    <Compile Include="Utilities\illib.fsi" />
-    <Compile Include="Utilities\illib.fs" />
     <Compile Include="Utilities\Cancellable.fsi" />
     <Compile Include="Utilities\Cancellable.fs" />
     <Compile Include="Utilities\FileSystem.fsi" />
