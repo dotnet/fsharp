@@ -1559,7 +1559,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
             if
                 ctors.Length = 1
-                && (not (isNull (ctors[0].GetCustomAttribute<CompilerGeneratedAttribute>())))
+                && not (isNull (box (ctors[0].GetCustomAttribute<CompilerGeneratedAttribute>())))
                 && not ctors[0].IsPublic
                 && IsCompilerGeneratedName reflectionTy.Name
             then
@@ -3277,7 +3277,7 @@ type internal MagicAssemblyResolution() =
             fsiDynamicCompiler: FsiDynamicCompiler,
             fsiConsoleOutput: FsiConsoleOutput,
             fullAssemName: string
-        ) =
+        ) : Assembly MaybeNull =
 
         try
             // Grab the name of the assembly
@@ -3433,7 +3433,7 @@ type internal MagicAssemblyResolution() =
             fsiDynamicCompiler: FsiDynamicCompiler,
             fsiConsoleOutput: FsiConsoleOutput,
             fullAssemName: string
-        ) =
+        ) : Assembly MaybeNull =
 
         //Eliminate recursive calls to Resolve which can happen via our callout to msbuild resolution
         if MagicAssemblyResolution.resolving then
@@ -3522,14 +3522,14 @@ type FsiStdinLexerProvider
                     | NonNull t -> fsiStdinSyphon.Add(t + "\n"))
 
                 match inputOption with
-                | Some null
+                | Some Null
                 | None ->
                     if progress then
                         fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
 
                     0
-                | Some(input: string) ->
-                    let input = input + "\n"
+                | Some(NonNull input) ->
+                    let input = nonNull input + "\n"
 
                     if input.Length > len then
                         fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiLineTooLong ())

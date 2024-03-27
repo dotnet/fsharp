@@ -554,6 +554,8 @@ type cenv =
 
       methodDefIdxs: Dictionary<ILMethodDef, int>
 
+      implementsIdxs: Dictionary<int,int list>
+
       propertyDefs: MetadataTable<PropertyTableKey>
 
       eventDefs: MetadataTable<EventTableKey>
@@ -1281,7 +1283,7 @@ and GetTypeAsImplementsRow cenv env tidx ty =
            TypeDefOrRefOrSpec (tdorTag, tdorRow) |]
 
 and GenImplementsPass2 cenv env tidx ty =
-    AddUnsharedRow cenv TableNames.InterfaceImpl (GetTypeAsImplementsRow cenv env tidx ty) |> ignore
+    AddUnsharedRow cenv TableNames.InterfaceImpl (GetTypeAsImplementsRow cenv env tidx ty)
 
 and GetKeyForEvent tidx (x: ILEventDef) =
     EventKey (tidx, x.Name)
@@ -1317,7 +1319,8 @@ and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
         // Now generate or assign index numbers for tables referenced by the maps.
         // Don't yet generate contents of these tables - leave that to pass3, as
         // code may need to embed these entries.
-        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
+        cenv.implementsIdxs[tidx] <- tdef.Implements |> List.map (GenImplementsPass2 cenv env tidx)            
+
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass2 tdef cenv tidx)
         tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
         // Generation of property & event definitions for **ref assemblies** is checking existence of generated method definitions.
@@ -2866,6 +2869,14 @@ let rec GenTypeDefPass3 enc cenv (tdef: ILTypeDef) =
    try
         let env = envForTypeDef tdef
         let tidx = GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
+
+        match tdef.ImplementsCustomAttrs with
+        | None -> ()
+        | Some attrList ->
+            attrList
+            |> List.zip cenv.implementsIdxs[tidx]
+            |> List.iter (fun (impIdx,(attrs,metadataIdx)) -> GenCustomAttrsPass3Or4 cenv (hca_InterfaceImpl,impIdx) (attrs.GetCustomAttrs metadataIdx))
+
         tdef.Properties.AsList() |> List.iter (GenPropertyPass3 cenv env)
         tdef.Events.AsList() |> List.iter (GenEventPass3 cenv env)
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass3 tdef cenv env)
@@ -3130,6 +3141,7 @@ let generateIL (
           methodDefIdxsByKey = MetadataTable<_>.New("method defs", EqualityComparer.Default)
           // This uses reference identity on ILMethodDef objects
           methodDefIdxs = Dictionary<_, _>(100, HashIdentity.Reference)
+          implementsIdxs = Dictionary<_, _>(100, HashIdentity.Structural)
           propertyDefs = MetadataTable<_>.New("property defs", EqualityComparer.Default)
           eventDefs = MetadataTable<_>.New("event defs", EqualityComparer.Default)
           typeDefs = MetadataTable<_>.New("type defs", EqualityComparer.Default)

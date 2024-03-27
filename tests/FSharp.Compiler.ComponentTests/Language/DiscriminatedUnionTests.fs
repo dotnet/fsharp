@@ -65,6 +65,7 @@ if foo.IsA then failwith "Should not be A"
         |> compileExeAndRun
         |> shouldSucceed
 
+
     [<Fact>]
     let ``Is* discriminated union properties with backticks are visible, proper values are returned`` () =
         Fsx """
@@ -145,6 +146,7 @@ let isFoo = foo.IsFoo
         |> shouldFail
         |> withErrorMessage "The type 'Foo' does not define the field, constructor or member 'IsFoo'. Maybe you want one of the following:
    Foo"
+
 
     [<Fact>]
     let ``Is* discriminated union properties are unavailable on union case with lang version 8`` () =

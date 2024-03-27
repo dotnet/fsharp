@@ -37,13 +37,20 @@ exception MSBuildReferenceResolutionError of message: string * warningCode: stri
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool
 
+/// Determine if an IL resource attached to an F# assembly is an F# signature data resource (data stream B)
+val IsSignatureDataResourceB: ILResource -> bool
+
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
 val IsOptimizationDataResource: ILResource -> bool
+
+/// Determine if an IL resource attached to an F# assembly is an F# optimization data resource (data sream B)
+val IsOptimizationDataResourceB: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
 
-val GetResourceNameAndSignatureDataFunc: ILResource -> string * (unit -> ReadOnlyByteMemory)
+val GetResourceNameAndSignatureDataFuncs:
+    ILResource list -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
 /// Encode the F# interface data into a set of IL attributes and resources
 val EncodeSignatureData:

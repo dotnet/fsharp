@@ -16,37 +16,21 @@ neg06.fs(37,6,37,29): typecheck error FS0954: This type definition involves an i
 
 neg06.fs(37,6,37,29): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
-neg06.fs(37,6,37,29): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
-
 neg06.fs(42,6,42,30): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
 neg06.fs(46,5,46,29): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
 neg06.fs(42,6,42,30): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
-neg06.fs(42,6,42,30): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
-
-neg06.fs(46,5,46,29): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
-
 neg06.fs(53,10,53,19): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
 neg06.fs(60,10,60,20): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
-
-neg06.fs(60,10,60,20): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
-
-neg06.fs(60,10,60,20): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
-
-neg06.fs(64,9,64,19): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
-
-neg06.fs(64,9,64,19): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
 neg06.fs(64,9,64,19): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
 neg06.fs(75,10,75,19): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
 neg06.fs(80,10,80,25): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
-
-neg06.fs(90,10,90,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
 
 neg06.fs(90,10,90,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
 
@@ -58,25 +42,11 @@ neg06.fs(100,9,100,10): typecheck error FS0035: This construct is deprecated: Th
 
 neg06.fs(104,10,104,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
 
-neg06.fs(104,10,104,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
-
-neg06.fs(108,10,108,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
-
 neg06.fs(108,10,108,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
 
 neg06.fs(112,10,112,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
 
 neg06.fs(117,10,117,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
-
-neg06.fs(117,10,117,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
-
-neg06.fs(117,10,117,11): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
-
-neg06.fs(118,9,118,10): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
-
-neg06.fs(118,9,118,10): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
-
-neg06.fs(118,9,118,10): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
 
 neg06.fs(118,9,118,10): typecheck error FS0953: This type definition involves an immediate cyclic reference through an abbreviation
 

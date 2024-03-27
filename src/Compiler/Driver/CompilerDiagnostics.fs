@@ -177,6 +177,10 @@ type Exception with
         | ConstraintSolverTupleDiffLengths(_, _, _, _, m, _)
         | ConstraintSolverInfiniteTypes(_, _, _, _, m, _)
         | ConstraintSolverMissingConstraint(_, _, _, m, _)
+        | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
+        | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
+        | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
+        | ConstraintSolverNullnessWarning(_, m, _)
         | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
         | ConstraintSolverError(_, m, _)
         | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _)
@@ -345,6 +349,10 @@ type Exception with
 #endif
         | ErrorsFromAddingSubsumptionConstraint(_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) ->
             fst (FSComp.SR.considerUpcast ("", ""))
+        | ConstraintSolverNullnessWarningEquivWithTypes _ -> 3261
+        | ConstraintSolverNullnessWarningWithTypes _ -> 3261
+        | ConstraintSolverNullnessWarningWithType _ -> 3261
+        | ConstraintSolverNullnessWarning _ -> 3261
         | _ -> 193
 
 type PhasedDiagnostic with
@@ -452,6 +460,10 @@ module OldStyleMessages =
     let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
     let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
     let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
+    let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s")
+    let ConstraintSolverNullnessWarningWithTypesE () = Message("ConstraintSolverNullnessWarningWithTypes", "%s%s")
+    let ConstraintSolverNullnessWarningWithTypeE () = Message("ConstraintSolverNullnessWarningWithType", "%s")
+    let ConstraintSolverNullnessWarningE () = Message("ConstraintSolverNullnessWarning", "%s")
     let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
     let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
     let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
@@ -677,6 +689,57 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
 
+        | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
+
+            // Turn on nullness annotations for messages about nullness
+            let denv =
+                { denv with
+                    showNullnessAnnotations = Some true
+                }
+
+            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2)
+            |> ignore
+
+            if m.StartLine <> m2.StartLine then
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+
+        | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
+
+            // Turn on nullness annotations for messages about nullness
+            let denv =
+                { denv with
+                    showNullnessAnnotations = Some true
+                }
+
+            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+            os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2) |> ignore
+
+            if m.StartLine <> m2.StartLine then
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+
+        | ConstraintSolverNullnessWarningWithType(denv, ty, _, m, m2) ->
+
+            // Turn on nullness annotations for messages about nullness
+            let denv =
+                { denv with
+                    showNullnessAnnotations = Some true
+                }
+
+            let t = NicePrint.minimalStringOfType denv ty
+            os.Append(ConstraintSolverNullnessWarningWithTypeE().Format(t)) |> ignore
+
+            if m.StartLine <> m2.StartLine then
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+
+        | ConstraintSolverNullnessWarning(msg, m, m2) ->
+            os.Append(ConstraintSolverNullnessWarningE().Format(msg)) |> ignore
+
+            if m.StartLine <> m2.StartLine then
+                os.AppendString(SeeAlsoE().Format(stringOfRange m2))
+
         | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) ->
             os.AppendString(
                 ConstraintSolverMissingConstraintE()
@@ -829,7 +892,8 @@ type Exception with
             let argsMessage, returnType, genericParametersMessage =
 
                 let retTy =
-                    knownReturnType |> Option.defaultValue (TType_var(Typar.NewUnlinked(), 0uy))
+                    knownReturnType
+                    |> Option.defaultValue (TType.TType_var(Typar.NewUnlinked(), KnownAmbivalentToNull))
 
                 let argRepr =
                     callerArgs.ArgumentNamesAndTypes
@@ -1236,9 +1300,9 @@ type Exception with
                 | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
                 | Parser.TOKEN_INTERP_STRING_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.PART")
                 | Parser.TOKEN_INTERP_STRING_END -> SR.GetString("Parser.TOKEN.INTERP.STRING.END")
+                | Parser.TOKEN_BAR_JUST_BEFORE_NULL -> SR.GetString("Parser.TOKEN.BAR_JUST_BEFORE_NULL")
                 | unknown ->
-                    Debug.Assert(false, "unknown token tag")
-                    let result = sprintf "%+A" unknown
+                    let result = sprintf "unknown token tag %+A" unknown
                     Debug.Assert(false, result)
                     result
 

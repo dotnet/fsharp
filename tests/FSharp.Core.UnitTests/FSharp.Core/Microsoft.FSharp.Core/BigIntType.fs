@@ -93,7 +93,7 @@ type BigIntType() =
         Assert.True(z4.Equals(z4))
 
         // Null
-        Assert.False(a.Equals(null))
+        Assert.False(a.Equals(null:obj)) // TODO NULLNESS - this type annoation was needed to resolve overloading, even with --checknulls off
 
         Assert.True(0I.GetHashCode() = (BigInteger()).GetHashCode())
     

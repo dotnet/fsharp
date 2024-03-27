@@ -157,7 +157,9 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInPrintf(), m))
                  (maxTy, isRefined), m
              | TyparConstraint.SupportsNull m -> 
-                 (maxTy, isRefined), m
+                 ((addNullnessToTy KnownWithNull maxTy), isRefined), m
+             | TyparConstraint.NotSupportsNull m -> 
+                 (maxTy, isRefined), m // NOTE: this doesn't "force" non-nullness, since it is the default choice in 'obj' or 'int'
              | TyparConstraint.SupportsComparison m -> 
                  join m g.mk_IComparable_ty, m
              | TyparConstraint.SupportsEquality m -> 

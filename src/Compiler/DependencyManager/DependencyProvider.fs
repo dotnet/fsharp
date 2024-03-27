@@ -124,7 +124,9 @@ type IResolveDependenciesResult =
     ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
 
+#if NO_CHECKNULLS
 [<AllowNullLiteral>]
+#endif
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string

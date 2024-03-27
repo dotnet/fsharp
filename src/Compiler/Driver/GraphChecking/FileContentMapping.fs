@@ -250,6 +250,7 @@ let visitSynType (t: SynType) : FileContentEntry list =
             let continuations = List.map (snd >> visit) fields
             Continuation.concatenate continuations continuation
         | SynType.Array(elementType = elementType) -> visit elementType continuation
+        | SynType.WithNull(innerType = innerType) -> visit innerType continuation
         | SynType.Fun(argType, returnType, _, _) ->
             let continuations = List.map visit [ argType; returnType ]
             Continuation.concatenate continuations continuation
@@ -260,6 +261,7 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.HashConstraint(innerType, _) -> visit innerType continuation
         | SynType.MeasurePower(baseMeasure = baseMeasure) -> visit baseMeasure continuation
         | SynType.StaticConstant _ -> continuation []
+        | SynType.StaticConstantNull _ -> continuation []
         | SynType.StaticConstantExpr(expr, _) -> continuation (visitSynExpr expr)
         | SynType.StaticConstantNamed(ident, value, _) ->
             let continuations = List.map visit [ ident; value ]
@@ -298,6 +300,7 @@ let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
     | SynTypeConstraint.WhereTyparIsReferenceType _
     | SynTypeConstraint.WhereTyparIsUnmanaged _
     | SynTypeConstraint.WhereTyparSupportsNull _
+    | SynTypeConstraint.WhereTyparNotSupportsNull _
     | SynTypeConstraint.WhereTyparIsComparable _
     | SynTypeConstraint.WhereTyparIsEquatable _ -> []
     | SynTypeConstraint.WhereTyparDefaultsToType(typeName = typeName) -> visitSynType typeName
