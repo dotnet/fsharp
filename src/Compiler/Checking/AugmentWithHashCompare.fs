@@ -1356,7 +1356,7 @@ let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
             tcref 
             ty 
             vis 
-            (Some(mkIStructuralEquatableEqualsSlotSig g)) 
+            None 
             "Equals" 
             (tps +-> (mkEqualsWithComparerTyExact g ty)) 
             tupArg 
