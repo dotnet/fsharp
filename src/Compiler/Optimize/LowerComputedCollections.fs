@@ -393,14 +393,7 @@ module Array =
                     mkCompGenLetIn m (nameof count) (tyOfExpr g count) count (fun (_, count) ->
                         let countTy = tyOfExpr g count
 
-                        // count < 1
-                        let countLtOne =
-                            if isSignedIntegerTy g countTy then
-                                mkILAsmClt g m count (mkTypedOne g m countTy)
-                            else
-                                mkAsmExpr ([AI_clt_un], [], [count; mkTypedOne g m countTy], [g.bool_ty], m)
-
-                        // if count < 1 then
+                        // if count = 0 then
                         //     [||]
                         // else
                         //     let array = (# "newarr !0" type ('T) count : 'T array #) in
@@ -410,7 +403,7 @@ module Array =
                             DebugPointAtBinding.NoneAtInvisible
                             m
                             arrayTy
-                            countLtOne
+                            (mkILAsmCeq g m count (mkTypedZero g m countTy))
                             (mkArray (overallElemTy, [], m))
                             (mkArrayInit count mkLoop)
                     )
