@@ -278,6 +278,17 @@ module Nested =
       } 
 
       .method public hidebysig virtual final 
+              instance bool  Equals(class ReferenceAssembly/Nested/Test obj,
+                                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      }
+
+      .method public hidebysig virtual final 
               instance bool  Equals(object obj,
                                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
@@ -423,6 +434,17 @@ module Nested =
         IL_0000:  ldnull
         IL_0001:  throw
       } 
+
+      .method public hidebysig virtual final 
+              instance bool  Equals(class ReferenceAssembly/Nested/Test obj,
+                                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      }
 
       .method public hidebysig virtual final 
               instance bool  Equals(object obj,

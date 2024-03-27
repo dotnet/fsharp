@@ -21,7 +21,7 @@ val MakeValsForCompareWithComparerAugmentation: TcGlobals -> TyconRef -> Val
 
 val MakeValsForEqualsAugmentation: TcGlobals -> TyconRef -> Val * Val
 
-val MakeValsForEqualityWithComparerAugmentation: TcGlobals -> TyconRef -> Val * Val * Val
+val MakeValsForEqualityWithComparerAugmentation: TcGlobals -> TyconRef -> Val * Val * Val * Val
 
 val MakeBindingsForCompareAugmentation: TcGlobals -> Tycon -> Binding list
 

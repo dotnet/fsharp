@@ -1258,7 +1258,13 @@ type Entity =
           | Some (vref1, vref2) -> yield vref1; yield vref2
           match x.GeneratedHashAndEqualsWithComparerValues with
           | None -> ()
-          | Some (vref1, vref2, vref3) -> yield vref1; yield vref2; yield vref3 ]
+          | Some (vref1, vref2, vref3, vref4opt) ->
+              yield vref1
+              yield vref2
+              yield vref3
+              match vref4opt with
+              | None -> ()
+              | Some vref4 -> yield vref4 ]
     
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
@@ -1398,10 +1404,10 @@ type TyconAugmentation =
       /// of Object.Equals or if the type doesn't override Object.Equals implicitly. 
       mutable tcaug_equals: (ValRef * ValRef) option
 
-      /// This is the value implementing the auto-generated comparison
+      /// This is the value implementing the auto-generated equality
       /// semantics if any. It is not present if the type defines its own implementation
-      /// of IStructuralEquatable or if the type doesn't implement IComparable implicitly.
-      mutable tcaug_hash_and_equals_withc: (ValRef * ValRef * ValRef) option                                    
+      /// of IStructuralEquatable or if the type doesn't override Object.Equals implicitly.
+      mutable tcaug_hash_and_equals_withc: (ValRef * ValRef * ValRef * ValRef option) option                                    
 
       /// True if the type defined an Object.GetHashCode method. In this 
       /// case we give a warning if we auto-generate a hash method since the semantics may not match up

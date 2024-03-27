@@ -58,8 +58,7 @@
     .field assembly int32 y@
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .method public hidebysig specialname 
-            instance int32  get_x() cil managed
+    .method public hidebysig specialname instance int32  get_x() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -70,8 +69,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance int32  get_y() cil managed
+    .method public hidebysig specialname instance int32  get_y() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -102,8 +100,7 @@
       IL_0014:  ret
     } 
 
-    .method public strict virtual instance string 
-            ToString() cil managed
+    .method public strict virtual instance string ToString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -116,8 +113,7 @@
       IL_0015:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(class assembly/R obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(class assembly/R obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -195,8 +191,7 @@
       IL_005d:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -297,8 +292,7 @@
       IL_006e:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -348,8 +342,7 @@
       IL_0036:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  GetHashCode() cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -361,61 +354,81 @@
     } 
 
     .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
+            instance bool  Equals(class assembly/R obj,
                                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
       .locals init (class assembly/R V_0,
-               class assembly/R V_1,
-               class [runtime]System.Collections.IEqualityComparer V_2,
-               class [runtime]System.Collections.IEqualityComparer V_3)
+               class [runtime]System.Collections.IEqualityComparer V_1,
+               class [runtime]System.Collections.IEqualityComparer V_2)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0036
+      IL_0001:  brfalse.s  IL_002f
 
       IL_0003:  ldarg.1
-      IL_0004:  isinst     assembly/R
-      IL_0009:  stloc.0
-      IL_000a:  ldloc.0
-      IL_000b:  brfalse.s  IL_0034
+      IL_0004:  brfalse.s  IL_002d
 
-      IL_000d:  ldloc.0
-      IL_000e:  stloc.1
-      IL_000f:  ldarg.2
-      IL_0010:  stloc.2
-      IL_0011:  ldarg.0
-      IL_0012:  ldfld      int32 assembly/R::x@
-      IL_0017:  ldloc.1
-      IL_0018:  ldfld      int32 assembly/R::x@
-      IL_001d:  ceq
-      IL_001f:  brfalse.s  IL_0032
+      IL_0006:  ldarg.1
+      IL_0007:  stloc.0
+      IL_0008:  ldarg.2
+      IL_0009:  stloc.1
+      IL_000a:  ldarg.0
+      IL_000b:  ldfld      int32 assembly/R::x@
+      IL_0010:  ldloc.0
+      IL_0011:  ldfld      int32 assembly/R::x@
+      IL_0016:  ceq
+      IL_0018:  brfalse.s  IL_002b
 
-      IL_0021:  ldarg.2
-      IL_0022:  stloc.3
-      IL_0023:  ldarg.0
-      IL_0024:  ldfld      int32 assembly/R::y@
-      IL_0029:  ldloc.1
-      IL_002a:  ldfld      int32 assembly/R::y@
-      IL_002f:  ceq
-      IL_0031:  ret
+      IL_001a:  ldarg.2
+      IL_001b:  stloc.2
+      IL_001c:  ldarg.0
+      IL_001d:  ldfld      int32 assembly/R::y@
+      IL_0022:  ldloc.0
+      IL_0023:  ldfld      int32 assembly/R::y@
+      IL_0028:  ceq
+      IL_002a:  ret
 
-      IL_0032:  ldc.i4.0
-      IL_0033:  ret
+      IL_002b:  ldc.i4.0
+      IL_002c:  ret
 
-      IL_0034:  ldc.i4.0
-      IL_0035:  ret
+      IL_002d:  ldc.i4.0
+      IL_002e:  ret
 
-      IL_0036:  ldarg.1
-      IL_0037:  ldnull
-      IL_0038:  cgt.un
-      IL_003a:  ldc.i4.0
-      IL_003b:  ceq
-      IL_003d:  ret
+      IL_002f:  ldarg.1
+      IL_0030:  ldnull
+      IL_0031:  cgt.un
+      IL_0033:  ldc.i4.0
+      IL_0034:  ceq
+      IL_0036:  ret
     } 
 
     .method public hidebysig virtual final 
-            instance bool  Equals(class assembly/R obj) cil managed
+            instance bool  Equals(object obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (class assembly/R V_0)
+      IL_0000:  ldarg.1
+      IL_0001:  isinst     assembly/R
+      IL_0006:  stloc.0
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0013
+
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  ldarg.2
+      IL_000d:  callvirt   instance bool assembly/R::Equals(class assembly/R,
+                                                                  class [runtime]System.Collections.IEqualityComparer)
+      IL_0012:  ret
+
+      IL_0013:  ldc.i4.0
+      IL_0014:  ret
+    } 
+
+    .method public hidebysig virtual final instance bool  Equals(class assembly/R obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -453,8 +466,7 @@
       IL_002e:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -489,8 +501,7 @@
     } 
   } 
 
-  .method public static class [runtime]System.Tuple`2<class assembly/R,class assembly/R> 
-          assembly(int32 inp) cil managed
+  .method public static class [runtime]System.Tuple`2<class assembly/R,class assembly/R> assembly(int32 inp) cil managed
   {
     
     .maxstack  4

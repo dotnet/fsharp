@@ -55,13 +55,11 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     } 
 
-    .method public hidebysig abstract virtual 
-            instance int32  A2(int32 A_1) cil managed
+    .method public hidebysig abstract virtual instance int32  A2(int32 A_1) cil managed
     {
     } 
 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -72,8 +70,7 @@
       IL_0008:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance int32  get_P() cil managed
+    .method public hidebysig specialname instance int32  get_P() cil managed
     {
       
       .maxstack  8
@@ -94,8 +91,7 @@
       IL_0003:  ret
     } 
 
-    .method public hidebysig instance !!a 
-            M2<a>(!!a x) cil managed preservesig
+    .method public hidebysig instance !!a M2<a>(!!a x) cil managed preservesig
     {
       
       .maxstack  8
@@ -112,8 +108,7 @@
   .class interface abstract auto ansi serializable nested public IInterface
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig abstract virtual 
-            instance int32  SomeMethod(int32 A_1) cil managed preservesig
+    .method public hidebysig abstract virtual instance int32  SomeMethod(int32 A_1) cil managed preservesig
     {
     } 
 
@@ -130,8 +125,7 @@
     .pack 0
     .size 1
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(valuetype Program/S obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(valuetype Program/S obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -143,8 +137,7 @@
       IL_0004:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -174,8 +167,7 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -184,8 +176,7 @@
       IL_0001:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  GetHashCode() cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -197,46 +188,8 @@
     } 
 
     .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
+            instance bool  Equals(valuetype Program/S obj,
                                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  3
-      .locals init (object V_0,
-               valuetype Program/S V_1,
-               valuetype Program/S& V_2)
-      IL_0000:  ldarg.1
-      IL_0001:  stloc.0
-      IL_0002:  ldloc.0
-      IL_0003:  isinst     Program/S
-      IL_0008:  ldnull
-      IL_0009:  cgt.un
-      IL_000b:  brfalse.s  IL_0019
-
-      IL_000d:  ldarg.1
-      IL_000e:  unbox.any  Program/S
-      IL_0013:  stloc.1
-      IL_0014:  ldloca.s   V_1
-      IL_0016:  stloc.2
-      IL_0017:  ldc.i4.1
-      IL_0018:  ret
-
-      IL_0019:  ldc.i4.0
-      IL_001a:  ret
-    } 
-
-    .method public hidebysig instance !!a 
-            M1<a>(!!a x) cil managed preservesig
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ret
-    } 
-
-    .method public hidebysig virtual final 
-            instance bool  Equals(valuetype Program/S obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -249,7 +202,57 @@
     } 
 
     .method public hidebysig virtual final 
-            instance bool  Equals(object obj) cil managed
+            instance bool  Equals(object obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (object V_0,
+               valuetype Program/S V_1)
+      IL_0000:  ldarg.1
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     Program/S
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_001d
+
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  Program/S
+      IL_0013:  stloc.1
+      IL_0014:  ldarg.0
+      IL_0015:  ldloc.1
+      IL_0016:  ldarg.2
+      IL_0017:  call       instance bool Program/S::Equals(valuetype Program/S,
+                                                           class [runtime]System.Collections.IEqualityComparer)
+      IL_001c:  ret
+
+      IL_001d:  ldc.i4.0
+      IL_001e:  ret
+    } 
+
+    .method public hidebysig instance !!a M1<a>(!!a x) cil managed preservesig
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method public hidebysig virtual final instance bool  Equals(valuetype Program/S obj) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  3
+      .locals init (valuetype Program/S& V_0)
+      IL_0000:  ldarga.s   obj
+      IL_0002:  stloc.0
+      IL_0003:  ldc.i4.1
+      IL_0004:  ret
+    } 
+
+    .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -281,8 +284,7 @@
   .class interface abstract auto ansi serializable nested public ITestInterface
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig abstract virtual 
-            instance int32  M(int32 A_1) cil managed
+    .method public hidebysig abstract virtual instance int32  M(int32 A_1) cil managed
     {
     } 
 
@@ -293,8 +295,7 @@
          implements Program/ITestInterface
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -305,8 +306,7 @@
       IL_0008:  ret
     } 
 
-    .method private hidebysig newslot virtual final 
-            instance int32  Program.ITestInterface.M(int32 x) cil managed
+    .method private hidebysig newslot virtual final instance int32  Program.ITestInterface.M(int32 x) cil managed
     {
       .custom instance void [runtime]System.Runtime.InteropServices.PreserveSigAttribute::.ctor() = ( 01 00 00 00 ) 
       .override Program/ITestInterface::M
@@ -340,8 +340,7 @@
     IL_0001:  ret
   } 
 
-  .method public specialname static class Program/ITestInterface 
-          get_a() cil managed
+  .method public specialname static class Program/ITestInterface get_a() cil managed
   {
     
     .maxstack  8

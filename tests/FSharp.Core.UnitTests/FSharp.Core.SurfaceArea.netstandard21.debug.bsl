@@ -205,6 +205,7 @@ Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.ICom
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Int32 Cons
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Int32 Empty
 Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean Equals(Microsoft.FSharp.Collections.FSharpList`1[T])
+Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean Equals(Microsoft.FSharp.Collections.FSharpList`1[T], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean IsCons
@@ -1016,6 +1017,7 @@ Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: T2 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`2+Tags[T1,T2]: Int32 Choice1Of2
 Microsoft.FSharp.Core.FSharpChoice`2+Tags[T1,T2]: Int32 Choice2Of2
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`2[T1,T2])
+Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`2[T1,T2], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Boolean IsChoice1Of2
@@ -1044,6 +1046,7 @@ Microsoft.FSharp.Core.FSharpChoice`3+Tags[T1,T2,T3]: Int32 Choice1Of3
 Microsoft.FSharp.Core.FSharpChoice`3+Tags[T1,T2,T3]: Int32 Choice2Of3
 Microsoft.FSharp.Core.FSharpChoice`3+Tags[T1,T2,T3]: Int32 Choice3Of3
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3])
+Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Boolean IsChoice1Of3
@@ -1079,6 +1082,7 @@ Microsoft.FSharp.Core.FSharpChoice`4+Tags[T1,T2,T3,T4]: Int32 Choice2Of4
 Microsoft.FSharp.Core.FSharpChoice`4+Tags[T1,T2,T3,T4]: Int32 Choice3Of4
 Microsoft.FSharp.Core.FSharpChoice`4+Tags[T1,T2,T3,T4]: Int32 Choice4Of4
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4])
+Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Boolean IsChoice1Of4
@@ -1121,6 +1125,7 @@ Microsoft.FSharp.Core.FSharpChoice`5+Tags[T1,T2,T3,T4,T5]: Int32 Choice3Of5
 Microsoft.FSharp.Core.FSharpChoice`5+Tags[T1,T2,T3,T4,T5]: Int32 Choice4Of5
 Microsoft.FSharp.Core.FSharpChoice`5+Tags[T1,T2,T3,T4,T5]: Int32 Choice5Of5
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5])
+Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Boolean IsChoice1Of5
@@ -1170,6 +1175,7 @@ Microsoft.FSharp.Core.FSharpChoice`6+Tags[T1,T2,T3,T4,T5,T6]: Int32 Choice4Of6
 Microsoft.FSharp.Core.FSharpChoice`6+Tags[T1,T2,T3,T4,T5,T6]: Int32 Choice5Of6
 Microsoft.FSharp.Core.FSharpChoice`6+Tags[T1,T2,T3,T4,T5,T6]: Int32 Choice6Of6
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6])
+Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Boolean IsChoice1Of6
@@ -1226,6 +1232,7 @@ Microsoft.FSharp.Core.FSharpChoice`7+Tags[T1,T2,T3,T4,T5,T6,T7]: Int32 Choice5Of
 Microsoft.FSharp.Core.FSharpChoice`7+Tags[T1,T2,T3,T4,T5,T6,T7]: Int32 Choice6Of7
 Microsoft.FSharp.Core.FSharpChoice`7+Tags[T1,T2,T3,T4,T5,T6,T7]: Int32 Choice7Of7
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7])
+Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Boolean IsChoice1Of7
@@ -1284,6 +1291,7 @@ Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute: Void .ctor(Int32, Int
 Microsoft.FSharp.Core.FSharpOption`1+Tags[T]: Int32 None
 Microsoft.FSharp.Core.FSharpOption`1+Tags[T]: Int32 Some
 Microsoft.FSharp.Core.FSharpOption`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpOption`1[T])
+Microsoft.FSharp.Core.FSharpOption`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpOption`1[T], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpOption`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpOption`1[T]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpOption`1[T]: Boolean IsNone
@@ -1306,6 +1314,7 @@ Microsoft.FSharp.Core.FSharpOption`1[T]: T Value
 Microsoft.FSharp.Core.FSharpOption`1[T]: T get_Value()
 Microsoft.FSharp.Core.FSharpOption`1[T]: Void .ctor(T)
 Microsoft.FSharp.Core.FSharpRef`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpRef`1[T])
+Microsoft.FSharp.Core.FSharpRef`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpRef`1[T], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpRef`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpRef`1[T]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpRef`1[T]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpRef`1[T])
@@ -1324,6 +1333,7 @@ Microsoft.FSharp.Core.FSharpRef`1[T]: Void set_contents(T)
 Microsoft.FSharp.Core.FSharpResult`2+Tags[T,TError]: Int32 Error
 Microsoft.FSharp.Core.FSharpResult`2+Tags[T,TError]: Int32 Ok
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Boolean Equals(Microsoft.FSharp.Core.FSharpResult`2[T,TError])
+Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Boolean Equals(Microsoft.FSharp.Core.FSharpResult`2[T,TError], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Boolean IsError
@@ -1349,6 +1359,7 @@ Microsoft.FSharp.Core.FSharpTypeFunc: Void .ctor()
 Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 ValueNone
 Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 ValueSome
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpValueOption`1[T])
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpValueOption`1[T], System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean IsNone
@@ -1545,6 +1556,7 @@ Microsoft.FSharp.Core.LanguagePrimitives: UInt64 ParseUInt64(System.String)
 Microsoft.FSharp.Core.LanguagePrimitives: UInt64 UInt64WithMeasure(UInt64)
 Microsoft.FSharp.Core.LanguagePrimitives: UIntPtr UIntPtrWithMeasure(UIntPtr)
 Microsoft.FSharp.Core.LiteralAttribute: Void .ctor()
+Microsoft.FSharp.Core.MatchFailureException: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.MatchFailureException: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.MatchFailureException: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.MatchFailureException: Int32 Data1

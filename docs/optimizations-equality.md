@@ -209,51 +209,11 @@ let f (x: float32) (y: float32) = (x = y)
 
 ### F# struct type (records, tuples - with compiler-generated structural equality)
 
-* Semantics: User expects field-by-field structural equality with no boxing
+* Semantics: User expects field-by-field structural equality
 * Perf expected: no boxing
 * Compilation today: `GenericEqualityIntrinsic<SomeStructType>`
-* Perf today: always boxes (Problem3 ❌)
+* Perf today: good ✅
 * [sharplab](https://sharplab.io/#v2:DYLgZgzgNALiCWwA+BYAUAbQDwGUYCcBXAYxgD4BddGATwAcBTAAhwHsBbBvI0gCgDcQTeADsYUJoSGiYASiYBedExVNO7AEYN8TAPoA6AGqKm/ZavVadBgKonC6dMAYwmYJrwAeQtp24k5JhoTLxMaWXQgA)
-* Note: the optimization path is a bit strange here, see the reductions below
-
-<details>
-
-<summary>Details</summary>
-
-```fsharp
-(x = y) 
-
---inline--> 
-
-GenericEquality x y 
-
---inline--> 
-
-GenericEqualityFast x y 
-
---inline--> 
-
-GenericEqualityIntrinsic x y
-
---devirtualize-->
-
-x.Equals(box y, LanguagePrimitives.GenericEqualityComparer);
-```
-
-The struct type has these generated methods:
-```csharp
-    override bool Equals(object y) 
-    override bool Equals(SomeStruct obj)
-    override bool Equals(object obj, IEqualityComparer comp) //with EqualsVal
-```
-
-These call each other in sequence, boxing then unboxing then boxing. We do NOT generate this method, we probably should:
-
-```csharp
-    override bool Equals(SomeStruct obj, IEqualityComparer comp) //with EqualsValUnboxed
-```
-
-If we did, the devirtualizing optimization should reduce to this directly, which would result in no boxing.
 
 </details>
 

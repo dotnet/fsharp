@@ -2189,7 +2189,7 @@ type AnonTypeGenerationTable() =
 
             let vspec1, vspec2 = AugmentTypeDefinitions.MakeValsForEqualsAugmentation g tcref
 
-            let evspec1, evspec2, evspec3 =
+            let evspec1, evspec2, evspec3, evspec4 =
                 AugmentTypeDefinitions.MakeValsForEqualityWithComparerAugmentation g tcref
 
             let cvspec1, cvspec2 = AugmentTypeDefinitions.MakeValsForCompareAugmentation g tcref
@@ -2200,7 +2200,7 @@ type AnonTypeGenerationTable() =
             tcaug.SetCompare(mkLocalValRef cvspec1, mkLocalValRef cvspec2)
             tcaug.SetCompareWith(mkLocalValRef cvspec3)
             tcaug.SetEquals(mkLocalValRef vspec1, mkLocalValRef vspec2)
-            tcaug.SetHashAndEqualsWith(mkLocalValRef evspec1, mkLocalValRef evspec2, mkLocalValRef evspec3)
+            tcaug.SetHashAndEqualsWith(mkLocalValRef evspec1, mkLocalValRef evspec2, mkLocalValRef evspec3, Some(mkLocalValRef evspec4))
 
             // Build the ILTypeDef. We don't rely on the normal record generation process because we want very specific field names
 

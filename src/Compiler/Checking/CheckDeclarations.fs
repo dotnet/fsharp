@@ -817,12 +817,13 @@ module AddAugmentationDeclarations =
             if hasExplicitIStructuralEquatable then
                 errorR(Error(FSComp.SR.tcImplementsIStructuralEquatableExplicitly(tycon.DisplayName), m))
             else
-                let evspec1, evspec2, evspec3 = AugmentTypeDefinitions.MakeValsForEqualityWithComparerAugmentation g tcref
+                let evspec1, evspec2, evspec3, evspec4 = AugmentTypeDefinitions.MakeValsForEqualityWithComparerAugmentation g tcref
                 PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralEquatable_ty
-                tcaug.SetHashAndEqualsWith (mkLocalValRef evspec1, mkLocalValRef evspec2, mkLocalValRef evspec3)
+                tcaug.SetHashAndEqualsWith (mkLocalValRef evspec1, mkLocalValRef evspec2, mkLocalValRef evspec3, Some (mkLocalValRef evspec4))
                 PublishValueDefn cenv env ModuleOrMemberBinding evspec1
                 PublishValueDefn cenv env ModuleOrMemberBinding evspec2
                 PublishValueDefn cenv env ModuleOrMemberBinding evspec3
+                PublishValueDefn cenv env ModuleOrMemberBinding evspec4
 
     let AddGenericCompareBindings (cenv: cenv) (tycon: Tycon) =
         if (* AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToValues then 

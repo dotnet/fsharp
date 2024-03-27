@@ -815,113 +815,134 @@
     } 
 
     .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
+            instance bool  Equals(class Match01/Test1 obj,
                                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
-      .locals init (class Match01/Test1 V_0,
+      .locals init (int32 V_0,
                int32 V_1,
-               int32 V_2,
+               class Match01/Test1/X11 V_2,
                class Match01/Test1/X11 V_3,
-               class Match01/Test1/X11 V_4,
+               class Match01/Test1/X12 V_4,
                class Match01/Test1/X12 V_5,
-               class Match01/Test1/X12 V_6,
+               class Match01/Test1/X13 V_6,
                class Match01/Test1/X13 V_7,
-               class Match01/Test1/X13 V_8,
-               class Match01/Test1/X14 V_9,
-               class Match01/Test1/X14 V_10)
+               class Match01/Test1/X14 V_8,
+               class Match01/Test1/X14 V_9)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse    IL_00c9
+      IL_0001:  brfalse    IL_00c0
 
       IL_0006:  ldarg.1
-      IL_0007:  isinst     Match01/Test1
-      IL_000c:  stloc.0
-      IL_000d:  ldloc.0
-      IL_000e:  brfalse    IL_00c7
+      IL_0007:  brfalse    IL_00be
 
-      IL_0013:  ldarg.0
+      IL_000c:  ldarg.0
+      IL_000d:  ldfld      int32 Match01/Test1::_tag
+      IL_0012:  stloc.0
+      IL_0013:  ldarg.1
       IL_0014:  ldfld      int32 Match01/Test1::_tag
       IL_0019:  stloc.1
       IL_001a:  ldloc.0
-      IL_001b:  ldfld      int32 Match01/Test1::_tag
-      IL_0020:  stloc.2
-      IL_0021:  ldloc.1
-      IL_0022:  ldloc.2
-      IL_0023:  bne.un     IL_00c5
+      IL_001b:  ldloc.1
+      IL_001c:  bne.un     IL_00bc
 
-      IL_0028:  ldarg.0
-      IL_0029:  call       instance int32 Match01/Test1::get_Tag()
-      IL_002e:  switch     ( 
-                            IL_0043,
-                            IL_0062,
-                            IL_0083,
-                            IL_00a4)
-      IL_0043:  ldarg.0
+      IL_0021:  ldarg.0
+      IL_0022:  call       instance int32 Match01/Test1::get_Tag()
+      IL_0027:  switch     ( 
+                            IL_003c,
+                            IL_0059,
+                            IL_007a,
+                            IL_009b)
+      IL_003c:  ldarg.0
+      IL_003d:  castclass  Match01/Test1/X11
+      IL_0042:  stloc.2
+      IL_0043:  ldarg.1
       IL_0044:  castclass  Match01/Test1/X11
       IL_0049:  stloc.3
-      IL_004a:  ldloc.0
-      IL_004b:  castclass  Match01/Test1/X11
-      IL_0050:  stloc.s    V_4
-      IL_0052:  ldloc.3
-      IL_0053:  ldfld      int32 Match01/Test1/X11::item
-      IL_0058:  ldloc.s    V_4
-      IL_005a:  ldfld      int32 Match01/Test1/X11::item
-      IL_005f:  ceq
-      IL_0061:  ret
+      IL_004a:  ldloc.2
+      IL_004b:  ldfld      int32 Match01/Test1/X11::item
+      IL_0050:  ldloc.3
+      IL_0051:  ldfld      int32 Match01/Test1/X11::item
+      IL_0056:  ceq
+      IL_0058:  ret
 
-      IL_0062:  ldarg.0
-      IL_0063:  castclass  Match01/Test1/X12
-      IL_0068:  stloc.s    V_5
-      IL_006a:  ldloc.0
-      IL_006b:  castclass  Match01/Test1/X12
-      IL_0070:  stloc.s    V_6
-      IL_0072:  ldloc.s    V_5
-      IL_0074:  ldfld      int32 Match01/Test1/X12::item
-      IL_0079:  ldloc.s    V_6
-      IL_007b:  ldfld      int32 Match01/Test1/X12::item
-      IL_0080:  ceq
-      IL_0082:  ret
+      IL_0059:  ldarg.0
+      IL_005a:  castclass  Match01/Test1/X12
+      IL_005f:  stloc.s    V_4
+      IL_0061:  ldarg.1
+      IL_0062:  castclass  Match01/Test1/X12
+      IL_0067:  stloc.s    V_5
+      IL_0069:  ldloc.s    V_4
+      IL_006b:  ldfld      int32 Match01/Test1/X12::item
+      IL_0070:  ldloc.s    V_5
+      IL_0072:  ldfld      int32 Match01/Test1/X12::item
+      IL_0077:  ceq
+      IL_0079:  ret
 
-      IL_0083:  ldarg.0
-      IL_0084:  castclass  Match01/Test1/X13
-      IL_0089:  stloc.s    V_7
-      IL_008b:  ldloc.0
-      IL_008c:  castclass  Match01/Test1/X13
-      IL_0091:  stloc.s    V_8
-      IL_0093:  ldloc.s    V_7
-      IL_0095:  ldfld      int32 Match01/Test1/X13::item
-      IL_009a:  ldloc.s    V_8
-      IL_009c:  ldfld      int32 Match01/Test1/X13::item
-      IL_00a1:  ceq
-      IL_00a3:  ret
+      IL_007a:  ldarg.0
+      IL_007b:  castclass  Match01/Test1/X13
+      IL_0080:  stloc.s    V_6
+      IL_0082:  ldarg.1
+      IL_0083:  castclass  Match01/Test1/X13
+      IL_0088:  stloc.s    V_7
+      IL_008a:  ldloc.s    V_6
+      IL_008c:  ldfld      int32 Match01/Test1/X13::item
+      IL_0091:  ldloc.s    V_7
+      IL_0093:  ldfld      int32 Match01/Test1/X13::item
+      IL_0098:  ceq
+      IL_009a:  ret
 
-      IL_00a4:  ldarg.0
-      IL_00a5:  castclass  Match01/Test1/X14
-      IL_00aa:  stloc.s    V_9
-      IL_00ac:  ldloc.0
-      IL_00ad:  castclass  Match01/Test1/X14
-      IL_00b2:  stloc.s    V_10
-      IL_00b4:  ldloc.s    V_9
-      IL_00b6:  ldfld      int32 Match01/Test1/X14::item
-      IL_00bb:  ldloc.s    V_10
-      IL_00bd:  ldfld      int32 Match01/Test1/X14::item
-      IL_00c2:  ceq
-      IL_00c4:  ret
+      IL_009b:  ldarg.0
+      IL_009c:  castclass  Match01/Test1/X14
+      IL_00a1:  stloc.s    V_8
+      IL_00a3:  ldarg.1
+      IL_00a4:  castclass  Match01/Test1/X14
+      IL_00a9:  stloc.s    V_9
+      IL_00ab:  ldloc.s    V_8
+      IL_00ad:  ldfld      int32 Match01/Test1/X14::item
+      IL_00b2:  ldloc.s    V_9
+      IL_00b4:  ldfld      int32 Match01/Test1/X14::item
+      IL_00b9:  ceq
+      IL_00bb:  ret
 
-      IL_00c5:  ldc.i4.0
-      IL_00c6:  ret
+      IL_00bc:  ldc.i4.0
+      IL_00bd:  ret
 
-      IL_00c7:  ldc.i4.0
-      IL_00c8:  ret
+      IL_00be:  ldc.i4.0
+      IL_00bf:  ret
 
-      IL_00c9:  ldarg.1
-      IL_00ca:  ldnull
-      IL_00cb:  cgt.un
-      IL_00cd:  ldc.i4.0
-      IL_00ce:  ceq
-      IL_00d0:  ret
+      IL_00c0:  ldarg.1
+      IL_00c1:  ldnull
+      IL_00c2:  cgt.un
+      IL_00c4:  ldc.i4.0
+      IL_00c5:  ceq
+      IL_00c7:  ret
+    } 
+
+    .method public hidebysig virtual final 
+            instance bool  Equals(object obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (class Match01/Test1 V_0)
+      IL_0000:  ldarg.1
+      IL_0001:  isinst     Match01/Test1
+      IL_0006:  stloc.0
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0013
+
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  ldarg.2
+      IL_000d:  callvirt   instance bool Match01/Test1::Equals(class Match01/Test1,
+                                                               class [runtime]System.Collections.IEqualityComparer)
+      IL_0012:  ret
+
+      IL_0013:  ldc.i4.0
+      IL_0014:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(class Match01/Test1 obj) cil managed
