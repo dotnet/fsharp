@@ -454,3 +454,38 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SingleCaseActivePattern01.fs"|])>]
+    let ``Named - E_SingleCaseActivePattern01_fs`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3188, Line 3, Col 6, Line 3, Col 7, "Type inference caused an inference type variable to escape its scope. Consider adding type annotations to make your code less generic.")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SingleCaseActivePattern01.fs"|])>]
+    let ``Named - SingleCaseActivePattern01_fs`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SingleCaseActivePattern02.fs"|])>]
+    let ``Named - SingleCaseActivePattern02_fs`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SingleCaseActivePattern03.fs"|])>]
+    let ``Named - SingleCaseActivePattern03_fs`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
