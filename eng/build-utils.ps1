@@ -225,6 +225,21 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
     Exec-Console $buildTool.Path "$($buildTool.Command) $args"
 }
 
+function Make-BootstrapItem([string]$project, [string]$output) {
+    Write-Host "Building bootstrap '$bootstrapTfm' compiler with '$fsharpNetCoreProductTfm' .NET Core product TFM"
+    $projectpath = "$RepoRoot" + $project
+    $outputpath = "$ArtifactsDir" + "\Bootstrap\$output"
+    Create-Directory $outputpath
+    $args = "build $projectpath -f net8.0 -p:PublishReadyToRun=False -r win-x64 -c $bootstrapConfiguration -v $verbosity -o $outputpath"
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
+        $args += " /bl:`"$logFilePath`""
+    }
+    Write-Host "$dotnetExe $args"
+    Exec-Console $dotnetExe $args
+    return $dir
+}
+
 # Create a bootstrap build of the compiler.  Returns the directory where the bootstrap build
 # is located.
 #
@@ -240,26 +255,13 @@ function Make-BootstrapBuild() {
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-    $buildToolsProject = "`"$RepoRoot\buildtools\buildtools.proj`""
-
-    $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
-    $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
-
-    $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity" + $argNoRestore + $argNoIncremental
-    if ($binaryLog) {
-        $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
-        $args += " /bl:`"$logFilePath`""
-    }
 
     # prepare compiler
-    $protoProject = "`"$RepoRoot" +"proto.proj`""
-    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity " + $argNoRestore + $argNoIncremental
-    if ($binaryLog) {
-        $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
-        $args += " /bl:`"$logFilePath`""
-    }
-    Write-Host "$dotnetExe $args"
-    Exec-Console $dotnetExe $args
+    Make-BootstrapItem "buildtools\AssemblyCheck\AssemblyCheck.fsproj" "AssemblyCheck"
+    Make-BootstrapItem "buildtools\fslex\fslex.fsproj" "fslex"
+    Make-BootstrapItem "buildtools\fsyacc\fsyacc.fsproj" "fsyacc"
+    Make-BootstrapItem "src\fsc\fscProject\fsc.fsproj" "fsc"
+    Make-BootstrapItem "src\fsi\fsiProject\fsi.fsproj" "fsi"
 
     return $dir
 }
