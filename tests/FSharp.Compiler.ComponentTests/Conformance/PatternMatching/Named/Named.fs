@@ -489,3 +489,11 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SingleCaseActivePattern04.fs"|])>]
+    let ``Named - SingleCaseActivePattern04_fs`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
