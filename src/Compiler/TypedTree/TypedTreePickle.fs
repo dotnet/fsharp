@@ -2250,7 +2250,7 @@ and u_tcaug st =
     let _space = u_space 1 st
     {tcaug_compare=a1
      tcaug_compare_withc=a2
-     tcaug_hash_and_equals_withc=a3 |> Option.map (fun (a,b,c) -> (a,b,c,None))
+     tcaug_hash_and_equals_withc=a3 |> Option.map (fun (v1, v2, v3) -> (v1, v2, v3, None))
      tcaug_equals=b2
      // only used for code generation and checking - hence don't care about the values when reading back in
      tcaug_hasObjectGetHashCode=false
