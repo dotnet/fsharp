@@ -46,14 +46,10 @@ variables:
     value: Real
   - name: _PublishUsingPipelines
     value: true
-  - name: _DotNetArtifactsCategory
-    value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
     value: true
-  - name: _DotNetValidationArtifactsCategory
-    value: .NETCoreValidation
   - group: DotNet-FSharp-SDLValidation-Params
   - template: /eng/common/templates-official/variables/pool-providers.yml@self
 
@@ -137,14 +133,9 @@ extends:
                       /p:SignType=$(_SignType)
                       /p:DotNetSignType=$(_SignType)
                       /p:MicroBuild_SigningEnabled=true
-                      /p:OverridePackageSource=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
                       /p:TeamName=$(_TeamName)
                       /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
-                      /p:DotNetArtifactsCategory=$(_DotNetArtifactsCategory)
-                      /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
-                      /p:DotNetSymbolServerTokenSymWeb=$(symweb-symbol-server-pat)
                       /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
-                      /p:PublishToSymbolServer=true
                       /p:VisualStudioDropName=$(VisualStudioDropName)
                       /p:GenerateSbom=true
               env:
