@@ -5,7 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern runtime { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,

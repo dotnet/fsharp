@@ -5,11 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern netstandard
-{
-  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:1:0:0
-}
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -80,8 +75,7 @@
     
     .maxstack  5
     .locals init (int64 V_0,
-             class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1,
-             class [runtime]System.IDisposable V_2)
+             class [runtime]System.IDisposable V_1)
     IL_0000:  ldc.i4.0
     IL_0001:  conv.i8
     IL_0002:  ldc.i4.1
@@ -89,48 +83,44 @@
     IL_0004:  ldc.i4.s   100
     IL_0006:  conv.i8
     IL_0007:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int64> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt64(int64,
-                                                                                                                                                                           int64,
-                                                                                                                                                                           int64)
+                                                                                                                                                                     int64,
+                                                                                                                                                                     int64)
     IL_000c:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<int64> For_loop_non_int::inputSequence@4
     IL_0011:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int64> For_loop_non_int::get_inputSequence@4()
     IL_0016:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int64>::GetEnumerator()
     IL_001b:  stsfld     class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::enumerator@4
     .try
     {
-      IL_0020:  br.s       IL_0044
+      IL_0020:  br.s       IL_003d
 
       IL_0022:  call       class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::get_enumerator@4()
       IL_0027:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int64>::get_Current()
       IL_002c:  stloc.0
       IL_002d:  ldstr      "hello"
       IL_0032:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_0037:  stloc.1
-      IL_0038:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-      IL_003d:  ldloc.1
-      IL_003e:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
-                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_0043:  pop
-      IL_0044:  call       class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::get_enumerator@4()
-      IL_0049:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-      IL_004e:  brtrue.s   IL_0022
+      IL_0037:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_003c:  pop
+      IL_003d:  call       class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::get_enumerator@4()
+      IL_0042:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0047:  brtrue.s   IL_0022
 
-      IL_0050:  leave.s    IL_0068
+      IL_0049:  leave.s    IL_0061
 
     }  
     finally
     {
-      IL_0052:  call       class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::get_enumerator@4()
-      IL_0057:  isinst     [runtime]System.IDisposable
-      IL_005c:  stloc.2
-      IL_005d:  ldloc.2
-      IL_005e:  brfalse.s  IL_0067
+      IL_004b:  call       class [runtime]System.Collections.Generic.IEnumerator`1<int64> For_loop_non_int::get_enumerator@4()
+      IL_0050:  isinst     [runtime]System.IDisposable
+      IL_0055:  stloc.1
+      IL_0056:  ldloc.1
+      IL_0057:  brfalse.s  IL_0060
 
-      IL_0060:  ldloc.2
-      IL_0061:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_0066:  endfinally
-      IL_0067:  endfinally
+      IL_0059:  ldloc.1
+      IL_005a:  callvirt   instance void [runtime]System.IDisposable::Dispose()
+      IL_005f:  endfinally
+      IL_0060:  endfinally
     }  
-    IL_0068:  ret
+    IL_0061:  ret
   } 
 
   .property class [runtime]System.Collections.Generic.IEnumerable`1<int64>
