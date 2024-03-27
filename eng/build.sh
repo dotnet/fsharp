@@ -272,8 +272,11 @@ function BuildSolution {
     if [[ "$bl" != "" ]]; then
       bltools=$bl+".proto.binlog"
     fi
+
     BuildMessage="Error building tools"
-    MSBuild "$repo_root/proto.proj" /restore "$bltools" /p:Configuration=Proto
+    local args=" publish $repo_root/proto.proj /restore $bltools /p:Configuration=Proto"
+    echo $args
+    "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
 
   if [[ "$skip_build" != true ]]; then
