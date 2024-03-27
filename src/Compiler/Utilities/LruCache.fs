@@ -277,3 +277,5 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                 match w.TryGetTarget() with
                 | true, value -> Some(label, version, value)
                 | _ -> None)
+
+    member this.Count = Seq.length (this.GetValues())
