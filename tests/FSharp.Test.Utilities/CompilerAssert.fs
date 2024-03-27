@@ -619,7 +619,7 @@ module rec CompilerAssertHelpers =
                     func ()
                     true, None
                 with e ->
-                    let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
+                    let errorMessage = if not (isNull (e.InnerException)) then e.InnerException.ToString() else e.ToString()
                     stderr.Append errorMessage |> ignore
                     false, Some e
             finally

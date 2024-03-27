@@ -17,7 +17,7 @@ module BuildGraphTests =
     let private createNode () =
         let o = obj ()
         GraphNode(node { 
-            Assert.shouldBeTrue (o <> null)
+            Assert.shouldBeTrue (not (isNull o))
             return 1 
         }), WeakReference(o)
 
@@ -149,7 +149,7 @@ module BuildGraphTests =
             | :? OperationCanceledException as ex ->
                 ex
 
-        Assert.shouldBeTrue(ex <> null)
+        Assert.shouldBeTrue(not (isNull ex))
 
     [<Fact>]
     let ``A request can cancel 2``() =
@@ -179,7 +179,7 @@ module BuildGraphTests =
             | :? OperationCanceledException as ex ->
                 ex
 
-        Assert.shouldBeTrue(ex <> null)
+        Assert.shouldBeTrue(not (isNull ex))
         try task.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ()
 
     [<Fact>]

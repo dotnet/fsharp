@@ -6633,7 +6633,7 @@ nameop:
 
 identExpr:
   | ident
-     { if $1.idText = "" then
+     { if System.String.IsNullOrEmpty $1.idText then
            SynExpr.FromParseError(SynExpr.Ident($1), $1.idRange)
        else
            SynExpr.Ident($1) }

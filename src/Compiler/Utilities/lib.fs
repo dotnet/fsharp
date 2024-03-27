@@ -312,7 +312,9 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
     let tab = Map.ofList nodes
     let nodes = List.map snd nodes
     do for node in nodes do
-        node.nodeNeighbours <- edges |> List.filter (fun (x, _y) -> x = node.nodeId) |> List.map (fun (_, nodeId) -> tab[nodeId])
+        node.nodeNeighbours <-
+            edges
+            |> List.choose (fun (x, nodeId) -> if x = node.nodeId then Some tab[nodeId] else None)
 
     member g.GetNodeData nodeId = tab[nodeId].nodeData
 

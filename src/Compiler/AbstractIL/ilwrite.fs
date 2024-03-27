@@ -3215,7 +3215,7 @@ let count f arr =
 module FileSystemUtilities =
     open System.Reflection
     open System.Globalization
-    let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
+    let progress = try not (isNull (Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions"))) with _ -> false
 
 /// Arbitrary value
 [<Literal>]

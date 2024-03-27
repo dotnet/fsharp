@@ -9,31 +9,35 @@ let private getContent isSignature sourceCode =
     let ast = parseSourceCode ("Test.fs", sourceCode)
     FileContentMapping.mkFileContent { Idx = 0; FileName = fileName; ParsedInput = ast }
 
+[<return: Struct>]
 let private (|TopLevelNamespace|_|) value e =
     match e with
     | FileContentEntry.TopLevelNamespace(path, content) ->
         let combined = String.concat "." path
-        if combined = value then Some content else None
-    | _ -> None
+        if combined = value then ValueSome content else ValueNone
+    | _ -> ValueNone
 
+[<return: Struct>]
 let private (|OpenStatement|_|) value e =
     match e with
     | FileContentEntry.OpenStatement path ->
         let combined = String.concat "." path
-        if combined = value then Some() else None
-    | _ -> None
+        if combined = value then ValueSome() else ValueNone
+    | _ -> ValueNone
 
+[<return: Struct>]
 let private (|PrefixedIdentifier|_|) value e =
     match e with
     | FileContentEntry.PrefixedIdentifier path ->
         let combined = String.concat "." path
-        if combined = value then Some() else None
-    | _ -> None
+        if combined = value then ValueSome() else ValueNone
+    | _ -> ValueNone
 
+[<return: Struct>]
 let private (|NestedModule|_|) value e =
     match e with
-    | FileContentEntry.NestedModule(name, nestedContent) -> if name = value then Some(nestedContent) else None
-    | _ -> None
+    | FileContentEntry.NestedModule(name, nestedContent) -> if name = value then ValueSome(nestedContent) else ValueNone
+    | _ -> ValueNone
 
 [<Test>]
 let ``Top level module only exposes namespace`` () =

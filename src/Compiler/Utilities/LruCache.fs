@@ -36,7 +36,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
     let weakList = LinkedList<'TKey * 'TVersion * string * ValueLink<'TValue>>()
 
     let rec removeCollected (node: LinkedListNode<_>) =
-        if node <> null then
+        if not (isNull node) then
             let key, version, label, value = node.Value
 
             match value with
@@ -63,7 +63,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
 
             let mutable node = weakList.Last
 
-            while weakList.Count > keepWeakly && node <> null do
+            while weakList.Count > keepWeakly && not (isNull node) do
                 let previous = node.Previous
                 let key, version, label, _ = node.Value
                 weakList.Remove node
@@ -80,7 +80,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
 
         let mutable anythingWeakened = false
 
-        while strongList.Count > keepStrongly && node <> null do
+        while strongList.Count > keepStrongly && not (isNull node) do
             let previous = node.Previous
 
             match node.Value with

@@ -31,16 +31,11 @@ type internal History() =
         current <- -1
 
     member _.Add line =
-        match line with
-        | null
-        | "" -> ()
-        | _ -> list.Add(line)
+        if not (String.IsNullOrWhiteSpace line) then
+            list.Add line
 
     member _.AddLast line =
-        match line with
-        | null
-        | "" -> ()
-        | _ ->
+        if not (String.IsNullOrWhiteSpace line) then
             list.Add(line)
             current <- list.Count
 
@@ -539,7 +534,7 @@ type internal ReadLineConsole() =
             let previous = history.Previous()
             history.Next() |> ignore
 
-            if previous = "" then
+            if String.IsNullOrEmpty previous then
                 setPrompt true
             else
                 setPrompt (previous.EndsWith(";;"))

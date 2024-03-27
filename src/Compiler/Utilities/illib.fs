@@ -639,8 +639,7 @@ module List =
     let duplicates (xs: 'T list) =
         xs
         |> List.groupBy id
-        |> List.filter (fun (_, elems) -> Seq.length elems > 1)
-        |> List.map fst
+        |> List.choose (fun (key, elems) -> if Seq.length elems > 1 then Some key else None)
 
     let internal allEqual (xs: 'T list) =
         match xs with
@@ -802,15 +801,17 @@ module String =
     /// Splits a string into substrings based on the strings in the array separators
     let split options (separator: string[]) (value: string) = value.Split(separator, options)
 
+    [<return: Struct>]
     let (|StartsWith|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then None
-        elif value.StartsWithOrdinal pattern then Some()
-        else None
+        if String.IsNullOrWhiteSpace value then ValueNone
+        elif value.StartsWithOrdinal pattern then ValueSome()
+        else ValueNone
 
+    [<return: Struct>]
     let (|Contains|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then None
-        elif value.Contains pattern then Some()
-        else None
+        if String.IsNullOrWhiteSpace value then ValueNone
+        elif value.Contains pattern then ValueSome()
+        else ValueNone
 
     let getLines (str: string) =
         use reader = new StringReader(str)

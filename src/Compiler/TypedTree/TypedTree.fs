@@ -5933,7 +5933,7 @@ type Construct() =
                                    match baseType with 
                                    | null -> false
                                    | x when x.IsGenericType -> false
-                                   | x when x.DeclaringType <> null -> false
+                                   | x when not (isNull (x.DeclaringType)) -> false
                                    | x -> x.FullName = "System.Delegate" || x.FullName = "System.MulticastDelegate"), m))
               IsEnum = st.PUntaint((fun st -> st.IsEnum), m)
               IsStructOrEnum = st.PUntaint((fun st -> st.IsValueType || st.IsEnum), m)
