@@ -1,11 +1,7 @@
 <Project>
 
-  <PropertyGroup>
-    <Configuration>Proto</Configuration>
-    <DisableCompilerRedirection>true</DisableCompilerRedirection>
-  </PropertyGroup>
-
-  <ItemGroup>
+  <!-- Skip on sourcebuild -->
+  <ItemGroup Condition="'$(SourceBuild)'!='true'">
     <Projects Include="buildtools\fslex\fslex.fsproj" />
     <Projects Include="buildtools\fsyacc\fsyacc.fsproj" />
     <Projects Include="buildtools\AssemblyCheck\AssemblyCheck.fsproj" Condition="'$(ArcadeBuildFromSource)' != 'true'" />
@@ -14,23 +10,23 @@
   </ItemGroup>
 
   <Target Name="Build">
-    <MSBuild Projects="@(Projects)" Targets="Build" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);OutputPath=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename);PublishReadyToRun=$(PublishReadyToRun)" />
+    <MSBuild Projects="@(Projects)" Targets="Build" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);PublishDir=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename)" />
   </Target>
 
   <Target Name="Rebuild">
-    <MSBuild Projects="@(Projects)" Targets="Rebuild" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);OutputPath=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename);PublishReadyToRun=$(PublishReadyToRun)" />
+    <MSBuild Projects="@(Projects)" Targets="Rebuild" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);PublishDir=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename)" />
   </Target>
 
   <Target Name="Clean">
-    <MSBuild Projects="@(Projects)" Targets="Clean" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);OutputPath=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename);PublishReadyToRun=$(PublishReadyToRun)" />
+    <MSBuild Projects="@(Projects)" Targets="Clean" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);PublishDir=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename)" />
   </Target>
 
   <Target Name="Restore">
-    <MSBuild Projects="@(Projects)" Targets="Restore" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);OutputPath=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename);PublishReadyToRun=$(PublishReadyToRun)" />
+    <MSBuild Projects="@(Projects)" Targets="Restore" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);PublishDir=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename)" />
   </Target>
 
   <Target Name="Publish">
-    <MSBuild Projects="@(Projects)" Targets="Publish" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);OutputPath=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename);PublishReadyToRun=$(PublishReadyToRun)" />
+    <MSBuild Projects="@(Projects)" Targets="Publish" Properties="Configuration=$(Configuration);DisableCompilerRedirection=$(DisableCompilerRedirection);PublishDir=$(MSBuildThisFileDirectory)/artifacts/Bootstrap/%(Filename)" />
   </Target>
 
 </Project>

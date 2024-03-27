@@ -225,21 +225,6 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
     Exec-Console $buildTool.Path "$($buildTool.Command) $args"
 }
 
-function Make-BootstrapItem([string]$project, [string]$output) {
-    Write-Host "Building bootstrap '$bootstrapTfm' compiler with '$fsharpNetCoreProductTfm' .NET Core product TFM"
-    $projectpath = "$RepoRoot" + $project
-    $outputpath = "$ArtifactsDir" + "\Bootstrap\$output"
-    Create-Directory $outputpath
-    $args = "build $projectpath -f net8.0 -p:PublishReadyToRun=False -r win-x64 -c $bootstrapConfiguration -v $verbosity -o $outputpath"
-    if ($binaryLog) {
-        $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
-        $args += " /bl:`"$logFilePath`""
-    }
-    Write-Host "$dotnetExe $args"
-    Exec-Console $dotnetExe $args
-    return $dir
-}
-
 # Create a bootstrap build of the compiler.  Returns the directory where the bootstrap build
 # is located.
 #
@@ -257,11 +242,13 @@ function Make-BootstrapBuild() {
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
 
     # prepare compiler
-    Make-BootstrapItem "buildtools\AssemblyCheck\AssemblyCheck.fsproj" "AssemblyCheck"
-    Make-BootstrapItem "buildtools\fslex\fslex.fsproj" "fslex"
-    Make-BootstrapItem "buildtools\fsyacc\fsyacc.fsproj" "fsyacc"
-    Make-BootstrapItem "src\fsc\fscProject\fsc.fsproj" "fsc"
-    Make-BootstrapItem "src\fsi\fsiProject\fsi.fsproj" "fsi"
-
+    $projectpath = "$RepoRoot" + "proto.proj"
+    $args = "publish $projectpath -c $bootstrapConfiguration"
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "bootstrap.binlog"
+        $args += " /bl:`"$logFilePath`""
+    }
+    Write-Host "$dotnetExe $args"
+    Exec-Console $dotnetExe $args
     return $dir
 }
