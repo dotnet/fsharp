@@ -7795,6 +7795,8 @@ let mkCallArrayLength (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g
 
 let mkCallArrayGet (g: TcGlobals) m ty e1 idx1 = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; idx1 ], m)
 
+let mkCallArrayMap (g: TcGlobals) m ty1 ty2 e1 e2 = mkApps g (typedExprForIntrinsic g m g.array_map_info, [[ty1; ty2]], [ e1 ; e2 ], m)
+
 let mkCallArray2DGet (g: TcGlobals) m ty e1 idx1 idx2 = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ], m)
 
 let mkCallArray3DGet (g: TcGlobals) m ty e1 idx1 idx2 idx3 = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ], m)
@@ -7808,6 +7810,8 @@ let mkCallArray2DSet (g: TcGlobals) m ty e1 idx1 idx2 v = mkApps g (typedExprFor
 let mkCallArray3DSet (g: TcGlobals) m ty e1 idx1 idx2 idx3 v = mkApps g (typedExprForIntrinsic g m g.array3D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; v ], m)
 
 let mkCallArray4DSet (g: TcGlobals) m ty e1 idx1 idx2 idx3 idx4 v = mkApps g (typedExprForIntrinsic g m g.array4D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4; v ], m)
+
+let mkCallListMap (g: TcGlobals) m ty1 ty2 e1 e2 = mkApps g (typedExprForIntrinsic g m g.list_map_info, [[ty1; ty2]], [ e1 ; e2 ], m)
 
 let mkCallHash (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.hash_info, [[ty]], [ e1 ], m)
 

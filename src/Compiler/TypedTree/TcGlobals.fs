@@ -824,6 +824,7 @@ type TcGlobals(
   let v_range_step_generic_op_info = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeStepGeneric"                     , None                 , None          , [vara;varb], ([[varaTy];[varbTy];[varaTy]], mkSeqTy varaTy))
 
   let v_array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               , None                 , Some "Length" , [vara],     ([[mkArrayType 1 varaTy]], v_int_ty))
+  let v_array_map_info             = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "map"                                  , None                 , Some "Map"    , [vara; varb], ([[varaTy --> varbTy]; [mkArrayType 1 varaTy]], mkArrayType 1 varbTy))
   let v_array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             , None                 , None          , [vara],     ([[mkArrayType 1 varaTy]; [v_int_ty]], varaTy))
   let v_array2D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]], varaTy))
   let v_array3D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]], varaTy))
@@ -832,6 +833,8 @@ type TcGlobals(
   let v_array2D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array3D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array4D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray4D"                           , None                 , None          , [vara],     ([[mkArrayType 4 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
+
+  let v_list_map_info              = makeIntrinsicValRef(fslib_MFListModule_nleref,                            "map"                                  , None                 , Some "Map"    , [vara; varb], ([[varaTy --> varbTy]; [mkListTy varaTy]], mkListTy varbTy))
 
   let v_option_toNullable_info     = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "toNullable"                           , None                 , Some "ToNullable" , [vara],     ([[mkOptionTy varaTy]], mkNullableTy varaTy))
   let v_option_defaultValue_info   = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "defaultValue"                         , None                 , Some "DefaultValue" , [vara],     ([[varaTy]; [mkOptionTy varaTy]], varaTy))
@@ -1715,9 +1718,11 @@ type TcGlobals(
   member val range_generic_op_vref      = ValRefForIntrinsic v_range_generic_op_info
   member val range_step_generic_op_vref = ValRefForIntrinsic v_range_step_generic_op_info
   member val array_get_vref             = ValRefForIntrinsic v_array_get_info
+  member val array_map_vref             = ValRefForIntrinsic v_array_map_info
   member val array2D_get_vref           = ValRefForIntrinsic v_array2D_get_info
   member val array3D_get_vref           = ValRefForIntrinsic v_array3D_get_info
   member val array4D_get_vref           = ValRefForIntrinsic v_array4D_get_info
+  member val list_map_vref              = ValRefForIntrinsic v_list_map_info
   member val seq_singleton_vref         = ValRefForIntrinsic v_seq_singleton_info
   member val seq_collect_vref           = ValRefForIntrinsic v_seq_collect_info
   member val nativeptr_tobyref_vref     = ValRefForIntrinsic v_nativeptr_tobyref_info
@@ -1778,6 +1783,7 @@ type TcGlobals(
   member _.seq_to_array_info          = v_seq_to_array_info
 
   member _.array_length_info          = v_array_length_info
+  member _.array_map_info             = v_array_map_info
   member _.array_get_info             = v_array_get_info
   member _.array2D_get_info           = v_array2D_get_info
   member _.array3D_get_info           = v_array3D_get_info
@@ -1786,6 +1792,8 @@ type TcGlobals(
   member _.array2D_set_info           = v_array2D_set_info
   member _.array3D_set_info           = v_array3D_set_info
   member _.array4D_set_info           = v_array4D_set_info
+
+  member _.list_map_info              = v_list_map_info
 
   member val option_toNullable_info     = v_option_toNullable_info
   member val option_defaultValue_info     = v_option_defaultValue_info
