@@ -1240,13 +1240,6 @@ let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) methodName mItem =
         // Check, wheter this method has external init, emit an error diagnostic in this case.
         if minfo.HasExternalInit then
             errorR (Error (FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
-            
-let CheckPropertyAttributes finalAssignedItemSetters =
-    for propInfo in finalAssignedItemSetters do
-        match propInfo with
-        | AssignedItemSetter(ident, AssignedPropSetter (_, pinfo, _, _), _) ->
-            CheckPropInfoAttributes pinfo ident.idRange  |> CommitOperationResult
-        | _ -> ()
 
 let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
     // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
@@ -10093,9 +10086,6 @@ and TcMethodApplication
     // Handle post-hoc property assignments
     let setterExprPrebinders, callExpr2b =
         let expr = callExpr2
-    
-        CheckPropertyAttributes finalAssignedItemSetters
-
         CheckRequiredProperties g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
 
         if isCheckingAttributeCall then
@@ -10169,6 +10159,8 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
     let argExprPrebinder, action, defnItem =
         match setter with
         | AssignedPropSetter (propStaticTyOpt, pinfo, pminfo, pminst) ->
+
+            CheckPropInfoAttributes pinfo id.idRange  |> CommitOperationResult
 
             if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly && not calledFromConstructor then
                 errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 pinfo.PropertyName, m))
