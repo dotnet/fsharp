@@ -30,7 +30,14 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </Choose>
 
   <PropertyGroup>
-    <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!-- Do not glob F# source files -->
+    <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                 <!-- Do not glob F# source files -->
+    <!--
+        It turns out that the project system discovers Folders as a consequence of <SomeItem Include="path to files" />
+        ''''EnableDefaultNoneItems true'''' causes folders and .fsi files to be displayed in the wrong order. because
+        Discovers Folders as a consequence of ````<SomeItem Include="path to files" />```` which EnableDefaultNoneItems causes folders and .fsi files to be located in the solution folder
+        prior to the ````<Compile Include="" />```` in the .fsproj which messes with the display order in solution explorer.
+    -->
+    <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>                                          <!-- Do not glob F# none items-->
   </PropertyGroup>
 
   <PropertyGroup>
