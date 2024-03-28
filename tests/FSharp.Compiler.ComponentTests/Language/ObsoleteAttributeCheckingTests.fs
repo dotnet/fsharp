@@ -1281,18 +1281,18 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad")
+            (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value")
             (Warning 44, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
             (Warning 44, Line 10, Col 61, Line 10, Col 75, "This construct is deprecated. This is bad")
-            (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value")
         ]
         
-    [<Fact>] // This should fail, Needs more investigation
+    [<Fact>]
     let ``Obsolete attribute warning is not taken into account in prop setters that can be included in methods which are not constructors`` () =
         Fsx """
 open System
 
 type JsonSerializerOptions() =
-    [<Obsolete("This is bad", true)>]
+    [<Obsolete("This is bad")>]
     member val DefaultOptions = false with get, set
     member val UseCustomOptions = false with get, set
     member this.With() = this
@@ -1304,9 +1304,11 @@ let options2 =
         .With(UseCustomOptions = false)
         """
         |> typecheck
-        |> shouldSucceed
+        |> withDiagnostics [
+            (Warning 44, Line 13, Col 15, Line 13, Col 29, "This construct is deprecated. This is bad")
+        ]
 
-    [<Fact>] // This should fail, Needs more investigation
+    [<Fact>]
     let ``Obsolete attribute error is not taken into account in prop setters that can be included in methods which are not constructors`` () =
         Fsx """
 open System
@@ -1324,7 +1326,10 @@ let options2 =
         .With(UseCustomOptions = false)
         """
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 13, Col 15, Line 13, Col 29, "This construct is deprecated. This is bad")
+        ]
         
     [<Fact>]
     let ``Obsolete attribute error is taken into account in a constructor property assignment`` () =
@@ -1342,7 +1347,8 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad")
+            (Error 101, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad");
+            (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value");
             (Error 101, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
         ]
         
