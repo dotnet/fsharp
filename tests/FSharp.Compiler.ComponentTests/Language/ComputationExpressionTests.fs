@@ -96,7 +96,6 @@ let x = lb {1; 2; if true then 3;}
 
     [<Theory>]
     [<InlineData("preview","BindReturn")>]
-    [<InlineData("preview","BindReturn")>]
     [<InlineData("preview","WithoutBindReturn")>]
     [<InlineData("4.7","BindReturn")>]   
     [<InlineData("4.7","WithoutBindReturn")>]  

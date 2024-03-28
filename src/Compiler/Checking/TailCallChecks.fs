@@ -222,6 +222,13 @@ and CheckCall cenv args ctxts (tailCall: TailCall) =
             | Expr.App _ -> Some(TailCall.YesFromExpr cenv.g e)
             | IsAppInLambdaBody t -> Some t
             | _ -> None
+        | Expr.App(args = args) ->
+            args
+            |> List.tryPick (fun a ->
+                match a with
+                | IsAppInLambdaBody t -> Some t
+                | _ -> None)
+
         | _ -> None
 
     // if we haven't already decided this is no tail call, try to detect CPS-like expressions

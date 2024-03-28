@@ -1522,3 +1522,164 @@ namespace N
               Message =
                 "The member or function 'reverse' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for yield! call of rec func in seq`` () =
+        """
+namespace N
+
+module M =
+
+    type SynExpr =
+        | Sequential of expr1 : SynExpr * expr2 : SynExpr
+        | NotSequential
+        member _.Range = 99
+
+    type SyntaxNode = SynExpr of SynExpr
+
+    type SyntaxVisitor () = member _.VisitExpr _ = None
+
+    let visitor = SyntaxVisitor ()
+    let dive expr range f = range, fun () -> Some expr
+    let traverseSynExpr _ expr = Some expr
+
+    [<TailCall>]
+    let rec traverseSequentials path expr =
+        seq {
+            match expr with
+            | SynExpr.Sequential(expr1 = expr1; expr2 = SynExpr.Sequential _ as expr2) ->
+                yield dive expr expr.Range (fun expr -> visitor.VisitExpr(path, traverseSynExpr path, (fun _ -> None), expr))
+                let path = SyntaxNode.SynExpr expr :: path
+                yield dive expr1 expr1.Range (traverseSynExpr path)
+                yield! traverseSequentials path expr2   // should not warn
+
+            | _ ->
+                yield dive expr expr.Range (traverseSynExpr path)
+        }
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for yield! call of rec func in list comprehension`` () =
+        """
+namespace N
+
+module M =
+
+    type SynExpr =
+        | Sequential of expr1 : SynExpr * expr2 : SynExpr
+        | NotSequential
+        member _.Range = 99
+
+    type SyntaxNode = SynExpr of SynExpr
+
+    type SyntaxVisitor () = member _.VisitExpr _ = None
+
+    let visitor = SyntaxVisitor ()
+    let dive expr range f = range, fun () -> Some expr
+    let traverseSynExpr _ expr = Some expr
+
+    [<TailCall>]
+    let rec traverseSequentials path expr =
+        [
+            match expr with
+            | SynExpr.Sequential(expr1 = expr1; expr2 = SynExpr.Sequential _ as expr2) ->
+                // It's a nested sequential expression.
+                // Visit it, but make defaultTraverse do nothing,
+                // since we're going to traverse its descendants ourselves.
+                yield dive expr expr.Range (fun expr -> visitor.VisitExpr(path, traverseSynExpr path, (fun _ -> None), expr))
+
+                // Now traverse its descendants.
+                let path = SyntaxNode.SynExpr expr :: path
+                yield dive expr1 expr1.Range (traverseSynExpr path)
+                yield! traverseSequentials path expr2   // should warn
+
+            | _ ->
+                // It's not a nested sequential expression.
+                // Traverse it normally.
+                yield dive expr expr.Range (traverseSynExpr path)
+        ]
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 32
+                        StartColumn = 24
+                        EndLine = 32
+                        EndColumn = 54 }
+              Message =
+                "The member or function 'traverseSequentials' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for yield! call of rec func in custom CE`` () =
+        """
+namespace N
+
+module M =
+
+    type SynExpr =
+        | Sequential of expr1 : SynExpr * expr2 : SynExpr
+        | NotSequential
+        member _.Range = 99
+
+    type SyntaxNode = SynExpr of SynExpr
+
+    type SyntaxVisitor () = member _.VisitExpr _ = None
+
+    let visitor = SyntaxVisitor ()
+    let dive expr range f = range, fun () -> Some expr
+    let traverseSynExpr _ expr = Some expr
+
+    type ThingsBuilder() =
+
+        member _.Yield(x) = [ x ]
+
+        member _.Combine(currentThings, newThings) = currentThings @ newThings
+
+        member _.Delay(f) = f ()
+
+        member _.YieldFrom(x) = x
+
+    let things = ThingsBuilder()
+
+    [<TailCall>]
+    let rec traverseSequentials path expr =
+        things {
+            match expr with
+            | SynExpr.Sequential(expr1 = expr1; expr2 = SynExpr.Sequential _ as expr2) ->
+                // It's a nested sequential expression.
+                // Visit it, but make defaultTraverse do nothing,
+                // since we're going to traverse its descendants ourselves.
+                yield dive expr expr.Range (fun expr -> visitor.VisitExpr(path, traverseSynExpr path, (fun _ -> None), expr))
+
+                // Now traverse its descendants.
+                let path = SyntaxNode.SynExpr expr :: path
+                yield dive expr1 expr1.Range (traverseSynExpr path)
+                yield! traverseSequentials path expr2   // should warn
+
+            | _ ->
+                // It's not a nested sequential expression.
+                // Traverse it normally.
+                yield dive expr expr.Range (traverseSynExpr path)
+        }
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 43
+                        StartColumn = 17
+                        EndLine = 43
+                        EndColumn = 68 }
+              Message =
+                "The member or function 'traverseSequentials' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
