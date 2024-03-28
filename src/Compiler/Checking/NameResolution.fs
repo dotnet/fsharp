@@ -4017,7 +4017,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 match item with
                 | Item.RecdField info -> info.FieldType
                 | Item.AnonRecdField (_, tys, index, _) -> tys[index]
-                | _ -> g.obj_ty
+                | _ -> g.obj_ty_ambivalent
 
             idsBeforeField, (fieldId, item) :: (nestedFieldSearch [] fieldTy rest)
 

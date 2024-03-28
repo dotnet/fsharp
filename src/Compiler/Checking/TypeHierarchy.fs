@@ -68,7 +68,7 @@ let GetSuperTypeOfType g amap m ty =
             elif isArrayTy g ty then
                 Some g.system_Array_ty
             elif isRefTy g ty && not (isObjTy g ty) then
-                Some g.obj_ty
+                Some g.obj_ty_noNulls
             elif isStructTupleTy g ty then
                 Some g.system_Value_ty
             elif isFSharpStructOrEnumTy g ty then
@@ -79,9 +79,9 @@ let GetSuperTypeOfType g amap m ty =
             elif isStructAnonRecdTy g ty then
                 Some g.system_Value_ty
             elif isAnonRecdTy g ty then
-                Some g.obj_ty
+                Some g.obj_ty_noNulls
             elif isRecdTy g ty || isUnionTy g ty then
-                Some g.obj_ty
+                Some g.obj_ty_noNulls
             else
                 None
 
@@ -267,11 +267,11 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                 List.foldBack
                    (loop (ndeep+1))
                    (GetImmediateInterfacesOfType skipUnref g amap m ty)
-                      (loop ndeep g.obj_ty state)
+                      (loop ndeep g.obj_ty_noNulls state)
             else
                 match tryDestTyparTy g ty with
                 | ValueSome tp ->
-                    let state = loop (ndeep+1) g.obj_ty state
+                    let state = loop (ndeep+1) g.obj_ty_noNulls state
                     List.foldBack
                         (fun x vacc ->
                           match x with

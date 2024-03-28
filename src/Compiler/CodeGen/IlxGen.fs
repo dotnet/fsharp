@@ -642,7 +642,7 @@ and GenNamedTyAppAux (cenv: cenv) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
 #if !NO_TYPEPROVIDERS
             match tcref.TypeReprInfo with
             // Generate the base type, because that is always the representation of the erased type, unless the assembly is being injected
-            | TProvidedTypeRepr info when info.IsErased -> GenTypeAux cenv m tyenv VoidNotOK ptrsOK (info.BaseTypeForErased(m, g.obj_ty))
+            | TProvidedTypeRepr info when info.IsErased -> GenTypeAux cenv m tyenv VoidNotOK ptrsOK (info.BaseTypeForErased(m, g.obj_ty_withNulls))
             | _ ->
 #endif
             GenTyAppAux cenv m tyenv (GenTyconRef tcref) tinst
@@ -10802,7 +10802,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                      Option.isNone tycon.GeneratedCompareToValues
                      && Option.isNone tycon.GeneratedHashAndEqualsValues
                      && tycon.HasInterface g g.mk_IComparable_ty
-                     && not (tycon.HasOverride g "Equals" [ g.obj_ty ])
+                     && not (tycon.HasOverride g "Equals" [ g.obj_ty_ambivalent ])
                      && not tycon.IsFSharpInterfaceTycon
                  then
                      [ GenEqualsOverrideCallingIComparable cenv (tcref, ilThisTy, ilThisTy) ]

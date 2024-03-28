@@ -235,23 +235,53 @@ looseFunc(maybeDu2) |> ignore
         Error 3261, Line 19, Col 12, Line 19, Col 20, "Nullness warning: The type ''a | null' supports 'null' but a non-null type is expected."]
     
 [<Fact>]
-let ``Regression strict func`` () = 
+let ``Strict func handling of obj type`` () = 
     FSharp """module MyLibrary
 let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString())
  
-strictFunc({|Anon=5|}) |> ignore
 strictFunc("hi") |> ignore
-strictFunc(null) |> ignore
-strictFunc(null:(string|null)) |> ignore
+strictFunc({|Anon=5|}) |> ignore
 strictFunc(null:obj) |> ignore
-
+strictFunc(null:(obj|null)) |> ignore
+strictFunc(null:(string|null)) |> ignore
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3261, Line 7, Col 12, Line 7, Col 30, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected." ]
-                
+            [ Error 3261, Line 6, Col 12, Line 6, Col 20, "Nullness warning: The type 'obj' supports 'null' but a non-null type is expected."
+              Error 3261, Line 7, Col 18, Line 7, Col 26, "Nullness warning: The type 'obj' supports 'null' but a non-null type is expected."
+              Error 3261, Line 7, Col 12, Line 7, Col 27, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 8, Col 12, Line 8, Col 30, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."]
+        
+        
+
+[<Fact>]
+let ``Strict func null literal`` () = 
+    FSharp """module MyLibrary
+let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString()) 
+
+strictFunc(null) |> ignore    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+    
+[<Fact>]
+let ``Strict func null literal2`` () = 
+    FSharp """module MyLibrary
+let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString()) 
+
+strictFunc(null) |> ignore
+strictFunc({|Anon=5|}) |> ignore
+strictFunc("hi") |> ignore   """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+         
     
 [<Fact>]
 let ``Nullnesss support for F# types`` () = 

@@ -3106,7 +3106,7 @@ let BuildDisposableCleanup (cenv: cenv) env m (v: Val) =
     else
         let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
         let disposeExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] [] None
-        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
+        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty_ambivalent, m, v.Type)
         mkIsInstConditional g m g.system_IDisposable_ty inputExpr disposeObjVar disposeExpr (mkUnit g m)
 
 /// Build call to get_OffsetToStringData as part of 'fixed'
@@ -3346,7 +3346,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
                         // e.g. MatchCollection
                         typeEquiv g g.int32_ty ty ||
                         // e.g. EnvDTE.Documents.Item
-                        typeEquiv g g.obj_ty ty
+                        typeEquiv g g.obj_ty_ambivalent ty
                     | _ -> false
 
                 match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "get_Item" tyToSearchForGetEnumeratorAndItem with
@@ -4462,7 +4462,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     match synTy with
     | SynType.LongIdent(SynLongIdent([], _, _)) ->
         // special case when type name is absent - i.e. empty inherit part in type declaration
-        g.obj_ty, tpenv
+        g.obj_ty_ambivalent, tpenv
 
     | SynType.LongIdent synLongId ->
         TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
@@ -5096,7 +5096,7 @@ and TcTypeOrMeasureAndRecover kindOpt (cenv: cenv) newOk checkConstraints occ iw
             match kindOpt, newOk with
             | Some TyparKind.Measure, NoNewTypars -> TType_measure Measure.One
             | Some TyparKind.Measure, _ -> TType_measure (NewErrorMeasure ())
-            | _, NoNewTypars -> g.obj_ty
+            | _, NoNewTypars -> g.obj_ty_ambivalent
             | _ -> NewErrorType ()
 
         recoveryTy, tpenv
@@ -7482,7 +7482,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
                 let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
-                let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+                let argsExpr = mkArray (g.obj_ty_withNulls, fillExprsBoxed, m)
                 let percentATysExpr =
                     if percentATys.Length = 0 then
                         mkNull m (mkArrayType g g.system_Type_ty)
@@ -7509,7 +7509,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
         let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
         let dotnetFormatStringExpr = mkString g m dotnetFormatString
-        let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+        let argsExpr = mkArray (g.obj_ty_withNulls, fillExprsBoxed, m)
 
         // FormattableString are *always* turned into FormattableStringFactory.Create calls, boxing each argument
         let createExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false createFormattableStringMethod NormalValUse [] [dotnetFormatStringExpr; argsExpr] [] None
@@ -9540,7 +9540,7 @@ and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mExprAndItem objDetai
                (let dv, de = mkCompGenLocal mItem "eventDelegate" delTy
                 let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false einfo.RemoveMethod NormalValUse [] objVars [de] None
                 mkLambda mItem dv (callExpr, g.unit_ty))
-               (let fvty = mkFunTy g g.obj_ty (mkFunTy g argsTy g.unit_ty)
+               (let fvty = mkFunTy g g.obj_ty_withNulls (mkFunTy g argsTy g.unit_ty)
                 let fv, fe = mkCompGenLocal mItem "callback" fvty
                 let createExpr = BuildNewDelegateExpr (Some einfo, g, cenv.amap, delTy, delInvokeMeth, delArgTys, fe, fvty, mItem)
                 mkLambda mItem fv (createExpr, delTy)))
@@ -9926,7 +9926,7 @@ and TcAdhocChecksOnLibraryMethods (cenv: cenv) (env: TcEnv) isInstance (finalCal
 
     if (isInstance &&
         finalCalledMethInfo.IsInstance &&
-        typeEquiv g finalCalledMethInfo.ApparentEnclosingType g.obj_ty &&
+        typeEquiv g finalCalledMethInfo.ApparentEnclosingType g.obj_ty_ambivalent &&
         (finalCalledMethInfo.LogicalName = "GetHashCode" || finalCalledMethInfo.LogicalName = "Equals")) then
 
         for objArg in objArgs do
