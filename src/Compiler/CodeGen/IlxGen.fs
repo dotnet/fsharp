@@ -642,7 +642,8 @@ and GenNamedTyAppAux (cenv: cenv) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
 #if !NO_TYPEPROVIDERS
             match tcref.TypeReprInfo with
             // Generate the base type, because that is always the representation of the erased type, unless the assembly is being injected
-            | TProvidedTypeRepr info when info.IsErased -> GenTypeAux cenv m tyenv VoidNotOK ptrsOK (info.BaseTypeForErased(m, g.obj_ty_withNulls))
+            | TProvidedTypeRepr info when info.IsErased ->
+                GenTypeAux cenv m tyenv VoidNotOK ptrsOK (info.BaseTypeForErased(m, g.obj_ty_withNulls))
             | _ ->
 #endif
             GenTyAppAux cenv m tyenv (GenTyconRef tcref) tinst
