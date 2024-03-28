@@ -35,7 +35,7 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net472",
+    [string]$bootstrapTfm = "net8.0",
     [string]$fsharpNetCoreProductTfm = "net8.0",
     [switch][Alias('bl')]$binaryLog = $true,
     [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
@@ -552,7 +552,7 @@ try {
     }
 
     $script:BuildMessage = "Failure building product"
-    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild) {
+    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild -and -not $sourceBuild) {
         if ($noVisualStudio) {
             BuildSolution "FSharp.sln" $False
         }

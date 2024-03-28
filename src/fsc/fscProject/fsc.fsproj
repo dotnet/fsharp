@@ -2,23 +2,29 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup Condition="'$(BUILD_PROTO)' != 'true'">
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
     <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
-    <Configurations>Debug;Release;Proto;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(BUILD_PROTO)' == 'true'">
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
+    <PublishReadyToRun>$(PublishReadyToRun)</PublishReadyToRun>
+    <PublishReadyToRunUseCrossgen2>$(PublishReadyToRun)</PublishReadyToRunUseCrossgen2>
+    <PublishReadyToRunComposite>$(PublishReadyToRun)</PublishReadyToRunComposite>
+    <RuntimeIdentifiers Condition="'$(OS)' == 'Unix'">win-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers Condition="'$(OS)' != 'Unix'">linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
+    <PublishReadyToRunExclude Include="FSharp.Build.dll" />
+  </ItemGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />
 
