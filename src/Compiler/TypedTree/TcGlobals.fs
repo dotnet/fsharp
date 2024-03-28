@@ -463,6 +463,7 @@ type TcGlobals(
   let mkByrefTy ty = TType_app(v_byref_tcr, [ty], v_knownWithoutNull)
   let mkNativePtrTy ty = TType_app(v_nativeptr_tcr, [ty], v_knownWithoutNull)
   let mkFunTy d r = TType_fun (d, r, v_knownWithoutNull)
+  let mkFunTyWithNullness d r nullness = TType_fun (d, r, nullness)
   let (-->) d r = mkFunTy d r
   let mkIteratedFunTy dl r = List.foldBack mkFunTy dl r
   let mkSmallRefTupledTy l = match l with [] -> v_unit_ty | [h] -> h | tys -> mkRawRefTupleTy tys
@@ -991,8 +992,7 @@ type TcGlobals(
 
   let decompileTyconEntries =
         [|
-             // TODO: nullness here
-            "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst _nullness -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
+            "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTyWithNullness (List.item 0 tinst) (List.item 1 tinst))
             "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTyAndNullness tupInfoRef
             "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTyAndNullness tupInfoRef
             "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTyAndNullness tupInfoRef
