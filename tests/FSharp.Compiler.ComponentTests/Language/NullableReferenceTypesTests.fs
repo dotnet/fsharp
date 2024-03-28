@@ -327,8 +327,6 @@ type Maybe<'T> = 'T | null
 let maybeTuple2 : Maybe<int*int> = null
 strictFunc(maybeTuple2) |> ignore
 looseFunc(maybeTuple2) |> ignore
-
-
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
