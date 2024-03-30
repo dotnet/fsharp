@@ -89,7 +89,7 @@
 
   } 
 
-  .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T75433_24Bytes@ field75434@ at I_00003949
+  .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T72031_24Bytes@ field72032@ at I_00003949
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public static !!State  FoldStrong<State,T,(class [runtime]System.Collections.Generic.IEnumerator`1<!!T>) TEnumerator>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!State,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!T,!!State>> folder,
                                                                                                                                  !!State state,
@@ -245,7 +245,7 @@
     IL_0000:  ldc.i4.6
     IL_0001:  newarr     [runtime]System.Int32
     IL_0006:  dup
-    IL_0007:  ldtoken    field valuetype '<PrivateImplementationDetails$assembly>'/T75433_24Bytes@ Use_binding_on_struct_enumerator::field75434@
+    IL_0007:  ldtoken    field valuetype '<PrivateImplementationDetails$assembly>'/T72031_24Bytes@ Use_binding_on_struct_enumerator::field72032@
     IL_000c:  call       void [runtime]System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(class [runtime]System.Array,
                                                                                                         valuetype [runtime]System.RuntimeFieldHandle)
     IL_0011:  newobj     instance void class [runtime]System.Collections.Generic.List`1<int32>::.ctor(class [runtime]System.Collections.Generic.IEnumerable`1<!0>)
@@ -327,7 +327,7 @@
 .class private abstract auto ansi sealed beforefieldinit '<PrivateImplementationDetails$assembly>'
        extends [runtime]System.Object
 {
-  .class explicit ansi sealed nested assembly beforefieldinit T75433_24Bytes@
+  .class explicit ansi sealed nested assembly beforefieldinit T72031_24Bytes@
          extends [runtime]System.ValueType
   {
     .pack 0
