@@ -1102,7 +1102,7 @@ module rec Compiler =
     
         let getLines (text: string) =
           [|
-            let reader = StringReader text
+            let reader = new StringReader(text)
             let mutable line = reader.ReadLine()
             while not(isNull line) do
               line
@@ -1115,7 +1115,7 @@ module rec Compiler =
           |> Seq.skipWhile (fun (a,b) -> a = b)
           |> Seq.tryHead
           |> function | None -> ""
-                      | Some((line, expected), (_,actual)) -> $"diff at line {line}:\nexpected:\n{expected}\nactual:\n{actual}\n"
+                      | Some((line, expected), (_,actual)) -> $"diff at line {line+1}:\nexpected:\n{expected}\nactual:\n{actual}\n"
         $"""to update baseline:
 $ cp {baseline.FilePath} {baseline.BslSource}
 to compare baseline:
