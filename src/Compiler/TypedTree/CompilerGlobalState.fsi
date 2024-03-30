@@ -51,6 +51,5 @@ val newUnique: (unit -> int64)
 /// Concurrency-safe
 val newStamp: (unit -> int64)
 
-
 /// used for test only, to make newUnique and newStamp robust between compilation calls
 val internal resetUniqueAndStamp: (unit -> unit)
