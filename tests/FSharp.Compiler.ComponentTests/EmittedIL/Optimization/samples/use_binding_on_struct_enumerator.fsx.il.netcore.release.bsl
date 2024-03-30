@@ -95,7 +95,7 @@
 
   } 
 
-  .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T8725966_24Bytes@ field8725967@ at I_00003991
+  .field static assembly valuetype '<PrivateImplementationDetails$assembly>'/T3547_24Bytes@ field3548@ at I_0000398D
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public static !!State  FoldStrong<State,T,(class [runtime]System.Collections.Generic.IEnumerator`1<!!T>) TEnumerator>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!State,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!T,!!State>> folder,
                                                                                                                                        !!State state,
@@ -251,7 +251,7 @@
     IL_0000:  ldc.i4.6
     IL_0001:  newarr     [runtime]System.Int32
     IL_0006:  dup
-    IL_0007:  ldtoken    field valuetype '<PrivateImplementationDetails$assembly>'/T8725966_24Bytes@ Use_binding_on_struct_enumerator::field8725967@
+    IL_0007:  ldtoken    field valuetype '<PrivateImplementationDetails$assembly>'/T3547_24Bytes@ Use_binding_on_struct_enumerator::field3548@
     IL_000c:  call       void [runtime]System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(class [runtime]System.Array,
                                                                                                               valuetype [runtime]System.RuntimeFieldHandle)
     IL_0011:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<int32>::.ctor(class [runtime]System.Collections.Generic.IEnumerable`1<!0>)
@@ -333,7 +333,7 @@
 .class private abstract auto ansi sealed beforefieldinit '<PrivateImplementationDetails$assembly>'
        extends [runtime]System.Object
 {
-  .class explicit ansi sealed nested assembly beforefieldinit T8725966_24Bytes@
+  .class explicit ansi sealed nested assembly beforefieldinit T3547_24Bytes@
          extends [runtime]System.ValueType
   {
     .pack 0
@@ -345,7 +345,7 @@
 
 
 
-.data cil I_00003991 = bytearray (
+.data cil I_0000398D = bytearray (
                  01 00 00 00 01 00 00 00 02 00 00 00 03 00 00 00
                  05 00 00 00 08 00 00 00) 
 

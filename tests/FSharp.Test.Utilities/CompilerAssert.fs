@@ -410,6 +410,7 @@ module rec CompilerAssertHelpers =
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
+        FSharp.Compiler.CompilerGlobalState.resetUniqueAndStamp()
         let errors, rc = checker.Compile args |> Async.RunImmediate
         errors, rc, outputFilePath
 
