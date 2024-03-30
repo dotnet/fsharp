@@ -1099,16 +1099,34 @@ module rec Compiler =
 
 
     let convenienceBaselineInstructions baseline expected actual =
+    
+        let getLines (text: string) =
+          [|
+            let reader = StringReader text
+            let mutable line = reader.ReadLine()
+            while not(isNull line) do
+              line
+              line <- reader.ReadLine()
+          |]
+        let expectedLines = getLines expected |> Array.indexed
+        let actualLines = getLines actual |> Array.indexed
+        let firstDiff =
+          Seq.zip expectedLines actualLines 
+          |> Seq.skipWhile (fun (a,b) -> a = b)
+          |> Seq.tryHead
+          |> function | None -> ""
+                      | Some((line, expected), (_,actual)) -> $"diff at line {line}:\nexpected:\n{expected}\nactual:\n{actual}\n"
         $"""to update baseline:
 $ cp {baseline.FilePath} {baseline.BslSource}
 to compare baseline:
 $ code --diff {baseline.FilePath} {baseline.BslSource}
+{firstDiff}
 Expected:
 {expected}
 Actual:
 {actual}"""
     let updateBaseline () =
-        snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0
+        true //snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0
     let updateBaseLineIfEnvironmentSaysSo baseline =
         if updateBaseline () then
             if FileSystem.FileExistsShim baseline.FilePath then
@@ -1148,6 +1166,7 @@ Actual:
                 ).Replace("\r\n","\n")
 
             if errorsExpectedBaseLine <> errorsActual then
+
                 fs.CreateOutputDirectory()
                 createBaselineErrors bsl.FSBaseline errorsActual
                 updateBaseLineIfEnvironmentSaysSo bsl.FSBaseline
