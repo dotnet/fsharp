@@ -922,7 +922,6 @@ val TcPatLongIdentActivePatternCase:
 val ConvSynPatToSynExpr: synPat: SynPat -> SynExpr
 
 val TcVal:
-    checkAttributes: bool ->
     cenv: TcFileState ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->

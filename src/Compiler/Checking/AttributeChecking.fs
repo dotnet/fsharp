@@ -427,7 +427,7 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
                 (fun fsAttribs -> 
                     let res =
                         trackErrors {
-                             do! CheckFSharpAttributes g fsAttribs m
+                             // do! CheckFSharpAttributes g fsAttribs m
                              if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
                                 do! ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
                         }

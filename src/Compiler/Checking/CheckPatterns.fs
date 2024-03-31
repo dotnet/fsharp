@@ -769,7 +769,7 @@ and TcPatLongIdentLiteral warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
     match vref.LiteralValue with
     | None -> error (Error(FSComp.SR.tcNonLiteralCannotBeUsedInPattern(), m))
     | Some lit ->
-        let _, _, _, vexpty, _, _ = TcVal true cenv env tpenv vref None None mLongId
+        let _, _, _, vexpty, _, _ = TcVal cenv env tpenv vref None None mLongId
         CheckValAccessible mLongId env.AccessRights vref
         CheckFSharpAttributes g vref.Attribs mLongId |> CommitOperationResult
         CheckNoArgsForLiteral args m

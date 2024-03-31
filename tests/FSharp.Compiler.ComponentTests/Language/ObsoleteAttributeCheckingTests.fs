@@ -68,7 +68,7 @@ c.Update()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 1, Line 9, Col 11, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -144,11 +144,11 @@ type C =
 let c = C()
 c.Update()
         """
-        |> ignoreWarnings
+        |> withOptions ["--nowarn:0052"]
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 10, Col 1, Line 10, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 10, Col 1, Line 10, Col 11, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -204,7 +204,7 @@ C.Update()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 1, Line 9, Col 11, "This construct is deprecated. Use B instead")
         ]
         
     [<Fact>]
@@ -522,7 +522,7 @@ type ButtonExtensions =
         ]
 
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on an moudle function and set property via module using an extesnion method`` () =
+    let ``Obsolete attribute is taken into account when used on an module function and set property via module using an extesnion method`` () =
         Fsx """
 open System
 open System.Runtime.CompilerServices
@@ -595,7 +595,7 @@ b.text("Hello 2") |> ignore
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 16, Col 1, Line 16, Col 7, "This construct is deprecated. Use B instead")
+            (Error 101, Line 16, Col 1, Line 16, Col 18, "This construct is deprecated. Use B instead")
         ]
     
     [<Fact>]
@@ -641,8 +641,7 @@ let value2 = class1.A <- 12
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated");
-            (Warning 44, Line 9, Col 14, Line 9, Col 28, "This construct is deprecated. member A is deprecated")
+            (Warning 44, Line 9, Col 14, Line 9, Col 28, "This construct is deprecated. member A is deprecated");
         ]
         
     [<Fact>]
@@ -660,7 +659,7 @@ let value2 = class1.A <- 12
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
+            (Error 101, Line 9, Col 14, Line 9, Col 28, "This construct is deprecated. member A is deprecated")
         ]
         
     [<Fact>]
@@ -1187,7 +1186,6 @@ let f (x: IFirst) = x.F()
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
             (Warning 44, Line 13, Col 21, Line 13, Col 26, "This construct is deprecated. Use G instead")
         ]
 
@@ -1211,7 +1209,7 @@ let f (x: IFirst) = x.F()
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+            (Error 101, Line 13, Col 21, Line 13, Col 26, "This construct is deprecated. Use G instead")
         ]
         
     [<Fact>]
