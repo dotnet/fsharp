@@ -10,7 +10,7 @@
   <ItemGroup>
     <Compile Include="AssemblyCheck.fs" />
     <Content Include="SkipVerifyEmbeddedPdb.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

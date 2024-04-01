@@ -238,10 +238,6 @@ function BuildSolution {
 
   local projects="$repo_root/FSharp.sln"
 
-  if [["$source_build" = true ]]; then
-    projects="$repo_root/Sourcebuild.sln"
-  fi
-
   echo "$projects:"
 
   # https://github.com/dotnet/roslyn/issues/23736
@@ -266,40 +262,24 @@ function BuildSolution {
   node_reuse=false
 
   # build bootstrap tools
-  # source_build=true means we are currently in the outer/wrapper source-build,
-  # and building bootstrap needs to wait. The source-build targets will run this
-  # script again without setting source_build=true when it is done setting up
-  # the build environment. See 'eng/SourceBuild.props'.
-  if [[ "$source_build" != true ]]; then
-    bootstrap_config=Proto
-    bootstrap_dir=$artifacts_dir/Bootstrap
-    if [[ "$force_bootstrap" == true ]]; then
-      rm -fr $bootstrap_dir
+  # source_build=In source build proto does no work, except cause sourcebuild in wrapper to build
+  bootstrap_dir=$artifacts_dir/Bootstrap
+  if [[ "$force_bootstrap" == true ]]; then
+    rm -fr $bootstrap_dir
+  fi
+  if [ ! -f "$bootstrap_dir/fslex/fslex.dll" ]; then
+    local bltools=""
+    if [[ "$bl" != "" ]]; then
+      bltools=$bl+".proto.binlog"
     fi
-    if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
-      local bltools=""
-      if [[ "$bl" != "" ]]; then
-        bltools=$bl+".lex.binlog"
-      fi
-      BuildMessage="Error building tools"
-      MSBuild "$repo_root/buildtools/buildtools.proj" /restore "$bltools" /p:Configuration=$bootstrap_config
 
-      mkdir -p "$bootstrap_dir"
-      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/$tfm $bootstrap_dir/fslex
-      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/$tfm $bootstrap_dir/fsyacc
-    fi
-    if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
-      local bltools=""
-      if [[ "$bl" != "" ]]; then
-        bltools=$bl+".bootstrap.binlog"
-      fi
-      BuildMessage="Error building bootstrap"
-      MSBuild "$repo_root/Proto.sln" /restore "$bltools" /p:Configuration=$bootstrap_config
-      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/$tfm $bootstrap_dir/fsc
-    fi
+    BuildMessage="Error building tools"
+    local args=" build $repo_root/proto.proj /restore $bltools /p:Configuration=Proto /p:ArcadeBuildFromSource=$source_build"
+    echo $args
+    "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
 
-  if [[ "$skip_build" != true && "$source_build != true" ]]; then
+  if [[ "$skip_build" != true ]]; then
     # do real build
     BuildMessage="Error building solution"
     MSBuild $toolset_build_proj \

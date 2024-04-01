@@ -4,6 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <Configurations>Debug;Release;Proto</Configurations>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
@@ -22,7 +23,7 @@
     <NoOptimizationData>true</NoOptimizationData>
     <NoInterfaceData>true</NoInterfaceData>
     <CompressMetadata>true</CompressMetadata>
-    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --realsig+</OtherFlags>
+    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
