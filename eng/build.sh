@@ -273,8 +273,13 @@ function BuildSolution {
       bltools=$bl+".proto.binlog"
     fi
 
+    local blrestore=""
+    if [[ "$source_build" != "true" ]]; then
+      blrestore="/restore"
+    fi
+
     BuildMessage="Error building tools"
-    local args=" publish $repo_root/proto.proj /restore $bltools /p:Configuration=Proto /p:ArcadeBuildFromSource=$source_build"
+    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto /p:ArcadeBuildFromSource=$source_build"
     echo $args
     "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
