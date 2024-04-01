@@ -686,6 +686,8 @@ module SynExpr =
         | _, SyntaxNode.SynExpr(SynExpr.Do _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.DoBang _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.Fixed _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.Record _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.AnonRecd _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.InterpolatedString _ as outer) :: _ when
             containsSensitiveIndentation outer.Range.StartColumn expr.Range
             ->
