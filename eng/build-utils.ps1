@@ -243,7 +243,7 @@ function Make-BootstrapBuild() {
 
     # prepare compiler
     $projectpath = "$RepoRoot" + "proto.proj"
-    $args = "build $projectpath -c $bootstrapConfiguration"
+    $args = "publish $projectpath -c $bootstrapConfiguration"
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "bootstrap.binlog"
         $args += " /bl:`"$logFilePath`""
