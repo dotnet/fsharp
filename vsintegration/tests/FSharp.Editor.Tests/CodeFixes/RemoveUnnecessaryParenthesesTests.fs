@@ -886,6 +886,111 @@ in x
             """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
 
+            // Technically we could remove some parens in some of these,
+            // but additional exprs above or below can suddenly move the offsides line,
+            // and we don't want to do unbounded lookahead or lookbehind.
+
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                    y
+                ]
+            ",
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                    y
+                ]
+            "
+
+            "
+            let _ =
+                [
+                    (if p then q else r);
+                    y
+                ]
+            ",
+            "
+            let _ =
+                [
+                    if p then q else r;
+                    y
+                ]
+            "
+
+            "
+            let _ =
+                [
+                    x;
+                   (if p then q else r);
+                   (if foo then bar else baz);
+                ]
+            ",
+            "
+            let _ =
+                [
+                    x;
+                   (if p then q else r);
+                   if foo then bar else baz;
+                ]
+            "
+
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                    y;
+                   (if foo then bar else baz);
+                ]
+            ",
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                    y;
+                   if foo then bar else baz;
+                ]
+            "
+
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                   (if foo then bar else baz);
+                    z
+                ]
+            ",
+            "
+            let _ =
+                [
+                   if p then q else r;
+                   (if foo then bar else baz);
+                    z
+                ]
+            "
+
+            "
+            let _ =
+                [
+                    x;
+                   (if a then b else c);
+                   (if p then q else r);
+                   (if foo then bar else baz);
+                    z
+                ]
+            ",
+            "
+            let _ =
+                [
+                    x;
+                   (if a then b else c);
+                   (if p then q else r);
+                   (if foo then bar else baz);
+                    z
+                ]
+            "
             "
             let _ =
                 let y = 100

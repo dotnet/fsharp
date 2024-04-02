@@ -539,6 +539,21 @@ module SynExpr =
 
             loop ValueNone startLine range.StartColumn
 
+    /// Matches constructs that are sensitive to
+    /// certain kinds of undentation in sequential expressions.
+    [<return: Struct>]
+    let (|UndentationSensitive|_|) expr =
+        match expr with
+        | SynExpr.TryWith _
+        | SynExpr.TryFinally _
+        | SynExpr.For _
+        | SynExpr.ForEach _
+        | SynExpr.IfThenElse _
+        | SynExpr.Match _
+        | SynExpr.While _
+        | SynExpr.Do _ -> ValueSome UndentationSensitive
+        | _ -> ValueNone
+
     let rec shouldBeParenthesizedInContext (getSourceLineStr: int -> string) path expr : bool =
         let shouldBeParenthesizedInContext = shouldBeParenthesizedInContext getSourceLineStr
         let containsSensitiveIndentation = containsSensitiveIndentation getSourceLineStr
@@ -690,6 +705,56 @@ module SynExpr =
         | _, SyntaxNode.SynExpr(SynExpr.AnonRecd _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.InterpolatedString _ as outer) :: _ when
             containsSensitiveIndentation outer.Range.StartColumn expr.Range
+            ->
+            true
+
+        // There are certain constructs whose indentation in
+        // a sequential expression is valid when parenthesized
+        // (and separated from the following expression by a semicolon),
+        // but where the parsing of the outer expression would change if
+        // the parentheses were removed in place, e.g.,
+        //
+        //     [
+        //        (if p then q else r); // Cannot remove in place because of the indentation of y below.
+        //         y
+        //     ]
+        //
+        // or
+        //
+        //     [
+        //         x;
+        //        (if p then q else r); // Cannot remove in place because of the indentation of x above.
+        //         z
+        //     ]
+        //
+        // This analysis is imperfect in that it sometimes requires parens when they
+        // may not be required, but the only way to know for sure in such cases would be to walk up
+        // an unknown number of ancestral sequential expressions to check for problematic
+        // indentation (or to keep track of the offsides line throughout the AST traversal):
+        //
+        //     [
+        //         x;                   // This line's indentation means we cannot remove below.
+        //        (…);
+        //        (…);
+        //        (* 𝑛 more such lines. *)
+        //        (…);
+        //        (…);
+        //        (if p then q else r); // Can no longer remove here because of the indentation of x above.
+        //        z
+        //     ]
+        | UndentationSensitive,
+          SyntaxNode.SynExpr(SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is expr))) :: SyntaxNode.SynExpr(SynExpr.Sequential(
+              expr1 = SynExpr.Paren(expr = other) | other)) :: _
+        | UndentationSensitive,
+          SyntaxNode.SynExpr(SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is expr); expr2 = other)) :: SyntaxNode.SynExpr(SynExpr.Sequential _) :: _
+        | UndentationSensitive,
+          SyntaxNode.SynExpr(SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is expr); expr2 = other)) :: SyntaxNode.SynExpr(SynExpr.ArrayOrListComputed _) :: _
+        | UndentationSensitive,
+          SyntaxNode.SynExpr(SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is expr); expr2 = other)) :: SyntaxNode.SynExpr(SynExpr.ArrayOrList _) :: _
+        | UndentationSensitive,
+          SyntaxNode.SynExpr(SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is expr); expr2 = other)) :: SyntaxNode.SynExpr(SynExpr.ComputationExpr _) :: _ when
+            expr.Range.StartLine <> other.Range.StartLine
+            && expr.Range.StartColumn <= other.Range.StartColumn
             ->
             true
 
