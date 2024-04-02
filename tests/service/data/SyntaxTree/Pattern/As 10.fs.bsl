@@ -22,4 +22,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(3,10)-(3,11) parse error Unexpected symbol ')' in pattern
+(3,7)-(3,9) parse error Expecting pattern

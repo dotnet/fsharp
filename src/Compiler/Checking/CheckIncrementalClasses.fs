@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CheckIncrementalClasses
 open System
 
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -173,7 +174,13 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
         let ctorTy = mkFunTy g argTy objTy    
 
         // NOTE: no attributes can currently be specified for the implicit constructor 
-        let attribs = TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
+        let attribs =
+            // Implicit constructors can only target AttributeTargets.Constructor
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                TcAttributes cenv env AttributeTargets.Constructor attrs
+            else
+                TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
+
         let memberFlags = CtorMemberFlags
                                   
         let synArgInfos = List.map (SynInfo.InferSynArgInfoFromSimplePat []) spats
@@ -291,13 +298,15 @@ type IncrClassReprInfo =
     /// <param name='staticForcedFieldVars'>The vars forced to be fields due to static member bindings, instance initialization expressions or instance member bindings</param>
     /// <param name='instanceForcedFieldVars'>The vars forced to be fields due to instance member bindings</param>
     /// <param name='takenFieldNames'></param>
+    /// <param name='declKind'></param>
     /// <param name='bind'></param>
     member localRep.ChooseRepresentation (cenv: cenv, env: TcEnv, isStatic, isCtorArg,
                                             staticCtorInfo: StaticCtorInfo,
                                             ctorInfoOpt: IncrClassCtorInfo option,
                                             staticForcedFieldVars: FreeLocals,
                                             instanceForcedFieldVars: FreeLocals, 
-                                            takenFieldNames: Set<string>, 
+                                            takenFieldNames: Set<string>,
+                                            declKind: DeclKind,
                                             bind: Binding) = 
         let g = cenv.g 
         let v = bind.Var
@@ -387,7 +396,7 @@ type IncrClassReprInfo =
                 // it a "member" in the F# sense, but the F# spec says it is generated and it is reasonable to reflect on it.
                 let memberValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, None, true (* isCompilerGenerated *), true (* isIncrClass *), false, false)
 
-                let methodVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, memberValScheme, v.Attribs, XmlDoc.Empty, None, false) 
+                let methodVal = MakeAndPublishVal cenv env (Parent tcref, false, declKind, ValNotInRecScope, memberValScheme, v.Attribs, XmlDoc.Empty, None, false) 
 
                 reportIfUnused()
                 InMethod(isStatic, methodVal, valReprInfo)
@@ -395,9 +404,9 @@ type IncrClassReprInfo =
         repr, takenFieldNames
 
     /// Extend the known local representations by choosing a representation for a binding
-    member localRep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, bind: Binding) = 
+    member localRep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, declKind, bind: Binding) = 
         let v = bind.Var
-        let repr, takenFieldNames = localRep.ChooseRepresentation (cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, localRep.TakenFieldNames, bind )
+        let repr, takenFieldNames = localRep.ChooseRepresentation (cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, localRep.TakenFieldNames, declKind, bind )
         // OK, representation chosen, now add it 
         {localRep with 
             TakenFieldNames=takenFieldNames 
@@ -677,11 +686,10 @@ let MakeCtorForIncrClassConstructionPhase2C(
 
             (staticForcedFieldVars.FreeLocals, instanceForcedFieldVars.FreeLocals)
 
-
     // Compute the implicit construction side effects of single 
     // 'let' or 'let rec' binding in the implicit class construction sequence 
     let TransBind (reps: IncrClassReprInfo) (TBind(v, rhsExpr, spBind)) =
-        if v.MustInline then
+        if v.ShouldInline then
             error(Error(FSComp.SR.tcLocalClassBindingsCannotBeInline(), v.Range))
         let rhsExpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst rhsExpr
             
@@ -772,7 +780,8 @@ let MakeCtorForIncrClassConstructionPhase2C(
             match dec with 
             | IncrClassBindingGroup(binds, isStatic, isRec) ->
                 let actions, reps, methodBinds = 
-                    let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, bind)) // extend
+                    // let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, (ClassLetBinding isStatic), bind)) // extend
+                    let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, ModuleOrMemberBinding, bind)) // extend
                     if isRec then
                         // Note: the recursive calls are made via members on the object
                         // or via access to fields. This means the recursive loop is "broken", 

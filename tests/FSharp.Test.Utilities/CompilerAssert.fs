@@ -296,8 +296,11 @@ and Compilation =
 
 module rec CompilerAssertHelpers =
 
-    let useTransparentCompiler = FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically
-    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=useTransparentCompiler)
+    let UseTransparentCompiler =
+        FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
+        not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
+
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=UseTransparentCompiler)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
     let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
@@ -436,9 +439,10 @@ module rec CompilerAssertHelpers =
                     | Some text ->
                         // In memory source file copy it to the build directory
                         let source = item.ChangeExtension
-                        File.WriteAllText (source.GetSourceFileName, text)
-                        disposals.Add(disposeFile source.GetSourceFileName)
-                        yield source
+                        let destFileName = Path.Combine(outputDirectory.FullName, Path.GetFileName(source.GetSourceFileName))
+                        File.WriteAllText (destFileName, text)
+                        disposals.Add(disposeFile destFileName)
+                        yield source.WithFileName(destFileName)
                     | None ->
                         // On Disk file
                         let sourceFileName = item.GetSourceFileName

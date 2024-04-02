@@ -1,4 +1,4 @@
-namespace EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
@@ -17,14 +17,38 @@ module AttributeTargets =
         |> verifyBaseline
         |> verifyILBaseline
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Default.fs"|])>]
-    let ``Default_fs`` compilation =
-        verifyCompilation compilation
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Default.fs"|])>]
+    let ``Default_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Field.fs"|])>]
-    let ``Field_fs`` compilation =
-        verifyCompilation compilation
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Default.fs"|])>]
+    let ``Default_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Property.fs"|])>]
-    let ``Property_fs`` compilation =
-        verifyCompilation compilation
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Field.fs"|])>]
+    let ``Field_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Field.fs"|])>]
+    let ``Field_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Property.fs"|])>]
+    let ``Property_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Property.fs"|])>]
+    let ``Property_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation

@@ -29,6 +29,12 @@ module internal Activity =
         val cache: string
         val buildPhase: string
         val version: string
+        val stackGuardName: string
+        val stackGuardCurrentDepth: string
+        val stackGuardMaxDepth: string
+        val callerMemberName: string
+        val callerFilePath: string
+        val callerLineNumber: string
 
     module Events =
         val cacheHit: string

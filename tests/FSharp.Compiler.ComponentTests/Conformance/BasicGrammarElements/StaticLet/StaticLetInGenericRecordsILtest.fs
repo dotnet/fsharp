@@ -9,7 +9,7 @@ type MyRecord<'T> =
         X: 'T 
     }
     // Init per typar
-    static let cachedVal =         
+    static let cachedVal =
         Console.WriteLine(typeof<'T>.Name)
         typeof<'T>.Name
 

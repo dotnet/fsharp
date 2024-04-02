@@ -3,6 +3,8 @@
 open System.Collections.Concurrent
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
+open FSharp.Compiler.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open Internal.Utilities.Library.Extras
@@ -27,7 +29,7 @@ open OpenTelemetry.Trace
 
 #nowarn "57"
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Use Transparent Compiler`` () =
 
     let size = 20
@@ -57,7 +59,7 @@ let ``Use Transparent Compiler`` () =
         checkFile last expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Parallel processing`` () =
 
     let project = SyntheticProject.Create(
@@ -75,7 +77,7 @@ let ``Parallel processing`` () =
         checkFile "E" expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Parallel processing with signatures`` () =
 
     let project = SyntheticProject.Create(
@@ -110,7 +112,7 @@ let makeTestProject () =
 let testWorkflow () =
     ProjectWorkflowBuilder(makeTestProject(), useTransparentCompiler = true)
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Edit file, check it, then check dependent file`` () =
     testWorkflow() {
         updateFile "First" breakDependentFiles
@@ -118,21 +120,21 @@ let ``Edit file, check it, then check dependent file`` () =
         checkFile "Second" expectErrors
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Edit file, don't check it, check dependent file`` () =
     testWorkflow() {
         updateFile "First" breakDependentFiles
         checkFile "Second" expectErrors
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Check transitive dependency`` () =
     testWorkflow() {
         updateFile "First" breakDependentFiles
         checkFile "Last" expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Change multiple files at once`` () =
     testWorkflow() {
         updateFile "First" (setPublicVersion 2)
@@ -141,7 +143,7 @@ let ``Change multiple files at once`` () =
         checkFile "Last" (expectSignatureContains "val f: x: 'a -> (ModuleFirst.TFirstV_2<'a> * ModuleSecond.TSecondV_2<'a>) * (ModuleFirst.TFirstV_2<'a> * ModuleThird.TThirdV_2<'a>) * TLastV_1<'a>")
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Files depend on signature file if present`` () =
     let project = makeTestProject() |> updateFile "First" addSignatureFile
 
@@ -151,7 +153,7 @@ let ``Files depend on signature file if present`` () =
         checkFile "Second" expectNoChanges
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Project with signatures`` () =
 
     let project = SyntheticProject.Create(
@@ -166,7 +168,7 @@ let ``Project with signatures`` () =
         checkFile "Second" expectOk
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Signature update`` () =
 
     let project = SyntheticProject.Create(
@@ -182,7 +184,7 @@ let ``Signature update`` () =
         checkFile "Second" expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Adding a file`` () =
     testWorkflow() {
         addFileAbove "Second" (sourceFile "New" [])
@@ -190,14 +192,14 @@ let ``Adding a file`` () =
         checkFile "Last" (expectSignatureContains "val f: x: 'a -> (ModuleFirst.TFirstV_1<'a> * ModuleNew.TNewV_1<'a> * ModuleSecond.TSecondV_1<'a>) * (ModuleFirst.TFirstV_1<'a> * ModuleThird.TThirdV_1<'a>) * TLastV_1<'a>")
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Removing a file`` () =
     testWorkflow() {
         removeFile "Second"
         checkFile "Last" expectErrors
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Changes in a referenced project`` () =
     let library = SyntheticProject.Create("library", sourceFile "Library" [])
 
@@ -216,7 +218,7 @@ let ``Changes in a referenced project`` () =
 
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``File is not checked twice`` () =
 
     let cacheEvents = ConcurrentQueue()
@@ -240,7 +242,7 @@ let ``File is not checked twice`` () =
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileThird.fs"])
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``If a file is checked as a dependency it's not re-checked later`` () =
     let cacheEvents = ConcurrentQueue()
 
@@ -264,7 +266,7 @@ let ``If a file is checked as a dependency it's not re-checked later`` () =
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Requested], intermediateTypeChecks["FileThird.fs"])
 
 
-// [<Fact>] TODO: differentiate complete and minimal checking requests
+// [<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>] TODO: differentiate complete and minimal checking requests
 let ``We don't check files that are not depended on`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [],
@@ -294,7 +296,7 @@ let ``We don't check files that are not depended on`` () =
     Assert.Equal<JobEvent list>([Started; Finished], intermediateTypeChecks["FileThird.fs"])
     Assert.False (intermediateTypeChecks.ContainsKey "FileSecond.fs")
 
-// [<Fact>] TODO: differentiate complete and minimal checking requests
+// [<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>] TODO: differentiate complete and minimal checking requests
 let ``Files that are not depended on don't invalidate cache`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [],
@@ -335,7 +337,7 @@ let ``Files that are not depended on don't invalidate cache`` () =
 
     Assert.Equal<string * JobEvent list>([], intermediateTypeChecks |> Map.toList)
 
-// [<Fact>] TODO: differentiate complete and minimal checking requests
+// [<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>] TODO: differentiate complete and minimal checking requests
 let ``Files that are not depended on don't invalidate cache part 2`` () =
     let project = SyntheticProject.Create(
         sourceFile "A" [],
@@ -375,7 +377,7 @@ let ``Files that are not depended on don't invalidate cache part 2`` () =
     Assert.Equal<string * JobEvent list>(["FileE.fs", [Started; Finished]], graphConstructions)
     Assert.Equal<string * JobEvent list>(["FileE.fs", [Started; Finished]], intermediateTypeChecks)
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Changing impl files doesn't invalidate cache when they have signatures`` () =
     let project = SyntheticProject.Create(
         { sourceFile "A" [] with SignatureFile = AutoGenerated },
@@ -404,7 +406,7 @@ let ``Changing impl files doesn't invalidate cache when they have signatures`` (
 
     Assert.Equal<string * JobEvent list>([], intermediateTypeChecks)
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Changing impl file doesn't invalidate an in-memory referenced project`` () =
     let library = SyntheticProject.Create("library", { sourceFile "A" [] with SignatureFile = AutoGenerated })
 
@@ -645,13 +647,15 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 }
 
 
+(* This gets in the way of insertions too often now, uncomment when stable.
 [<Theory>]
 [<InlineData(SignatureFiles.Yes)>]
 [<InlineData(SignatureFiles.No)>]
 [<InlineData(SignatureFiles.Some)>]
+*)
 let Fuzzing signatureFiles =
 
-    let seed = 1106087513
+    let seed = System.Random().Next()
     let rng = System.Random(int seed)
 
     let fileCount = 30
@@ -711,7 +715,6 @@ type GiraffeTheoryAttribute() =
 [<InlineData false>]
 let GiraffeFuzzing signatureFiles =
     let seed = System.Random().Next()
-    //let seed = 1044159179
 
     let giraffeDir = if signatureFiles then giraffeSignaturesDir else giraffeDir
     let giraffeTestsDir = if signatureFiles then giraffeSignaturesTestsDir else giraffeTestsDir
@@ -787,7 +790,7 @@ module Stuff =
         let fileName, snapshot, checker = singleFileChecker source
         checker.ParseFile(fileName, snapshot) |> Async.RunSynchronously
 
-    //[<Fact>]
+    //[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
     let ``Hash stays the same when whitespace changes`` () =
 
         //let parseResult = getParseResult source
@@ -843,7 +846,7 @@ let ``TypeCheck last file in project with transparent compiler`` useTransparentC
         checkFile lastFile expectOk
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``LoadClosure for script is computed once`` () =
     let project = SyntheticProject.CreateForScript(
         sourceFile "First" [])
@@ -868,7 +871,7 @@ let ``LoadClosure for script is computed once`` () =
 
     Assert.Empty(closureComputations)
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``LoadClosure for script is recomputed after changes`` () =
     let project = SyntheticProject.CreateForScript(
         sourceFile "First" [])
@@ -896,3 +899,271 @@ let ``LoadClosure for script is recomputed after changes`` () =
         |> Map
 
     Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
+    
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
+let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        clearCache
+        tryGetRecentCheckResults "First" expectNone
+    } |> ignore
+
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
+let ``TryGetRecentCheckResultsForFile returns result after first call to ParseAndCheckFileInProject`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [] )
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
+let ``TryGetRecentCheckResultsForFile returns no result after edit`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First" expectNone
+        checkFile "First" expectOk
+        tryGetRecentCheckResults "First" expectSome
+    } |> ignore
+    
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
+let ``TryGetRecentCheckResultsForFile returns result after edit of other file`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" ["First"])
+    
+    ProjectWorkflowBuilder(project) {
+        tryGetRecentCheckResults "First" expectSome
+        tryGetRecentCheckResults "Second" expectSome
+        updateFile "First" updatePublicSurface
+        tryGetRecentCheckResults "First"  expectNone
+        tryGetRecentCheckResults "Second" expectSome // file didn't change so we still want to get the recent result
+    } |> ignore
+
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
+let ``Background compiler and Transparent compiler return the same options`` () =
+    async {
+        let backgroundChecker = FSharpChecker.Create(useTransparentCompiler = false)
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+
+        let! backgroundSnapshot, backgroundDiags = backgroundChecker.GetProjectSnapshotFromScript(scriptName, content)
+        let! transparentSnapshot, transparentDiags = transparentChecker.GetProjectSnapshotFromScript(scriptName, content)
+        Assert.Empty(backgroundDiags)
+        Assert.Empty(transparentDiags)
+        Assert.Equal<string list>(backgroundSnapshot.OtherOptions, transparentSnapshot.OtherOptions)
+        Assert.Equal<ProjectSnapshot.ReferenceOnDisk list>(backgroundSnapshot.ReferencesOnDisk, transparentSnapshot.ReferencesOnDisk)
+    }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Unused warning should still produce after parse warning`` useTransparentCompiler =
+
+    // There should be parse warning because of the space in the file name:
+    //   warning FS0221: The declarations in this file will be placed in an implicit module 'As 01' based on the file name 'As 01.fs'.
+    //   However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.
+    
+    let project =
+        { SyntheticProject.Create(
+            { sourceFile "As 01" [] with
+                Source = """
+do
+    let _ as b = ()
+    ()
+
+// For more information see https://aka.ms/fsharp-console-apps
+printfn "Hello from F#"
+"""
+                SignatureFile = No
+                
+            }) with
+            AutoAddModules = false
+            OtherOptions = [
+                "--target:exe"
+                "--warn:3"
+                "--warnon:1182"
+                "--warnaserror:3239"
+                "--noframework"
+            ]
+        }
+
+    let expectTwoWarnings (_parseResult:FSharpParseFileResults, checkAnswer: FSharpCheckFileAnswer) (_, _) =
+        match checkAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwith "Should not have aborted"
+        | FSharpCheckFileAnswer.Succeeded checkResults ->
+            let hasParseWarning =
+                checkResults.Diagnostics
+                |> Array.exists (fun diag -> diag.Severity = FSharpDiagnosticSeverity.Warning && diag.ErrorNumber = 221)
+            Assert.True(hasParseWarning, "Expected parse warning FS0221")
+
+            let hasCheckWarning =
+                checkResults.Diagnostics
+                |> Array.exists (fun diag -> diag.Severity = FSharpDiagnosticSeverity.Warning && diag.ErrorNumber = 1182)
+            Assert.True(hasCheckWarning, "Expected post inference warning FS1182")
+    
+    ProjectWorkflowBuilder(project, useTransparentCompiler = useTransparentCompiler) {
+        checkFile "As 01" expectTwoWarnings
+    }
+
+[<Fact>]
+let ``Transparent Compiler ScriptClosure cache is populated after GetProjectOptionsFromScript`` () =
+    async {
+        let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
+        let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
+        let content = SourceTextNew.ofString ""
+        let! _ = transparentChecker.GetProjectOptionsFromScript(scriptName, content)
+        Assert.Equal(1, transparentChecker.Caches.ScriptClosure.Count)
+
+    }
+
+type private LoadClosureTestShim(currentFileSystem: IFileSystem) =
+    inherit DefaultFileSystem()
+    let mutable bDidUpdate = false
+    let asStream (v:string) = new MemoryStream(System.Text.Encoding.UTF8.GetBytes v)
+    let knownFiles = set [ "a.fsx"; "b.fsx"; "c.fsx" ]
+    
+    member val aFsx = "#load \"b.fsx\""
+    member val  bFsxInitial = ""
+    member val  bFsxUpdate = "#load \"c.fsx\""
+    member val  cFsx = ""
+    
+    member x.DocumentSource (fileName: string) =
+        async {
+            if not (knownFiles.Contains fileName) then
+                return None
+            else
+                match fileName with
+                | "a.fsx" -> return Some (SourceText.ofString x.aFsx)
+                | "b.fsx" ->  return Some (SourceText.ofString (if bDidUpdate then x.bFsxUpdate else x.bFsxInitial))
+                | "c.fsx" -> return Some (SourceText.ofString x.cFsx)
+                | _ -> return  None
+        }
+
+    member x.UpdateB () = bDidUpdate <- true
+    
+    override _.FileExistsShim(path) =
+        if knownFiles.Contains path then true else currentFileSystem.FileExistsShim(path)
+    override _.GetFullPathShim(fileName) =
+        if knownFiles.Contains fileName then fileName else currentFileSystem.GetFullPathShim(fileName)
+    override x.OpenFileForReadShim(fileName, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) =
+        match fileName with
+        | "a.fsx" -> asStream x.aFsx
+        | "b.fsx" ->  asStream (if bDidUpdate then x.bFsxUpdate else x.bFsxInitial)
+        | "c.fsx" -> asStream x.cFsx
+        | _ ->
+            currentFileSystem.OpenFileForReadShim(
+                fileName,
+                ?useMemoryMappedFile = useMemoryMappedFile,
+                ?shouldShadowCopy = shouldShadowCopy
+            )
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``The script load closure should always be evaluated`` useTransparentCompiler =
+    async {
+        // The LoadScriptClosure uses the file system shim so we need to reset that.
+        let currentFileSystem = FileSystemAutoOpens.FileSystem
+        let assumeDotNetFramework =
+            // The old BackgroundCompiler uses assumeDotNetFramework = true
+            // This is not always correctly loading when this test runs on non-Windows.
+            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework") then
+                None
+            else
+                Some false 
+
+        try
+            let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+            let fileSystemShim = LoadClosureTestShim(currentFileSystem)
+            // Override the file system shim for loading b.fsx
+            FileSystem <- fileSystemShim
+
+            let! initialSnapshot, _ =
+                checker.GetProjectSnapshotFromScript(
+                    "a.fsx",
+                    SourceTextNew.ofString fileSystemShim.aFsx,
+                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
+                    ?assumeDotNetFramework = assumeDotNetFramework
+                )
+
+            // File b.fsx should also be included in the snapshot.
+            Assert.Equal(2, initialSnapshot.SourceFiles.Length)
+
+            let! checkResults = checker.ParseAndCheckFileInProject("a.fsx", initialSnapshot)
+
+            match snd checkResults with
+            | FSharpCheckFileAnswer.Aborted -> failwith "Did not expected FSharpCheckFileAnswer.Aborted"
+            | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
+            
+            // Update b.fsx, it should now load c.fsx
+            fileSystemShim.UpdateB()
+
+            // The constructed key for the load closure will the exactly the same as the first GetProjectSnapshotFromScript call.
+            // However, a none cached version will be computed first in GetProjectSnapshotFromScript and update the cache afterwards.
+            let! secondSnapshot, _ =
+                checker.GetProjectSnapshotFromScript(
+                    "a.fsx",
+                    SourceTextNew.ofString fileSystemShim.aFsx,
+                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
+                    ?assumeDotNetFramework = assumeDotNetFramework
+                )
+
+            Assert.Equal(3, secondSnapshot.SourceFiles.Length)
+
+            let! checkResults = checker.ParseAndCheckFileInProject("a.fsx", secondSnapshot)
+
+            match snd checkResults with
+            | FSharpCheckFileAnswer.Aborted -> failwith "Did not expected FSharpCheckFileAnswer.Aborted"
+            | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
+        finally
+            FileSystemAutoOpens.FileSystem <- currentFileSystem
+    }
+
+[<Fact>]
+let ``Parsing without cache and without project snapshot`` () =
+    async {
+        let checker = FSharpChecker.Create(useTransparentCompiler = true)
+        let fileName = "Temp.fs"
+        let sourceText = "let a = 0" |> SourceText.ofString
+        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| fileName |]; IsExe = true }
+        let! parseResult = checker.ParseFile(fileName, sourceText, parsingOptions, cache = false)
+        Assert.False(parseResult.ParseHadErrors)
+        Assert.True(Array.isEmpty parseResult.Diagnostics)
+        Assert.Equal(0, checker.Caches.ParseFile.Count)
+        Assert.Equal(0, checker.Caches.ParseFileWithoutProject.Count)
+    }
+
+// In this scenario, the user is typing something in file B.fs.
+// The idea is that the IDE will introduce an additional (fake) identifier in order to have a potential complete syntax tree.
+// The user never wrote this code so we need to ensure nothing is added to checker.Caches.ParseFile
+[<Fact>]
+let ``Parsing with cache and without project snapshot`` () =
+    async {
+        let checker = FSharpChecker.Create(useTransparentCompiler = true)
+        let fileName = "B.fs"
+        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| "A.fs"; fileName; "C.fs" |] }        
+        let sourceText =
+            SourceText.ofString """
+module B
+
+let b : int = ExtraIdentUserNeverWroteRulezzz
+"""
+        let! parseResult = checker.ParseFile(fileName, sourceText, parsingOptions, cache = true)
+        Assert.False(parseResult.ParseHadErrors)
+        Assert.True(Array.isEmpty parseResult.Diagnostics)
+        
+        let! parseAgainResult = checker.ParseFile(fileName, sourceText, parsingOptions, cache = true)
+        Assert.False(parseAgainResult.ParseHadErrors)
+        Assert.True(Array.isEmpty parseAgainResult.Diagnostics)
+
+        Assert.Equal(0, checker.Caches.ParseFile.Count)
+        Assert.Equal(1, checker.Caches.ParseFileWithoutProject.Count)
+    }

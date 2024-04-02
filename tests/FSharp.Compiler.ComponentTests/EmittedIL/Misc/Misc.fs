@@ -1,4 +1,4 @@
-namespace EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open System.IO
@@ -16,6 +16,23 @@ module Misc =
         |> ignoreWarnings
         |> verifyILBaseline
 
+
+    // SOURCE=AbstractClass.fs             SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd AbstractClass.exe"	# AbstractClass.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AbstractClass.fs"|])>]
+    let ``AbstractClass_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=AbstractClass.fs             SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd AbstractClass.exe"	# AbstractClass.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AbstractClass.fs"|])>]
+    let ``AbstractClass_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> asExe
+        |> verifyCompilation
+
     // SOURCE=AnonRecd.fs                  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd AnonRecd.exe"	# AnonRecd.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AnonRecd.fs"|])>]
     let ``AnonRecd_fs`` compilation =
@@ -24,30 +41,67 @@ module Misc =
         |> verifyCompilation
 
     // SOURCE=CodeGenRenamings01.fs        SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd CodeGenRenamings01.exe"	# CodeGenRenamings01.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CodeGenRenamings01.fs"|])>]
-    let ``CodeGenRenamings01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__,  BaselineSuffix=".RealInternalSignatureOn",Includes=[|"CodeGenRenamings01.fs"|])>]
+    let ``CodeGenRenamings01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=CodeGenRenamings01.fs        SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd CodeGenRenamings01.exe"	# CodeGenRenamings01.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"CodeGenRenamings01.fs"|])>]
+    let ``CodeGenRenamings01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=ArgumentNamesInClosures01.fs SCFLAGS="-a -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ArgumentNamesInClosures01.dll"	# ArgumentNamesInClosures01.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ArgumentNamesInClosures01.fs"|])>]
-    let ``ArgumentNamesInClosures01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ArgumentNamesInClosures01.fs"|])>]
+    let ``ArgumentNamesInClosures01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=ArgumentNamesInClosures01.fs SCFLAGS="-a -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ArgumentNamesInClosures01.dll"	# ArgumentNamesInClosures01.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ArgumentNamesInClosures01.fs"|])>]
+    let ``ArgumentNamesInClosures01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=Decimal01.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Decimal01.exe"			# Decimal01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Decimal01.fs"|])>]
-    let ``Decimal01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Decimal01.fs"|])>]
+    let ``Decimal01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=Decimal01.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Decimal01.exe"			# Decimal01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Decimal01.fs"|])>]
+    let ``Decimal01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=EntryPoint01.fs              SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd EntryPoint01.exe"		# EntryPoint01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EntryPoint01.fs"|])>]
-    let ``EntryPoint01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"EntryPoint01.fs"|])>]
+    let ``EntryPoint01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=EntryPoint01.fs              SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd EntryPoint01.exe"		# EntryPoint01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"EntryPoint01.fs"|])>]
+    let ``EntryPoint01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
@@ -59,23 +113,51 @@ module Misc =
         |> verifyCompilation
 
     // SOURCE=ForLoop01.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoop01.exe"	# ForLoop01.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoop01.fs"|])>]
-    let ``ForLoop01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ForLoop01.fs"|])>]
+    let ``ForLoop01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=ForLoop01.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoop01.exe"	# ForLoop01.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ForLoop01.fs"|])>]
+    let ``ForLoop01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=ForLoop02.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoop02.exe"	# ForLoop02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoop02.fs"|])>]
-    let ``ForLoop02_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ForLoop02.fs"|])>]
+    let ``ForLoop02_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=ForLoop02.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoop02.exe"	# ForLoop02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ForLoop02.fs"|])>]
+    let ``ForLoop02_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=ForLoop03.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoop03.exe"	# ForLoop03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoop02.fs"|])>]
-    let ``ForLoop03_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ForLoop03.fs"|])>]
+    let ``ForLoop03_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=ForLoop03.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoop03.exe"	# ForLoop03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ForLoop03.fs"|])>]
+    let ``ForLoop03_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
@@ -88,29 +170,65 @@ module Misc =
 
     //SOURCE=IfThenElse01.fs              SCFLAGS="-a -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd IfThenElse01.dll"		# IfThenElse01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IfThenElse01.fs"|])>]
-    let ``IfThenElse01_fs`` compilation =
+    let ``IfThenElse01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    //SOURCE=IfThenElse01.fs              SCFLAGS="-a -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd IfThenElse01.dll"		# IfThenElse01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"IfThenElse01.fs"|])>]
+    let ``IfThenElse01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=LetIfThenElse01.fs           SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd LetIfThenElse01.exe"			# LetIfThenElse01.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LetIfThenElse01.fs"|])>]
-    let ``LetIfThenElse01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"LetIfThenElse01.fs"|])>]
+    let ``LetIfThenElse01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=LetIfThenElse01.fs           SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd LetIfThenElse01.exe"			# LetIfThenElse01.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"LetIfThenElse01.fs"|])>]
+    let ``LetIfThenElse01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=Lock01.fs                    SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Lock01.exe"	# Lock01.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Lock01.fs"|])>]
-    let ``Lock01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Lock01.fs"|])>]
+    let ``Lock01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=Lock01.fs                    SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Lock01.exe"	# Lock01.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Lock01.fs"|])>]
+    let ``Lock01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=ModuleWithExpression01.fs    SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ModuleWithExpression01.exe"	# ModuleWithExpression01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleWithExpression01.fs"|])>]
-    let ``ModuleWithExpression01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ModuleWithExpression01.fs"|])>]
+    let ``ModuleWithExpression01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=ModuleWithExpression01.fs    SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ModuleWithExpression01.exe"	# ModuleWithExpression01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ModuleWithExpression01.fs"|])>]
+    let ``ModuleWithExpression01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
@@ -122,16 +240,34 @@ module Misc =
         |> verifyCompilation
 
     // SOURCE=Seq_for_all01.fs             SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Seq_for_all01.exe"		# Seq_for_all01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Seq_for_all01.fs"|])>]
-    let ``Seq_for_all01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Seq_for_all01.fs"|])>]
+    let ``Seq_for_all01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=Seq_for_all01.fs             SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Seq_for_all01.exe"		# Seq_for_all01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Seq_for_all01.fs"|])>]
+    let ``Seq_for_all01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=StructsAsArrayElements01.fs  SCFLAGS="-a -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd StructsAsArrayElements01.dll"		# StructsAsArrayElements01.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StructsAsArrayElements01.fs"|])>]
-    let ``StructsAsArrayElements01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"StructsAsArrayElements01.fs"|])>]
+    let ``StructsAsArrayElements01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=StructsAsArrayElements01.fs  SCFLAGS="-a -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd StructsAsArrayElements01.dll"		# StructsAsArrayElements01.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"StructsAsArrayElements01.fs"|])>]
+    let ``StructsAsArrayElements01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
@@ -144,9 +280,19 @@ module Misc =
 
     // # The name of this test is a bit misleading for legacy reasons: it used to test the --no-generate-filter-blocks option, which is now gone
     // SOURCE=TryWith_NoFilterBlocks01.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TryWith_NoFilterBlocks01.exe"						# TryWith_NoFilterBlocks01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TryWith_NoFilterBlocks01.fs"|])>]
-    let ``TryWith_NoFilterBlocks01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"TryWith_NoFilterBlocks01.fs"|])>]
+    let ``TryWith_NoFilterBlocks01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // # The name of this test is a bit misleading for legacy reasons: it used to test the --no-generate-filter-blocks option, which is now gone
+    // SOURCE=TryWith_NoFilterBlocks01.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TryWith_NoFilterBlocks01.exe"						# TryWith_NoFilterBlocks01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"TryWith_NoFilterBlocks01.fs"|])>]
+    let ``TryWith_NoFilterBlocks01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
@@ -178,24 +324,35 @@ module Misc =
         |> asExe
         |> verifyCompilation
 
-    // SOURCE=MethodImplNoInline.fs        SCFLAGS="-O" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd MethodImplNoInline.exe"						# MethodImplNoInline.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoop02.fs"|])>]
-    let ``MethodImplNoInline_fs`` compilation =
+    // SOURCE=MethodImplNoInline02.fs      SCFLAGS="-O" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd MethodImplNoInline02.exe"						# MethodImplNoInline02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"MethodImplNoInline02.fs"|])>]
+    let ``MethodImplNoInline02_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
         |> asExe
         |> verifyCompilation
 
     // SOURCE=MethodImplNoInline02.fs      SCFLAGS="-O" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd MethodImplNoInline02.exe"						# MethodImplNoInline02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MethodImplNoInline02.fs"|])>]
-    let ``MethodImplNoInline02_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"MethodImplNoInline02.fs"|])>]
+    let ``MethodImplNoInline02_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
     // SOURCE=CustomAttributeGenericParameter01.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd CustomAttributeGenericParameter01.exe"	# CustomAttributeGenericParameter01.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CustomAttributeGenericParameter01.fs"|])>]
-    let ``CustomAttributeGenericParameter01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"CustomAttributeGenericParameter01.fs"|])>]
+    let ``CustomAttributeGenericParameter01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
+        |> asExe
+        |> verifyCompilation
+
+    // SOURCE=CustomAttributeGenericParameter01.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd CustomAttributeGenericParameter01.exe"	# CustomAttributeGenericParameter01.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"CustomAttributeGenericParameter01.fs"|])>]
+    let ``CustomAttributeGenericParameter01_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation
 
@@ -206,16 +363,19 @@ module Misc =
         |> asExe
         |> verifyCompilation
 
+    // SOURCE=GenericTypeStaticField.fs  SCFLAGS="-g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd GenericTypeStaticField.exe"	# GenericTypeStaticField.fs -
     // SOURCE=GeneralizationOnUnions01.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd GeneralizationOnUnions01.exe"	# GeneralizationOnUnions01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GeneralizationOnUnions01.fs"|])>]
-    let ``GeneralizationOnUnions01_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"GeneralizationOnUnions01.fs"|])>]
+    let ``GeneralizationOnUnions01_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOn
         |> asExe
         |> verifyCompilation
 
-    // SOURCE=AbstractClass.fs             SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd AbstractClass.exe"	# AbstractClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AbstractClass.fs"|])>]
-    let ``AbstractClass_fs`` compilation =
+    // SOURCE=GeneralizationOnUnions01.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd GeneralizationOnUnions01.exe"	# GeneralizationOnUnions01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"GeneralizationOnUnions01.fs"|])>]
+    let ``GeneralizationOnUnions01_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
         |> asExe
         |> verifyCompilation

@@ -725,6 +725,19 @@ module ProjectOperations =
             then
                 failwith "Expected errors, but there were none"
 
+    let expectErrorCodes codes parseAndCheckResults _ =
+        let (parseResult: FSharpParseFileResults), _checkResult = parseAndCheckResults
+
+        if not parseResult.ParseHadErrors then
+            let checkResult = getTypeCheckResult parseAndCheckResults
+            let actualCodes = checkResult.Diagnostics |> Seq.map (fun d -> d.ErrorNumberText) |> Set
+            let codes = Set.ofSeq codes
+            if actualCodes <> codes then
+                failwith $"Expected error codes {codes} but got {actualCodes}. \n%A{checkResult.Diagnostics}"
+
+        else
+            failwith $"There were parse errors: %A{parseResult.Diagnostics}"
+
     let expectSignatureChanged result (oldSignature: string, newSignature: string) =
         expectOk result ()
         Assert.NotEqual<string>(oldSignature, newSignature)
@@ -754,7 +767,13 @@ module ProjectOperations =
             |> Seq.toArray
 
         Assert.Equal<(string * int * int * int)[]>(expected |> Seq.sort |> Seq.toArray, actual)
-
+        
+    let expectNone x =
+        if Option.isSome x then failwith "expected None, but was Some"
+    
+    let expectSome x =
+        if Option.isNone x then failwith "expected Some, but was None"
+        
     let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
         async {
             Directory.CreateDirectory(p.ProjectDir) |> ignore
@@ -928,10 +947,11 @@ type ProjectWorkflowBuilder
         ?useTransparentCompiler,
         ?runTimeout,
         ?autoStart,
-        ?isExistingProject
+        ?isExistingProject,
+        ?enablePartialTypeChecking
     ) =
 
-    let useTransparentCompiler = defaultArg useTransparentCompiler FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically
+    let useTransparentCompiler = defaultArg useTransparentCompiler CompilerAssertHelpers.UseTransparentCompiler
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true
@@ -949,7 +969,7 @@ type ProjectWorkflowBuilder
             (FSharpChecker.Create(
                 keepAllBackgroundSymbolUses = true,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                enablePartialTypeChecking = true,
+                enablePartialTypeChecking = defaultArg enablePartialTypeChecking true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
                 useSyntaxTreeCache = defaultArg useSyntaxTreeCache false,
@@ -1344,6 +1364,28 @@ type ProjectWorkflowBuilder
             let! _diagnostics, exitCode = checker.Compile(arguments)
             if exitCode <> 0 then
                 exn $"Compilation failed with exit code {exitCode}" |> raise
+            return ctx
+        }
+        
+    [<CustomOperation "tryGetRecentCheckResults">]
+    member this.TryGetRecentCheckResults(workflow: Async<WorkflowContext>, fileId: string, expected) =
+        async {
+            let! ctx = workflow
+            let project, file = ctx.Project.FindInAllProjects fileId
+            let fileName = project.ProjectDir ++ file.FileName
+            let options = project.GetProjectOptions checker
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
+            let r = checker.TryGetRecentCheckResultsForFile(fileName, snapshot)
+            expected r
+            
+            match r with
+            | Some(parseFileResults, checkFileResults) ->
+                let signature = getSignature(parseFileResults, FSharpCheckFileAnswer.Succeeded(checkFileResults)) 
+                match ctx.Signatures.TryFind(fileId) with
+                | Some priorSignature -> Assert.Equal(priorSignature, signature)
+                | None -> ()
+            | None -> ()
+            
             return ctx
         }
 

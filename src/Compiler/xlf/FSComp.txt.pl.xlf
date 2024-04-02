@@ -312,6 +312,11 @@
         <target state="translated">bezkropkowy literał float32</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargets">
+        <source>Enforce AttributeTargets</source>
+        <target state="new">Enforce AttributeTargets</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
         <target state="translated">Zgłasza błędy w przypadku przesłonięć elementów innych niż wirtualne</target>
@@ -390,6 +395,16 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">interfejsy z wieloma ogólnymi wystąpieniami</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerInterpolatedStringToConcat">
+        <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
+        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerIntegralRangesToFastLoops">
+        <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
+        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -845,6 +860,11 @@
       <trans-unit id="optsPdbMatchesOutputFileName">
         <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
         <target state="translated">Nazwa pliku wyjściowego pdb nie może być zgodna z nazwą pliku wyjściowego kompilacji, użyj parametru --pdb:filename.pdb</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRealsig">
+        <source>Generate assembly with IL visibility that matches the source code visibility</source>
+        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -1400,6 +1420,36 @@
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
         <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">Składnia wyrażenia „(expr1)[expr2]” jest teraz zarezerwowana do indeksowania i jest niejednoznaczna, gdy jest używana jako argument. Zobacz: https://aka.ms/fsharp-index-notation. Jeśli wywołujesz funkcję z wieloma argumentami typu curried, dodaj spację między nimi, np. „someFunction (expr1) [expr2]”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToANullableExpectingFunc">
+        <source>Value known to be without null passed to a function meant for nullables: {0}</source>
+        <target state="new">Value known to be without null passed to a function meant for nullables: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToNonNullAP">
+        <source>You can remove this |Null|NonNull| pattern usage.</source>
+        <target state="new">You can remove this |Null|NonNull| pattern usage.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToNonNullQuickAP">
+        <source>You can remove this |NonNullQuick| pattern usage.</source>
+        <target state="new">You can remove this |NonNullQuick| pattern usage.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToOptionOfObj">
+        <source>You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value.</source>
+        <target state="new">You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToValueOptionOfObj">
+        <source>You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value.</source>
+        <target state="new">You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullTononNullFunction">
+        <source>You can remove this `nonNull` assertion.</source>
+        <target state="new">You can remove this `nonNull` assertion.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -2290,11 +2340,6 @@
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature declares a {2} while the implementation declares a {3}</source>
         <target state="translated">Definicje {0} dla typu „{1}” w sygnaturze i implementacji są niezgodne, ponieważ sygnatura deklaruje element {2}, natomiast implementacja deklaruje element {3}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">Definicje {0} dla typu „{1}” w sygnaturze i implementacji są niezgodne, ponieważ skróty są różne: {2} i {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -6247,11 +6292,6 @@
         <target state="translated">Wartość „{0}” została oznaczona jako śródwierszowa, ale nie powiązano jej w środowisku optymalizacji</target>
         <note />
       </trans-unit>
-      <trans-unit id="optLocalValueNotFoundDuringOptimization">
-        <source>Local value {0} not found during optimization</source>
-        <target state="translated">Nie znaleziono wartości lokalnej {0} podczas optymalizacji</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
         <source>A value marked as 'inline' has an unexpected value</source>
         <target state="translated">Wartość oznaczona jako „inline” ma nieoczekiwaną wartość</target>
@@ -6437,12 +6477,12 @@
         <target state="translated">Nieprawidłowa liczba zmiennoprzecinkowa</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideDecimal">
+      <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
         <target state="translated">Ta liczba jest poza dozwolonym zakresem literałów dziesiętnych</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideThirtyTwoBitFloat">
+      <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
         <target state="translated">Ta liczba jest poza dozwolonym zakresem 32-bitowych liczb zmiennoprzecinkowych</target>
         <note />

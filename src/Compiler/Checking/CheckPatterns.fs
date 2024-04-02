@@ -293,7 +293,11 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
         TcPatAnds warnOnUpper cenv env vFlags patEnv ty pats m
 
     | SynPat.LongIdent (longDotId=longDotId; typarDecls=tyargs; argPats=args; accessibility=vis; range=m) ->
-        TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, tyargs, args, vis, m)
+        try
+            TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, tyargs, args, vis, m)
+        with RecoverableException e ->
+            errorRecovery e m
+            (fun _ -> TPat_error m), patEnv
 
     | SynPat.QuoteExpr(_, m) ->
         errorR (Error(FSComp.SR.tcInvalidPattern(), m))
@@ -442,7 +446,7 @@ and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
 
-    let gtyp = mkAppTy tcref tinst
+    let gtyp = mkWoNullAppTy tcref tinst
     let inst = List.zip (tcref.Typars m) tinst
 
     UnifyTypes cenv env m ty gtyp

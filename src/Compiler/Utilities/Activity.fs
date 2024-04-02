@@ -43,6 +43,12 @@ module internal Activity =
         let outputDllFile = "outputDllFile"
         let buildPhase = "buildPhase"
         let version = "version"
+        let stackGuardName = "stackGuardName"
+        let stackGuardCurrentDepth = "stackGuardCurrentDepth"
+        let stackGuardMaxDepth = "stackGuardMaxDepth"
+        let callerMemberName = "callerMemberName"
+        let callerFilePath = "callerFilePath"
+        let callerLineNumber = "callerLineNumber"
 
         let AllKnownTags =
             [|
@@ -59,6 +65,12 @@ module internal Activity =
                 gc2
                 outputDllFile
                 buildPhase
+                stackGuardName
+                stackGuardCurrentDepth
+                stackGuardMaxDepth
+                callerMemberName
+                callerFilePath
+                callerLineNumber
             |]
 
     module Events =
@@ -69,16 +81,16 @@ module internal Activity =
         member this.RootId =
             let rec rootID (act: Activity) =
                 match act.Parent with
-                | NonNull parent -> rootID parent
-                | Null -> act.Id
+                | null -> act.Id
+                | parent -> rootID parent
 
             rootID this
 
         member this.Depth =
             let rec depth (act: Activity) acc =
                 match act.Parent with
-                | NonNull parent -> depth parent (acc + 1)
-                | Null -> acc
+                | null -> acc
+                | parent -> depth parent (acc + 1)
 
             depth this 0
 
@@ -88,8 +100,8 @@ module internal Activity =
         let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
 
         match activity with
-        | Null -> activity
-        | NonNull activity ->
+        | null -> activity
+        | activity ->
             for key, value in tags do
                 activity.AddTag(key, value) |> ignore
 
@@ -99,7 +111,8 @@ module internal Activity =
 
     let addEvent name =
         match Activity.Current with
-        | NonNull activity when activity.Source = activitySource -> activity.AddEvent(ActivityEvent name) |> ignore
+        | null -> ()
+        | activity when activity.Source = activitySource -> activity.AddEvent(ActivityEvent name) |> ignore
         | _ -> ()
 
     module Profiling =

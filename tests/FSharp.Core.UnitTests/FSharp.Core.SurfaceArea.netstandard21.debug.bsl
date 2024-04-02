@@ -671,10 +671,13 @@ Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Contro
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpAsync`1[TReply] PostAndAsyncReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpAsync`1[T] Scan[T](Microsoft.FSharp.Core.FSharpFunc`2[TMsg,Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Control.FSharpAsync`1[T]]], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpHandler`1[System.Exception] Error
+Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg] Start(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg] Start(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg] StartImmediate(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg] StartImmediate(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Core.FSharpOption`1[TReply] TryPostAndReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: TReply PostAndReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Dispose()
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Post(TMsg)
@@ -2092,6 +2095,9 @@ Microsoft.FSharp.Core.ValueOption: TState Fold[T,TState](Microsoft.FSharp.Core.F
 Microsoft.FSharp.Core.ValueOption: T[] ToArray[T](Microsoft.FSharp.Core.FSharpValueOption`1[T])
 Microsoft.FSharp.Core.ValueOption: Void Iterate[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpValueOption`1[T])
 Microsoft.FSharp.Core.VolatileFieldAttribute: Void .ctor()
+Microsoft.FSharp.Core.WarnOnWithoutNullArgumentAttribute: System.String WarningMessage
+Microsoft.FSharp.Core.WarnOnWithoutNullArgumentAttribute: System.String get_WarningMessage()
+Microsoft.FSharp.Core.WarnOnWithoutNullArgumentAttribute: Void .ctor(System.String)
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToByte[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToUInt8$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], System.Nullable`1[T])

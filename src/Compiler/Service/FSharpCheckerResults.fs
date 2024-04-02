@@ -60,6 +60,11 @@ open Internal.Utilities.Hashing
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
+[<RequireQualifiedAccess>]
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> Async<ISourceText option>)
+
 [<Sealed>]
 type DelayedILModuleReader =
     val private name: string
@@ -2680,7 +2685,7 @@ module internal ParseAndCheckFile =
                 | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
                     let braceOffset =
                         match tok with
-                        | INTERP_STRING_BEGIN_PART(_, SynStringKind.TripleQuote, (LexerContinuation.Token(_, (_, _, dl, _) :: _))) ->
+                        | INTERP_STRING_BEGIN_PART(_, SynStringKind.TripleQuote, (LexerContinuation.Token(_, (_, _, dl, _, _) :: _))) ->
                             dl - 1
                         | _ -> 0
 
@@ -2904,11 +2909,6 @@ module internal ParseAndCheckFile =
             // update the error handler with the modified tcConfig
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
 
-            // Play background errors and warnings for this file.
-            do
-                for err, severity in backgroundDiagnostics do
-                    diagnosticSink (err, severity)
-
             // If additional references were brought in by the preprocessor then we need to process them
             ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)
 
@@ -2951,6 +2951,11 @@ module internal ParseAndCheckFile =
 
                         return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
                 }
+
+            // Play background errors and warnings for this file.
+            do
+                for err, severity in backgroundDiagnostics do
+                    diagnosticSink (err, severity)
 
             let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
 

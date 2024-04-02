@@ -27,8 +27,10 @@
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-  .method public specialname static int32 
-          get_justInt() cil managed
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> maybeListOfMaybeString@5
+  .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .method public specialname static int32 get_justInt() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -38,8 +40,7 @@
     IL_0002:  ret
   } 
 
-  .method public specialname static string 
-          get_maybeString() cil managed
+  .method public specialname static string get_maybeString() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -49,17 +50,15 @@
     IL_0001:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 
-          get_maybeListOfMaybeString() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> get_maybeListOfMaybeString() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$assembly>'.$MyTestModule::maybeListOfMaybeString@5
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> MyTestModule::maybeListOfMaybeString@5
     IL_0005:  ret
   } 
 
-  .method public static class '<>f__AnonymousType2430756162`3'<string,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>,int32> 
-          giveMeA() cil managed
+  .method public static class '<>f__AnonymousType2430756162`3'<string,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>,int32> giveMeA() cil managed
   {
     .param [0]
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 04 00 00 00 01 02 02 02 00 00 ) 
@@ -74,8 +73,7 @@
     IL_0014:  ret
   } 
 
-  .method public static class '<>f__AnonymousType2430756162`3'<int32,int32,int32> 
-          giveMeB() cil managed
+  .method public static class '<>f__AnonymousType2430756162`3'<int32,int32,int32> giveMeB() cil managed
   {
     
     .maxstack  8
@@ -88,8 +86,7 @@
     IL_0014:  ret
   } 
 
-  .method public static class '<>f__AnonymousType2430756162`3'<string,string,string> 
-          giveMeC() cil managed
+  .method public static class '<>f__AnonymousType2430756162`3'<string,string,string> giveMeC() cil managed
   {
     .param [0]
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 04 00 00 00 01 02 02 02 00 00 ) 
@@ -101,6 +98,29 @@
     IL_000f:  newobj     instance void class '<>f__AnonymousType2430756162`3'<string,string,string>::.ctor(!0,
                                                                                                            !1,
                                                                                                            !2)
+    IL_0014:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       string MyTestModule::get_maybeString()
+    IL_0005:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::get_Empty()
+    IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
+                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+    IL_000f:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> MyTestModule::maybeListOfMaybeString@5
     IL_0014:  ret
   } 
 
@@ -126,24 +146,16 @@
        extends [runtime]System.Object
 {
   .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-  .field static assembly initonly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> maybeListOfMaybeString@5
-  .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  call       string MyTestModule::get_maybeString()
-    IL_0005:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::get_Empty()
-    IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
-                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_000f:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$assembly>'.$MyTestModule::maybeListOfMaybeString@5
-    IL_0014:  ret
+    IL_0000:  call       void MyTestModule::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 
@@ -193,8 +205,7 @@
     IL_001b:  ret
   } 
 
-  .method public hidebysig specialname instance !'<A>j__TPar' 
-          get_A() cil managed
+  .method public hidebysig specialname instance !'<A>j__TPar' get_A() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -205,8 +216,7 @@
     IL_0006:  ret
   } 
 
-  .method public hidebysig specialname instance !'<B>j__TPar' 
-          get_B() cil managed
+  .method public hidebysig specialname instance !'<B>j__TPar' get_B() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -217,8 +227,7 @@
     IL_0006:  ret
   } 
 
-  .method public hidebysig specialname instance !'<C>j__TPar' 
-          get_C() cil managed
+  .method public hidebysig specialname instance !'<C>j__TPar' get_C() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -229,8 +238,7 @@
     IL_0006:  ret
   } 
 
-  .method public strict virtual instance string 
-          ToString() cil managed
+  .method public strict virtual instance string ToString() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -243,8 +251,7 @@
     IL_0015:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance int32  CompareTo(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj) cil managed
+  .method public hidebysig virtual final instance int32  CompareTo(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -327,8 +334,7 @@
     IL_006d:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance int32  CompareTo(object obj) cil managed
+  .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -435,8 +441,7 @@
     IL_0074:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -502,8 +507,7 @@
     IL_0059:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance int32  GetHashCode() cil managed
+  .method public hidebysig virtual final instance int32  GetHashCode() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -583,8 +587,7 @@
     IL_0059:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance bool  Equals(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj) cil managed
+  .method public hidebysig virtual final instance bool  Equals(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -637,8 +640,7 @@
     IL_004d:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance bool  Equals(object obj) cil managed
+  .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -734,8 +736,7 @@
     IL_0014:  ret
   } 
 
-  .method public hidebysig specialname instance class [runtime]System.Type 
-          get_Type() cil managed
+  .method public hidebysig specialname instance class [runtime]System.Type get_Type() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -746,8 +747,7 @@
     IL_0006:  ret
   } 
 
-  .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes 
-          get_MemberType() cil managed
+  .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes get_MemberType() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -781,8 +781,7 @@
   .field public uint8[] NullableFlags
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 scalarByteValue) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8 scalarByteValue) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -801,8 +800,7 @@
     IL_0016:  ret
   } 
 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8[] NullableFlags) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8[] NullableFlags) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -825,8 +823,7 @@
   .field public uint8 Flag
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 Flag) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8 Flag) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 

@@ -268,6 +268,7 @@ type ConstraintSolverState =
       /// Checks to run after all inference is complete.
       PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
+      WarnWhenUsingWithoutNullOnAWithNullTarget: string option
     }
 
     static member New(g, amap, infoReader, tcVal) = 
@@ -277,7 +278,8 @@ type ConstraintSolverState =
           InfoReader = infoReader
           TcVal = tcVal
           PostInferenceChecksPreDefaults = ResizeArray()
-          PostInferenceChecksFinal = ResizeArray() } 
+          PostInferenceChecksFinal = ResizeArray()
+          WarnWhenUsingWithoutNullOnAWithNullTarget = None } 
 
     member this.PushPostInferenceCheck (preDefaults, check) =
         if preDefaults then
@@ -1041,6 +1043,9 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | _, NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
+        // Warn for 'strict "must pass null"` APIs like Option.ofObj
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))    
         // Allow expected of WithNull and actual of WithoutNull
         // TODO NULLNESS:  this is not sound in contravariant cases etc. It is assuming covariance.
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
@@ -1076,8 +1081,12 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | _, NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
+        // Warn for 'strict "must pass null"` APIs like Option.ofObj
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))
         // Allow target of WithNull and actual of WithoutNull
-        | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
+            CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then 
                 if not (isObjTy csenv.g ty1) || not (isObjTy csenv.g ty2) then 
@@ -1536,7 +1545,7 @@ and DepthCheck ndeep m =
 and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     match getMeasureOfType csenv.g ty with
     | Some (tcref, _) -> 
-        SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkAppTy tcref [TType_measure Measure.One])
+        SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkWoNullAppTy tcref [TType_measure Measure.One])
     | None ->
         CompleteD
 
@@ -1641,8 +1650,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     match getMeasureOfType g argTy1 with
                     | Some (tcref, ms1) ->
                         let ms2 = freshMeasure ()
-                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 (mkAppTy tcref [TType_measure ms2])
-                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
+                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 (mkWoNullAppTy tcref [TType_measure ms2])
+                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
                         return TTraitBuiltIn
 
                     | _ ->
@@ -1650,8 +1659,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                         match getMeasureOfType g argTy2 with
                         | Some (tcref, ms2) ->
                             let ms1 = freshMeasure ()
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkAppTy tcref [TType_measure ms1]) 
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkWoNullAppTy tcref [TType_measure ms1]) 
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
                             return TTraitBuiltIn
 
                         | _ ->
@@ -1785,8 +1794,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     match getMeasureOfType g argTy1 with
                         | Some (tcref, _) -> 
                             let ms1 = freshMeasure () 
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure ms1])
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkWoNullAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure ms1])
                             return TTraitBuiltIn
                         | None -> 
                             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
@@ -1838,7 +1847,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
                     match getMeasureOfType g argTy1 with
                     | None -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
-                    | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure Measure.One])
+                    | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure Measure.One])
                     return TTraitBuiltIn
 
                 | _ -> 
@@ -2612,6 +2621,18 @@ and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: O
                 if g.checkNullness && TypeNullIsExtraValueNew g m ty && not (isObjTy g ty) then
                     let denv = { denv with showNullnessAnnotations = Some true }
                     return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
+    }
+
+and SolveTypeCanCarryNullness (csenv: ConstraintSolverEnv)  ty nullness =
+    trackErrors {
+        let g = csenv.g
+        let m = csenv.m
+        let strippedTy = stripTyEqnsA g true ty
+        match tryAddNullnessToTy nullness strippedTy with
+        | Some _ -> ()
+        | None -> 
+            let tyString = NicePrint.minimalStringOfType csenv.DisplayEnv strippedTy
+            return! ErrorD(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m))
     }
 
 and SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
@@ -3646,7 +3667,13 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
                 0
         if c <> 0 then c else
 
-        0
+        // Properties are kept incl. almost-duplicates because of the partial-override possibility.
+        // E.g. base can have get,set and derived only get => we keep both props around until method resolution time.
+        // Now is the type to pick the better (more derived) one.
+        match candidate.AssociatedPropertyInfo,other.AssociatedPropertyInfo,candidate.Method.IsExtensionMember,other.Method.IsExtensionMember with
+        | Some p1, Some p2, false, false -> compareTypes p1.ApparentEnclosingType p2.ApparentEnclosingType
+        | _ -> 0
+        
 
     let bestMethods =
         let indexedApplicableMeths = applicableMeths |> List.indexed
@@ -3870,6 +3897,12 @@ let AddCxTypeUseSupportsNull denv css m trace ty =
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
+let AddCxTypeCanCarryNullnessInfo denv css m ty nullness =
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let canCarryNullnessCheck() = SolveTypeCanCarryNullness csenv ty nullness |> RaiseOperationResult
+    csenv.SolverState.PushPostInferenceCheck (preDefaults=false, check = canCarryNullnessCheck)
+
+
 let AddCxTypeMustSupportComparison denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeOnFailedMemberConstraintResolution csenv trace
@@ -3962,7 +3995,8 @@ let CreateCodegenState tcVal g amap =
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
       InfoReader = InfoReader(g, amap)
       PostInferenceChecksPreDefaults = ResizeArray() 
-      PostInferenceChecksFinal = ResizeArray() }
+      PostInferenceChecksFinal = ResizeArray()
+      WarnWhenUsingWithoutNullOnAWithNullTarget = None}
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
@@ -4057,7 +4091,8 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
               InfoReader = InfoReader(g, amap)
               PostInferenceChecksPreDefaults = ResizeArray() 
-              PostInferenceChecksFinal = ResizeArray() }
+              PostInferenceChecksFinal = ResizeArray()
+              WarnWhenUsingWithoutNullOnAWithNullTarget = None}
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with

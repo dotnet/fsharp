@@ -20,7 +20,7 @@ let mkIComparableCompareToSlotSig (g: TcGlobals) =
 let mkGenericIComparableCompareToSlotSig (g: TcGlobals) ty =
     TSlotSig(
         "CompareTo",
-        (mkAppTy g.system_GenericIComparable_tcref [ ty ]),
+        (mkWoNullAppTy g.system_GenericIComparable_tcref [ ty ]),
         [],
         [],
         [ [ TSlotParam(Some("obj"), ty, false, false, false, []) ] ],
@@ -44,7 +44,7 @@ let mkIStructuralComparableCompareToSlotSig (g: TcGlobals) =
 let mkGenericIEquatableEqualsSlotSig (g: TcGlobals) ty =
     TSlotSig(
         "Equals",
-        (mkAppTy g.system_GenericIEquatable_tcref [ ty ]),
+        (mkWoNullAppTy g.system_GenericIEquatable_tcref [ ty ]),
         [],
         [],
         [ [ TSlotParam(Some("obj"), ty, false, false, false, []) ] ],
@@ -414,7 +414,7 @@ let mkExnEquality (g: TcGlobals) exnref (exnc: Tycon) =
 
         let cases =
             [
-                mkCase (DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), mbuilder.AddResultTarget(expr))
+                mkCase (DecisionTreeTest.IsInst(g.exn_ty, mkWoNullAppTy exnref []), mbuilder.AddResultTarget(expr))
             ]
 
         let dflt = Some(mbuilder.AddResultTarget(mkFalse g m))
@@ -445,7 +445,7 @@ let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (t
 
         let cases =
             [
-                mkCase (DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), mbuilder.AddResultTarget(expr))
+                mkCase (DecisionTreeTest.IsInst(g.exn_ty, mkWoNullAppTy exnref []), mbuilder.AddResultTarget(expr))
             ]
 
         let dflt = mbuilder.AddResultTarget(mkFalse g m)

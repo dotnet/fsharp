@@ -69,9 +69,13 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member Get': key: 'TKey * computation: NodeCode<'TValue> -> NodeCode<'TValue>
 
+    member TryGet: key: 'TKey * predicate: ('TVersion -> bool) -> 'TValue option
+
     member Event: IEvent<JobEvent * (string * 'TKey * 'TVersion)>
 
     member OnEvent: ((JobEvent * (string * 'TKey * 'TVersion) -> unit) -> unit)
+
+    member Count: int
 
 /// A drop-in replacement for AsyncMemoize that disables caching and just runs the computation every time.
 type internal AsyncMemoizeDisabled<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality> =

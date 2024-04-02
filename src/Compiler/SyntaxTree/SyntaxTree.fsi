@@ -16,7 +16,10 @@ type Ident =
     member idRange: range
 
 /// Represents an identifier with potentially additional trivia information.
-type SynIdent = SynIdent of ident: Ident * trivia: IdentTrivia option
+type SynIdent =
+    | SynIdent of ident: Ident * trivia: IdentTrivia option
+
+    member Range: range
 
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list

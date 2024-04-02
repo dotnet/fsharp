@@ -56,8 +56,7 @@ let GetSuperTypeOfType g amap m ty =
             let tinst = argsOfAppTy g ty
             match tdef.Extends with
             | None -> None
-                                // 'inherit' cannot refer to a nullable type
-            | Some ilTy -> 
+            | Some ilTy ->   // 'inherit' can refer to a type which has nullable type arguments (e.g. List<string?>)
                 let typeAttrs = AttributesFromIL(tdef.MetadataIndex,tdef.CustomAttrsStored)
                 let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
                 Some (RescopeAndImportILType scoref amap m tinst nullness ilTy)
@@ -202,10 +201,10 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
         // However since F# 2.0 we have always reported these interfaces for all measure-annotated types.
 
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIComparable_tcref [reprTy])) skipUnref g amap m ty then
-        mkAppTy g.system_GenericIComparable_tcref [ty]
+        mkWoNullAppTy g.system_GenericIComparable_tcref [ty]
 
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIEquatable_tcref [reprTy])) skipUnref g amap m ty then
-        mkAppTy g.system_GenericIEquatable_tcref [ty]
+        mkWoNullAppTy g.system_GenericIEquatable_tcref [ty]
     ]
 
 // Check for any System.Numerics type in the interface hierarchy

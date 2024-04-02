@@ -58,7 +58,7 @@ val IsIdentifierName: name: string -> bool
 /// TBD: needs unit testing
 val IsActivePatternName: name: string -> bool
 
-val internal DoesIdentifierNeedBackticks: string -> bool
+val DoesIdentifierNeedBackticks: string -> bool
 
 /// Adds double backticks if necessary to make a valid identifier, e.g.
 ///     op_Addition  -->  op_Addition

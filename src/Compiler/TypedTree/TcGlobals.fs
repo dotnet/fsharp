@@ -194,9 +194,12 @@ type TcGlobals(
     emitDebugInfoInQuotations: bool,
     noDebugAttributes: bool,
     pathMap: PathMap,
-    langVersion: LanguageVersion) =
+    langVersion: LanguageVersion,
+    realsig: bool) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
+
+  let v_renderNullness = checkNullness && v_langFeatureNullness
 
   let v_knownWithNull =
       if v_langFeatureNullness then KnownWithNull else KnownAmbivalentToNull
@@ -365,7 +368,7 @@ type TcGlobals(
           let attrRef = ILTypeRef.Create(ILScopeRef.Local, [], nm)
           let attrTycon =
              Construct.NewTycon(
-                 Some (CompPath(ILScopeRef.Local, [])),
+                 Some (CompPath(ILScopeRef.Local, SyntaxAccess.Internal, [])),
                  attrRef.Name,
                  range0,
                  taccessInternal,
@@ -447,7 +450,7 @@ type TcGlobals(
   let v_FormattableStringFactory_tcref = findSysTyconRef sysCompilerServices "FormattableStringFactory"
   let v_FormattableStringFactory_ty = mkNonGenericTy v_FormattableStringFactory_tcref
   let v_string_ty       = mkNonGenericTy v_string_tcr
-  let v_string_ty_withNull = mkNonGenericTyWithNullness v_string_tcr KnownWithNull
+  let v_string_ty_ambivalent = mkNonGenericTyWithNullness v_string_tcr KnownAmbivalentToNull
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
   let v_system_Type_ty = mkSysNonGenericTy sys "Type" 
@@ -460,6 +463,7 @@ type TcGlobals(
   let mkByrefTy ty = TType_app(v_byref_tcr, [ty], v_knownWithoutNull)
   let mkNativePtrTy ty = TType_app(v_nativeptr_tcr, [ty], v_knownWithoutNull)
   let mkFunTy d r = TType_fun (d, r, v_knownWithoutNull)
+  let mkFunTyWithNullness d r nullness = TType_fun (d, r, nullness)
   let (-->) d r = mkFunTy d r
   let mkIteratedFunTy dl r = List.foldBack mkFunTy dl r
   let mkSmallRefTupledTy l = match l with [] -> v_unit_ty | [h] -> h | tys -> mkRawRefTupleTy tys
@@ -823,6 +827,18 @@ type TcGlobals(
   let v_range_op_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Range"                             , None                 , None          , [vara],     ([[varaTy];[varaTy]], mkSeqTy varaTy))
   let v_range_step_op_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_RangeStep"                         , None                 , None          , [vara;varb], ([[varaTy];[varbTy];[varaTy]], mkSeqTy varaTy))
   let v_range_int32_op_info        = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeInt32"                           , None                 , None          , [],     ([[v_int_ty];[v_int_ty];[v_int_ty]], mkSeqTy v_int_ty))
+  let v_range_int64_op_info        = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeInt64"                           , None                 , None          , [],     ([[v_int64_ty];[v_int64_ty];[v_int64_ty]], mkSeqTy v_int64_ty))
+  let v_range_uint64_op_info       = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeUInt64"                          , None                 , None          , [],     ([[v_uint64_ty];[v_uint64_ty];[v_uint64_ty]], mkSeqTy v_uint64_ty))
+  let v_range_uint32_op_info       = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeUInt32"                          , None                 , None          , [],     ([[v_uint32_ty];[v_uint32_ty];[v_uint32_ty]], mkSeqTy v_uint32_ty))
+  let v_range_nativeint_op_info    = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeIntPtr"                          , None                 , None          , [],     ([[v_nativeint_ty];[v_nativeint_ty];[v_nativeint_ty]], mkSeqTy v_nativeint_ty))
+  let v_range_unativeint_op_info   = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeUIntPtr"                         , None                 , None          , [],     ([[v_unativeint_ty];[v_unativeint_ty];[v_unativeint_ty]], mkSeqTy v_unativeint_ty))
+  let v_range_int16_op_info        = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeInt16"                           , None                 , None          , [],     ([[v_int16_ty];[v_int16_ty];[v_int16_ty]], mkSeqTy v_int16_ty))
+  let v_range_uint16_op_info       = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeUInt16"                          , None                 , None          , [],     ([[v_uint16_ty];[v_uint16_ty];[v_uint16_ty]], mkSeqTy v_uint16_ty))
+  let v_range_sbyte_op_info        = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeSByte"                           , None                 , None          , [],     ([[v_sbyte_ty];[v_sbyte_ty];[v_sbyte_ty]], mkSeqTy v_sbyte_ty))
+  let v_range_byte_op_info         = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeByte"                            , None                 , None          , [],     ([[v_byte_ty];[v_byte_ty];[v_byte_ty]], mkSeqTy v_byte_ty))
+  let v_range_char_op_info         = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeChar"                            , None                 , None          , [],     ([[v_char_ty];[v_char_ty];[v_char_ty]], mkSeqTy v_char_ty))
+  let v_range_generic_op_info      = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeGeneric"                         , None                 , None          , [vara],      ([[varaTy];[varaTy]], mkSeqTy varaTy))
+  let v_range_step_generic_op_info = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeStepGeneric"                     , None                 , None          , [vara;varb], ([[varaTy];[varbTy];[varaTy]], mkSeqTy varaTy))
 
   let v_array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               , None                 , Some "Length" , [vara],     ([[mkArrayType 1 varaTy]], v_int_ty))
   let v_array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             , None                 , None          , [vara],     ([[mkArrayType 1 varaTy]; [v_int_ty]], varaTy))
@@ -976,8 +992,7 @@ type TcGlobals(
 
   let decompileTyconEntries =
         [|
-             // TODO: nullness here
-            "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst _nullness -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
+            "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTyWithNullness (List.item 0 tinst) (List.item 1 tinst))
             "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTyAndNullness tupInfoRef
             "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTyAndNullness tupInfoRef
             "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTyAndNullness tupInfoRef
@@ -1105,6 +1120,8 @@ type TcGlobals(
 
   member _.langFeatureNullness = v_langFeatureNullness
 
+  member _.renderNullnessAnnotations = v_renderNullness
+
   member _.knownWithNull = v_knownWithNull
 
   member _.knownWithoutNull = v_knownWithoutNull
@@ -1126,6 +1143,8 @@ type TcGlobals(
   member _.pathMap = pathMap
 
   member _.langVersion = langVersion
+
+  member _.realsig = realsig
 
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
 
@@ -1337,7 +1356,7 @@ type TcGlobals(
   member _.bool_ty = v_bool_ty
   member _.int_ty = v_int_ty
   member _.string_ty = v_string_ty
-  member _.string_ty_withNull = v_string_ty_withNull
+  member _.string_ty_ambivalent = v_string_ty_ambivalent
   member _.system_IFormattable_tcref = v_IFormattable_tcref
   member _.system_FormattableString_tcref = v_FormattableString_tcref
   member _.system_FormattableStringFactory_tcref = v_FormattableStringFactory_tcref
@@ -1554,6 +1573,7 @@ type TcGlobals(
   member val attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
   member val attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
   member val attrib_NoCompilerInliningAttribute            = mk_MFCore_attrib "NoCompilerInliningAttribute"
+  member val attrib_WarnOnWithoutNullArgumentAttribute      = mk_MFCore_attrib "WarnOnWithoutNullArgumentAttribute"
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
@@ -1716,6 +1736,18 @@ type TcGlobals(
   member val range_op_vref              = ValRefForIntrinsic v_range_op_info
   member val range_step_op_vref         = ValRefForIntrinsic v_range_step_op_info
   member val range_int32_op_vref        = ValRefForIntrinsic v_range_int32_op_info
+  member val range_int64_op_vref        = ValRefForIntrinsic v_range_int64_op_info
+  member val range_uint64_op_vref       = ValRefForIntrinsic v_range_uint64_op_info
+  member val range_uint32_op_vref       = ValRefForIntrinsic v_range_uint32_op_info
+  member val range_nativeint_op_vref    = ValRefForIntrinsic v_range_nativeint_op_info
+  member val range_unativeint_op_vref   = ValRefForIntrinsic v_range_unativeint_op_info
+  member val range_int16_op_vref        = ValRefForIntrinsic v_range_int16_op_info
+  member val range_uint16_op_vref       = ValRefForIntrinsic v_range_uint16_op_info
+  member val range_sbyte_op_vref        = ValRefForIntrinsic v_range_sbyte_op_info
+  member val range_byte_op_vref         = ValRefForIntrinsic v_range_byte_op_info
+  member val range_char_op_vref         = ValRefForIntrinsic v_range_char_op_info
+  member val range_generic_op_vref      = ValRefForIntrinsic v_range_generic_op_info
+  member val range_step_generic_op_vref = ValRefForIntrinsic v_range_step_generic_op_info
   member val array_get_vref             = ValRefForIntrinsic v_array_get_info
   member val array2D_get_vref           = ValRefForIntrinsic v_array2D_get_info
   member val array3D_get_vref           = ValRefForIntrinsic v_array3D_get_info

@@ -1607,7 +1607,10 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
 let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
-    let compPath = (CompilationPath.CompPath(ILScopeRef.Local, []))
+
+    let compPath =
+        (CompilationPath.CompPath(ILScopeRef.Local, SyntaxAccess.Unknown, []))
+
     let mutable mty = Unchecked.defaultof<_>
 
     let entity =

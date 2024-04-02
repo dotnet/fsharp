@@ -22,7 +22,6 @@
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
-	<!--<OtherFlags>$(OtherFlags) - - allsigs</OtherFlags>-->
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
@@ -78,8 +77,8 @@
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="HistoricalBenchmark" />
-	<InternalsVisibleTo Include="FSharp.Test.Utilities" />
-	<InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="FSharp.Test.Utilities" />
+    <InternalsVisibleTo Include="FSharp.Editor" />
   </ItemGroup>
 
   <ItemGroup>
@@ -234,7 +233,7 @@
       <Link>SyntaxTree\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="pars.fsy">
-      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>SyntaxTree\pars.fsy</Link>
     </FsYacc>
     <None Include="pplex.fsl">
@@ -366,8 +365,8 @@
     <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
-	<Compile Include="Checking\SignatureHash.fsi" />
-	<Compile Include="Checking\SignatureHash.fs" />
+    <Compile Include="Checking\SignatureHash.fsi" />
+    <Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
@@ -505,12 +504,12 @@
     <Compile Include="Service\QuickParse.fsi" />
     <Compile Include="Service\QuickParse.fs" />
     <Compile Include="Service\FSharpCheckerResults.fsi" />
-	  <Compile Include="Service\FSharpCheckerResults.fs" />
-	  <Compile Include="Service\FSharpProjectSnapshot.fs" />
-	  <Compile Include="Service\BackgroundCompiler.fsi" />
-	  <Compile Include="Service\BackgroundCompiler.fs" />
-	  <Compile Include="Service\TransparentCompiler.fsi" />
-	  <Compile Include="Service\TransparentCompiler.fs" />
+    <Compile Include="Service\FSharpCheckerResults.fs" />
+    <Compile Include="Service\FSharpProjectSnapshot.fs" />
+    <Compile Include="Service\BackgroundCompiler.fsi" />
+    <Compile Include="Service\BackgroundCompiler.fs" />
+    <Compile Include="Service\TransparentCompiler.fsi" />
+    <Compile Include="Service\TransparentCompiler.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\ServiceInterfaceStubGenerator.fsi" />
@@ -543,15 +542,15 @@
   <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
     <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
   </ItemGroup>

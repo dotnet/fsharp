@@ -1,4 +1,4 @@
-namespace EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
@@ -10,6 +10,7 @@ module GeneratedIterators =
         compilation
         |> withOptions [ "--test:EmitFeeFeeAs100001" ]
         |> asExe
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withNoOptimize
         |> withEmbeddedPdb
         |> withEmbedAllSource
@@ -35,7 +36,15 @@ module GeneratedIterators =
         |> verifyCompilation
 
     // SOURCE=GenIter04.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd GenIter04.exe"	# GenIter04.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenIter04.fs"|])>]
-    let ``GenIter04_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenIter04_RealInternalSignatureOff.fs"|])>]
+    let ``GenIter04_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    // SOURCE=GenIter04.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd GenIter04.exe"	# GenIter04.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenIter04_RealInternalSignatureOn.fs"|])>]
+    let ``GenIter04_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation

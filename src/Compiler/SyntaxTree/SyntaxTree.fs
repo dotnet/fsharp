@@ -16,7 +16,19 @@ type Ident(text: string, range: range) =
     member _.idRange = range
     override _.ToString() = text
 
-type SynIdent = SynIdent of ident: Ident * trivia: IdentTrivia option
+type SynIdent =
+    | SynIdent of ident: Ident * trivia: IdentTrivia option
+
+    member this.Range =
+        match this with
+        | SynIdent(ident, trivia) ->
+            match trivia with
+            | Some value ->
+                match value with
+                | IdentTrivia.OriginalNotationWithParen(leftParen, _, rightParen)
+                | IdentTrivia.HasParenthesis(leftParen, rightParen) -> unionRanges leftParen rightParen
+                | _ -> ident.idRange
+            | None -> ident.idRange
 
 type LongIdent = Ident list
 

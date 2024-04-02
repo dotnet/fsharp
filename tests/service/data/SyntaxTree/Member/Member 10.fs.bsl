@@ -45,4 +45,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(7,0)-(7,0) parse error Incomplete structured construct at or before this point in member definition. Expected 'with', '=' or other token.
+(7,0)-(7,0) parse error Expecting member body

@@ -90,6 +90,7 @@ module AccessibilityAnnotations_OnTypeMembers =
             (Error 10, Line 20, Col 49, Line 20, Col 50, "Unexpected identifier in pattern")
             (Error 1244, Line 20, Col 48, Line 20, Col 57, "Attempted to parse this as an operator name, but failed")
             (Error 10, Line 23, Col 36, Line 23, Col 42, "Unexpected keyword 'public' in member definition")
+            (Error 3567, Line 23, Col 36, Line 23, Col 42, "Expecting member body")
         ]
 
     // SOURCE=OnProperty01.fs                                                  # OnProperty01.fs

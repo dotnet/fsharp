@@ -218,6 +218,10 @@ val mkCompGenLet: range -> Val -> Expr -> Expr -> Expr
 /// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
 val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
+/// Make a mutable let-expression that locally binds a compiler-generated value to an expression, where the expression
+/// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
+val mkCompGenLetMutableIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
+
 /// Make a let-expression that locally binds a value to an expression in an "invisible" way.
 /// Invisible bindings are not given a sequence point and should not have side effects.
 val mkInvisibleLet: range -> Val -> Expr -> Expr -> Expr
@@ -682,7 +686,7 @@ val tryAnyParTyOption: TcGlobals -> TType -> Typar option
 
 val isMeasureTy: TcGlobals -> TType -> bool
 
-val mkAppTy: TyconRef -> TypeInst -> TType
+val mkWoNullAppTy: TyconRef -> TypeInst -> TType
 
 val mkProvenUnionCaseTy: UnionCaseRef -> TypeInst -> TType
 
@@ -895,6 +899,8 @@ val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> Typa
 val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
+
+val nullnessSensitivetypeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
 val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
@@ -1333,6 +1339,12 @@ val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
 
 /// Make a remapping table for viewing a module or namespace 'from the outside'
 val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
+
+/// Get the value including fsi remapping
+val DoRemapTycon: (Remap * SignatureHidingInfo) list -> Tycon -> Tycon
+
+/// Get the value including fsi remapping
+val DoRemapVal: (Remap * SignatureHidingInfo) list -> Val -> Val
 
 /// Determine if a type definition is hidden by a signature
 val IsHiddenTycon: (Remap * SignatureHidingInfo) list -> Tycon -> bool
@@ -1957,6 +1969,12 @@ val mkTwo: TcGlobals -> range -> Expr
 
 val mkMinusOne: TcGlobals -> range -> Expr
 
+/// Makes an expression holding a constant 0 value of the given numeric type.
+val mkTypedZero: g: TcGlobals -> m: range -> ty: TType -> Expr
+
+/// Makes an expression holding a constant 1 value of the given numeric type.
+val mkTypedOne: g: TcGlobals -> m: range -> ty: TType -> Expr
+
 val destInt32: Expr -> int32 option
 
 //-------------------------------------------------------------------------
@@ -2268,6 +2286,8 @@ val TryFindFSharpBoolAttributeAssumeFalse: TcGlobals -> BuiltinAttribInfo -> Att
 
 val TryFindFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
 
+val TryFindLocalizedFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
+
 val TryFindFSharpInt32Attribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> int32 option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
@@ -2544,6 +2564,50 @@ val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list option
 val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list option
 
 val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
+
+/// Matches if the given expression is an application
+/// of the range or range-step operator on an integral type
+/// and returns the type, start, step, and finish if so.
+///
+/// start..finish
+///
+/// start..step..finish
+[<return: Struct>]
+val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
+
+[<RequireQualifiedAccess>]
+module IntegralConst =
+    /// Constant 0.
+    [<return: Struct>]
+    val (|Zero|_|): c: Const -> unit voption
+
+/// An expression holding the loop's iteration count.
+type Count = Expr
+
+/// An expression representing the loop's current iteration index.
+type Idx = Expr
+
+/// An expression representing the current loop element.
+type Elem = Expr
+
+/// An expression representing the loop body.
+type Body = Expr
+
+/// An expression representing the overall loop.
+type Loop = Expr
+
+/// Makes an optimized while-loop for a range expression with the given integral start, step, and finish:
+///
+/// start..step..finish
+///
+/// The buildLoop function enables using the precomputed iteration count in an optional initialization step before the loop is executed.
+val mkOptimizedRangeLoop:
+    g: TcGlobals ->
+    mBody: range * mFor: range * mIn: range * spInWhile: DebugPointAtWhile ->
+        rangeTy: TType * rangeExpr: Expr ->
+            start: Expr * step: Expr * finish: Expr ->
+                buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr) ->
+                    Expr
 
 type OptimizeForExpressionOptions =
     | OptimizeIntRangesOnly
