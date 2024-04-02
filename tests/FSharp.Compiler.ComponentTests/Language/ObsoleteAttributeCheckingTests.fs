@@ -151,6 +151,22 @@ c.Update()
         |> withDiagnostics [
             (Error 101, Line 10, Col 1, Line 10, Col 11, "This construct is deprecated. Use B instead")
         ]
+        
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on a static member and invoking the member`` () =
+        Fsx """
+[<Sealed>]
+type C() = 
+    [<System.Obsolete("nope")>]
+    static member op_Implicit(x:int) = C()
+    static member M1(C:C) = 1
+let x = C.M1(2)
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 7, Col 9, Line 7, Col 16, "This construct is deprecated. nope")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on a record property`` () =

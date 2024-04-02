@@ -9769,6 +9769,20 @@ and TcMethodApplication_CheckArguments
 
     let g = cenv.g
     let denv = env.DisplayEnv
+    let valRefs =
+        candidates
+        |> List.collect(fun meth ->
+            match meth with
+            | FSMeth(valRef = valRef) when not valRef.IsConstructor && not valRef.IsInstanceMember ->
+                match valRef.MemberInfo with
+                | Some membInfo ->
+                    membInfo.ApparentEnclosingEntity.MembersOfFSharpTyconSorted
+                | None -> []
+            | _ -> [])
+        
+    for valRef in valRefs do
+        CheckValAttributes g valRef mMethExpr |> CommitOperationResult    
+            
     match curriedCallerArgsOpt with
     | None ->
         let curriedArgTys, curriedArgNamesIfFeatureEnabled, returnTy =
