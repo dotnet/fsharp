@@ -886,6 +886,21 @@ in x
             """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
 
+            """
+            [
+                ()
+                (printfn "1"; ())
+                ()
+            ]
+            """,
+            """
+            [
+                ()
+                (printfn "1"; ())
+                ()
+            ]
+            """
+
             // Technically we could remove some parens in some of these,
             // but additional exprs above or below can suddenly move the offsides line,
             // and we don't want to do unbounded lookahead or lookbehind.
@@ -991,6 +1006,7 @@ in x
                     z
                 ]
             "
+
             "
             let _ =
                 let y = 100

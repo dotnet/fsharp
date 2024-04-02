@@ -977,6 +977,8 @@ module SynExpr =
                 ->
                 true
 
+            | SynExpr.Sequential _, Dangling.Problematic(SynExpr.Sequential _) -> true
+
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), Dangling.Problematic _ when
                 problematic inner.Range expr2.Range
                 ->
