@@ -116,6 +116,11 @@ type SynExprMatchBangTrivia =
 type SynExprAnonRecdTrivia = { OpeningBraceRange: range }
 
 [<NoEquality; NoComparison>]
+type SynExprSequentialTrivia =
+    { SemiColonRange: range option }
+    static member Zero = { SemiColonRange = None }
+
+[<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
     {
         ArrowRange: range option
