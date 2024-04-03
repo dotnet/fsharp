@@ -9894,8 +9894,8 @@ FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: Void .ctor(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia Zero
 FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia get_Zero()
-FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] SemiColonRange
-FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_SemiColonRange()
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] SeparatorRange
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_SeparatorRange()
 FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia: FSharp.Compiler.Text.Range FinallyKeyword

@@ -24,8 +24,8 @@ ImplFile
                         Sequential
                           (SuppressNeither, true, Const (Int32 2, (2,24--2,25)),
                            Const (Int32 4, (2,26--2,27)), (2,24--2,27),
-                           { SemiColonRange = Some (2,25--2,26) }), (2,22--2,27),
-                        { SemiColonRange = Some (2,23--2,24) }), (2,20--2,28)),
+                           { SeparatorRange = Some (2,25--2,26) }), (2,22--2,27),
+                        { SeparatorRange = Some (2,23--2,24) }), (2,20--2,28)),
                   (2,4--2,16), Yes (2,0--2,28),
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None

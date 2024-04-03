@@ -38,7 +38,7 @@ ImplFile
                                 ([Infrastructure; ReportWarning], [(7,18--7,19)],
                                  [None; None]), None, (7,4--7,32)), Ident ex,
                            (7,4--7,35)), Ident None, (7,4--8,8),
-                        { SemiColonRange = None }), (6,2--8,8), Yes,
+                        { SeparatorRange = None }), (6,2--8,8), Yes,
                      { ArrowRange = Some (6,5--6,7)
                        BarRange = Some (6,0--6,1) });
                   SynMatchClause

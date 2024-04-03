@@ -10,7 +10,7 @@ ImplFile
                    (SuppressNeither, false, Ident a,
                     Paren
                       (Ident b, (1,10--1,15), Some (1,18--1,21), (1,10--1,21)),
-                    (1,3--1,21), { SemiColonRange = Some (1,5--1,9) }),
+                    (1,3--1,21), { SeparatorRange = Some (1,5--1,9) }),
                  (1,0--1,21)), (1,0--1,21))], PreXmlDocEmpty, [], None,
           (1,0--2,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

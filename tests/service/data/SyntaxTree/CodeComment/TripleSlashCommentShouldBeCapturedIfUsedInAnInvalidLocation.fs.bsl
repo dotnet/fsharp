@@ -31,7 +31,7 @@ ImplFile
                                  [Some (OriginalNotation "+")]), None,
                               (9,6--9,7)), Ident a, (9,4--9,7)),
                         Const (Int32 1, (9,8--9,9)), (9,4--9,9)), (8,4--9,9),
-                     { SemiColonRange = None }), (2,0--3,5), NoneAtLet,
+                     { SeparatorRange = None }), (2,0--3,5), NoneAtLet,
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
                     EqualsRange = Some (3,6--3,7) })], (2,0--9,9))],

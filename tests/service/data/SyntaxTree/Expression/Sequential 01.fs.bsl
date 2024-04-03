@@ -8,7 +8,7 @@ ImplFile
              (Do
                 (Sequential
                    (SuppressNeither, true, Ident a, Ident b, (1,3--1,8),
-                    { SemiColonRange = Some (1,5--1,6) }), (1,0--1,8)),
+                    { SeparatorRange = Some (1,5--1,6) }), (1,0--1,8)),
               (1,0--1,8))], PreXmlDocEmpty, [], None, (1,0--2,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

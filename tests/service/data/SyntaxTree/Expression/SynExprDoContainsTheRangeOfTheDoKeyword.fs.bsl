@@ -15,7 +15,7 @@ ImplFile
                   Sequential
                     (SuppressNeither, true, Do (Ident foobar, (3,4--4,14)),
                      DoBang (Ident foobarBang, (5,4--6,18)), (3,4--6,18),
-                     { SemiColonRange = None }), (2,4--2,5), NoneAtLet,
+                     { SeparatorRange = None }), (2,4--2,5), NoneAtLet,
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange = Some (2,6--2,7) })], (2,0--6,18))],

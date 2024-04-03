@@ -51,7 +51,7 @@ ImplFile
                                         (5,34--5,35), Some (5,50--5,51),
                                         (5,34--5,51)), (5,22--5,51)),
                                   Const (Int32 4, (5,53--5,54)), (5,22--5,54),
-                                  { SemiColonRange = Some (5,51--5,52) }),
+                                  { SeparatorRange = Some (5,51--5,52) }),
                                (5,13--5,19), NoneAtInvisible,
                                { LeadingKeyword =
                                   StaticMember ((3,4--3,10), (3,11--3,17))

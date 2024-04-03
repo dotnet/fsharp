@@ -181,7 +181,7 @@ type SynExprSequentialTrivia =
     {
         /// The syntax range of the `;` token.
         /// Could also be the `then` keyword.
-        SemiColonRange: range option
+        SeparatorRange: range option
     }
 
     static member Zero: SynExprSequentialTrivia
