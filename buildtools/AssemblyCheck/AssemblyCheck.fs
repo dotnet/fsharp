@@ -64,6 +64,9 @@ module AssemblyCheck =
 
     let verifyAssemblies (binariesPath:string) =
 
+        // When building in the VMR, the package cache directory is under artifacts and should not be scanned.
+        let vmrPackageCacheDirectory = $"{Path.DirectorySeparatorChar}package-cache{Path.DirectorySeparatorChar}"
+
         let excludedAssemblies =
             [ ] |> Set.ofList
 
@@ -84,7 +87,13 @@ module AssemblyCheck =
 
         let fsharpExecutingWithEmbeddedPdbs =
             fsharpAssemblies
-            |> List.filter (fun p -> not (p.Contains(@"\Proto\") || p.Contains(@"\Bootstrap\") || p.Contains(@".resources.") || p.Contains(@"\FSharpSdk\") || p.Contains(@"\tmp\") || p.Contains(@"\obj\")))
+            |> List.filter (fun p -> not (p.Contains($"{Path.DirectorySeparatorChar}Proto{Path.DirectorySeparatorChar}") ||
+                            p.Contains($"{Path.DirectorySeparatorChar}Bootstrap{Path.DirectorySeparatorChar}") ||
+                            p.Contains(".resources.") ||
+                            p.Contains($"{Path.DirectorySeparatorChar}FSharpSdk{Path.DirectorySeparatorChar}") ||
+                            p.Contains($"{Path.DirectorySeparatorChar}tmp{Path.DirectorySeparatorChar}") ||
+                            p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") ||
+                            p.Contains(vmrPackageCacheDirectory)))
 
         // verify that all assemblies have a version number other than 0.0.0.0 or 1.0.0.0
         let failedVersionCheck =
@@ -99,21 +108,22 @@ module AssemblyCheck =
 
         if failedVersionCheck.Length > 0 then
             printfn "The following assemblies had a version of %A or %A" versionZero versionOne
-            printfn "%s\r\n" <| String.Join("\r\n", failedVersionCheck)
+            printfn "%s" <| String.Join(Environment.NewLine, failedVersionCheck)
         else
             printfn "All shipping assemblies had an appropriate version number."
 
         // verify that all assemblies have a commit hash
         let failedCommitHash =
             fsharpAssemblies
-            |> List.filter (fun p -> not (p.Contains(@"\FSharpSdk\")))
+            |> List.filter (fun p -> not (p.Contains($"{Path.DirectorySeparatorChar}FSharpSdk{Path.DirectorySeparatorChar}") ||
+                                          p.Contains(vmrPackageCacheDirectory)))
             |> List.filter (fun a ->
                 let fileProductVersion = FileVersionInfo.GetVersionInfo(a).ProductVersion
                 not (commitHashPattern.IsMatch(fileProductVersion) || devVersionPattern.IsMatch(fileProductVersion)))
 
         if failedCommitHash.Length > 0 then
             printfn "The following assemblies don't have a commit hash set"
-            printfn "%s\r\n" <| String.Join("\r\n", failedCommitHash)
+            printfn "%s%s" (String.Join(Environment.NewLine, failedCommitHash)) Environment.NewLine
         else
             printfn "All shipping assemblies had an appropriate commit hash."
 
@@ -124,7 +134,7 @@ module AssemblyCheck =
 
         if failedVerifyEmbeddedPdb.Length > 0 then
             printfn "The following assemblies don't have an embedded pdb"
-            printfn "%s\r\n" <| String.Join("\r\n", failedVerifyEmbeddedPdb)
+            printfn "%s%s" (String.Join(Environment.NewLine, failedVerifyEmbeddedPdb)) Environment.NewLine
         else
             printfn "All shipping assemblies had an embedded PDB."
 
