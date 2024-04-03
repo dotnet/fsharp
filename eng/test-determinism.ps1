@@ -29,8 +29,8 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
 
   # Clean out the previous run
   Write-Host "Cleaning binaries in $rootDir"
-  $binDir = Get-BinDir $rootDir
-  $objDir = Get-ObjDir $rootDir
+  $binDir = Get-BinDir (Get-ArtifactsDir $rootDir)
+  $objDir = Get-ObjDir (Get-ArtifactsDir $rootDir)
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
   Write-Host "Cleaning binaries in $binDir"
   Remove-Item -Recurse $binDir -ErrorAction SilentlyContinue
@@ -80,18 +80,22 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
   Stop-Processes
 }
 
-function Get-ObjDir([string]$rootDir) {
-  return Join-Path $rootDir "artifacts\obj"
+function Get-ArtifactsDir([string]$dir) {
+  return Join-Path $dir "artifacts"
 }
 
-function Get-BinDir([string]$rootDir) {
-  return Join-Path $rootDir "artifacts\bin"
+function Get-ObjDir([string]$dir) {
+  return Join-Path $dir "obj"
+}
+
+function Get-BinDir([string]$dir) {
+  return Join-Path $dir "artifacts\bin"
 }
 
 # Return all of the files that need to be processed for determinism under the given
 # directory.
 function Get-FilesToProcess([string]$rootDir) {
-  $objDir = Get-ObjDir $rootDir
+  $objDir = Get-ObjDir (Get-ArtifactsDir $rootDir)
   foreach ($item in Get-ChildItem -re -in *.dll, *.exe, *.pdb, *.sourcelink.json $objDir) {
     $filePath = $item.FullName
     $fileName = Split-Path -leaf $filePath
@@ -183,7 +187,7 @@ function Test-Build([string]$rootDir, $dataMap, [string]$logFileName) {
   $errorList = @()
   $allGood = $true
 
-  Write-Host "Testing the binaries"
+  Write-Host "Testing the binaries: $rootDir"
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
   foreach ($fileData in Get-FilesToProcess $rootDir) {
     $fileId = $fileData.FileId
@@ -249,6 +253,7 @@ function Test-Build([string]$rootDir, $dataMap, [string]$logFileName) {
 function Run-Test() {
   # Run the initial build so that we can populate the maps
   Run-Build $RepoRoot -logFileName "Initial" -useBootstrap
+
   $dataMap = Record-Binaries $RepoRoot
   Test-MapContents $dataMap
 
@@ -377,12 +382,8 @@ try {
 
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
-  $script:bootstrapTfm = "net472"
   $script:fsharpNetCoreProductTfm = "net8.0"
-
-  if ($script:msbuildEngine -eq "dotnet") {
-    $script.bootstrapTfm = $script:fsharpNetCoreProductTfm
-  }
+  $script:bootstrapTfm = $script:fsharpNetCoreProductTfm
 
   $bootstrapDir = Make-BootstrapBuild
 
