@@ -752,8 +752,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
     let (|ForEachThen|_|) synExpr =
         match synExpr with
-        | SynExpr.ForEach(_spFor, _spIn, SeqExprOnly false, isFromSource, pat1, expr1, SynExpr.Sequential(isTrueSeq = true; expr1 = clause; expr2 = rest), _) ->
-            Some(isFromSource, pat1, expr1, clause, rest)
+        | SynExpr.ForEach(_spFor,
+                          _spIn,
+                          SeqExprOnly false,
+                          isFromSource,
+                          pat1,
+                          expr1,
+                          SynExpr.Sequential(isTrueSeq = true; expr1 = clause; expr2 = rest),
+                          _) -> Some(isFromSource, pat1, expr1, clause, rest)
         | _ -> None
 
     let (|CustomOpId|_|) predicate synExpr =
@@ -1233,7 +1239,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     // 2. incompatible types: int and string
                     // with SynExpr.ArbitraryAfterError we have only first one
                     let wrapInArbErrSequence l caption =
-                        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, l, (arbExpr (caption, l.Range.EndRange)), l.Range, SynExprSequentialTrivia.Zero)
+                        SynExpr.Sequential(
+                            DebugPointAtSequential.SuppressNeither,
+                            true,
+                            l,
+                            (arbExpr (caption, l.Range.EndRange)),
+                            l.Range,
+                            SynExprSequentialTrivia.Zero
+                        )
 
                     let mkOverallExprGivenVarSpaceExpr, varSpaceInner =
 
@@ -1529,7 +1542,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                             SynExpr.While(
                                 DebugPointAtWhile.No,
                                 SynExpr.Ident idCond,
-                                SynExpr.Sequential(DebugPointAtSequential.SuppressBoth, true, innerComp, bindCondExpr, mWhile, SynExprSequentialTrivia.Zero),
+                                SynExpr.Sequential(
+                                    DebugPointAtSequential.SuppressBoth,
+                                    true,
+                                    innerComp,
+                                    bindCondExpr,
+                                    mWhile,
+                                    SynExprSequentialTrivia.Zero
+                                ),
                                 mOrig
                             )
 
@@ -2643,7 +2663,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                                     comp.Range
                                 )
                             else
-                                SynExpr.Sequential(DebugPointAtSequential.SuppressExpr, true, comp, holeFill, comp.Range, SynExprSequentialTrivia.Zero)
+                                SynExpr.Sequential(
+                                    DebugPointAtSequential.SuppressExpr,
+                                    true,
+                                    comp,
+                                    holeFill,
+                                    comp.Range,
+                                    SynExprSequentialTrivia.Zero
+                                )
 
                         translatedCtxt fillExpr)
 
