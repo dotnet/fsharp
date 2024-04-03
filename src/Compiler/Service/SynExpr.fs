@@ -472,6 +472,21 @@ module SynExpr =
                 | SynExpr.Lambda _ as expr -> Some expr
                 | _ -> None)
 
+        /// Matches a dangling arrow-sensitive construct.
+        [<return: Struct>]
+        let (|ArrowSensitive|_|) =
+            dangling (function
+                | SynExpr.Match _
+                | SynExpr.MatchBang _
+                | SynExpr.MatchLambda _
+                | SynExpr.TryWith _
+                | SynExpr.Lambda _
+                | SynExpr.Typed _
+                | SynExpr.TypeTest _
+                | SynExpr.Upcast _
+                | SynExpr.Downcast _ as expr -> Some expr
+                | _ -> None)
+
         /// Matches a nested dangling construct that could become problematic
         /// if the surrounding parens were removed.
         [<return: Struct>]
@@ -873,23 +888,22 @@ module SynExpr =
 
             | SynExpr.TryFinally(trivia = trivia), Dangling.Try tryExpr when problematic tryExpr.Range trivia.FinallyKeyword -> true
 
-            | SynExpr.Match(clauses = clauses; trivia = { WithKeyword = withKeyword }), Dangling.Match matchOrTry when
-                problematic matchOrTry.Range withKeyword
-                || anyProblematic matchOrTry.Range clauses
+            | SynExpr.Match(clauses = clauses; trivia = { WithKeyword = withKeyword }), Dangling.ArrowSensitive dangling when
+                problematic dangling.Range withKeyword || anyProblematic dangling.Range clauses
                 ->
                 true
 
-            | SynExpr.MatchBang(clauses = clauses; trivia = { WithKeyword = withKeyword }), Dangling.Match matchOrTry when
-                problematic matchOrTry.Range withKeyword
-                || anyProblematic matchOrTry.Range clauses
+            | SynExpr.MatchBang(clauses = clauses; trivia = { WithKeyword = withKeyword }), Dangling.ArrowSensitive dangling when
+                problematic dangling.Range withKeyword || anyProblematic dangling.Range clauses
                 ->
                 true
 
-            | SynExpr.MatchLambda(matchClauses = clauses), Dangling.Match matchOrTry when anyProblematic matchOrTry.Range clauses -> true
+            | SynExpr.MatchLambda(matchClauses = clauses), Dangling.ArrowSensitive dangling when anyProblematic dangling.Range clauses ->
+                true
 
-            | SynExpr.TryWith(withCases = clauses; trivia = trivia), Dangling.Match matchOrTry when
-                problematic matchOrTry.Range trivia.WithKeyword
-                || anyProblematic matchOrTry.Range clauses
+            | SynExpr.TryWith(withCases = clauses; trivia = trivia), Dangling.ArrowSensitive dangling when
+                problematic dangling.Range trivia.WithKeyword
+                || anyProblematic dangling.Range clauses
                 ->
                 true
 
@@ -903,12 +917,36 @@ module SynExpr =
             //          match x with
             //          | 3 | _ -> y) -> ()
             //     | _ -> ()
-            | _, Dangling.Match matchOrTry when
-                let line = getSourceLineStr matchOrTry.Range.EndLine
-                let endCol = matchOrTry.Range.EndColumn
+            | _, Dangling.ArrowSensitive dangling when
+                let rec ancestralTrailingArrow path =
+                    match path with
+                    | SyntaxNode.SynMatchClause _ :: _ -> shouldBeParenthesizedInContext path dangling
 
-                line.Length > endCol + 1
-                && line.AsSpan(endCol + 1).TrimStart(' ').StartsWith("->".AsSpan())
+                    | SyntaxNode.SynExpr(SynExpr.Tuple _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.App _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.IfThenElse _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.IfThenElse _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.Sequential _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.YieldOrReturn _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.YieldOrReturnFrom _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.Set _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.DotSet _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.DotNamedIndexedPropertySet _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.DotIndexedSet _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.LongIdentSet _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.LetOrUse _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.Lambda _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.Match _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.MatchLambda _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.MatchBang _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.TryWith _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.TryFinally _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.Do _) :: path
+                    | SyntaxNode.SynExpr(SynExpr.DoBang _) :: path -> ancestralTrailingArrow path
+
+                    | _ -> false
+
+                ancestralTrailingArrow outerPath
                 ->
                 true
 

@@ -388,6 +388,21 @@ let _ =
              | _ -> 3)
             "
 
+            "match () with () when (box x :? int) -> () | _ -> ()", "match () with () when (box x :? int) -> () | _ -> ()"
+
+            "
+            match () with
+            | () when (box x :? int)
+                -> ()
+            | _ -> ()
+            ",
+            "
+            match () with
+            | () when box x :? int
+                -> ()
+            | _ -> ()
+            "
+
             // Do
             "do (ignore 3)", "do ignore 3"
 
