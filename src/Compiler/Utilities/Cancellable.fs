@@ -18,7 +18,7 @@ type Cancellable =
     static member Tokens
         with private get () =
             match box Cancellable.tokens with
-            | Null -> []
+            | null -> []
             | _ -> Cancellable.tokens
         and private set v = Cancellable.tokens <- v
 
