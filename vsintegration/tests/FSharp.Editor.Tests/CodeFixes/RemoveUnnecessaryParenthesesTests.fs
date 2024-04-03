@@ -1427,6 +1427,17 @@ in x
                     A = 4 |}
                 "
 
+                "
+                {|
+                    A = ([] : int list list)
+                |}
+                ",
+                "
+                {|
+                    A = ([] : int list list)
+                |}
+                "
+
                 // ArrayOrList
                 "id ([])", "id []"
                 "id ([||])", "id [||]"
@@ -1482,6 +1493,17 @@ in x
                 { (try { A = 3 } with _ -> reraise ())
                   with
                     A = 4 }
+                "
+
+                "
+                {
+                    A = ([] : int list list)
+                }
+                ",
+                "
+                {
+                    A = ([] : int list list)
+                }
                 "
 
                 // New

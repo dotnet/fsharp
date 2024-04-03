@@ -1013,8 +1013,6 @@ module SynExpr =
 
             | SynExpr.Paren _, SynExpr.Typed _
             | SynExpr.Quote _, SynExpr.Typed _
-            | SynExpr.AnonRecd _, SynExpr.Typed _
-            | SynExpr.Record _, SynExpr.Typed _
             | SynExpr.While(doExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
             | SynExpr.WhileBang(doExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
             | SynExpr.For(doBody = Is inner), SynExpr.Typed _
