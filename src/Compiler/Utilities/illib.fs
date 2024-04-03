@@ -139,7 +139,7 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
-        member inline x.IndexOfOrdinal value =
+        member inline x.IndexOfOrdinal (value:string) =
             x.IndexOf(value, StringComparison.Ordinal)
 
         member inline x.IndexOfOrdinal(value, startIndex) =
@@ -836,10 +836,13 @@ module String =
         elif value.StartsWithOrdinal pattern then Some()
         else None
 
-    let (|Contains|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then None
-        elif value.Contains pattern then Some()
-        else None
+    let (|Contains|_|) (pattern:string) value =
+        match value with        
+        | value when String.IsNullOrWhiteSpace value -> None
+        | null -> None
+        | value ->
+            if value.Contains pattern then Some()
+            else None
 
     let getLines (str: string) =
         use reader = new StringReader(str)
@@ -978,7 +981,11 @@ module ResultOrException =
         | Exception _err -> f ()
 
 /// Generates unique stamps
-type UniqueStampGenerator<'T when 'T: equality>() =
+type UniqueStampGenerator<'T when 'T: equality
+#if !NO_CHECKNULLS
+    and 'T:not null
+#endif
+    >() =
     let encodeTable = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
     let mutable nItems = -1
 
@@ -990,7 +997,11 @@ type UniqueStampGenerator<'T when 'T: equality>() =
     member _.Table = encodeTable.Keys
 
 /// memoize tables (all entries cached, never collected)
-type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
+type MemoizationTable<'T, 'U
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    >(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
 
     let table = new ConcurrentDictionary<'T, Lazy<'U>>(keyComparer)
     let computeFunc = Func<_, _>(fun key -> lazy (compute key))
@@ -1006,7 +1017,11 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
             compute x
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionary<'T, 'U>(keyComparer: IEqualityComparer<'T>) =
+type internal StampedDictionary<'T, 'U
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    >(keyComparer: IEqualityComparer<'T>) =
     let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
     let mutable count = -1
 

@@ -253,7 +253,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
 
     key
 
-let createSignature hash keyBlob keyType =
+let createSignature (hash:byte array) keyBlob keyType =
     use rsa = RSA.Create()
     rsa.ImportParameters(RSAParamatersFromBlob keyBlob keyType)
 

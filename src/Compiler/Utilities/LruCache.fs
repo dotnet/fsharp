@@ -23,7 +23,12 @@ type internal ValueLink<'T when 'T: not struct> =
     | Weak of WeakReference<'T>
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
-type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality and 'TValue: not struct>
+type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality and 'TValue: not struct
+#if !NO_CHECKNULLS
+    and 'TKey:not null
+    and 'TVersion:not null
+#endif
+    >
     (keepStrongly, ?keepWeakly, ?requiredToKeep, ?event) =
 
     let keepWeakly = defaultArg keepWeakly 100
@@ -36,8 +41,10 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
     let strongList = LinkedList<'TKey * 'TVersion * string * ValueLink<'TValue>>()
     let weakList = LinkedList<'TKey * 'TVersion * string * ValueLink<'TValue>>()
 
-    let rec removeCollected (node: LinkedListNode<_> MaybeNull) =
-        if node <> null then
+    let rec removeCollected (possiblyNullNode: LinkedListNode<_> MaybeNull) =
+        match possiblyNullNode with
+        | null -> ()
+        | node ->
             let key, version, label, value = node.Value
 
             match value with

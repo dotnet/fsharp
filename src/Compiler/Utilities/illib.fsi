@@ -405,7 +405,11 @@ module internal ResultOrException =
     val otherwise: f: (unit -> ResultOrException<'a>) -> x: ResultOrException<'a> -> ResultOrException<'a>
 
 /// Generates unique stamps
-type internal UniqueStampGenerator<'T when 'T: equality> =
+type internal UniqueStampGenerator<'T when 'T: equality
+#if !NO_CHECKNULLS
+    and 'T:not null
+#endif
+    > =
 
     new: unit -> UniqueStampGenerator<'T>
 
@@ -414,7 +418,11 @@ type internal UniqueStampGenerator<'T when 'T: equality> =
     member Table: ICollection<'T>
 
 /// Memoize tables (all entries cached, never collected unless whole table is collected)
-type internal MemoizationTable<'T, 'U> =
+type internal MemoizationTable<'T, 'U
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    > =
 
     new:
         compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) -> MemoizationTable<'T, 'U>
@@ -422,7 +430,11 @@ type internal MemoizationTable<'T, 'U> =
     member Apply: x: 'T -> 'U
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionary<'T, 'U> =
+type internal StampedDictionary<'T, 'U
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    > =
 
     new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
 
