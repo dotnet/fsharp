@@ -14,6 +14,8 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <CheckNulls>true</CheckNulls>
+	<!-- Nullness checking againts ns20 base class libraries is very weak, the APIs were not updated with annotations. -->
+    <TargetFrameworks Condition=" '$(BuildingInsideVisualStudio)' == 'true' Or '$(DesignTimeBuild)' == 'true' ">net8.0;$(TargetFrameworks)</TargetFrameworks>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
