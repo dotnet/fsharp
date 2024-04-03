@@ -1280,8 +1280,11 @@ in x
             memberData {
                 // Paren
                 "id ()", "id ()"
-                "id (())", "id ()"
+                "id (())", "id (())"
                 "id ((x))", "id (x)"
+                "x.M(())", "x.M(())"
+                "x.M (())", "x.M (())"
+                "x.M.N(())", "x.M.N(())"
 
                 // Quote
                 "id (<@ x @>)", "id <@ x @>"
