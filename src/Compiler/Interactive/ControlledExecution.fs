@@ -70,5 +70,5 @@ type internal ControlledExecution(isInteractive: bool) =
         | :? TargetInvocationException as e ->
             match e.InnerException with
             | Null -> exn
-            | NonNull innerEx -> ControlledExecution.StripTargetInvocationException(innerEx)            
+            | NonNull innerEx -> ControlledExecution.StripTargetInvocationException(innerEx)
         | _ -> exn

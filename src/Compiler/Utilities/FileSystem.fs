@@ -693,6 +693,7 @@ type DefaultFileSystem() as this =
 
     default _.IsStableFileHeuristic(fileName: string) =
         let directory = Path.GetDirectoryName fileName
+
         match directory with
         | Null -> false
         | NonNull directory ->
@@ -819,7 +820,7 @@ module public StreamExtensions =
             let encoding = defaultArg encoding Encoding.UTF8
 
             seq {
-                use sr = new StreamReader(s, encoding, true)                
+                use sr = new StreamReader(s, encoding, true)
 
                 while not <| sr.EndOfStream do
                     yield sr.ReadLine()

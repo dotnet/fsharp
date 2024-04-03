@@ -975,11 +975,11 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let executableFileNameWithoutExtension =
         lazy
             let getFsiCommandLine () =
-                let fileNameWithoutExtension (path:string MaybeNull) = Path.GetFileNameWithoutExtension(path)
+                let fileNameWithoutExtension (path: string MaybeNull) = Path.GetFileNameWithoutExtension(path)
 
                 let currentProcess = Process.GetCurrentProcess()
                 let mainModule = currentProcess.MainModule
-                let processFileName = fileNameWithoutExtension (mainModule ^_.FileName)
+                let processFileName = fileNameWithoutExtension (mainModule ^ _.FileName)
 
                 let commandLineExecutableFileName =
                     try

@@ -203,7 +203,7 @@ module internal FSharpCheckerResultsSettings =
     // Look for DLLs in the location of the service DLL first.
     let defaultFSharpBinariesDir =
         FSharpEnvironment
-            .BinFolderOfDefaultFSharpCompiler(Option.ofObj(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location)))
+            .BinFolderOfDefaultFSharpCompiler(Option.ofObj (Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location)))
             .Value
 
 [<Sealed>]
