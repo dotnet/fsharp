@@ -1368,6 +1368,11 @@ in x
                 "{| A = (fun () -> ()); B = 3 |}", "{| A = (fun () -> ()); B = 3 |}"
                 "{| A = (let x = 3 in x); B = 3 |}", "{| A = (let x = 3 in x); B = 3 |}"
                 "{| (try {||} with _ -> reraise ()) with A = 4 |}", "{| (try {||} with _ -> reraise ()) with A = 4 |}"
+                "{| (x |> id) with A = 4 |}", "{| (x |> id) with A = 4 |}"
+                "{| (box x :?> T) with A = 4 |}", "{| (box x :?> T) with A = 4 |}"
+                "{| (+x) with A = 4 |}", "{| (+x) with A = 4 |}"
+                "{| (!x) with A = 4 |}", "{| !x with A = 4 |}"
+                "{| (! x) with A = 4 |}", "{| ! x with A = 4 |}"
 
                 "
                 {| A = (fun () -> ())
@@ -1420,6 +1425,11 @@ in x
                 "{ A = (let x = 3 in x); B = 3 }", "{ A = (let x = 3 in x); B = 3 }"
                 "{ A.B.C.D.X = (match () with () -> ()); A.B.C.D.Y = 3 }", "{ A.B.C.D.X = (match () with () -> ()); A.B.C.D.Y = 3 }"
                 "{ (try { A = 3 } with _ -> reraise ()) with A = 4 }", "{ (try { A = 3 } with _ -> reraise ()) with A = 4 }"
+                "{ (x |> id) with A = 4 }", "{ (x |> id) with A = 4 }"
+                "{ (box x :?> T) with A = 4 }", "{ (box x :?> T) with A = 4 }"
+                "{ (+x) with A = 4 }", "{ (+x) with A = 4 }"
+                "{ (!x) with A = 4 }", "{ !x with A = 4 }"
+                "{ (! x) with A = 4 }", "{ ! x with A = 4 }"
 
                 "
                 { A = (fun () -> ())

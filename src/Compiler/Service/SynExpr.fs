@@ -543,13 +543,13 @@ module SynExpr =
         let shouldBeParenthesizedInContext = shouldBeParenthesizedInContext getSourceLineStr
         let containsSensitiveIndentation = containsSensitiveIndentation getSourceLineStr
 
+        let (|StartsWith|) (s: string) = s[0]
+
         // Matches if the given expression starts with a symbol, e.g., <@ … @>, $"…", @"…", +1, -1…
         let (|StartsWithSymbol|_|) =
             let (|TextStartsWith|) (m: range) =
                 let line = getSourceLineStr m.StartLine
                 line[m.StartColumn]
-
-            let (|StartsWith|) (s: string) = s[0]
 
             function
             | SynExpr.Quote _
@@ -939,8 +939,19 @@ module SynExpr =
                     | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true
                     | _ -> false)
 
-            | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _
-            | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _ -> true
+            // { (!x) with … }
+            | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)),
+              SynExpr.App(isInfix = false; funcExpr = FuncExpr.SymbolicOperator(StartsWith('!' | '~')))
+            | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)),
+              SynExpr.App(isInfix = false; funcExpr = FuncExpr.SymbolicOperator(StartsWith('!' | '~'))) -> false
+
+            // { (+x) with … }
+            // { (x + y) with … }
+            // { (x |> f) with … }
+            // { (printfn "…"; x) with … }
+            | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), (PrefixApp _ | InfixApp _ | Dangling.Problematic _)
+            | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), (PrefixApp _ | InfixApp _ | Dangling.Problematic _) ->
+                true
 
             | SynExpr.Record(recordFields = recordFields), Dangling.Problematic _ ->
                 let rec loop recordFields =
