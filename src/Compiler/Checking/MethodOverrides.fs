@@ -427,9 +427,9 @@ module DispatchSlotChecking =
                         else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
-                    | possibleOverrides ->
-                        let overrideBy = List.head possibleOverrides
-                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap overrideBy.Range denv dispatchSlot), overrideBy.Range))
+                    | ambiguousOverrides ->
+                        let ambiguousOverride = List.head ambiguousOverrides
+                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap ambiguousOverride.Range denv dispatchSlot), ambiguousOverride.Range))
             | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot), m))
         
         if missingOverloadImplementation.Count > 0 then
