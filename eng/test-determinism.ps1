@@ -33,8 +33,8 @@ function Run-Build([string]$rootDir, [string]$increment) {
   Write-Host "Cleaning binaries in $rootDir"
   $binDir = Get-BinDir (Get-ArtifactsDir $rootDir)
   $objDir = Get-ObjDir (Get-ArtifactsDir $rootDir)
-  $incrementDir = Join-Path (Get-ArtifactsDir $rootDir) $increment
-  
+  $incrementDir = Get-LeafDir (Get-ArtifactsDir $rootDir) $increment
+
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
 
   Write-Host "Cleaning binaries in $binDir"
@@ -94,22 +94,28 @@ function Run-Build([string]$rootDir, [string]$increment) {
   Stop-Processes
 }
 
+
+function Get-LeafDir([string]$dir, [string]$leaf) {
+  return Join-Path $dir $leaf
+}
+
 function Get-ArtifactsDir([string]$dir) {
-  return Join-Path $dir "artifacts"
+  return Get-LeafDir $dir "artifacts"
 }
 
 function Get-ObjDir([string]$dir) {
-  return Join-Path $dir "obj"
+  return Get-LeafDir $dir "obj"
 }
 
 function Get-BinDir([string]$dir) {
-  return Join-Path $dir "bin"
+  return Get-LeafDir $dir "bin"
 }
 
 # Return all of the files that need to be processed for determinism under the given
 # directory.
-function Get-FilesToProcess([string]$rootDir) {
-  $objDir = Get-ObjDir (Get-ArtifactsDir $rootDir)
+function Get-FilesToProcess([string]$rootDir, [string]$increment) {
+  $objDir = Get-LeafDir (Get-ArtifactsDir $rootDir) $increment
+
   foreach ($item in Get-ChildItem -re -in *.dll, *.exe, *.pdb, *.sourcelink.json $objDir) {
     $filePath = $item.FullName
     $fileName = Split-Path -leaf $filePath
@@ -150,12 +156,13 @@ function Get-FilesToProcess([string]$rootDir) {
 }
 
 # This will build up the map of all of the binaries and their respective hashes.
-function Record-Binaries([string]$rootDir) {
+function Record-Binaries([string]$rootDir, [string]$increment) {
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
   Write-Host "Recording file hashes"
 
   $map = @{ }
-  foreach ($fileData in Get-FilesToProcess $rootDir) {
+  Write-Host "Get-FilesToProcess $rootDir $increment"
+  foreach ($fileData in Get-FilesToProcess $rootDir $increment) {
     Write-Host "`t$($fileData.FileId) = $($fileData.Hash)"
     $map[$fileData.FileId] = $fileData
   }
@@ -204,7 +211,7 @@ function Test-Build([string]$rootDir, $dataMap, [string]$increment) {
 
   Write-Host "Testing the binaries: $rootDir"
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
-  foreach ($fileData in Get-FilesToProcess $rootDir) {
+  foreach ($fileData in Get-FilesToProcess $rootDir $increment) {
     $fileId = $fileData.FileId
     $fileName = $fileData.FileName
     $filePath = $fileData.FilePath
@@ -269,7 +276,7 @@ function Run-Test() {
   # Run the initial build so that we can populate the maps
   Run-Build $RepoRoot -increment "Initial" -useBootstrap
 
-  $dataMap = Record-Binaries $RepoRoot
+  $dataMap = Record-Binaries $RepoRoot "Initial"
   Test-MapContents $dataMap
 
   # Run a test against the source in the same directory location
