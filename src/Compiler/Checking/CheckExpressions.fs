@@ -5795,7 +5795,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         let _, tpenv = suppressErrorReporting (fun () -> TcExpr cenv overallTy env tpenv expr1)
         mkDefault(m, overallTy.Commit), tpenv
 
-    | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m) ->
+    | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m, _) ->
         TcExprSequential cenv overallTy env tpenv (synExpr, sp, dir, synExpr1, synExpr2, m)
 
     // Used to implement the type-directed 'implicit yield' rule for computation expressions
@@ -10337,7 +10337,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
     let g = cenv.g
 
     match synExpr with
-    | SynExpr.Sequential (sp, true, expr1, expr2, m) when not isCompExpr ->
+    | SynExpr.Sequential (sp, true, expr1, expr2, m, _) when not isCompExpr ->
         let expr1R, _ =
             let env1 = { env with eIsControlFlow = (match sp with | DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
             TcStmtThatCantBeCtorBody cenv env1 tpenv expr1
