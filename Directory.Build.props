@@ -33,8 +33,8 @@
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
     <!-- Note, that default framework is used here (the one we use for development in the current cycle),
          since it's a non-arcade and non-sourcebuild scenario -->
-    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/fslex.dll</FsLexPath>
-    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/fsyacc.dll</FsYaccPath>
+    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fslex.dll</FsLexPath>
+    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fsyacc.dll</FsYaccPath>
     <DefineConstants>NO_CHECKNULLS;BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'" />
