@@ -116,6 +116,14 @@ type SynExprMatchBangTrivia =
 type SynExprAnonRecdTrivia = { OpeningBraceRange: range }
 
 [<NoEquality; NoComparison>]
+type SynExprSequentialTrivia =
+    {
+        SeparatorRange: range option
+    }
+
+    static member val Zero = { SeparatorRange = None }
+
+[<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
     {
         ArrowRange: range option
