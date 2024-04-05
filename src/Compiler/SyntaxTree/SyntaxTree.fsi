@@ -754,7 +754,8 @@ type SynExpr =
         isTrueSeq: bool *
         expr1: SynExpr *
         expr2: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprSequentialTrivia
 
     /// F# syntax: if expr then expr
     /// F# syntax: if expr then expr else expr

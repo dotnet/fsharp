@@ -3895,7 +3895,8 @@ typedSequentialExprEOF:
 
 sequentialExpr:
   | declExpr seps sequentialExpr
-      { SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, $1, $3, unionRanges $1.Range $3.Range) }
+      { let trivia = { SeparatorRange = $2 }
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, $1, $3, unionRanges $1.Range $3.Range, trivia) }
 
   | declExpr seps
       { $1 }
@@ -3904,10 +3905,12 @@ sequentialExpr:
       { $1 }
 
   | declExpr THEN sequentialExpr %prec prec_then_before
-      { SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, false, $1, $3, unionRanges $1.Range $3.Range) }
+      { let trivia = { SeparatorRange = Some (rhs parseState 2) }
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, false, $1, $3, unionRanges $1.Range $3.Range, trivia) }
 
   | declExpr OTHEN OBLOCKBEGIN typedSequentialExpr oblockend %prec prec_then_before
-      { SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, false, $1, $4, unionRanges $1.Range $4.Range) }
+      { let trivia = { SeparatorRange = Some (rhs parseState 2) }
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, false, $1, $4, unionRanges $1.Range $4.Range, trivia) }
 
   | hardwhiteLetBindings %prec prec_args_error
      { let hwlb, m, mIn = $1
@@ -6658,10 +6661,10 @@ opt_topSeparators:
 
 /* Seprators in either #light or non-#light */
 seps:
-  | OBLOCKSEP { }
-  | SEMICOLON { }
-  | OBLOCKSEP SEMICOLON { }
-  | SEMICOLON OBLOCKSEP { }
+  | OBLOCKSEP { None }
+  | SEMICOLON { Some (rhs parseState 1) }
+  | OBLOCKSEP SEMICOLON { Some (rhs parseState 2) }
+  | SEMICOLON OBLOCKSEP { Some (rhs parseState 1) }
 
 /* An 'end' that's optional only in #light, where an ODECLEND gets inserted, and explicit 'end's get converted to OEND */
 declEnd:
