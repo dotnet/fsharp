@@ -14,8 +14,7 @@
 
   <PropertyGroup>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <RuntimeIdentifiers Condition="'$(OS)' == 'Unix'">linux-x64</RuntimeIdentifiers>
-    <RuntimeIdentifiers Condition="'$(OS)' != 'Unix'">win-x64</RuntimeIdentifiers>
+    <UseCurrentRuntimeIdentifier>true</UseCurrentRuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Proto'">
