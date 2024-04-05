@@ -15,8 +15,11 @@ open System.Collections.Concurrent
 module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString s =
-        if String.IsNullOrEmpty(s) then None else Some(s)
+    let ofString (s:string | null)  =
+        match s with
+        | null -> None
+        | "" -> None
+        | s -> Some s
 
 [<AutoOpen>]
 module ReflectionHelper =
