@@ -1961,7 +1961,7 @@ and [<Sealed>] TcImports
 
             match providers with
             | [] ->
-                let typeName = typeof<TypeProviderAssemblyAttribute>.FullName
+                let typeName = !! typeof<TypeProviderAssemblyAttribute>.FullName
                 warning (Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts (fileNameOfRuntimeAssembly, typeName), m))
             | _ ->
 

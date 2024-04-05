@@ -49,6 +49,7 @@ module internal PervasiveAutoOpens =
     /// replacement for 'string?' to align with FS-1060.
     type 'T MaybeNull when 'T: null and 'T: not struct = 'T
     val inline (^): a: 'a  ->[<InlineIfLambda>] b: ('a -> 'b) -> 'b when 'a : null
+    val inline (!!): 'a -> 'a
 
     /// Asserts the argument is non-null and raises an exception if it is
     val inline (|NonNullQuick|): 'T MaybeNull -> 'T
@@ -66,6 +67,7 @@ module internal PervasiveAutoOpens =
     /// replacement for 'string?'
     type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null    
     val inline (^): a: 'a | null -> [<InlineIfLambda>]b:('a -> 'b) -> ('b | null) when 'a : not struct
+    val inline (!!): x:'a | null -> 'a when 'a: not null and 'a: not struct
 #endif
 
     val inline (===): x: 'a -> y: 'a -> bool when 'a: not struct

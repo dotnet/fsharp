@@ -112,6 +112,8 @@ module internal PervasiveAutoOpens =
         match x with
         | null -> raise (ArgumentNullException(paramName))
         | v -> v
+
+    let inline (!!) x = x
 #else
     type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
 
@@ -119,6 +121,8 @@ module internal PervasiveAutoOpens =
         match a with
         | Null -> null
         | NonNull v -> b v
+
+    let inline (!!) (x:'T | null) = Unchecked.nonNull x
 
 #endif
 

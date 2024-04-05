@@ -355,7 +355,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     let isMeasure = 
         lazy
             x.CustomAttributes 
-            |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
+            |> Seq.exists (fun a -> (!! a.Constructor.DeclaringType).FullName = typeof<MeasureAttribute>.FullName)
 
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
