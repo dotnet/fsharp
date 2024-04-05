@@ -478,15 +478,15 @@ let isHashRReference (r: range) =
     && not (equals r rangeCmdArgs)
     && FileSystem.IsPathRootedShim r.FileName
 
-let IsNetModule fileName =
+let IsNetModule (fileName:string) =
     let ext = Path.GetExtension fileName
     String.Compare(ext, ".netmodule", StringComparison.OrdinalIgnoreCase) = 0
 
-let IsDLL fileName =
+let IsDLL (fileName:string) =
     let ext = Path.GetExtension fileName
     String.Compare(ext, ".dll", StringComparison.OrdinalIgnoreCase) = 0
 
-let IsExe fileName =
+let IsExe (fileName:string) =
     let ext = Path.GetExtension fileName
     String.Compare(ext, ".exe", StringComparison.OrdinalIgnoreCase) = 0
 
@@ -989,7 +989,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk(ilModule: ILModuleDef, ilAssemblyRe
 
             let sigDataReaders =
                 if sigDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then
-                    let sigFileName = Path.ChangeExtension(fileName, "sigdata")
+                    let sigFileName = !! Path.ChangeExtension(fileName, "sigdata")
 
                     if not (FileSystem.FileExistsShim sigFileName) then
                         error (Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
@@ -1014,7 +1014,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk(ilModule: ILModuleDef, ilAssemblyRe
             // Look for optimization data in a file
             let optDataReaders =
                 if optDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then
-                    let optDataFile = Path.ChangeExtension(fileName, "optdata")
+                    let optDataFile = !! Path.ChangeExtension(fileName, "optdata")
 
                     if not (FileSystem.FileExistsShim optDataFile) then
                         error (
@@ -1464,7 +1464,7 @@ and [<Sealed>] TcImports
         | Tainted.Null -> false, None
         | Tainted.NonNull assembly ->
             let aname = assembly.PUntaint((fun a -> a.GetName()), m)
-            let ilShortAssemName = aname.Name
+            let ilShortAssemName = string aname.Name
 
             match tcImports.FindCcu(ctok, m, ilShortAssemName, lookupOnly = true) with
             | ResolvedCcu ccu ->
@@ -1477,7 +1477,7 @@ and [<Sealed>] TcImports
             | UnresolvedCcu _ ->
                 let g = tcImports.GetTcGlobals()
                 let ilScopeRef = ILScopeRef.Assembly(ILAssemblyRef.FromAssemblyName aname)
-                let fileName = aname.Name + ".dll"
+                let fileName = string aname.Name + ".dll"
 
                 let bytes =
                     assembly
@@ -1860,7 +1860,7 @@ and [<Sealed>] TcImports
                     |> Option.get
                 // MSDN: this method causes the file to be opened and closed, but the assembly is not added to this domain
                 let name = AssemblyName.GetAssemblyName(resolution.resolvedPath)
-                name.Version
+                !! name.Version
 
             // Note, this only captures systemRuntimeContainsTypeRef (which captures tcImportsWeak, using name tcImports)
             let systemRuntimeContainsType =
