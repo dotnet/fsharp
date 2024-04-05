@@ -182,9 +182,9 @@ module internal FSharpEnvironment =
                 match path with
                 | None -> ()
                 | Some(p: string) ->
-                    match Path.GetDirectoryName(p) with
+                    match Path.GetDirectoryName(p) with                    
                     | s when String.IsNullOrEmpty(s) || Path.GetFileName(p) = "packages" || s = p -> ()
-                    | parentDir -> yield! searchParentDirChain (Some parentDir) assemblyName
+                    | parentDir -> yield! searchParentDirChain (Option.ofObj parentDir) assemblyName
 
                 for p in searchToolPaths path compilerToolPaths do
                     let fileName = Path.Combine(p, assemblyName)
@@ -195,7 +195,7 @@ module internal FSharpEnvironment =
 
         let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName =
             let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
-            let paths = searchParentDirChain (Some runTimeAssemblyPath) designTimeAssemblyName
+            let paths = searchParentDirChain (Option.ofObj runTimeAssemblyPath) designTimeAssemblyName
 
             paths
             |> Seq.tryHead
@@ -203,7 +203,7 @@ module internal FSharpEnvironment =
                 | Some res -> loadFromLocation res
                 | None ->
                     // The search failed, just load from the first location and report an error
-                    let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
+                    let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName |> nullArgCheck "runTimeAssemblyPath"
                     loadFromLocation (Path.Combine(runTimeAssemblyPath, designTimeAssemblyName))
 
         if designTimeAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
@@ -214,9 +214,9 @@ module internal FSharpEnvironment =
             // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
             // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
             // and will always succeed.
-            let name = AssemblyName(Path.GetFileNameWithoutExtension designTimeAssemblyName)
+            let name = AssemblyName(Path.GetFileNameWithoutExtension designTimeAssemblyName |> nullArgCheck "designTimeAssemblyName")
 
-            if name.Name.Equals(name.FullName, StringComparison.OrdinalIgnoreCase) then
+            if name.FullName.Equals(name.Name, StringComparison.OrdinalIgnoreCase) then
                 let designTimeFileName = designTimeAssemblyName + ".dll"
                 loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeFileName
             else
@@ -236,7 +236,8 @@ module internal FSharpEnvironment =
     let getFSharpCompilerLocationWithDefaultFromType (defaultLocation: Type) =
         let location =
             try
-                Some(Path.GetDirectoryName(defaultLocation.Assembly.Location))
+                let directory = Path.GetDirectoryName(defaultLocation.Assembly.Location)
+                Option.ofObj(directory)
             with _ ->
                 None
 
