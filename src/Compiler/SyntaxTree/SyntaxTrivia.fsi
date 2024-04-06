@@ -175,6 +175,17 @@ type SynExprAnonRecdTrivia =
         OpeningBraceRange: range
     }
 
+/// Represents additional information for SynExpr.Sequential
+[<NoEquality; NoComparison>]
+type SynExprSequentialTrivia =
+    {
+        /// The syntax range of the `;` token.
+        /// Could also be the `then` keyword.
+        SeparatorRange: range option
+    }
+
+    static member Zero: SynExprSequentialTrivia
+
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
