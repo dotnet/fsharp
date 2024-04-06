@@ -96,7 +96,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             match expr with
 
             // This lets us dive into subexpressions that may contain the binding we're after
-            | SynExpr.Sequential(_, _, expr1, expr2, _) ->
+            | SynExpr.Sequential(expr1 = expr1; expr2 = expr2) ->
                 if rangeContainsPos expr1.Range pos then
                     walkBinding expr1 workingRange
                 else
@@ -714,7 +714,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! walkFinallySeqPt spFinally
 
                         | SynExpr.SequentialOrImplicitYield(spSeq, e1, e2, _, _)
-                        | SynExpr.Sequential(spSeq, _, e1, e2, _) ->
+                        | SynExpr.Sequential(debugPoint = spSeq; expr1 = e1; expr2 = e2) ->
                             let implicit1 =
                                 match spSeq with
                                 | DebugPointAtSequential.SuppressExpr

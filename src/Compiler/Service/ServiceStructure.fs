@@ -337,7 +337,7 @@ module Structure =
                 parseExpr argExpr
                 parseExpr funcExpr
 
-            | SynExpr.Sequential(_, _, e1, e2, _) ->
+            | SynExpr.Sequential(expr1 = e1; expr2 = e2) ->
                 parseExpr e1
                 parseExpr e2
 
