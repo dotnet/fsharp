@@ -798,10 +798,26 @@ module SynExpr =
         //     (f x)[z]
         //     (f(x))[z]
         //     x.M(y)[z]
-        | _, SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(SynExpr.DotGet _ | SynExpr.DotIndexedGet _ | SynExpr.DotLambda _) :: _
-        | SynExpr.App _, SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _
-        | _,
-          SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _ ->
+        //     M(x).N <- y
+        | SynExpr.App _, SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _ -> true
+
+        | _, SyntaxNode.SynExpr(SynExpr.App _) :: path
+        | _, SyntaxNode.SynExpr(OuterBinaryExpr expr (Dot, _)) :: SyntaxNode.SynExpr(SynExpr.App _) :: path when
+            let rec appChainDependsOnDotOrPseudoDotPrecedence path =
+                match path with
+                | SyntaxNode.SynExpr(SynExpr.DotGet _) :: _
+                | SyntaxNode.SynExpr(SynExpr.DotLambda _) :: _
+                | SyntaxNode.SynExpr(SynExpr.DotIndexedGet _) :: _
+                | SyntaxNode.SynExpr(SynExpr.Set _) :: _
+                | SyntaxNode.SynExpr(SynExpr.DotSet _) :: _
+                | SyntaxNode.SynExpr(SynExpr.DotIndexedSet _) :: _
+                | SyntaxNode.SynExpr(SynExpr.DotNamedIndexedPropertySet _) :: _
+                | SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _ -> true
+                | SyntaxNode.SynExpr(SynExpr.App _) :: path -> appChainDependsOnDotOrPseudoDotPrecedence path
+                | _ -> false
+
+            appChainDependsOnDotOrPseudoDotPrecedence path
+            ->
             true
 
         // The :: operator is parsed differently from other symbolic infix operators,

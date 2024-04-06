@@ -1762,6 +1762,9 @@ in x
                 "let mutable x = y in (x <- z) |> id", "let mutable x = y in (x <- z) |> id"
                 "let mutable x = y in ((); x <- z) |> id", "let mutable x = y in ((); x <- z) |> id"
                 "let mutable x = y in (if true then x <- z) |> id", "let mutable x = y in (if true then x <- z) |> id"
+                "M(x).N <- y", "M(x).N <- y"
+                "A(x).B(x).M(x).N <- y", "A(x).B(x).M(x).N <- y"
+                "A(x)(x)(x).N <- y", "A(x)(x)(x).N <- y"
 
                 // DotIndexedGet
                 "id ([x].[y])", "id [x].[y]"
