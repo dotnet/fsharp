@@ -320,10 +320,10 @@ module internal Utilities =
             //      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet5/nuget/v3/index.json
             // Use enabled feeds only (see NuGet.Commands.ListSourceRunner.Run) and strip off the flags.
             let pattern =
-                @"(\s*\d+\.+\s*)(?'name'\S*)(\s*)\[(?'enabled'Enabled|Disabled)\](\s*)$(\s*)(?'uri'[^\0]+)*$"
+                @"(\s*\d+\.+\s*)(?'name'\S*)(\s*)\[(?'enabled'Enabled|Disabled)\](\s*)(?'uri'[^\0\r\n]*)"
 
             let regex =
-                new Regex(pattern, RegexOptions.Multiline ||| RegexOptions.ExplicitCapture)
+                new Regex(pattern, RegexOptions.ExplicitCapture)
 
             let sourcelist = String.concat Environment.NewLine stdOut
 
