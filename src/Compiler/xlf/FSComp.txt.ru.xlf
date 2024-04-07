@@ -297,14 +297,9 @@
         <target state="translated">литерал float32 без точки</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEnforceAttributeTargetsOnFunctions">
-        <source>Enforce AttributeTargets on functions</source>
-        <target state="new">Enforce AttributeTargets on functions</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEnforceAttributeTargetsUnionCaseDeclarations">
-        <source>Enforce AttributeTargets on union case declarations</source>
-        <target state="new">Enforce AttributeTargets on union case declarations</target>
+      <trans-unit id="featureEnforceAttributeTargets">
+        <source>Enforce AttributeTargets</source>
+        <target state="new">Enforce AttributeTargets</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -6417,12 +6412,12 @@
         <target state="translated">Недопустимое число с плавающей точкой</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideDecimal">
+      <trans-unit id="lexOutsideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
         <target state="translated">Это число находится вне допустимого диапазона для десятичных литералов</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexOusideThirtyTwoBitFloat">
+      <trans-unit id="lexOutsideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
         <target state="translated">Это число находится вне допустимого диапазона для 32-битных чисел с плавающей точкой</target>
         <note />

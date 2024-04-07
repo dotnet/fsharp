@@ -940,4 +940,28 @@ do ignore (match "" with | nameof X.Y.Z -> () | _ -> ())
 """
                     (set [| 0 |])
             ]
+        scenario
+            "nameof type with generic parameters"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace A
+
+module B =
+    module C =
+        type D = class end
+"""
+                    Set.empty
+                sourceFile
+                    "Z.fs"
+                    """
+module Z
+
+open System.Threading.Tasks
+
+let _ = nameof Task<A.B.C.D>
+"""
+                    (set [| 0 |])
+            ]
     ]

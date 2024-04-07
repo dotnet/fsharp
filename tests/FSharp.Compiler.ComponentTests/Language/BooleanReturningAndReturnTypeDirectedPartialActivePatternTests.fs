@@ -101,6 +101,8 @@ but here has type
         (Error 39, Line 4, Col 7, Line 4, Col 13,
          "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result")
+        (Warning 20, Line 3, Col 1, Line 5, Col 15,
+         "The result of this expression has type 'string' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.");
         (Error 1, Line 8, Col 3, Line 8, Col 13,
          "This expression was expected to have type
     'string -> bool'    
@@ -108,10 +110,17 @@ but here has type
     'bool'    ")
         (Error 39, Line 8, Col 7, Line 8, Col 13,
          "The value or constructor 'result' is not defined. Maybe you want one of the following:
+   Result");
+        (Error 39, Line 8, Col 17, Line 8, Col 23,
+         "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result")
+        (Warning 20, Line 7, Col 1, Line 9, Col 15,
+         "The result of this expression has type 'string' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.");
         (Error 1, Line 12, Col 3, Line 12, Col 30,
          "This expression was expected to have type
     'string -> bool'    
 but here has type
     'bool'    ")
+        (Warning 20, Line 11, Col 1, Line 13, Col 21,
+         "The result of this expression has type 'string' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
     ]

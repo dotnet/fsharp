@@ -85,11 +85,10 @@ type LanguageFeature =
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
     | BooleanReturningAndReturnTypeDirectedPartialActivePattern
-    | AllowAccessModifiersToAutoPropertiesGettersAndSetters
-    | EnforceAttributeTargetsOnFunctions
-    | EnforceAttributeTargetsUnionCaseDeclarations
+    | EnforceAttributeTargets
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
+    | AllowAccessModifiersToAutoPropertiesGettersAndSetters
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -202,11 +201,10 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
                 LanguageFeature.UnionIsPropertiesVisible, previewVersion
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
-                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
-                LanguageFeature.EnforceAttributeTargetsOnFunctions, previewVersion
-                LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations, previewVersion
+                LanguageFeature.EnforceAttributeTargets, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
                 LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
+                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -350,13 +348,11 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
         | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
             FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
-        | LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters ->
-            FSComp.SR.featureAllowAccessModifiersToAutoPropertiesGettersAndSetters ()
-        | LanguageFeature.EnforceAttributeTargetsOnFunctions -> FSComp.SR.featureEnforceAttributeTargetsOnFunctions ()
-        | LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations -> FSComp.SR.featureEnforceAttributeTargetsUnionCaseDeclarations ()
+        | LanguageFeature.EnforceAttributeTargets -> FSComp.SR.featureEnforceAttributeTargets ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
-
+        | LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters ->
+            FSComp.SR.featureAllowAccessModifiersToAutoPropertiesGettersAndSetters ()
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
         match features.TryGetValue feature with

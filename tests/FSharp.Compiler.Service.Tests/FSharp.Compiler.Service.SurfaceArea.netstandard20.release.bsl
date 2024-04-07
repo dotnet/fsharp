@@ -2067,7 +2067,7 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] ParseAndCheckFileInProject(System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults]] GetBackgroundCheckResultsForFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic]]] GetProjectOptionsFromScript(System.String, FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.String[]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Int64], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic]]] GetProjectSnapshotFromScript(System.String, FSharp.Compiler.Text.ISourceTextNew, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.String[]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Int64], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic]]] GetProjectSnapshotFromScript(System.String, FSharp.Compiler.Text.ISourceTextNew, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.DocumentSource], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.String[]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Int64], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.Diagnostics.FSharpDiagnostic[],System.Int32]] Compile(System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.Text.Range,FSharp.Compiler.Text.Range][]] MatchBraces(System.String, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpParsingOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.Text.Range,FSharp.Compiler.Text.Range][]] MatchBraces(System.String, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -6049,6 +6049,7 @@ FSharp.Compiler.Syntax.ParserDetail: Int32 GetHashCode(System.Collections.IEqual
 FSharp.Compiler.Syntax.ParserDetail: Int32 Tag
 FSharp.Compiler.Syntax.ParserDetail: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParserDetail: System.String ToString()
+FSharp.Compiler.Syntax.PrettyNaming: Boolean DoesIdentifierNeedBackticks(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsActivePatternName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsCompilerGeneratedName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsIdentifierFirstCharacter(Char)
@@ -6992,6 +6993,8 @@ FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Syntax.SynExpr expr1
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Syntax.SynExpr expr2
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Syntax.SynExpr get_expr1()
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Syntax.SynExpr get_expr2()
+FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia get_trivia()
+FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia trivia
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+SequentialOrImplicitYield: FSharp.Compiler.Syntax.DebugPointAtSequential debugPoint
@@ -7380,7 +7383,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewObjExpr(FSharp
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewParen(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewQuote(FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewRecord(Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.Syntax.SynType,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]],FSharp.Compiler.Text.Range]], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExprRecordField], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequential(FSharp.Compiler.Syntax.DebugPointAtSequential, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequential(FSharp.Compiler.Syntax.DebugPointAtSequential, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequentialOrImplicitYield(FSharp.Compiler.Syntax.DebugPointAtSequential, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTraitCall(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynMemberSig, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
@@ -7534,6 +7537,8 @@ FSharp.Compiler.Syntax.SynField: System.String ToString()
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Syntax.SynIdent NewSynIdent(FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia])
+FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynIdent: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynIdent: Int32 Tag
 FSharp.Compiler.Syntax.SynIdent: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynIdent: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia] get_trivia()
@@ -9891,6 +9896,12 @@ FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: FSharp.Compiler.Text.Range get_
 FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: FSharp.Compiler.Text.Range get_WithKeyword()
 FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: Void .ctor(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia Zero
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia get_Zero()
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] SeparatorRange
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_SeparatorRange()
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia: FSharp.Compiler.Text.Range FinallyKeyword
 FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia: FSharp.Compiler.Text.Range TryKeyword
 FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia: FSharp.Compiler.Text.Range get_FinallyKeyword()

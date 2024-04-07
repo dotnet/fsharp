@@ -6,6 +6,8 @@ open System
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -448,7 +450,12 @@ type StackGuard =
     new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
-    member Guard: f: (unit -> 'T) -> 'T
+    member Guard:
+        f: (unit -> 'T) *
+        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string *
+        [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string *
+        [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
+            'T
 
     static member GetDepthOption: string -> int
 

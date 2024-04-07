@@ -38,4 +38,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,19)-(4,20) parse error Incomplete structured construct at or before this point in object expression. Expected 'with', '=' or other token.
+(4,19)-(4,20) parse error Expecting member body

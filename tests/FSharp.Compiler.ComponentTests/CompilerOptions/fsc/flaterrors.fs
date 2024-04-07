@@ -59,7 +59,7 @@ module flaterrors =
 
     [<InlineData("--FlatErrors")>]                          //Invalid case
     [<InlineData("--FLATERRORS")>]                          //Even more invalid case
-    [<InlineData("--flaterrors-")>]                         // no + allowed
+    [<InlineData("--flaterrors+")>]                         // no + allowed
     [<InlineData("--flaterrors-")>]                         // no - allowed
     [<Theory>]
     let ``E_MultiLine04_fs`` (option: string) =
