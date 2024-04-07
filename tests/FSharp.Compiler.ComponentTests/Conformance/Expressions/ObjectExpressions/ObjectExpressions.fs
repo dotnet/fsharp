@@ -331,3 +331,31 @@ consoleLogger.Log("Hello World")
          |> withLangVersion80
          |> compileExeAndRun
          |> shouldSucceed
+
+    [<Fact>]
+    let ``Error reporting ambiguous override method in object expression`` () =
+        Fsx """
+type IExample =
+    abstract member Overloaded : string -> bool
+    abstract member Overloaded : int -> bool
+
+let failingExample x =
+    { new IExample with
+        member __.Overloaded (_ : string) = x
+        member __.Overloaded (_ : int)    = x }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3213, Line 8, Col 19, Line 8, Col 29, "The member 'Overloaded: string -> 'a' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+   Overloaded: int -> bool
+   Overloaded: string -> bool.")
+            (Error 3213, Line 9, Col 19, Line 9, Col 29, "The member 'Overloaded: int -> 'a' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+   Overloaded: int -> bool
+   Overloaded: string -> bool.")
+            (Error 358, Line 8, Col 19, Line 8, Col 29, "The override for 'Overloaded: int -> bool' was ambiguous")
+            (Error 358, Line 8, Col 19, Line 8, Col 29, "The override for 'Overloaded: string -> bool' was ambiguous")
+            (Error 783, Line 7, Col 11, Line 7, Col 19, "At least one override did not correctly implement its corresponding abstract member")
+        ]

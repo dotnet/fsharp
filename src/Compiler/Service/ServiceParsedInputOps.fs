@@ -263,8 +263,8 @@ module ParsedInput =
 
         let rec collect expr acc =
             match expr with
-            | SynExpr.Sequential(_, _, e1, (SynExpr.Sequential _ as e2), _) -> collect e2 (e1 :: acc)
-            | SynExpr.Sequential(_, _, e1, e2, _) -> e2 :: e1 :: acc
+            | SynExpr.Sequential(expr1 = e1; expr2 = (SynExpr.Sequential _ as e2)) -> collect e2 (e1 :: acc)
+            | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> e2 :: e1 :: acc
             | _ -> acc
 
         match collect expr [] with
