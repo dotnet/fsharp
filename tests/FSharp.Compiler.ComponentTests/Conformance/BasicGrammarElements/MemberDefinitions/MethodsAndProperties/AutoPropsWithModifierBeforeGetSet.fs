@@ -159,7 +159,7 @@ type A =
     |> shouldFail
     |> withDiagnostics [
         (Error 0034, Line 7, Col 16, Line 7, Col 17, "Module 'Program' contains
-    member private A.E: int with set    
+    member A.E: int with private set    
 but its signature specifies
     member A.E: int with set    
 The accessibility specified in the signature is more than that specified in the implementation")
