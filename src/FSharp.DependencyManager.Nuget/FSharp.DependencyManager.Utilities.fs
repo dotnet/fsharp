@@ -322,8 +322,7 @@ module internal Utilities =
             let pattern =
                 @"(\s*\d+\.+\s*)(?'name'\S*)(\s*)\[(?'enabled'Enabled|Disabled)\](\s*)(?'uri'[^\0\r\n]*)"
 
-            let regex =
-                new Regex(pattern, RegexOptions.ExplicitCapture)
+            let regex = new Regex(pattern, RegexOptions.ExplicitCapture)
 
             let sourcelist = String.concat Environment.NewLine stdOut
 
