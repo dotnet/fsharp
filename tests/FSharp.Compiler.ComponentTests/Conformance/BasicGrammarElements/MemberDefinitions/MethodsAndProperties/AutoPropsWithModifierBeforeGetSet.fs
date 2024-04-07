@@ -164,7 +164,7 @@ but its signature specifies
     member A.E: int with set    
 The accessibility specified in the signature is more than that specified in the implementation")
         (Error 0034, Line 7, Col 16, Line 7, Col 17, "Module 'Program' contains
-    member internal A.E: int    
+    member A.E: int internal get    
 but its signature specifies
     member A.E: int with get    
 The accessibility specified in the signature is more than that specified in the implementation")

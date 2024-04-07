@@ -1845,8 +1845,9 @@ module TastDefinitionPrinting =
         | Some vref when not supportAccessModifiersBeforeGetSet ->
             match pinfo with
             | DifferentGetterAndSetter(getValRef, setValRef) ->
+                let getSuffix = if pinfo.IsIndexer then emptyL else WordL.keywordWith ^^ WordL.keywordGet
                 [
-                    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader getValRef
+                    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader getValRef ^^ getSuffix
                     PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader setValRef
                 ]
             | _ ->
