@@ -353,6 +353,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
         | LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters ->
             FSComp.SR.featureAllowAccessModifiersToAutoPropertiesGettersAndSetters ()
+
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
         match features.TryGetValue feature with

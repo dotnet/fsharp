@@ -1688,8 +1688,10 @@ module InfoMemberPrinting =
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> wordL) pinfo.PropertyName
         let struct(isGetterProtect, isSetterProtect) = pinfo.IsProtectedAccessibility
         let getterAccess, setterAccess = 
-            PrintTypes.layoutAccessibilityCoreWithProtected denv isGetterProtect (Option.defaultValue taccessPublic pinfo.GetterAccessibility),
-            PrintTypes.layoutAccessibilityCoreWithProtected denv isSetterProtect (Option.defaultValue taccessPublic pinfo.SetterAccessibility)
+            if denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters then
+                PrintTypes.layoutAccessibilityCoreWithProtected denv isGetterProtect (Option.defaultValue taccessPublic pinfo.GetterAccessibility),
+                PrintTypes.layoutAccessibilityCoreWithProtected denv isSetterProtect (Option.defaultValue taccessPublic pinfo.SetterAccessibility)
+            else emptyL, emptyL
         let getterSetter =
             match pinfo.HasGetter, pinfo.HasSetter with
             | true, false ->
