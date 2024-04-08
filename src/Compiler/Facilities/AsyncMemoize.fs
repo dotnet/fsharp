@@ -19,7 +19,7 @@ module internal Utils =
 
     /// Return file name with one directory above it
     let shortPath (path: string) =
-        let dirPath = Path.GetDirectoryName path |> nullArgCheck "path"
+        let dirPath = !! Path.GetDirectoryName(path)
 
         let dir =
             dirPath.Split Path.DirectorySeparatorChar

@@ -215,7 +215,7 @@ module internal FSharpEnvironment =
                 | Some res -> loadFromLocation res
                 | None ->
                     // The search failed, just load from the first location and report an error
-                    let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName |> nullArgCheck "runTimeAssemblyPath"
+                    let runTimeAssemblyPath = !! Path.GetDirectoryName(runTimeAssemblyFileName)
                     loadFromLocation (Path.Combine(runTimeAssemblyPath, designTimeAssemblyName))
 
         if designTimeAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
@@ -226,7 +226,7 @@ module internal FSharpEnvironment =
             // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
             // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
             // and will always succeed.
-            let name = AssemblyName(Path.GetFileNameWithoutExtension designTimeAssemblyName |> nullArgCheck "designTimeAssemblyName")
+            let name = AssemblyName(!! Path.GetFileNameWithoutExtension(designTimeAssemblyName))
 
             if name.FullName.Equals(name.Name, StringComparison.OrdinalIgnoreCase) then
                 let designTimeFileName = designTimeAssemblyName + ".dll"

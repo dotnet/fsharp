@@ -15,30 +15,24 @@ type AssemblyResolutionProbe = delegate of Unit -> seq<string>
 /// Type that encapsulates AssemblyResolveHandler for managed packages
 type AssemblyResolveHandlerCoreclr(assemblyProbingPaths: AssemblyResolutionProbe option) as this =
     let loadContextType =
-        Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
-        |> nullArgCheck "AssemblyLoadContext not loaded"
+        !! Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
 
     let loadFromAssemblyPathMethod =
-        loadContextType.GetMethod("LoadFromAssemblyPath", [| typeof<string> |])
-        |> nullArgCheck "LoadFromAssemblyPath"
+        !! loadContextType.GetMethod("LoadFromAssemblyPath", [| typeof<string> |])
 
-    let eventInfo = loadContextType.GetEvent("Resolving") |> nullArgCheck "Resolving event"
+    let eventInfo = !! loadContextType.GetEvent("Resolving")
 
     let handler, defaultAssemblyLoadContext =
         let ti = typeof<AssemblyResolveHandlerCoreclr>
 
         let gmi =
-            ti.GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
-            |> nullArgCheck "ResolveAssemblyNetStandard method not found"
+            !! ti.GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
 
         let mi = gmi.MakeGenericMethod(loadContextType)
-        let del = Delegate.CreateDelegate(eventInfo.EventHandlerType |> nullArgCheck "Event Handler", this, mi)
+        let del = Delegate.CreateDelegate(!! eventInfo.EventHandlerType, this, mi)
 
         let prop =
-            loadContextType
-            |> _.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public)
-            |> nullArgCheck "Default"
-            |> _.GetValue(null, null)
+            (!! loadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public)).GetValue(null, null)
 
         del, prop
 
