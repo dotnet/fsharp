@@ -2596,83 +2596,85 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         trans CompExprTranslationPass.Initial CustomOperationsMode.Denied emptyVarSpace comp id
 
     and trans firstTry q varSpace comp translatedCtxt =
-        match tryTrans firstTry q varSpace comp translatedCtxt with
-        | Some e -> e
-        | None ->
-            // This only occurs in final position in a sequence
-            match comp with
-            // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
-            | SynExpr.DoBang(rhsExpr, m) ->
-                let mUnit = rhsExpr.Range
-                let rhsExpr = mkSourceExpr rhsExpr
+        cenv.stackGuard.Guard
+        <| fun () ->
+            match tryTrans firstTry q varSpace comp translatedCtxt with
+            | Some e -> e
+            | None ->
+                // This only occurs in final position in a sequence
+                match comp with
+                // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
+                | SynExpr.DoBang(rhsExpr, m) ->
+                    let mUnit = rhsExpr.Range
+                    let rhsExpr = mkSourceExpr rhsExpr
 
-                if isQuery then
-                    error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
+                    if isQuery then
+                        error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
 
-                let bodyExpr =
-                    if
-                        isNil (
-                            TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Return" builderTy
+                    let bodyExpr =
+                        if
+                            isNil (
+                                TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Return" builderTy
+                            )
+                        then
+                            SynExpr.ImplicitZero m
+                        else
+                            match
+                                TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy
+                            with
+                            | minfo :: _ when MethInfoHasAttribute cenv.g m cenv.g.attrib_DefaultValueAttribute minfo -> SynExpr.ImplicitZero m
+                            | _ -> SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m)
+
+                    let letBangBind =
+                        SynExpr.LetOrUseBang(
+                            DebugPointAtBinding.NoneAtDo,
+                            false,
+                            false,
+                            SynPat.Const(SynConst.Unit, mUnit),
+                            rhsExpr,
+                            [],
+                            bodyExpr,
+                            m,
+                            SynExprLetOrUseBangTrivia.Zero
                         )
-                    then
-                        SynExpr.ImplicitZero m
+
+                    trans CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
+
+                // "expr;" in final position is treated as { expr; zero }
+                // Suppress the sequence point on the "zero"
+                | _ ->
+                    // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore comp
+                    if isQuery && checkForBinaryApp comp then
+                        trans CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) translatedCtxt
                     else
-                        match
-                            TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy
-                        with
-                        | minfo :: _ when MethInfoHasAttribute cenv.g m cenv.g.attrib_DefaultValueAttribute minfo -> SynExpr.ImplicitZero m
-                        | _ -> SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m)
+                        if isQuery && not comp.IsArbExprAndThusAlreadyReportedError then
+                            match comp with
+                            | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
+                            | _ -> errorR (Error(FSComp.SR.tcUnrecognizedQueryOperator (), comp.RangeOfFirstPortion))
 
-                let letBangBind =
-                    SynExpr.LetOrUseBang(
-                        DebugPointAtBinding.NoneAtDo,
-                        false,
-                        false,
-                        SynPat.Const(SynConst.Unit, mUnit),
-                        rhsExpr,
-                        [],
-                        bodyExpr,
-                        m,
-                        SynExprLetOrUseBangTrivia.Zero
-                    )
+                        trans CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) (fun holeFill ->
+                            let fillExpr =
+                                if enableImplicitYield then
+                                    let implicitYieldExpr = mkSynCall "Yield" comp.Range [ comp ]
 
-                trans CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
+                                    SynExpr.SequentialOrImplicitYield(
+                                        DebugPointAtSequential.SuppressExpr,
+                                        comp,
+                                        holeFill,
+                                        implicitYieldExpr,
+                                        comp.Range
+                                    )
+                                else
+                                    SynExpr.Sequential(
+                                        DebugPointAtSequential.SuppressExpr,
+                                        true,
+                                        comp,
+                                        holeFill,
+                                        comp.Range,
+                                        SynExprSequentialTrivia.Zero
+                                    )
 
-            // "expr;" in final position is treated as { expr; zero }
-            // Suppress the sequence point on the "zero"
-            | _ ->
-                // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore comp
-                if isQuery && checkForBinaryApp comp then
-                    trans CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) translatedCtxt
-                else
-                    if isQuery && not comp.IsArbExprAndThusAlreadyReportedError then
-                        match comp with
-                        | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
-                        | _ -> errorR (Error(FSComp.SR.tcUnrecognizedQueryOperator (), comp.RangeOfFirstPortion))
-
-                    trans CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) (fun holeFill ->
-                        let fillExpr =
-                            if enableImplicitYield then
-                                let implicitYieldExpr = mkSynCall "Yield" comp.Range [ comp ]
-
-                                SynExpr.SequentialOrImplicitYield(
-                                    DebugPointAtSequential.SuppressExpr,
-                                    comp,
-                                    holeFill,
-                                    implicitYieldExpr,
-                                    comp.Range
-                                )
-                            else
-                                SynExpr.Sequential(
-                                    DebugPointAtSequential.SuppressExpr,
-                                    true,
-                                    comp,
-                                    holeFill,
-                                    comp.Range,
-                                    SynExprSequentialTrivia.Zero
-                                )
-
-                        translatedCtxt fillExpr)
+                            translatedCtxt fillExpr)
 
     and transBind q varSpace bindRange addBindDebugPoint bindName bindArgs (consumePat: SynPat) (innerComp: SynExpr) translatedCtxt =
 
