@@ -387,6 +387,11 @@
         <target state="translated">最佳化整數範圍 (..) 和 range 步驟 (.. ..) 運算子的特定用法，以加快 while 迴圈。</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 屬性時允許小寫 DU</target>

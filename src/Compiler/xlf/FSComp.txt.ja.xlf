@@ -387,6 +387,11 @@
         <target state="translated">整数範囲 (..) および範囲ステップ (.. ..) 演算子の特定の使用法を最適化し、高速な while ループにします。</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 属性の場合に小文字 DU を許可する</target>

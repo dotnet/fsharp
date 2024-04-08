@@ -387,6 +387,11 @@
         <target state="translated">정수 계열 범위(..) 및 범위 단계(.. ..) 연산자의 특정 사용을 빠른 while 루프에 최적화합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 특성이 있는 경우 소문자 DU 허용</target>

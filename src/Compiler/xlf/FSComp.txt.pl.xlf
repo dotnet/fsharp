@@ -387,6 +387,11 @@
         <target state="translated">Optymalizuje niektóre zastosowania operatorów zakresu całkowitego (..) i krok-zakresu (.. .), aby przyspieszyć pętle while.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
         <target state="translated">Zezwalaj na małą literę DU, gdy występuje RequireQualifiedAccess</target>
