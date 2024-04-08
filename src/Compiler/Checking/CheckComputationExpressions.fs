@@ -205,7 +205,7 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
 
     let rec TryGetSimpleSemicolonSequenceOfComprehension expr acc =
         match expr with
-        | SynExpr.Sequential(_, true, e1, e2, _) ->
+        | SynExpr.Sequential(isTrueSeq = true; expr1 = e1; expr2 = e2) ->
             if IsSimpleSemicolonSequenceElement e1 then
                 TryGetSimpleSemicolonSequenceOfComprehension e2 (e1 :: acc)
             else
@@ -752,8 +752,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
     let (|ForEachThen|_|) synExpr =
         match synExpr with
-        | SynExpr.ForEach(_spFor, _spIn, SeqExprOnly false, isFromSource, pat1, expr1, SynExpr.Sequential(_, true, clause, rest, _), _) ->
-            Some(isFromSource, pat1, expr1, clause, rest)
+        | SynExpr.ForEach(_spFor,
+                          _spIn,
+                          SeqExprOnly false,
+                          isFromSource,
+                          pat1,
+                          expr1,
+                          SynExpr.Sequential(isTrueSeq = true; expr1 = clause; expr2 = rest),
+                          _) -> Some(isFromSource, pat1, expr1, clause, rest)
         | _ -> None
 
     let (|CustomOpId|_|) predicate synExpr =
@@ -998,7 +1004,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
     let (|OptionalSequential|) e =
         match e with
-        | SynExpr.Sequential(_sp, true, dataComp1, dataComp2, _) -> (dataComp1, Some dataComp2)
+        | SynExpr.Sequential(debugPoint = _sp; isTrueSeq = true; expr1 = dataComp1; expr2 = dataComp2) -> (dataComp1, Some dataComp2)
         | _ -> (e, None)
 
     // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
@@ -1233,7 +1239,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     // 2. incompatible types: int and string
                     // with SynExpr.ArbitraryAfterError we have only first one
                     let wrapInArbErrSequence l caption =
-                        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, l, (arbExpr (caption, l.Range.EndRange)), l.Range)
+                        SynExpr.Sequential(
+                            DebugPointAtSequential.SuppressNeither,
+                            true,
+                            l,
+                            (arbExpr (caption, l.Range.EndRange)),
+                            l.Range,
+                            SynExprSequentialTrivia.Zero
+                        )
 
                     let mkOverallExprGivenVarSpaceExpr, varSpaceInner =
 
@@ -1529,7 +1542,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                             SynExpr.While(
                                 DebugPointAtWhile.No,
                                 SynExpr.Ident idCond,
-                                SynExpr.Sequential(DebugPointAtSequential.SuppressBoth, true, innerComp, bindCondExpr, mWhile),
+                                SynExpr.Sequential(
+                                    DebugPointAtSequential.SuppressBoth,
+                                    true,
+                                    innerComp,
+                                    bindCondExpr,
+                                    mWhile,
+                                    SynExprSequentialTrivia.Zero
+                                ),
                                 mOrig
                             )
 
@@ -1658,7 +1678,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 // Now run the consumeCustomOpClauses
                 Some(consumeCustomOpClauses q varSpace dataCompPriorToOp comp false mClause)
 
-            | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m) ->
+            | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m, _) ->
 
                 // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore innerComp1
                 if isQuery && checkForBinaryApp innerComp1 then
@@ -1761,7 +1781,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                                             SynExpr.SequentialOrImplicitYield(sp, innerComp1, holeFill, combineExpr, m)
                                         else
-                                            SynExpr.Sequential(sp, true, innerComp1, holeFill, m)
+                                            SynExpr.Sequential(sp, true, innerComp1, holeFill, m, SynExprSequentialTrivia.Zero)
 
                                     translatedCtxt fillExpr)
                             )
@@ -2643,7 +2663,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                                     comp.Range
                                 )
                             else
-                                SynExpr.Sequential(DebugPointAtSequential.SuppressExpr, true, comp, holeFill, comp.Range)
+                                SynExpr.Sequential(
+                                    DebugPointAtSequential.SuppressExpr,
+                                    true,
+                                    comp,
+                                    holeFill,
+                                    comp.Range,
+                                    SynExprSequentialTrivia.Zero
+                                )
 
                         translatedCtxt fillExpr)
 
@@ -2772,14 +2799,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             Some(varSpaceExpr, Some(innerComp, mClause))
 
-        | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m) ->
+        | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m, trivia) ->
 
             // Check the first part isn't a computation expression construct
             if isSimpleExpr innerComp1 then
                 // Check the second part is a simple return
                 match convertSimpleReturnToExpr varSpace innerComp2 with
                 | None -> None
-                | Some(innerExpr2, optionalCont) -> Some(SynExpr.Sequential(sp, true, innerComp1, innerExpr2, m), optionalCont)
+                | Some(innerExpr2, optionalCont) -> Some(SynExpr.Sequential(sp, true, innerComp1, innerExpr2, m, trivia), optionalCont)
             else
                 None
 
@@ -2798,7 +2825,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | SynExpr.ImplicitZero _ -> false
         | OptionalSequential(JoinOrGroupJoinOrZipClause _, _) -> false
         | OptionalSequential(CustomOperationClause _, _) -> false
-        | SynExpr.Sequential(_, _, innerComp1, innerComp2, _) -> isSimpleExpr innerComp1 && isSimpleExpr innerComp2
+        | SynExpr.Sequential(expr1 = innerComp1; expr2 = innerComp2) -> isSimpleExpr innerComp1 && isSimpleExpr innerComp2
         | SynExpr.IfThenElse(thenExpr = thenComp; elseExpr = elseCompOpt) ->
             isSimpleExpr thenComp
             && (match elseCompOpt with
@@ -3122,7 +3149,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
         | SynExpr.DoBang(_rhsExpr, m) -> error (Error(FSComp.SR.tcDoBangIllegalInSequenceExpression (), m))
 
-        | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m) ->
+        | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m, _) ->
             let env1 =
                 { env with
                     eIsControlFlow =

@@ -416,7 +416,7 @@ module DispatchSlotChecking =
                                     fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                                 elif not (IsTyparKindMatch compiledSig overrideBy) then
                                     fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
-                                else 
+                                else
                                     fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                         | overrideBy :: _ -> 
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
@@ -427,8 +427,8 @@ module DispatchSlotChecking =
                         else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
-                    | _ -> 
-                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap m denv dispatchSlot), m))
+                    | ambiguousOverride :: _ ->
+                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap ambiguousOverride.Range denv dispatchSlot), ambiguousOverride.Range))
             | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot), m))
         
         if missingOverloadImplementation.Count > 0 then

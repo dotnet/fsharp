@@ -6993,6 +6993,8 @@ FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Syntax.SynExpr expr1
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Syntax.SynExpr expr2
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Syntax.SynExpr get_expr1()
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Syntax.SynExpr get_expr2()
+FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia get_trivia()
+FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia trivia
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Sequential: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+SequentialOrImplicitYield: FSharp.Compiler.Syntax.DebugPointAtSequential debugPoint
@@ -7381,7 +7383,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewObjExpr(FSharp
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewParen(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewQuote(FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewRecord(Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.Syntax.SynType,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]],FSharp.Compiler.Text.Range]], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExprRecordField], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequential(FSharp.Compiler.Syntax.DebugPointAtSequential, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequential(FSharp.Compiler.Syntax.DebugPointAtSequential, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequentialOrImplicitYield(FSharp.Compiler.Syntax.DebugPointAtSequential, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTraitCall(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynMemberSig, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
@@ -9890,6 +9892,12 @@ FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: FSharp.Compiler.Text.Range get_
 FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: FSharp.Compiler.Text.Range get_WithKeyword()
 FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynExprMatchTrivia: Void .ctor(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia Zero
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia get_Zero()
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] SeparatorRange
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_SeparatorRange()
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynExprSequentialTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia: FSharp.Compiler.Text.Range FinallyKeyword
 FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia: FSharp.Compiler.Text.Range TryKeyword
 FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia: FSharp.Compiler.Text.Range get_FinallyKeyword()
