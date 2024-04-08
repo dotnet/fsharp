@@ -2614,7 +2614,14 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     let bodyExpr =
                         if
                             isNil (
-                                TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Return" builderTy
+                                TryFindIntrinsicOrExtensionMethInfo
+                                    ResultCollectionSettings.AtMostOneResult
+                                    cenv
+                                    env
+                                    m
+                                    ad
+                                    "Return"
+                                    builderTy
                             )
                         then
                             SynExpr.ImplicitZero m
@@ -2622,7 +2629,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                             match
                                 TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy
                             with
-                            | minfo :: _ when MethInfoHasAttribute cenv.g m cenv.g.attrib_DefaultValueAttribute minfo -> SynExpr.ImplicitZero m
+                            | minfo :: _ when MethInfoHasAttribute cenv.g m cenv.g.attrib_DefaultValueAttribute minfo ->
+                                SynExpr.ImplicitZero m
                             | _ -> SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m)
 
                     let letBangBind =
