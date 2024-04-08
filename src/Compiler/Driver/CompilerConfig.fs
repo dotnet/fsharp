@@ -177,7 +177,7 @@ type VersionFlag =
             else
                 use fs = FileSystem.OpenFileForReadShim(s)
                 use is = new StreamReader(fs)
-                is.ReadLine()
+                !! is.ReadLine()
         | VersionNone -> "0.0.0.0"
 
 /// Represents a reference to an assembly. May be backed by a real assembly on disk, or a cross-project
@@ -651,8 +651,7 @@ type TcConfigBuilder =
             rangeForErrors
         ) =
 
-        if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
-            failwith "Expected a valid defaultFSharpBinariesDir"
+        let defaultFSharpBinariesDir = nullArgCheck "defaultFSharpBinariesDir" defaultFSharpBinariesDir
 
         // These are all default values, many can be overridden using the command line switch
         {
@@ -1104,7 +1103,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     // clone the input builder to ensure nobody messes with it.
     let data = { data with pause = data.pause }
 
-    let computeKnownDllReference libraryName =
+    let computeKnownDllReference (libraryName:string) =
         let defaultCoreLibraryReference =
             AssemblyReference(range0, libraryName + ".dll", None)
 
@@ -1156,7 +1155,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
 
             try
-                let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim fileName))
+                let clrRoot = Some(!! Path.GetDirectoryName(FileSystem.GetFullPathShim fileName))
                 clrRoot, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
@@ -1456,7 +1455,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     /// 'framework' reference set that is potentially shared across multiple compilations.
     member tcConfig.IsSystemAssembly(fileName: string) =
         try
-            let dirName = Path.GetDirectoryName fileName
+            let dirName = !! Path.GetDirectoryName(fileName)
             let baseName = FileSystemUtils.fileNameWithoutExtension fileName
 
             FileSystem.FileExistsShim fileName

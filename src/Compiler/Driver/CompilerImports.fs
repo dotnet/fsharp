@@ -164,8 +164,10 @@ let PickleToResource inMem file (g: TcGlobals) compress scope rName rNameB p x =
 
     let byteStorageB =
         if inMem then
+            // TODO nullness : Fix how C# extension methods with 'nullable this' are imported, there is a bug
             ByteStorage.FromMemoryAndCopy(bytesB.AsMemory(), useBackingMemoryMappedFile = true)
         else
+            // TODO nullness : Fix how C# extension methods with 'nullable this' are imported, there is a bug
             ByteStorage.FromByteArray(bytesB.AsMemory().ToArray())
 
     let resource =

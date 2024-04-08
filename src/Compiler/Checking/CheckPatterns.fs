@@ -654,8 +654,8 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, emptyTyparInst, ItemOccurence.Pattern, ad)
 
                     match box result[idx] with
-                    | Null -> result[idx] <- pat
-                    | NonNull _ ->
+                    | null -> result[idx] <- pat
+                    | _ ->
                         extraPatterns.Add pat
                         errorR (Error (FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce id.idText, id.idRange))
 
