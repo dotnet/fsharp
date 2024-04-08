@@ -58,33 +58,29 @@ module ReflectionHelper =
     let getInstanceProperty<'T> (theType: Type) propertyName =
         try
             let instanceFlags =
-                BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance
+                BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance                
 
-            let property =
-                theType.GetProperty(propertyName, instanceFlags, null, typeof<'T>, [||], [||])
-
-            if isNull property then
-                None
-            else
-                let getMethod = property.GetGetMethod()
-
-                if not (isNull getMethod) && not getMethod.IsStatic then
-                    Some property
-                else
-                    None
+            match theType.GetProperty(propertyName, instanceFlags, null, typeof<'T>, [||], [||]) with
+            | null -> None
+            | property ->
+                match property.GetGetMethod() with
+                | null -> None
+                | getMethod when getMethod.IsStatic -> None
+                | _ -> Some property              
         with _ ->
             None
 
     let getInstanceMethod<'T> (theType: Type) (parameterTypes: Type[]) methodName =
         try
-            let theMethod = theType.GetMethod(methodName, parameterTypes)
-            if isNull theMethod then None else Some theMethod
+            match theType.GetMethod(methodName, parameterTypes) with
+            | null -> None
+            | theMethod -> Some theMethod           
         with _ ->
             None
 
     let stripTieWrapper (e: Exception) =
         match e with
-        | :? TargetInvocationException as e -> e.InnerException
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> !! e.InnerException
         | _ -> e
 
 /// Indicate the type of error to report
