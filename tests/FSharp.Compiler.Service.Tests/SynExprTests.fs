@@ -86,3 +86,37 @@ let shouldBeParenthesizedInContext (expected: Parenthesization list) src =
             | _ -> actual)
 
     CollectionAssert.AreEqual(expected, actual)
+
+[<Theory>]
+[<TestCase("9")>]
+[<TestCase("9 |> ignore")>]
+[<TestCase("
+let x =
+    do ()
+    9
+")>]
+[<TestCase("
+let x =
+    do ()
+    9 |> ignore
+")>]
+[<TestCase("
+for x in 1..10 do
+    9 |> ignore
+")>]
+let ``shouldBeParenthesizedInContext handles an unparenthesized hypothetical`` src =
+    let ast = getParseResults src
+
+    let getSourceLineStr =
+        let lines = src.ReplaceLineEndings().Split '\n'
+        Line.toZ >> Array.get lines
+
+    let expr, path =
+        (None, ast)
+        ||> ParsedInput.foldWhile (fun acc path node ->
+            match node with
+            | SyntaxNode.SynExpr (SynExpr.Const(SynConst.Int32 9, _)  as expr) -> Some(Some(expr, path))
+            | _ -> Some acc)
+        |> Option.defaultWith (fun () -> invalidOp "Expected a 9 but did not find one.")
+
+    Assert.False(SynExpr.shouldBeParenthesizedInContext getSourceLineStr path expr)

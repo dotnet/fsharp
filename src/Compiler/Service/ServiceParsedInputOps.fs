@@ -263,8 +263,8 @@ module ParsedInput =
 
         let rec collect expr acc =
             match expr with
-            | SynExpr.Sequential(_, _, e1, (SynExpr.Sequential _ as e2), _) -> collect e2 (e1 :: acc)
-            | SynExpr.Sequential(_, _, e1, e2, _) -> e2 :: e1 :: acc
+            | SynExpr.Sequential(expr1 = e1; expr2 = (SynExpr.Sequential _ as e2)) -> collect e2 (e1 :: acc)
+            | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> e2 :: e1 :: acc
             | _ -> acc
 
         match collect expr [] with
@@ -1646,11 +1646,12 @@ module ParsedInput =
 
                 member _.VisitRecordDefn(_, fields, range) =
                     fields
-                    |> List.tryPick (fun (SynField(idOpt = idOpt; range = fieldRange)) ->
-                        match idOpt with
-                        | Some id when rangeContainsPos id.idRange pos ->
+                    |> List.tryPick (fun (SynField(idOpt = idOpt; range = fieldRange; fieldType = fieldType)) ->
+                        match idOpt, fieldType with
+                        | Some id, _ when rangeContainsPos id.idRange pos ->
                             Some(CompletionContext.RecordField(RecordContext.Declaration true))
                         | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
+                        | _, SynType.FromParseError _ -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
                         | _ -> None)
                     // No completions in a record outside of all fields, except in attributes, which is established earlier in VisitAttributeApplication
                     |> Option.orElseWith (fun _ ->

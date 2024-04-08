@@ -16,7 +16,10 @@ type Ident =
     member idRange: range
 
 /// Represents an identifier with potentially additional trivia information.
-type SynIdent = SynIdent of ident: Ident * trivia: IdentTrivia option
+type SynIdent =
+    | SynIdent of ident: Ident * trivia: IdentTrivia option
+
+    member Range: range
 
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
@@ -751,7 +754,8 @@ type SynExpr =
         isTrueSeq: bool *
         expr1: SynExpr *
         expr2: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprSequentialTrivia
 
     /// F# syntax: if expr then expr
     /// F# syntax: if expr then expr else expr
