@@ -6,6 +6,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration
+open BenchmarkDotNet.Engines
 open FSharp.Benchmarks.Common.Categories
 
 [<MemoryDiagnoser>]
