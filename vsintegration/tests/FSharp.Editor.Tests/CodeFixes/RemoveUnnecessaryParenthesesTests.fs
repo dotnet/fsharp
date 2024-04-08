@@ -1665,6 +1665,11 @@ in x
                 "id(id<int>)id", "id id<int> id"
                 "id (id id) id", "id (id id) id" // While it would be valid in this case to remove the parens, it is not in general.
                 "id ((<|) ((+) x)) y", "id ((<|) ((+) x)) y"
+                "(int)x", "int x"
+                "(uint32)x", "uint32 x"
+                "(int)_x", "int _x"
+                "(uint32)_x", "uint32 _x"
+                "(f_)x", "f_ x"
 
                 "~~~(-1)", "~~~ -1"
                 "~~~(-x)", "~~~(-x)"
