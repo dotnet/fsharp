@@ -32,8 +32,10 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         Some (Internal (4,15--4,23)),
-                         Some (Public (4,40--4,46)), Some (Private (4,52--4,59)),
+                         GetSet
+                           (Some (Internal (4,15--4,23)),
+                            Some (Public (4,40--4,46)),
+                            Some (Private (4,52--4,59))),
                          Const (Int32 7, (4,33--4,34)), (4,4--4,63),
                          { LeadingKeyword =
                             MemberVal ((4,4--4,10), (4,11--4,14))
