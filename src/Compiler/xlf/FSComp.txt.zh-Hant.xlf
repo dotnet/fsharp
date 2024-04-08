@@ -1108,8 +1108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgumentCountNotMatch">
-        <source>This active pattern case needs {0} argument(s) and {1} return value, but here has {2} argument(s) and {3} return value.</source>
-        <target state="new">This active pattern case needs {0} argument(s) and {1} return value, but here has {2} argument(s) and {3} return value.</target>
+        <source>This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</source>
+        <target state="new">This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
@@ -1380,6 +1380,11 @@
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
         <target state="translated">此覆寫接受一個元組，而不是多個引數。請嘗試在方法定義中新增額外一層括弧 (例如 'member _.Foo((x, y))')，或在抽象方法宣告中移除括弧 (例如 'abstract member Foo: 'a * 'b -&gt; 'c')。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcParameterizedActivePatternArgumentCountNotMatch">
+        <source>This active pattern requires {0} parameter(s) and returns {1} value(s), but the usage here matches {2} argument(s) and {3} return value(s).</source>
+        <target state="new">This active pattern requires {0} parameter(s) and returns {1} value(s), but the usage here matches {2} argument(s) and {3} return value(s).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">

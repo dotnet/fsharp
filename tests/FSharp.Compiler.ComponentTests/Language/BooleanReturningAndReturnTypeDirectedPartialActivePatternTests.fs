@@ -93,7 +93,7 @@ match "A" with
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3866, Line 4, Col 3, Line 4, Col 13, "This active pattern case needs 0 argument(s) and 0 return value, but here has 1 argument(s) and 0 return value.")
-        (Error 3866, Line 8, Col 3, Line 8, Col 13, "This active pattern case needs 0 argument(s) and 0 return value, but here has 1 argument(s) and 0 return value.")
-        (Error 3866, Line 12, Col 3, Line 12, Col 30, "This active pattern case needs 0 argument(s) and 0 return value, but here has 1 argument(s) and 0 return value.")
+        (Error 3867, Line 4, Col 3, Line 4, Col 13, "This active pattern returns 0 value(s), but the usage here matches 1 return value(s).")
+        (Error 3867, Line 8, Col 3, Line 8, Col 13, "This active pattern returns 0 value(s), but the usage here matches 1 return value(s).")
+        (Error 3867, Line 12, Col 3, Line 12, Col 30, "This active pattern returns 0 value(s), but the usage here matches 1 return value(s).")
     ]

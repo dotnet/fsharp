@@ -5138,13 +5138,17 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
         let dtys, retTy = stripFunTy g vExprTy
         let paramCount = if dtys.Length = 0 then 0 else dtys.Length - 1
 
+        let showErrMsg returnCount actualParamCount actualReturnCount =
+            if paramCount = 0 then error(Error(FSComp.SR.tcNoParameterActivePatternArgumentCountNotMatch(returnCount, actualParamCount + actualReturnCount), m))
+            else error(Error(FSComp.SR.tcParameterizedActivePatternArgumentCountNotMatch(paramCount, returnCount, actualParamCount, actualReturnCount), m))
+
         // partial active pattern (returning bool) doesn't have output arg
         if (not apinfo.IsTotal && isBoolTy g retTy) then
             checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
             if paramCount = (args: _ list).Length then
                 args, SynPat.Const(SynConst.Unit, m)
             else
-                error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 0, args.Length, 0), m))
+                showErrMsg 0 args.Length 0
 
         // for single case active pattern, if not all parameter provided, output will be a function
         // that takes the remaining parameter as input
@@ -5163,7 +5167,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
              if canOmit caseRetTy then
                 args, SynPat.Const(SynConst.Unit, m)
              else
-                 error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 1, args.Length, 0), m))
+                 showErrMsg 1 args.Length 0
         
         // active pattern (returning unknown things) can not omit output arg
         elif IsNotSolved vExprTy then
@@ -5171,9 +5175,9 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
 
         // active pattern (returning 'a or 'Boxed<'a>) can not omit output arg
         elif dtys.Length > args.Length then
-            error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 1, args.Length, 0), m))
+            showErrMsg 1 args.Length 0
         elif dtys.Length < args.Length then
-            error(Error(FSComp.SR.tcActivePatternArgumentCountNotMatch(paramCount, 1, args.Length - 1, 1), m))
+            showErrMsg 1 (args.Length - 1) 1
         else
             List.frontAndBack args
 
