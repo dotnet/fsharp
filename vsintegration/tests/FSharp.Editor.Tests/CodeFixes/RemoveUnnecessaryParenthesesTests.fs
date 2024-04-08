@@ -977,6 +977,23 @@ in x
                 x
             "
 
+            "
+            [
+                1, 2,
+                3, 4
+                (1, 2,
+                3, 4)
+            ]
+            ",
+            "
+            [
+                1, 2,
+                3, 4
+                (1, 2,
+                3, 4)
+            ]
+            "
+
             // IfThenElse
             "if (3 = 3) then 3 else 3", "if 3 = 3 then 3 else 3"
             "if 3 = 3 then (3) else 3", "if 3 = 3 then 3 else 3"

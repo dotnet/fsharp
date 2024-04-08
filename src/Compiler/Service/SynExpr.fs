@@ -710,6 +710,28 @@ module SynExpr =
             ->
             true
 
+        // Hanging tuples:
+        //
+        //     let _ =
+        //         (
+        //             1, 2,
+        //           3, 4
+        //         )
+        //
+        // or
+        //
+        //     [
+        //         1, 2,
+        //         3, 4
+        //         (1, 2,
+        //        3, 4)
+        //     ]
+        | SynExpr.Tuple(isStruct = false; exprs = exprs; range = range), _ when
+            range.StartLine <> range.EndLine
+            && exprs |> List.exists (fun e -> e.Range.StartColumn < range.StartColumn)
+            ->
+            true
+
         // Check for nested matches, e.g.,
         //
         //     match … with … -> (…, match … with … -> … | … -> …) | … -> …
