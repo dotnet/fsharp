@@ -9,9 +9,16 @@ open System.Reflection
 open System.Runtime.InteropServices
 open Microsoft.FSharp.Core
 
+
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
 module internal FSharpEnvironment =
+
+#if NO_CHECKNULLS
+    let inline (!!) x = x
+#else
+    let inline (!!) (x:'T | null) = Unchecked.nonNull x
+#endif
 
     type private TypeInThisAssembly =
         class
@@ -23,7 +30,10 @@ module internal FSharpEnvironment =
 
     let FSharpProductName = UtilsStrings.SR.buildProductName (FSharpBannerVersion)
 
-    let versionOf<'t> = typeof<'t>.Assembly.GetName().Version.ToString()
+    let versionOf<'t> : string | null = 
+        match typeof<'t>.Assembly.GetName().Version with
+        | null -> null
+        | v -> v.ToString()
 
     let FSharpCoreLibRunningVersion =
         try
@@ -40,8 +50,9 @@ module internal FSharpEnvironment =
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
     let isRunningOnCoreClr =
-        typeof<obj>.Assembly.FullName
-            .StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+        match typeof<obj>.Assembly.FullName with
+        | null -> false
+        | name -> name.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
     module Option =
         /// Convert string into Option string where null and String.Empty result in None
@@ -69,7 +80,7 @@ module internal FSharpEnvironment =
         try
             // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
             match Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN") with
-            | result when not (String.IsNullOrWhiteSpace result) -> Some result
+            | result when not (String.IsNullOrWhiteSpace result) -> Some !! result
             | _ ->
                 let safeExists f =
                     (try
@@ -83,7 +94,8 @@ module internal FSharpEnvironment =
                 | _ ->
                     let fallback () =
                         let d = Assembly.GetExecutingAssembly()
-                        Some(Path.GetDirectoryName d.Location)
+                        
+                        Some(!! Path.GetDirectoryName(d.Location))
 
                     match tryCurrentDomain () with
                     | None -> fallback ()
@@ -266,7 +278,7 @@ module internal FSharpEnvironment =
 
     // Must be alongside the location of FSharp.CompilerService.dll
     let getDefaultFsiLibraryLocation () =
-        Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation ()), fsiLibraryName + ".dll")
+        Path.Combine(!! Path.GetDirectoryName(getFSharpCompilerLocation ()), fsiLibraryName + ".dll")
 
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
@@ -286,7 +298,7 @@ module internal FSharpEnvironment =
             if String.IsNullOrEmpty(pf) then
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
             else
-                pf
+                !! pf
 
         let candidate = Path.Combine(pf, "dotnet", dotnet)
 
@@ -311,7 +323,9 @@ module internal FSharpEnvironment =
         let probePathForDotnetHost () =
             let paths =
                 let p = Environment.GetEnvironmentVariable("PATH")
-                if not (isNull p) then p.Split(Path.PathSeparator) else [||]
+                match p with
+                | null -> [||]
+                | p -> p.Split(Path.PathSeparator) 
 
             paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
 
@@ -324,7 +338,7 @@ module internal FSharpEnvironment =
                 let assemblyLocation =
                     Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
 
-                Path.GetFullPath(Path.Combine(assemblyLocation, "..", "..", "..", dotnet))
+                Path.GetFullPath(Path.Combine(!! assemblyLocation, "..", "..", "..", dotnet))
 
             if fileExists candidate then
                 Some candidate
@@ -342,12 +356,12 @@ module internal FSharpEnvironment =
         [|
             match getDotnetHostPath (), getDotnetGlobalHostPath () with
             | Some hostPath, Some globalHostPath ->
-                yield Path.GetDirectoryName(hostPath)
+                yield !! Path.GetDirectoryName(hostPath)
 
                 if isDotnetMultilevelLookup && hostPath <> globalHostPath then
-                    yield Path.GetDirectoryName(globalHostPath)
-            | Some hostPath, None -> yield Path.GetDirectoryName(hostPath)
-            | None, Some globalHostPath -> yield Path.GetDirectoryName(globalHostPath)
+                    yield !! Path.GetDirectoryName(globalHostPath)
+            | Some hostPath, None -> yield !! Path.GetDirectoryName(hostPath)
+            | None, Some globalHostPath -> yield !! Path.GetDirectoryName(globalHostPath)
             | None, None -> ()
         |]
 

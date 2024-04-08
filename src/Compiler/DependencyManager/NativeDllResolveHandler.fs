@@ -185,7 +185,7 @@ type NativeDllResolveHandler(nativeProbingRoots: NativeResolutionProbe option) =
         |> Option.filter (fun _ -> isRunningOnCoreClr)
         |> Option.map (fun _ -> new NativeDllResolveHandlerCoreClr(nativeProbingRoots))
 
-    new(nativeProbingRoots: NativeResolutionProbe) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
+    new(nativeProbingRoots: NativeResolutionProbe MaybeNull) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
 
     member internal _.RefreshPathsInEnvironment(roots: string seq) =
         handler |> Option.iter (fun handler -> handler.RefreshPathsInEnvironment(roots))

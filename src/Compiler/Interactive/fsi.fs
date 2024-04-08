@@ -1526,7 +1526,7 @@ let ConvReflectionTypeToILTypeRef (reflectionTy: Type) =
     let aref = ILAssemblyRef.FromAssemblyName(reflectionTy.Assembly.GetName())
     let scoref = ILScopeRef.Assembly aref
 
-    let fullName = reflectionTy.FullName
+    let fullName = reflectionTy.FullName |> nullArgCheck "reflectionTy.FullName"
     let index = fullName.IndexOfOrdinal("[")
 
     let fullName =
