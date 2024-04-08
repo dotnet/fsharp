@@ -373,7 +373,7 @@ module InterfaceFileWriter =
         let writeToSeparateFiles (declaredImpls: CheckedImplFile list) =
             for CheckedImplFile(qualifiedNameOfFile = name) as impl in declaredImpls do
                 let fileName =
-                    Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
+                    !! Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
 
                 printfn "writing impl file to %s" fileName
                 use os = FileSystem.OpenFileForWriteShim(fileName, FileMode.Create).GetWriter()
@@ -394,7 +394,7 @@ module InterfaceFileWriter =
 // 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
 // 3) If not, it will produce an error.
 let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
-    let outDir = Path.GetDirectoryName outFile
+    let outDir = !! Path.GetDirectoryName(outFile)
     let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
     let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
 
@@ -414,7 +414,7 @@ let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
     | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
     | None ->
         let executionLocation = Assembly.GetExecutingAssembly().Location
-        let compilerLocation = Path.GetDirectoryName executionLocation
+        let compilerLocation = !! Path.GetDirectoryName(executionLocation)
 
         let compilerFsharpCoreDllPath =
             Path.Combine(compilerLocation, fsharpCoreAssemblyName)

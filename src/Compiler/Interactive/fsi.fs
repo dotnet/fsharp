@@ -373,7 +373,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         let typT = convTypeRef tref
         let tyargs = List.map convTypeAux tspec.GenericArgs
 
-        let res =
+        let res : Type MaybeNull =
             match isNil tyargs, typT.IsGenericType with
             | _, true -> typT.MakeGenericType(List.toArray tyargs)
             | true, false -> typT
@@ -388,7 +388,7 @@ type ILMultiInMemoryAssemblyEmitEnv
 
     and convTypeAux ty =
         match ty with
-        | ILType.Void -> Type.GetType("System.Void")
+        | ILType.Void -> !! Type.GetType("System.Void")
         | ILType.Array(shape, eltType) ->
             let baseT = convTypeAux eltType
 
@@ -396,8 +396,8 @@ type ILMultiInMemoryAssemblyEmitEnv
                 baseT.MakeArrayType()
             else
                 baseT.MakeArrayType shape.Rank
-        | ILType.Value tspec -> convTypeSpec tspec
-        | ILType.Boxed tspec -> convTypeSpec tspec
+        | ILType.Value tspec -> !! (convTypeSpec tspec)
+        | ILType.Boxed tspec -> !! (convTypeSpec tspec)
         | ILType.Ptr eltType ->
             let baseT = convTypeAux eltType
             baseT.MakePointerType()
@@ -435,7 +435,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         let ltref = mkRefForNestedILTypeDef ILScopeRef.Local (enc, tdef)
         let tref = mkRefForNestedILTypeDef ilScopeRef (enc, tdef)
         let key = tref.BasicQualifiedName
-        let typ = asm.GetType(key)
+        let typ = !! asm.GetType(key)
         //printfn "Adding %s --> %s" key typ.FullName
         let rtref = rescopeILTypeRef dynamicCcuScopeRef tref
         typeMap.Add(ltref, (typ, tref))
@@ -994,7 +994,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                     | _ -> StringComparison.OrdinalIgnoreCase
 
                 if String.Compare(processFileName, commandLineExecutableFileName, stringComparison) = 0 then
-                    processFileName
+                    !! processFileName
                 else
                     sprintf "%s %s" processFileName commandLineExecutableFileName
 
@@ -1565,10 +1565,10 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
                 && IsCompilerGeneratedName reflectionTy.Name
             then
                 let rec get (typ: Type) =
-                    if FSharp.Reflection.FSharpType.IsFunction typ.BaseType then
-                        get typ.BaseType
-                    else
-                        typ
+                    match typ.BaseType with
+                    | null -> typ
+                    | baseTyp when FSharp.Reflection.FSharpType.IsFunction baseTyp -> get baseTyp
+                    | _ -> typ
 
                 get reflectionTy
             else
@@ -1578,7 +1578,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
     let elementOrItemTref =
         if reflectionTy.HasElementType then
-            reflectionTy.GetElementType()
+            !! reflectionTy.GetElementType()
         else
             reflectionTy
         |> ConvReflectionTypeToILTypeRef
@@ -1671,7 +1671,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
 let scriptingSymbolsPath =
-    let createDirectory path =
+    let createDirectory (path:string) =
         lazy
             try
                 if not (Directory.Exists(path)) then
@@ -1692,7 +1692,7 @@ let deleteScriptingSymbols () =
 #else
         ()
 #endif
-    with _ ->
+    with _->
         ()
 
 AppDomain.CurrentDomain.ProcessExit
@@ -1897,7 +1897,7 @@ type internal FsiDynamicCompiler
                     if edef.ArgCount = 0 then
                         yield
                             (fun () ->
-                                let typ = asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
+                                let typ = !! asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
 
                                 try
                                     ignore (
@@ -1915,8 +1915,8 @@ type internal FsiDynamicCompiler
                                     )
 
                                     None
-                                with :? TargetInvocationException as e ->
-                                    Some e.InnerException)
+                                with :? TargetInvocationException as e when isNotNull e.InnerException ->
+                                    Some !!e.InnerException)
             ]
 
         emEnv.AddModuleDef asm ilScopeRef ilxMainModule
@@ -2409,7 +2409,7 @@ type internal FsiDynamicCompiler
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
     member _.FindDynamicAssembly(name, useFullName: bool) =
-        let getName (assemblyName: AssemblyName) =
+        let getName (assemblyName: AssemblyName) : string MaybeNull =
             if useFullName then
                 assemblyName.FullName
             else
@@ -2838,7 +2838,7 @@ type internal FsiDynamicCompiler
 
                      st),
                  (fun _ _ -> ()))
-                (tcConfigB, input, Path.GetDirectoryName sourceFile, istate))
+                (tcConfigB, input, !!Path.GetDirectoryName(sourceFile), istate))
 
     member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger: DiagnosticsLogger) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
@@ -3530,7 +3530,7 @@ type FsiStdinLexerProvider
 
                     0
                 | Some(NonNull input) ->
-                    let input = nonNull input + "\n"
+                    let input = input + "\n"
 
                     if input.Length > len then
                         fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiLineTooLong ())

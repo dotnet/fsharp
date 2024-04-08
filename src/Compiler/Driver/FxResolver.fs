@@ -69,7 +69,7 @@ type internal FxResolver
                 | NonNull message -> lock errorslock (fun () -> errorsList.Add(message))
 
             let psi = ProcessStartInfo()
-            psi.FileName <- pathToExe
+            psi.FileName <- !! pathToExe
 
             if workingDir.IsSome then
                 psi.WorkingDirectory <- workingDir.Value
@@ -91,7 +91,7 @@ type internal FxResolver
                 p.BeginOutputReadLine()
                 p.BeginErrorReadLine()
 
-                if not (p.WaitForExit(timeout)) then
+                if not (p.WaitForExit(timeout:int)) then
                     // Timed out resolving throw a diagnostic.
                     raise (TimeoutException(sprintf "Timeout executing command '%s' '%s'" psi.FileName psi.Arguments))
                 else

@@ -203,7 +203,7 @@ module internal FSharpCheckerResultsSettings =
     // Look for DLLs in the location of the service DLL first.
     let defaultFSharpBinariesDir =
         FSharpEnvironment
-            .BinFolderOfDefaultFSharpCompiler(Option.ofObj (Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location)))
+            .BinFolderOfDefaultFSharpCompiler(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location) |> Option.ofObj)
             .Value
 
 [<Sealed>]
@@ -973,7 +973,7 @@ type internal TypeCheckInfo
         if String.IsNullOrWhiteSpace name then
             None
         else
-            let name = String.lowerCaseFirstChar name
+            let name = String.lowerCaseFirstChar !!name
 
             let unused =
                 sResolutions.CapturedNameResolutions
@@ -2761,7 +2761,7 @@ module internal ParseAndCheckFile =
         (
             tcConfig,
             parsedMainInput,
-            mainInputFileName,
+            mainInputFileName: string,
             loadClosure: LoadClosure option,
             tcImports: TcImports,
             backgroundDiagnostics
@@ -2853,7 +2853,7 @@ module internal ParseAndCheckFile =
             ApplyMetaCommandsFromInputToTcConfig(
                 tcConfig,
                 parsedMainInput,
-                Path.GetDirectoryName mainInputFileName,
+                !! Path.GetDirectoryName(mainInputFileName),
                 tcImports.DependencyProvider
             )
             |> ignore
@@ -2904,7 +2904,7 @@ module internal ParseAndCheckFile =
 
             // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
             let tcConfig =
-                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName)
+                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
 
             // update the error handler with the modified tcConfig
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
