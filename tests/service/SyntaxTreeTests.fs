@@ -6,6 +6,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Test
 open NUnit.Framework
 
 let testCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree")
@@ -133,7 +134,8 @@ let parseSourceCode (name: string, code: string) =
             SourceText.ofString code,
             { FSharpParsingOptions.Default with
                 SourceFiles = [| location |]
-                IsExe = true }
+                IsExe = true
+                LangVersionText = "preview" }
         )
         |> Async.RunImmediate
 
@@ -175,7 +177,9 @@ let ParseFile fileName =
             $"%A{ast}\n\n%s{diagnostics}"
         |> normalize
         |> sprintf "%s\n"
+
     let bslPath = $"{fullPath}.bsl"
+    let actualPath = $"{fullPath}.actual"
 
     let expected =
         if File.Exists bslPath then
@@ -183,9 +187,17 @@ let ParseFile fileName =
         else
             "No baseline was found"
 
+    let equals = expected = actual
     let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
     if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
         File.WriteAllText(bslPath, actual)
+    elif not equals then
+        File.WriteAllText(actualPath, actual)
+    else
+        File.Delete(actualPath)
 
     Assert.AreEqual(expected, actual)
+
+    // Run type checker to assert that it doesn't fail with the tree produced by the parser
+    CompilerAssert.ParseAndTypeCheck([|"--langversion:preview"|], fileName, contents) |> ignore

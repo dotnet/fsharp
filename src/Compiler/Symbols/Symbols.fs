@@ -322,7 +322,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.ActivePatternResult (apinfo, ty, n, _) ->
              FSharpActivePatternCase(cenv, apinfo, ty, n, None, item) :> _
 
-        | Item.ArgName(id, ty, argOwner, m) ->
+        | Item.OtherName(id, ty, _, argOwner, m) ->
             FSharpParameter(cenv, id, ty, argOwner, m) :> _
 
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) }) ->
@@ -987,6 +987,10 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
     member _.DeclarationLocation = 
         checkIsResolved()
         v.Range
+
+    member _.DeclaringEntity =
+        checkIsResolved()
+        FSharpEntity(cenv, v.TyconRef)
 
     member _.HasFields =
         if isUnresolved() then false else
@@ -2072,7 +2076,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             [ [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in p.GetParamDatas(cenv.amap, range0) do 
                     // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                     // either .NET or F# parameters
-                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
+                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=[]; OtherRange=None }
                     let m =
                         match nmOpt with
                         | Some v -> v.idRange
@@ -2091,7 +2095,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                    [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in argTys do 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
-                        let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
+                        let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=[]; OtherRange=None }
                         let m =
                             match nmOpt with
                             | Some v -> v.idRange
@@ -2291,6 +2295,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V vref -> not vref.IsCtorThisVal && isRefCellTy cenv.g vref.Type
         | _ -> false
 
+    member x.IsReferencedValue =
+        match d with
+        | V vref -> vref.Deref.HasBeenReferenced
+        | _ -> false
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
@@ -2346,6 +2355,35 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             |> LayoutRender.toArray
             |> Some
     
+    member x.GetValSignatureText (displayContext: FSharpDisplayContext, m: range) =
+        checkIsResolved()
+        let displayEnv = { displayContext.Contents cenv.g with includeStaticParametersInTypeNames = true }
+
+        let stringValOfMethInfo (methInfo: MethInfo) =
+            match methInfo with
+            | FSMeth(valRef = vref) -> NicePrint.stringValOrMember displayEnv cenv.infoReader vref
+            | _ -> NicePrint.stringOfMethInfoFSharpStyle cenv.infoReader m displayEnv methInfo
+
+        let stringValOfPropInfo (p: PropInfo) =
+            let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+            let withGetSet =
+                if p.HasGetter && p.HasSetter then "with get, set"
+                elif p.HasGetter then "with get"
+                elif p.HasSetter then "with set"
+                else ""
+                
+            $"member val %s{p.DisplayName}: %s{t} %s{withGetSet}"
+
+        match d with
+        | E _ -> None
+        | V v ->
+            NicePrint.stringValOrMember displayEnv cenv.infoReader v
+            |> Some
+        | C methInfo
+        | M methInfo -> stringValOfMethInfo methInfo |> Some
+        | P p -> stringValOfPropInfo p |> Some
+
+
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
             match d with 
@@ -2368,7 +2406,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let nm = String.uncapitalize witnessInfo.MemberName
                 let nm = if used.Contains nm then nm + string i else nm
                 let m = x.DeclarationLocation
-                let argReprInfo : ArgReprInfo = { Attribs=[]; Name=Some (mkSynId m nm) }
+                let argReprInfo : ArgReprInfo = { Attribs=[]; Name=Some (mkSynId m nm); OtherRange=None }
                 let p = FSharpParameter(cenv, paramTy, argReprInfo, None, m, false, false, false, false, true)
                 p, (used.Add nm, i + 1))
             |> fst
@@ -2422,6 +2460,13 @@ type FSharpType(cenv, ty:TType) =
          match stripTyparEqns ty with 
          | TType_app _ | TType_measure (Measure.Const _ | Measure.Prod _ | Measure.Inv _ | Measure.One) -> true 
          | _ -> false
+
+    member _.IsMeasureType =
+       isResolved() &&
+       protect <| fun () ->
+        match stripTyparEqns ty with
+        | TType_measure _ -> true
+        | _ -> false
 
     member _.IsTupleType = 
        isResolved() &&
@@ -2689,7 +2734,7 @@ type FSharpStaticParameter(cenv, sp: Tainted< TypeProviders.ProvidedParameterInf
                                 let paramTy = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
                                 let nm = sp.PUntaint((fun p -> p.Name), m)
                                 let id = mkSynId m nm
-                                Item.ArgName(Some id, paramTy, None, m)), 
+                                Item.OtherName(Some id, paramTy, None, None, m)), 
                          (fun _ _ _ -> true))
 
     member _.Name = 
@@ -2727,11 +2772,11 @@ type FSharpStaticParameter(cenv, sp: Tainted< TypeProviders.ProvidedParameterInf
 
 type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, m: range, isParamArrayArg, isInArg, isOutArg, isOptionalArg, isWitnessArg) = 
     inherit FSharpSymbol(cenv, 
-                         (fun () -> Item.ArgName(topArgInfo.Name, paramTy, ownerOpt, m)), 
+                         (fun () -> Item.OtherName(topArgInfo.Name, paramTy, Some topArgInfo, ownerOpt, m)), 
                          (fun _ _ _ -> true))
 
     new (cenv, idOpt, ty, ownerOpt, m) =
-        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = [] }
+        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = []; OtherRange = None }
         FSharpParameter(cenv, ty, argInfo, ownerOpt, m, false, false, false, false, false)
 
     new (cenv, ty, argInfo: ArgReprInfo, m: range) =

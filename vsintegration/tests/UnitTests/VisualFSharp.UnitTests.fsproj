@@ -57,9 +57,9 @@
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.References.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.UpToDate.fs" />
-	  <Compile Include="DocCommentIdParserTests.fs">
-		  <Link>CompilerService\DocCommentIdParserTests.fs</Link>
-	  </Compile>
+    <Compile Include="DocCommentIdParserTests.fs">
+      <Link>CompilerService\DocCommentIdParserTests.fs</Link>
+    </Compile>
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
@@ -104,6 +104,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />

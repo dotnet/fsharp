@@ -78,24 +78,30 @@ type CodeFixesOptions =
 [<CLIMutable>]
 type LanguageServicePerformanceOptions =
     {
-        EnableInMemoryCrossProjectReferences: bool
         AllowStaleCompletionResults: bool
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
-        EnableFastFindReferences: bool
+        EnableFastFindReferencesAndRename: bool
         EnablePartialTypeChecking: bool
         UseSyntaxTreeCache: bool
+        KeepAllBackgroundResolutions: bool
+        KeepAllBackgroundSymbolUses: bool
+        EnableBackgroundItemKeyStoreAndSemanticClassification: bool
+        CaptureIdentifiersWhenParsing: bool
     }
 
     static member Default =
         {
-            EnableInMemoryCrossProjectReferences = true
             AllowStaleCompletionResults = true
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
-            EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically
+            EnableFastFindReferencesAndRename = true
             EnablePartialTypeChecking = true
             UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically
+            KeepAllBackgroundResolutions = false
+            KeepAllBackgroundSymbolUses = false
+            EnableBackgroundItemKeyStoreAndSemanticClassification = true
+            CaptureIdentifiersWhenParsing = true
         }
 
 [<CLIMutable>]
@@ -107,6 +113,7 @@ type AdvancedOptions =
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
         IsLiveBuffersEnabled: bool
+        SendAdditionalTelemetry: bool
     }
 
     static member Default =
@@ -117,6 +124,7 @@ type AdvancedOptions =
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
+            SendAdditionalTelemetry = true
         }
 
 [<CLIMutable>]
@@ -217,9 +225,6 @@ module EditorOptionsExtensions =
         member private this.EditorOptions =
             this.Solution.Workspace.Services.GetService<EditorOptions>()
 
-        member this.AreFSharpInMemoryCrossProjectReferencesEnabled =
-            this.EditorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
-
         member this.IsFSharpCodeFixesAlwaysPlaceOpensAtTopLevelEnabled =
             this.EditorOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel
 
@@ -242,4 +247,4 @@ module EditorOptionsExtensions =
             this.EditorOptions.Advanced.IsBlockStructureEnabled
 
         member this.IsFastFindReferencesEnabled =
-            this.EditorOptions.LanguageServicePerformance.EnableFastFindReferences
+            this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename

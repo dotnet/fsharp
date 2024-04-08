@@ -20,7 +20,7 @@ open FSharp.Compiler.Tokenization
 [<RequireQualifiedAccess>]
 type DocumentSource =
     | FileSystem
-    | Custom of (string -> ISourceText option)
+    | Custom of (string -> Async<ISourceText option>)
 
 /// Used to parse and check F# source code.
 [<Sealed; AutoSerializable(false)>]

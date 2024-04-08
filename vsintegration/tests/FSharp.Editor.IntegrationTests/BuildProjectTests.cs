@@ -24,6 +24,7 @@ let answer = 42
 
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
+        await SolutionExplorer.OpenFileAsync("Library", "Library.fs", TestToken);
         await Editor.SetTextAsync(code, TestToken);
 
         var actualBuildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);
@@ -45,6 +46,7 @@ let answer =
 
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
+        await SolutionExplorer.OpenFileAsync("Library", "Library.fs", TestToken);
         await Editor.SetTextAsync(code, TestToken);
 
         var actualBuildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);

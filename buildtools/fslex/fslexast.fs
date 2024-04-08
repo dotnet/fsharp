@@ -156,7 +156,14 @@ type Regexp =
   | Macro of Ident
 type Clause = Regexp * Code
 
-type Rule = Ident * Ident list * Clause list
+/// Capture the name of the argument inside a rule.
+/// When the rule is typed, the type name is expected to have a single identifier.
+/// This is a known limitation and the caller can get around this by using a type alias.
+type RuleArgument =
+    | Ident of name:Ident
+    | Typed of name:Ident * typeName:Ident
+
+type Rule = Ident * RuleArgument list * Clause list
 type Macro = Ident * Regexp
 
 type Spec =

@@ -7,54 +7,64 @@ open System.Windows
 open System.Windows.Controls
 
 open Microsoft.VisualStudio.Text.Adornments
-open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Utilities
 
-open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp
 
-type Separator = Separator
+type internal FSharpStyle =
+    | Separator
+    | Paragraph
+    | CustomLinkStyle
 
+    // Render as strings for cross platform look.
+    override this.ToString() =
+        match this with
+        | Separator -> Editor.XmlDocumentation.separatorText
+        | Paragraph -> System.Environment.NewLine
+        | CustomLinkStyle -> ""
+
+// Provide nicer look for the QuickInfo on Windows.
 [<Export(typeof<IViewElementFactory>)>]
-[<Name("QuickInfoElement to UIElement")>]
-[<TypeConversion(typeof<ClassifiedTextRun>, typeof<UIElement>)>]
-type WpfNavigableTextRunFactory [<ImportingConstructor>] (viewElementFactoryService: IViewElementFactoryService, settings: EditorOptions) =
-    let resources = Microsoft.VisualStudio.FSharp.UIResources.NavStyles().Resources
+[<Name("FSharpStyle to UIElement")>]
+[<TypeConversion(typeof<FSharpStyle>, typeof<UIElement>)>]
+type internal WpfFSharpStyleFactory [<ImportingConstructor>] (settings: Editor.EditorOptions) =
+    let linkStyleUpdater () =
+        let key =
+            if settings.QuickInfo.DisplayLinks then
+                $"{settings.QuickInfo.UnderlineStyle.ToString().ToLower()}_underline"
+            else
+                "no_underline"
 
-    interface IViewElementFactory with
-        member _.CreateViewElement(textView: ITextView, model: obj) =
-            match model with
-            | :? ClassifiedTextRun as classifiedTextRun ->
-                // use the default converters to get a UIElement
-                let classifiedTextElement = ClassifiedTextElement([ classifiedTextRun ])
+        let style = UIResources.NavStyles().Resources[key] :?> Style
 
-                let convertedElement =
-                    viewElementFactoryService.CreateViewElement<UIElement>(textView, classifiedTextElement)
-                // Apply custom underline.
-                match convertedElement with
-                | :? TextBlock as tb when classifiedTextRun.NavigationAction <> null && settings.QuickInfo.DisplayLinks ->
-                    match tb.Inlines.FirstInline with
-                    | :? Documents.Hyperlink as hyperlink ->
-                        let key =
-                            match settings.QuickInfo.UnderlineStyle with
-                            | QuickInfoUnderlineStyle.Solid -> "solid_underline"
-                            | QuickInfoUnderlineStyle.Dash -> "dash_underline"
-                            | QuickInfoUnderlineStyle.Dot -> "dot_underline"
-                        // Fix color and apply styles.
-                        hyperlink.Foreground <- hyperlink.Inlines.FirstInline.Foreground
-                        hyperlink.Style <- downcast resources[key]
-                    | _ -> ()
-                | _ -> ()
+        // Some assumptions are made here about the shape of QuickInfo visual tree rendered by VS.
+        // If some future VS update were to render QuickInfo with different WPF elements
+        // the links will still work, just without their custom styling.
+        let rec styleLinks (element: DependencyObject) =
+            match element with
+            | :? TextBlock as t ->
+                for run in t.Inlines do
+                    if run :? Documents.Hyperlink then
+                        run.Style <- style
+            | :? Panel as p ->
+                for e in p.Children do
+                    styleLinks e
+            | _ -> ()
 
-                box convertedElement :?> _
-            | _ ->
-                failwith $"Invalid type conversion.  Supported conversion is {typeof<ClassifiedTextRun>.Name} to {typeof<UIElement>.Name}."
+        // Return an invisible FrameworkElement which will traverse it's siblings
+        // to find HyperLinks and update their style, when inserted into the visual tree.
+        { new FrameworkElement() with
+            override this.OnVisualParentChanged _ = styleLinks this.Parent
+        }
 
-[<Export(typeof<IViewElementFactory>)>]
-[<Name("Separator to UIElement")>]
-[<TypeConversion(typeof<Separator>, typeof<UIElement>)>]
-type WpfSeparatorFactory() =
     interface IViewElementFactory with
         member _.CreateViewElement(_, model: obj) =
             match model with
-            | :? Separator -> Controls.Separator(Opacity = 0.4, Margin = Thickness(0, 10, 0, 10)) |> box :?> _
-            | _ -> failwith $"Invalid type conversion.  Supported conversion is {typeof<Separator>.Name} to {typeof<UIElement>.Name}."
+            | :? FSharpStyle as fSharpStyle ->
+                match fSharpStyle with
+                | CustomLinkStyle -> linkStyleUpdater ()
+                | Separator -> Controls.Separator(Opacity = 0.3, Margin = Thickness(0, 8, 0, 8))
+                | Paragraph -> Controls.Separator(Opacity = 0)
+                |> box
+                :?> _
+            | _ -> failwith $"Invalid type conversion.  Supported conversion is {typeof<FSharpStyle>.Name} to {typeof<UIElement>.Name}."

@@ -5,7 +5,7 @@
 // Verify error when using 'as' to get a thisPointer when you don't have an
 // implicit constructor.
 
-//<Expects id="FS0010" status="error">Unexpected keyword 'as' in type definition\. Expected '\(' or other token</Expects>
+//<Expects id="FS0963" status="error">This definition may only be used in a type with a primary constructor\. Consider adding arguments to your type definition, e\.g\. 'type X\(args\) = \.\.\.'\.</Expects>
 
 type Point as otherThisPtr =
 

@@ -1,0 +1,3 @@
+namespace
+
+type T = int

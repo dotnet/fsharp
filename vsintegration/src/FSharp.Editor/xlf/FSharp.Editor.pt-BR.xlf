@@ -35,7 +35,7 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
         <target state="translated">Guias de Estrutura de Bloco;
@@ -45,7 +45,7 @@ Mostrar nós de estrutura de tópicos e recolhíveis para código F#;
 Dicas embutidas;
 Exibir dicas de tipo embutido (versão prévia);
 Exibir dicas de tipo de retorno (versão prévia);
-Exibir dicas de nome de parâmetro embutido (versão prévia);Cerveja;
+Exibir dicas de nome de parâmetro embutido (versão prévia);
 Buffers Dinâmicos;
 Usar buffers dinâmicos (não salvos) para verificação</target>
         <note />

@@ -2,6 +2,8 @@
 
 namespace FSharp.Test
 
+#nowarn "57"
+
 open System
 open System.IO
 open System.Text
@@ -333,6 +335,9 @@ module rec CompilerAssertHelpers =
             OriginalLoadReferences = []
             Stamp = None
         }
+
+    let defaultProjectOptionsForFilePath path (targetFramework: TargetFramework) =
+        { defaultProjectOptions targetFramework with SourceFiles = [| path |] }
 
     let rawCompile outputFilePath isExe options (targetFramework: TargetFramework) (sources: SourceCodeFileKind list) =
         let args =
@@ -802,7 +807,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     /// Parses and type checks the given source. Fails if type checker is aborted.
     static member ParseAndTypeCheck(options, name, source: string) =
         let parseResults, fileAnswer =
-            let defaultOptions = defaultProjectOptions TargetFramework.Current
+            let defaultOptions = defaultProjectOptionsForFilePath name TargetFramework.Current
             checker.ParseAndCheckFileInProject(
                 name,
                 0,
@@ -856,6 +861,14 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
+    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking) : FSharpCheckProjectResults =
+        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking)
+        let defaultOptions = defaultProjectOptions TargetFramework.Current
+        let projectOptions = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = sourceFiles }
+
+        checker.ParseAndCheckProject(projectOptions)
+        |> Async.RunImmediate
+    
     static member CompileExeWithOptions(options, (source: SourceCodeFileKind)) =
         compile true options source (fun (errors, _, _) ->
             if errors.Length > 0 then
@@ -930,10 +943,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
         | Choice2Of2 ex -> errorMessages.Add(ex.Message)
         | _ -> ()
 
-        errorMessages
+        errorMessages, outStream.ToString()
 
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
-        let errorMessages = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+        let errorMessages, _ = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
         if expectedErrorMessages.Length <> errorMessages.Count then
             Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
         else

@@ -10,6 +10,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.IO
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.Text
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type HelpContextServiceTests() =
     let getMarkers (source: string) =
@@ -42,16 +43,28 @@ type HelpContextServiceTests() =
                     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
                     let classifiedSpans =
-                        Tokenizer.getClassifiedSpans (documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+                        Tokenizer.getClassifiedSpans (
+                            documentId,
+                            sourceText,
+                            textLine.Span,
+                            Some "test.fs",
+                            [],
+                            None,
+                            CancellationToken.None
+                        )
 
-                    FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
-                    |> Async.RunSynchronously
+                    let task =
+                        FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
+                        |> CancellableTask.start CancellationToken.None
+
+                    task.Result
             ]
 
         let equalLength = (expectedKeywords.Length = res.Length)
         Assert.True(equalLength)
 
         for (exp, res) in List.zip expectedKeywords res do
+            let exp = Option.defaultValue "" exp
             Assert.Equal(exp, res)
 
     let TestF1Keywords (expectedKeywords, lines) =

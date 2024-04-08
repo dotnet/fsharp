@@ -14,18 +14,18 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis
+open CancellableTasks
 
 [<Shared>]
 [<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpHelpContextService [<ImportingConstructor>] () =
 
-    static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : Async<string option> =
-        asyncMaybe {
-            let! _, check =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpHelpContextService))
-                |> liftAsync
+    static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : CancellableTask<string> =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpHelpContextService))
 
-            let! sourceText = document.GetTextAsync() |> liftTaskAsync
+            let! sourceText = document.GetTextAsync(cancellationToken)
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -76,7 +76,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
                 | otherwise -> otherwise, col
 
             match tokenInformation with
-            | None -> return! None
+            | None -> return ""
             | Some token ->
                 match token.ClassificationType with
                 | ClassificationTypeNames.Keyword
@@ -85,17 +85,22 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
                 | ClassificationTypeNames.Comment -> return "comment_FS"
                 | ClassificationTypeNames.Identifier ->
                     try
-                        let! (s, colAtEndOfNames, _) = QuickParse.GetCompleteIdentifierIsland false lineText col
+                        let island = QuickParse.GetCompleteIdentifierIsland false lineText col
 
-                        if check.HasFullTypeCheckInfo then
+                        match island with
+                        | Some (s, colAtEndOfNames, _) when check.HasFullTypeCheckInfo ->
                             let qualId = PrettyNaming.GetLongNameFromString s
-                            return! check.GetF1Keyword(Line.fromZ line, colAtEndOfNames, lineText, qualId)
-                        else
-                            return! None
+
+                            let f1Keyword =
+                                check.GetF1Keyword(Line.fromZ line, colAtEndOfNames, lineText, qualId)
+
+                            return Option.defaultValue "" f1Keyword
+
+                        | _ -> return ""
                     with e ->
                         Assert.Exception e
-                        return! None
-                | _ -> return! None
+                        return ""
+                | _ -> return ""
         }
 
     interface IHelpContextService with
@@ -103,17 +108,25 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
         member this.Product = FSharpConstants.FSharpLanguageLongName
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) =
-            asyncMaybe {
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let defines = document.GetFSharpQuickDefines()
+                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
 
                 let classifiedSpans =
-                    Tokenizer.getClassifiedSpans (document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
+                    Tokenizer.getClassifiedSpans (
+                        document.Id,
+                        sourceText,
+                        textLine.Span,
+                        Some document.Name,
+                        defines,
+                        Some langVersion,
+                        cancellationToken
+                    )
 
                 return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)
             }
-            |> Async.map (Option.defaultValue "")
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> CancellableTask.start cancellationToken
 
         member this.FormatSymbol(_symbol) = Unchecked.defaultof<_>

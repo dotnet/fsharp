@@ -44,12 +44,15 @@ let ``append is consistent`` () =
     smallerSizeCheck append<string>
     smallerSizeCheck append<NormalFloat>
 
+let inline roundResult res = res |> Result.map (fun (x:float) -> Math.Round(x,8))
+
 let averageFloat (xs : NormalFloat []) =
     let xs = xs |> Array.map float
-    let s = runAndCheckErrorType (fun () -> xs |> Seq.average)
-    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.average)
-    let a = runAndCheckErrorType (fun () -> xs |> Array.average)    
-    consistency "average" s l a
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.average) |> roundResult
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.average) |> roundResult
+    let a = runAndCheckErrorType (fun () -> xs |> Array.average) |> roundResult
+    let pa = runAndCheckErrorType (fun () -> xs |> Array.Parallel.average) |> roundResult
+    consistencyIncludingParallel "average" s l a pa
 
 [<Fact>]
 let ``average is consistent`` () =
@@ -58,10 +61,11 @@ let ``average is consistent`` () =
 let averageBy (xs : float []) f =
     let xs = xs |> Array.map float
     let f x = (f x : NormalFloat) |> float
-    let s = runAndCheckErrorType (fun () -> xs |> Seq.averageBy f)
-    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.averageBy f)
-    let a = runAndCheckErrorType (fun () -> xs |> Array.averageBy f)
-    consistency "averageBy" s l a
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.averageBy f) |> roundResult
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.averageBy f) |> roundResult
+    let a = runAndCheckErrorType (fun () -> xs |> Array.averageBy f) |> roundResult
+    let pa = runAndCheckErrorType (fun () -> xs |> Array.Parallel.averageBy f) |> roundResult
+    consistencyIncludingParallel "averageBy" s l a pa
 
 
 [<Fact>]
@@ -85,7 +89,9 @@ let choose<'a when 'a : equality> (xs : 'a []) f  =
     let s = xs |> Seq.choose f |> Seq.toArray
     let l = xs |> List.ofArray |> List.choose f |> List.toArray
     let a = xs |> Array.choose f
-    consistency "contains" s l a
+    let pa = xs |> Array.Parallel.choose f
+    
+    consistencyIncludingParallel "contains" s l a pa
 
 [<Fact>]
 let ``choose is consistent`` () =
@@ -116,7 +122,8 @@ let collect<'a> (xs : 'a []) f  =
     let s = xs |> Seq.collect f |> Seq.toArray
     let l = xs |> List.ofArray |> List.collect (fun x -> f x |> List.ofArray) |> List.toArray
     let a = xs |> Array.collect f
-    consistency "collect" s l a
+    let pa = xs |> Array.Parallel.collect f
+    consistencyIncludingParallel "collect" s l a pa
 
 
 
@@ -705,7 +712,8 @@ let max<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.max)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.max)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.max)
-    consistency "max" s l a
+    let pa = runAndCheckIfAnyError (fun () -> xs |> Array.Parallel.max)
+    consistencyIncludingParallel "max" s l a pa
 
 [<Fact>]
 let ``max is consistent`` () =
@@ -717,7 +725,8 @@ let maxBy<'a when 'a : comparison> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.maxBy f)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.maxBy f)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.maxBy f)
-    consistency "maxBy" s l a
+    let pa = runAndCheckIfAnyError (fun () -> xs |> Array.Parallel.maxBy f)
+    consistencyIncludingParallel "maxBy" s l a pa
 
 [<Fact>]
 let ``maxBy is consistent`` () =
@@ -729,7 +738,8 @@ let min<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.min)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.min)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.min)
-    consistency "min" s l a
+    let pa = runAndCheckIfAnyError (fun () -> xs |> Array.Parallel.min)
+    consistencyIncludingParallel "min" s l a pa
 
 [<Fact>]
 let ``min is consistent`` () =
@@ -741,7 +751,8 @@ let minBy<'a when 'a : comparison> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.minBy f)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.minBy f)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.minBy f)
-    consistency "minBy" s l a
+    let pa = runAndCheckIfAnyError (fun () -> xs |> Array.Parallel.minBy f)
+    consistencyIncludingParallel "minBy" s l a pa
 
 [<Fact>]
 let ``minBy is consistent`` () =
@@ -813,8 +824,8 @@ let ``pick is consistent`` () =
 let reduce<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.reduce f)
     let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.reduce f)
-    let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)
-    consistency "reduce" s l a
+    let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)   
+    consistency "reduce" s l a 
 
 [<Fact>]
 let ``reduce is consistent`` () =
@@ -1004,7 +1015,8 @@ let sum (xs : int []) =
     let s = run (fun () -> xs |> Seq.sum)
     let l = run (fun () -> xs |> Array.toList |> List.sum)
     let a = run (fun () -> xs |> Array.sum)
-    consistency "sum" s l a
+    let pa = run (fun () -> xs |> Array.Parallel.sum)
+    consistencyIncludingParallel "sum" s l a pa
 
 [<Fact>]
 let ``sum is consistent`` () =
@@ -1014,7 +1026,8 @@ let sumBy<'a> (xs : 'a []) (f:'a -> int) =
     let s = run (fun () -> xs |> Seq.sumBy f)
     let l = run (fun () -> xs |> Array.toList |> List.sumBy f)
     let a = run (fun () -> xs |> Array.sumBy f)
-    consistency "sumBy" s l a
+    let pa = run (fun () -> xs |> Array.Parallel.sumBy f)
+    consistencyIncludingParallel "sumBy" s l a pa
 
 [<Fact>]
 let ``sumBy is consistent`` () =

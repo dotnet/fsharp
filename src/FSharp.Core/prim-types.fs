@@ -387,7 +387,7 @@ namespace System.Diagnostics.CodeAnalysis
     /// bitwise combination of its member values.
     /// </summary>
     [<Flags; RequireQualifiedAccessAttribute>]
-    type internal DynamicallyAccessedMemberTypes = (*
+    type internal DynamicallyAccessedMemberTypes =
         | None = 0
         | PublicParameterlessConstructor = 0x0001
         | PublicConstructors = 0x0003
@@ -401,7 +401,8 @@ namespace System.Diagnostics.CodeAnalysis
         | PublicProperties = 0x0200
         | NonPublicProperties = 0x0400
         | PublicEvents = 0x0800
-        | NonPublicEvents = 0x1000 *)
+        | NonPublicEvents = 0x1000
+        | Interfaces = 0x2000
         | All = 0xffffffff
 
     [<AttributeUsage(
@@ -415,7 +416,6 @@ namespace System.Diagnostics.CodeAnalysis
 
         member this.DynamicallyAccessedMembersAttribute(memberTypes: DynamicallyAccessedMemberTypes) =
             this.MemberTypes <- memberTypes
-
 
 namespace Microsoft.FSharp.Core
     open System
@@ -1561,7 +1561,7 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
                 GenericEqualityObj true fsEqualityComparerNoHashingER ((box x), (box y))
-                
+
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_withc_inner_vref in opt.fs)
@@ -1621,13 +1621,14 @@ namespace Microsoft.FSharp.Core
                   when 'T : float   = (# "ceq" x y : bool #)
                   when 'T : float32 = (# "ceq" x y : bool #)
                   when 'T : char    = (# "ceq" x y : bool #)
+                  when 'T : voidptr = (# "ceq" x y : bool #)
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
-    
-                  
+
+
             /// A compiler intrinsic generated during optimization of calls to GenericEqualityIntrinsic on tuple values.
             //
             // If no static optimization applies, this becomes GenericEqualityIntrinsic.
@@ -1646,9 +1647,10 @@ namespace Microsoft.FSharp.Core
                   when 'T : uint16  = (# "ceq" x y : bool #)
                   when 'T : uint32  = (# "ceq" x y : bool #)
                   when 'T : uint64  = (# "ceq" x y : bool #)
-                  when 'T : float   = (# "ceq" x y : bool #)        
-                  when 'T : float32 = (# "ceq" x y : bool #)          
+                  when 'T : float   = (# "ceq" x y : bool #)
+                  when 'T : float32 = (# "ceq" x y : bool #)
                   when 'T : char    = (# "ceq" x y : bool #)
+                  when 'T : voidptr = (# "ceq" x y : bool #)
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  

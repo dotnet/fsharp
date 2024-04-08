@@ -20,7 +20,6 @@ let test s b =
   else (stderr.WriteLine ("failure: " + s); 
         reportFailure s)
 
-  
 let format_uint64 outc formatc width left_justify add_zeros num_prefix_if_pos (n:uint64) = 
   let _ = match formatc with 'd' | 'i' | 'u' -> 10UL | 'o' -> 8UL | 'x' | 'X'-> 16UL | _ -> failwith "invalid value" in
   failwith "hello"

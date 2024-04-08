@@ -256,8 +256,21 @@ let morphILMethodDefs f (m: ILMethodDefs) = mkILMethods (List.map f (m.AsList())
 let morphILFieldDefs f (fdefs: ILFieldDefs) =
     mkILFields (List.map f (fdefs.AsList()))
 
-let morphILTypeDefs f (tdefs: ILTypeDefs) =
-    mkILTypeDefsFromArray (Array.map f (tdefs.AsArray()))
+let morphILTypeDefs isInKnownSet f (tdefs: ILTypeDefs) =
+    let filtered (tdefs: ILTypeDef array) =
+        // The key ensures that items in the Known Set are not duplicated everything else may be.
+        let mkKey (i, (td: ILTypeDef)) =
+            if isInKnownSet td.Name then
+                struct (0, td.Name)
+            else
+                struct (i + 1, td.Name)
+
+        tdefs
+        |> Array.indexed
+        |> Array.distinctBy mkKey
+        |> Array.map (fun (_, td) -> td)
+
+    mkILTypeDefsFromArray (Array.map f (filtered (tdefs.AsArray())))
 
 let morphILLocals f locals = List.map (morphILLocal f) locals
 
@@ -349,7 +362,7 @@ let edefs_ty2ty f (edefs: ILEventDefs) =
 let mimpls_ty2ty f (mimpls: ILMethodImplDefs) =
     mkILMethodImpls (mimpls.AsList() |> List.map (mimpl_ty2ty f))
 
-let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs (tdef: ILTypeDef) =
+let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet enc fs (tdef: ILTypeDef) =
     let fTyInCtxt, fMethodDefs = fs
     let fTyInCtxtR = fTyInCtxt (Some(enc, tdef)) None
     let mdefsR = fMethodDefs (enc, tdef) tdef.Methods
@@ -360,7 +373,7 @@ let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs (tdef: ILTypeDef) =
         genericParams = gparams_ty2ty fTyInCtxtR tdef.GenericParams,
         extends = Option.map fTyInCtxtR tdef.Extends,
         methods = mdefsR,
-        nestedTypes = tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs (enc @ [ tdef ]) fs tdef.NestedTypes,
+        nestedTypes = tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet (enc @ [ tdef ]) fs tdef.NestedTypes,
         fields = fdefsR,
         methodImpls = mimpls_ty2ty fTyInCtxtR tdef.MethodImpls,
         events = edefs_ty2ty fTyInCtxtR tdef.Events,
@@ -368,8 +381,8 @@ let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs (tdef: ILTypeDef) =
         customAttrs = cattrs_ty2ty fTyInCtxtR tdef.CustomAttrs
     )
 
-and tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs tdefs =
-    morphILTypeDefs (tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs) tdefs
+and tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet enc fs tdefs =
+    morphILTypeDefs isInKnownSet (tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet enc fs) tdefs
 
 // --------------------------------------------------------------------
 // Derived versions of the above, e.g. with defaults added
@@ -381,12 +394,13 @@ let manifest_ty2ty f (m: ILAssemblyManifest) =
     }
 
 let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs
+    isInKnownSet
     (fTyInCtxt: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType, fMethodDefs)
     modul
     =
 
     let ftdefs =
-        tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs [] (fTyInCtxt modul, fMethodDefs modul)
+        tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet [] (fTyInCtxt modul, fMethodDefs modul)
 
     { modul with
         TypeDefs = ftdefs modul.TypeDefs
@@ -394,7 +408,7 @@ let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs
         Manifest = Option.map (manifest_ty2ty (fTyInCtxt modul None None)) modul.Manifest
     }
 
-let morphILInstrsAndILTypesInILModule fs modul =
+let morphILInstrsAndILTypesInILModule isInKnownSet fs modul =
     let fCode, fTyInCtxt = fs
 
     let fMethBody modCtxt tdefCtxt mdefCtxt =
@@ -403,20 +417,20 @@ let morphILInstrsAndILTypesInILModule fs modul =
     let fMethodDefs modCtxt tdefCtxt =
         mdefs_ty2ty_ilmbody2ilmbody (fTyInCtxt modCtxt (Some tdefCtxt), fMethBody modCtxt tdefCtxt)
 
-    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs (fTyInCtxt, fMethodDefs) modul
+    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs isInKnownSet (fTyInCtxt, fMethodDefs) modul
 
 let morphILInstrsInILCode f ilcode = code_instr2instrs f ilcode
 
-let morphILTypeInILModule fTyInCtxt modul =
+let morphILTypeInILModule isInKnownSet fTyInCtxt modul =
     let finstr modCtxt tdefCtxt mdefCtxt =
         let fTy = fTyInCtxt modCtxt (Some tdefCtxt) mdefCtxt
         morphILTypesInILInstr ((fun _instrCtxt -> fTy), (fun _instrCtxt _formalCtxt -> fTy))
 
-    morphILInstrsAndILTypesInILModule (finstr, fTyInCtxt) modul
+    morphILInstrsAndILTypesInILModule isInKnownSet (finstr, fTyInCtxt) modul
 
-let morphILTypeRefsInILModuleMemoized f modul =
+let morphILTypeRefsInILModuleMemoized isInKnownSet f modul =
     let fTy = Tables.memoize (morphILTypeRefsInILType f)
-    morphILTypeInILModule (fun _ _ _ ty -> fTy ty) modul
+    morphILTypeInILModule isInKnownSet (fun _ _ _ ty -> fTy ty) modul
 
-let morphILScopeRefsInILModuleMemoized f modul =
-    morphILTypeRefsInILModuleMemoized (morphILScopeRefsInILTypeRef f) modul
+let morphILScopeRefsInILModuleMemoized isInKnownSet f modul =
+    morphILTypeRefsInILModuleMemoized isInKnownSet (morphILScopeRefsInILTypeRef f) modul

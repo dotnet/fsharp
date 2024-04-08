@@ -27,7 +27,8 @@ ImplFile
                                (Id
                                   (age, None, false, false, false, (3,27--3,30)),
                                 LongIdent (SynLongIdent ([int], [], [None])),
-                                (3,27--3,36))], (3,11--3,37)), None,
+                                (3,27--3,36))], [(3,25--3,26)], (3,11--3,37)),
+                         None,
                          PreXmlDoc ((3,11), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,11), { AsKeyword = None });
                       AutoProperty
@@ -65,7 +66,8 @@ ImplFile
                             Typed
                               (Id (age, None, false, false, false, (3,27--3,30)),
                                LongIdent (SynLongIdent ([int], [], [None])),
-                               (3,27--3,36))], (3,11--3,37)), None,
+                               (3,27--3,36))], [(3,25--3,26)], (3,11--3,37)),
+                        None,
                         PreXmlDoc ((3,11), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,11), { AsKeyword = None })), (2,0--5,26),
                   { LeadingKeyword = Type (3,0--3,4)

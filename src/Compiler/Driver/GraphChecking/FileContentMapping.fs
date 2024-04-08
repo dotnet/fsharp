@@ -260,6 +260,7 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.Or (lhsType, rhsType, _, _) ->
             let continuations = List.map visit [ lhsType; rhsType ]
             Continuation.concatenate continuations continuation
+        | SynType.FromParseError _ -> continuation []
 
     visit t id
 
@@ -538,7 +539,7 @@ let visitPat (p: SynPat) : FileContentEntry list =
                     yield! collectFromOption visitSynValTyparDecls typarDecls
                     yield! visitSynArgPats argPats
                 ]
-        | SynPat.Tuple (_, elementPats, _) ->
+        | SynPat.Tuple (elementPats = elementPats) ->
             let continuations = List.map visit elementPats
             Continuation.concatenate continuations continuation
         | SynPat.ArrayOrList (_, elementPats, _) ->
@@ -587,7 +588,6 @@ let visitSynSimplePat (pat: SynSimplePat) =
 let visitSynSimplePats (pats: SynSimplePats) =
     match pats with
     | SynSimplePats.SimplePats (pats = pats) -> List.collect visitSynSimplePat pats
-    | SynSimplePats.Typed (pats, t, _) -> [ yield! visitSynSimplePats pats; yield! visitSynType t ]
 
 let visitSynMatchClause (SynMatchClause (pat = pat; whenExpr = whenExpr; resultExpr = resultExpr)) =
     [

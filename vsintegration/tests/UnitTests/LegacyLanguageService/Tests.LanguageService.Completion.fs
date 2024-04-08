@@ -4444,7 +4444,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let file3 = OpenFile(project,"File3.fs")
         TakeCoffeeBreak(this.VS)
 
-        gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
+        gpatcc.AssertExactly(notAA[file2], notAA[file2;file3])
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]

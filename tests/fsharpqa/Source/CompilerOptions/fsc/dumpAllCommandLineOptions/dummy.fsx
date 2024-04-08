@@ -30,7 +30,7 @@
 //<Expects status="success">section='- ADVANCED -             ' ! option=utf8output                     kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=fullpaths                      kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=lib                            kind=OptionStringList</Expects>
-//<Expects status="success">section='- ADVANCED -             ' ! option=noframework                    kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=noframework                    kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=typedtree                      kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=typedtreefile                  kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=typedtreestamps                kind=OptionUnit</Expects>
@@ -123,6 +123,7 @@
 //<Expects status="notin">section='- ADVANCED -             ' ! option=standalone                     kind=OptionUnit</Expects>
 //<Expects status="notin">section='- ADVANCED -             ' ! option=staticlink                     kind=OptionString</Expects>
 //<Expects status="notin">section='- ADVANCED -             ' ! option=pdb                            kind=OptionString</Expects>
+//<Expects status="notin">section='- ADVANCED -             ' ! option=noframework                    kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=generatehtml                   kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=htmloutputdir                  kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=htmlcss                        kind=OptionString</Expects>

@@ -8,31 +8,28 @@ open System.Threading.Tasks
 open System.ComponentModel.Composition
 
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Shell
 
 [<AllowNullLiteral>]
-type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition, statusBar: StatusBar) =
+type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition) =
     interface INavigableSymbol with
         member _.Navigate(_: INavigableRelationship) =
-            gtd.NavigateToItem(item, statusBar, CancellationToken.None)
+            gtd.NavigateToItem(item, CancellationToken.None)
 
         member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
 
         member _.SymbolSpan = span
 
-type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: IServiceProvider) =
+type internal FSharpNavigableSymbolSource(metadataAsSource) =
 
     let mutable disposed = false
     let gtd = GoToDefinition(metadataAsSource)
-    let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>())
+    let statusBar = StatusBar()
 
     interface INavigableSymbolSource with
         member _.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
@@ -67,7 +64,7 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
 
                             match result with
                             | FSharpGoToDefinitionResult.NavigableItem (navItem) ->
-                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
+                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd) :> INavigableSymbol
 
                             | FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences) ->
                                 let nav =
@@ -105,12 +102,8 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
 [<Name("F# Navigable Symbol Service")>]
 [<ContentType(Constants.FSharpContentType)>]
 [<Order>]
-type internal FSharpNavigableSymbolService [<ImportingConstructor>]
-    (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        metadataAsSource: FSharpMetadataAsSourceService
-    ) =
+type internal FSharpNavigableSymbolService [<ImportingConstructor>] (metadataAsSource: FSharpMetadataAsSourceService) =
 
     interface INavigableSymbolSourceProvider with
         member _.TryCreateNavigableSymbolSource(_: ITextView, _: ITextBuffer) =
-            new FSharpNavigableSymbolSource(metadataAsSource, serviceProvider) :> INavigableSymbolSource
+            new FSharpNavigableSymbolSource(metadataAsSource)

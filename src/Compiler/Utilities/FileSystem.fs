@@ -886,6 +886,8 @@ type internal ByteStream =
         max: int
     }
 
+    member b.IsEOF = (b.pos >= b.max)
+
     member b.ReadByte() =
         if b.pos >= b.max then
             failwith "end of stream"

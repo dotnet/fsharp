@@ -978,7 +978,7 @@ module Test =
         | UCase1
         | UCase2 with
 
-    static member M() = ()
+        static member M() = ()
 
 open type Test.TestUnion
 
@@ -1004,7 +1004,7 @@ module Test =
         | UCase1 of 'T
         | UCase2 with
 
-    static member M() = ()
+        static member M() = ()
 
 open type Test.TestUnion<int>
 

@@ -11,7 +11,7 @@ ImplFile
                     (LongIdent
                        (SynLongIdent ([OnePartData], [], [None]), None, None,
                         NamePatPairs
-                          ([(part1, (4,10--4,11),
+                          ([(part1, Some (4,10--4,11),
                              Named
                                (SynIdent (p1, None), false, None, (4,12--4,14)))],
                            (4,4--5,13), { ParenRange = (3,13--5,13) }), None,

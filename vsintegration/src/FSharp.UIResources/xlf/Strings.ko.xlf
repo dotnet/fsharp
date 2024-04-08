@@ -2,9 +2,24 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="translated">추가 성능 원격 분석(실험적)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">항상 최상위에 open 문 배치</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Capture_Identifiers_When_Parsing">
+        <source>Capture identifiers while parsing</source>
+        <target state="translated">구문 분석하는 동안 식별자 캡처</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
+        <source>Keep background symbol keys</source>
+        <target state="translated">배경 기호 키 유지</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -52,14 +67,19 @@
         <target state="translated">진단</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="translated">서명 파일로 병렬 유형 검사 사용</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
         <target state="translated">병렬 참조 해상도 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Resolutions">
+        <source>Keep all background intermediate resolutions (increases memory usage)</source>
+        <target state="translated">모든 백그라운드 중간 해상도 유지(메모리 사용량 증가)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Symbol_Uses">
+        <source>Keep all background symbol uses (increases memory usage)</source>
+        <target state="translated">모든 배경 기호 사용 유지(메모리 사용량 증가)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -75,6 +95,11 @@
       <trans-unit id="Dot_underline">
         <source>D_ot underline</source>
         <target state="translated">점 밑줄(_O)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Language_Service_Settings">
+        <source>Language service settings (advanced)</source>
+        <target state="translated">언어 서비스 설정(고급)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
@@ -97,6 +122,11 @@
         <target state="translated">기본 설정 설명 너비(문자)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="translated">추가 성능 원격 분석 보내기</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
         <target state="translated">인라인 매개 변수 이름 힌트 표시(미리 보기)</target>
@@ -109,12 +139,7 @@
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
         <source>Display return type hints (preview)</source>
-        <target state="new">Display return type hints (preview)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Show_Return_Type_Hints">
-        <source>Display return type hints (preview)</source>
-        <target state="new">Display return type hints (preview)</target>
+        <target state="translated">반환 형식 힌트 표시(미리 보기)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -130,11 +155,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">문자를 입력하면 완성 목록 표시(_S)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">메모리 내 크로스 프로젝트 참조 사용(_E)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -210,11 +230,6 @@
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
         <target state="translated">IntelliSense 기능에 대해 부실 데이터 사용</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">메모리 내 크로스 프로젝트 참조가 메모리에 프로젝트 수준 데이터를 저장하여 IDE 기능이 프로젝트에서 작동하도록 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

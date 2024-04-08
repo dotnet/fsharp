@@ -148,7 +148,7 @@ let internal TrySetUnhandledExceptionMode () =
 
 #endif
 
-/// Starts the remoting server to handle interrupt reuests from a host tool.
+/// Starts the remoting server to handle interrupt requests from a host tool.
 let StartServer (fsiSession: FsiEvaluationSession) (fsiServerName) =
     let server =
 
@@ -344,11 +344,7 @@ let evaluateSession (argv: string[]) =
         // Start the session
         fsiSession.Run()
         0
-    with
-    | FSharp.Compiler.DiagnosticsLogger.StopProcessingExn _ -> 1
-    | FSharp.Compiler.DiagnosticsLogger.ReportedError _ -> 1
-    | e ->
-        eprintf "Exception by fsi.exe:\n%+A\n" e
+    with e ->
         1
 
 // Mark the main thread as STAThread since it is a GUI thread

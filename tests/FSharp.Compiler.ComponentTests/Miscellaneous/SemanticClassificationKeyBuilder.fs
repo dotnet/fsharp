@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.ComponentTests.Miscellaneous.SemanticClassificationKeyStoreBuilder
+module Miscellaneous.SemanticClassificationKeyStoreBuilder
 
 open Xunit
 open FSharp.Compiler.EditorServices
