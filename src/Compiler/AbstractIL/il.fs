@@ -513,7 +513,8 @@ type ILAssemblyRef(data) =
 
         let retargetable = aname.Flags = AssemblyNameFlags.Retargetable
 
-        ILAssemblyRef.Create(aname.Name, None, publicKey, retargetable, version, locale)
+        let name = match aname.Name with | null -> aname.FullName | name -> name
+        ILAssemblyRef.Create(name, None, publicKey, retargetable, version, locale)
 
     member aref.QualifiedName =
         let b = StringBuilder(100)
@@ -873,7 +874,7 @@ and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugT
         && (x.GenericArgs = y.GenericArgs)
 
     override x.ToString() =
-        x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
+        x.TypeRef.FullName + if isNil x.GenericArgs then "" else "<...>"
 
 and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>] ILType =
     | Void
