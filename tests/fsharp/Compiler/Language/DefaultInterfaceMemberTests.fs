@@ -938,7 +938,7 @@ type Test2 () =
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpDiagnosticSeverity.Error, 3350, (10, 15, 10, 22), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 358, (10, 15, 10, 22), "The override for 'M<'U> : 'U * int -> unit' was ambiguous")
+            (FSharpDiagnosticSeverity.Error, 358, (14, 19, 14, 20), "The override for 'M<'U> : 'U * int -> unit' was ambiguous")
         |])
 
 #else
