@@ -1,0 +1,7 @@
+﻿let f1 (seq: int seq) = [for x in seq -> x]
+let f2 f (seq: int seq) = [for x in seq -> f x]
+let f3 f (seq: int seq) = [for x in seq -> f (); x]
+let f4 f g (seq: int seq) = [for x in seq -> f (); g(); x]
+let f5 (seq: int seq) = [for x in seq do yield x]
+let f6 f (seq: int seq) = [for x in seq do f (); yield x]
+let f7 f g (seq: int seq) = [for x in seq do f (); g (); yield x]
