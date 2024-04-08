@@ -1,5 +1,13 @@
 <Project>
-  <PropertyGroup>
-    <PublishingVersion>3</PublishingVersion>
-  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Additional packages needed to avoid prebuilts in VMR - https://github.com/dotnet/source-build/issues/4203
+    -->
+    <ItemsToPushToBlobFeed Include="$(ArtifactsPackagesDir)Dependency\**\*.nupkg"
+                           IsShipping="true"
+                           UploadPathSegment="Runtime"
+                           Condition="'$(DotNetBuildSourceOnly)' == 'true'" />
+  </ItemGroup>
+
 </Project>

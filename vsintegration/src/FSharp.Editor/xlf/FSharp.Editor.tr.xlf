@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">Dönüş türü ek açıklaması ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -44,16 +44,17 @@ Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">Blok Yapısı Kılavuzları;
+        <target state="translated">Blok Yapısı Kılavuzları;
 F# kodu için yapı yönergelerini göster;
-Anahat oluşturma;
+Ana hat oluşturma;
 F# kodu için ana hattı ve daraltılabilir düğümleri göster;
 Satır içi ipuçları;
 Satır içi tür ipuçlarını görüntüle (önizleme);
 Dönüş türü ipuçlarını görüntüle (önizleme);
 Satır içi parametre adı ipuçlarını görüntüle (önizleme);
+Saydam Derleyiciyi kullan (deneysel);
 Canlı Arabellekler;
-Denetim için canlı (kaydedilmemiş) arabellekler kullan</target>
+Analiz için canlı (kaydedilmemiş) arabellekleri kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -231,7 +232,7 @@ Açıklamaları Hızlı Bilgide göster</target>
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">Gereksiz parantezleri kaldır</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -256,7 +257,7 @@ Açıklamaları Hızlı Bilgide göster</target>
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">Şunu döndürür:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
