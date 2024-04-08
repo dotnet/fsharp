@@ -607,6 +607,36 @@ module Test =
         ]
 
     [<FactForNETCOREAPP>]
+    let ``F# can call overwritten static virtual member from interface``() =
+        let CSharpLib =
+            CSharp """
+namespace Test;
+
+public interface I
+{
+    static virtual string Echo(string x) => x;
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+            |> withName "CsLibAssembly"
+
+        FSharp """
+type Imp() =
+    interface Test.I with
+        static member Echo (x: string) = x + "_imp"
+
+let echo<'T when 'T :> Test.I> x = 'T.Echo(x)
+
+if echo<Imp> "a" <> "a_imp" then
+    failwith "incorrect value"
+"""
+        |> withReferences [CSharpLib]
+        |> withLangVersion80
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
     let ``C# can call constrained method defined in F#`` () =
         let FSharpLib =
             FSharp """
