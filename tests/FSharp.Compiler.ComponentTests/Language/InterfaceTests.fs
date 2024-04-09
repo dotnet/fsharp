@@ -92,7 +92,7 @@ type Imp () =
     interface I with
         member _.Blah = 3
 
-let o = {{ new I with member _.Blah = 4 }}
+let o = { new I with member _.Blah = 4 }
 
 if I.Echo "yup" <> "yup" || (Imp() :> I).Blah <> 3 || o.Blah <> 4 then
     failwith "failed"
