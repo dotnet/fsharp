@@ -1016,8 +1016,9 @@ type ILMethodRef =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() =
-        x.DeclaringTypeRef.ToString() + "::" + x.Name + "(...)"
+    member x.FullName = x.DeclaringTypeRef.FullName + "::" + x.Name + "(...)"
+
+    override x.ToString() = x.FullName
 
 [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILFieldRef =
@@ -1032,7 +1033,7 @@ type ILFieldRef =
     member x.DebugText = x.ToString()
 
     override x.ToString() =
-        x.DeclaringTypeRef.ToString() + "::" + x.Name
+        x.DeclaringTypeRef.FullName + "::" + x.Name
 
 [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILMethodSpec =
@@ -1071,7 +1072,7 @@ type ILMethodSpec =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = x.MethodRef.ToString() + "(...)"
+    override x.ToString() = x.MethodRef.FullName + "(...)"
 
 [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILFieldSpec =
@@ -1212,7 +1213,7 @@ type ILAttribute =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = x.Method.ToString() + "(...)"
+    override x.ToString() = x.Method.MethodRef.FullName
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes(array: ILAttribute[]) =

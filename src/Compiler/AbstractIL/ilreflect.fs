@@ -270,10 +270,9 @@ type TypeBuilder with
             else
                 null
 
-        if not (isNull m) then
-            m.Invoke(null, args)
-        else
-            raise (MissingMethodException nm)
+        match m with
+        | null -> raise (MissingMethodException nm)
+        | m -> m.Invoke(null, args)
 
     member typB.SetCustomAttributeAndLog(cinfo, bytes) =
         if logRefEmitCalls then
@@ -284,9 +283,12 @@ type TypeBuilder with
 type OpCode with
 
     member opcode.RefEmitName =
-        (string (Char.ToUpper(opcode.Name[0])) + opcode.Name[1..])
-            .Replace(".", "_")
-            .Replace("_i4", "_I4")
+        match opcode.Name with
+        | null -> ""
+        | name ->
+            (string (Char.ToUpper(name[0])) + name[1..])
+                .Replace(".", "_")
+                .Replace("_i4", "_I4")
 
 type ILGenerator with
 
@@ -396,7 +398,7 @@ type ILGenerator with
 
     member x.EmitAndLog(op: OpCode, v: ConstructorInfo) =
         if logRefEmitCalls then
-            printfn "ilg%d.Emit(OpCodes.%s, constructor_%s)" (abs <| hash x) op.RefEmitName v.DeclaringType.Name
+            printfn "ilg%d.Emit(OpCodes.%s, constructor_%s)" (abs <| hash x) op.RefEmitName (!!v.DeclaringType).Name
 
         x.Emit(op, v)
 
@@ -693,7 +695,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
     let typT = convTypeRef cenv emEnv preferCreated tspec.TypeRef
     let tyargs = List.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
 
-    let res =
+    let res : Type MaybeNull =
         match isNil tyargs, typT.IsGenericType with
         | _, true -> typT.MakeGenericType(List.toArray tyargs)
         | true, false -> typT
@@ -706,7 +708,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
 
 and convTypeAux cenv emEnv preferCreated ty =
     match ty with
-    | ILType.Void -> Type.GetType("System.Void")
+    | ILType.Void -> !!Type.GetType("System.Void")
     | ILType.Array(shape, eltType) ->
         let baseT = convTypeAux cenv emEnv preferCreated eltType
         let nDims = shape.Rank
@@ -857,8 +859,8 @@ let nonQueryableTypeGetField (parentTI: Type) (fieldInfo: FieldInfo) : FieldInfo
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
                     "field",
                     fieldInfo.Name,
-                    parentTI.AssemblyQualifiedName,
-                    parentTI.Assembly.FullName
+                    parentTI.AssemblyQualifiedName |> string,
+                    parentTI.Assembly.FullName |> string
                 ),
                 range0
             )
