@@ -1112,11 +1112,6 @@
         <target state="translated">(建議的名稱)</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcActivePatternArgumentCountNotMatch">
-        <source>This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</source>
-        <target state="new">This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="translated">此處的 _ 意義不明確。它不能在同一個範圍中既作為已捨棄的變數又作為函式速記。</target>
@@ -1340,6 +1335,11 @@
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">使用具有 'NoEagerConstraintApplicationAttribute' 的方法需要 /langversion:6.0 或更新版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoParameterActivePatternArgumentCountNotMatch">
+        <source>This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</source>
+        <target state="new">This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">

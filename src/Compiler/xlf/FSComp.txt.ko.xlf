@@ -1112,11 +1112,6 @@
         <target state="translated">(제안된 이름)</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcActivePatternArgumentCountNotMatch">
-        <source>This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</source>
-        <target state="new">This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="translated">여기서 _의 의미가 모호합니다. 삭제된 변수와 동일한 범위의 함수 줄임에는 사용할 수 없습니다.</target>
@@ -1340,6 +1335,11 @@
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">'NoEagerConstraintApplicationAttribute'와 함께 메서드를 사용하려면 /langversion:6.0 이상이 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoParameterActivePatternArgumentCountNotMatch">
+        <source>This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</source>
+        <target state="new">This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
