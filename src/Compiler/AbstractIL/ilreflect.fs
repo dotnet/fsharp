@@ -846,26 +846,10 @@ let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
     | NonNull res -> res
 
 let nonQueryableTypeGetField (parentTI: Type) (fieldInfo: FieldInfo) : FieldInfo =
-    let res =
-        if parentTI.IsGenericType then
-            TypeBuilder.GetField(parentTI, fieldInfo)
-        else
-            fieldInfo
-
-    match res with
-    | Null ->
-        error (
-            Error(
-                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "field",
-                    fieldInfo.Name,
-                    parentTI.AssemblyQualifiedName |> string,
-                    parentTI.Assembly.FullName |> string
-                ),
-                range0
-            )
-        )
-    | NonNull res -> res
+    if parentTI.IsGenericType then
+        TypeBuilder.GetField(parentTI, fieldInfo)
+    else
+        fieldInfo
 
 let convFieldSpec cenv emEnv fspec =
     let fref = fspec.FieldRef
@@ -1019,10 +1003,11 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
             with _ ->
                 null
 
-        if (isNotNull methInfo && equalTypes resT methInfo.ReturnType) then
-            methInfo
-        else
-            queryableTypeGetMethodBySearch cenv emEnv parentT mref
+        match methInfo with
+        | null -> queryableTypeGetMethodBySearch cenv emEnv parentT mref
+        | m when equalTypes resT m.ReturnType -> m
+        | _ -> queryableTypeGetMethodBySearch cenv emEnv parentT mref
+
     else
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
@@ -1058,7 +1043,7 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
     | Null ->
         error (
             Error(
-                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName),
+                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName |> string, parentTI.Assembly.FullName |> string),
                 range0
             )
         )
@@ -1099,7 +1084,7 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
     | Null ->
         error (
             Error(
-                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName),
+                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName |> string, parentT.Assembly.FullName |> string),
                 range0
             )
         )
@@ -1134,7 +1119,7 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
     | Null ->
         error (
             Error(
-                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName),
+                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName |> string, parentTI.Assembly.FullName |> string),
                 range0
             )
         )
@@ -1826,7 +1811,7 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
         let methB =
             System.Diagnostics.Debug.Assert(not (isNull definePInvokeMethod), "Runtime does not have DefinePInvokeMethod") // Absolutely can't happen
 
-            definePInvokeMethod.Invoke(
+            (!!definePInvokeMethod).Invoke(
                 typB,
                 [|
                     mdef.Name
