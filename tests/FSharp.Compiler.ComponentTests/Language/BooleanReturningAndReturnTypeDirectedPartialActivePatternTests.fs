@@ -96,6 +96,7 @@ match "A" with
     |> withDiagnostics [
         (Error 3867, Line 5, Col 3, Line 5, Col 13, "This active pattern returns 0 value(s), but the usage here matches 1 return value(s).")
         (Error 3867, Line 9, Col 3, Line 9, Col 13, "This active pattern returns 0 value(s), but the usage here matches 1 return value(s).")
-        (Error 0039, Line 9, Col 17, Line 9, Col 23, "The value or constructor 'result' is not defined. Maybe you want one of the following:    Result")
+        (Error 0039, Line 9, Col 17, Line 9, Col 23, "The value or constructor 'result' is not defined. Maybe you want one of the following:
+   Result")
         (Error 3867, Line 13, Col 3, Line 13, Col 30, "This active pattern returns 0 value(s), but the usage here matches 1 return value(s).")
     ]
