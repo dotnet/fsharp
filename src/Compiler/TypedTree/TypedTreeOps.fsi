@@ -2045,6 +2045,8 @@ val mkCallArrayLength: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallArrayGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
+val mkCallArrayMap: g: TcGlobals -> m: range -> ty1: TType -> ty2: TType -> e1: Expr -> e2: Expr -> Expr
+
 val mkCallArray2DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray3DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
@@ -2058,6 +2060,8 @@ val mkCallArray2DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Exp
 val mkCallArray3DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray4DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+
+val mkCallListMap: g: TcGlobals -> m: range -> ty1: TType -> ty2: TType -> e1: Expr -> e2: Expr -> Expr
 
 val mkCallHash: TcGlobals -> range -> TType -> Expr -> Expr
 
