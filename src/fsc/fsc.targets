@@ -8,9 +8,6 @@
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <NGenBinary>true</NGenBinary>
-    <UseAppHost>true</UseAppHost>
-    <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
 
   <!--  The fsc application does not provide a referencable public interface  -->
