@@ -2194,6 +2194,93 @@ let _ = (2 + 2) { return 5 }
             [<Theory; MemberData(nameof infixOperatorsWithLeadingAndTrailingChars)>]
             let ``Infix operators with leading and trailing chars`` expr expected = expectFix expr expected
 
+    let failing =
+        memberData {
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            (x) < (printfn $"{y}"
+                   y)
+            """,
+            """
+            (x) < (printfn $"{y}"
+                   y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            id (x) < (printfn $"{y}"
+                      y)
+            """,
+            """
+            id (x) < (printfn $"{y}"
+                      y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            id (id (id (x))) < (printfn $"{y}"
+                                y)
+            """,
+            """
+            id (id (id (x))) < (printfn $"{y}"
+                                y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            (x) <> z && x < (printfn $"{y}"
+                             y)
+            """,
+            """
+            (x) <> z && x < (printfn $"{y}"
+                             y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            (x) < match y with
+                  | Some y -> let y = y
+                              y
+                  | y)
+            """,
+            """
+            (x) < match y with
+                  | Some y -> let y = y
+                              y
+                  | y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            printfn "1"; printfn ("2"); (id <| match y with Some y -> let y = y
+                                                                      y
+                                                          | None -> 3)
+            """,
+            """
+            printfn "1"; printfn ("2"); (id <| match y with Some y -> let y = y
+                                                                      y
+                                                          | None -> 3)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            printfn ("1"
+                        ); printfn "2"; (id <| match y with Some y -> let y = y
+                                                                      y
+                                                          | None -> 3)
+            """,
+            """
+            printfn ("1"
+                        ); printfn "2"; (id <| match y with Some y -> let y = y
+                                                                      y
+                                                          | None -> 3)
+            """
+        }
+
+    [<Theory; MemberData(nameof failing)>]
+    let ``Failing tests`` expr expected =
+        Assert.ThrowsAsync<UnexpectedCodeFixException>(fun () -> expectFix expr expected)
+
 module Patterns =
     type SynPat =
         | Const of string
@@ -2878,6 +2965,113 @@ module Patterns =
             match 1, [2] with
             | _, (1 as x :: _ :: _) -> ()
             | _ -> ()
+            "
+
+            "
+            match maybe with
+            | Some(x) -> let y = x * 2
+                         let z = 99
+                         x + y + z
+            | None -> 3
+            ",
+            "
+            match maybe with
+            | Some(x) -> let y = x * 2
+                         let z = 99
+                         x + y + z
+            | None -> 3
+            "
+
+            "
+            match maybe with
+            | Some(x) -> id <| (let y = x * 2
+                                let z = 99
+                                x + y + z)
+            | None -> 3
+            ",
+            "
+            match maybe with
+            | Some(x) -> id <| (let y = x * 2
+                                let z = 99
+                                x + y + z)
+            | None -> 3
+            "
+
+            "
+            match maybe with
+            | Some(
+                    x
+                  ) -> let y = x * 2
+                       let z = 99
+                       x + y + z
+            | None -> 3
+            ",
+            "
+            match maybe with
+            | Some(
+                    x
+                  ) -> let y = x * 2
+                       let z = 99
+                       x + y + z
+            | None -> 3
+            "
+
+            "
+            match q with
+            | { A = Some(
+                         x
+                        ) } -> let y = x * 2
+                               let z = 99
+                               x + y + z
+            | { A = None } -> 3
+            ",
+            "
+            match q with
+            | { A = Some(
+                         x
+                        ) } -> let y = x * 2
+                               let z = 99
+                               x + y + z
+            | { A = None } -> 3
+            "
+
+            // This removal is somewhat ugly, albeit valid.
+            // Maybe we can make it nicer someday.
+            "
+            match q with
+            | { A = Some (
+                           x
+                         )
+              } -> let y = x * 2
+                   let z = 99
+                   x + y + z
+            | { A = None } -> 3
+            ",
+            "
+            match q with
+            | { A = Some 
+                           x
+              } -> let y = x * 2
+                   let z = 99
+                   x + y + z
+            | { A = None } -> 3
+            "
+
+            "
+            match q with
+            | { A = Some (x)
+              } -> let y = x * 2
+                   let z = 99
+                   x + y + z
+            | { A = None } -> 3
+            ",
+            "
+            match q with
+            | { A = Some x
+              } -> let y = x * 2
+                   let z = 99
+                   x + y + z
+            | { A = None } -> 3
             "
 
             "
