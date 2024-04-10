@@ -1083,6 +1083,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     /// <summary>
     /// Try translate the syntax sugar
     /// </summary>
+    /// <param name="isTailcallPosition"></param>
     /// <param name="firstTry"></param>
     /// <param name="q">a flag indicating if custom operators are allowed. They are not allowed inside try/with, try/finally, if/then/else etc.</param>
     /// <param name="varSpace">a lazy data structure indicating the variables bound so far in the overall computation</param>
@@ -1090,6 +1091,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     /// <param name="translatedCtxt">represents the translation of the context in which the computation expression 'comp' occurs,
     /// up to a hole to be filled by (part of) the results of translating 'comp'.</param>
     let rec tryTrans
+        (isTailcallPosition: bool)
         (firstTry: CompExprTranslationPass)
         (q: CustomOperationsMode)
         (varSpace: LazyWithContext<(Val list * TcEnv), range>)
@@ -1334,7 +1336,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                             mOpCore
                         )
 
-                    Some(trans CompExprTranslationPass.Initial q varSpaceInner consumingExpr translatedCtxt)
+                    Some(trans false CompExprTranslationPass.Initial q varSpaceInner consumingExpr translatedCtxt)
 
             | SynExpr.ForEach(spFor, spIn, SeqExprOnly _seqExprOnly, isFromSource, pat, sourceExpr, innerComp, _mEntireForEach) ->
                 let sourceExpr =
@@ -1377,7 +1379,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         vspecs, envinner)
 
                 Some(
-                    trans CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
+                    trans false CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
 
                         let forCall =
                             mkSynCall
@@ -1424,7 +1426,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let reduced =
                     elimFastIntegerForLoop (spFor, spTo, id, start, dir, finish, innerComp, m)
 
-                Some(trans CompExprTranslationPass.Initial q varSpace reduced translatedCtxt)
+                Some(trans false CompExprTranslationPass.Initial q varSpace reduced translatedCtxt)
 
             | SynExpr.While(spWhile, guardExpr, innerComp, _) ->
                 let mGuard = guardExpr.Range
@@ -1458,7 +1460,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     | DebugPointAtWhile.No -> guardExpr
 
                 Some(
-                    trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
+                    trans false CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
                         translatedCtxt (
                             mkSynCall
                                 "While"
@@ -1547,7 +1549,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         SynExprLetOrUseBangTrivia.Zero
                     )
 
-                tryTrans CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
+                tryTrans isTailcallPosition CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
 
             | SynExpr.TryFinally(innerComp, unwindExpr, _mTryToLast, spTry, spFinally, trivia) ->
 
@@ -1582,7 +1584,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 then
                     error (Error(FSComp.SR.tcRequireBuilderMethod ("Delay"), mTry))
 
-                let innerExpr = transNoQueryOps innerComp
+                let innerExpr = transNoQueryOps false innerComp
 
                 let innerExpr =
                     match spTry with
@@ -1625,7 +1627,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let varSpacePat = mkPatForVarSpace mClause patvs
 
                 let dataCompPrior =
-                    translatedCtxt (transNoQueryOps (SynExpr.YieldOrReturn((true, false), varSpaceExpr, mClause)))
+                    translatedCtxt (transNoQueryOps false (SynExpr.YieldOrReturn((true, false), varSpaceExpr, mClause)))
 
                 // Rebind using for ...
                 let rebind =
@@ -1641,7 +1643,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     )
 
                 // Retry with the 'for' loop packaging. Set firstTry=false just in case 'join' processing fails
-                tryTrans CompExprTranslationPass.Subsequent q varSpace rebind id
+                tryTrans false CompExprTranslationPass.Subsequent q varSpace rebind id
 
             | OptionalSequential(CustomOperationClause(nm, _, opExpr, mClause, _), _) ->
 
@@ -1653,7 +1655,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                 let dataCompPriorToOp =
                     let isYield = not (customOperationMaintainsVarSpaceUsingBind nm)
-                    translatedCtxt (transNoQueryOps (SynExpr.YieldOrReturn((isYield, false), varSpaceExpr, mClause)))
+                    translatedCtxt (transNoQueryOps false (SynExpr.YieldOrReturn((isYield, false), varSpaceExpr, mClause)))
 
                 // Now run the consumeCustomOpClauses
                 Some(consumeCustomOpClauses q varSpace dataCompPriorToOp comp false mClause)
@@ -1662,7 +1664,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                 // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore innerComp1
                 if isQuery && checkForBinaryApp innerComp1 then
-                    Some(trans CompExprTranslationPass.Initial q varSpace innerComp2 translatedCtxt)
+                    Some(trans false CompExprTranslationPass.Initial q varSpace innerComp2 translatedCtxt)
 
                 else
 
@@ -1671,7 +1673,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
                         | _ -> errorR (Error(FSComp.SR.tcUnrecognizedQueryOperator (), innerComp1.RangeOfFirstPortion))
 
-                    match tryTrans CompExprTranslationPass.Initial CustomOperationsMode.Denied varSpace innerComp1 id with
+                    match tryTrans false CompExprTranslationPass.Initial CustomOperationsMode.Denied varSpace innerComp1 id with
                     | Some c ->
                         // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
                         let m1 = rangeForCombine innerComp1
@@ -1703,7 +1705,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                                 m1
                                 [
                                     c
-                                    mkSynCall "Delay" m1 [ mkSynDelay innerComp2.Range (transNoQueryOps innerComp2) ]
+                                    mkSynCall "Delay" m1 [ mkSynDelay innerComp2.Range (transNoQueryOps isTailcallPosition innerComp2) ]
                                 ]
 
                         Some(translatedCtxt combineCall)
@@ -1720,7 +1722,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                                 | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes m
 
                             Some(
-                                trans
+                                trans isTailcallPosition
                                     CompExprTranslationPass.Initial
                                     q
                                     varSpace
@@ -1741,7 +1743,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         // "expr; cexpr" is treated as sequential execution
                         | _ ->
                             Some(
-                                trans CompExprTranslationPass.Initial q varSpace innerComp2 (fun holeFill ->
+                                trans isTailcallPosition CompExprTranslationPass.Initial q varSpace innerComp2 (fun holeFill ->
                                     let fillExpr =
                                         if enableImplicitYield then
                                             // When implicit yields are enabled, then if the 'innerComp1' checks as type
@@ -1776,8 +1778,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         translatedCtxt (
                             SynExpr.IfThenElse(
                                 guardExpr,
-                                transNoQueryOps thenComp,
-                                Some(transNoQueryOps elseComp),
+                                transNoQueryOps isTailcallPosition thenComp,
+                                Some(transNoQueryOps isTailcallPosition elseComp),
                                 spIfToThen,
                                 isRecovery,
                                 mIfToEndOfElseBranch,
@@ -1804,7 +1806,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         mkSynCall "Zero" trivia.IfToThenRange []
 
                     Some(
-                        trans CompExprTranslationPass.Initial q varSpace thenComp (fun holeFill ->
+                        trans isTailcallPosition CompExprTranslationPass.Initial q varSpace thenComp (fun holeFill ->
                             translatedCtxt (
                                 SynExpr.IfThenElse(
                                     guardExpr,
@@ -1851,7 +1853,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                             error (Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings (), mQueryOp)))
 
                 Some(
-                    trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
+                    trans isTailcallPosition CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
                         translatedCtxt (SynExpr.LetOrUse(isRec, false, binds, holeFill, m, trivia)))
                 )
 
@@ -1878,7 +1880,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                             SynMatchClause(
                                 pat,
                                 None,
-                                transNoQueryOps innerComp,
+                                transNoQueryOps false innerComp,
                                 innerCompRange,
                                 DebugPointAtTarget.Yes,
                                 SynMatchClauseTrivia.Zero
@@ -1930,7 +1932,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         vspecs, envinner)
 
                 let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
-                Some(transBind q varSpace mBind (addBindDebugPoint spBind) "Bind" [ rhsExpr ] pat innerComp translatedCtxt)
+                Some(transBind isTailcallPosition q varSpace mBind (addBindDebugPoint spBind) "Bind" [ rhsExpr ] pat innerComp translatedCtxt)
 
             // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
             | SynExpr.LetOrUseBang(
@@ -1977,7 +1979,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                                 SynMatchClause(
                                     pat,
                                     None,
-                                    transNoQueryOps innerComp,
+                                    transNoQueryOps false innerComp,
                                     innerComp.Range,
                                     DebugPointAtTarget.Yes,
                                     SynMatchClauseTrivia.Zero
@@ -2080,7 +2082,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                             vspecs, envinner)
 
-                    Some(transBind q varSpace mBind (addBindDebugPoint spBind) bindNName sources consumePat innerComp translatedCtxt)
+                    Some(transBind isTailcallPosition q varSpace mBind (addBindDebugPoint spBind) bindNName sources consumePat innerComp translatedCtxt)
 
                 else
 
@@ -2112,7 +2114,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                                 vspecs, envinner)
 
-                        Some(transBind q varSpace mBind (addBindDebugPoint spBind) bindNName sources consumePat innerComp translatedCtxt)
+                        Some(transBind isTailcallPosition q varSpace mBind (addBindDebugPoint spBind) bindNName sources consumePat innerComp translatedCtxt)
                     else
 
                         // Look for the maximum supported MergeSources, MergeSources3, ...
@@ -2224,6 +2226,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         // Build the 'Bind' call
                         Some(
                             transBind
+                                isTailcallPosition
                                 q
                                 varSpace
                                 mBind
@@ -2242,7 +2245,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let clauses =
                     clauses
                     |> List.map (fun (SynMatchClause(pat, cond, innerComp, patm, sp, trivia)) ->
-                        SynMatchClause(pat, cond, transNoQueryOps innerComp, patm, sp, trivia))
+                        SynMatchClause(pat, cond, transNoQueryOps isTailcallPosition innerComp, patm, sp, trivia))
 
                 Some(translatedCtxt (SynExpr.Match(spMatch, expr, clauses, m, trivia)))
 
@@ -2271,7 +2274,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let clauses =
                     clauses
                     |> List.map (fun (SynMatchClause(pat, cond, innerComp, patm, sp, trivia)) ->
-                        SynMatchClause(pat, cond, transNoQueryOps innerComp, patm, sp, trivia))
+                        SynMatchClause(pat, cond, transNoQueryOps isTailcallPosition innerComp, patm, sp, trivia))
 
                 let consumeExpr =
                     SynExpr.MatchLambda(
@@ -2305,7 +2308,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let clauses =
                     clauses
                     |> List.map (fun (SynMatchClause(pat, cond, clauseComp, patm, sp, trivia)) ->
-                        SynMatchClause(pat, cond, transNoQueryOps clauseComp, patm, sp, trivia))
+                        SynMatchClause(pat, cond, transNoQueryOps false clauseComp, patm, sp, trivia))
 
                 let consumeExpr =
                     SynExpr.MatchLambda(true, mTryToLast, clauses, spWith2, mTryToLast)
@@ -2322,7 +2325,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 then
                     error (Error(FSComp.SR.tcRequireBuilderMethod ("Delay"), mTry))
 
-                let innerExpr = transNoQueryOps innerComp
+                let innerExpr = transNoQueryOps false innerComp
 
                 let innerExpr =
                     match spTry with
@@ -2358,6 +2361,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 if isQuery then
                     error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
 
+                match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "ReturnFromFinal" builderTy with
+                | _ :: _ when isTailcallPosition -> failwith "todo" 
+                | _ ->
+
                 if
                     isNil (
                         TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "ReturnFrom" builderTy
@@ -2380,6 +2387,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                 if isQuery && not isYield then
                     error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
+
+                match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "YieldFromFinal" builderTy with
+                | _ :: _ when isTailcallPosition -> failwith "todo" 
+                | _ ->
 
                 if
                     isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad methName builderTy)
@@ -2529,7 +2540,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                                     intoPat.Range
                                 )
 
-                        trans CompExprTranslationPass.Initial q emptyVarSpace rebind id
+                        trans false CompExprTranslationPass.Initial q emptyVarSpace rebind id
 
                     // select a.Name; ...
                     // distinct; ...
@@ -2570,17 +2581,21 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         compClausesExpr.Range
                     )
 
-            trans CompExprTranslationPass.Initial q varSpace rebind id
+            // TODO: consider if there are cases where custom operations can interact
+            // with tailcallness
+            trans false CompExprTranslationPass.Initial q varSpace rebind id
 
-    and transNoQueryOps comp =
-        trans CompExprTranslationPass.Initial CustomOperationsMode.Denied emptyVarSpace comp id
+    and transNoQueryOps isTailcallPosition  comp =
+        trans isTailcallPosition CompExprTranslationPass.Initial CustomOperationsMode.Denied emptyVarSpace comp id
 
-    and trans firstTry q varSpace comp translatedCtxt =
-        match tryTrans firstTry q varSpace comp translatedCtxt with
+    and trans isTailcallPosition firstTry q varSpace comp translatedCtxt =
+        match tryTrans isTailcallPosition firstTry q varSpace comp translatedCtxt with
         | Some e -> e
         | None ->
             // This only occurs in final position in a sequence
             match comp with
+            // "do! expr;" in final position is treated as { return! expr } when ReturnFinal is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
+
             // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
             | SynExpr.DoBang(rhsExpr, m) ->
                 let mUnit = rhsExpr.Range
@@ -2588,6 +2603,12 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                 if isQuery then
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
+
+                match
+                    TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "ReturnFromFinal" builderTy
+                with
+                | _ :: _ when isTailcallPosition -> failwith "todo - make the call"
+                | _ ->
 
                 let bodyExpr =
                     if
@@ -2616,21 +2637,21 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         SynExprLetOrUseBangTrivia.Zero
                     )
 
-                trans CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
+                trans isTailcallPosition CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
 
             // "expr;" in final position is treated as { expr; zero }
             // Suppress the sequence point on the "zero"
             | _ ->
                 // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore comp
                 if isQuery && checkForBinaryApp comp then
-                    trans CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) translatedCtxt
+                    trans false CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) translatedCtxt
                 else
                     if isQuery && not comp.IsArbExprAndThusAlreadyReportedError then
                         match comp with
                         | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
                         | _ -> errorR (Error(FSComp.SR.tcUnrecognizedQueryOperator (), comp.RangeOfFirstPortion))
 
-                    trans CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) (fun holeFill ->
+                    trans isTailcallPosition CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) (fun holeFill ->
                         let fillExpr =
                             if enableImplicitYield then
                                 let implicitYieldExpr = mkSynCall "Yield" comp.Range [ comp ]
@@ -2647,7 +2668,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                         translatedCtxt fillExpr)
 
-    and transBind q varSpace bindRange addBindDebugPoint bindName bindArgs (consumePat: SynPat) (innerComp: SynExpr) translatedCtxt =
+    and transBind isTailcallPosition q varSpace bindRange addBindDebugPoint bindName bindArgs (consumePat: SynPat) (innerComp: SynExpr) translatedCtxt =
 
         let innerRange = innerComp.Range
 
@@ -2701,7 +2722,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 error (Error(FSComp.SR.tcRequireBuilderMethod (bindName), bindRange))
 
             // Build the `Bind` call
-            trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
+            trans isTailcallPosition CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
                 let consumeExpr =
                     SynExpr.MatchLambda(
                         false,
@@ -2820,7 +2841,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | _ -> true
 
     let basicSynExpr =
-        trans CompExprTranslationPass.Initial (hasCustomOperations ()) (LazyWithContext.NotLazy([], env)) comp id
+        trans true CompExprTranslationPass.Initial (hasCustomOperations ()) (LazyWithContext.NotLazy([], env)) comp id
 
     let mDelayOrQuoteOrRun =
         mBuilderVal
