@@ -9957,10 +9957,6 @@ and TcMethodApplication
         let callerArgs = { Unnamed = unnamedCurriedCallerArgs ; Named = namedCurriedCallerArgs }
         let postArgumentTypeCheckingCalledMethGroup =
             preArgumentTypeCheckingCalledMethGroup
-            |> List.filter (fun (minfo, _, _, _) ->
-                match minfo with
-                | ILMeth(ilMethInfo = ilMethInfo) -> not(ilMethInfo.IsStatic && ilMethInfo.IsAbstract)
-                | _ -> true)
             |> List.map (fun (minfo, minst, pinfoOpt, usesParamArrayConversion) ->
                 let callerTyArgs =
                     match tyArgsOpt with
