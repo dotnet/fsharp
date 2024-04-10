@@ -218,6 +218,10 @@ val mkCompGenLet: range -> Val -> Expr -> Expr -> Expr
 /// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
 val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
+/// Make a mutable let-expression that locally binds a compiler-generated value to an expression, where the expression
+/// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
+val mkCompGenLetMutableIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
+
 /// Make a let-expression that locally binds a value to an expression in an "invisible" way.
 /// Invisible bindings are not given a sequence point and should not have side effects.
 val mkInvisibleLet: range -> Val -> Expr -> Expr -> Expr
@@ -1960,6 +1964,12 @@ val mkTwo: TcGlobals -> range -> Expr
 
 val mkMinusOne: TcGlobals -> range -> Expr
 
+/// Makes an expression holding a constant 0 value of the given numeric type.
+val mkTypedZero: g: TcGlobals -> m: range -> ty: TType -> Expr
+
+/// Makes an expression holding a constant 1 value of the given numeric type.
+val mkTypedOne: g: TcGlobals -> m: range -> ty: TType -> Expr
+
 val destInt32: Expr -> int32 option
 
 //-------------------------------------------------------------------------
@@ -2026,6 +2036,8 @@ val mkCallArrayLength: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallArrayGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
+val mkCallArrayMap: g: TcGlobals -> m: range -> ty1: TType -> ty2: TType -> e1: Expr -> e2: Expr -> Expr
+
 val mkCallArray2DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray3DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
@@ -2039,6 +2051,8 @@ val mkCallArray2DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Exp
 val mkCallArray3DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray4DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+
+val mkCallListMap: g: TcGlobals -> m: range -> ty1: TType -> ty2: TType -> e1: Expr -> e2: Expr -> Expr
 
 val mkCallHash: TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2545,6 +2559,50 @@ val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list option
 val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list option
 
 val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
+
+/// Matches if the given expression is an application
+/// of the range or range-step operator on an integral type
+/// and returns the type, start, step, and finish if so.
+///
+/// start..finish
+///
+/// start..step..finish
+[<return: Struct>]
+val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
+
+[<RequireQualifiedAccess>]
+module IntegralConst =
+    /// Constant 0.
+    [<return: Struct>]
+    val (|Zero|_|): c: Const -> unit voption
+
+/// An expression holding the loop's iteration count.
+type Count = Expr
+
+/// An expression representing the loop's current iteration index.
+type Idx = Expr
+
+/// An expression representing the current loop element.
+type Elem = Expr
+
+/// An expression representing the loop body.
+type Body = Expr
+
+/// An expression representing the overall loop.
+type Loop = Expr
+
+/// Makes an optimized while-loop for a range expression with the given integral start, step, and finish:
+///
+/// start..step..finish
+///
+/// The buildLoop function enables using the precomputed iteration count in an optional initialization step before the loop is executed.
+val mkOptimizedRangeLoop:
+    g: TcGlobals ->
+    mBody: range * mFor: range * mIn: range * spInWhile: DebugPointAtWhile ->
+        rangeTy: TType * rangeExpr: Expr ->
+            start: Expr * step: Expr * finish: Expr ->
+                buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr) ->
+                    Expr
 
 type OptimizeForExpressionOptions =
     | OptimizeIntRangesOnly

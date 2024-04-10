@@ -43,4 +43,8 @@ module internal Md5Hasher =
 
     val addDateTimes: dts: System.DateTime seq -> s: byte array -> byte array
 
+    val addIntegers: items: int seq -> s: byte array -> byte array
+
+    val addBooleans: items: bool seq -> s: byte array -> byte array
+
     val toString: bytes: byte array -> string

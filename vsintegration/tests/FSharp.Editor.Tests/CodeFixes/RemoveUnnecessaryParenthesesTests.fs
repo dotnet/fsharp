@@ -151,6 +151,42 @@ let _ =
                 1
             "
 
+            "
+            let (a,
+                 b,
+                 c,
+                 d,
+                 e,
+                 f) = g
+            ",
+            "
+            let a,
+                b,
+                c,
+                d,
+                e,
+                f = g
+            "
+
+            "
+            let (a,
+                 b,
+                 c,
+                 d,
+                 e,
+                 f) =
+                 g
+            ",
+            "
+            let (a,
+                 b,
+                 c,
+                 d,
+                 e,
+                 f) =
+                 g
+            "
+
             // AnonymousRecord
             "{| A = (1) |}", "{| A = 1 |}"
             "{| A = (1); B = 2 |}", "{| A = 1; B = 2 |}"
@@ -188,6 +224,7 @@ let _ =
             // While
             "while (true) do ()", "while true do ()"
             "while true do (ignore 3)", "while true do ignore 3"
+            "while (match () with _ -> true) do ()", "while (match () with _ -> true) do ()"
 
             // For
             "for x = (0) to 1 do ()", "for x = 0 to 1 do ()"
@@ -200,6 +237,7 @@ let _ =
             "for (x) in [] do ()", "for x in [] do ()"
             "for x in ([]) do ()", "for x in [] do ()"
             "for x in [] do (ignore 3)", "for x in [] do ignore 3"
+            "for x in (try [] with _ -> []) do ()", "for x in (try [] with _ -> []) do ()"
 
             // ArrayOrListComputed
             "[1; 2; (if x then 3 else 4); 5]", "[1; 2; (if x then 3 else 4); 5]"
@@ -293,6 +331,63 @@ let _ =
                 | _ -> 3
             "
 
+            "
+            3 > ( match x with
+                | 1
+                | _ -> 3)
+            ",
+            "
+            3 > match x with
+                | 1
+                | _ -> 3
+            "
+
+            "
+            3 > (match x with
+                | 1
+                | _ -> 3)
+            ",
+            "
+            3 > match x with
+                | 1
+                | _ -> 3
+            "
+
+            "
+            3 > (match x with
+                 // Lol.
+                | 1
+                | _ -> 3)
+            ",
+            "
+            3 > match x with
+                 // Lol.
+                | 1
+                | _ -> 3
+            "
+
+            "
+            3 >(match x with
+               | 1
+               | _ -> 3)
+            ",
+            "
+            3 >match x with
+               | 1
+               | _ -> 3
+            "
+
+            "
+            f(match x with
+             | 1
+             | _ -> 3)
+            ",
+            "
+            f(match x with
+             | 1
+             | _ -> 3)
+            "
+
             // Do
             "do (ignore 3)", "do ignore 3"
 
@@ -310,6 +405,152 @@ let _ =
             "nameof(nameof)", "nameof nameof"
             "(x) :: []", "x :: []"
             "x :: ([])", "x :: []"
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2)
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2
+                )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            // We could remove here, but we'd need to update
+            // the "sensitive indentation" logic to differentiate between
+            // an outer offsides column established by an open paren (as here)
+            // and an outer offsides column established by, say, the leftmost
+            // column of a binding, e.g.:
+            //
+            //     let _ = (
+            //     ↑
+            //     )
+            //
+            //     static member M () = (
+            //     ↑
+            //     )
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+            longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+            longFunctionName
+                longVarName1
+                longVarName2
+            )
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+        longFunctionName
+            longVarName1
+            longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (
+        longFunctionName
+            longVarName1
+            longVarName2
+            )
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            (+longFunctionName
+                longVarName1
+                longVarName2)
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2
+            +longFunctionName
+                longVarName1
+                longVarName2
+            """
+
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2 in (
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            )
+            """,
+            """
+            let longVarName1 = 1
+            let longVarName2 = 2 in 
+                longFunctionName
+                    longVarName1
+                    longVarName2
+            """
 
             """
             let x = (printfn $"{y}"
@@ -342,10 +583,11 @@ let _ =
             "
             let x =
              2
-             + 2
+           + 2
             in x
             "
 
+            // The extra spaces in this test are intentional.
             "
             let x =
      
@@ -361,9 +603,9 @@ let _ =
      
 
              2
-      
- 
-             + 2
+    
+
+           + 2
             in x
             "
 
@@ -398,7 +640,7 @@ let _ =
             ",
             "
             let x = 2
-                    +             2
+                  +             2
             in x
             "
 
@@ -409,7 +651,7 @@ let _ =
             ",
             "
             let x = 2
-                    + 2
+                  + 2
             in x
             "
 
@@ -420,7 +662,7 @@ let _ =
             ",
             "
             let x = x
-                    +y
+                   +y
             in x
             "
 
@@ -442,7 +684,7 @@ let _ =
             ",
             "
             let x = 2
-                    <<< 2
+                <<< 2
             in x
             "
 
@@ -455,7 +697,7 @@ in x
             "
 let (<<<<<<<<) = (<<<)
 let x = 2
-        <<<<<<<< 2
+<<<<<<<< 2
 in x
             "
 
@@ -505,7 +747,7 @@ in x
 
             let y =
                 2
-                + 2
+              + 2
 
             in x + y
             "
@@ -532,7 +774,7 @@ in x
             "
             x <
                 2
-                + 3
+              + 3
             "
 
             // LetOrUse
@@ -569,7 +811,7 @@ in x
             let x =
              ()
              2
-             ++++++ 2
+      ++++++ 2
             in x
             "
 
@@ -756,6 +998,11 @@ in x
                 ()
             """
 
+            "if (match () with _ -> true) then ()", "if (match () with _ -> true) then ()"
+
+            "if (match () with _ -> true) && (match () with _ -> true) then ()",
+            "if (match () with _ -> true) && (match () with _ -> true) then ()"
+
             // LongIdent
             "(|Failure|_|) null", "(|Failure|_|) null"
 
@@ -765,6 +1012,15 @@ in x
             // DotGet
             "([]).Length", "[].Length"
             "([] : int list).Length", "([] : int list).Length"
+
+            "Debug.Assert((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)",
+            "Debug.Assert((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)"
+
+            "Debug.Assert ((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)",
+            "Debug.Assert (xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel"
+
+            "Assert((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)",
+            "Assert((xT.DeclaringType :?> ProvidedTypeDefinition).BelongsToTargetModel)"
 
             // DotLambda
             """_.ToString("x")""", """_.ToString("x")"""
@@ -806,7 +1062,7 @@ in x
             """
             let mutable x = 3
             x <- 3
-                 <<< 3
+             <<< 3
             """
 
             // DotIndexedGet
@@ -950,6 +1206,7 @@ in x
             "$\"{-(3)}\"", "$\"{-3}\""
             "$\"{(id 3)}\"", "$\"{id 3}\""
             "$\"{(x)}\"", "$\"{x}\""
+            "$\"{(x, y)}\"", "$\"{(x, y)}\""
 
             "$\"{(if true then 1 else 0)}\"", "$\"{if true then 1 else 0}\""
             "$\"{(if true then 1 else 0):N0}\"", "$\"{(if true then 1 else 0):N0}\""
@@ -1090,6 +1347,20 @@ in x
                 "id (x, y)", "id (x, y)"
                 "id (struct (x, y))", "id struct (x, y)"
                 "id<struct (_ * _)> (x, y)", "id<struct (_ * _)> (x, y)"
+
+                // We can't tell syntactically whether the method might have the signature
+                //
+                //     val TryGetValue : 'Key * outref<'Value> -> bool
+                //
+                // where 'Key is 'a * 'b, in which case the double parens are required.
+                // We could look this up in the typed tree, but we don't currently.
+                "x.TryGetValue((y, z))", "x.TryGetValue((y, z))"
+
+                "valInfosForFslib.Force(g).TryGetValue((vref, vref.Deref.GetLinkageFullKey()))",
+                "valInfosForFslib.Force(g).TryGetValue((vref, vref.Deref.GetLinkageFullKey()))"
+
+                "SemanticClassificationItem((m, SemanticClassificationType.Printf))",
+                "SemanticClassificationItem((m, SemanticClassificationType.Printf))"
 
                 // AnonRecd
                 "id ({||})", "id {||}"
@@ -1270,6 +1541,65 @@ in x
                 "(id <| match x with _ -> x) |> id", "(id <| match x with _ -> x) |> id"
                 "id <| (match x with _ -> x) |> id", "id <| (match x with _ -> x) |> id"
 
+                "
+                match () with
+                | _ when
+                    (true &&
+                     let x = 3
+                     match x with
+                     | 3 | _ -> true) -> ()
+                | _ -> ()
+                ",
+                "
+                match () with
+                | _ when
+                    (true &&
+                     let x = 3
+                     match x with
+                     | 3 | _ -> true) -> ()
+                | _ -> ()
+                "
+
+                "
+                match () with
+                | _ when
+                    true &&
+                    let x = 3
+                    (match x with
+                     | 3 | _ -> true) -> ()
+                | _ -> ()
+                ",
+                "
+                match () with
+                | _ when
+                    true &&
+                    let x = 3
+                    (match x with
+                     | 3 | _ -> true) -> ()
+                | _ -> ()
+                "
+
+                "
+                match () with
+                | _ when
+                    true &&
+                    let x = 3
+                    (let y = false
+                     match x with
+                     | 3 | _ -> y) -> ()
+                | _ -> ()
+                ",
+                "
+                match () with
+                | _ when
+                    true &&
+                    let x = 3
+                    (let y = false
+                     match x with
+                     | 3 | _ -> y) -> ()
+                | _ -> ()
+                "
+
                 // Do
                 "id (do ())", "id (do ())"
 
@@ -1366,6 +1696,7 @@ in x
                 """(id("x")).Length""", """(id "x").Length"""
                 """(id "x").Length""", """(id "x").Length"""
                 """(3L.ToString("x")).Length""", """(3L.ToString "x").Length"""
+                "~~TypedResults.Ok<string>(maybe.Value)", "~~TypedResults.Ok<string>(maybe.Value)"
 
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
@@ -1464,6 +1795,22 @@ in x
                 // Miscellaneous
                 "System.Threading.Tasks.Task.CompletedTask.ConfigureAwait((x = x))",
                 "System.Threading.Tasks.Task.CompletedTask.ConfigureAwait((x = x))"
+
+                "x.M(y).N((z = z))", "x.M(y).N((z = z))"
+
+                """
+                dprintn ("The local method '"+(String.concat "." (tenc@[tname]))+"'::'"+mdkey.Name+"' was referenced but not declared")
+                """,
+                """
+                dprintn ("The local method '"+(String.concat "." (tenc@[tname]))+"'::'"+mdkey.Name+"' was referenced but not declared")
+                """
+
+                """
+                ""+(Unchecked.defaultof<string>)+""
+                """,
+                """
+                ""+(Unchecked.defaultof<string>)+""
+                """
             }
 
         [<Theory; MemberData(nameof functionApplications)>]
@@ -2404,6 +2751,84 @@ module Patterns =
                 new (x) = T (x, 3)
                 new (x, y, z) = T (x, y)
                 member _.Z = x + y
+            "
+
+            // The parens could be required by a signature file like this:
+            //
+            //     type SemanticClassificationItem =
+            //         val Range: range
+            //         val Type: SemanticClassificationType
+            //         new: (range * SemanticClassificationType) -> SemanticClassificationItem
+            "
+            type SemanticClassificationItem =
+                val Range: range
+                val Type: SemanticClassificationType
+                new((range, ty)) = { Range = range; Type = ty }
+            ",
+            "
+            type SemanticClassificationItem =
+                val Range: range
+                val Type: SemanticClassificationType
+                new((range, ty)) = { Range = range; Type = ty }
+            "
+
+            "
+            match 1, 2 with
+            | _, (1 | 2 as x) -> ()
+            | _ -> ()
+            ",
+            "
+            match 1, 2 with
+            | _, (1 | 2 as x) -> ()
+            | _ -> ()
+            "
+
+            "
+            match 1, [2] with
+            | _, (1 | 2 as x :: _) -> ()
+            | _ -> ()
+            ",
+            "
+            match 1, [2] with
+            | _, (1 | 2 as x :: _) -> ()
+            | _ -> ()
+            "
+
+            "
+            match 1, [2] with
+            | _, (1 as x :: _ :: _) -> ()
+            | _ -> ()
+            ",
+            "
+            match 1, [2] with
+            | _, (1 as x :: _ :: _) -> ()
+            | _ -> ()
+            "
+
+            "
+            type T () =
+                member this.Item
+                    with get (y : int) = 3
+                    and set (x : int) (y : int) = ignore (x, y)
+            ",
+            "
+            type T () =
+                member this.Item
+                    with get (y : int) = 3
+                    and set (x : int) (y : int) = ignore (x, y)
+            "
+
+            "
+            let _ =
+                { new IEquatable<int * int * int> with
+                    member this.GetHashCode ((x, y, z)) = x + y + z
+                    member this.Equals ((x, y, z), (x', y', z')) = false }
+            ",
+            "
+            let _ =
+                { new IEquatable<int * int * int> with
+                    member this.GetHashCode ((x, y, z)) = x + y + z
+                    member this.Equals ((x, y, z), (x', y', z')) = false }
             "
         }
 

@@ -1910,7 +1910,7 @@ memberCore:
            let memberRange = unionRanges rangeStart mEnd |> unionRangeWithXmlDoc xmlDoc
            [ SynMemberDefn.Member (binding, memberRange) ] }
 
-  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints recover
+  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints ends_coming_soon_or_recover
      { let optReturnType = $3
        let bindingPat, mBindLhs = $2
        let mEnd =
@@ -1918,6 +1918,7 @@ memberCore:
            | Some(_, ty) -> ty.Range.EndRange
            | _ -> bindingPat.Range.EndRange
        let expr = arbExpr ("memberCore2", mEnd)
+       errorR (Error(FSComp.SR.parsMissingMemberBody(), rhs parseState 4))
 
        fun vis flagsBuilderAndLeadingKeyword attrs rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
@@ -3627,8 +3628,7 @@ atomicPattern:
             mkSynPatMaybeVar lidwd vis (lhs parseState)
         else
            let synIdent = List.head lidwd.IdentsWithTrivia
-           let (SynIdent(id, _)) = synIdent
-           SynPat.Named(synIdent, false, vis, id.idRange) }
+           SynPat.Named(synIdent, false, vis, synIdent.Range) }
 
   | constant
       { SynPat.Const(fst $1, snd $1) }
@@ -3718,6 +3718,12 @@ parenPattern:
   | parenPattern AS recover
       { let mAs = rhs parseState 2
         let pat2 = SynPat.Wild(mAs.EndRange)
+        SynPat.As($1, pat2, rhs2 parseState 1 2) }
+
+  | parenPattern AS
+      { let mAs = rhs parseState 2
+        let pat2 = SynPat.Wild(mAs.EndRange)
+        reportParseErrorAt mAs (FSComp.SR.parsExpectingPattern ())
         SynPat.As($1, pat2, rhs2 parseState 1 2) }
 
   | parenPattern BAR parenPattern
@@ -3889,7 +3895,8 @@ typedSequentialExprEOF:
 
 sequentialExpr:
   | declExpr seps sequentialExpr
-      { SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, $1, $3, unionRanges $1.Range $3.Range) }
+      { let trivia = { SeparatorRange = $2 }
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, $1, $3, unionRanges $1.Range $3.Range, trivia) }
 
   | declExpr seps
       { $1 }
@@ -3898,10 +3905,12 @@ sequentialExpr:
       { $1 }
 
   | declExpr THEN sequentialExpr %prec prec_then_before
-      { SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, false, $1, $3, unionRanges $1.Range $3.Range) }
+      { let trivia = { SeparatorRange = Some (rhs parseState 2) }
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, false, $1, $3, unionRanges $1.Range $3.Range, trivia) }
 
   | declExpr OTHEN OBLOCKBEGIN typedSequentialExpr oblockend %prec prec_then_before
-      { SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, false, $1, $4, unionRanges $1.Range $4.Range) }
+      { let trivia = { SeparatorRange = Some (rhs parseState 2) }
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, false, $1, $4, unionRanges $1.Range $4.Range, trivia) }
 
   | hardwhiteLetBindings %prec prec_args_error
      { let hwlb, m, mIn = $1
@@ -6652,10 +6661,10 @@ opt_topSeparators:
 
 /* Seprators in either #light or non-#light */
 seps:
-  | OBLOCKSEP { }
-  | SEMICOLON { }
-  | OBLOCKSEP SEMICOLON { }
-  | SEMICOLON OBLOCKSEP { }
+  | OBLOCKSEP { None }
+  | SEMICOLON { Some (rhs parseState 1) }
+  | OBLOCKSEP SEMICOLON { Some (rhs parseState 2) }
+  | SEMICOLON OBLOCKSEP { Some (rhs parseState 1) }
 
 /* An 'end' that's optional only in #light, where an ODECLEND gets inserted, and explicit 'end's get converted to OEND */
 declEnd:

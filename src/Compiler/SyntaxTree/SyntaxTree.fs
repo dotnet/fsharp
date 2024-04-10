@@ -16,7 +16,19 @@ type Ident(text: string, range: range) =
     member _.idRange = range
     override _.ToString() = text
 
-type SynIdent = SynIdent of ident: Ident * trivia: IdentTrivia option
+type SynIdent =
+    | SynIdent of ident: Ident * trivia: IdentTrivia option
+
+    member this.Range =
+        match this with
+        | SynIdent(ident, trivia) ->
+            match trivia with
+            | Some value ->
+                match value with
+                | IdentTrivia.OriginalNotationWithParen(leftParen, _, rightParen)
+                | IdentTrivia.HasParenthesis(leftParen, rightParen) -> unionRanges leftParen rightParen
+                | _ -> ident.idRange
+            | None -> ident.idRange
 
 type LongIdent = Ident list
 
@@ -618,7 +630,13 @@ type SynExpr =
 
     | Lazy of expr: SynExpr * range: range
 
-    | Sequential of debugPoint: DebugPointAtSequential * isTrueSeq: bool * expr1: SynExpr * expr2: SynExpr * range: range
+    | Sequential of
+        debugPoint: DebugPointAtSequential *
+        isTrueSeq: bool *
+        expr1: SynExpr *
+        expr2: SynExpr *
+        range: range *
+        trivia: SynExprSequentialTrivia
 
     | IfThenElse of
         ifExpr: SynExpr *
@@ -823,9 +841,9 @@ type SynExpr =
         match e with
         // these are better than just .Range, and also commonly applicable inside queries
         | SynExpr.Paren(_, m, _, _) -> m
-        | SynExpr.Sequential(_, _, e1, _, _)
-        | SynExpr.SequentialOrImplicitYield(_, e1, _, _, _)
-        | SynExpr.App(_, _, e1, _, _) -> e1.RangeOfFirstPortion
+        | SynExpr.Sequential(expr1 = e1)
+        | SynExpr.SequentialOrImplicitYield(expr1 = e1)
+        | SynExpr.App(funcExpr = e1) -> e1.RangeOfFirstPortion
         | SynExpr.ForEach(pat = pat; range = r) ->
             let e = (pat.Range: range).Start
             withEnd e r

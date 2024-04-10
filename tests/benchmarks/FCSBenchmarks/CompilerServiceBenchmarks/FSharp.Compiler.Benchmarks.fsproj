@@ -2,9 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <ExcludeFromDotNetBuild Condition="'$(DotNetBuildTests)' != 'true'">true</ExcludeFromDotNetBuild>
   </PropertyGroup>
 
   <ItemGroup>
