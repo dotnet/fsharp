@@ -1184,3 +1184,33 @@ let execute = IPrintable.Say("hello")
          |> withLangVersion80
          |> typecheck
          |> shouldSucceed
+         
+        
+    [<FactForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics non virtual) produces a compilation error`` () =
+         Fsx """
+open System.Numerics
+
+IAdditionOperators.op_Addition (3, 6)
+         """
+          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+          |> withLangVersion80
+          |> compile
+          |> shouldFail
+          |> withSingleDiagnostic (Error 509, Line 4, Col 1, Line 4, Col 38, "Method or object constructor 'op_Addition' not found")
+
+    [<FactForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` () =
+         Fsx """
+open System.Numerics
+
+let res = IAdditionOperators.op_CheckedAddition (3, 6)
+
+printf "%A" res"""
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> asExe
+         |> compile
+         |> shouldSucceed
+         |> run
+         |> verifyOutput "9" 

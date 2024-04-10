@@ -2942,10 +2942,16 @@ and ResolveOverloading
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
 
     let calledMethOpt, errors, calledMethTrace = 
-
         match calledMethGroup, candidates with 
-        | _, [calledMeth] when not isOpConversion -> 
-            Some calledMeth, CompleteD, NoTrace
+        | _, [calledMeth] when not isOpConversion ->
+            // See what candidates we have based on static/virtual/abstract
+            // OK: static virtual TResult operator checked i.e. IAdditionOperators.op_CheckedAddition
+            // Error: static abstract TResult operator i.e. IAdditionOperators.op_Addition
+            match calledMeth.Method with
+            | ILMeth(ilMethInfo= ilMethInfo) when ilMethInfo.IsStatic && ilMethInfo.IsVirtual && methodName.Contains("op_") && ilMethInfo.IsAbstract ->
+                // Do don't want to make available via completion, as it will lead to the compile time error. I.e. not usable if it's non-virtual
+                None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
+            | _ -> Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
