@@ -2936,8 +2936,7 @@ and ResolveOverloading
 
     let isOpConversion =
         (methodName = "op_Explicit") ||
-        (methodName = "op_Implicit") ||
-         methodName.Contains("op_")
+        (methodName = "op_Implicit")
 
     // See what candidates we have based on name and arity 
     let candidates =
@@ -2945,7 +2944,7 @@ and ResolveOverloading
         |> List.filter (
             fun cmeth ->
                 match cmeth.Method with
-                | ILMeth(ilMethInfo= ilMethInfo) when ilMethInfo.IsStatic && isOpConversion ->
+                | ILMeth(ilMethInfo= ilMethInfo) when ilMethInfo.IsStatic && ilMethInfo.IsVirtual && methodName.Contains("op_") ->
                     // OK -> static virtual TResult operator checked
                     // IAdditionOperators.op_CheckedAddition
                     // Error: static abstract TResult operator
@@ -2960,7 +2959,7 @@ and ResolveOverloading
         | _, [calledMeth] when not isOpConversion -> 
             Some calledMeth, CompleteD, NoTrace
 
-        | _, [] when isOpConversion -> 
+        | _, [] when methodName.Contains("op_") -> 
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
 
         | [], _ when not isOpConversion -> 
