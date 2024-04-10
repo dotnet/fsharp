@@ -2939,28 +2939,22 @@ and ResolveOverloading
         (methodName = "op_Implicit")
 
     // See what candidates we have based on name and arity 
-    let candidates =
-        calledMethGroup
-        |> List.filter (
-            fun cmeth ->
-                match cmeth.Method with
-                | ILMeth(ilMethInfo= ilMethInfo) when ilMethInfo.IsStatic && ilMethInfo.IsVirtual && methodName.Contains("op_") ->
-                    // OK -> static virtual TResult operator checked
-                    // IAdditionOperators.op_CheckedAddition
-                    // Error: static abstract TResult operator
-                    // IAdditionOperators.op_Addition
-                    cmeth.IsCandidate(m, ad) && ilMethInfo.IsVirtual && not ilMethInfo.IsAbstract
-                |  _ -> cmeth.IsCandidate(m, ad)
-        )
+    let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
 
     let calledMethOpt, errors, calledMethTrace = 
 
         match calledMethGroup, candidates with 
-        | _, [calledMeth] when not isOpConversion -> 
-            Some calledMeth, CompleteD, NoTrace
-
-        | _, [] when methodName.Contains("op_") -> 
-            None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
+        | _, [calledMeth] when not isOpConversion ->
+            // See what candidates we have based on name and arity, and check for static/virtual/abstract
+            // OK: static virtual TResult operator checked i.e. IAdditionOperators.op_CheckedAddition
+            // Error: static abstract TResult operator i.e. IAdditionOperators.op_Addition
+            match calledMeth.Method with
+            | ILMeth(ilMethInfo= ilMethInfo) when ilMethInfo.IsStatic && ilMethInfo.IsVirtual && methodName.Contains("op_") ->
+                if ilMethInfo.IsAbstract then
+                    None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
+                else
+                    Some calledMeth, CompleteD, NoTrace
+            |  _ ->  Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
