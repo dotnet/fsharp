@@ -657,7 +657,41 @@ module SynExpr =
         //     return (
         //     x
         //     )
-        | _, SyntaxNode.SynExpr outer :: _ when containsSensitiveIndentation outer.Range.StartColumn expr.Range -> true
+        | _, SyntaxNode.SynExpr(SynExpr.YieldOrReturn _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.YieldOrReturnFrom _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.Assert _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.Lazy _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.Paren(expr = Is expr)) as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.LetOrUse _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.LetOrUseBang _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.TryWith _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.TryFinally _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.For _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.ForEach _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.IfThenElse _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.New _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.Set(rhsExpr = SynExpr.Paren(expr = Is expr)) as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.DotIndexedSet(valueExpr = SynExpr.Paren(expr = Is expr)) as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.DotNamedIndexedPropertySet(rhsExpr = SynExpr.Paren(expr = Is expr)) as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.DotSet(rhsExpr = SynExpr.Paren(expr = Is expr)) as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.LibraryOnlyUnionCaseFieldSet(rhsExpr = SynExpr.Paren(expr = Is expr)) as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.LongIdentSet(expr = SynExpr.Paren(expr = Is expr)) as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.NamedIndexedPropertySet(expr2 = SynExpr.Paren(expr = Is expr)) as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.InferredUpcast _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.InferredDowncast _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.Match _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.MatchBang _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.While _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.WhileBang _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.Do _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.DoBang _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.Fixed _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.Record _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.AnonRecd _ as outer) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.InterpolatedString _ as outer) :: _ when
+            containsSensitiveIndentation outer.Range.StartColumn expr.Range
+            ->
+            true
 
         // Check for nested matches, e.g.,
         //
