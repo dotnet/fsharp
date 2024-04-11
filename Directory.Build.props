@@ -1,6 +1,8 @@
 <Project>
 
   <PropertyGroup>
+    <PackageProjectUrl>https://github.com/dotnet/fsharp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dotnet/fsharp</RepositoryUrl>
     <LangVersion Condition="'$(FSharpLangVersion)' != ''">$(FSharpLangVersion)</LangVersion>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
