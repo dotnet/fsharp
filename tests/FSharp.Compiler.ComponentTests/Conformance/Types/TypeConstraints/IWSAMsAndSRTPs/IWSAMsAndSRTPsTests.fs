@@ -1226,9 +1226,13 @@ printf "%A" res"""
          |> shouldSucceed
          |> run
          |> verifyOutput "9"
-         
+
+#if !NETCOREAPP
+    [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+#else
     // SOURCE=ConstrainedAndInterfaceCalls.fs							# AssemblyVersion01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConstrainedAndInterfaceCalls.fs"|])>]
+#endif
     let ``ConstrainedAndInterfaceCalls.fs`` compilation =
         compilation 
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
