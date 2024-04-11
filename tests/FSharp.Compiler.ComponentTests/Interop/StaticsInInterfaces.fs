@@ -12,7 +12,7 @@ module ``Static Methods In Interfaces`` =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
-    let csharpBaseClass = 
+    let csharpBaseClass =
         CSharp """
     namespace StaticsInInterfaces
     {
@@ -38,7 +38,7 @@ module ``Static Methods In Interfaces`` =
 
     }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
 
-    
+
     let csharpOperators =
         CSharp """
         namespace StaticsInInterfaces
@@ -110,7 +110,7 @@ let main _ =
     [<FactForNETCOREAPP>]
     let ``F# can call static methods declared in interfaces from C#`` () =
 
-        let csharpLib = csharpBaseClass 
+        let csharpLib = csharpBaseClass
 
         let fsharpSource =
             """
@@ -145,18 +145,18 @@ let main _ =
         .class interface public auto ansi abstract IGetNext`1<(class IGetNext`1<!T>) T>
         {
             // Methods
-            .method public hidebysig abstract virtual static 
+            .method public hidebysig abstract virtual static
             !T Next (
                 !T other
-            ) cil managed 
+            ) cil managed
             {
             } // end of method IGetNext`1::Next
 
         } // end of class IGetNext`1
 
         And the following implementation:
-        .method public hidebysig static 
-        class RepeatSequence Next (class RepeatSequence other) cil managed 
+        .method public hidebysig static
+        class RepeatSequence Next (class RepeatSequence other) cil managed
         {
             .override method !0 class IGetNext`1<class RepeatSequence>::Next(!0)
             ...
@@ -165,11 +165,11 @@ let main _ =
     [<FactForNETCOREAPP>]
     let ``F# generates valid IL for abstract static interface methods`` () =
 
-        let csharpLib = csharpBaseClass 
+        let csharpLib = csharpBaseClass
 
         let fsharpSource =
             """
-module StaticsTesting 
+module StaticsTesting
 open StaticsInInterfaces
 
 type MyRepeatSequence() =
@@ -192,69 +192,69 @@ type MyRepeatSequence2() =
 extends [runtime]System.Object
 implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>
     {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
     .method public specialname rtspecialname instance void  .ctor() cil managed
     {
-          
+
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  pop
         IL_0008:  ret
-    } 
-    
+    }
+
     .method public hidebysig static class StaticsTesting/MyRepeatSequence 'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence>.Next'(class StaticsTesting/MyRepeatSequence other) cil managed
     {
         .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>::Next(!0)
-          
+
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ret
-    } 
-    
-    } 
-    
+    }
+
+    }
+
     .class auto ansi serializable nested public MyRepeatSequence2
 extends [runtime]System.Object
 implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence2>
     {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
     .method public specialname rtspecialname instance void  .ctor() cil managed
     {
-          
+
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  pop
         IL_0008:  ret
-    } 
-    
+    }
+
     .method public static class StaticsTesting/MyRepeatSequence2 Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
     {
-          
+
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ret
-    } 
-    
+    }
+
     .method public hidebysig static class StaticsTesting/MyRepeatSequence2 'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence2>.Next'(class StaticsTesting/MyRepeatSequence2 other) cil managed
     {
         .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence2>::Next(!0)
-          
+
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ret
-    } 
-    
+    }
+
     }
         """]
-    
+
     [<FactForNETCOREAPP>]
     let ``F# can implement static methods declared in interfaces from C#`` () =
 
-        let csharpLib = csharpBaseClass 
+        let csharpLib = csharpBaseClass
 
         let fsharpSource =
             """
@@ -376,28 +376,28 @@ module Test =
 .class public abstract auto ansi sealed Tests.Test
        extends [runtime]System.Object
 {
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
   .class interface abstract auto ansi serializable nested public IAdditionOperator`1<T>
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig static abstract virtual 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
+    .method public hidebysig static abstract virtual
             !T  op_Addition(!T A_0,
                             !T A_1) cil managed
     {
-    } 
+    }
 
-  } 
+  }
 
   .class auto ansi serializable nested public C
          extends [runtime]System.Object
          implements class Tests.Test/IAdditionOperator`1<class Tests.Test/C>
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
     .field assembly int32 c
-    .method public specialname rtspecialname 
+    .method public specialname rtspecialname
             instance void  .ctor(int32 c) cil managed
     {
-      
+
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
@@ -407,25 +407,25 @@ module Test =
       IL_0009:  ldarg.1
       IL_000a:  stfld      int32 Tests.Test/C::c
       IL_000f:  ret
-    } 
+    }
 
-    .method public hidebysig specialname 
+    .method public hidebysig specialname
             instance int32  get_Value() cil managed
     {
-      
+
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Tests.Test/C::c
       IL_0006:  ret
-    } 
+    }
 
-    .method public hidebysig static class Tests.Test/C 
+    .method public hidebysig static class Tests.Test/C
             'Tests.Test.IAdditionOperator<Tests.Test.C>.op_Addition'(class Tests.Test/C x,
                                                                      class Tests.Test/C y) cil managed
     {
       .override  method !0 class Tests.Test/IAdditionOperator`1<class Tests.Test/C>::op_Addition(!0,
                                                                                                  !0)
-      
+
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Tests.Test/C::c
@@ -434,18 +434,18 @@ module Test =
       IL_000c:  add
       IL_000d:  newobj     instance void Tests.Test/C::.ctor(int32)
       IL_0012:  ret
-    } 
+    }
 
     .property instance int32 Value()
     {
       .get instance int32 Tests.Test/C::get_Value()
-    } 
-  } 
+    }
+  }
 
   .method public static !!T  f<(class Tests.Test/IAdditionOperator`1<!!T>) T>(!!T x,
                                                                               !!T y) cil managed
   {
-    
+
     .maxstack  8
     IL_0000:  ldarg.0
     IL_0001:  ldarg.1
@@ -453,13 +453,13 @@ module Test =
     IL_0008:  call       !0 class Tests.Test/IAdditionOperator`1<!!T>::op_Addition(!0,
                                                                                    !0)
     IL_000d:  ret
-  } 
+  }
 
   .method public static int32  main(string[] _arg1) cil managed
   {
     .entrypoint
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-    
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 )
+
     .maxstack  4
     .locals init (class Tests.Test/C V_0,
              class Tests.Test/C V_1)
@@ -484,37 +484,37 @@ module Test =
 
     IL_002e:  ldc.i4.0
     IL_002f:  ret
-  } 
+  }
 
-} 
+}
             """
 #else
             """
 .class public abstract auto ansi sealed Tests.Test
        extends [runtime]System.Object
 {
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
   .class interface abstract auto ansi serializable nested public IAdditionOperator`1<T>
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig static abstract virtual 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
+    .method public hidebysig static abstract virtual
             !T  op_Addition(!T A_0,
                             !T A_1) cil managed
     {
-    } 
+    }
 
-  } 
+  }
 
   .class auto ansi serializable nested public C
          extends [runtime]System.Object
          implements class Tests.Test/IAdditionOperator`1<class Tests.Test/C>
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
     .field assembly int32 c
-    .method public specialname rtspecialname 
+    .method public specialname rtspecialname
             instance void  .ctor(int32 c) cil managed
     {
-      
+
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
@@ -524,25 +524,25 @@ module Test =
       IL_0009:  ldarg.1
       IL_000a:  stfld      int32 Tests.Test/C::c
       IL_000f:  ret
-    } 
+    }
 
-    .method public hidebysig specialname 
+    .method public hidebysig specialname
             instance int32  get_Value() cil managed
     {
-      
+
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Tests.Test/C::c
       IL_0006:  ret
-    } 
+    }
 
-    .method public hidebysig static class Tests.Test/C 
+    .method public hidebysig static class Tests.Test/C
             'Tests.Test.IAdditionOperator<Tests.Test.C>.op_Addition'(class Tests.Test/C x,
                                                                      class Tests.Test/C y) cil managed
     {
       .override  method !0 class Tests.Test/IAdditionOperator`1<class Tests.Test/C>::op_Addition(!0,
                                                                                                  !0)
-      
+
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Tests.Test/C::c
@@ -551,18 +551,18 @@ module Test =
       IL_000c:  add
       IL_000d:  newobj     instance void Tests.Test/C::.ctor(int32)
       IL_0012:  ret
-    } 
+    }
 
     .property instance int32 Value()
     {
       .get instance int32 Tests.Test/C::get_Value()
-    } 
-  } 
+    }
+  }
 
   .method public static !!T  f<(class Tests.Test/IAdditionOperator`1<!!T>) T>(!!T x,
                                                                               !!T y) cil managed
   {
-    
+
     .maxstack  8
     IL_0000:  ldarg.0
     IL_0001:  ldarg.1
@@ -570,13 +570,13 @@ module Test =
     IL_0008:  call       !0 class Tests.Test/IAdditionOperator`1<!!T>::op_Addition(!0,
                                                                                    !0)
     IL_000d:  ret
-  } 
+  }
 
   .method public static int32  main(string[] _arg1) cil managed
   {
     .entrypoint
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-    
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 )
+
     .maxstack  4
     .locals init (class Tests.Test/C V_0,
              class Tests.Test/C V_1)
@@ -601,7 +601,7 @@ module Test =
 
     IL_002e:  ldc.i4.0
     IL_002f:  ret
-  } 
+  }
             """
 #endif
         ]
@@ -623,12 +623,14 @@ public interface I
         FSharp """
 type Imp() =
     interface Test.I with
-        static member Echo (x: string) = x + "_imp"
+        static member Echo (x: string) = $"{x}_imp"
 
 let echo<'T when 'T :> Test.I> x = 'T.Echo(x)
 
-if echo<Imp> "a" <> "a_imp" then
-    failwith "incorrect value"
+match echo<Imp> "a" with
+| "a_imp" -> printfn "success"
+| "a" -> failwith "incorrectly invoked the base interface 'Echo'"
+| _ -> failwith "incorrect value"
 """
         |> withReferences [CSharpLib]
         |> withLangVersion80
