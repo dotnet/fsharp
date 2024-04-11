@@ -15,7 +15,6 @@
     <NoOptimizationData>true</NoOptimizationData>
     <NoInterfaceData>false</NoInterfaceData>
     <CompressMetadata>true</CompressMetadata>
-    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
   <!-- If building FCS solution directly, set paths explicitly -->

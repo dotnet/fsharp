@@ -22,6 +22,12 @@
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
   </PropertyGroup>
 
+  <!-- pick realsig value -->
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">
+    <OtherFlags Condition="'$(BuildNoRealsig)' == 'true'">$(OtherFlags) --realsig-</OtherFlags>
+    <OtherFlags Condition="'$(BuildNoRealsig)' != 'true'">$(OtherFlags) --realsig+</OtherFlags>
+  </PropertyGroup>
+
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition="Exists('$(RepoRoot)/Directory.Build.props.user')" />
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">

@@ -35,11 +35,6 @@
     <CompressMetadata>false</CompressMetadata>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(BUILDING_USING_DOTNET)' != 'true'">
-    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(TestingLegacyInternalSignature)' != 'true'">$(OtherFlags) --realsig-</OtherFlags>
-    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig+</OtherFlags>
-  </PropertyGroup>
-
   <PropertyGroup>
     <PackageId>FSharp.Compiler.Service</PackageId>
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>

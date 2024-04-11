@@ -35,7 +35,6 @@
     <NoOptimizationData>true</NoOptimizationData>
     <NoInterfaceData>false</NoInterfaceData>
     <CompressMetadata>false</CompressMetadata>
-    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true'" >$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
 </Project>

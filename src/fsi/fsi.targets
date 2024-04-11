@@ -20,7 +20,6 @@
     <NoOptimizationData>true</NoOptimizationData>
     <NoInterfaceData>true</NoInterfaceData>
     <CompressMetadata>true</CompressMetadata>
-    <OtherFlags Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">$(OtherFlags) --realsig+</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
