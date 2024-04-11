@@ -206,8 +206,8 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                                 | ' ', '=', _ -> Some ShouldPutSpaceBefore
                                 | _, '=', ('(' | '[' | '{') -> None
                                 | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                                | _, LetterOrDigit, '(' -> None
-                                | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
+                                | _, ('_' | LetterOrDigit), '(' -> None
+                                | _, ('_' | LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
                                 | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
                                 | _ -> None
 
@@ -219,7 +219,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                             | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
                             | _, ('+' | '-' | '%' | '&' | '!' | '~') -> None
                             | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
-                            | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
+                            | ('_' | LetterOrDigit), ('_' | LetterOrDigit) -> Some ShouldPutSpaceAfter
                             | _ -> None
 
                         let (|WouldTurnInfixIntoPrefix|_|) (s: string) =
