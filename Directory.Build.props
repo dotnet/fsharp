@@ -19,6 +19,10 @@
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Benchmarks' and '$(BUILDING_USING_DOTNET)' != 'false'">
+      <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
+  </PropertyGroup>
+
   <!-- Temporary workaround if proj-info is used, allows Ionide's evaluation to work correctly. -->
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'false' and '$(DotnetProjInfo)' == 'true'">
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
