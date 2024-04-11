@@ -62,6 +62,8 @@ module internal PervasiveAutoOpens =
 
     /// Checks the argument is non-null
     val inline nullArgCheck: paramName: string -> x: 'T MaybeNull -> 'T
+
+    val inline defaultIfNull : defaultValue:'T -> arg:'T  -> 'T when 'T : null and 'T : not struct 
 #else
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?'

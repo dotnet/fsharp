@@ -114,6 +114,8 @@ module internal PervasiveAutoOpens =
         | v -> v
 
     let inline (!!) x = x
+
+    let inline defaultIfNull defaultValue arg = match arg with | null -> defaultValue | _ -> arg
 #else
     type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
 

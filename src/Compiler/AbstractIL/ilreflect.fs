@@ -1471,7 +1471,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             ilG.EmitAndLog(OpCodes.Ldelema, convType cenv emEnv ty)
         else
             let arrayTy = convType cenv emEnv (ILType.Array(shape, ty))
-            let elemTy = arrayTy.GetElementType()
+            let elemTy = !! arrayTy.GetElementType()
             let argTys = Array.create shape.Rank typeof<int>
             let retTy = elemTy.MakeByRefType()
 
@@ -1497,7 +1497,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             ilG.EmitAndLog(OpCodes.Stelem, convType cenv emEnv ty)
         else
             let arrayTy = convType cenv emEnv (ILType.Array(shape, ty))
-            let elemTy = arrayTy.GetElementType()
+            let elemTy = !! arrayTy.GetElementType()
 
             let meth =
                 modB.GetArrayMethodAndLog(
@@ -2471,7 +2471,7 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, collectible) =
         let daType = typeof<System.Diagnostics.DebuggableAttribute>
 
         let daCtor =
-            daType.GetConstructor [| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |]
+            !! daType.GetConstructor [| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |]
 
         let daBuilder =
             CustomAttributeBuilder(
