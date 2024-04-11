@@ -19,6 +19,18 @@ module TypesAndTypeConstraints_IWSAMsAndSRTPs =
         |> asExe
         |> withLangVersion70
         |> withReferences [typesModule]
+        
+    let verifyCompile compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compile
+
+    let verifyCompileAndRun compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compileAndRun
 
     [<Fact>]
     let ``Srtp call Zero property returns valid result`` () =
@@ -1213,4 +1225,18 @@ printf "%A" res"""
          |> compile
          |> shouldSucceed
          |> run
-         |> verifyOutput "9" 
+         |> verifyOutput "9"
+         
+    // SOURCE=ConstrainedAndInterfaceCalls.fs							# AssemblyVersion01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConstrainedAndInterfaceCalls.fs"|])>]
+    let ``ConstrainedAndInterfaceCalls.fs`` compilation =
+        compilation 
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 509, Line 6, Col 82, Line 6, Col 110, "Method or object constructor 'op_Addition' not found")
+            (Error 509, Line 7, Col 82, Line 7, Col 110, "Method or object constructor 'op_Addition' not found")
+            (Error 509, Line 12, Col 82, Line 12, Col 126, "Method or object constructor 'op_Addition' not found")
+            (Error 509, Line 13, Col 82, Line 13, Col 126, "Method or object constructor 'op_Addition' not found")
+        ]
