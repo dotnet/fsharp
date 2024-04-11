@@ -614,7 +614,7 @@ namespace Test;
 
 public interface I
 {
-    static virtual string Echo(string x) => x;
+    static virtual string Echo(string x) => $"I.Echo: {x}";
 }
             """
             |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
@@ -623,13 +623,24 @@ public interface I
         FSharp """
 type Imp() =
     interface Test.I with
-        static member Echo (x: string) = $"{x}_imp"
+        static member Echo (x: string) = $"Imp.I.Echo: {x}"
+
+    static member Echo (x: string) = $"Imp.Echo: {x}"
 
 let echo<'T when 'T :> Test.I> x = 'T.Echo(x)
 
+let inline echo_srtp<'T when 'T : (static member Echo: string -> string)> x = 'T.Echo(x)
+
 match echo<Imp> "a" with
-| "a_imp" -> printfn "success"
-| "a" -> failwith "incorrectly invoked the base interface 'Echo'"
+| "Imp.I.Echo: a" -> printfn "success"
+| "Imp.Echo: a" -> failwith "incorrectly invoked the class 'Echo'"
+| "I.Echo: a" -> failwith "incorrectly invoked the base interface 'Echo'"
+| _ -> failwith "incorrect value"
+
+match echo_srtp<Imp> "a" with
+| "Imp.Echo: a" -> printfn "success"
+| "Imp.I.Echo: a" -> failwith "incorrectly invoked the interface 'Echo'"
+| "I.Echo: a" -> failwith "incorrectly invoked the base interface 'Echo'"
 | _ -> failwith "incorrect value"
 """
         |> withReferences [CSharpLib]
