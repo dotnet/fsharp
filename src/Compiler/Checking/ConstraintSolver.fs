@@ -2948,7 +2948,7 @@ and ResolveOverloading
             // OK: static virtual TResult operator checked i.e. IAdditionOperators.op_CheckedAddition
             // Error: static abstract TResult operator i.e. IAdditionOperators.op_Addition
             match calledMeth.Method with
-            | ILMeth(ilMethInfo= ilMethInfo) when ilMethInfo.IsStatic && ilMethInfo.IsVirtual && methodName.Contains("op_") && ilMethInfo.IsAbstract ->
+            | ILMeth(ilMethInfo= ilMethInfo) when ilMethInfo.IsStatic && ilMethInfo.IsVirtual && ilMethInfo.IsAbstract ->
                 // Do don't want to make available via completion, as it will lead to the compile time error. I.e. not usable if it's non-virtual
                 None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
