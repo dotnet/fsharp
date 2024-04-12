@@ -49,7 +49,7 @@ type StringText(str: string) =
             let mutable line = reader.ReadLine()
 
             while not (isNull line) do
-                yield line
+                yield !!line
                 line <- reader.ReadLine()
 
             if str.EndsWith("\n", StringComparison.Ordinal) then
@@ -190,7 +190,7 @@ module SourceTextNew =
 
             member _.GetChecksum() =
                 // TODO: something better...
-                sourceText.ToString() |> Md5Hasher.hashString |> ImmutableArray.Create<byte>
+                !!sourceText.ToString() |> Md5Hasher.hashString |> ImmutableArray.Create<byte>
         }
 
 // NOTE: the code in this file is a drop-in replacement runtime for Lexing.fs from the FsLexYacc repository

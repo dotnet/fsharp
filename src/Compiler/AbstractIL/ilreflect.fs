@@ -2454,7 +2454,7 @@ let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
 
     asmB
 
-let mkDynamicAssemblyAndModule (assemblyName, optimize, collectible) =
+let mkDynamicAssemblyAndModule (assemblyName:string, optimize, collectible) =
     let asmDir = "."
     let asmName = AssemblyName()
     asmName.Name <- assemblyName
@@ -2471,7 +2471,7 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, collectible) =
         let daType = typeof<System.Diagnostics.DebuggableAttribute>
 
         let daCtor =
-            !! daType.GetConstructor [| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |]
+            !! daType.GetConstructor([| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |])
 
         let daBuilder =
             CustomAttributeBuilder(

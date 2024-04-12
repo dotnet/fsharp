@@ -623,7 +623,7 @@ let IsValidPrefixOperatorUse s =
     if String.IsNullOrEmpty s then
         false
     else
-        match s with
+        match !!s with
         | "?+"
         | "?-"
         | "+"
@@ -634,13 +634,13 @@ let IsValidPrefixOperatorUse s =
         | "%%"
         | "&"
         | "&&" -> true
-        | _ -> s[0] = '!' || isTildeOnlyString s
+        | s -> s[0] = '!' || isTildeOnlyString s
 
 let IsValidPrefixOperatorDefinitionName s =
     if String.IsNullOrEmpty s then
         false
     else
-
+        let s = !!s
         match s[0] with
         | '~' ->
             isTildeOnlyString s
@@ -666,8 +666,8 @@ let IsLogicalPrefixOperator logicalName =
     if String.IsNullOrEmpty logicalName then
         false
     else
-        let displayName = ConvertValLogicalNameToDisplayNameCore logicalName
-        displayName <> logicalName && IsValidPrefixOperatorDefinitionName displayName
+        let displayName = ConvertValLogicalNameToDisplayNameCore !!logicalName
+        displayName <> !!logicalName && IsValidPrefixOperatorDefinitionName displayName
 
 let IsLogicalTernaryOperator logicalName =
     let displayName = ConvertValLogicalNameToDisplayNameCore logicalName

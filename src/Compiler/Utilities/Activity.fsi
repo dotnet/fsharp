@@ -40,8 +40,11 @@ module internal Activity =
         val cacheHit: string
 
     val startNoTags: name: string -> IDisposable
-
+#if NO_CHECKNULLS
     val start: name: string -> tags: (string * string) seq -> IDisposable
+#else
+    val start: name: string -> tags: (string * string|null) seq -> IDisposable
+#endif    
 
     val addEvent: name: string -> unit
 

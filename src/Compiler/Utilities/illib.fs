@@ -130,6 +130,12 @@ module internal PervasiveAutoOpens =
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
+    let inline nullSafeEquality (x: MaybeNull<'T>) (y: MaybeNull<'T>) ([<InlineIfLambda>]nonNullEqualityFunc:'T->'T->bool) =
+        match x, y with
+        | null, null -> true
+        | null,_ | _, null -> false
+        | x, y -> nonNullEqualityFunc !!x !!y
+
     /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
@@ -224,9 +230,9 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                 match dictStore with
                 | NonNull value -> value
                 | _ ->
-
-                    dictStore <- this.CreateDictionary(array)
-                    dictStore
+                    let dict = this.CreateDictionary(array)
+                    dictStore <- dict
+                    dict
             finally
                 Monitor.Exit(syncObj)
 
@@ -239,7 +245,7 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
 module Order =
     let orderBy (p: 'T -> 'U) =
         { new IComparer<'T> with
-            member _.Compare(x, xx) = compare (p x) (p xx)
+            member _.Compare(x, xx) = compare (p !!x) (p !!xx)
         }
 
     let orderOn p (pxOrder: IComparer<'U>) =
@@ -278,6 +284,7 @@ module Array =
     let order (eltOrder: IComparer<'T>) =
         { new IComparer<'T array> with
             member _.Compare(xs, ys) =
+                let xs,ys = nullArgCheck "xs" xs, nullArgCheck "ys" ys
                 let c = compare xs.Length ys.Length
 
                 if c <> 0 then
@@ -574,6 +581,7 @@ module List =
     let order (eltOrder: IComparer<'T>) =
         { new IComparer<'T list> with
             member _.Compare(xs, ys) =
+                let xs,ys = nullArgCheck "xs" xs, nullArgCheck "ys" ys
                 let rec loop xs ys =
                     match xs, ys with
                     | [], [] -> 0
@@ -839,7 +847,7 @@ module String =
 
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then None
-        elif value.StartsWithOrdinal pattern then Some()
+        elif (!!value).StartsWithOrdinal pattern then Some()
         else None
 
     let (|Contains|_|) (pattern:string) value =
@@ -1156,7 +1164,7 @@ module IPartialEqualityComparer =
     let On f (c: IPartialEqualityComparer<_>) =
         { new IPartialEqualityComparer<_> with
             member _.InEqualityRelation x = c.InEqualityRelation(f x)
-            member _.Equals(x, y) = c.Equals(f x, f y)
+            member _.Equals(x, y) = c.Equals(f !!x, f !!y)
             member _.GetHashCode x = c.GetHashCode(f x)
         }
 

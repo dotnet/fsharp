@@ -3363,7 +3363,7 @@ type NonLocalValOrMemberRef =
     member x.DebugText = x.ToString()
 
     /// For debugging
-    override x.ToString() = x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
+    override x.ToString() = !! x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
       
 /// Represents the path information for a reference to a value or member in another assembly, disassociated
 /// from any particular reference.

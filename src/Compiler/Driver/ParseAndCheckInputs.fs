@@ -343,8 +343,8 @@ let PostParseModuleSpecs
 type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameOfFile: QualifiedNameOfFile) =
-    let path = Path.GetDirectoryName fileName
+let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) (fileName:string) (qualNameOfFile: QualifiedNameOfFile) =
+    let path = !! Path.GetDirectoryName(fileName)
 
     let path =
         if FileSystem.IsPathRootedShim path then

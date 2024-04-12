@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection
 open FSharp.Compiler.IO
+open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
 open FSharp.Compiler.Text
@@ -419,7 +420,7 @@ and internal ProjectCore
                  member _.GetVersion() = fullHashString.Value
              })
 
-    member val ProjectDirectory = Path.GetDirectoryName(ProjectFileName)
+    member val ProjectDirectory = !! Path.GetDirectoryName(ProjectFileName)
     member _.OutputFileName = outputFileName.Value
     member _.Identifier: ProjectIdentifier = key.Value
     member _.Version = fullHash.Value

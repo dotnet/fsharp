@@ -254,7 +254,7 @@ module internal SymbolHelpers =
         | FSharpXmlDoc.None
         | FSharpXmlDoc.FromXmlText _ -> xmlDoc
         | FSharpXmlDoc.FromXmlFile(dllName, xmlSig) ->
-            TryFindXmlDocByAssemblyNameAndSig infoReader (Path.GetFileNameWithoutExtension dllName) xmlSig
+            TryFindXmlDocByAssemblyNameAndSig infoReader (!!Path.GetFileNameWithoutExtension(dllName)) xmlSig
             |> Option.map FSharpXmlDoc.FromXmlText
             |> Option.defaultValue xmlDoc
 
@@ -405,66 +405,70 @@ module internal SymbolHelpers =
               //| _ -> false
               
           member x.Equals(item1, item2) = 
-            // This may explore assemblies that are not in the reference set.
-            // In this case just bail out and assume items are not equal
-            protectAssemblyExploration false (fun () -> 
-              let equalHeadTypes(ty1, ty2) =
-                  match tryTcrefOfAppTy g ty1 with
-                  | ValueSome tcref1 ->
-                    match tryTcrefOfAppTy g ty2 with
-                    | ValueSome tcref2 -> tyconRefEq g tcref1 tcref2
-                    | _ -> typeEquiv g ty1 ty2
-                  | _ -> typeEquiv g ty1 ty2
+            match item1,item2 with
+            | null,null -> true
+            | null,_ | _,null -> false
+            | item1,item2 ->
+                // This may explore assemblies that are not in the reference set.
+                // In this case just bail out and assume items are not equal
+                protectAssemblyExploration false (fun () -> 
+                  let equalHeadTypes(ty1, ty2) =
+                      match tryTcrefOfAppTy g ty1 with
+                      | ValueSome tcref1 ->
+                        match tryTcrefOfAppTy g ty2 with
+                        | ValueSome tcref2 -> tyconRefEq g tcref1 tcref2
+                        | _ -> typeEquiv g ty1 ty2
+                      | _ -> typeEquiv g ty1 ty2
 
-              ItemsAreEffectivelyEqual g item1 item2 || 
+                  ItemsAreEffectivelyEqual g item1 item2 || 
 
-              // Much of this logic is already covered by 'ItemsAreEffectivelyEqual'
-              match item1, item2 with 
-              | Item.DelegateCtor ty1, Item.DelegateCtor ty2 -> equalHeadTypes(ty1, ty2)
-              | Item.Types(dn1, ty1 :: _), Item.Types(dn2, ty2 :: _) ->
-                  // Bug 4403: We need to compare names as well, because 'int' and 'Int32' are physically the same type, but we want to show both
-                  dn1 = dn2 && equalHeadTypes(ty1, ty2) 
+                  // Much of this logic is already covered by 'ItemsAreEffectivelyEqual'
+                  match item1, item2 with 
+                  | Item.DelegateCtor ty1, Item.DelegateCtor ty2 -> equalHeadTypes(ty1, ty2)
+                  | Item.Types(dn1, ty1 :: _), Item.Types(dn2, ty2 :: _) ->
+                      // Bug 4403: We need to compare names as well, because 'int' and 'Int32' are physically the same type, but we want to show both
+                      dn1 = dn2 && equalHeadTypes(ty1, ty2) 
               
-              // Prefer a type to a DefaultStructCtor, a DelegateCtor and a FakeInterfaceCtor 
-              | ItemWhereTypIsPreferred ty1, ItemWhereTypIsPreferred ty2 -> equalHeadTypes(ty1, ty2) 
+                  // Prefer a type to a DefaultStructCtor, a DelegateCtor and a FakeInterfaceCtor 
+                  | ItemWhereTypIsPreferred ty1, ItemWhereTypIsPreferred ty2 -> equalHeadTypes(ty1, ty2) 
 
-              | Item.ExnCase tcref1, Item.ExnCase tcref2 -> tyconRefEq g tcref1 tcref2
-              | Item.ILField(fld1), Item.ILField(fld2) ->
-                  ILFieldInfo.ILFieldInfosUseIdenticalDefinitions fld1 fld2
-              | Item.CustomOperation (_, _, Some minfo1), Item.CustomOperation (_, _, Some minfo2) -> 
-                    MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2
-              | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) -> 
-                    (nm1 = nm2) && typarRefEq tp1 tp2
-              | Item.ModuleOrNamespaces(modref1 :: _), Item.ModuleOrNamespaces(modref2 :: _) -> fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef modref2
-              | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> Range.equals id1.idRange id2.idRange && id1.idText = id2.idText
-              | Item.MethodGroup(_, meths1, _), Item.MethodGroup(_, meths2, _) -> 
-                  Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
-                    MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
-              | (Item.Value vref1 | Item.CustomBuilder (_, vref1)), (Item.Value vref2 | Item.CustomBuilder (_, vref2)) -> 
-                  valRefEq g vref1 vref2
-              | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1, _)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2, _)) ->
-                  idx1 = idx2 && valRefEq g vref1 vref2
-              | Item.UnionCase(UnionCaseInfo(_, ur1), _), Item.UnionCase(UnionCaseInfo(_, ur2), _) -> 
-                  g.unionCaseRefEq ur1 ur2
-              | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
-                  (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
-              | Item.Property(info = pi1s), Item.Property(info = pi2s) -> 
-                  (pi1s, pi2s) ||> List.forall2 PropInfo.PropInfosUseIdenticalDefinitions
-              | Item.Event evt1, Item.Event evt2 -> 
-                  EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
-              | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
-                 anonInfoEquiv anon1 anon2 && i1 = i2
-              | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
-                 (traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName)
-              | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) ->
-                  (meths1, meths2)
-                  ||> List.forall2 MethInfo.MethInfosUseIdenticalDefinitions
-              | Item.UnqualifiedType tcrefs1, Item.UnqualifiedType tcrefs2 ->
-                  (tcrefs1, tcrefs2)
-                  ||> List.forall2 (fun tcref1 tcref2 -> tyconRefEq g tcref1 tcref2)
-              | Item.Types(_, [AbbrevOrAppTy(tcref1, _)]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
-              | Item.UnqualifiedType([tcref1]), Item.Types(_, [AbbrevOrAppTy(tcref2, _)]) -> tyconRefEq g tcref1 tcref2
-              | _ -> false)
+                  | Item.ExnCase tcref1, Item.ExnCase tcref2 -> tyconRefEq g tcref1 tcref2
+                  | Item.ILField(fld1), Item.ILField(fld2) ->
+                      ILFieldInfo.ILFieldInfosUseIdenticalDefinitions fld1 fld2
+                  | Item.CustomOperation (_, _, Some minfo1), Item.CustomOperation (_, _, Some minfo2) -> 
+                        MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2
+                  | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) -> 
+                        (nm1 = nm2) && typarRefEq tp1 tp2
+                  | Item.ModuleOrNamespaces(modref1 :: _), Item.ModuleOrNamespaces(modref2 :: _) -> fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef modref2
+                  | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> Range.equals id1.idRange id2.idRange && id1.idText = id2.idText
+                  | Item.MethodGroup(_, meths1, _), Item.MethodGroup(_, meths2, _) -> 
+                      Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
+                        MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+                  | (Item.Value vref1 | Item.CustomBuilder (_, vref1)), (Item.Value vref2 | Item.CustomBuilder (_, vref2)) -> 
+                      valRefEq g vref1 vref2
+                  | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1, _)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2, _)) ->
+                      idx1 = idx2 && valRefEq g vref1 vref2
+                  | Item.UnionCase(UnionCaseInfo(_, ur1), _), Item.UnionCase(UnionCaseInfo(_, ur2), _) -> 
+                      g.unionCaseRefEq ur1 ur2
+                  | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
+                      (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
+                  | Item.Property(info = pi1s), Item.Property(info = pi2s) -> 
+                      (pi1s, pi2s) ||> List.forall2 PropInfo.PropInfosUseIdenticalDefinitions
+                  | Item.Event evt1, Item.Event evt2 -> 
+                      EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
+                  | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
+                     anonInfoEquiv anon1 anon2 && i1 = i2
+                  | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
+                     (traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName)
+                  | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) ->
+                      (meths1, meths2)
+                      ||> List.forall2 MethInfo.MethInfosUseIdenticalDefinitions
+                  | Item.UnqualifiedType tcrefs1, Item.UnqualifiedType tcrefs2 ->
+                      (tcrefs1, tcrefs2)
+                      ||> List.forall2 (fun tcref1 tcref2 -> tyconRefEq g tcref1 tcref2)
+                  | Item.Types(_, [AbbrevOrAppTy(tcref1, _)]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
+                  | Item.UnqualifiedType([tcref1]), Item.Types(_, [AbbrevOrAppTy(tcref2, _)]) -> tyconRefEq g tcref1 tcref2
+                  | _ -> false)
               
           member x.GetHashCode item =
             // This may explore assemblies that are not in the reference set.

@@ -393,7 +393,7 @@ type PortablePdbGenerator
     /// </summary>
     let sourceCompressionThreshold = 200
 
-    let includeSource file =
+    let includeSource (file:string) =
         let isInList =
             embedSourceList
             |> List.exists (fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase) = 0)
@@ -872,7 +872,7 @@ let getInfoForEmbeddedPortablePdb
     (uncompressedLength: int64)
     (contentId: BlobContentId)
     (compressedStream: MemoryStream)
-    pdbfile
+    (pdbfile:string)
     cvChunk
     pdbChunk
     deterministicPdbChunk
@@ -886,7 +886,7 @@ let getInfoForEmbeddedPortablePdb
     pdbGetDebugInfo
         (contentId.Guid.ToByteArray())
         (int32 contentId.Stamp)
-        fn
+        !!fn
         cvChunk
         (Some pdbChunk)
         deterministicPdbChunk

@@ -2706,7 +2706,7 @@ module internal ParseAndCheckFile =
     let parseFile
         (
             sourceText: ISourceText,
-            fileName,
+            fileName: string,
             options: FSharpParsingOptions,
             userOpName: string,
             suggestNamesForErrors: bool,
