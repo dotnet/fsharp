@@ -19,6 +19,10 @@
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Benchmarks' and '$(BUILDING_USING_DOTNET)' != 'false'">
+      <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
+  </PropertyGroup>
+
   <!-- Temporary workaround if proj-info is used, allows Ionide's evaluation to work correctly. -->
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'false' and '$(DotnetProjInfo)' == 'true'">
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
@@ -33,7 +37,8 @@
          Don't use it explicitly when building with plain .NET (without Proto or Arcade).
      -->
     <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' != 'true'">$(OtherFlags) --realsig-</OtherFlags>
-    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig+</OtherFlags>
+    <!-- TBD: Fix MEF Export visibility issues in VS -->
+    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig-</OtherFlags>
 
   </PropertyGroup>
 
