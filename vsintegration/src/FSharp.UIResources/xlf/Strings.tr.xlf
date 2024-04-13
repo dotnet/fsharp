@@ -204,37 +204,37 @@
       </trans-unit>
       <trans-unit id="TransparentCompiler">
         <source>Transparent Compiler (experimental)</source>
-        <target state="new">Transparent Compiler (experimental)</target>
+        <target state="translated">Saydam Derleyiciyi kullan (deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer1">
         <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
+        <target state="translated">UYARI! Saydam Derleyici henüz tüm özellikleri desteklemiyor ve kilitlenmelere neden olabilir veya hatalı sonuçlar verebilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer2">
         <source>Use at your own risk!</source>
-        <target state="new">Use at your own risk!</target>
+        <target state="translated">Kullanım sorumluluğu size aittir!</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer3">
         <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
+        <target state="translated">Bunu seçerek ek performans telemetrisini de kabul etmiş olursunuz</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
         <source>Transparent Compiler Cache Factor</source>
-        <target state="new">Transparent Compiler Cache Factor</target>
+        <target state="translated">Saydam Derleyici Önbellek Faktörü</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
         <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
-        <target state="new">Higher number means more memory will be used for caching. Changing the value wipes cache.</target>
+        <target state="translated">Sayının yüksek olması, önbelleğe alma için daha fazla bellek kullanılacağı anlamına gelir. Değerin değiştirilmesi önbelleğini siler.</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
         <source>Create new project snapshots from existing ones</source>
-        <target state="new">Create new project snapshots from existing ones</target>
+        <target state="translated">Mevcut proje anlık görüntülerinden yenilerini oluşturma</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -324,7 +324,7 @@
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
         <source>Use Transparent Compiler (restart required)</source>
-        <target state="new">Use Transparent Compiler (restart required)</target>
+        <target state="translated">Saydam Derleyiciyi kullan (yeniden başlatma gereklidir)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
