@@ -2947,9 +2947,14 @@ and ResolveOverloading
             // See what candidates we have based on static/virtual/abstract
             // OK: static virtual TResult operator checked e.g. IAdditionOperators.op_CheckedAddition
             // Error: static abstract TResult operator e.g. IAdditionOperators.op_Addition
+            let isConstrainedCall =
+                match calledMeth.OptionalStaticType with
+                | Some ttype -> isTyparTy g ttype
+                | None -> false
+                
             match calledMeth.Method with
-            | ILMeth(ilMethInfo= ilMethInfo) when ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
-                // Don't want to make available via completion, as it will lead to the compile time error. I.e. not usable if it's non-virtual
+            | ILMeth(ilMethInfo= ilMethInfo) when not isConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
+                // Don't want to make available via completion, as it will lead to the compile time error e.g. not usable if it's non-virtual
                 None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
 
