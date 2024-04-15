@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">반환 형식 주석 추가</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -44,17 +44,17 @@ Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">블록 구조 안내선; 
-
+        <target state="translated">블록 구조 가이드;
 F# 코드에 대한 구조 지침 표시;
 개요;
 F# 코드에 대한 개요 및 축소 가능한 노드 표시;
 인라인 힌트;
 인라인 형식 힌트 표시(미리 보기);
-반환 유형 힌트 표시(미리 보기);
+반환 형식 힌트 표시(미리 보기);
 인라인 매개 변수 이름 힌트 표시(미리 보기);
+투명한 컴파일러 사용(실험적);
 라이브 버퍼;
-확인에 라이브(저장되지 않은) 버퍼 사용</target>
+분석에 라이브(저장되지 않은) 버퍼 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -232,7 +232,7 @@ F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">불필요한 괄호 제거</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -257,7 +257,7 @@ F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">반환 값:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
