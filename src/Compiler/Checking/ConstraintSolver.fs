@@ -2945,15 +2945,18 @@ and ResolveOverloading
         match calledMethGroup, candidates with 
         | _, [calledMeth] when not isOpConversion ->
             // See what candidates we have based on static/virtual/abstract
-            // OK: static virtual TResult operator checked e.g. IAdditionOperators.op_CheckedAddition
-            // Error: static abstract TResult operator e.g. IAdditionOperators.op_Addition
-            let isConstrainedCall =
+            
+            // If false then is a static method call directly on an interface e.g.
+            // IParsable.Parse(...)
+            // IAdditionOperators.(+)
+            // This is not allowed as Parse and (+) method are static abstract
+            let isStaticConstrainedCall =
                 match calledMeth.OptionalStaticType with
                 | Some ttype -> isTyparTy g ttype
                 | None -> false
                 
             match calledMeth.Method with
-            | ILMeth(ilMethInfo= ilMethInfo) when not isConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
+            | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
                 // Don't want to make available via completion, as it will lead to the compile time error e.g. not usable if it's non-virtual
                 None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
