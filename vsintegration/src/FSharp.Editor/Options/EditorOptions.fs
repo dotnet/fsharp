@@ -168,7 +168,7 @@ type EditorOptions() =
     member _.Formatting: FormattingOptions = store.Get()
 
     [<Export(typeof<SettingsStore.ISettingsStore>)>]
-    member private _.SettingsStore = store
+    member _.SettingsStore = store
 
     member _.With value = store.Register value
 

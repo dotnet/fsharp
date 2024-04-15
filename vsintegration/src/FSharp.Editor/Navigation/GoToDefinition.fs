@@ -29,7 +29,7 @@ open System.Text.RegularExpressions
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Telemetry
-open System.Collections.Generic
+open Microsoft.VisualStudio.Threading
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -565,6 +565,18 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 return this.NavigateToItem(item, cancellationToken)
         }
 
+    member this.NavigateToExternalDeclarationAsync
+        (
+            targetSymbolUse: FSharpSymbolUse,
+            metadataReferences: seq<MetadataReference>
+        ) =
+        foregroundCancellableTask
+            {
+                let! cancellationToken = CancellableTask.getCancellationToken()
+                do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken)
+                return this.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken)
+            }
+
     member this.NavigateToExternalDeclaration
         (
             targetSymbolUse: FSharpSymbolUse,
@@ -600,9 +612,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     fileName,
                     metadataReferences
                 )
-
             let tmpShownDocOpt =
                 metadataAsSource.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
+            
 
             match tmpShownDocOpt with
             | ValueSome tmpShownDoc ->
@@ -706,10 +718,19 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             let gtd = GoToDefinition(metadataAsSource)
             let! result = gtd.FindDefinitionAtPosition(initialDoc, position)
 
-            return
-                match result with
-                | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) -> ImmutableArray.create navItem
-                | _ -> ImmutableArray.empty
+            
+            match result with
+            | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) ->
+                return ImmutableArray.create navItem
+            | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _) ->
+                let! res = gtd.NavigateToExternalDeclarationAsync(targetSymbolUse, metadataReferences)
+                if not res then
+                    return ImmutableArray.empty
+                else
+                    // TODO: return something? Maybe cancelled task?
+                    return ImmutableArray.empty
+            | _ ->
+                return ImmutableArray.empty
         }
 
     member _.TryGoToDefinition(position, cancellationToken) =
