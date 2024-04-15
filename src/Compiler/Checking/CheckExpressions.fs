@@ -5293,7 +5293,13 @@ and TcStmtThatCantBeCtorBody (cenv: cenv) env tpenv synExpr =
 and TcStmt (cenv: cenv) env tpenv synExpr =
     let g = cenv.g
     let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
-    let m = synExpr.Range
+
+    let rec getInnerRange synExpr =
+        match synExpr with
+        | SynExpr.Sequential(expr2 = expr2)  -> getInnerRange expr2
+        | synExpr -> synExpr.Range
+    
+    let m = getInnerRange synExpr
     let wasUnit = UnifyUnitType cenv env m ty expr
     if wasUnit then
         expr, tpenv

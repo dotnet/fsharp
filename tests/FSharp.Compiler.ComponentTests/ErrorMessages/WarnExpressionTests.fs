@@ -2,6 +2,7 @@
 
 namespace ErrorMessages
 
+open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -225,3 +226,15 @@ let main _argv =
         """
         |> typecheck
         |> shouldSucceed
+
+    // SOURCE=ExpressionIgnoredRange.fs							# ExpressionIgnoredRange.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExpressionIgnoredRange.fs"|])>]
+    let ``ExpressionIgnoredRange.fs`` compilation =
+        compilation
+        |> asFs
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 20, Line 8, Col 5, Line 8, Col 9, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            (Warning 20, Line 13, Col 5, Line 13, Col 16, "The result of this expression has type '{| A: int |}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+        ]
