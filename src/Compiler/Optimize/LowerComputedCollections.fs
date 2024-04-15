@@ -314,7 +314,7 @@ module Array =
         let arrayTy = mkArrayType g overallElemTy
 
         let convToNativeInt ovf expr =
-            let ty = stripMeasuresFromTy g (tyOfExpr g expr)
+            let ty = tyOfExpr g expr
 
             let conv =
                 match ovf with
@@ -322,13 +322,13 @@ module Array =
                 | CheckOvf when isSignedIntegerTy g ty -> AI_conv_ovf DT_I
                 | CheckOvf -> AI_conv_ovf_un DT_I
 
-            if typeEquiv g ty g.int64_ty then
+            if typeEquivAux EraseMeasures g ty g.int64_ty then
                 mkAsmExpr ([conv], [], [expr], [g.nativeint_ty], m)
-            elif typeEquiv g ty g.nativeint_ty then
+            elif typeEquivAux EraseMeasures g ty g.nativeint_ty then
                 mkAsmExpr ([conv], [], [mkAsmExpr ([AI_conv DT_I8], [], [expr], [g.int64_ty], m)], [g.nativeint_ty], m)
-            elif typeEquiv g ty g.uint64_ty then
+            elif typeEquivAux EraseMeasures g ty g.uint64_ty then
                 mkAsmExpr ([conv], [], [expr], [g.nativeint_ty], m)
-            elif typeEquiv g ty g.unativeint_ty then
+            elif typeEquivAux EraseMeasures g ty g.unativeint_ty then
                 mkAsmExpr ([conv], [], [mkAsmExpr ([AI_conv DT_U8], [], [expr], [g.uint64_ty], m)], [g.nativeint_ty], m)
             else
                 expr
