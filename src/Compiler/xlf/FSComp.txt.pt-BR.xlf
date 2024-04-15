@@ -122,6 +122,11 @@
         <target state="translated">O membro ou a função "{0}" tem o atributo "TailCallAttribute", mas não está sendo usado de maneira recursiva em cauda.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticAbstractInterfaceMembers">
+        <source>A static abstract interface member can be accessed only on a type parameter.</source>
+        <target state="new">A static abstract interface member can be accessed only on a type parameter.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="translated">Expressões de objeto não podem implementar interfaces com membros abstratos estáticos ou declarar membros estáticos.</target>

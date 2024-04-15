@@ -1746,3 +1746,4 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3863,parsExpectingField,"Expecting record field"
 3864,tooManyMethodsInDotNetTypeWritingAssembly,"The type '%s' has too many methods. Found: '%d', maximum: '%d'"
 3865,parsOnlySimplePatternsAreAllowedInConstructors,"Only simple patterns are allowed in primary constructors"
+3866,chkStaticAbstractInterfaceMembers,"A static abstract interface member can be accessed only on a type parameter."

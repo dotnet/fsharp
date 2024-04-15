@@ -1208,7 +1208,7 @@ IAdditionOperators.op_Addition (3, 6)
           |> withLangVersion80
           |> compile
           |> shouldFail
-          |> withSingleDiagnostic (Error 509, Line 4, Col 1, Line 4, Col 38, "Method or object constructor 'op_Addition' not found")
+          |> withSingleDiagnostic (Error 3866, Line 4, Col 1, Line 4, Col 38, "A static abstract interface member can be accessed only on a type parameter.")
 
     [<FactForNETCOREAPP>]
     let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` () =
@@ -1238,7 +1238,7 @@ printf "%A" res"""
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 509, Line 12, Col 82, Line 12, Col 126, "Method or object constructor 'op_Addition' not found")
-            (Error 509, Line 13, Col 82, Line 13, Col 126, "Method or object constructor 'op_Addition' not found")
-            (Error 509, Line 15, Col 82, Line 15, Col 129, "Method or object constructor 'Parse' not found")
+            (Error 3866, Line 12, Col 82, Line 12, Col 126, "A static abstract interface member can be accessed only on a type parameter.")
+            (Error 3866, Line 13, Col 82, Line 13, Col 126, "A static abstract interface member can be accessed only on a type parameter.")
+            (Error 3866, Line 15, Col 82, Line 15, Col 129, "A static abstract interface member can be accessed only on a type parameter.")
         ]
