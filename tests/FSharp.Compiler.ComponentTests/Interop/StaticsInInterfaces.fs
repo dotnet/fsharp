@@ -607,6 +607,49 @@ module Test =
         ]
 
     [<FactForNETCOREAPP>]
+    let ``F# can call overwritten static virtual member from interface``() =
+        let CSharpLib =
+            CSharp """
+namespace Test;
+
+public interface I
+{
+    static virtual string Echo(string x) => $"I.Echo: {x}";
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+            |> withName "CsLibAssembly"
+
+        FSharp """
+type Imp() =
+    interface Test.I with
+        static member Echo (x: string) = $"Imp.I.Echo: {x}"
+
+    static member Echo (x: string) = $"Imp.Echo: {x}"
+
+let echo<'T when 'T :> Test.I> x = 'T.Echo(x)
+
+let inline echo_srtp<'T when 'T : (static member Echo: string -> string)> x = 'T.Echo(x)
+
+match echo<Imp> "a" with
+| "Imp.I.Echo: a" -> printfn "success"
+| "Imp.Echo: a" -> failwith "incorrectly invoked the class 'Echo'"
+| "I.Echo: a" -> failwith "incorrectly invoked the base interface 'Echo'"
+| _ -> failwith "incorrect value"
+
+match echo_srtp<Imp> "a" with
+| "Imp.Echo: a" -> printfn "success"
+| "Imp.I.Echo: a" -> failwith "incorrectly invoked the interface 'Echo'"
+| "I.Echo: a" -> failwith "incorrectly invoked the base interface 'Echo'"
+| _ -> failwith "incorrect value"
+"""
+        |> withReferences [CSharpLib]
+        |> withLangVersion80
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
     let ``C# can call constrained method defined in F#`` () =
         let FSharpLib =
             FSharp """
