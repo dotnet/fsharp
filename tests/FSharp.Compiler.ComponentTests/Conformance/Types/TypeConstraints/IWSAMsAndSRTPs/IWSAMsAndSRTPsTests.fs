@@ -19,6 +19,18 @@ module TypesAndTypeConstraints_IWSAMsAndSRTPs =
         |> asExe
         |> withLangVersion70
         |> withReferences [typesModule]
+        
+    let verifyCompile compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compile
+
+    let verifyCompileAndRun compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compileAndRun
 
     [<Fact>]
     let ``Srtp call Zero property returns valid result`` () =
@@ -1184,3 +1196,49 @@ let execute = IPrintable.Say("hello")
          |> withLangVersion80
          |> typecheck
          |> shouldSucceed
+        
+    [<FactForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics non virtual) produces a compilation error`` () =
+         Fsx """
+open System.Numerics
+
+IAdditionOperators.op_Addition (3, 6)
+         """
+          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+          |> withLangVersion80
+          |> compile
+          |> shouldFail
+          |> withSingleDiagnostic (Error 3866, Line 4, Col 1, Line 4, Col 38, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+
+    [<FactForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` () =
+         Fsx """
+open System.Numerics
+
+let res = IAdditionOperators.op_CheckedAddition (3, 6)
+
+printf "%A" res"""
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> asExe
+         |> compile
+         |> shouldSucceed
+         |> run
+         |> verifyOutput "9"
+
+#if !NETCOREAPP
+    [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+#else
+    // SOURCE=ConstrainedAndInterfaceCalls.fs							# ConstrainedAndInterfaceCalls.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConstrainedAndInterfaceCalls.fs"|])>]
+#endif
+    let ``ConstrainedAndInterfaceCalls.fs`` compilation =
+        compilation 
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3866, Line 12, Col 82, Line 12, Col 126, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+            (Error 3866, Line 13, Col 82, Line 13, Col 126, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+            (Error 3866, Line 15, Col 82, Line 15, Col 129, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.Parse).")
+        ]
