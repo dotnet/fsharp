@@ -2957,8 +2957,7 @@ and ResolveOverloading
                 
             match calledMeth.Method with
             | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
-                // Don't want to make available via completion, as it will lead to the compile time error e.g. not usable if it's non-virtual
-                None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(), m)), NoTrace
+                None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(ilMethInfo.ILName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
