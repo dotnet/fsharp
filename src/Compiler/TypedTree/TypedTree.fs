@@ -5083,11 +5083,11 @@ type Expr =
 
     override expr.ToString() = expr.ToDebugString(3)
 
-    member expr.ToDebugString(depth: int) = 
+    member expr.ToDebugString(depth: int) : string = 
         if depth = 0 then ".." else
         let depth = depth - 1
         match expr with 
-        | Const (c, _, _) -> c.ToString()
+        | Const (c, _, _) -> string c
         | Val (v, _, _) -> v.LogicalName
         | Sequential (e1, e2, _, _) -> "Sequential(" + e1.ToDebugString(depth) + ", " + e2.ToDebugString(depth) + ")"
         | Lambda (_, _, _, vs, body, _, _) -> sprintf "Lambda(%+A, " vs + body.ToDebugString(depth) + ")" 
@@ -6300,8 +6300,8 @@ type Construct() =
     static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> (p: Tainted<'T>) : range option =
         let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure id))
         match attrs with
-        | None | Some (Null, _, _) -> None
-        | Some (NonNull filePath, line, column) -> 
+        | None | Some (null, _, _) -> None
+        | Some (filePath, line, column) -> 
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
             let pos = Position.mkPos line (max 0 (column - 1)) 
