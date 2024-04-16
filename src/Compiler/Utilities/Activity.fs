@@ -96,7 +96,7 @@ module internal Activity =
 
     let private activitySource = new ActivitySource(ActivityNames.FscSourceName)
 
-    let start (name: string) (tags: (string * string HelpersUntilNullnessIsAvailable.MaybeNull) seq) : IDisposable =
+    let start (name: string) (tags: (string * string) seq) : IDisposable =
         let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
 
         match activity with

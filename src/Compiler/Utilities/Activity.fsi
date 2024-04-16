@@ -43,7 +43,7 @@ module internal Activity =
 #if NO_CHECKNULLS
     val start: name: string -> tags: (string * string) seq -> IDisposable
 #else
-    val start: name: string -> tags: (string * string|null) seq -> IDisposable
+    val start: name: string -> tags: (string * string) seq -> IDisposable
 #endif    
 
     val addEvent: name: string -> unit

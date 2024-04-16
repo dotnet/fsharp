@@ -833,7 +833,7 @@ type internal TransparentCompiler
                     Activity.start
                         "ComputeBootstrapInfoStatic"
                         [|
-                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
                             "references", projectSnapshot.ReferencedProjects.Length.ToString()
                         |]
 
@@ -987,7 +987,7 @@ type internal TransparentCompiler
             projectSnapshot.NoFileVersionsKey,
             node {
                 use _ =
-                    Activity.start "ComputeBootstrapInfo" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
+                    Activity.start "ComputeBootstrapInfo" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName  |> (!!) |]
 
                 // Trap and report diagnostics from creation.
                 let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
@@ -1261,7 +1261,7 @@ type internal TransparentCompiler
                     Activity.start
                         "ComputeTcIntermediate"
                         [|
-                            Activity.Tags.fileName, fileName |> Path.GetFileName
+                            Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!)
                             "key", key.GetLabel()
                             "version", "-" // key.GetVersion()
                         |]
@@ -1289,7 +1289,7 @@ type internal TransparentCompiler
 
                 // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
                 let tcConfig =
-                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName)
+                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
 
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
@@ -1300,7 +1300,7 @@ type internal TransparentCompiler
 
                 //beforeFileChecked.Trigger fileName
 
-                ApplyMetaCommandsFromInputToTcConfig(tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider)
+                ApplyMetaCommandsFromInputToTcConfig(tcConfig, input, Path.GetDirectoryName fileName |> (!!), tcImports.DependencyProvider)
                 |> ignore
 
                 let sink = TcResultsSinkImpl(tcGlobals, file.SourceText)
@@ -1476,7 +1476,7 @@ type internal TransparentCompiler
                 let file = projectSnapshot.SourceFiles |> List.last
 
                 use _ =
-                    Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
+                    Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |> (!!) |]
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
 
@@ -1531,7 +1531,7 @@ type internal TransparentCompiler
             projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
             node {
                 use _ =
-                    Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+                    Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
                 match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
@@ -1563,7 +1563,7 @@ type internal TransparentCompiler
 
                     // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
                     let tcConfig =
-                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName)
+                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName |> (!!))
 
                     let diagnosticsOptions = tcConfig.diagnosticsOptions
 
@@ -1645,7 +1645,7 @@ type internal TransparentCompiler
                 use _ =
                     Activity.start
                         "ComputeParseAndCheckAllFilesInProject"
-                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
+                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!) |]
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
 
@@ -1917,7 +1917,7 @@ type internal TransparentCompiler
             projectSnapshot.FileKey fileName,
             node {
                 use _ =
-                    Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+                    Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
                 let! sinkOpt = tryGetSink fileName projectSnapshot
 
@@ -1947,7 +1947,7 @@ type internal TransparentCompiler
             projectSnapshot.FileKey fileName,
             node {
                 use _ =
-                    Activity.start "ComputeItemKeyStore" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+                    Activity.start "ComputeItemKeyStore" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
                 let! sinkOpt = tryGetSink fileName projectSnapshot
 

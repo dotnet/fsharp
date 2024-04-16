@@ -6,6 +6,7 @@ open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Reflection
+open Internal.Utilities.Library
 
 module internal SR =
     let private resources =
@@ -149,7 +150,7 @@ module internal DiagnosticMessage =
 
                 nFmt
 
-        let nHoles, holes = countFormatHoles messageString
+        let nHoles, holes = countFormatHoles !!messageString
         let nPlaceholders = countFormatPlaceholders fmtString
 
         // first, verify that the number of holes in the message string does not exceed the
@@ -172,5 +173,5 @@ module internal DiagnosticMessage =
             )
 
 #endif
-        messageString <- postProcessString messageString
-        new ResourceString<'T>(messageString, fmt)
+        messageString <- postProcessString !!messageString
+        new ResourceString<'T>(!!messageString, fmt)
