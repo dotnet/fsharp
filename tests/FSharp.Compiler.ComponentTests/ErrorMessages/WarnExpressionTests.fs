@@ -237,4 +237,7 @@ let main _argv =
         |> withDiagnostics [
             (Warning 20, Line 8, Col 5, Line 8, Col 9, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
             (Warning 20, Line 13, Col 5, Line 13, Col 16, "The result of this expression has type '{| A: int |}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            (Warning 20, Line 17, Col 5, Line 17, Col 6, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            (Warning 20, Line 18, Col 5, Line 18, Col 9, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            (Warning 20, Line 19, Col 5, Line 19, Col 16, "The result of this expression has type '{| A: int |}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]

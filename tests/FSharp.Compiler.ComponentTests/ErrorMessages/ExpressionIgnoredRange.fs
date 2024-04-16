@@ -12,4 +12,10 @@ for i in 1 .. 10 do
     printfn "" |> ignore
     {| A = 4 |}
 
-// TODO Add more cases
+for i in 1 .. 10 do 
+    printfn "" 
+    3 
+    true 
+    {| A = 4 |}
+
+// TODO Add more test cases

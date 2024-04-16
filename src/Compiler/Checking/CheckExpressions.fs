@@ -729,9 +729,15 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
         extractNext inner
     | expr -> checkExpr m expr
 
-let UnifyUnitType (cenv: cenv) (env: TcEnv) m ty expr =
+let UnifyUnitType (cenv: cenv) (env: TcEnv) ty expr =
     let g = cenv.g
     let denv = env.DisplayEnv
+    let rec getInnerRange expr =
+        match expr with
+        | Expr.Sequential(expr2 = expr2)  -> getInnerRange expr2
+        | expr -> expr.Range
+        
+    let m = getInnerRange expr
     if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty g.unit_ty then
         true
     else
@@ -5293,14 +5299,8 @@ and TcStmtThatCantBeCtorBody (cenv: cenv) env tpenv synExpr =
 and TcStmt (cenv: cenv) env tpenv synExpr =
     let g = cenv.g
     let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
-
-    let rec getInnerRange synExpr =
-        match synExpr with
-        | SynExpr.Sequential(expr2 = expr2)  -> getInnerRange expr2
-        | synExpr -> synExpr.Range
-    
-    let m = getInnerRange synExpr
-    let wasUnit = UnifyUnitType cenv env m ty expr
+    let m = synExpr.Range    
+    let wasUnit = UnifyUnitType cenv env ty expr
     if wasUnit then
         expr, tpenv
     else
@@ -10833,7 +10833,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr)
 
         if kind = SynBindingKind.StandaloneExpression && not cenv.isScript then
-            UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
+            UnifyUnitType cenv env overallPatTy rhsExprChecked |> ignore<bool>
 
         // Fix up the r.h.s. expression for 'fixed'
         let rhsExprChecked =
