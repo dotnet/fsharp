@@ -10434,21 +10434,19 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             mkAsmExpr ([AI_clt_un], [], [e1; e2], [g.bool_ty], m)
 
     let unsignedEquivalent ty =
-        if typeEquiv g ty g.int64_ty then g.uint64_ty
-        elif typeEquiv g ty g.int32_ty then g.uint32_ty
-        elif typeEquiv g ty g.int16_ty then g.uint16_ty
-        elif typeEquiv g ty g.sbyte_ty then g.byte_ty
+        if typeEquivAux EraseMeasures g ty g.int64_ty then g.uint64_ty
+        elif typeEquivAux EraseMeasures g ty g.int32_ty then g.uint32_ty
+        elif typeEquivAux EraseMeasures g ty g.int16_ty then g.uint16_ty
+        elif typeEquivAux EraseMeasures g ty g.sbyte_ty then g.byte_ty
         else ty
 
     /// Find the unsigned type with twice the width of the given type, if available.
     let nextWidestUnsignedTy ty =
-        let ty = stripMeasuresFromTy g ty
-
-        if typeEquiv g ty g.int64_ty || typeEquiv g ty g.int32_ty || typeEquiv g ty g.uint32_ty then
+        if typeEquivAux EraseMeasures g ty g.int64_ty || typeEquivAux EraseMeasures g ty g.int32_ty || typeEquivAux EraseMeasures g ty g.uint32_ty then
             g.uint64_ty
-        elif typeEquiv g ty g.int16_ty || typeEquiv g ty g.uint16_ty || typeEquiv g ty g.char_ty then
+        elif typeEquivAux EraseMeasures g ty g.int16_ty || typeEquivAux EraseMeasures g ty g.uint16_ty || typeEquivAux EraseMeasures g ty g.char_ty then
             g.uint32_ty
-        elif typeEquiv g ty g.sbyte_ty || typeEquiv g ty g.byte_ty then
+        elif typeEquivAux EraseMeasures g ty g.sbyte_ty || typeEquivAux EraseMeasures g ty g.byte_ty then
             g.uint16_ty
         else
             ty
@@ -10456,19 +10454,17 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
     /// Convert the value to the next-widest unsigned type.
     /// We do this so that adding one won't result in overflow.
     let mkWiden e =
-        let ty = stripMeasuresFromTy g rangeTy
-
-        if typeEquiv g ty g.int32_ty then
+        if typeEquivAux EraseMeasures g rangeTy g.int32_ty then
             mkAsmExpr ([AI_conv DT_I8], [], [e], [g.uint64_ty], m)
-        elif typeEquiv g ty g.uint32_ty then
+        elif typeEquivAux EraseMeasures g rangeTy g.uint32_ty then
             mkAsmExpr ([AI_conv DT_U8], [], [e], [g.uint64_ty], m)
-        elif typeEquiv g ty g.int16_ty then
+        elif typeEquivAux EraseMeasures g rangeTy g.int16_ty then
             mkAsmExpr ([AI_conv DT_I4], [], [e], [g.uint32_ty], m)
-        elif typeEquiv g ty g.uint16_ty || typeEquiv g ty g.char_ty then
+        elif typeEquivAux EraseMeasures g rangeTy g.uint16_ty || typeEquivAux EraseMeasures g rangeTy g.char_ty then
             mkAsmExpr ([AI_conv DT_U4], [], [e], [g.uint32_ty], m)
-        elif typeEquiv g ty g.sbyte_ty then
+        elif typeEquivAux EraseMeasures g rangeTy g.sbyte_ty then
             mkAsmExpr ([AI_conv DT_I2], [], [e], [g.uint16_ty], m)
-        elif typeEquiv g ty g.byte_ty then
+        elif typeEquivAux EraseMeasures g rangeTy g.byte_ty then
             mkAsmExpr ([AI_conv DT_U2], [], [e], [g.uint16_ty], m)
         else
             e
@@ -10481,12 +10477,10 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
 
     /// Whether the total count might not fit in 64 bits.
     let couldBeTooBig ty =
-        let underlying = stripMeasuresFromTy g ty
-
-        typeEquiv g underlying g.int64_ty
-        || typeEquiv g underlying g.uint64_ty
-        || typeEquiv g underlying g.nativeint_ty
-        || typeEquiv g underlying g.unativeint_ty
+        typeEquivAux EraseMeasures g ty g.int64_ty
+        || typeEquivAux EraseMeasures g ty g.uint64_ty
+        || typeEquivAux EraseMeasures g ty g.nativeint_ty
+        || typeEquivAux EraseMeasures g ty g.unativeint_ty
 
     /// pseudoCount + 1
     let mkAddOne pseudoCount =
@@ -10499,16 +10493,14 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
             mkAsmExpr ([AI_add], [], [pseudoCount; mkTypedOne g m ty], [ty], m)
 
     let mkRuntimeCalc mkThrowIfStepIsZero pseudoCount count =
-        let underlying = stripMeasuresFromTy g rangeTy
-
-        if typeEquiv g underlying g.int64_ty || typeEquiv g underlying g.uint64_ty then
+        if typeEquivAux EraseMeasures g rangeTy g.int64_ty || typeEquivAux EraseMeasures g rangeTy g.uint64_ty then
             RangeCount.PossiblyOversize (fun mkLoopExpr ->
                 mkThrowIfStepIsZero
                     (mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
                         let wouldOvf = mkILAsmCeq g m pseudoCount (Expr.Const (Const.UInt64 UInt64.MaxValue, m, g.uint64_ty))
                         mkCompGenLetIn m (nameof wouldOvf) g.bool_ty wouldOvf (fun (_, wouldOvf) ->
                             mkLoopExpr count wouldOvf))))
-        elif typeEquiv g underlying g.nativeint_ty || typeEquiv g underlying g.unativeint_ty then // We have a nativeint ty whose size we won't know till runtime.
+        elif typeEquivAux EraseMeasures g rangeTy g.nativeint_ty || typeEquivAux EraseMeasures g rangeTy g.unativeint_ty then // We have a nativeint ty whose size we won't know till runtime.
             RangeCount.PossiblyOversize (fun mkLoopExpr ->
                 mkThrowIfStepIsZero
                     (mkCompGenLetIn m (nameof pseudoCount) (tyOfExpr g pseudoCount) pseudoCount (fun (_, pseudoCount) ->
