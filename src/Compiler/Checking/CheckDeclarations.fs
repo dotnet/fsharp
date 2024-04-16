@@ -3681,6 +3681,12 @@ module EstablishTypeDefinitionCores =
                                   
                                   for slot in slots do 
                                       yield mkLocalValRef slot ]
+                            
+                        if hasAbstractAttr then
+                            for slot in abstractSlots do
+                                if not slot.IsInstanceMember then
+                                    errorR(Error(FSComp.SR.chkStaticAbstractMembersOnAbstractClasses(), slot.Range))
+                            
 
                         let baseValOpt = MakeAndPublishBaseVal cenv envinner baseIdOpt (superOfTycon g tycon)
                         let safeInitInfo = ComputeInstanceSafeInitInfo cenv envinner thisTyconRef.Range thisTy

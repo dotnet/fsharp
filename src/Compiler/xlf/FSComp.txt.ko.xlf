@@ -127,6 +127,11 @@
         <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticAbstractMembersOnAbstractClasses">
+        <source>Static abstract members are not allowed on abstract classes.</source>
+        <target state="new">Static abstract members are not allowed on abstract classes.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="translated">개체 식은 정적 추상 멤버가 있는 인터페이스를 구현하거나 정적 멤버를 선언할 수 없습니다.</target>

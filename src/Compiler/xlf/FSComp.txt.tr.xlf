@@ -127,6 +127,11 @@
         <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticAbstractMembersOnAbstractClasses">
+        <source>Static abstract members are not allowed on abstract classes.</source>
+        <target state="new">Static abstract members are not allowed on abstract classes.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="translated">Nesne ifadeleri, statik soyut üyeler içeren arabirimleri uygulayamaz veya statik üyeleri bildiremez.</target>

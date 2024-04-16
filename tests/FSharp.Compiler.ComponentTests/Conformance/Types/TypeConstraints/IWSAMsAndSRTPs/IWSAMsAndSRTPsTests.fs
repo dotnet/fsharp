@@ -1242,3 +1242,24 @@ printf "%A" res"""
             (Error 3866, Line 13, Col 82, Line 13, Col 126, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
             (Error 3866, Line 15, Col 82, Line 15, Col 129, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.Parse).")
         ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error message that explicitly disallowed static abstract methods in abstract classes.`` () =
+        Fsx """
+[<AbstractClass>]
+type A () =
+    let mutable rotAngle = 0.0
+
+    static abstract M : unit -> unit
+    abstract Area: float with get
+    abstract Perimeter: float with get
+    abstract Name: string with get
+    abstract member Rotate: float -> unit
+    default this.Rotate(angle) = rotAngle <- rotAngle + angle
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3867, Line 6, Col 21, Line 6, Col 22, "Static abstract members are not allowed on abstract classes.")
+        ]
