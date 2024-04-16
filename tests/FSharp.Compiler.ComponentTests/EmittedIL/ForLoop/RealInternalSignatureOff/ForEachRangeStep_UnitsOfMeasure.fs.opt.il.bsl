@@ -98,7 +98,7 @@
   {
     
     .maxstack  4
-    .locals init (int64 V_0,
+    .locals init (uint64 V_0,
              int64 V_1)
     IL_0000:  ldc.i4.0
     IL_0001:  conv.i8
@@ -132,7 +132,7 @@
   {
     
     .maxstack  4
-    .locals init (int64 V_0,
+    .locals init (uint64 V_0,
              int64 V_1)
     IL_0000:  ldc.i4.0
     IL_0001:  conv.i8
@@ -166,8 +166,8 @@
   {
     
     .maxstack  4
-    .locals init (int64 V_0,
-             int64 V_1,
+    .locals init (uint64 V_0,
+             uint64 V_1,
              int64 V_2)
     IL_0000:  ldc.i4.s   10
     IL_0002:  conv.i8
@@ -188,7 +188,7 @@
     IL_0012:  div.un
     IL_0013:  ldc.i4.1
     IL_0014:  conv.i8
-    IL_0015:  add
+    IL_0015:  add.ovf.un
     IL_0016:  nop
     IL_0017:  stloc.0
     IL_0018:  ldc.i4.0
@@ -221,8 +221,8 @@
   {
     
     .maxstack  5
-    .locals init (int64 V_0,
-             int64 V_1,
+    .locals init (uint64 V_0,
+             uint64 V_1,
              int64 V_2)
     IL_0000:  ldarg.0
     IL_0001:  brtrue.s   IL_0012
@@ -251,7 +251,7 @@
     IL_001c:  div.un
     IL_001d:  ldc.i4.1
     IL_001e:  conv.i8
-    IL_001f:  add
+    IL_001f:  add.ovf.un
     IL_0020:  nop
     IL_0021:  br.s       IL_0026
 
@@ -289,8 +289,8 @@
   {
     
     .maxstack  4
-    .locals init (int64 V_0,
-             int64 V_1,
+    .locals init (uint64 V_0,
+             uint64 V_1,
              int64 V_2)
     IL_0000:  ldarg.0
     IL_0001:  ldc.i4.1
@@ -311,7 +311,7 @@
     IL_0010:  div.un
     IL_0011:  ldc.i4.1
     IL_0012:  conv.i8
-    IL_0013:  add
+    IL_0013:  add.ovf.un
     IL_0014:  nop
     IL_0015:  stloc.0
     IL_0016:  ldc.i4.0
@@ -349,9 +349,11 @@
                                                                                                                     00 00 00 00 ) 
     
     .maxstack  5
-    .locals init (int64 V_0,
-             int64 V_1,
-             int64 V_2)
+    .locals init (uint64 V_0,
+             bool V_1,
+             uint64 V_2,
+             int64 V_3,
+             uint64 V_4)
     IL_0000:  ldarg.1
     IL_0001:  brtrue.s   IL_000f
 
@@ -369,7 +371,7 @@
     IL_0010:  ldc.i4.0
     IL_0011:  conv.i8
     IL_0012:  ldarg.1
-    IL_0013:  bge.s      IL_0029
+    IL_0013:  bge.s      IL_0026
 
     IL_0015:  ldarg.2
     IL_0016:  ldarg.0
@@ -378,65 +380,142 @@
     IL_0019:  ldc.i4.0
     IL_001a:  conv.i8
     IL_001b:  nop
-    IL_001c:  br.s       IL_003f
+    IL_001c:  br.s       IL_0039
 
     IL_001e:  ldarg.2
     IL_001f:  ldarg.0
     IL_0020:  sub
     IL_0021:  ldarg.1
     IL_0022:  div.un
-    IL_0023:  ldc.i4.1
-    IL_0024:  conv.i8
-    IL_0025:  add
-    IL_0026:  nop
-    IL_0027:  br.s       IL_003f
+    IL_0023:  nop
+    IL_0024:  br.s       IL_0039
 
-    IL_0029:  ldarg.0
-    IL_002a:  ldarg.2
-    IL_002b:  bge.s      IL_0032
+    IL_0026:  ldarg.0
+    IL_0027:  ldarg.2
+    IL_0028:  bge.s      IL_002f
 
-    IL_002d:  ldc.i4.0
-    IL_002e:  conv.i8
-    IL_002f:  nop
-    IL_0030:  br.s       IL_003f
+    IL_002a:  ldc.i4.0
+    IL_002b:  conv.i8
+    IL_002c:  nop
+    IL_002d:  br.s       IL_0039
 
-    IL_0032:  ldarg.0
-    IL_0033:  ldarg.2
-    IL_0034:  sub
-    IL_0035:  ldarg.1
-    IL_0036:  not
-    IL_0037:  ldc.i4.1
-    IL_0038:  conv.i8
-    IL_0039:  add
-    IL_003a:  div.un
-    IL_003b:  ldc.i4.1
+    IL_002f:  ldarg.0
+    IL_0030:  ldarg.2
+    IL_0031:  sub
+    IL_0032:  ldarg.1
+    IL_0033:  not
+    IL_0034:  ldc.i4.1
+    IL_0035:  conv.i8
+    IL_0036:  add
+    IL_0037:  div.un
+    IL_0038:  nop
+    IL_0039:  stloc.0
+    IL_003a:  ldloc.0
+    IL_003b:  ldc.i4.m1
     IL_003c:  conv.i8
-    IL_003d:  add
-    IL_003e:  nop
-    IL_003f:  stloc.0
-    IL_0040:  ldc.i4.0
-    IL_0041:  conv.i8
-    IL_0042:  stloc.1
-    IL_0043:  ldarg.0
-    IL_0044:  stloc.2
-    IL_0045:  br.s       IL_0056
+    IL_003d:  bne.un.s   IL_0061
 
-    IL_0047:  ldloc.2
-    IL_0048:  call       void assembly::set_c(int64)
-    IL_004d:  ldloc.2
-    IL_004e:  ldarg.1
-    IL_004f:  add
-    IL_0050:  stloc.2
-    IL_0051:  ldloc.1
-    IL_0052:  ldc.i4.1
-    IL_0053:  conv.i8
-    IL_0054:  add
-    IL_0055:  stloc.1
-    IL_0056:  ldloc.1
-    IL_0057:  ldloc.0
-    IL_0058:  blt.un.s   IL_0047
+    IL_003f:  ldc.i4.1
+    IL_0040:  stloc.1
+    IL_0041:  ldc.i4.0
+    IL_0042:  conv.i8
+    IL_0043:  stloc.2
+    IL_0044:  ldarg.0
+    IL_0045:  stloc.3
+    IL_0046:  br.s       IL_005d
 
-    IL_005a:  ret
+    IL_0048:  ldloc.3
+    IL_0049:  call       void assembly::set_c(int64)
+    IL_004e:  ldloc.3
+    IL_004f:  ldarg.1
+    IL_0050:  add
+    IL_0051:  stloc.3
+    IL_0052:  ldloc.2
+    IL_0053:  ldc.i4.1
+    IL_0054:  conv.i8
+    IL_0055:  add
+    IL_0056:  stloc.2
+    IL_0057:  ldloc.2
+    IL_0058:  ldc.i4.0
+    IL_0059:  conv.i8
+    IL_005a:  cgt.un
+    IL_005c:  stloc.1
+    IL_005d:  ldloc.1
+    IL_005e:  brtrue.s   IL_0048
+
+    IL_0060:  ret
+
+    IL_0061:  ldc.i4.0
+    IL_0062:  conv.i8
+    IL_0063:  ldarg.1
+    IL_0064:  bge.s      IL_007a
+
+    IL_0066:  ldarg.2
+    IL_0067:  ldarg.0
+    IL_0068:  bge.s      IL_006f
+
+    IL_006a:  ldc.i4.0
+    IL_006b:  conv.i8
+    IL_006c:  nop
+    IL_006d:  br.s       IL_0090
+
+    IL_006f:  ldarg.2
+    IL_0070:  ldarg.0
+    IL_0071:  sub
+    IL_0072:  ldarg.1
+    IL_0073:  div.un
+    IL_0074:  ldc.i4.1
+    IL_0075:  conv.i8
+    IL_0076:  add.ovf.un
+    IL_0077:  nop
+    IL_0078:  br.s       IL_0090
+
+    IL_007a:  ldarg.0
+    IL_007b:  ldarg.2
+    IL_007c:  bge.s      IL_0083
+
+    IL_007e:  ldc.i4.0
+    IL_007f:  conv.i8
+    IL_0080:  nop
+    IL_0081:  br.s       IL_0090
+
+    IL_0083:  ldarg.0
+    IL_0084:  ldarg.2
+    IL_0085:  sub
+    IL_0086:  ldarg.1
+    IL_0087:  not
+    IL_0088:  ldc.i4.1
+    IL_0089:  conv.i8
+    IL_008a:  add
+    IL_008b:  div.un
+    IL_008c:  ldc.i4.1
+    IL_008d:  conv.i8
+    IL_008e:  add.ovf.un
+    IL_008f:  nop
+    IL_0090:  stloc.2
+    IL_0091:  ldc.i4.0
+    IL_0092:  conv.i8
+    IL_0093:  stloc.s    V_4
+    IL_0095:  ldarg.0
+    IL_0096:  stloc.3
+    IL_0097:  br.s       IL_00aa
+
+    IL_0099:  ldloc.3
+    IL_009a:  call       void assembly::set_c(int64)
+    IL_009f:  ldloc.3
+    IL_00a0:  ldarg.1
+    IL_00a1:  add
+    IL_00a2:  stloc.3
+    IL_00a3:  ldloc.s    V_4
+    IL_00a5:  ldc.i4.1
+    IL_00a6:  conv.i8
+    IL_00a7:  add
+    IL_00a8:  stloc.s    V_4
+    IL_00aa:  ldloc.s    V_4
+    IL_00ac:  ldloc.2
+    IL_00ad:  blt.un.s   IL_0099
+
+    IL_00af:  ret
   } 
 
   .method public static void  f8(int64 start,
@@ -536,7 +615,7 @@
   {
     
     .maxstack  4
-    .locals init (int64 V_0,
+    .locals init (uint64 V_0,
              int64 V_1)
     IL_0000:  ldc.i4.0
     IL_0001:  conv.i8
@@ -570,7 +649,7 @@
   {
     
     .maxstack  4
-    .locals init (int64 V_0,
+    .locals init (uint64 V_0,
              int64 V_1)
     IL_0000:  ldc.i4.0
     IL_0001:  conv.i8
