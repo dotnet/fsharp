@@ -1747,4 +1747,4 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3864,tooManyMethodsInDotNetTypeWritingAssembly,"The type '%s' has too many methods. Found: '%d', maximum: '%d'"
 3865,parsOnlySimplePatternsAreAllowedInConstructors,"Only simple patterns are allowed in primary constructors"
 3866,chkStaticAbstractInterfaceMembers,"A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.%s)."
-3867,chkStaticAbstractMembersOnAbstractClasses,"Static abstract members are not allowed on abstract classes."
+3867,chkStaticAbstractMembersOnClasses,"Classes cannot contain static abstract members."

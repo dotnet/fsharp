@@ -127,9 +127,9 @@
         <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkStaticAbstractMembersOnAbstractClasses">
-        <source>Static abstract members are not allowed on abstract classes.</source>
-        <target state="new">Static abstract members are not allowed on abstract classes.</target>
+      <trans-unit id="chkStaticAbstractMembersOnClasses">
+        <source>Classes cannot contain static abstract members.</source>
+        <target state="new">Classes cannot contain static abstract members.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">

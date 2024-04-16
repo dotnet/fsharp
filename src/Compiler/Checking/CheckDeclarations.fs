@@ -3608,6 +3608,20 @@ module EstablishTypeDefinitionCores =
                             elif not (isClassTy g ty) then 
                                 errorR(Error(FSComp.SR.tcCannotInheritFromInterfaceType(), m)))
 
+                        let abstractSlots = 
+                            [ for synValSig, memberFlags in slotsigs do 
+
+                                  let (SynValSig(range=m)) = synValSig
+
+                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
+                                  
+                                  let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
+                                  // Multiple slots may be returned, e.g. for 
+                                  //    abstract P: int with get, set
+                                  
+                                  for slot in slots do 
+                                      yield mkLocalValRef slot ]
+
                         let kind = 
                             match kind with 
                               | SynTypeDefnKind.Struct -> 
@@ -3632,6 +3646,9 @@ module EstablishTypeDefinitionCores =
                                   noCLIMutableAttributeCheck()
                                   structLayoutAttributeCheck(not isIncrClass)
                                   allowNullLiteralAttributeCheck()
+                                  for slot in abstractSlots do
+                                      if not slot.IsInstanceMember then
+                                          errorR(Error(FSComp.SR.chkStaticAbstractMembersOnClasses(), slot.Range))
                                   TFSharpClass
                               | SynTypeDefnKind.Delegate (ty, arity) -> 
                                   noCLIMutableAttributeCheck()
@@ -3666,27 +3683,7 @@ module EstablishTypeDefinitionCores =
                                 | (_, m, baseIdOpt) :: _ -> 
                                     match baseIdOpt with 
                                     | None -> Some(ident("base", m)) 
-                                    | Some id -> Some id
-                            
-                        let abstractSlots = 
-                            [ for synValSig, memberFlags in slotsigs do 
-
-                                  let (SynValSig(range=m)) = synValSig
-
-                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
-                                  
-                                  let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
-                                  // Multiple slots may be returned, e.g. for 
-                                  //    abstract P: int with get, set
-                                  
-                                  for slot in slots do 
-                                      yield mkLocalValRef slot ]
-                            
-                        if hasAbstractAttr then
-                            for slot in abstractSlots do
-                                if not slot.IsInstanceMember then
-                                    errorR(Error(FSComp.SR.chkStaticAbstractMembersOnAbstractClasses(), slot.Range))
-                            
+                                    | Some id -> Some id                            
 
                         let baseValOpt = MakeAndPublishBaseVal cenv envinner baseIdOpt (superOfTycon g tycon)
                         let safeInitInfo = ComputeInstanceSafeInitInfo cenv envinner thisTyconRef.Range thisTy

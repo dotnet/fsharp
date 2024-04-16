@@ -1248,18 +1248,24 @@ printf "%A" res"""
         Fsx """
 [<AbstractClass>]
 type A () =
-    let mutable rotAngle = 0.0
-
     static abstract M : unit -> unit
-    abstract Area: float with get
-    abstract Perimeter: float with get
-    abstract Name: string with get
-    abstract member Rotate: float -> unit
-    default this.Rotate(angle) = rotAngle <- rotAngle + angle
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3867, Line 6, Col 21, Line 6, Col 22, "Static abstract members are not allowed on abstract classes.")
+            (Error 3867, Line 4, Col 21, Line 4, Col 22, "Classes cannot contain static abstract members.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error message that explicitly disallowed static abstract methods in classes.`` () =
+        Fsx """
+type A () =
+    static abstract M : unit -> unit
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3867, Line 3, Col 21, Line 3, Col 22, "Classes cannot contain static abstract members.")
         ]
