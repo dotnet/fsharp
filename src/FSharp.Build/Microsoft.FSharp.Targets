@@ -258,7 +258,7 @@ this file.
     <Target Name="FSharpSourceCodeCompileOrder">
         <!-- implement <CompileOrder>CompileBefore</CompileOrder> -->
         <ItemGroup>
-            <__Sources Remove="*" />
+            <__Sources Remove="@(__Sources)" />
             <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileFirst'))" />
             <__Sources Include="@(CompileBefore)" />
             <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileBefore'))" />
@@ -268,9 +268,9 @@ this file.
             <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileLast'))" />
         </ItemGroup>
         <ItemGroup>
-            <Compile Remove="*" />
-            <CompileBefore Remove="*" />
-            <CompileAfter Remove="*" />
+            <Compile Remove="@(Compile)" />
+            <CompileBefore Remove="@(CompileBefore)" />
+            <CompileAfter Remove="@(CompileAfter)" />
         </ItemGroup>
         <ItemGroup>
             <Compile Include="@(__Sources)" />
