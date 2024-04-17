@@ -1244,7 +1244,7 @@ printf "%A" res"""
         ]
 
     [<FactForNETCOREAPP>]
-    let ``Error message that explicitly disallowed static abstract methods in abstract classes.`` () =
+    let ``Error message that explicitly disallows static abstract methods in abstract classes.`` () =
         Fsx """
 [<AbstractClass>]
 type A () =
@@ -1258,7 +1258,7 @@ type A () =
         ]
 
     [<FactForNETCOREAPP>]
-    let ``Error message that explicitly disallowed static abstract methods in classes.`` () =
+    let ``Error message that explicitly disallows static abstract methods in classes.`` () =
         Fsx """
 type A () =
     static abstract M : unit -> unit
