@@ -271,8 +271,6 @@ this file.
             <Compile Remove="@(Compile)" />
             <CompileBefore Remove="@(CompileBefore)" />
             <CompileAfter Remove="@(CompileAfter)" />
-        </ItemGroup>
-        <ItemGroup>
             <Compile Include="@(__Sources)" />
         </ItemGroup>
         <Message Importance="low" Text="FSharpSourceCodeCompileOrder:Sources: '@(Sources)'" />
