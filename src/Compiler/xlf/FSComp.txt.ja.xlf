@@ -122,6 +122,11 @@
         <target state="translated">メンバーまたは関数 '{0}' には 'TailCallAttribute' 属性がありますが、末尾の再帰的な方法では使用されていません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticAbstractInterfaceMembers">
+        <source>A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</source>
+        <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="translated">オブジェクト式は、静的抽象メンバーを持つインターフェイスを実装したり、静的メンバーを宣言したりすることはできません。</target>
@@ -269,7 +274,7 @@
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
         <source>Boolean-returning and return-type-directed partial active patterns</source>
-        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <target state="translated">ブール値を返すパターンと、戻り値の型が指定された部分的アクティブパターン</target>
         <note />
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
@@ -314,7 +319,7 @@
       </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
-        <target state="new">Enforce AttributeTargets</target>
+        <target state="translated">AttributeTargets を適用する</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -399,17 +404,17 @@
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
-        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <target state="translated">特定のケースにおいて、補間された文字列を連結に変換することで最適化します。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerIntegralRangesToFastLoops">
         <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
-        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
+        <target state="translated">整数範囲 (..) および範囲ステップ (.. ..) 演算子の特定の使用法を最適化し、高速な while ループにします。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
         <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</target>
+        <target state="translated">xs が list または array の場合、[for x in xs -&gt; f x] および [|for x in xs -&gt; f x|] を下げて List.map および Array.map を呼び出します。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -869,7 +874,7 @@
       </trans-unit>
       <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <target state="translated">ソース コードの可視性と一致する IL 可視性を持つアセンブリを生成します</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -1024,7 +1029,7 @@
       </trans-unit>
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
-        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <target state="translated">プライマリ コンストラクターで使用できるのは単純なパターンのみです</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
