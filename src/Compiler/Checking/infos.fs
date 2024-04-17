@@ -344,12 +344,12 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
 type ILFieldInit with
 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-    static member FromProvidedObj m (v: obj) =
+    static member FromProvidedObj m (v: obj MaybeNull) =
         match v with
         | Null -> ILFieldInit.Null
         | NonNull v ->
             let objTy = v.GetType()
-            let v = if objTy.IsEnum then objTy.GetField("value__").GetValue v else v
+            let v = if objTy.IsEnum then (!!objTy.GetField("value__")).GetValue v else v
             match v with
             | :? single as i -> ILFieldInit.Single i
             | :? double as i -> ILFieldInit.Double i
@@ -364,7 +364,7 @@ type ILFieldInit with
             | :? uint32 as i -> ILFieldInit.UInt32 i
             | :? int64 as i -> ILFieldInit.Int64 i
             | :? uint64 as i -> ILFieldInit.UInt64 i
-            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try v.ToString() with _ -> "?"), m))
+            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try !!v.ToString() with _ -> "?"), m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter.

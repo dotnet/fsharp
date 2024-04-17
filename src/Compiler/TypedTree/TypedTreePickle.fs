@@ -67,7 +67,11 @@ type PickledDataWithReferences<'rawData> =
 //---------------------------------------------------------------------------
 
 [<NoEquality; NoComparison>]
+#if NO_CHECKNULLS
 type Table<'T> =
+#else
+type Table<'T when 'T: not null> =
+#endif
     { name: string
       tbl: Dictionary<'T, int>
       mutable rows: ResizeArray<'T>
