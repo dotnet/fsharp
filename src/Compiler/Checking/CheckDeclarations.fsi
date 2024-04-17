@@ -79,3 +79,5 @@ val CheckOneSigFile:
 exception NotUpperCaseConstructor of range: range
 
 exception NotUpperCaseConstructorWithoutRQA of range: range
+
+exception TypeIsImplicitlyAbstract of range
