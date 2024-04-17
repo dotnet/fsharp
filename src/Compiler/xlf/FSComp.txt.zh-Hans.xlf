@@ -127,6 +127,11 @@
         <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticAbstractMembersOnClasses">
+        <source>Classes cannot contain static abstract members.</source>
+        <target state="new">Classes cannot contain static abstract members.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="translated">对象表达式无法实现具有静态抽象成员或声明静态成员的接口。</target>
