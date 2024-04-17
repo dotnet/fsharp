@@ -142,7 +142,7 @@ module IncrementalBuildSyntaxTree =
                     Activity.start "IncrementalBuildSyntaxTree.parse"
                         [|
                             Activity.Tags.fileName, fileName
-                            Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                            Activity.Tags.buildPhase, !! BuildPhase.Parse.ToString()
                         |]
 
                 try

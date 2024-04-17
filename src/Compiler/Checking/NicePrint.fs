@@ -261,7 +261,7 @@ module internal PrintUtilities =
             if possibleXmlDoc.IsEmpty then
                 match info with
                 | Some(Some ccuFileName, xmlDocSig) ->
-                    infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(Path.GetFileNameWithoutExtension ccuFileName)
+                    infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(!!Path.GetFileNameWithoutExtension(ccuFileName))
                     |> Option.bind (fun xmlDocInfo ->
                         xmlDocInfo.TryGetXmlDocBySig(xmlDocSig)
                     )

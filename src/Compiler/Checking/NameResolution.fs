@@ -4293,7 +4293,7 @@ let ItemOfTy g x =
     Item.Types (nm, [x])
 
 // Filter out 'PrivateImplementationDetail' classes
-let IsInterestingModuleName nm = not (System.String.IsNullOrEmpty nm) && nm[0] <> '<'
+let IsInterestingModuleName nm = not (System.String.IsNullOrEmpty nm) && (!!nm)[0] <> '<'
 
 let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f plid (modref: ModuleOrNamespaceRef) =
     let mty = modref.ModuleOrNamespaceType
