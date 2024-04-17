@@ -349,7 +349,7 @@ type ILFieldInit with
         | Null -> ILFieldInit.Null
         | NonNull v ->
             let objTy = v.GetType()
-            let v = if objTy.IsEnum then (!!objTy.GetField("value__")).GetValue v else v
+            let v = if objTy.IsEnum then !!(!!objTy.GetField("value__")).GetValue v else v
             match v with
             | :? single as i -> ILFieldInit.Single i
             | :? double as i -> ILFieldInit.Double i
@@ -1726,7 +1726,7 @@ type ILPropInfo =
         let nullness = {DirectAttributes = AttributesFromIL(pdef.MetadataIndex,pdef.CustomAttrsStored); Fallback = tinfo.NullableClassSource}
         ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] nullness pdef.PropertyType
 
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.PropertyName
+    override x.ToString() = !!x.ILTypeInfo.ToString() + "::" + x.PropertyName
 
 /// Describes an F# use of a property
 [<NoComparison; NoEquality>]
@@ -2152,7 +2152,7 @@ type ILEventInfo =
     /// Indicates if the property is static
     member x.IsStatic = x.AddMethod.IsStatic
 
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.EventName
+    override x.ToString() = !!x.ILTypeInfo.ToString() + "::" + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers for EventInfo
