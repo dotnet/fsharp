@@ -54,8 +54,6 @@ type cenv = TcFileState
 type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * range * appliedScope: range * OpenDeclaration list ref
 type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
 
-exception TypeIsImplicitlyAbstract of range
-
 /// Represents the shape of a mutually recursive group of declarations including nested modules
 [<RequireQualifiedAccess>]
 type MutRecShape<'TypeData, 'LetsData, 'ModuleData> = 
@@ -3631,10 +3629,8 @@ module EstablishTypeDefinitionCores =
                                   noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedStruct
                                   noAbstractClassAttributeCheck()
                                   noAllowNullLiteralAttributeCheck()
-
-                                  for slot in abstractSlots do
-                                    errorR (Error(FSComp.SR.tcStructTypesCannotContainAbstractMembers(), slot.Range))
-
+                                  if not (isNil slotsigs) then 
+                                    errorR (Error(FSComp.SR.tcStructTypesCannotContainAbstractMembers(), m)) 
                                   structLayoutAttributeCheck true
 
                                   TFSharpStruct
@@ -3651,11 +3647,8 @@ module EstablishTypeDefinitionCores =
                                   structLayoutAttributeCheck(not isIncrClass)
                                   allowNullLiteralAttributeCheck()
                                   for slot in abstractSlots do
-                                    if not slot.IsInstanceMember then
-                                        errorR(Error(FSComp.SR.chkStaticAbstractMembersOnClasses(), slot.Range))
-                                    elif not hasAbstractAttr then
-                                        errorR(TypeIsImplicitlyAbstract(slot.Range))
-
+                                      if not slot.IsInstanceMember then
+                                          errorR(Error(FSComp.SR.chkStaticAbstractMembersOnClasses(), slot.Range))
                                   TFSharpClass
                               | SynTypeDefnKind.Delegate (ty, arity) -> 
                                   noCLIMutableAttributeCheck()

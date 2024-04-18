@@ -103,6 +103,7 @@ type SlotImplSet =
         availablePriorOverrides: OverrideInfo list *
         requiredProperties: PropInfo list
 
+exception TypeIsImplicitlyAbstract of range
 exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * Import.ImportMap * range
 
 module DispatchSlotChecking =
@@ -827,7 +828,11 @@ module DispatchSlotChecking =
                 
                 if isImplementation && not (isInterfaceTy g overallTy) then 
                     let overrides = allImmediateMembersThatMightImplementDispatchSlots |> List.map snd
-                    let _ = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    
+                    // Tell the user to mark the thing abstract if it was missing implementations
+                    if not allCorrect && not tcaug.tcaug_abstract && not (isInterfaceTy g reqdTy) then 
+                        errorR(TypeIsImplicitlyAbstract(m))
                     
                     let overridesToCheck = 
                         allImmediateMembersThatMightImplementDispatchSlots 
@@ -877,7 +882,7 @@ module DispatchSlotChecking =
             overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overriden)
 
 /// "Type Completion" inference and a few other checks at the end of the inference scope
-let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv: NameResolutionEnv, sink: TcResultsSink, isImplementation, denv: DisplayEnv, tycon: Tycon) =
+let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv, sink, isImplementation, denv, tycon: Tycon) =
 
     let g = infoReader.g
     let amap = infoReader.amap

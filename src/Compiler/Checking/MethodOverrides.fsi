@@ -77,6 +77,8 @@ type SlotImplSet =
         availablePriorOverrides: OverrideInfo list *
         requiredProperties: PropInfo list
 
+exception TypeIsImplicitlyAbstract of range
+
 exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * ImportMap * range
 
 module DispatchSlotChecking =
