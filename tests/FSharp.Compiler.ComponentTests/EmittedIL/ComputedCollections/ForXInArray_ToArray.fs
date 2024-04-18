@@ -5,3 +5,8 @@ let f4 f g (array: int array) = [|for x in array -> f (); g(); x|]
 let f5 (array: int array) = [|for x in array do yield x|]
 let f6 f (array: int array) = [|for x in array do f (); yield x|]
 let f7 f g (array: int array) = [|for x in array do f (); g (); yield x|]
+
+let f8 f g (array: int array) = [|let y = f () in let z = g () in for x in array -> x + y + z|]
+let f9 f g (array: int array) = [|let y = f () in g (); for x in array -> x + y|]
+let f10 f g (array: int array) = [|f (); g (); for x in array -> x|]
+let f11 f g (array: int array) = [|f (); let y = g () in for x in array -> x + y|]
