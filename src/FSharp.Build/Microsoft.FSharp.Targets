@@ -273,7 +273,7 @@ this file.
             <CompileAfter Remove="@(CompileAfter)" />
             <Compile Include="@(__Sources)" />
         </ItemGroup>
-        <Message Importance="low" Text="FSharpSourceCodeCompileOrder:Sources: '@(Sources)'" />
+        <Message Importance="low" Text="FSharpSourceCodeCompileOrder:Sources: '@(__Sources)'" />
     </Target>
 
     <Target
@@ -456,7 +456,7 @@ this file.
             Overwrite="true"/>
 
         <ItemGroup Condition="'$(AdditionalSourcesText)' != ''">
-            <Compile Include="$(TargetFrameworkMonikerAssemblyAttributesPath)"><CompileOrder>BeforeCompile</CompileOrder></Compile>
+            <Compile Include="$(TargetFrameworkMonikerAssemblyAttributesPath)"><CompileOrder>CompileBefore</CompileOrder></Compile>
             <_FsGeneratedTfmAttributesSource Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" />
         </ItemGroup>
     </Target>
