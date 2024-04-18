@@ -783,3 +783,37 @@ type FooImpl =
             """
         |> typecheck
         |> shouldSucceed
+        
+    
+    [<Fact>]
+    let ``Error when declaring abstract members on a class, No [<AbstractClass>] or default implementation`` () =
+            Fsx """
+type A() =
+    abstract member M: unit -> unit
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 365, Line 2, Col 6, Line 2, Col 7, "No implementation was given for 'abstract A.M: unit -> unit'")
+                (Error 54, Line 3, Col 21, Line 3, Col 22, "Classes cannot contain abstract members. If this is intentional then provide a default member implementation or add the '[<AbstractClass>]' attribute to your type.")
+            ]
+            
+    [<Fact>]
+    let ``Not error when declaring abstract members on a class with [<AbstractClass>] attribute.`` () =
+            Fsx """
+[<AbstractClass>]
+type A() =
+    abstract member M: unit -> unit
+            """
+            |> typecheck
+            |> shouldSucceed
+
+    [<Fact>]
+    let ``Not error when declaring abstract members on a class with a default implementation.`` () =
+            Fsx """
+type A() =
+    abstract member M: unit -> unit
+    default this.M() = ()
+            """
+            |> typecheck
+            |> shouldSucceed

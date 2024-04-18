@@ -248,8 +248,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">これは 'abstract' 型です。一部の抽象メンバーに実装がありません。意図的な場合には、型に '[&lt;AbstractClass&gt;]' 属性を追加してください。</target>
+        <source>Classes cannot contain abstract members. If this is intentional then provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="needs-review-translation">これは 'abstract' 型です。一部の抽象メンバーに実装がありません。意図的な場合には、型に '[&lt;AbstractClass&gt;]' 属性を追加してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
