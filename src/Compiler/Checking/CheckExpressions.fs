@@ -830,10 +830,10 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
         let measureTy =
             match synConst with
             | SynConst.Measure(synMeasure = SynMeasure.Anon _) ->
-              (mkAppTy tcr [TType_measure (Measure.Var (NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No)))])
+              (mkWoNullAppTy tcr [TType_measure (Measure.Var (NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No)))])
 
-            | SynConst.Measure(synMeasure = ms) -> mkAppTy tcr [TType_measure (tcMeasure ms)]
-            | _ -> mkAppTy tcr [TType_measure Measure.One]
+            | SynConst.Measure(synMeasure = ms) -> mkWoNullAppTy tcr [TType_measure (tcMeasure ms)]
+            | _ -> mkWoNullAppTy tcr [TType_measure Measure.One]
         unif measureTy
 
     let expandedMeasurablesEnabled =
@@ -853,7 +853,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
         unif g.float_ty
         Const.Double f
     | SynConst.Decimal f ->
-        unif (mkAppTy g.decimal_tcr [])
+        unif (mkWoNullAppTy g.decimal_tcr [])
         Const.Decimal f
     | SynConst.SByte i ->
         unif g.sbyte_ty
@@ -1010,6 +1010,48 @@ let TranslateSynValInfo (cenv: cenv) m tcAttributes (SynValInfo(argsData, retDat
 
 let TranslatePartialValReprInfo tps (PrelimValReprInfo (argsData, retData)) =
     ValReprInfo(ValReprInfo.InferTyparInfo tps, argsData, retData)
+
+//-------------------------------------------------------------------------
+// Members
+//-------------------------------------------------------------------------
+
+let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC m =
+    let g = cenv.g
+    if g.langFeatureNullness then 
+        if TypeNullNever g innerTyC then
+            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
+
+        match tryAddNullnessToTy nullness innerTyC with 
+
+        | None -> 
+            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
+            innerTyC
+
+        | Some innerTyCWithNull ->
+            // The inner type is not allowed to support null or use null as a representation value.
+            // For example "int option?" is not allowed, nor "string??".
+            //
+            // For variable types in FSharp.Core we make an exception because we must allow
+            //    val toObj: value: 'T option -> 'T | null when 'T : not struct (* and 'T : not null *)
+            // wihout implying 'T is not null.  This is because it is legitimate to use this
+            // function to "collapse" null and obj-null-coming-from-option using such a function.
+
+            if not g.compilingFSharpCore || not (isTyparTy g innerTyC) then 
+                AddCxTypeDefnNotSupportsNull env.DisplayEnv cenv.css m NoTrace innerTyC
+
+            if not g.compilingFSharpCore && isTyparTy g innerTyC then
+                // A typar might be later infered into a type not supporting `| null|, like tuple or anon.
+                // Repeat the check in post inference
+                AddCxTypeCanCarryNullnessInfo env.DisplayEnv cenv.css m innerTyC nullness
+
+            innerTyCWithNull
+
+    else
+        if warn then
+            warning(Error(FSComp.SR.tcNullnessCheckingNotEnabled(), m))
+        innerTyC
 
 //-------------------------------------------------------------------------
 // Members
@@ -2140,7 +2182,7 @@ module GeneralizationHelpers =
             match tp.Constraints |> List.partition (function TyparConstraint.CoercesTo _ -> true | _ -> false) with
             | [TyparConstraint.CoercesTo(tgtTy, _)], others ->
                  // Throw away null constraints if they are implied
-                 if others |> List.exists (function TyparConstraint.SupportsNull _ -> not (TypeSatisfiesNullConstraint g m tgtTy) | _ -> true)
+                 if others |> List.exists (function TyparConstraint.SupportsNull _ -> not (TypeNullIsExtraValue g m tgtTy) | _ -> true)
                  then None
                  else Some tgtTy
             | _ -> None
@@ -3382,7 +3424,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
     match probe exprTyAsSeq with
     | Some res -> res
     | None ->
-    let ienumerable = mkAppTy g.tcref_System_Collections_IEnumerable []
+    let ienumerable = mkWoNullAppTy g.tcref_System_Collections_IEnumerable []
     match probe ienumerable with
     | Some res -> res
     | None ->
@@ -4044,6 +4086,13 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
     | SynTypeConstraint.WhereTyparSupportsNull(tp, m) ->
         TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeUseSupportsNull
 
+    | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m) ->
+        if g.langFeatureNullness then 
+            TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeDefnNotSupportsNull
+        else
+            warning(Error(FSComp.SR.tcNullnessCheckingNotEnabled(), m))
+            tpenv
+
     | SynTypeConstraint.WhereTyparIsComparable(tp, m) ->
         TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeMustSupportComparison
 
@@ -4461,10 +4510,17 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.StaticConstant (synConst, m) ->
         TcTypeStaticConstant kindOpt tpenv synConst m
 
+    | SynType.StaticConstantNull m
     | SynType.StaticConstantNamed (_, _, m)
     | SynType.StaticConstantExpr (_, m) ->
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m))
         NewErrorType (), tpenv
+
+    | SynType.WithNull(innerTy, ambivalent, m) -> 
+        let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv innerTy
+        let nullness = if ambivalent then KnownAmbivalentToNull else KnownWithNull
+        let tyWithNull = TcAddNullnessToType false cenv env nullness innerTyC m
+        tyWithNull, tpenv
 
     | SynType.MeasurePower(ty, exponent, m) ->
         TcTypeMeasurePower kindOpt cenv newOk checkConstraints occ env tpenv ty exponent m
@@ -4617,7 +4673,7 @@ and TcFunctionType (cenv: cenv) newOk checkConstraints occ env tpenv domainTy re
 and TcArrayType (cenv: cenv) newOk checkConstraints occ env tpenv rank elemTy m =
     let g = cenv.g
     let elemTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv elemTy
-    let tyR = mkArrayTy g rank elemTy m
+    let tyR = mkArrayTy g rank g.knownWithoutNull elemTy m
     tyR, tpenv
 
 and TcTypeParameter kindOpt (cenv: cenv) env newOk tpenv tp =
@@ -4642,8 +4698,9 @@ and TcTypeWithConstraints (cenv: cenv) env newOk checkConstraints occ tpenv synT
 and TcTypeHashConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTy m =
     let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
     let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv synTy
-    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty (mkTyparTy tp)
-    tp.AsType, tpenv
+    let tpTy = mkTyparTy tp
+    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty tpTy
+    tpTy, tpenv
 
 // (x: 't & #I1 & #I2)
 // (x: #I1 & #I2)
@@ -4666,7 +4723,8 @@ and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv s
             | _ -> tpenv
         ) tpenv
 
-    tp.AsType, tpenv
+    let tpTy = tp.AsType KnownAmbivalentToNull // TODO: NULLNESS
+    tpTy, tpenv
 
 and TcTypeStaticConstant kindOpt tpenv c m =
     match c, kindOpt with
@@ -4820,7 +4878,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
             | SynConst.Double n when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
             | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
             | SynConst.String (s, _, _)
-            | SynConst.SourceIdentifier (_, s, _) when (not (isNull s)) && typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
+            | SynConst.SourceIdentifier (_, s, _) when typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)
             | _ -> fail()
         v, tpenv
@@ -4849,7 +4907,6 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
                 | Const.Single n -> record(g.float32_ty); box (n: single)
                 | Const.Double n -> record(g.float_ty); box (n: double)
                 | Const.Char n -> record(g.char_ty); box (n: char)
-                | Const.String null -> fail()
                 | Const.String s -> record(g.string_ty); box (s: string)
                 | Const.Bool b -> record(g.bool_ty); box (b: bool)
                 | _ -> fail()
@@ -4973,7 +5030,7 @@ and TcProvidedTypeApp (cenv: cenv) env tpenv tcref args m =
     // We put the type name check after the 'isDirectReferenceToGenerated' check because we need the 'isDirectReferenceToGenerated' error to be shown for generated types
     checkTypeName()
     if hasNoArgs then
-        mkAppTy tcref [], tpenv
+        mkWoNullAppTy tcref [], tpenv
     else
         let ty = Import.ImportProvidedType cenv.amap m providedTypeAfterStaticArguments
         ty, tpenv
@@ -5024,7 +5081,7 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv m tcref pathType
         List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
 
     // Try to decode System.Tuple --> F# tuple types etc.
-    let ty = g.decompileType tcref actualArgTys
+    let ty = g.decompileType tcref actualArgTys g.knownWithoutNull
 
     ty, tpenv
 
@@ -5111,9 +5168,13 @@ and ConvSynPatToSynExpr synPat =
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags patEnv ty (mLongId, item, apref, args, m) =
     let g = cenv.g
-
     let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
     let (APElemRef (apinfo, vref, idx, isStructRetTy)) = apref
+
+    let cenv = 
+        match g.checkNullness,TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
+        | true, (Some _ as warnMsg) -> {cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = warnMsg}
+        | _ -> cenv
 
     // Report information about the 'active recognizer' occurrence to IDE
     CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.eAccessRights)
@@ -5700,7 +5761,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.Null m ->
         TcNonControlFlowExpr env <| fun env ->
         AddCxTypeUseSupportsNull env.DisplayEnv cenv.css m NoTrace overallTy.Commit
-        mkNull m overallTy.Commit, tpenv
+        let tyWithNull = addNullnessToTy KnownWithNull overallTy.Commit
+        mkNull m tyWithNull, tpenv
 
     | SynExpr.Lazy (synInnerExpr, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -7589,7 +7651,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                 | None -> []
                 | Some(tinst, tcref, _, fldsList) ->
 
-                let gtyp = mkAppTy tcref tinst
+                let gtyp = mkWoNullAppTy tcref tinst
                 UnifyTypes cenv env mWholeExpr overallTy gtyp
 
                 [ for n, v in fldsList do
@@ -8375,11 +8437,11 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     SynExpr.ComputationExpr (true, comp, m)
                 | _ -> synArg
 
-            let arg, tpenv =
+            let (arg, tpenv), cenv =
                 // treat left and right of '||' and '&&' as control flow, so for example
                 //     f expr1 && g expr2
                 // will have debug points on "f expr1" and "g expr2"
-                let env =
+                let env,cenv =
                     match leftExpr with
                     | ApplicableExpr(expr=Expr.Val (vref, _, _))
                     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [_], _))
@@ -8387,10 +8449,15 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                            || valRefEq g vref g.and2_vref 
                            || valRefEq g vref g.or_vref
                            || valRefEq g vref g.or2_vref ->
-                        { env with eIsControlFlow = true }
-                    | _ -> env
+                        { env with eIsControlFlow = true },cenv
+                    | ApplicableExpr(expr=Expr.Val (valRef=vref))
+                    | ApplicableExpr(expr=Expr.App (funcExpr=Expr.Val (valRef=vref))) ->
+                        match TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
+                        | Some _ as msg -> env,{ cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}  
+                        | None -> env,cenv                                                      
+                    | _ -> env,cenv
 
-                TcExprFlex2 cenv domainTy env false tpenv synArg
+                TcExprFlex2 cenv domainTy env false tpenv synArg, cenv
 
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
@@ -9255,10 +9322,13 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
     let objArgs = [objExpr]
 
-    // 'base' calls use a different resolution strategy when finding methods.
-    let findFlag =
-        let baseCall = IsBaseCall objArgs
-        (if baseCall then PreferOverrides else IgnoreOverrides)
+    let findFlag = 
+        // 'base' calls use a different resolution strategy when finding methods
+        // nullness checks need the overrides, since those can change nullable semantics (e.g. ToString from BCL)
+        if (g.checkNullness && g.langFeatureNullness) || IsBaseCall objArgs then
+            PreferOverrides
+        else
+            IgnoreOverrides
 
     // Canonicalize inference problem prior to '.' lookup on variable types
     if isTyparTy g objExprTy then
@@ -10429,10 +10499,13 @@ and TcMatchPattern cenv inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynE
 and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     let mutable first = true
     let isFirst() = if first then first <- false; true else false
-    List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
+    let resultList,(tpEnv,_input) = 
+        List.mapFold (fun (unscopedTyParEnv,inputTy) -> TcMatchClause cenv inputTy resultTy env (isFirst()) unscopedTyParEnv) (tpenv,inputTy) clauses
+    resultList,tpEnv
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
     let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, _)) = synMatchClause
+
     let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt
 
     let resultEnv =
@@ -10447,8 +10520,35 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
     let resultExpr, tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv synResultExpr
 
     let target = TTarget(vspecs, resultExpr, None)
+
+    let inputTypeForNextPatterns= 
+        let removeNull t = replaceNullnessOfTy KnownWithoutNull t
+        let rec isWild (p:Pattern) = 
+            match p with
+            | TPat_wild _ -> true
+            | TPat_as (p,_,_) -> isWild p
+            | TPat_disjs(patterns,_) -> patterns |> List.exists isWild
+            | TPat_conjs(patterns,_) -> patterns |> List.forall isWild
+            | TPat_tuple (_,pats,_,_) -> pats |> List.forall isWild              
+            | _ -> false
+
+        let rec eliminateNull (ty:TType) (p:Pattern)  = 
+            match p with
+            | TPat_null _ -> removeNull ty
+            | TPat_as (p,_,_) -> eliminateNull ty p
+            | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
+            | TPat_tuple (_,pats,_,_) -> 
+                match stripTyparEqns ty with
+                // In a tuple of size N, if 1 elem is matched for null and N-1 are wild => subsequent clauses can strip nullness
+                | TType_tuple(ti,tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
+                    TType_tuple(ti, List.map2 eliminateNull tys pats)
+                | _ -> ty
+            | _ -> ty
+        match whenExprOpt with
+        | None -> eliminateNull inputTy pat
+        | _ -> inputTy
     
-    MatchClause(pat, whenExprOpt, target, patm), tpenv
+    MatchClause(pat, whenExprOpt, target, patm), (tpenv,inputTypeForNextPatterns)
 
 and TcStaticOptimizationConstraint cenv env tpenv c =
     let g = cenv.g
@@ -12020,7 +12120,7 @@ and TcLetrecBinding
             | None ->
                 let reqdThisValTy = if isByrefTy g reqdThisValTy then destByrefTy g reqdThisValTy else reqdThisValTy
                 let enclosingTyconRef = tcrefOfAppTy g reqdThisValTy
-                reqdThisValTy, (mkAppTy enclosingTyconRef (List.map mkTyparTy enclosingDeclaredTypars)), vspec.Range
+                reqdThisValTy, (mkWoNullAppTy enclosingTyconRef (List.map mkTyparTy enclosingDeclaredTypars)), vspec.Range
             | Some thisVal ->
                 reqdThisValTy, thisVal.Type, thisVal.Range
         if not (AddCxTypeEqualsTypeUndoIfFailed envRec.DisplayEnv cenv.css rangeForCheck actualThisValTy reqdThisValTy) then
