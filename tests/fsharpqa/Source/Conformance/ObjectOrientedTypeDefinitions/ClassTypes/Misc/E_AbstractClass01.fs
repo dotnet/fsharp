@@ -5,7 +5,7 @@
 
 //<Expects id="FS0054" status="error" span="(12,6)">This type is 'abstract' since some abstract members have not been given an implementation\. If this is intentional then add the '\[<AbstractClass>\]' attribute to your type</Expects>
 //<Expects id="FS0365" status="error" span="(12,6)">No implementation was given for 'abstract Foo\.f: int -> int'</Expects>
-//<Expects id="FS0054" status="error" span="(17,6)">This type is 'abstract' since some abstract members have not been given an implementation\. If this is intentional then add the '\[<AbstractClass>\]' attribute to your type</Expects>
+//<Expects id="FS0054" status="error" span="(17,6)">Classes cannot contain abstract members\. If this is intentional then provide a default member implementation or add the '\[<AbstractClass>\]' attribute to your type\.$</Expects>
 //<Expects id="FS0365" status="error" span="(17,6)">No implementation was given for 'abstract Foo\.f: int -> int'</Expects>
 
 
