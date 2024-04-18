@@ -426,6 +426,36 @@ let (|SimpleSequential|_|) g expr =
 
     loop expr Expr.Sequential
 
+/// Extracts any let-bindings or sequential
+/// expressions that directly precede the specified mapping application, e.g.,
+///
+///     [let y = f () in for … in … -> …]
+///
+///     [f (); g (); for … in … -> …]
+///
+/// Returns a function that will re-prefix the prelude to the
+/// lowered mapping, as well as the mapping to lower, i.e.,
+/// to transform the above into something like:
+///
+///     let y = f () in [for … in … -> …]
+///
+///     f (); g (); [for … in … -> …]
+let gatherPrelude ((|App|_|) : _ -> _ voption) expr =
+    let rec loop expr cont =
+        match expr with
+        | Expr.Let (binding, DebugPoints (body, debug), m, frees) ->
+            loop body (cont << fun body -> Expr.Let (binding, debug body, m, frees))
+
+        | Expr.Sequential (expr1, DebugPoints (body, debug), kind, m) ->
+            loop body (cont << fun body -> Expr.Sequential (expr1, debug body, kind, m))
+
+        | App contents ->
+            ValueSome (cont, contents)
+
+        | _ -> ValueNone
+
+    loop expr id
+
 /// The representation used for
 ///
 /// for … in … -> …
@@ -434,21 +464,23 @@ let (|SimpleSequential|_|) g expr =
 ///
 /// for … in … do yield …
 [<return: Struct>]
-let (|SeqMap|_|) g expr =
-    match expr with
-    | ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _) ->
-        ValueSome (ty1, ty2, input, mapping, loopVal, body)
-    | _ -> ValueNone
+let (|SeqMap|_|) g =
+    gatherPrelude (function
+        | ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body) as mapping; input], _) ->
+            ValueSome (ty1, ty2, input, mapping, loopVal, body)
+
+        | _ -> ValueNone)
 
 /// The representation used for
 ///
 /// for … in … do f (); …; yield …
 [<return: Struct>]
-let (|SeqCollectSingle|_|) g expr =
-    match expr with
-    | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = SimpleSequential g body) as mapping; input], _) ->
-        ValueSome (ty1, ty2, input, mapping, loopVal, body)
-    | _ -> ValueNone
+let (|SeqCollectSingle|_|) g =
+    gatherPrelude (function
+        | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = SimpleSequential g body) as mapping; input], _) ->
+            ValueSome (ty1, ty2, input, mapping, loopVal, body)
+
+        | _ -> ValueNone)
 
 /// for … in … -> …
 /// for … in … do yield …
@@ -458,11 +490,11 @@ let (|SimpleMapping|_|) g expr =
     match expr with
     // for … in … -> …
     // for … in … do yield …
-    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = SeqMap g (ty1, ty2, input, mapping, loopVal, body))], _)
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = DebugPoints (SeqMap g (cont, (ty1, ty2, input, mapping, loopVal, body)), debug))], _)
 
     // for … in … do f (); …; yield …
-    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = SeqCollectSingle g (ty1, ty2, input, mapping, loopVal, body))], _) ->
-        ValueSome (ty1, ty2, input, mapping, loopVal, body)
+    | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = DebugPoints (SeqCollectSingle g (cont, (ty1, ty2, input, mapping, loopVal, body)), debug))], _) ->
+        ValueSome (debug >> cont, (ty1, ty2, input, mapping, loopVal, body))
 
     | _ -> ValueNone
 
@@ -484,10 +516,10 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             match overallSeqExpr with
             // [for … in xs -> …] (* When xs is a list. *)
-            | SimpleMapping g (ty1, ty2, List g list, mapping, _, _) when
+            | SimpleMapping g (cont, (ty1, ty2, List g list, mapping, _, _)) when
                 g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap
                 ->
-                Some (mkCallListMap g m ty1 ty2 mapping list)
+                Some (cont (mkCallListMap g m ty1 ty2 mapping list))
 
             // [start..finish]
             // [start..step..finish]
@@ -498,10 +530,10 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
 
             // [for … in start..finish -> …]
             // [for … in start..step..finish -> …]
-            | SimpleMapping g (_, _, rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), _, loopVal, body) when
+            | SimpleMapping g (cont, (_, _, rangeExpr & DebugPoints (IntegralRange g (rangeTy, (start, step, finish)), debug), _, loopVal, body)) when
                 g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
                 ->
-                Some (List.mkFromIntegralRange tcVal g amap m rangeTy overallElemTy rangeExpr start step finish (Some (loopVal, body)))
+                Some (cont (debug (List.mkFromIntegralRange tcVal g amap m rangeTy overallElemTy rangeExpr start step finish (Some (loopVal, body)))))
 
             // [(* Anything more complex. *)]
             | _ ->
@@ -512,10 +544,10 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             match overallSeqExpr with
             // [|for … in xs -> …|] (* When xs is an array. *)
-            | SimpleMapping g (ty1, ty2, Array g array, mapping, _, _) when
+            | SimpleMapping g (cont, (ty1, ty2, Array g array, mapping, _, _)) when
                 g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap
                 ->
-                Some (mkCallArrayMap g m ty1 ty2 mapping array)
+                Some (cont (mkCallArrayMap g m ty1 ty2 mapping array))
 
             // [|start..finish|]
             // [|start..step..finish|]
@@ -526,10 +558,10 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
 
             // [|for … in start..finish -> …|]
             // [|for … in start..step..finish -> …|]
-            | SimpleMapping g (_, _, rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), _, loopVal, body) when
+            | SimpleMapping g (cont, (_, _, rangeExpr & DebugPoints (IntegralRange g (rangeTy, (start, step, finish)), debug), _, loopVal, body)) when
                 g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
                 ->
-                Some (Array.mkFromIntegralRange g m rangeTy (ilTyForTy overallElemTy) overallElemTy rangeExpr start step finish (Some (loopVal, body)))
+                Some (cont (debug (Array.mkFromIntegralRange g m rangeTy (ilTyForTy overallElemTy) overallElemTy rangeExpr start step finish (Some (loopVal, body)))))
 
             // [|(* Anything more complex. *)|]
             | _ ->
