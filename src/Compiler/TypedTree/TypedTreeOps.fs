@@ -38,6 +38,14 @@ let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
 let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
 
+let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
+    match x,y with
+    | null,null -> 0
+    | null,_ -> -1
+    | _,null -> 1
+    | x,y ->  compare (func !!x) (func !!y)
+
+
 //---------------------------------------------------------------------------
 // Basic data structures
 //---------------------------------------------------------------------------
@@ -1184,7 +1192,7 @@ let rec getErasedTypes g ty =
 // Standard orderings, e.g. for order set/map keys
 //---------------------------------------------------------------------------
 
-let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
+let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compareBy v1 v2 _.Stamp }
 
 let tyconOrder = { new IComparer<Tycon> with member _.Compare(tycon1, tycon2) = compare tycon1.Stamp tycon2.Stamp }
 
@@ -3222,7 +3230,7 @@ type DisplayEnv =
               ControlPath
               (splitNamespace ExtraTopLevelOperatorsName) ]
 
-let (+.+) s1 s2 = if String.IsNullOrEmpty(s1) then s2 else s1+"."+s2
+let (+.+) s1 s2 = if String.IsNullOrEmpty(s1) then s2 else !!s1+"."+s2
 
 let layoutOfPath p =
     sepListL SepL.dot (List.map (tagNamespace >> wordL) p)
@@ -8921,7 +8929,7 @@ let buildAccessPath (cp: CompilationPath option) =
         System.String.Join(".", ap)      
     | None -> "Extension Type"
 
-let prependPath path name = if String.IsNullOrEmpty(path) then name else path + "." + name
+let prependPath path name = if String.IsNullOrEmpty(path) then name else !!path + "." + name
 
 let XmlDocSigOfVal g full path (v: Val) =
     let parentTypars, methTypars, cxs, argInfos, retTy, prefix, path, name = 
@@ -8946,7 +8954,7 @@ let XmlDocSigOfVal g full path (v: Val) =
                 | SynMemberKind.PropertySet
                 | SynMemberKind.PropertyGet -> "P:", v.PropertyName
 
-            let path = if v.HasDeclaringEntity then prependPath path v.DeclaringEntity.CompiledName else path
+            let path : string MaybeNull = if v.HasDeclaringEntity then prependPath path v.DeclaringEntity.CompiledName else path
 
             let parentTypars, methTypars = 
                 match PartitionValTypars g v with

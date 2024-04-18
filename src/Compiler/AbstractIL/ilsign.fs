@@ -93,6 +93,8 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
         let corHeader = peHeaders.CorHeader
         corHeader ^ _.StrongNameSignatureDirectory
 
+    let signatureDirectory = match signatureDirectory with | null -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignNoSignatureDirectory ()))) | sd -> sd
+
     let signatureStart =
         match peHeaders.TryGetDirectoryOffset signatureDirectory with
         | true, value -> value
@@ -277,6 +279,8 @@ let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array)
     let signatureOffset =
         if signatureDirectory.Size > signature.Length then
             raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignInvalidSignatureSize ())))
+
+        let signatureDirectory = match signatureDirectory with | null -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignNoSignatureDirectory ()))) | sd -> sd
 
         match peHeaders.TryGetDirectoryOffset signatureDirectory with
         | false, _ -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignNoSignatureDirectory ())))

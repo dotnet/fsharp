@@ -214,7 +214,7 @@ type ProvidedType =
 type IProvidedCustomAttributeProvider =
     abstract GetHasTypeProviderEditorHideMethodsAttribute: provider: ITypeProvider -> bool
 
-    abstract GetDefinitionLocationAttribute: provider: ITypeProvider -> (string * int * int) option
+    abstract GetDefinitionLocationAttribute: provider: ITypeProvider -> (string MaybeNull * int * int) option
 
     abstract GetXmlDocAttributes: provider: ITypeProvider -> string[]
 

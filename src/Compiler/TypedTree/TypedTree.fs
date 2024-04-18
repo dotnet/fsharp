@@ -6305,5 +6305,5 @@ type Construct() =
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
             let pos = Position.mkPos line (max 0 (column - 1)) 
-            mkRange filePath pos pos |> Some
+            mkRange !!filePath pos pos |> Some
 #endif

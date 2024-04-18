@@ -504,7 +504,7 @@ module SynExpr =
         if startLine = endLine then
             range.StartColumn <= outerOffsidesColumn
         else
-            let rec loop offsides lineNo startCol =
+            let rec loop offsides lineNo (startCol:int) =
                 if lineNo <= endLine then
                     let line = getSourceLineStr lineNo
 
