@@ -1242,3 +1242,30 @@ printf "%A" res"""
             (Error 3866, Line 13, Col 82, Line 13, Col 126, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
             (Error 3866, Line 15, Col 82, Line 15, Col 129, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.Parse).")
         ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error message that explicitly disallows static abstract methods in abstract classes.`` () =
+        Fsx """
+[<AbstractClass>]
+type A () =
+    static abstract M : unit -> unit
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3867, Line 4, Col 21, Line 4, Col 22, "Classes cannot contain static abstract members.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error message that explicitly disallows static abstract methods in classes.`` () =
+        Fsx """
+type A () =
+    static abstract M : unit -> unit
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3867, Line 3, Col 21, Line 3, Col 22, "Classes cannot contain static abstract members.")
+        ]
