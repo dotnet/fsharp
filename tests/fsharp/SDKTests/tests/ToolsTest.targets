@@ -18,7 +18,7 @@
 
     <Error Condition="'$(ExpectedFscToolPath)' != '$(FscToolPath)'" Text="FscToolPath:  expected:'$(ExpectedFscToolPath)' actual:'$(FscToolPath)'" />
 
-    <Error Condition="'$(ExpectedCompile)' != '' and  '$(ExpectedCompile)' != '@(Sources)'" Text="ExpectedCompile:  expected:'$(ExpectedCompile)' actual:'@(Compile)'" />
+    <Error Condition="'$(ExpectedCompile)' != '' and  '$(ExpectedCompile)' != '@(Compile)'" Text="ExpectedCompile:  expected:'$(ExpectedCompile)' actual:'@(Compile)'" />
 
     <Error Condition="'$(ExpectedDotnetFscCompilerPath)' == '' and '$(DotnetFscCompilerPath)' != ''" Text="DotnetFscCompilerPath expected to be empty actual:'$(DotnetFscCompilerPath)'" />
 
