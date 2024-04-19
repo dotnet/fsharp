@@ -709,3 +709,15 @@ if (sprintf "%%A" ABC.ab) <> "[A; B]" then failwith (sprintf "Failed: printing '
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Error when declaring an abstract member in union type`` () =
+        Fsx """
+type U = 
+  | A | B
+  abstract M : unit -> unit
+       """
+        |> typecheck 
+        |> shouldFail
+        |>  withSingleDiagnostic (Error 912, Line 4, Col 3, Line 4, Col 28, "This declaration element is not permitted in an augmentation")
+        

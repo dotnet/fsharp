@@ -44,7 +44,8 @@ type internal FSharpAsyncQuickInfoSource
 
                     [
                         Path.GetRelativePath(projectDir, filePath)
-                        Path.GetRelativePath(solutionDir, filePath)
+                        if not (isNull solutionDir) then
+                            Path.GetRelativePath(solutionDir, filePath)
                     ]
                     |> List.minBy String.length
 

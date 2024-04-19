@@ -2942,10 +2942,23 @@ and ResolveOverloading
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
 
     let calledMethOpt, errors, calledMethTrace = 
-
         match calledMethGroup, candidates with 
-        | _, [calledMeth] when not isOpConversion -> 
-            Some calledMeth, CompleteD, NoTrace
+        | _, [calledMeth] when not isOpConversion ->
+            // See what candidates we have based on static/virtual/abstract
+            
+            // If false then is a static method call directly on an interface e.g.
+            // IParsable.Parse(...)
+            // IAdditionOperators.(+)
+            // This is not allowed as Parse and (+) method are static abstract
+            let isStaticConstrainedCall =
+                match calledMeth.OptionalStaticType with
+                | Some ttype -> isTyparTy g ttype
+                | None -> false
+                
+            match calledMeth.Method with
+            | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
+                None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(ilMethInfo.ILName), m)), NoTrace
+            | _ -> Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
