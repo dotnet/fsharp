@@ -794,7 +794,7 @@ type A() =
             |> shouldFail
             |> withDiagnostics [
                 (Error 365, Line 2, Col 6, Line 2, Col 7, "No implementation was given for 'abstract A.M: unit -> unit'")
-                (Error 54, Line 2, Col 6, Line 2, Col 7, "Classes cannot contain abstract members. If this is intentional then provide a default member implementation or add the '[<AbstractClass>]' attribute to your type.")
+                (Error 54, Line 2, Col 6, Line 2, Col 7, "Non-abstract classes cannot contain abstract members. If this is intentional then provide a default member implementation or add the '[<AbstractClass>]' attribute to your type.")
             ]
             
     [<Fact>]
