@@ -831,7 +831,7 @@ module DispatchSlotChecking =
                     let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, reqdTy, dispatchSlots, availPriorOverrides, overrides)
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
-                    if not allCorrect && not tcaug.tcaug_abstract && not (isInterfaceTy g reqdTy) then 
+                    if not allCorrect && not tcaug.tcaug_abstract && (isClassTy g reqdTy) then
                         errorR(TypeIsImplicitlyAbstract(m))
                     
                     let overridesToCheck = 

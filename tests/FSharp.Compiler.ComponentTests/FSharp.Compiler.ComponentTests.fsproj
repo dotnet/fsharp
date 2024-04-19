@@ -237,6 +237,7 @@
     <Compile Include="Language\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\NullableCsharpImportTests.fs" />
     <Compile Include="Language\NullableReferenceTypesTests.fs" />
+    <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
