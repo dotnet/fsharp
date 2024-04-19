@@ -720,7 +720,7 @@ let reduceTyconMeasureableOrProvided (g: TcGlobals) (tycon: Tycon) tyargs =
     | TMeasureableRepr ty -> 
         if isNil tyargs then ty else instType (mkTyconInst tycon tyargs) ty
 #if !NO_TYPEPROVIDERS
-    | TProvidedTypeRepr info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
+    | TProvidedTypeRepr info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty_withNulls)
 #endif
     | _ -> invalidArg "tc" "this type definition is not a refinement" 
 
@@ -3427,7 +3427,7 @@ let trimPathByDisplayEnv denv path =
 
 let superOfTycon (g: TcGlobals) (tycon: Tycon) = 
     match tycon.TypeContents.tcaug_super with 
-    | None -> g.obj_ty 
+    | None -> g.obj_ty_noNulls 
     | Some ty -> ty 
 
 /// walk a TyconRef's inheritance tree, yielding any parent types as an array
@@ -6172,7 +6172,7 @@ and remapTyconRepr ctxt tmenv repr =
     | TProvidedTypeRepr info -> 
        TProvidedTypeRepr 
             { info with 
-                 LazyBaseType = info.LazyBaseType.Force (range0, ctxt.g.obj_ty) |> remapType tmenv |> LazyWithContext.NotLazy
+                 LazyBaseType = info.LazyBaseType.Force (range0, ctxt.g.obj_ty_withNulls) |> remapType tmenv |> LazyWithContext.NotLazy
                  // The load context for the provided type contains TyconRef objects. We must remap these.
                  // This is actually done on-demand (see the implementation of ProvidedTypeContext)
                  ProvidedType = 

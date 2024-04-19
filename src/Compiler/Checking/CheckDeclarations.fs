@@ -860,7 +860,7 @@ module AddAugmentationDeclarations =
             let m = tycon.Range
 
             // Note: tycon.HasOverride only gives correct results after we've done the type augmentation 
-            let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
+            let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]
             let hasExplicitGenericIEquatable = tcaugHasNominalInterface g tcaug g.system_GenericIEquatable_tcref
 
             if hasExplicitGenericIEquatable then 
@@ -1610,7 +1610,7 @@ module MutRecBindingChecking =
                             if tcref.IsStructOrEnumTycon then 
                                 Some (incrCtorInfo, mkUnit g tcref.Range, false), defnCs
                             else
-                                let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
+                                let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty_noNulls None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
 
                                 // If there is no 'inherits' and no simple non-static 'let' of a non-method then add a debug point at the entry to the constructor over the type name itself.
                                 let addDebugPointAtImplicitCtorArguments =
@@ -3313,7 +3313,7 @@ module EstablishTypeDefinitionCores =
                           if isTyparTy g ty then 
                               if firstPass then 
                                   errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), m)) 
-                              Some g.obj_ty // a "super" that is a variable type causes grief later
+                              Some g.obj_ty_noNulls // a "super" that is a variable type causes grief later
                           else                          
                               Some ty 
                       | _ -> 

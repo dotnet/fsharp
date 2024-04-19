@@ -1050,12 +1050,8 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         // TODO NULLNESS:  this is not sound in contravariant cases etc. It is assuming covariance.
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
-            // NOTE: we never give nullness warnings for the 'obj' type
             if csenv.g.checkNullness then 
-                if not (isObjTy csenv.g ty1) || not (isObjTy csenv.g ty2) then 
-                    WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
-                else
-                    CompleteD
+                WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2))
             else
                 CompleteD
         
@@ -1088,11 +1084,8 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
-            if csenv.g.checkNullness then 
-                if not (isObjTy csenv.g ty1) || not (isObjTy csenv.g ty2) then 
-                    WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
-                else
-                    CompleteD
+            if csenv.g.checkNullness then               
+                 WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
         
@@ -2575,7 +2568,7 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
             | NullnessInfo.AmbivalentToNull -> ()
             | NullnessInfo.WithNull -> ()
             | NullnessInfo.WithoutNull -> 
-                if g.checkNullness && not (isObjTy g ty) then 
+                if g.checkNullness then 
                     return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2)) 
     }
 
@@ -2590,7 +2583,7 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
             // code via Option.ofObj and Option.toObj
             do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
         elif TypeNullIsExtraValueNew g m ty then 
-            if g.checkNullness && not (isObjTy g ty) then
+            if g.checkNullness then
                 let denv = { denv with showNullnessAnnotations = Some true }
                 do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
         else
@@ -2618,7 +2611,7 @@ and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: O
             | NullnessInfo.AmbivalentToNull -> ()
             | NullnessInfo.WithoutNull -> ()
             | NullnessInfo.WithNull -> 
-                if g.checkNullness && TypeNullIsExtraValueNew g m ty && not (isObjTy g ty) then
+                if g.checkNullness && TypeNullIsExtraValueNew g m ty then
                     let denv = { denv with showNullnessAnnotations = Some true }
                     return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
     }

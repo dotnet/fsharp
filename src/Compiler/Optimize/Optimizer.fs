@@ -3228,7 +3228,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             // the target takes a tupled argument, so we need to reorder the arg expressions in the
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
         | _ -> None
         
@@ -3249,7 +3249,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
         | Some (_, _, withcEqualsVal), [comp; x; y] -> 
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
@@ -3258,7 +3258,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
        let tcref, tyargs = StripToNominalTyconRef cenv ty
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
        | Some (_, _, withcEqualsVal), [x; y] -> 
-           let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
+           let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
            Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     
