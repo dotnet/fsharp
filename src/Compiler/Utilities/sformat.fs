@@ -30,6 +30,12 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Collections
 
+#if COMPILER && !NO_CHECKNULLS
+type ObjOrNull = obj | null
+#else
+type ObjOrNull = obj
+#endif
+
 [<StructuralEquality; NoComparison>]
 type TextTag =
     | ActivePatternCase
@@ -1591,7 +1597,7 @@ module Display =
 
                     match text with
                     | null -> ""
-                    | _ -> text
+                    | text -> text
                 with e ->
                     // If a .ToString() call throws an exception, catch it and use the message as the result.
                     // This may be informative, e.g. division by zero etc...
