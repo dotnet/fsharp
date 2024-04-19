@@ -82,7 +82,7 @@ module CustomAttributes_Basic =
         |> shouldFail
         |> withDiagnostics [
             (Error 842, Line 8, Col 7, Line 8, Col 8, "This attribute is not valid for use on this language element")
-            (Warning 20, Line 8, Col 1, Line 8, Col 31, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            (Warning 20, Line 8, Col 26, Line 8, Col 31, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]
 
     // SOURCE=E_AttributeApplication06.fs     SCFLAGS="--test:ErrorRanges"	# E_AttributeApplication06.fs
@@ -93,7 +93,7 @@ module CustomAttributes_Basic =
         |> shouldFail
         |> withDiagnostics [
             (Error 824, Line 8, Col 5, Line 8, Col 20, "Attributes are not permitted on 'let' bindings in expressions")
-            (Warning 20, Line 8, Col 1, Line 8, Col 41, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            (Warning 20, Line 8, Col 28, Line 8, Col 41, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]
 
     // SOURCE=E_AttributeApplication07.fs					# E_AttributeApplication07.fs

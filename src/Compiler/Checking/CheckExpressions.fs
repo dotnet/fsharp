@@ -735,6 +735,8 @@ let UnifyUnitType (cenv: cenv) (env: TcEnv) ty expr =
     let rec getInnerRange expr =
         match expr with
         | Expr.Sequential(expr2 = expr2)  -> getInnerRange expr2
+        | Expr.Let(_, DebugPoints(expr, _), _, _) -> getInnerRange expr
+        | Expr.App(_funcExpr, _, _typeArgs, _args, m) -> m
         | expr -> expr.Range
         
     let m = getInnerRange expr
