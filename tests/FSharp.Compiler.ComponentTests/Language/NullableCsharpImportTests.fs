@@ -35,6 +35,26 @@ let doSomethingAboutIt (ilg:ILGenerator) =
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
+let ``Consuming C# extension methods which allow nullable this`` () = 
+    FSharp """module MyLibrary
+
+open System
+
+let asMemoryOnNonNull : Memory<byte> = 
+    let bytes = [|0uy..11uy|]
+    let memory = bytes.AsMemory()
+    memory
+
+let asMemoryOnNull : Memory<byte> = 
+    let bytes : (byte[]) | null = null
+    let memory = bytes.AsMemory()
+    memory
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
 let ``Nullable directory info show warn on prop access`` () = 
     FSharp """module MyLibrary
 open System.IO

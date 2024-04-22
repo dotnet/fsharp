@@ -2932,7 +2932,11 @@ and CanMemberSigsMatchUpToCheck
                                 ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
                         else
                             // The object types must be non-null
-                            let nonNullCalledObjArgTys = calledObjArgTys |> List.map (replaceNullnessOfTy g.knownWithoutNull)
+                            let nonNullCalledObjArgTys = 
+                                if not calledMeth.Method.IsExtensionMember then
+                                    calledObjArgTys |> List.map (replaceNullnessOfTy g.knownWithoutNull)
+                                else
+                                    calledObjArgTys
                             MapCombineTDC2D subsumeTypes nonNullCalledObjArgTys callerObjArgTys
 
                 let! usesTDC3 =
