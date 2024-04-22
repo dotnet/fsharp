@@ -9104,10 +9104,7 @@ let nullnessOfTy g ty =
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
-
-    // Check if the type is 'obj'
-    isObjTy g sty
-    ||
+    
     // Check if the type has AllowNullLiteral
     (match tryTcrefOfAppTy g sty with 
      | ValueSome tcref -> 

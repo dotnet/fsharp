@@ -264,8 +264,7 @@ strictFunc(null:(string|null)) |> ignore
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3261, Line 6, Col 12, Line 6, Col 20, "Nullness warning: The type 'obj' supports 'null' but a non-null type is expected."
-              Error 3261, Line 7, Col 18, Line 7, Col 26, "Nullness warning: The type 'obj' supports 'null' but a non-null type is expected."
+            [ Error 3261, Line 6, Col 12, Line 6, Col 16, "Nullness warning: The type 'obj' does not support 'null'."
               Error 3261, Line 7, Col 12, Line 7, Col 27, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 8, Col 12, Line 8, Col 30, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."]
         
@@ -473,3 +472,19 @@ let mapped2 =
         [ Error 3262, Line 6, Col 7, Line 6, Col 24, "Value known to be without null passed to a function meant for nullables: You can remove this |NonNullQuick| pattern usage."
           Error 3262, Line 10, Col 6, Line 10, Col 10, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."
           Error 3262, Line 11, Col 6, Line 11, Col 15, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."]
+
+[<Fact>]
+let ``Obj can be passed to not null constrained methods`` () = 
+    FSharp """module MyLibrary
+
+let objVal:(obj | null) = box 42
+
+
+let mappableFunc =
+    match objVal with
+    |Null -> 42
+    |NonNull o -> o.GetHashCode()
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
