@@ -185,6 +185,21 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withErrorCode 3261
+
+[<Fact>]
+let ``Eliminate aliased nullness after matching`` () = 
+    FSharp $"""module MyLibrary
+
+type Maybe<'T> = 'T | null
+
+let myFunction (input : string Maybe) : string = 
+    match input with
+    | null -> ""
+    | nonNullString -> nonNullString
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
     
 [<Fact>]
 let ``WithNull used on anon type`` () = 
