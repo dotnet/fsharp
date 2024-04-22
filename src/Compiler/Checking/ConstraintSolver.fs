@@ -1021,6 +1021,11 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
             SolveMemberConstraint csenv false PermitWeakResolution.No ndeep m2 trace traitInfo |> OperationResult.ignore
     }
 
+and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
+    csenv.g.checkNullness &&
+    csenv.IsSpeculativeForMethodOverloading = false &&
+    csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome    
+
 // nullness1: actual
 // nullness2: expected
 and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
@@ -1044,7 +1049,7 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
-        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
             WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))    
         // Allow expected of WithNull and actual of WithoutNull
         // TODO NULLNESS:  this is not sound in contravariant cases etc. It is assuming covariance.
@@ -1078,7 +1083,7 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
-        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
             WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))
         // Allow target of WithNull and actual of WithoutNull
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             

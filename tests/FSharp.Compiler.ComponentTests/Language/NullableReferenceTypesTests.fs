@@ -452,6 +452,18 @@ let mappedMaybe = nonNull maybeNull
     |> withDiagnostics [Error 3262, Line 4, Col 25, Line 4, Col 39, "Value known to be without null passed to a function meant for nullables: You can remove this `nonNull` assertion."]
 
 [<Fact>]
+let ``Regression: Useless usage in nested calls`` () = 
+    FSharp """module MyLibrary
+open System.IO
+
+let meTry = Option.ofObj (Path.GetDirectoryName "")
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+
+[<Fact>]
 let ``Useless usage of null active patterns from fscore`` () = 
     FSharp """module MyLibrary
 
