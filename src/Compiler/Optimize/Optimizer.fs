@@ -2329,7 +2329,7 @@ let rec IsDebugPipeRightExpr cenv expr =
         else false
     | _ -> false
 
-let IsStateMachineExpr g overallExpr =
+let inline IsStateMachineExpr g overallExpr =
     //printfn "%s" (DebugPrint.showExpr overallExpr)
     match overallExpr with
     | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
