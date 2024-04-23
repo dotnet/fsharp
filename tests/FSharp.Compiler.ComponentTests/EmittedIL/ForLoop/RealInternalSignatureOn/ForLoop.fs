@@ -211,3 +211,10 @@ module ForLoopRealInternalSignatureOn =
         compilation
         |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
+
+    // SOURCE=ForEachRangeStep_UnitsOfMeasure.fs SCFLAGS="--optimize+"	# ForEachRangeStep_UnitsOfMeasure.fs --optimize+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"ForEachRangeStep_UnitsOfMeasure.fs"|])>]
+    let ``ForEachRangeStep_UnitsOfMeasure_opt`` compilation =
+        compilation
+        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> verifyCompilation

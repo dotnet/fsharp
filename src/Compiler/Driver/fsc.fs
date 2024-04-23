@@ -204,6 +204,7 @@ let AdjustForScriptCompile (tcConfigB: TcConfigBuilder, commandLineSourceFiles, 
             error (Error(FSComp.SR.pathIsInvalid file, rangeStartup))
 
     let commandLineSourceFiles = commandLineSourceFiles |> List.map combineFilePath
+    tcConfigB.embedSourceList <- tcConfigB.embedSourceList |> List.map combineFilePath
 
     // Script compilation is active if the last item being compiled is a script and --noframework has not been specified
     let mutable allSources = []

@@ -204,37 +204,37 @@
       </trans-unit>
       <trans-unit id="TransparentCompiler">
         <source>Transparent Compiler (experimental)</source>
-        <target state="new">Transparent Compiler (experimental)</target>
+        <target state="translated">투명한 컴파일러(실험적)</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer1">
         <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
+        <target state="translated">경고! 투명 컴파일러는 아직 모든 기능을 지원하지 않으며 충돌을 발생시키거나 잘못된 결과를 제공할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer2">
         <source>Use at your own risk!</source>
-        <target state="new">Use at your own risk!</target>
+        <target state="translated">본인 책임하에 사용하세요!</target>
         <note />
       </trans-unit>
       <trans-unit id="TransparentCompiler_Discalimer3">
         <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
+        <target state="translated">이를 확인하여 추가 성능 원격 분석을 옵트인합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
         <source>Transparent Compiler Cache Factor</source>
-        <target state="new">Transparent Compiler Cache Factor</target>
+        <target state="translated">투명한 컴파일러 캐시 팩터</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
         <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
-        <target state="new">Higher number means more memory will be used for caching. Changing the value wipes cache.</target>
+        <target state="translated">숫자가 높을수록 캐싱에 더 많은 메모리가 사용됩니다. 값을 변경하면 캐시가 초기화됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
         <source>Create new project snapshots from existing ones</source>
-        <target state="new">Create new project snapshots from existing ones</target>
+        <target state="translated">기존 스냅샷에서 새 프로젝트 스냅샷 만들기</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -324,7 +324,7 @@
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
         <source>Use Transparent Compiler (restart required)</source>
-        <target state="new">Use Transparent Compiler (restart required)</target>
+        <target state="translated">투명한 컴파일러 사용(다시 시작해야 함)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
