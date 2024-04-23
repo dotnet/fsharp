@@ -79,6 +79,11 @@ let ``Nullable inheritance`` compilation =
     compilation
     |> verifyCompilation DoNotOptimize
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CustomPipe.fs"|])>]
+let ``Custom pipe`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+
 
 module Interop  =
     open System.IO

@@ -423,6 +423,36 @@ let whatIsThis = Option.ofObj "abc123"
     |> withErrorCodes [3262]
 
 [<Fact>]
+let ``Option ofObj with inner nonnull expression`` () = 
+    FSharp """module MyLibrary
+open System.IO
+
+//let dirName = Path.GetDirectoryName ""
+
+//let whatIsThis1 = Option.ofObj dirName
+//let whatIsThis2 = Option.ofObj ( Path.GetDirectoryName "" ) 
+let whatIsThis3 = Option.ofObj ("" |> Path.GetDirectoryName )  // Warnings were happening at this line only
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics []
+
+[<Fact>]
+let ``Option ofObj with inner nullable expression`` () = 
+    FSharp """module MyLibrary
+open System.IO
+
+let nullSupportiveFunc (x: _ | null) = x
+
+let maybePath : string | null = null
+let whatIsThis3 = Option.ofObj (maybePath |> nullSupportiveFunc)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
 let ``Useless null pattern match`` () = 
     FSharp """module MyLibrary
 
