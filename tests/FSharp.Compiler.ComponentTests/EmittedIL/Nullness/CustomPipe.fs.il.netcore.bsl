@@ -27,8 +27,8 @@
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-  .method public specialname static !!b  op_PipeRight<a,b>(!!a arg,
-                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!b> func) cil managed
+  .method public static !!b  myassemblyFunc<a,b>(!!a arg,
+                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!b> func) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     .param type a 
