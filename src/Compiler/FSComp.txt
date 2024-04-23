@@ -1746,5 +1746,8 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3863,parsExpectingField,"Expecting record field"
 3864,tooManyMethodsInDotNetTypeWritingAssembly,"The type '%s' has too many methods. Found: '%d', maximum: '%d'"
 3865,parsOnlySimplePatternsAreAllowedInConstructors,"Only simple patterns are allowed in primary constructors"
-3866,tcParameterizedActivePatternArgumentCountNotMatch,"This active pattern requires %d parameter(s) and returns %d value(s), but the usage here matches %d argument(s) and %d return value(s)."
-3867,tcNoParameterActivePatternArgumentCountNotMatch,"This active pattern returns %d value(s), but the usage here matches %d return value(s)."
+3866,chkStaticAbstractInterfaceMembers,"A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.%s)."
+3867,chkStaticAbstractMembersOnClasses,"Classes cannot contain static abstract members."
+3868,tcParameterizedActivePatternArgumentCountNotMatch,"This active pattern requires %d parameter(s) and returns %d value(s), but the usage here matches %d argument(s) and %d return value(s)."
+3869,tcNoParameterActivePatternArgumentCountNotMatch,"This active pattern returns %d value(s), but the usage here matches %d return value(s)."
+

@@ -122,6 +122,16 @@
         <target state="translated">Üye veya '{0}' işlevi, 'TailCallAttribute' özniteliğine sahip ancak kuyruk özyinelemeli bir şekilde kullanılmıyor.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticAbstractInterfaceMembers">
+        <source>A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</source>
+        <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticAbstractMembersOnClasses">
+        <source>Classes cannot contain static abstract members.</source>
+        <target state="new">Classes cannot contain static abstract members.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="translated">Nesne ifadeleri, statik soyut üyeler içeren arabirimleri uygulayamaz veya statik üyeleri bildiremez.</target>
@@ -249,7 +259,7 @@
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
         <source>Boolean-returning and return-type-directed partial active patterns</source>
-        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <target state="translated">Boole döndüren ve dönüş türü yönlendiren kısmi etkin desenler</target>
         <note />
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
@@ -294,7 +304,7 @@
       </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
-        <target state="new">Enforce AttributeTargets</target>
+        <target state="translated">AttributeTargets'ı zorla</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -379,17 +389,17 @@
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
-        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <target state="translated">Birleştirmeye indirerek belirli durumlarda düz metin arasına kod eklenmiş dizeleri en iyi duruma getirir</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerIntegralRangesToFastLoops">
         <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
-        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
+        <target state="translated">İntegral aralığı (..) ve aralık adımı (.. ..) işleçlerinin belirli kullanımlarını hızlı while döngüsünde en iyi duruma getirir.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
         <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</target>
+        <target state="translated">Xs bir liste veya dizi olduğunda [for x in xs -&gt; f x] ve [|for x in xs -&gt; f x|] çağrılarını sırasıyla List.map ve Array.map olarak indirger.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -839,7 +849,7 @@
       </trans-unit>
       <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <target state="translated">Kaynak kodu görünürlüğüyle eşleşen IL görünürlüğüne sahip bütünleştirilmiş kod oluşturma</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -994,7 +1004,7 @@
       </trans-unit>
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
-        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <target state="translated">Birincil oluşturucularda yalnızca basit desenlere izin verilir</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
