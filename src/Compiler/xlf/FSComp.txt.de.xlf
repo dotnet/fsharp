@@ -1122,6 +1122,26 @@
         <target state="translated">(Empfohlener Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
+        <source>This active pattern expects {0} expression argument(s), e.g., '{1} e1...'.</source>
+        <target state="new">This active pattern expects {0} expression argument(s), e.g., '{1} e1...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchArgsAndPat">
+        <source>This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1} e1... pat'.</source>
+        <target state="new">This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1} e1... pat'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchNoArgsNoPat">
+        <source>This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</source>
+        <target state="new">This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchOnlyPat">
+        <source>This active pattern expects exactly one pattern argument, e.g., '{0} x'.</source>
+        <target state="new">This active pattern expects exactly one pattern argument, e.g., '{0} x'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="translated">Die Bedeutung von "_" ist hier mehrdeutig. Dieses Zeichen kann nicht in demselben Bereich für eine verworfene Variable und ein Funktionskürzel verwendet werden.</target>
@@ -1347,11 +1367,6 @@
         <target state="translated">Die Verwendung von Methoden mit "NoEagerConstraintApplicationAttribute" erfordert /langversion:6.0 oder höher.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNoParameterActivePatternArgumentCountNotMatch">
-        <source>This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</source>
-        <target state="new">This active pattern returns {0} value(s), but the usage here matches {1} return value(s).</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
         <target state="translated">Es wurde kein abstrakter Member gefunden, der dieser Überschreibung entspricht.</target>
@@ -1395,11 +1410,6 @@
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
         <target state="translated">Diese Außerkraftsetzung akzeptiert ein Tupel anstelle mehrerer Argumente. Fügen Sie der Methodendefinition eine zusätzliche Ebene von Klammern hinzu (z. B. "member _. Foo((x, y))"), oder entfernen Sie Klammern in der abstrakten Methodendeklaration (z. B. "abstract member Foo: 'a * 'b -&gt; 'c").</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcParameterizedActivePatternArgumentCountNotMatch">
-        <source>This active pattern requires {0} parameter(s) and returns {1} value(s), but the usage here matches {2} argument(s) and {3} return value(s).</source>
-        <target state="new">This active pattern requires {0} parameter(s) and returns {1} value(s), but the usage here matches {2} argument(s) and {3} return value(s).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">

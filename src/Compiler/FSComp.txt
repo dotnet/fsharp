@@ -1748,6 +1748,7 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3865,parsOnlySimplePatternsAreAllowedInConstructors,"Only simple patterns are allowed in primary constructors"
 3866,chkStaticAbstractInterfaceMembers,"A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.%s)."
 3867,chkStaticAbstractMembersOnClasses,"Classes cannot contain static abstract members."
-3868,tcParameterizedActivePatternArgumentCountNotMatch,"This active pattern requires %d parameter(s) and returns %d value(s), but the usage here matches %d argument(s) and %d return value(s)."
-3869,tcNoParameterActivePatternArgumentCountNotMatch,"This active pattern returns %d value(s), but the usage here matches %d return value(s)."
-
+3868,tcActivePatternArgsCountNotMatchNoArgsNoPat,"This active pattern does not expect any arguments, i.e., it should be used like '%s' instead of '%s x'."
+3868,tcActivePatternArgsCountNotMatchOnlyPat,"This active pattern expects exactly one pattern argument, e.g., '%s x'."
+3868,tcActivePatternArgsCountNotMatchArgs,"This active pattern expects %d expression argument(s), e.g., '%s e1...'."
+3868,tcActivePatternArgsCountNotMatchArgsAndPat,"This active pattern expects %d expression argument(s) and a pattern argument, e.g., '%s e1... pat'."
