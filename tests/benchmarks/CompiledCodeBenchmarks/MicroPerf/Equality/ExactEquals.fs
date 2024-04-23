@@ -74,7 +74,26 @@ type ExactEquals_EqualityTests() =
         { V = 1 } = { V = 2 }
 
 [<MemoryDiagnoser>]
-type ExactEquals_FSharpCore() =
+type ExactEquals_Fslib() =
+
+    [<Benchmark>]
+    member _.ValueOption_Some() =
+        ValueSome (1, 2) = ValueSome (2, 3)
+
+    [<Benchmark>]
+    member _.ValueOption_None() =
+        ValueNone = ValueNone
+
+    [<Benchmark>]
+    member _.Result_Ok() =
+        Ok (1, 2) = Ok (2, 3)
+
+    [<Benchmark>]
+    member _.Result_Error() =
+        Error (1, 2) = Error (2, 3)
+
+[<MemoryDiagnoser>]
+type ExactEquals_Arrays() =
 
     let array = Array.init 1000 (fun n -> Struct(n, n))
     let existingElement = Struct (1, 1)
