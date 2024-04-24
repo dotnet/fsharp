@@ -258,7 +258,7 @@ let (|SeqToArray|_|) g expr =
 
 module List =
     /// Makes an expression that will build a list from an integral range.
-    let mkFromIntegralRange tcVal (g: TcGlobals) amap m rangeTy overallElemTy rangeExpr start step finish body =
+    let mkFromIntegralRange tcVal (g: TcGlobals) amap m rangeTy overallElemTy (rangeExpr: Expr) start step finish (body: (Val * Expr) option) =
         let collectorTy = g.mk_ListCollector_ty overallElemTy
 
         /// let collector = ListCollector () in
@@ -281,9 +281,12 @@ module List =
                 mkSequential m loop close
             )
 
+        let mRangeExpr = rangeExpr.Range
+        let mBody = body |> Option.map (fun (_, body) -> body.Range) |> Option.defaultValue m
+
         mkOptimizedRangeLoop
             g
-            (m, m, m, DebugPointAtWhile.No)
+            (mBody, mRangeExpr, mRangeExpr, DebugPointAtWhile.Yes mRangeExpr)
             (rangeTy, rangeExpr)
             (start, step, finish)
             (fun count mkLoop ->
@@ -310,7 +313,7 @@ module Array =
         | NoCheckOvf
 
     /// Makes an expression that will build an array from an integral range.
-    let mkFromIntegralRange g m rangeTy ilTy overallElemTy rangeExpr start step finish body =
+    let mkFromIntegralRange g m rangeTy ilTy overallElemTy (rangeExpr: Expr) start step finish (body: (Val * Expr) option) =
         let arrayTy = mkArrayType g overallElemTy
 
         let convToNativeInt ovf expr =
@@ -376,9 +379,12 @@ module Array =
 
                 mkSequential m loop array)
 
+        let mRangeExpr = rangeExpr.Range
+        let mBody = body |> Option.map (fun (_, body) -> body.Range) |> Option.defaultValue m
+
         mkOptimizedRangeLoop
             g
-            (m, m, m, DebugPointAtWhile.No)
+            (mBody, mRangeExpr, mRangeExpr, DebugPointAtWhile.Yes mRangeExpr)
             (rangeTy, rangeExpr)
             (start, step, finish)
             (fun count mkLoop ->
@@ -530,7 +536,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
 
             // [for … in start..finish -> …]
             // [for … in start..step..finish -> …]
-            | SimpleMapping g (cont, (_, _, rangeExpr & DebugPoints (IntegralRange g (rangeTy, (start, step, finish)), debug), _, loopVal, body)) when
+            | SimpleMapping g (cont, (_, _, DebugPoints (rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), debug), _, loopVal, body)) when
                 g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
                 ->
                 Some (cont (debug (List.mkFromIntegralRange tcVal g amap m rangeTy overallElemTy rangeExpr start step finish (Some (loopVal, body)))))
@@ -558,7 +564,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
 
             // [|for … in start..finish -> …|]
             // [|for … in start..step..finish -> …|]
-            | SimpleMapping g (cont, (_, _, rangeExpr & DebugPoints (IntegralRange g (rangeTy, (start, step, finish)), debug), _, loopVal, body)) when
+            | SimpleMapping g (cont, (_, _, DebugPoints (rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), debug), _, loopVal, body)) when
                 g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
                 ->
                 Some (cont (debug (Array.mkFromIntegralRange g m rangeTy (ilTyForTy overallElemTy) overallElemTy rangeExpr start step finish (Some (loopVal, body)))))
