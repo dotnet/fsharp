@@ -373,17 +373,7 @@ module internal Impl =
     // UNION DECOMPILATION
 
     // Get the type where the type definitions are stored
-    let getUnionCasesTyp (typ: Type, _bindingFlags) =
-#if CASES_IN_NESTED_CLASS
-        let casesTyp = typ.GetNestedType("Cases", bindingFlags)
-
-        if casesTyp.IsGenericTypeDefinition then
-            casesTyp.MakeGenericType(typ.GetGenericArguments())
-        else
-            casesTyp
-#else
-        typ
-#endif
+    let getUnionCasesTyp (typ: Type, _bindingFlags) = typ
 
     let getUnionTypeTagNameMap (typ: Type, bindingFlags) =
         let enumTyp = typ.GetNestedType("Tags", bindingFlags)
