@@ -37,9 +37,10 @@ ImplFile
                               SynLongIdent
                                 ([Infrastructure; ReportWarning], [(6,18--6,19)],
                                  [None; None]), None, (6,4--6,32)), Ident ex,
-                           (6,4--6,35)), Ident None, (6,4--7,8)), (5,5--7,8),
-                     Yes, { ArrowRange = Some (5,8--5,10)
-                            BarRange = None })], (2,0--7,8), Yes (2,0--2,3),
+                           (6,4--6,35)), Ident None, (6,4--7,8),
+                        { SeparatorRange = None }), (5,5--7,8), Yes,
+                     { ArrowRange = Some (5,8--5,10)
+                       BarRange = None })], (2,0--7,8), Yes (2,0--2,3),
                  Yes (5,0--5,4), { TryKeyword = (2,0--2,3)
                                    TryToWithRange = (2,0--5,4)
                                    WithKeyword = (5,0--5,4)

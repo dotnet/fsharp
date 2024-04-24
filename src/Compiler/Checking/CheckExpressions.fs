@@ -5412,7 +5412,10 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
         TcNonControlFlowExpr env <| fun env ->
         if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
             warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (expr3, mOfLeftOfSet)) expr1 indexArgs delayed
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range), mOfLeftOfSet
+        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some setInfo) expr1 indexArgs delayed
 
     // Part of 'T.Ident
     | SynExpr.Typar (typar, m) ->
@@ -5795,7 +5798,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         let _, tpenv = suppressErrorReporting (fun () -> TcExpr cenv overallTy env tpenv expr1)
         mkDefault(m, overallTy.Commit), tpenv
 
-    | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m) ->
+    | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m, _) ->
         TcExprSequential cenv overallTy env tpenv (synExpr, sp, dir, synExpr1, synExpr2, m)
 
     // Used to implement the type-directed 'implicit yield' rule for computation expressions
@@ -5827,7 +5830,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     // synExpr1.longId(synExpr2) <- expr3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (synExpr1, synLongId, synExpr2, expr3, mStmt) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcExprDotNamedIndexedPropertySet cenv overallTy env tpenv (synExpr1, synLongId, synExpr2, expr3, mStmt)
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range)
+        TcExprDotNamedIndexedPropertySet cenv overallTy env tpenv (synExpr1, synLongId, synExpr2, setInfo, mStmt)
 
     | SynExpr.LongIdentSet (synLongId, synExpr2, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -5836,7 +5842,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     // Type.Items(synExpr1) <- synExpr2
     | SynExpr.NamedIndexedPropertySet (synLongId, synExpr1, synExpr2, mStmt) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcExprNamedIndexPropertySet cenv overallTy env tpenv (synLongId, synExpr1, synExpr2, mStmt)
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (synExpr2, range0, None, synExpr2.Range)
+        TcExprNamedIndexPropertySet cenv overallTy env tpenv (synLongId, synExpr1, setInfo, mStmt)
 
     | SynExpr.TraitCall (TypesForTypar tps, synMemberSig, arg, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -10086,7 +10095,6 @@ and TcMethodApplication
     // Handle post-hoc property assignments
     let setterExprPrebinders, callExpr2b =
         let expr = callExpr2
-
         CheckRequiredProperties g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
 
         if isCheckingAttributeCall then
@@ -10160,6 +10168,8 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
     let argExprPrebinder, action, defnItem =
         match setter with
         | AssignedPropSetter (propStaticTyOpt, pinfo, pminfo, pminst) ->
+
+            CheckPropInfoAttributes pinfo id.idRange  |> CommitOperationResult
 
             if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly && not calledFromConstructor then
                 errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 pinfo.PropertyName, m))
@@ -10336,7 +10346,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
     let g = cenv.g
 
     match synExpr with
-    | SynExpr.Sequential (sp, true, expr1, expr2, m) when not isCompExpr ->
+    | SynExpr.Sequential (sp, true, expr1, expr2, m, _) when not isCompExpr ->
         let expr1R, _ =
             let env1 = { env with eIsControlFlow = (match sp with | DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
             TcStmtThatCantBeCtorBody cenv env1 tpenv expr1
