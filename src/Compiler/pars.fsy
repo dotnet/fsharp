@@ -2558,6 +2558,10 @@ opt_explicitValTyparDecls:
   |
       { SynValTyparDecls(None, true) }
 
+hashConstraint:
+  | HASH atomType
+     { SynType.HashConstraint($2, lhs parseState) }
+
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 opt_typeConstraints:
@@ -2579,20 +2583,20 @@ typeConstraints:
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 intersectionConstraints:
-  | intersectionConstraints AMP atomType %prec prec_no_more_attr_bindings // todo precedence
+  | intersectionConstraints AMP hashConstraint
       { let constraints, mAmpersands = $1
-
-        match $3 with
-        | SynType.HashConstraint _ -> ()
-        | ty -> errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), ty.Range))
-
         ($3 :: constraints), (rhs parseState 2 :: mAmpersands) }
 
-  | atomType
-      { match $1 with
-        | SynType.HashConstraint _ -> ()
-        | ty -> errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), ty.Range))
+  | intersectionConstraints AMP atomType
+      { let constraints, mAmpersands = $1
+        errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), $3.Range))
+        ($3 :: constraints), (rhs parseState 2 :: mAmpersands) }
 
+  | hashConstraint
+      { [ $1 ], [] }
+
+  | atomType
+      { errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), $1.Range))
         [ $1 ], [] }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
@@ -5993,11 +5997,11 @@ tupleOrQuotTypeElements:
       { [ SynTupleTypeSegment.Type $1 ] }
 
 intersectionType:
-  | typar AMP intersectionConstraints %prec prec_no_more_attr_bindings // todo precedence
+  | typar AMP intersectionConstraints
     { let constraints, mAmpersands = $3
       SynType.Intersection(Some $1, List.rev constraints, lhs parseState, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
-  | atomType AMP intersectionConstraints %prec prec_no_more_attr_bindings // todo precedence
+  | hashConstraint AMP intersectionConstraints
     { let constraints, mAmpersands = $3
       SynType.Intersection(None, $1 :: List.rev constraints, lhs parseState, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
@@ -6213,8 +6217,8 @@ atomTypeOrAnonRecdType:
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 atomType:
-  | HASH atomType
-     { SynType.HashConstraint($2, lhs parseState) }
+  | hashConstraint
+     { $1 }
 
   | appTypeConPower %prec prec_atomtyp_path
      { $1 }
