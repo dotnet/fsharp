@@ -2368,7 +2368,6 @@ and [<Sealed>] TcImports
                             // Note, if mode=ResolveAssemblyReferenceMode.Speculative and the resolution failed then TryResolveLibsUsingMSBuildRules returns
                             // the empty list and we convert the failure into an AssemblyNotResolved here.
                             ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
-#endif
         )
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list =
