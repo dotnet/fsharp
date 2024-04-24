@@ -2314,7 +2314,7 @@ let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
                                               ilTy.IsNominal &&
                                               ilTy.TypeRef.Name = "System.String" -> true
             | _ -> false))
-    
+
 let rec IsDebugPipeRightExpr cenv expr =
     let g = cenv.g
     match expr with
@@ -2327,6 +2327,13 @@ let rec IsDebugPipeRightExpr cenv expr =
             | OpPipeRight3 g _  -> true
             | _ -> false
         else false
+    | _ -> false
+
+let inline IsStateMachineExpr g overallExpr =
+    //printfn "%s" (DebugPrint.showExpr overallExpr)
+    match overallExpr with
+    | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
+        isReturnsResumableCodeTy g valRef.TauType
     | _ -> false
 
 /// Optimize/analyze an expression
@@ -2342,6 +2349,10 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     let expr = stripExpr expr
 
     if IsDebugPipeRightExpr cenv expr then OptimizeDebugPipeRights cenv env expr else 
+
+    let isStateMachineE = IsStateMachineExpr g expr
+
+    let env = { env with disableMethodSplitting = env.disableMethodSplitting || isStateMachineE }
 
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
