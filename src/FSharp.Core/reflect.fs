@@ -432,7 +432,7 @@ module internal Impl =
 
                 match caseTyp with
                 | null -> null
-                | _ when caseTyp.IsGenericTypeDefinition -> caseTyp.MakeGenericType(castypesTyp.GetGenericArguments())
+                | _ when caseTyp.IsGenericTypeDefinition -> caseTyp.MakeGenericType(typ.GetGenericArguments())
                 | _ -> caseTyp
 
     let getUnionTagConverter (typ: Type, bindingFlags) =
