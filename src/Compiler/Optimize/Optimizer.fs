@@ -2521,13 +2521,6 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
           when IsILMethodRefSystemStringConcat ilMethRef ->
             optimizeArgs args accArgs
 
-// String constant folding requires a bit more work as we cannot quadratically concat strings at compile time.
-#if STRING_CONSTANT_FOLDING
-        // Optimize string constants, e.g. "1" + "2" will turn into "12"
-        | Expr.Const (Const.String str1, _, _), Expr.Const (Const.String str2, _, _) :: accArgs ->
-            mkString g m (str1 + str2) :: accArgs
-#endif
-
         | arg, _ -> arg :: accArgs
 
     and optimizeArgs args accArgs =
