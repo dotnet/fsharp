@@ -423,30 +423,37 @@ let whatIsThis = Option.ofObj "abc123"
     |> withErrorCodes [3262]
 
 [<Fact>]
-let ``Option ofObj with inner nonnull expression`` () = 
+let ``Option ofObj for PathGetDirectoryName`` () = 
     FSharp """module MyLibrary
 open System.IO
 
-//let dirName = Path.GetDirectoryName ""
-
-//let whatIsThis1 = Option.ofObj dirName
-//let whatIsThis2 = Option.ofObj ( Path.GetDirectoryName "" ) 
+let dirName = Path.GetDirectoryName ""
+let whatIsThis1 = Option.ofObj dirName
+let whatIsThis2 = Option.ofObj ( Path.GetDirectoryName "" ) 
 let whatIsThis3 = Option.ofObj ("" |> Path.GetDirectoryName )  // Warnings were happening at this line only
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics []
+    |> shouldSucceed
 
 [<Fact>]
-let ``Option ofObj with inner nullable expression`` () = 
+let ``Option ofObj with fully annotated nullsupportive func`` () = 
     FSharp """module MyLibrary
-open System.IO
 
-let nullSupportiveFunc (x: _ | null) = x
-
+let nullSupportiveFunc (x: string | null) : string | null = x
 let maybePath : string | null = null
 let whatIsThis3 = Option.ofObj (maybePath |> nullSupportiveFunc)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Option ofObj with calling id inside`` () = 
+    FSharp """module MyLibrary
+
+let maybePath : string | null = null
+let whatIsThis5 = Option.ofObj (id maybePath)
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
