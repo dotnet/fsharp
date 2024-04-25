@@ -2144,10 +2144,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                     error(Duplicate(kind, v.DisplayName, v.Range))
 
-#if CASES_IN_NESTED_CLASS
-                if tcref.IsUnionTycon && nm = "Cases" then
-                    errorR(NameClash(nm, kind, v.DisplayName, v.Range, "generated type", "Cases", tcref.Range))
-#endif
                 if tcref.IsUnionTycon then
                     match nm with
                     | "Tag" -> errorR(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), "Tag", tcref.Range))
