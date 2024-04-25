@@ -9413,15 +9413,15 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
     | Item.DelegateCtor _ -> error (Error (FSComp.SR.tcConstructorsCannotBeFirstClassValues(), mItem))
     
     | Item.UnionCase(info, _) ->
-        let clashingNames = info.Tycon.MembersOfFSharpTyconSorted
-        for value in clashingNames do
-            if value.DisplayNameCore = info.DisplayNameCore then
-                let kind = (if value.IsMember then "member" else "value")
-                errorR (NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, value.Range, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, value.Range))
-                errorR(NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, mItem, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, mItem))
-                error (Error(FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
+        let clashingNames = info.Tycon.MembersOfFSharpTyconSorted |> List.tryFind(fun mem -> mem.DisplayNameCore = info.DisplayNameCore)
+        match clashingNames with
+        | None -> ()
+        | Some value ->
+            let kind = if value.IsMember then "member" else "value"
+            errorR (NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, value.Range, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, value.Range))
+            errorR (NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, mItem, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, mItem))
 
-        PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr) objExprTy ExprAtomicFlag.Atomic delayed
+        error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
     // These items are not expected here - they can't be the result of a instance member dot-lookup "expr.Ident"
     | Item.ActivePatternResult _
     | Item.CustomOperation _
