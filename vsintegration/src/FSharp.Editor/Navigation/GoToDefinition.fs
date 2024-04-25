@@ -29,7 +29,7 @@ open System.Text.RegularExpressions
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Telemetry
-open System.Collections.Generic
+open Microsoft.VisualStudio.Threading
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -565,6 +565,77 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 return this.NavigateToItem(item, cancellationToken)
         }
 
+    member this.NavigateToExternalDeclarationAsync(targetSymbolUse: FSharpSymbolUse, metadataReferences: seq<MetadataReference>) =
+        let textOpt =
+            match targetSymbolUse.Symbol with
+            | :? FSharpEntity as symbol -> symbol.TryGetMetadataText() |> Option.map (fun text -> text, symbol.DisplayName)
+            | :? FSharpMemberOrFunctionOrValue as symbol ->
+                symbol.ApparentEnclosingEntity.TryGetMetadataText()
+                |> Option.map (fun text -> text, symbol.ApparentEnclosingEntity.DisplayName)
+            | :? FSharpField as symbol ->
+                match symbol.DeclaringEntity with
+                | Some entity ->
+                    let text = entity.TryGetMetadataText()
+
+                    match text with
+                    | Some text -> Some(text, entity.DisplayName)
+                    | None -> None
+                | None -> None
+            | :? FSharpUnionCase as symbol ->
+                symbol.DeclaringEntity.TryGetMetadataText()
+                |> Option.map (fun text -> text, symbol.DisplayName)
+            | _ -> None
+
+        match textOpt with
+        | None -> CancellableTask.singleton false
+        | Some(text, fileName) ->
+            foregroundCancellableTask {
+                let! cancellationToken = CancellableTask.getCancellationToken ()
+                do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken)
+
+                let tmpProjInfo, tmpDocInfo =
+                    MetadataAsSource.generateTemporaryDocument (
+                        AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName),
+                        fileName,
+                        metadataReferences
+                    )
+
+                let tmpShownDocOpt =
+                    metadataAsSource.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
+
+                match tmpShownDocOpt with
+                | ValueNone -> return false
+                | ValueSome tmpShownDoc ->
+                    let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration")
+
+                    let r =
+                        // This tries to find the best possible location of the target symbol's location in the metadata source.
+                        // We really should rely on symbol equality within FCS instead of doing it here,
+                        //     but the generated metadata as source isn't perfect for symbol equality.
+                        let symbols = checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
+
+                        symbols
+                        |> Seq.tryFindV (tryFindExternalSymbolUse targetSymbolUse)
+                        |> ValueOption.map (fun x -> x.Range)
+
+                    let! span =
+                        cancellableTask {
+                            let! cancellationToken = CancellableTask.getCancellationToken ()
+
+                            match r with
+                            | ValueNone -> return TextSpan.empty
+                            | ValueSome r ->
+                                let! text = tmpShownDoc.GetTextAsync(cancellationToken)
+
+                                match RoslynHelpers.TryFSharpRangeToTextSpan(text, r) with
+                                | ValueSome span -> return span
+                                | _ -> return TextSpan.empty
+                        }
+
+                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)
+                    return this.NavigateToItem(navItem, cancellationToken)
+            }
+
     member this.NavigateToExternalDeclaration
         (
             targetSymbolUse: FSharpSymbolUse,
@@ -706,10 +777,15 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             let gtd = GoToDefinition(metadataAsSource)
             let! result = gtd.FindDefinitionAtPosition(initialDoc, position)
 
-            return
-                match result with
-                | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) -> ImmutableArray.create navItem
-                | _ -> ImmutableArray.empty
+            match result with
+            | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) -> return ImmutableArray.create navItem
+            | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _) ->
+                do!
+                    gtd.NavigateToExternalDeclarationAsync(targetSymbolUse, metadataReferences)
+                    |> CancellableTask.ignore
+
+                return ImmutableArray.empty
+            | _ -> return ImmutableArray.empty
         }
 
     member _.TryGoToDefinition(position, cancellationToken) =
