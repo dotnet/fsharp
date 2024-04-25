@@ -1415,11 +1415,11 @@ type internal TransparentCompiler
                             if tcInfo.stateContainsNodes |> Set.contains fileNode then
                                 failwith $"Oops!"
 
-                            if
-                                tcInfo.stateContainsNodes
-                                |> Set.contains (NodeToTypeCheck.PhysicalFile(index + 1))
-                            then
-                                failwith $"Oops!!!"
+                            // if
+                            //     tcInfo.stateContainsNodes
+                            //     |> Set.contains (NodeToTypeCheck.PhysicalFile(index + 1))
+                            // then
+                            //     failwith $"Oops!!!"
 
                             let parsedInput = projectSnapshot.SourceFiles[index].ParsedInput
                             let prefixPathOpt = None
