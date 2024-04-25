@@ -312,9 +312,10 @@ type MyId =
 let onlyIdX (ids: MyId list) = ids |> List.choose _.IdX
 let onlyIdA (ids: MyId list) = ids |> List.choose _.IdA
         """
-        |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            (Error 23, Line 6, Col 17, Line 6, Col 20, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module")
             (Error 23, Line 17, Col 51, Line 17, Col 56, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module")
+            (Error 812, Line 17, Col 51, Line 17, Col 56, "The syntax 'expr.id' may only be used with record labels, properties and fields")
         ]
