@@ -551,6 +551,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member this.OnEvent = this.Event.Add
 
+    member this.Count = cache.Count
+
     member _.Locked = lock.Semaphore.CurrentCount < 1
 
     member _.Running =

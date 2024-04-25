@@ -78,4 +78,11 @@ module internal Md5Hasher =
 
     let addDateTimes (dts: System.DateTime seq) (s: byte array) = s |> addSeq dts addDateTime
 
+    let addInt (i: int) (s: byte array) =
+        i |> BitConverter.GetBytes |> addBytes <| s
+
+    let addIntegers (items: int seq) (s: byte array) = addSeq items addInt s
+
+    let addBooleans (items: bool seq) (s: byte array) = addSeq items addBool s
+
     let toString (bytes: byte array) = bytes |> System.BitConverter.ToString

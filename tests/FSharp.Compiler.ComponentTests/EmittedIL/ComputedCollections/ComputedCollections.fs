@@ -34,3 +34,43 @@ module ComputedCollections =
     let ``UInt64RangeLists_fs`` compilation =
         compilation
         |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForNInRangeArrays.fs"|])>]
+    let ``ForNInRangeArrays_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForNInRangeLists.fs"|])>]
+    let ``ForNInRangeLists_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInArray_ToArray.fs"|])>]
+    let ``ForXInArray_ToArray_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInArray_ToList.fs"|])>]
+    let ``ForXInArray_ToList_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInList_ToArray.fs"|])>]
+    let ``ForXInList_ToArray_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInList_ToList.fs"|])>]
+    let ``ForXInList_ToList_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInSeq_ToArray.fs"|])>]
+    let ``ForXInSeq_ToArray_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInSeq_ToList.fs"|])>]
+    let ``ForXInSeq_ToList_fs`` compilation =
+        compilation
+        |> verifyCompilation

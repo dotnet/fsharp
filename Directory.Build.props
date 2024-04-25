@@ -1,6 +1,8 @@
 <Project>
 
   <PropertyGroup>
+    <PackageProjectUrl>https://github.com/dotnet/fsharp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dotnet/fsharp</RepositoryUrl>
     <LangVersion Condition="'$(FSharpLangVersion)' != ''">$(FSharpLangVersion)</LangVersion>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
@@ -14,6 +16,10 @@
    All settings below can be overriden via CLI switches if needed. -->
 
   <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_USING_DOTNET)' != 'false'">
+      <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Benchmarks' and '$(BUILDING_USING_DOTNET)' != 'false'">
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
   </PropertyGroup>
 
@@ -31,7 +37,8 @@
          Don't use it explicitly when building with plain .NET (without Proto or Arcade).
      -->
     <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' != 'true'">$(OtherFlags) --realsig-</OtherFlags>
-    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig+</OtherFlags>
+    <!-- TBD: Fix MEF Export visibility issues in VS -->
+    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig-</OtherFlags>
 
   </PropertyGroup>
 

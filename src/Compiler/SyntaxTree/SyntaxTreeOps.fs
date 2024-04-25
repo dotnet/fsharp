@@ -100,6 +100,8 @@ let rec pushUnaryArg expr arg =
     | SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m) ->
         let innerExpr = pushUnaryArg innerExpr arg
         SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m)
+    | SynExpr.ArbitraryAfterError(_, m) when m.Start = m.End ->
+        SynExpr.DiscardAfterMissingQualificationAfterDot(SynExpr.Ident arg, m.StartRange, unionRanges arg.idRange m)
     | _ ->
         errorR (Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression (), expr.Range))
         expr
@@ -940,7 +942,7 @@ let rec synExprContainsError inpExpr =
 
         | SynExpr.TryFinally(tryExpr = e1; finallyExpr = e2) -> walkExpr e1 || walkExpr e2
 
-        | SynExpr.Sequential(_, _, e1, e2, _) -> walkExpr e1 || walkExpr e2
+        | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> walkExpr e1 || walkExpr e2
 
         | SynExpr.SequentialOrImplicitYield(_, e1, e2, _, _) -> walkExpr e1 || walkExpr e2
 

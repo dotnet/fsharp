@@ -204,6 +204,7 @@ let AdjustForScriptCompile (tcConfigB: TcConfigBuilder, commandLineSourceFiles, 
             error (Error(FSComp.SR.pathIsInvalid file, rangeStartup))
 
     let commandLineSourceFiles = commandLineSourceFiles |> List.map combineFilePath
+    tcConfigB.embedSourceList <- tcConfigB.embedSourceList |> List.map combineFilePath
 
     // Script compilation is active if the last item being compiled is a script and --noframework has not been specified
     let mutable allSources = []
@@ -525,7 +526,7 @@ let main1
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
     let delayForFlagsLogger = CapturingDiagnosticsLogger("DelayFlagsLogger")
 
-    let _holder = UseDiagnosticsLogger delayForFlagsLogger
+    SetThreadDiagnosticsLoggerNoUnwind delayForFlagsLogger
 
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = Lexhelp.LexResourceManager()
@@ -596,7 +597,7 @@ let main1
     let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _holder = UseDiagnosticsLogger diagnosticsLogger
+    SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
     // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics diagnosticsLogger
@@ -749,7 +750,7 @@ let main2
 
         GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
-    let _holder = UseDiagnosticsLogger diagnosticsLogger
+    SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
     // Try to find an AssemblyVersion attribute
     let assemVerFromAttrib =

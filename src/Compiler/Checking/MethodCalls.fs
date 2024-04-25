@@ -906,8 +906,8 @@ let IsBaseCall objArgs =
 /// For example, when calling an interface method on a struct, or a method on a constrained 
 /// variable type. 
 let ComputeConstrainedCallInfo g amap m staticTyOpt args (minfo: MethInfo) =
-    match args, staticTyOpt with 
-    | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && minfo.IsAbstract -> Some staticTy
+    match args, staticTyOpt with
+    | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && (minfo.IsAbstract || minfo.IsVirtual) -> Some staticTy
 
     | (objArgExpr :: _), _ when minfo.IsInstance && not minfo.IsExtensionMember -> 
         let methObjTy = minfo.ApparentEnclosingType

@@ -1389,15 +1389,17 @@ let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input =
-    // Equip loggers to locally filter w.r.t. scope pragmas in each input
-    use _ =
-        UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, input, oldLogger))
+    cancellable {
+        // Equip loggers to locally filter w.r.t. scope pragmas in each input
+        use _ =
+            UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, input, oldLogger))
 
-    use _ = UseBuildPhase BuildPhase.TypeCheck
+        use _ = UseBuildPhase BuildPhase.TypeCheck
 
-    RequireCompilationThread ctok
+        RequireCompilationThread ctok
 
-    CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input)
+        return! CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input)
+    }
     |> Cancellable.runWithoutCancellation
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
@@ -1859,14 +1861,18 @@ let CheckMultipleInputsUsingGraphMode
         ((input, logger): ParsedInput * DiagnosticsLogger)
         ((currentTcState, _currentPriorErrors): State)
         : Finisher<NodeToTypeCheck, State, PartialResult> =
-        use _ = UseDiagnosticsLogger logger
-        let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-        let tcSink = TcResultsSink.NoSink
 
         let (Finisher(finisher = finisher)) =
-            CheckOneInputWithCallback
-                node
-                (checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+            cancellable {
+                use _ = UseDiagnosticsLogger logger
+                let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+                let tcSink = TcResultsSink.NoSink
+
+                return!
+                    CheckOneInputWithCallback
+                        node
+                        (checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+            }
             |> Cancellable.runWithoutCancellation
 
         Finisher(

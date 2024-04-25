@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
-        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <target state="translated">약어가 다르기 때문에 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다.\n    {2}\n 대 \n    {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
@@ -248,8 +248,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">일부 추상 멤버에 구현이 지정되지 않았으므로 이 형식은 'abstract'입니다. 의도적으로 구현을 지정하지 않은 경우에는 형식에 '[&lt;AbstractClass&gt;]' 특성을 추가하세요.</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="needs-review-translation">일부 추상 멤버에 구현이 지정되지 않았으므로 이 형식은 'abstract'입니다. 의도적으로 구현을 지정하지 않은 경우에는 형식에 '[&lt;AbstractClass&gt;]' 특성을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">

@@ -4,6 +4,7 @@ module internal FSharp.Compiler.CheckDeclarations
 
 open System
 open System.Collections.Generic
+open System.Threading
 
 open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
@@ -574,7 +575,7 @@ module TcRecdUnionAndEnumDeclarations =
                     type SomeUnion =
                     | Case1 // Compiles down to a static property
             *)
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsUnionCaseDeclarations) then
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
                 let target = if rfields.IsEmpty then AttributeTargets.Property else AttributeTargets.Method
                 TcAttributes cenv env target synAttrs
             else
@@ -2926,15 +2927,26 @@ module EstablishTypeDefinitionCores =
                 | _ -> 
                     let kind = 
                         match kind with
-                        | SynTypeDefnKind.Class -> TFSharpClass
+                        | SynTypeDefnKind.Class ->
+                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
+                            TFSharpClass
                         | SynTypeDefnKind.Interface -> TFSharpInterface
-                        | SynTypeDefnKind.Delegate _ -> TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
-                        | SynTypeDefnKind.Struct -> TFSharpStruct 
+                        | SynTypeDefnKind.Delegate _ ->
+                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Delegate synAttrs |> ignore
+                            TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
+                        | SynTypeDefnKind.Struct ->
+                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                            TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
 
                     TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData kind)
 
-            | SynTypeDefnSimpleRepr.Enum _ -> 
+            | SynTypeDefnSimpleRepr.Enum _ ->
+                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                    TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Enum synAttrs |> ignore
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpEnum)
 
         // OK, now fill in the (partially computed) type representation
@@ -3596,6 +3608,20 @@ module EstablishTypeDefinitionCores =
                             elif not (isClassTy g ty) then 
                                 errorR(Error(FSComp.SR.tcCannotInheritFromInterfaceType(), m)))
 
+                        let abstractSlots = 
+                            [ for synValSig, memberFlags in slotsigs do 
+
+                                  let (SynValSig(range=m)) = synValSig
+
+                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
+                                  
+                                  let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
+                                  // Multiple slots may be returned, e.g. for 
+                                  //    abstract P: int with get, set
+                                  
+                                  for slot in slots do 
+                                      yield mkLocalValRef slot ]
+
                         let kind = 
                             match kind with 
                               | SynTypeDefnKind.Struct -> 
@@ -3620,6 +3646,9 @@ module EstablishTypeDefinitionCores =
                                   noCLIMutableAttributeCheck()
                                   structLayoutAttributeCheck(not isIncrClass)
                                   allowNullLiteralAttributeCheck()
+                                  for slot in abstractSlots do
+                                      if not slot.IsInstanceMember then
+                                          errorR(Error(FSComp.SR.chkStaticAbstractMembersOnClasses(), slot.Range))
                                   TFSharpClass
                               | SynTypeDefnKind.Delegate (ty, arity) -> 
                                   noCLIMutableAttributeCheck()
@@ -3654,21 +3683,7 @@ module EstablishTypeDefinitionCores =
                                 | (_, m, baseIdOpt) :: _ -> 
                                     match baseIdOpt with 
                                     | None -> Some(ident("base", m)) 
-                                    | Some id -> Some id
-                            
-                        let abstractSlots = 
-                            [ for synValSig, memberFlags in slotsigs do 
-
-                                  let (SynValSig(range=m)) = synValSig
-
-                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
-                                  
-                                  let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
-                                  // Multiple slots may be returned, e.g. for 
-                                  //    abstract P: int with get, set
-                                  
-                                  for slot in slots do 
-                                      yield mkLocalValRef slot ]
+                                    | Some id -> Some id                            
 
                         let baseValOpt = MakeAndPublishBaseVal cenv envinner baseIdOpt (superOfTycon g tycon)
                         let safeInitInfo = ComputeInstanceSafeInitInfo cenv envinner thisTyconRef.Range thisTy
@@ -4441,7 +4456,7 @@ module TcDeclarations =
 
             let slotsigs = members |> List.choose (function  SynMemberDefn.AbstractSlot (slotSig = x; flags = y) -> Some(x, y) | _ -> None)
            
-            let members,_vals_Inherits_Abstractslots = SplitAutoProps members
+            let members, _vals_Inherits_Abstractslots = SplitAutoProps members
 
             let isConcrete = 
                 members |> List.exists (function 
@@ -5319,22 +5334,29 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
  }
  
 /// The non-mutually recursive case for a sequence of declarations
-and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) =
- cancellable {
-    match moreDefs with 
-    | firstDef :: otherDefs ->
-        // Lookahead one to find out the scope of the next declaration.
-        let scopem = 
-            if isNil otherDefs then unionRanges firstDef.Range endm
-            else unionRanges (List.head otherDefs).Range endm
+and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) (ct: CancellationToken) =
 
-        let! firstDef, env, envAtEnd = TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef
+    if ct.IsCancellationRequested then
+        ValueOrCancelled.Cancelled (OperationCanceledException())
+    else
+        match moreDefs with
+        | [] ->
+            ValueOrCancelled.Value (List.rev defsSoFar, envAtEnd)
+        | firstDef :: otherDefs ->
+            // Lookahead one to find out the scope of the next declaration.
+            let scopem =
+                if isNil otherDefs then
+                    unionRanges firstDef.Range endm
+                else
+                    unionRanges (List.head otherDefs).Range endm
 
-        // tail recursive 
-        return! TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ( (firstDef :: defsSoFar), env, envAtEnd) otherDefs
-    | [] -> 
-        return List.rev defsSoFar, envAtEnd
- }
+            let result = Cancellable.run ct (TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef)
+
+            match result with
+            | ValueOrCancelled.Cancelled x ->
+                ValueOrCancelled.Cancelled x
+            | ValueOrCancelled.Value(firstDef, env, envAtEnd) ->
+                TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ((firstDef :: defsSoFar), env, envAtEnd) otherDefs ct
 
 /// The mutually recursive case for a sequence of declarations (and nested modules)
 and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial mutRecNSInfo (defs: SynModuleDecl list) =
@@ -5459,20 +5481,24 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
             escapeCheck()
         return (moduleContents, topAttrsNew, envAtEnd)
 
-    | None -> 
+    | None ->
+        let! ct = Cancellable.token ()
+        let result = TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ([], env, env) synModuleDecls ct
 
-        let! compiledDefs, envAtEnd = TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ([], env, env) synModuleDecls 
+        match result with
+        | ValueOrCancelled.Value(compiledDefs, envAtEnd) ->
+            // Apply the functions for each declaration to build the overall expression-builder
+            let moduleDefs = List.collect p13 compiledDefs
+            let moduleDefs = match openDecls0 with [] -> moduleDefs | _ -> TMDefOpens openDecls0 :: moduleDefs
+            let moduleContents = TMDefs moduleDefs
 
-        // Apply the functions for each declaration to build the overall expression-builder 
-        let moduleDefs = List.collect p13 compiledDefs
-        let moduleDefs = match openDecls0 with [] -> moduleDefs | _ -> TMDefOpens openDecls0 :: moduleDefs
-        let moduleContents = TMDefs moduleDefs 
+            // Collect up the attributes that are global to the file
+            let topAttrsNew = List.collect p33 compiledDefs
+            return (moduleContents, topAttrsNew, envAtEnd)
+        | ValueOrCancelled.Cancelled x -> 
+            return! Cancellable(fun _ -> ValueOrCancelled.Cancelled x)
+  }
 
-        // Collect up the attributes that are global to the file 
-        let topAttrsNew = compiledDefs |> List.collect p33
-        return (moduleContents, topAttrsNew, envAtEnd)
-  }  
-    
 
 //--------------------------------------------------------------------------
 // CheckOneImplFile - Typecheck all the namespace fragments in a file.
