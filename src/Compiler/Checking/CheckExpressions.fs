@@ -2614,13 +2614,8 @@ module EventDeclarationNormalization =
 let FreshenObjectArgType (cenv: cenv) m rigid tcref isExtrinsic declaredTyconTypars =
     let g = cenv.g
 
-#if EXTENDED_EXTENSION_MEMBERS // indicates if extension members can add additional constraints to type parameters
-    let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy =
-        FreshenTyconRef g m (if isExtrinsic then TyparRigidity.Flexible else rigid) tcref declaredTyconTypars
-#else
     let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy =
         FreshenTyconRef g m rigid tcref declaredTyconTypars
-#endif
 
     // Struct members have a byref 'this' type (unless they are extrinsic extension members)
     let thisTy =
@@ -5412,7 +5407,10 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
         TcNonControlFlowExpr env <| fun env ->
         if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
             warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (expr3, mOfLeftOfSet)) expr1 indexArgs delayed
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range), mOfLeftOfSet
+        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some setInfo) expr1 indexArgs delayed
 
     // Part of 'T.Ident
     | SynExpr.Typar (typar, m) ->
@@ -5827,7 +5825,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     // synExpr1.longId(synExpr2) <- expr3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (synExpr1, synLongId, synExpr2, expr3, mStmt) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcExprDotNamedIndexedPropertySet cenv overallTy env tpenv (synExpr1, synLongId, synExpr2, expr3, mStmt)
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range)
+        TcExprDotNamedIndexedPropertySet cenv overallTy env tpenv (synExpr1, synLongId, synExpr2, setInfo, mStmt)
 
     | SynExpr.LongIdentSet (synLongId, synExpr2, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -5836,7 +5837,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     // Type.Items(synExpr1) <- synExpr2
     | SynExpr.NamedIndexedPropertySet (synLongId, synExpr1, synExpr2, mStmt) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcExprNamedIndexPropertySet cenv overallTy env tpenv (synLongId, synExpr1, synExpr2, mStmt)
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (synExpr2, range0, None, synExpr2.Range)
+        TcExprNamedIndexPropertySet cenv overallTy env tpenv (synLongId, synExpr1, setInfo, mStmt)
 
     | SynExpr.TraitCall (TypesForTypar tps, synMemberSig, arg, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -10621,6 +10625,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
     | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), mBinding, debugPoint) ->
         let (SynValData(memberFlags = memberFlagsOpt)) = valSynData
 
+        let isClassLetBinding =
+            match declKind, kind with
+            | ClassLetBinding _, SynBindingKind.Normal -> true
+            | _ -> false
+
         let callerName =
             match declKind, kind, pat with
             | ExpressionBinding, _, _ -> envinner.eCallerMemberName
@@ -10876,14 +10885,14 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
             
         if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && memberFlagsOpt.IsNone && not attrs.IsEmpty then
-            TcAttributeTargetsOnLetBindings cenv env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty)
+            TcAttributeTargetsOnLetBindings cenv env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding
 
         CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
 
 // Note:
 // - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
 // - Let function bindings can only have attributes that uses AttributeTargets.Method ||| AttributeTargets.ReturnValue
-and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy areTyparsDeclared =
+and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy areTyparsDeclared isClassLetBinding =
     let attrTgt =
         if
             // It's a type function:
@@ -10895,7 +10904,11 @@ and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallE
             || isFunTy cenv.g overallPatTy
             || isFunTy cenv.g overallExprTy
         then
-            AttributeTargets.ReturnValue ||| AttributeTargets.Method
+            // Class let bindings are a special case, they can have attributes that target fields and properties, since they might be lifted to those and contain lambdas/functions.
+            if isClassLetBinding then
+                AttributeTargets.ReturnValue ||| AttributeTargets.Method ||| AttributeTargets.Field ||| AttributeTargets.Property
+            else
+                AttributeTargets.ReturnValue ||| AttributeTargets.Method
         else
             AttributeTargets.ReturnValue ||| AttributeTargets.Field ||| AttributeTargets.Property
 
@@ -12377,11 +12390,7 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
 
     // Check coherence of generalization of variables for memberInfo members in generic classes
     match vspec.MemberInfo with
-#if EXTENDED_EXTENSION_MEMBERS // indicates if extension members can add additional constraints to type parameters
-    | Some _ when not vspec.IsExtensionMember ->
-#else
     | Some _ ->
-#endif
        match PartitionValTyparsForApparentEnclosingType g vspec with
        | Some(parentTypars, memberParentTypars, _, _, _) ->
           ignore(SignatureConformance.Checker(g, cenv.amap, denv, SignatureRepackageInfo.Empty, false).CheckTypars vspec.Range TypeEquivEnv.Empty memberParentTypars parentTypars)

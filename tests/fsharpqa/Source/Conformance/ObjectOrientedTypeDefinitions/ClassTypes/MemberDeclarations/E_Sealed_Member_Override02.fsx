@@ -28,5 +28,5 @@ type T4() =
 //<Expects status="error" span="(21,6-21,8)" id="FS0365">No implementation was given for those members:</Expects>
 //<Expects span="(21,6-21,8)">	'CSLib5\.B0\.M\(c: char, a: int\) : int'</Expects>
 //<Expects span="(21,6-21,8)">	'CSLib5\.B0\.N\(c: char, a: int\) : int'</Expects>
-//<Expects status="error" span="(21,6-21,8)" id="FS0054">This type is 'abstract' since some abstract members have not been given an implementation\. If this is intentional then add the '\[<AbstractClass>\]' attribute to your type\.$</Expects>
+//<Expects status="error" span="(21,6-21,8)" id="FS0054">Non-abstract classes cannot contain abstract members\. Either provide a default member implementation or add the '\[<AbstractClass>\]' attribute to your type\.$</Expects>
 //<Expects status="error" span="(23,16-23,17)" id="FS3070">Cannot override inherited member 'CSLib5.B1::M' because it is sealed$</Expects>

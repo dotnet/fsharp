@@ -14,7 +14,10 @@ open System.Runtime.CompilerServices
 [<Class>]
 type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
     let syncObj = obj ()
+
+    [<VolatileField>]
     let mutable valueFactory = valueFactory
+
     let mutable value = value
 
     new(valueFactory: unit -> 'T) = InterruptibleLazy(Unchecked.defaultof<_>, valueFactory)
@@ -28,7 +31,6 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
         match box valueFactory with
         | null -> value
         | _ ->
-
             Monitor.Enter(syncObj)
 
             try

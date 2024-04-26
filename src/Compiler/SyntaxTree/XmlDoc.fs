@@ -118,46 +118,6 @@ type XmlDoc(unprocessedLines: string[], range: range) =
         with e ->
             warning (Error(FSComp.SR.xmlDocBadlyFormed (e.Message), doc.Range))
 
-#if CREF_ELABORATION
-    member doc.Elaborate(crefResolver) =
-        for see in
-            seq {
-                yield! xml.Descendants(XName.op_Implicit "see")
-                yield! xml.Descendants(XName.op_Implicit "seealso")
-                yield! xml.Descendants(XName.op_Implicit "exception")
-            } do
-            match see.Attribute(XName.op_Implicit "cref") with
-            | null -> warning (Error(FSComp.SR.xmlDocMissingCrossReference (), doc.Range))
-            | attr ->
-                let cref = attr.Value
-
-                if
-                    cref.StartsWith("T:")
-                    || cref.StartsWith("P:")
-                    || cref.StartsWith("M:")
-                    || cref.StartsWith("E:")
-                    || cref.StartsWith("F:")
-                then
-                    ()
-                else
-                    match crefResolver cref with
-                    | None -> warning (Error(FSComp.SR.xmlDocUnresolvedCrossReference (nm), doc.Range))
-                    | Some text ->
-                        attr.Value <- text
-                        modified <- true
-
-        if modified then
-            let m = doc.Range
-
-            let newLines =
-                [|
-                    for e in xml.Elements() do
-                        yield! e.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
-                |]
-
-            lines <- newLines
-#endif
-
 // Discriminated unions can't contain statics, so we use a separate type
 and XmlDocStatics() =
 

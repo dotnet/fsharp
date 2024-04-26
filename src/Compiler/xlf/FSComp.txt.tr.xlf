@@ -122,6 +122,16 @@
         <target state="translated">Üye veya '{0}' işlevi, 'TailCallAttribute' özniteliğine sahip ancak kuyruk özyinelemeli bir şekilde kullanılmıyor.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticAbstractInterfaceMembers">
+        <source>A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</source>
+        <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticAbstractMembersOnClasses">
+        <source>Classes cannot contain static abstract members.</source>
+        <target state="new">Classes cannot contain static abstract members.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="translated">Nesne ifadeleri, statik soyut üyeler içeren arabirimleri uygulayamaz veya statik üyeleri bildiremez.</target>
