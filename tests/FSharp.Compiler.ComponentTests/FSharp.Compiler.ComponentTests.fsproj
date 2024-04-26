@@ -157,6 +157,7 @@
     <Compile Include="EmittedIL\ForLoop\RealInternalSignatureOff\ForLoop.fs" />
     <Compile Include="EmittedIL\ForLoop\RealInternalSignatureOn\ForLoop.fs" />
     <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
+    <Compile Include="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <Compile Include="EmittedIL\GenericComparison\GenericComparison.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
@@ -329,6 +330,7 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
