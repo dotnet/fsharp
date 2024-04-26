@@ -9419,7 +9419,6 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         | Some value ->
             let kind = if value.IsMember then "member" else "value"
             errorR (NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, value.Range, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, value.Range))
-            errorR (NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, mItem, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, mItem))
 
         error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
     // These items are not expected here - they can't be the result of a instance member dot-lookup "expr.Ident"
