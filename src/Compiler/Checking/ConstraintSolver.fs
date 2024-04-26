@@ -1021,6 +1021,11 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
             SolveMemberConstraint csenv false PermitWeakResolution.No ndeep m2 trace traitInfo |> OperationResult.ignore
     }
 
+and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
+    csenv.g.checkNullness &&
+    csenv.IsSpeculativeForMethodOverloading = false &&
+    csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome    
+
 // nullness1: actual
 // nullness2: expected
 and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
@@ -1044,7 +1049,7 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
-        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
             WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))    
         // Allow expected of WithNull and actual of WithoutNull
         // TODO NULLNESS:  this is not sound in contravariant cases etc. It is assuming covariance.
@@ -1078,7 +1083,7 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
-        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
             WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))
         // Allow target of WithNull and actual of WithoutNull
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
@@ -1227,6 +1232,12 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         // Unifying 'T1? and 'T2?
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
             SolveTyparEqualsType csenv ndeep m2 trace sty1 (TType_var (tp2, g.knownWithoutNull)) 
+        | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithoutNull ->
+            let tpNew = NewCompGenTypar(TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
+            trackErrors {
+                do! SolveTypeEqualsType csenv ndeep m2 trace cxsln sty2 (TType_var(tpNew, g.knownWithNull))
+                do! SolveTypeEqualsType csenv ndeep m2 trace cxsln (TType_var(tpNew, g.knownWithoutNull)) sty1
+            }
         //// Unifying 'T1 % and 'T2 %
         //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
         //    SolveTyparEqualsType csenv ndeep m2 trace sty1 (TType_var (tp2, g.knownWithoutNull)) 
@@ -1243,6 +1254,12 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         // Unifying 'T1? and 'T2?
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
             SolveTyparEqualsType csenv ndeep m2 trace sty2 (TType_var (tp1, g.knownWithoutNull)) 
+        | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithoutNull ->
+            let tpNew = NewCompGenTypar(TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
+            trackErrors {
+                do! SolveTypeEqualsType csenv ndeep m2 trace cxsln sty2 (TType_var(tpNew, g.knownWithNull))
+                do! SolveTypeEqualsType csenv ndeep m2 trace cxsln (TType_var(tpNew, g.knownWithoutNull)) sty1      
+            }           
         //// Unifying 'T1 % and 'T2 % 
         //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
         //    SolveTyparEqualsType csenv ndeep m2 trace sty2 (TType_var (tp1, g.knownWithoutNull)) 
@@ -1259,7 +1276,7 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         match nullness1.TryEvaluate(), (nullnessOfTy g sty2).TryEvaluate() with
         // Unifying 'T1? and 'T2? 
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
-            SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2) 
+            SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2)
         // Unifying 'T1 % and 'T2 % 
         //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
         //    SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2) 
@@ -2927,7 +2944,11 @@ and CanMemberSigsMatchUpToCheck
                                 ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
                         else
                             // The object types must be non-null
-                            let nonNullCalledObjArgTys = calledObjArgTys |> List.map (replaceNullnessOfTy g.knownWithoutNull)
+                            let nonNullCalledObjArgTys = 
+                                if not calledMeth.Method.IsExtensionMember then
+                                    calledObjArgTys |> List.map (replaceNullnessOfTy g.knownWithoutNull)
+                                else
+                                    calledObjArgTys
                             MapCombineTDC2D subsumeTypes nonNullCalledObjArgTys callerObjArgTys
 
                 let! usesTDC3 =

@@ -35,6 +35,43 @@ let doSomethingAboutIt (ilg:ILGenerator) =
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
+let ``Consuming C# extension methods which allow nullable this`` () = 
+    FSharp """module MyLibrary
+
+open System
+
+let asMemoryOnNonNull : Memory<byte> = 
+    let bytes = [|0uy..11uy|]
+    let memory = bytes.AsMemory()
+    memory
+
+let asMemoryOnNull : Memory<byte> = 
+    let bytes : (byte[]) | null = null
+    let memory = bytes.AsMemory()
+    memory
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Consuming LinkedList First and Last should warn about nullness`` () = 
+    FSharp """module MyLibrary
+
+let ll = new System.Collections.Generic.LinkedList<string>()
+let x:System.Collections.Generic.LinkedListNode<string> = ll.Last
+let y:System.Collections.Generic.LinkedListNode<string> = ll.First
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+         [ Error 3261, Line 4, Col 59, Line 4, Col 66, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have compatible nullability."
+           Error 3261, Line 4, Col 59, Line 4, Col 66, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have equivalent nullability."
+           Error 3261, Line 5, Col 59, Line 5, Col 67, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have compatible nullability."
+           Error 3261, Line 5, Col 59, Line 5, Col 67, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have equivalent nullability."]
+
+[<FactForNETCOREAPP>]
 let ``Nullable directory info show warn on prop access`` () = 
     FSharp """module MyLibrary
 open System.IO

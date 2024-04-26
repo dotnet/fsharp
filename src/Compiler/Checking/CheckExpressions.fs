@@ -8462,8 +8462,10 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     | ApplicableExpr(expr=Expr.Val (valRef=vref))
                     | ApplicableExpr(expr=Expr.App (funcExpr=Expr.Val (valRef=vref))) ->
                         match TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
-                        | Some _ as msg -> env,{ cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}  
-                        | None -> env,cenv                                                      
+                        | Some _ as msg -> env,{ cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}
+                        | None when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
+                               env, { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None}  
+                        | None -> env,cenv
                     | _ -> env,cenv
 
                 TcExprFlex2 cenv domainTy env false tpenv synArg, cenv
@@ -10531,7 +10533,9 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
     let target = TTarget(vspecs, resultExpr, None)
 
     let inputTypeForNextPatterns= 
-        let removeNull t = replaceNullnessOfTy KnownWithoutNull t
+        let removeNull t = 
+            let stripped = stripTyEqns cenv.g t
+            replaceNullnessOfTy KnownWithoutNull stripped
         let rec isWild (p:Pattern) = 
             match p with
             | TPat_wild _ -> true

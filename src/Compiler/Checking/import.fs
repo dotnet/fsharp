@@ -186,7 +186,10 @@ module Nullness =
         | 2uy -> knownNullable
         | _ ->
             dprintfn "%i was passed to Nullness mapping, this is not a valid value" byteValue
-            knownAmbivalent         
+            knownAmbivalent
+            
+    let isByte (g:TcGlobals) (ilgType:ILType) =
+        g.ilg.typ_Byte.BasicQualifiedName = ilgType.BasicQualifiedName
 
     let tryParseAttributeDataToNullableByteFlags (g:TcGlobals) attrData = 
         match attrData with
@@ -194,7 +197,7 @@ module Nullness =
         | Some ([ILAttribElem.Byte 0uy],_) -> ValueSome arrayWithByte0
         | Some ([ILAttribElem.Byte 1uy],_) -> ValueSome arrayWithByte1
         | Some ([ILAttribElem.Byte 2uy],_) -> ValueSome arrayWithByte2
-        | Some ([ILAttribElem.Array(byteType,listOfBytes)],_) when byteType = g.ilg.typ_Byte -> 
+        | Some ([ILAttribElem.Array(byteType,listOfBytes)],_) when isByte g byteType -> 
             listOfBytes
             |> Array.ofList
             |> Array.choose(function | ILAttribElem.Byte b -> Some b | _ -> None)
