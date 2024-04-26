@@ -7,11 +7,7 @@ open System
 [<StructuralEquality; NoComparison>]
 type internal ValueStrength<'T when 'T: not struct> =
     | Strong of 'T
-#if FX_NO_GENERIC_WEAKREFERENCE
-    | Weak of WeakReference
-#else
     | Weak of WeakReference<'T>
-#endif
 
 type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStrongly: int, areSimilar, ?requiredToKeep, ?keepMax: int) =
     /// The list of items stored. Youngest is at the end of the list.
@@ -78,17 +74,10 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
                 match value with
                 | Strong(value) -> yield (key, value)
                 | Weak(weakReference) ->
-#if FX_NO_GENERIC_WEAKREFERENCE
-                    match weakReference.Target with
-                    | Null -> ()
-                    | NonNull value -> yield key, (value :?> 'Value)
-        ]
-#else
                     match weakReference.TryGetTarget() with
                     | false, _ -> ()
                     | true, value -> yield key, value
         ]
-#endif
 
     let AssignWithStrength (tok, newData) =
         let actualLength = List.length newData
@@ -106,11 +95,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
             |> List.map (fun (n: int, (k, v)) ->
                 let handle =
                     if n < weakThreshold && not (requiredToKeep v) then
-#if FX_NO_GENERIC_WEAKREFERENCE
-                        Weak(WeakReference(v))
-#else
                         Weak(WeakReference<_>(v))
-#endif
                     else
                         Strong(v)
 

@@ -193,50 +193,65 @@
       IL_000b:  ret
     } 
 
+    .method public hidebysig instance bool 
+            Equals(valuetype assembly/T obj,
+                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  4
+      .locals init (valuetype assembly/T& V_0,
+               class [runtime]System.Collections.IEqualityComparer V_1,
+               int32 V_2,
+               int32 V_3,
+               class [runtime]System.Collections.IEqualityComparer V_4)
+      IL_0000:  ldarga.s   obj
+      IL_0002:  stloc.0
+      IL_0003:  ldarg.2
+      IL_0004:  stloc.1
+      IL_0005:  ldarg.0
+      IL_0006:  ldfld      int32 assembly/T::i
+      IL_000b:  stloc.2
+      IL_000c:  ldloc.0
+      IL_000d:  ldfld      int32 assembly/T::i
+      IL_0012:  stloc.3
+      IL_0013:  ldloc.1
+      IL_0014:  stloc.s    V_4
+      IL_0016:  ldloc.2
+      IL_0017:  ldloc.3
+      IL_0018:  ceq
+      IL_001a:  ret
+    } 
+
     .method public hidebysig virtual final 
             instance bool  Equals(object obj,
                                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
-      .maxstack  4
+      .maxstack  5
       .locals init (object V_0,
-               valuetype assembly/T V_1,
-               valuetype assembly/T& V_2,
-               class [runtime]System.Collections.IEqualityComparer V_3,
-               int32 V_4,
-               int32 V_5,
-               class [runtime]System.Collections.IEqualityComparer V_6)
+               valuetype assembly/T V_1)
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldloc.0
       IL_0003:  isinst     assembly/T
       IL_0008:  ldnull
       IL_0009:  cgt.un
-      IL_000b:  brfalse.s  IL_0033
+      IL_000b:  brfalse.s  IL_001d
 
       IL_000d:  ldarg.1
       IL_000e:  unbox.any  assembly/T
       IL_0013:  stloc.1
-      IL_0014:  ldloca.s   V_1
-      IL_0016:  stloc.2
-      IL_0017:  ldarg.2
-      IL_0018:  stloc.3
-      IL_0019:  ldarg.0
-      IL_001a:  ldfld      int32 assembly/T::i
-      IL_001f:  stloc.s    V_4
-      IL_0021:  ldloc.2
-      IL_0022:  ldfld      int32 assembly/T::i
-      IL_0027:  stloc.s    V_5
-      IL_0029:  ldloc.3
-      IL_002a:  stloc.s    V_6
-      IL_002c:  ldloc.s    V_4
-      IL_002e:  ldloc.s    V_5
-      IL_0030:  ceq
-      IL_0032:  ret
+      IL_0014:  ldarg.0
+      IL_0015:  ldloc.1
+      IL_0016:  ldarg.2
+      IL_0017:  call       instance bool assembly/T::Equals(valuetype assembly/T,
+                                                                            class [runtime]System.Collections.IEqualityComparer)
+      IL_001c:  ret
 
-      IL_0033:  ldc.i4.0
-      IL_0034:  ret
+      IL_001d:  ldc.i4.0
+      IL_001e:  ret
     } 
 
     .method public hidebysig instance void Set(int32 i) cil managed
