@@ -1914,7 +1914,7 @@ and p_tcaug p st =
       (p_space 1)
       (p.tcaug_compare,
        p.tcaug_compare_withc,
-       p.tcaug_hash_and_equals_withc,
+       p.tcaug_hash_and_equals_withc |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
        p.tcaug_equals,
        (p.tcaug_adhoc_list
            |> ResizeArray.toList
@@ -2221,7 +2221,7 @@ and u_tcaug st =
         st
     {tcaug_compare=a1
      tcaug_compare_withc=a2
-     tcaug_hash_and_equals_withc=a3
+     tcaug_hash_and_equals_withc=a3 |> Option.map (fun (v1, v2, v3) -> (v1, v2, v3, None))
      tcaug_equals=b2
      // only used for code generation and checking - hence don't care about the values when reading back in
      tcaug_hasObjectGetHashCode=false

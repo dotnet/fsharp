@@ -336,9 +336,9 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool 
+            Equals(class ABC/Expr obj,
+                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -346,52 +346,73 @@
       .locals init (class ABC/Expr V_0,
                class ABC/Expr V_1,
                class ABC/Expr V_2,
-               class ABC/Expr V_3,
-               class [runtime]System.Collections.IEqualityComparer V_4,
+               class [runtime]System.Collections.IEqualityComparer V_3,
+               int32 V_4,
                int32 V_5,
-               int32 V_6,
-               class [runtime]System.Collections.IEqualityComparer V_7)
+               class [runtime]System.Collections.IEqualityComparer V_6)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0035
+      IL_0001:  brfalse.s  IL_002c
 
       IL_0003:  ldarg.1
-      IL_0004:  isinst     ABC/Expr
-      IL_0009:  stloc.0
-      IL_000a:  ldloc.0
-      IL_000b:  brfalse.s  IL_0033
+      IL_0004:  brfalse.s  IL_002a
 
-      IL_000d:  ldloc.0
-      IL_000e:  stloc.1
-      IL_000f:  ldarg.0
-      IL_0010:  pop
-      IL_0011:  ldarg.0
-      IL_0012:  stloc.2
-      IL_0013:  ldloc.1
-      IL_0014:  stloc.3
-      IL_0015:  ldarg.2
+      IL_0006:  ldarg.1
+      IL_0007:  stloc.0
+      IL_0008:  ldarg.0
+      IL_0009:  pop
+      IL_000a:  ldarg.0
+      IL_000b:  stloc.1
+      IL_000c:  ldloc.0
+      IL_000d:  stloc.2
+      IL_000e:  ldarg.2
+      IL_000f:  stloc.3
+      IL_0010:  ldloc.1
+      IL_0011:  ldfld      int32 ABC/Expr::item
       IL_0016:  stloc.s    V_4
       IL_0018:  ldloc.2
       IL_0019:  ldfld      int32 ABC/Expr::item
       IL_001e:  stloc.s    V_5
       IL_0020:  ldloc.3
-      IL_0021:  ldfld      int32 ABC/Expr::item
-      IL_0026:  stloc.s    V_6
-      IL_0028:  ldloc.s    V_4
-      IL_002a:  stloc.s    V_7
-      IL_002c:  ldloc.s    V_5
-      IL_002e:  ldloc.s    V_6
-      IL_0030:  ceq
-      IL_0032:  ret
+      IL_0021:  stloc.s    V_6
+      IL_0023:  ldloc.s    V_4
+      IL_0025:  ldloc.s    V_5
+      IL_0027:  ceq
+      IL_0029:  ret
 
-      IL_0033:  ldc.i4.0
-      IL_0034:  ret
+      IL_002a:  ldc.i4.0
+      IL_002b:  ret
 
-      IL_0035:  ldarg.1
-      IL_0036:  ldnull
-      IL_0037:  cgt.un
-      IL_0039:  ldc.i4.0
-      IL_003a:  ceq
-      IL_003c:  ret
+      IL_002c:  ldarg.1
+      IL_002d:  ldnull
+      IL_002e:  cgt.un
+      IL_0030:  ldc.i4.0
+      IL_0031:  ceq
+      IL_0033:  ret
+    } 
+
+    .method public hidebysig virtual final 
+            instance bool  Equals(object obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (class ABC/Expr V_0)
+      IL_0000:  ldarg.1
+      IL_0001:  isinst     ABC/Expr
+      IL_0006:  stloc.0
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0013
+
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  ldarg.2
+      IL_000d:  callvirt   instance bool ABC/Expr::Equals(class ABC/Expr,
+                                                          class [runtime]System.Collections.IEqualityComparer)
+      IL_0012:  ret
+
+      IL_0013:  ldc.i4.0
+      IL_0014:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(class ABC/Expr obj) cil managed
@@ -572,68 +593,89 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig virtual instance bool 
-            Equals(object obj,
+    .method public hidebysig instance bool 
+            Equals(class [runtime]System.Exception obj,
                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
       .locals init (class [runtime]System.Exception V_0,
-               class [runtime]System.Exception V_1,
-               object V_2,
-               class [runtime]System.Collections.IEqualityComparer V_3,
+               object V_1,
+               class [runtime]System.Collections.IEqualityComparer V_2,
+               int32 V_3,
                int32 V_4,
-               int32 V_5,
-               class [runtime]System.Collections.IEqualityComparer V_6)
+               class [runtime]System.Collections.IEqualityComparer V_5)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0046
+      IL_0001:  brfalse.s  IL_003d
 
       IL_0003:  ldarg.1
-      IL_0004:  isinst     [runtime]System.Exception
-      IL_0009:  stloc.0
-      IL_000a:  ldloc.0
-      IL_000b:  brfalse.s  IL_0044
+      IL_0004:  brfalse.s  IL_003b
 
-      IL_000d:  ldloc.0
-      IL_000e:  stloc.1
-      IL_000f:  ldloc.0
-      IL_0010:  stloc.2
-      IL_0011:  ldloc.2
-      IL_0012:  isinst     ABC/MyExn
-      IL_0017:  ldnull
-      IL_0018:  cgt.un
-      IL_001a:  brfalse.s  IL_0042
+      IL_0006:  ldarg.1
+      IL_0007:  stloc.0
+      IL_0008:  ldarg.1
+      IL_0009:  stloc.1
+      IL_000a:  ldloc.1
+      IL_000b:  isinst     ABC/MyExn
+      IL_0010:  ldnull
+      IL_0011:  cgt.un
+      IL_0013:  brfalse.s  IL_0039
 
-      IL_001c:  ldarg.2
-      IL_001d:  stloc.3
-      IL_001e:  ldarg.0
-      IL_001f:  castclass  ABC/MyExn
-      IL_0024:  call       instance int32 ABC/MyExn::get_Data0()
-      IL_0029:  stloc.s    V_4
-      IL_002b:  ldloc.1
-      IL_002c:  castclass  ABC/MyExn
-      IL_0031:  call       instance int32 ABC/MyExn::get_Data0()
-      IL_0036:  stloc.s    V_5
-      IL_0038:  ldloc.3
-      IL_0039:  stloc.s    V_6
-      IL_003b:  ldloc.s    V_4
-      IL_003d:  ldloc.s    V_5
-      IL_003f:  ceq
-      IL_0041:  ret
+      IL_0015:  ldarg.2
+      IL_0016:  stloc.2
+      IL_0017:  ldarg.0
+      IL_0018:  castclass  ABC/MyExn
+      IL_001d:  call       instance int32 ABC/MyExn::get_Data0()
+      IL_0022:  stloc.3
+      IL_0023:  ldloc.0
+      IL_0024:  castclass  ABC/MyExn
+      IL_0029:  call       instance int32 ABC/MyExn::get_Data0()
+      IL_002e:  stloc.s    V_4
+      IL_0030:  ldloc.2
+      IL_0031:  stloc.s    V_5
+      IL_0033:  ldloc.3
+      IL_0034:  ldloc.s    V_4
+      IL_0036:  ceq
+      IL_0038:  ret
 
-      IL_0042:  ldc.i4.0
-      IL_0043:  ret
+      IL_0039:  ldc.i4.0
+      IL_003a:  ret
 
-      IL_0044:  ldc.i4.0
-      IL_0045:  ret
+      IL_003b:  ldc.i4.0
+      IL_003c:  ret
 
-      IL_0046:  ldarg.1
-      IL_0047:  ldnull
-      IL_0048:  cgt.un
-      IL_004a:  ldc.i4.0
-      IL_004b:  ceq
-      IL_004d:  ret
+      IL_003d:  ldarg.1
+      IL_003e:  ldnull
+      IL_003f:  cgt.un
+      IL_0041:  ldc.i4.0
+      IL_0042:  ceq
+      IL_0044:  ret
+    } 
+
+    .method public hidebysig virtual instance bool 
+            Equals(object obj,
+                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (class [runtime]System.Exception V_0)
+      IL_0000:  ldarg.1
+      IL_0001:  isinst     [runtime]System.Exception
+      IL_0006:  stloc.0
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0013
+
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  ldarg.2
+      IL_000d:  callvirt   instance bool ABC/MyExn::Equals(class [runtime]System.Exception,
+                                                           class [runtime]System.Collections.IEqualityComparer)
+      IL_0012:  ret
+
+      IL_0013:  ldc.i4.0
+      IL_0014:  ret
     } 
 
     .method public hidebysig instance bool Equals(class [runtime]System.Exception obj) cil managed
@@ -1039,9 +1081,9 @@
         IL_000b:  ret
       } 
 
-      .method public hidebysig virtual final 
-              instance bool  Equals(object obj,
-                                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      .method public hidebysig instance bool 
+              Equals(class ABC/ABC/Expr obj,
+                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
@@ -1049,52 +1091,73 @@
         .locals init (class ABC/ABC/Expr V_0,
                  class ABC/ABC/Expr V_1,
                  class ABC/ABC/Expr V_2,
-                 class ABC/ABC/Expr V_3,
-                 class [runtime]System.Collections.IEqualityComparer V_4,
+                 class [runtime]System.Collections.IEqualityComparer V_3,
+                 int32 V_4,
                  int32 V_5,
-                 int32 V_6,
-                 class [runtime]System.Collections.IEqualityComparer V_7)
+                 class [runtime]System.Collections.IEqualityComparer V_6)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_0035
+        IL_0001:  brfalse.s  IL_002c
 
         IL_0003:  ldarg.1
-        IL_0004:  isinst     ABC/ABC/Expr
-        IL_0009:  stloc.0
-        IL_000a:  ldloc.0
-        IL_000b:  brfalse.s  IL_0033
+        IL_0004:  brfalse.s  IL_002a
 
-        IL_000d:  ldloc.0
-        IL_000e:  stloc.1
-        IL_000f:  ldarg.0
-        IL_0010:  pop
-        IL_0011:  ldarg.0
-        IL_0012:  stloc.2
-        IL_0013:  ldloc.1
-        IL_0014:  stloc.3
-        IL_0015:  ldarg.2
+        IL_0006:  ldarg.1
+        IL_0007:  stloc.0
+        IL_0008:  ldarg.0
+        IL_0009:  pop
+        IL_000a:  ldarg.0
+        IL_000b:  stloc.1
+        IL_000c:  ldloc.0
+        IL_000d:  stloc.2
+        IL_000e:  ldarg.2
+        IL_000f:  stloc.3
+        IL_0010:  ldloc.1
+        IL_0011:  ldfld      int32 ABC/ABC/Expr::item
         IL_0016:  stloc.s    V_4
         IL_0018:  ldloc.2
         IL_0019:  ldfld      int32 ABC/ABC/Expr::item
         IL_001e:  stloc.s    V_5
         IL_0020:  ldloc.3
-        IL_0021:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0026:  stloc.s    V_6
-        IL_0028:  ldloc.s    V_4
-        IL_002a:  stloc.s    V_7
-        IL_002c:  ldloc.s    V_5
-        IL_002e:  ldloc.s    V_6
-        IL_0030:  ceq
-        IL_0032:  ret
+        IL_0021:  stloc.s    V_6
+        IL_0023:  ldloc.s    V_4
+        IL_0025:  ldloc.s    V_5
+        IL_0027:  ceq
+        IL_0029:  ret
 
-        IL_0033:  ldc.i4.0
-        IL_0034:  ret
+        IL_002a:  ldc.i4.0
+        IL_002b:  ret
 
-        IL_0035:  ldarg.1
-        IL_0036:  ldnull
-        IL_0037:  cgt.un
-        IL_0039:  ldc.i4.0
-        IL_003a:  ceq
-        IL_003c:  ret
+        IL_002c:  ldarg.1
+        IL_002d:  ldnull
+        IL_002e:  cgt.un
+        IL_0030:  ldc.i4.0
+        IL_0031:  ceq
+        IL_0033:  ret
+      } 
+
+      .method public hidebysig virtual final 
+              instance bool  Equals(object obj,
+                                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  5
+        .locals init (class ABC/ABC/Expr V_0)
+        IL_0000:  ldarg.1
+        IL_0001:  isinst     ABC/ABC/Expr
+        IL_0006:  stloc.0
+        IL_0007:  ldloc.0
+        IL_0008:  brfalse.s  IL_0013
+
+        IL_000a:  ldarg.0
+        IL_000b:  ldloc.0
+        IL_000c:  ldarg.2
+        IL_000d:  callvirt   instance bool ABC/ABC/Expr::Equals(class ABC/ABC/Expr,
+                                                                class [runtime]System.Collections.IEqualityComparer)
+        IL_0012:  ret
+
+        IL_0013:  ldc.i4.0
+        IL_0014:  ret
       } 
 
       .method public hidebysig virtual final instance bool  Equals(class ABC/ABC/Expr obj) cil managed
@@ -1275,68 +1338,89 @@
         IL_000b:  ret
       } 
 
-      .method public hidebysig virtual instance bool 
-              Equals(object obj,
+      .method public hidebysig instance bool 
+              Equals(class [runtime]System.Exception obj,
                      class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  4
         .locals init (class [runtime]System.Exception V_0,
-                 class [runtime]System.Exception V_1,
-                 object V_2,
-                 class [runtime]System.Collections.IEqualityComparer V_3,
+                 object V_1,
+                 class [runtime]System.Collections.IEqualityComparer V_2,
+                 int32 V_3,
                  int32 V_4,
-                 int32 V_5,
-                 class [runtime]System.Collections.IEqualityComparer V_6)
+                 class [runtime]System.Collections.IEqualityComparer V_5)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_0046
+        IL_0001:  brfalse.s  IL_003d
 
         IL_0003:  ldarg.1
-        IL_0004:  isinst     [runtime]System.Exception
-        IL_0009:  stloc.0
-        IL_000a:  ldloc.0
-        IL_000b:  brfalse.s  IL_0044
+        IL_0004:  brfalse.s  IL_003b
 
-        IL_000d:  ldloc.0
-        IL_000e:  stloc.1
-        IL_000f:  ldloc.0
-        IL_0010:  stloc.2
-        IL_0011:  ldloc.2
-        IL_0012:  isinst     ABC/ABC/MyExn
-        IL_0017:  ldnull
-        IL_0018:  cgt.un
-        IL_001a:  brfalse.s  IL_0042
+        IL_0006:  ldarg.1
+        IL_0007:  stloc.0
+        IL_0008:  ldarg.1
+        IL_0009:  stloc.1
+        IL_000a:  ldloc.1
+        IL_000b:  isinst     ABC/ABC/MyExn
+        IL_0010:  ldnull
+        IL_0011:  cgt.un
+        IL_0013:  brfalse.s  IL_0039
 
-        IL_001c:  ldarg.2
-        IL_001d:  stloc.3
-        IL_001e:  ldarg.0
-        IL_001f:  castclass  ABC/ABC/MyExn
-        IL_0024:  call       instance int32 ABC/ABC/MyExn::get_Data0()
-        IL_0029:  stloc.s    V_4
-        IL_002b:  ldloc.1
-        IL_002c:  castclass  ABC/ABC/MyExn
-        IL_0031:  call       instance int32 ABC/ABC/MyExn::get_Data0()
-        IL_0036:  stloc.s    V_5
-        IL_0038:  ldloc.3
-        IL_0039:  stloc.s    V_6
-        IL_003b:  ldloc.s    V_4
-        IL_003d:  ldloc.s    V_5
-        IL_003f:  ceq
-        IL_0041:  ret
+        IL_0015:  ldarg.2
+        IL_0016:  stloc.2
+        IL_0017:  ldarg.0
+        IL_0018:  castclass  ABC/ABC/MyExn
+        IL_001d:  call       instance int32 ABC/ABC/MyExn::get_Data0()
+        IL_0022:  stloc.3
+        IL_0023:  ldloc.0
+        IL_0024:  castclass  ABC/ABC/MyExn
+        IL_0029:  call       instance int32 ABC/ABC/MyExn::get_Data0()
+        IL_002e:  stloc.s    V_4
+        IL_0030:  ldloc.2
+        IL_0031:  stloc.s    V_5
+        IL_0033:  ldloc.3
+        IL_0034:  ldloc.s    V_4
+        IL_0036:  ceq
+        IL_0038:  ret
 
-        IL_0042:  ldc.i4.0
-        IL_0043:  ret
+        IL_0039:  ldc.i4.0
+        IL_003a:  ret
 
-        IL_0044:  ldc.i4.0
-        IL_0045:  ret
+        IL_003b:  ldc.i4.0
+        IL_003c:  ret
 
-        IL_0046:  ldarg.1
-        IL_0047:  ldnull
-        IL_0048:  cgt.un
-        IL_004a:  ldc.i4.0
-        IL_004b:  ceq
-        IL_004d:  ret
+        IL_003d:  ldarg.1
+        IL_003e:  ldnull
+        IL_003f:  cgt.un
+        IL_0041:  ldc.i4.0
+        IL_0042:  ceq
+        IL_0044:  ret
+      } 
+
+      .method public hidebysig virtual instance bool 
+              Equals(object obj,
+                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  5
+        .locals init (class [runtime]System.Exception V_0)
+        IL_0000:  ldarg.1
+        IL_0001:  isinst     [runtime]System.Exception
+        IL_0006:  stloc.0
+        IL_0007:  ldloc.0
+        IL_0008:  brfalse.s  IL_0013
+
+        IL_000a:  ldarg.0
+        IL_000b:  ldloc.0
+        IL_000c:  ldarg.2
+        IL_000d:  callvirt   instance bool ABC/ABC/MyExn::Equals(class [runtime]System.Exception,
+                                                                 class [runtime]System.Collections.IEqualityComparer)
+        IL_0012:  ret
+
+        IL_0013:  ldc.i4.0
+        IL_0014:  ret
       } 
 
       .method public hidebysig instance bool Equals(class [runtime]System.Exception obj) cil managed

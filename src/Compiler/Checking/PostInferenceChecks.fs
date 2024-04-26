@@ -2280,7 +2280,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             else MethInfosEquivByNameAndPartialSig eraseFlag true g cenv.amap m minfo minfo2 (* partial ignores return type *)
 
         let immediateMeths =
-            [ for v in tycon.AllGeneratedValues do yield FSMeth (g, ty, v, None)
+            [ for v in tycon.AllGeneratedInterfaceImplsAndOverrides do yield FSMeth (g, ty, v, None)
               yield! GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty ]
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty
