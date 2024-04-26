@@ -122,6 +122,16 @@
         <target state="translated">Элемент или функция "{0}" содержит атрибут "TailCallAttribute", но не используется в рекурсивном хвостовом режиме.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticAbstractInterfaceMembers">
+        <source>A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</source>
+        <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticAbstractMembersOnClasses">
+        <source>Classes cannot contain static abstract members.</source>
+        <target state="new">Classes cannot contain static abstract members.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="translated">Выражения объектов не могут реализовывать интерфейсы со статическими абстрактными членами или объявлять статические члены.</target>
@@ -269,7 +279,7 @@
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
         <source>Boolean-returning and return-type-directed partial active patterns</source>
-        <target state="new">Boolean-returning and return-type-directed partial active patterns</target>
+        <target state="translated">Логические возвращаемые и направленные на возвращаемый тип частичные активные шаблоны</target>
         <note />
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
@@ -314,7 +324,7 @@
       </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
-        <target state="new">Enforce AttributeTargets</target>
+        <target state="translated">Принудительно применить AttributeTargets</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
@@ -399,12 +409,17 @@
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
-        <target state="new">Optimizes interpolated strings in certain cases, by lowering to concatenation</target>
+        <target state="translated">Оптимизирует интерполированные строки в определенных случаях путем понижения до объединения</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerIntegralRangesToFastLoops">
         <source>Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</source>
-        <target state="new">Optimizes certain uses of the integral range (..) and range-step (.. ..) operators to fast while-loops.</target>
+        <target state="translated">Оптимизирует определенные варианты использования операторов целого диапазона (..) и шага диапазона (.. ..) для быстрых циклов while.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
+        <target state="translated">Понижает [для x в xs -&gt; f x] и [|для x в xs -&gt; f x|] для вызовов List.map и Array.map, если xs является списком или массивом соответственно.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -864,7 +879,7 @@
       </trans-unit>
       <trans-unit id="optsRealsig">
         <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="new">Generate assembly with IL visibility that matches the source code visibility</target>
+        <target state="translated">Создать сборку с видимостью IL, соответствующей видимости исходного кода</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -1019,7 +1034,7 @@
       </trans-unit>
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
-        <target state="new">Only simple patterns are allowed in primary constructors</target>
+        <target state="translated">В первичных конструкторах разрешены только простые шаблоны</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">

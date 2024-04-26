@@ -1021,6 +1021,11 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
             SolveMemberConstraint csenv false PermitWeakResolution.No ndeep m2 trace traitInfo |> OperationResult.ignore
     }
 
+and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
+    csenv.g.checkNullness &&
+    csenv.IsSpeculativeForMethodOverloading = false &&
+    csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome    
+
 // nullness1: actual
 // nullness2: expected
 and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
@@ -1044,18 +1049,14 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
-        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
             WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))    
         // Allow expected of WithNull and actual of WithoutNull
         // TODO NULLNESS:  this is not sound in contravariant cases etc. It is assuming covariance.
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
-            // NOTE: we never give nullness warnings for the 'obj' type
             if csenv.g.checkNullness then 
-                if not (isObjTy csenv.g ty1) || not (isObjTy csenv.g ty2) then 
-                    WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
-                else
-                    CompleteD
+                WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2))
             else
                 CompleteD
         
@@ -1082,17 +1083,14 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
-        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when csenv.g.checkNullness && csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome -> 
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
             WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))
         // Allow target of WithNull and actual of WithoutNull
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
-            if csenv.g.checkNullness then 
-                if not (isObjTy csenv.g ty1) || not (isObjTy csenv.g ty2) then 
-                    WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
-                else
-                    CompleteD
+            if csenv.g.checkNullness then               
+                 WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
         
@@ -1234,6 +1232,12 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         // Unifying 'T1? and 'T2?
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
             SolveTyparEqualsType csenv ndeep m2 trace sty1 (TType_var (tp2, g.knownWithoutNull)) 
+        | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithoutNull ->
+            let tpNew = NewCompGenTypar(TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
+            trackErrors {
+                do! SolveTypeEqualsType csenv ndeep m2 trace cxsln sty2 (TType_var(tpNew, g.knownWithNull))
+                do! SolveTypeEqualsType csenv ndeep m2 trace cxsln (TType_var(tpNew, g.knownWithoutNull)) sty1
+            }
         //// Unifying 'T1 % and 'T2 %
         //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
         //    SolveTyparEqualsType csenv ndeep m2 trace sty1 (TType_var (tp2, g.knownWithoutNull)) 
@@ -1250,6 +1254,12 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         // Unifying 'T1? and 'T2?
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
             SolveTyparEqualsType csenv ndeep m2 trace sty2 (TType_var (tp1, g.knownWithoutNull)) 
+        | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithoutNull ->
+            let tpNew = NewCompGenTypar(TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
+            trackErrors {
+                do! SolveTypeEqualsType csenv ndeep m2 trace cxsln sty2 (TType_var(tpNew, g.knownWithNull))
+                do! SolveTypeEqualsType csenv ndeep m2 trace cxsln (TType_var(tpNew, g.knownWithoutNull)) sty1      
+            }           
         //// Unifying 'T1 % and 'T2 % 
         //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
         //    SolveTyparEqualsType csenv ndeep m2 trace sty2 (TType_var (tp1, g.knownWithoutNull)) 
@@ -1266,7 +1276,7 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         match nullness1.TryEvaluate(), (nullnessOfTy g sty2).TryEvaluate() with
         // Unifying 'T1? and 'T2? 
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
-            SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2) 
+            SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2)
         // Unifying 'T1 % and 'T2 % 
         //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
         //    SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2) 
@@ -2575,7 +2585,7 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
             | NullnessInfo.AmbivalentToNull -> ()
             | NullnessInfo.WithNull -> ()
             | NullnessInfo.WithoutNull -> 
-                if g.checkNullness && not (isObjTy g ty) then 
+                if g.checkNullness then 
                     return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2)) 
     }
 
@@ -2590,7 +2600,7 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
             // code via Option.ofObj and Option.toObj
             do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
         elif TypeNullIsExtraValueNew g m ty then 
-            if g.checkNullness && not (isObjTy g ty) then
+            if g.checkNullness then
                 let denv = { denv with showNullnessAnnotations = Some true }
                 do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
         else
@@ -2618,7 +2628,7 @@ and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: O
             | NullnessInfo.AmbivalentToNull -> ()
             | NullnessInfo.WithoutNull -> ()
             | NullnessInfo.WithNull -> 
-                if g.checkNullness && TypeNullIsExtraValueNew g m ty && not (isObjTy g ty) then
+                if g.checkNullness && TypeNullIsExtraValueNew g m ty then
                     let denv = { denv with showNullnessAnnotations = Some true }
                     return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
     }
@@ -2934,7 +2944,11 @@ and CanMemberSigsMatchUpToCheck
                                 ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
                         else
                             // The object types must be non-null
-                            let nonNullCalledObjArgTys = calledObjArgTys |> List.map (replaceNullnessOfTy g.knownWithoutNull)
+                            let nonNullCalledObjArgTys = 
+                                if not calledMeth.Method.IsExtensionMember then
+                                    calledObjArgTys |> List.map (replaceNullnessOfTy g.knownWithoutNull)
+                                else
+                                    calledObjArgTys
                             MapCombineTDC2D subsumeTypes nonNullCalledObjArgTys callerObjArgTys
 
                 let! usesTDC3 =
@@ -3331,10 +3345,23 @@ and ResolveOverloading
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
 
     let calledMethOpt, errors, calledMethTrace = 
-
         match calledMethGroup, candidates with 
-        | _, [calledMeth] when not isOpConversion -> 
-            Some calledMeth, CompleteD, NoTrace
+        | _, [calledMeth] when not isOpConversion ->
+            // See what candidates we have based on static/virtual/abstract
+            
+            // If false then is a static method call directly on an interface e.g.
+            // IParsable.Parse(...)
+            // IAdditionOperators.(+)
+            // This is not allowed as Parse and (+) method are static abstract
+            let isStaticConstrainedCall =
+                match calledMeth.OptionalStaticType with
+                | Some ttype -> isTyparTy g ttype
+                | None -> false
+                
+            match calledMeth.Method with
+            | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
+                None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(ilMethInfo.ILName), m)), NoTrace
+            | _ -> Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace

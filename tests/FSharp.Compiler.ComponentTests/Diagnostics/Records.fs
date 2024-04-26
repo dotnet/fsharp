@@ -112,3 +112,14 @@ type FooImpl =
     |> compile
     |> shouldFail
     |> withSingleDiagnostic (Error 912, Line 9, Col 5, Line 9, Col 36, "This declaration element is not permitted in an augmentation")
+    
+[<Fact>]
+let ``Error when declaring an abstract member in record type`` () =
+    Fsx """
+type R =
+  { a : int; b : string }
+  abstract M : unit -> unit
+   """
+    |> typecheck 
+    |> shouldFail
+    |>  withSingleDiagnostic (Error 912, Line 4, Col 3, Line 4, Col 28, "This declaration element is not permitted in an augmentation")

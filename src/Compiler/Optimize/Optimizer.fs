@@ -2314,7 +2314,7 @@ let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
                                               ilTy.IsNominal &&
                                               ilTy.TypeRef.Name = "System.String" -> true
             | _ -> false))
-    
+
 let rec IsDebugPipeRightExpr cenv expr =
     let g = cenv.g
     match expr with
@@ -2327,6 +2327,13 @@ let rec IsDebugPipeRightExpr cenv expr =
             | OpPipeRight3 g _  -> true
             | _ -> false
         else false
+    | _ -> false
+
+let inline IsStateMachineExpr g overallExpr =
+    //printfn "%s" (DebugPrint.showExpr overallExpr)
+    match overallExpr with
+    | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
+        isReturnsResumableCodeTy g valRef.TauType
     | _ -> false
 
 /// Optimize/analyze an expression
@@ -2342,6 +2349,10 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     let expr = stripExpr expr
 
     if IsDebugPipeRightExpr cenv expr then OptimizeDebugPipeRights cenv env expr else 
+
+    let isStateMachineE = IsStateMachineExpr g expr
+
+    let env = { env with disableMethodSplitting = env.disableMethodSplitting || isStateMachineE }
 
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
@@ -3228,7 +3239,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             // the target takes a tupled argument, so we need to reorder the arg expressions in the
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
         | _ -> None
         
@@ -3249,7 +3260,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
         | Some (_, _, withcEqualsVal), [comp; x; y] -> 
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
@@ -3258,7 +3269,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
        let tcref, tyargs = StripToNominalTyconRef cenv ty
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
        | Some (_, _, withcEqualsVal), [x; y] -> 
-           let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
+           let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
            Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     

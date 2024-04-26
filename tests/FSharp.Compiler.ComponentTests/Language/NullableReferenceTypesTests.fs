@@ -185,6 +185,21 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withErrorCode 3261
+
+[<Fact>]
+let ``Eliminate aliased nullness after matching`` () = 
+    FSharp $"""module MyLibrary
+
+type Maybe<'T> = 'T | null
+
+let myFunction (input : string Maybe) : string = 
+    match input with
+    | null -> ""
+    | nonNullString -> nonNullString
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
     
 [<Fact>]
 let ``WithNull used on anon type`` () = 
@@ -235,23 +250,52 @@ looseFunc(maybeDu2) |> ignore
         Error 3261, Line 19, Col 12, Line 19, Col 20, "Nullness warning: The type ''a | null' supports 'null' but a non-null type is expected."]
     
 [<Fact>]
-let ``Regression strict func`` () = 
+let ``Strict func handling of obj type`` () = 
     FSharp """module MyLibrary
 let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString())
  
-strictFunc({|Anon=5|}) |> ignore
 strictFunc("hi") |> ignore
-strictFunc(null) |> ignore
-strictFunc(null:(string|null)) |> ignore
+strictFunc({|Anon=5|}) |> ignore
 strictFunc(null:obj) |> ignore
-
+strictFunc(null:(obj|null)) |> ignore
+strictFunc(null:(string|null)) |> ignore
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3261, Line 7, Col 12, Line 7, Col 30, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected." ]
-                
+            [ Error 3261, Line 6, Col 12, Line 6, Col 16, "Nullness warning: The type 'obj' does not support 'null'."
+              Error 3261, Line 7, Col 12, Line 7, Col 27, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 8, Col 12, Line 8, Col 30, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."]
+        
+        
+
+[<Fact>]
+let ``Strict func null literal`` () = 
+    FSharp """module MyLibrary
+let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString()) 
+
+strictFunc(null) |> ignore    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+    
+[<Fact>]
+let ``Strict func null literal2`` () = 
+    FSharp """module MyLibrary
+let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString()) 
+
+strictFunc(null) |> ignore
+strictFunc({|Anon=5|}) |> ignore
+strictFunc("hi") |> ignore   """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+         
     
 [<Fact>]
 let ``Nullnesss support for F# types`` () = 
@@ -297,8 +341,6 @@ type Maybe<'T> = 'T | null
 let maybeTuple2 : Maybe<int*int> = null
 strictFunc(maybeTuple2) |> ignore
 looseFunc(maybeTuple2) |> ignore
-
-
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -381,6 +423,43 @@ let whatIsThis = Option.ofObj "abc123"
     |> withErrorCodes [3262]
 
 [<Fact>]
+let ``Option ofObj for PathGetDirectoryName`` () = 
+    FSharp """module MyLibrary
+open System.IO
+
+let dirName = Path.GetDirectoryName ""
+let whatIsThis1 = Option.ofObj dirName
+let whatIsThis2 = Option.ofObj ( Path.GetDirectoryName "" ) 
+let whatIsThis3 = Option.ofObj ("" |> Path.GetDirectoryName )  // Warnings were happening at this line only
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Option ofObj with fully annotated nullsupportive func`` () = 
+    FSharp """module MyLibrary
+
+let nullSupportiveFunc (x: string | null) : string | null = x
+let maybePath : string | null = null
+let whatIsThis3 = Option.ofObj (maybePath |> nullSupportiveFunc)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Option ofObj with calling id inside`` () = 
+    FSharp """module MyLibrary
+
+let maybePath : string | null = null
+let whatIsThis5 = Option.ofObj (id maybePath)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
 let ``Useless null pattern match`` () = 
     FSharp """module MyLibrary
 
@@ -410,6 +489,18 @@ let mappedMaybe = nonNull maybeNull
     |> withDiagnostics [Error 3262, Line 4, Col 25, Line 4, Col 39, "Value known to be without null passed to a function meant for nullables: You can remove this `nonNull` assertion."]
 
 [<Fact>]
+let ``Regression: Useless usage in nested calls`` () = 
+    FSharp """module MyLibrary
+open System.IO
+
+let meTry = Option.ofObj (Path.GetDirectoryName "")
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+
+[<Fact>]
 let ``Useless usage of null active patterns from fscore`` () = 
     FSharp """module MyLibrary
 
@@ -430,3 +521,19 @@ let mapped2 =
         [ Error 3262, Line 6, Col 7, Line 6, Col 24, "Value known to be without null passed to a function meant for nullables: You can remove this |NonNullQuick| pattern usage."
           Error 3262, Line 10, Col 6, Line 10, Col 10, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."
           Error 3262, Line 11, Col 6, Line 11, Col 15, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."]
+
+[<Fact>]
+let ``Obj can be passed to not null constrained methods`` () = 
+    FSharp """module MyLibrary
+
+let objVal:(obj | null) = box 42
+
+
+let mappableFunc =
+    match objVal with
+    |Null -> 42
+    |NonNull o -> o.GetHashCode()
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed

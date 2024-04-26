@@ -337,6 +337,8 @@
   .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  8
     IL_0000:  ldarg.0
@@ -352,6 +354,8 @@
                                     class [runtime]System.Collections.IComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  5
     .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0,
@@ -524,6 +528,8 @@
                                 class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  5
     .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0,
@@ -643,6 +649,8 @@
   .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  4
     .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0)

@@ -3106,7 +3106,7 @@ let BuildDisposableCleanup (cenv: cenv) env m (v: Val) =
     else
         let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
         let disposeExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] [] None
-        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
+        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty_ambivalent, m, v.Type)
         mkIsInstConditional g m g.system_IDisposable_ty inputExpr disposeObjVar disposeExpr (mkUnit g m)
 
 /// Build call to get_OffsetToStringData as part of 'fixed'
@@ -3346,7 +3346,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
                         // e.g. MatchCollection
                         typeEquiv g g.int32_ty ty ||
                         // e.g. EnvDTE.Documents.Item
-                        typeEquiv g g.obj_ty ty
+                        typeEquiv g g.obj_ty_ambivalent ty
                     | _ -> false
 
                 match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "get_Item" tyToSearchForGetEnumeratorAndItem with
@@ -4462,7 +4462,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     match synTy with
     | SynType.LongIdent(SynLongIdent([], _, _)) ->
         // special case when type name is absent - i.e. empty inherit part in type declaration
-        g.obj_ty, tpenv
+        g.obj_ty_ambivalent, tpenv
 
     | SynType.LongIdent synLongId ->
         TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
@@ -5096,7 +5096,7 @@ and TcTypeOrMeasureAndRecover kindOpt (cenv: cenv) newOk checkConstraints occ iw
             match kindOpt, newOk with
             | Some TyparKind.Measure, NoNewTypars -> TType_measure Measure.One
             | Some TyparKind.Measure, _ -> TType_measure (NewErrorMeasure ())
-            | _, NoNewTypars -> g.obj_ty
+            | _, NoNewTypars -> g.obj_ty_ambivalent
             | _ -> NewErrorType ()
 
         recoveryTy, tpenv
@@ -5473,7 +5473,10 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
         TcNonControlFlowExpr env <| fun env ->
         if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
             warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (expr3, mOfLeftOfSet)) expr1 indexArgs delayed
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range), mOfLeftOfSet
+        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some setInfo) expr1 indexArgs delayed
 
     // Part of 'T.Ident
     | SynExpr.Typar (typar, m) ->
@@ -5857,7 +5860,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         let _, tpenv = suppressErrorReporting (fun () -> TcExpr cenv overallTy env tpenv expr1)
         mkDefault(m, overallTy.Commit), tpenv
 
-    | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m) ->
+    | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m, _) ->
         TcExprSequential cenv overallTy env tpenv (synExpr, sp, dir, synExpr1, synExpr2, m)
 
     // Used to implement the type-directed 'implicit yield' rule for computation expressions
@@ -5889,7 +5892,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     // synExpr1.longId(synExpr2) <- expr3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (synExpr1, synLongId, synExpr2, expr3, mStmt) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcExprDotNamedIndexedPropertySet cenv overallTy env tpenv (synExpr1, synLongId, synExpr2, expr3, mStmt)
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range)
+        TcExprDotNamedIndexedPropertySet cenv overallTy env tpenv (synExpr1, synLongId, synExpr2, setInfo, mStmt)
 
     | SynExpr.LongIdentSet (synLongId, synExpr2, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -5898,7 +5904,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     // Type.Items(synExpr1) <- synExpr2
     | SynExpr.NamedIndexedPropertySet (synLongId, synExpr1, synExpr2, mStmt) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcExprNamedIndexPropertySet cenv overallTy env tpenv (synLongId, synExpr1, synExpr2, mStmt)
+        // Wrap in extra parens: like MakeDelayedSet,
+        // but we don't actually want to delay it here.
+        let setInfo = SynExpr.Paren (synExpr2, range0, None, synExpr2.Range)
+        TcExprNamedIndexPropertySet cenv overallTy env tpenv (synLongId, synExpr1, setInfo, mStmt)
 
     | SynExpr.TraitCall (TypesForTypar tps, synMemberSig, arg, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -7482,7 +7491,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
                 let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
-                let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+                let argsExpr = mkArray (g.obj_ty_withNulls, fillExprsBoxed, m)
                 let percentATysExpr =
                     if percentATys.Length = 0 then
                         mkNull m (mkArrayType g g.system_Type_ty)
@@ -7509,7 +7518,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
         let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
         let dotnetFormatStringExpr = mkString g m dotnetFormatString
-        let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+        let argsExpr = mkArray (g.obj_ty_withNulls, fillExprsBoxed, m)
 
         // FormattableString are *always* turned into FormattableStringFactory.Create calls, boxing each argument
         let createExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false createFormattableStringMethod NormalValUse [] [dotnetFormatStringExpr; argsExpr] [] None
@@ -8453,8 +8462,10 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     | ApplicableExpr(expr=Expr.Val (valRef=vref))
                     | ApplicableExpr(expr=Expr.App (funcExpr=Expr.Val (valRef=vref))) ->
                         match TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
-                        | Some _ as msg -> env,{ cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}  
-                        | None -> env,cenv                                                      
+                        | Some _ as msg -> env,{ cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}
+                        | None when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
+                               env, { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None}  
+                        | None -> env,cenv
                     | _ -> env,cenv
 
                 TcExprFlex2 cenv domainTy env false tpenv synArg, cenv
@@ -9540,7 +9551,7 @@ and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mExprAndItem objDetai
                (let dv, de = mkCompGenLocal mItem "eventDelegate" delTy
                 let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false einfo.RemoveMethod NormalValUse [] objVars [de] None
                 mkLambda mItem dv (callExpr, g.unit_ty))
-               (let fvty = mkFunTy g g.obj_ty (mkFunTy g argsTy g.unit_ty)
+               (let fvty = mkFunTy g g.obj_ty_withNulls (mkFunTy g argsTy g.unit_ty)
                 let fv, fe = mkCompGenLocal mItem "callback" fvty
                 let createExpr = BuildNewDelegateExpr (Some einfo, g, cenv.amap, delTy, delInvokeMeth, delArgTys, fe, fvty, mItem)
                 mkLambda mItem fv (createExpr, delTy)))
@@ -9926,7 +9937,7 @@ and TcAdhocChecksOnLibraryMethods (cenv: cenv) (env: TcEnv) isInstance (finalCal
 
     if (isInstance &&
         finalCalledMethInfo.IsInstance &&
-        typeEquiv g finalCalledMethInfo.ApparentEnclosingType g.obj_ty &&
+        typeEquiv g finalCalledMethInfo.ApparentEnclosingType g.obj_ty_ambivalent &&
         (finalCalledMethInfo.LogicalName = "GetHashCode" || finalCalledMethInfo.LogicalName = "Equals")) then
 
         for objArg in objArgs do
@@ -10156,7 +10167,6 @@ and TcMethodApplication
     // Handle post-hoc property assignments
     let setterExprPrebinders, callExpr2b =
         let expr = callExpr2
-
         CheckRequiredProperties g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
 
         if isCheckingAttributeCall then
@@ -10230,6 +10240,8 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
     let argExprPrebinder, action, defnItem =
         match setter with
         | AssignedPropSetter (propStaticTyOpt, pinfo, pminfo, pminst) ->
+
+            CheckPropInfoAttributes pinfo id.idRange  |> CommitOperationResult
 
             if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly && not calledFromConstructor then
                 errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 pinfo.PropertyName, m))
@@ -10406,7 +10418,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
     let g = cenv.g
 
     match synExpr with
-    | SynExpr.Sequential (sp, true, expr1, expr2, m) when not isCompExpr ->
+    | SynExpr.Sequential (sp, true, expr1, expr2, m, _) when not isCompExpr ->
         let expr1R, _ =
             let env1 = { env with eIsControlFlow = (match sp with | DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
             TcStmtThatCantBeCtorBody cenv env1 tpenv expr1
@@ -10521,7 +10533,9 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
     let target = TTarget(vspecs, resultExpr, None)
 
     let inputTypeForNextPatterns= 
-        let removeNull t = replaceNullnessOfTy KnownWithoutNull t
+        let removeNull t = 
+            let stripped = stripTyEqns cenv.g t
+            replaceNullnessOfTy KnownWithoutNull stripped
         let rec isWild (p:Pattern) = 
             match p with
             | TPat_wild _ -> true

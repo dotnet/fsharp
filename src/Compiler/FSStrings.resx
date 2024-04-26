@@ -232,7 +232,7 @@
     <value>A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</value>
   </data>
   <data name="TypeIsImplicitlyAbstract" xml:space="preserve">
-    <value>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</value>
+    <value>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</value>
   </data>
   <data name="NonRigidTypar1" xml:space="preserve">
     <value>This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</value>

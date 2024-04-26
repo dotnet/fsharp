@@ -1223,7 +1223,7 @@ and ConvILType cenv env m ty =
 and TryElimErasableTyconRef cenv m (tcref: TyconRef) =
     match tcref.TypeReprInfo with
     // Get the base type
-    | TProvidedTypeRepr info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
+    | TProvidedTypeRepr info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty_withNulls))
     | _ -> None
 #endif
 

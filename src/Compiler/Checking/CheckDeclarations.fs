@@ -860,7 +860,7 @@ module AddAugmentationDeclarations =
             let m = tycon.Range
 
             // Note: tycon.HasOverride only gives correct results after we've done the type augmentation 
-            let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
+            let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]
             let hasExplicitGenericIEquatable = tcaugHasNominalInterface g tcaug g.system_GenericIEquatable_tcref
 
             if hasExplicitGenericIEquatable then 
@@ -1610,7 +1610,7 @@ module MutRecBindingChecking =
                             if tcref.IsStructOrEnumTycon then 
                                 Some (incrCtorInfo, mkUnit g tcref.Range, false), defnCs
                             else
-                                let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
+                                let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty_noNulls None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
 
                                 // If there is no 'inherits' and no simple non-static 'let' of a non-method then add a debug point at the entry to the constructor over the type name itself.
                                 let addDebugPointAtImplicitCtorArguments =
@@ -3313,7 +3313,7 @@ module EstablishTypeDefinitionCores =
                           if isTyparTy g ty then 
                               if firstPass then 
                                   errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), m)) 
-                              Some g.obj_ty // a "super" that is a variable type causes grief later
+                              Some g.obj_ty_noNulls // a "super" that is a variable type causes grief later
                           else                          
                               Some ty 
                       | _ -> 
@@ -3607,6 +3607,20 @@ module EstablishTypeDefinitionCores =
                             elif not (isClassTy g ty) then 
                                 errorR(Error(FSComp.SR.tcCannotInheritFromInterfaceType(), m)))
 
+                        let abstractSlots = 
+                            [ for synValSig, memberFlags in slotsigs do 
+
+                                  let (SynValSig(range=m)) = synValSig
+
+                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
+                                  
+                                  let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
+                                  // Multiple slots may be returned, e.g. for 
+                                  //    abstract P: int with get, set
+                                  
+                                  for slot in slots do 
+                                      yield mkLocalValRef slot ]
+
                         let kind = 
                             match kind with 
                               | SynTypeDefnKind.Struct -> 
@@ -3631,6 +3645,9 @@ module EstablishTypeDefinitionCores =
                                   noCLIMutableAttributeCheck()
                                   structLayoutAttributeCheck(not isIncrClass)
                                   allowNullLiteralAttributeCheck()
+                                  for slot in abstractSlots do
+                                      if not slot.IsInstanceMember then
+                                          errorR(Error(FSComp.SR.chkStaticAbstractMembersOnClasses(), slot.Range))
                                   TFSharpClass
                               | SynTypeDefnKind.Delegate (ty, arity) -> 
                                   noCLIMutableAttributeCheck()
@@ -3665,21 +3682,7 @@ module EstablishTypeDefinitionCores =
                                 | (_, m, baseIdOpt) :: _ -> 
                                     match baseIdOpt with 
                                     | None -> Some(ident("base", m)) 
-                                    | Some id -> Some id
-                            
-                        let abstractSlots = 
-                            [ for synValSig, memberFlags in slotsigs do 
-
-                                  let (SynValSig(range=m)) = synValSig
-
-                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
-                                  
-                                  let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
-                                  // Multiple slots may be returned, e.g. for 
-                                  //    abstract P: int with get, set
-                                  
-                                  for slot in slots do 
-                                      yield mkLocalValRef slot ]
+                                    | Some id -> Some id                            
 
                         let baseValOpt = MakeAndPublishBaseVal cenv envinner baseIdOpt (superOfTycon g tycon)
                         let safeInitInfo = ComputeInstanceSafeInitInfo cenv envinner thisTyconRef.Range thisTy
@@ -4452,7 +4455,7 @@ module TcDeclarations =
 
             let slotsigs = members |> List.choose (function  SynMemberDefn.AbstractSlot (slotSig = x; flags = y) -> Some(x, y) | _ -> None)
            
-            let members,_vals_Inherits_Abstractslots = SplitAutoProps members
+            let members, _vals_Inherits_Abstractslots = SplitAutoProps members
 
             let isConcrete = 
                 members |> List.exists (function 

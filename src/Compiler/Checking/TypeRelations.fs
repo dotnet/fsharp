@@ -31,7 +31,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
     // F# reference types are subtypes of type 'obj'
-    (typeEquiv g ty1 g.obj_ty && isRefTy g ty2) ||
+    (typeEquiv g ty1 g.obj_ty_ambivalent && isRefTy g ty2) ||
     // Follow the supertype chain
     (isAppTy g ty2 &&
      isRefTy g ty2 && 
@@ -138,7 +138,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
     let (maxTy, isRefined), m =
          let initialTy = 
              match tp.Kind with 
-             | TyparKind.Type -> g.obj_ty 
+             | TyparKind.Type -> g.obj_ty_noNulls
              | TyparKind.Measure -> TType_measure Measure.One
          // Loop through the constraints computing the lub
          (((initialTy, false), m), tp.Constraints) ||> List.fold (fun ((maxTy, isRefined), _) tpc ->

@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
-        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</target>
+        <target state="translated">Kısaltmalar \n    {2}\nile\n    {3} olarak farklı olduğundan imzadaki ve uygulamadaki '{1}' türü için {0} tanımları uyumlu değil</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarning">
@@ -273,8 +273,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Bazı soyut üyelere bir uygulama verilmediğinden bu bir 'abstract' türdür. Bu bilerek yapıldıysa türünüze '[&lt;AbstractClass&gt;]' özniteliğini ekleyin.</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="needs-review-translation">Bazı soyut üyelere bir uygulama verilmediğinden bu bir 'abstract' türdür. Bu bilerek yapıldıysa türünüze '[&lt;AbstractClass&gt;]' özniteliğini ekleyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
