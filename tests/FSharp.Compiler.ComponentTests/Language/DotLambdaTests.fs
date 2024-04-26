@@ -317,7 +317,7 @@ type MyId =
 
 let onlyIdA (ids: MyId list) = ids |> List.choose _.IdA
 let onlyIdX (ids: MyId list) = ids |> List.choose _.IdX
-let onlyIdD (ids: MyId list) = ids |> List.choose _.IdC
+let onlyIdC (ids: MyId list) = ids |> List.choose _.IdC
         """
         |> typecheck
         |> shouldFail
