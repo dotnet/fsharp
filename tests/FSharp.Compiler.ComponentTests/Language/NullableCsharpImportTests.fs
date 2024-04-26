@@ -35,6 +35,18 @@ let doSomethingAboutIt (ilg:ILGenerator) =
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
+let ``Consuming C# generic API which allows struct and yet uses question mark on the typar`` () = 
+    FSharp """module MyLibrary
+let ec = 
+    { new System.Collections.Generic.IEqualityComparer<int> with
+          member this.Equals(x, y) = (x+0) = (y+0)
+          member this.GetHashCode(obj) = obj * 2}
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
 let ``Consuming C# extension methods which allow nullable this`` () = 
     FSharp """module MyLibrary
 
