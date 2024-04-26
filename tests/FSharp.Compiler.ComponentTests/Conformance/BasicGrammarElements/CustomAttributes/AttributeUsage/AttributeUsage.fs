@@ -592,3 +592,15 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
             (Error 842, Line 22, Col 3, Line 22, Col 13, "This attribute is not valid for use on this language element")
         ]
+
+    [<Fact>]
+    let ``Type-level let bindings allowed to use attribute with Field target`` () =
+        FSharp"""
+module Foo
+type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
+    [<VolatileField>]
+    let mutable valueFactory = valueFactory
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
