@@ -5335,100 +5335,106 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 /// method applications and other item-based syntax.
 and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     let g = cenv.g
-
-    match synExpr with
-
-    // A.
-    // A.B.
-    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
-        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
-        mkDefault(m, overallTy.Commit), tpenv
-
-    // A
-    // A.B.C
-    | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
-        TcNonControlFlowExpr env <| fun env ->
-
-        if isOpt then errorR(Error(FSComp.SR.tcSyntaxErrorUnexpectedQMark(), mLongId))
-
-        // Check to see if pattern translation decided to use an alternative identifier.
-        match altNameRefCellOpt with
-        | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId} -> 
-            TcExprThen cenv overallTy env tpenv isArg (SynExpr.LongIdent (isOpt, SynLongIdent([altId], [], [None]), None, mLongId)) delayed
-        | _ ->
-            TcLongIdentThen cenv overallTy env tpenv longId delayed
-
-    // f?x<-v
-    | SynExpr.Set(SynExpr.Dynamic(e1, _, e2, _) , rhsExpr, m) ->
-        TcExprThenSetDynamic cenv overallTy env tpenv isArg e1 e2 rhsExpr m delayed
     
-    // f x
-    // f(x)  // hpa=true
-    // f[x]  // hpa=true
-    | SynExpr.App (hpa, isInfix, func, arg, mFuncAndArg) ->
-        match func with
-        | SynExpr.DotLambda _ -> errorR(Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression(), func.Range))
-        | _ -> ()
-
-        TcNonControlFlowExpr env <| fun env ->
-       
-        CheckForAdjacentListExpression cenv synExpr hpa isInfix delayed arg
-
-        TcExprThen cenv overallTy env tpenv false func ((DelayedApp (hpa, isInfix, Some func, arg, mFuncAndArg)) :: delayed)
-
-    // e1?e2
-    | SynExpr.Dynamic(e1, mQmark, e2, _) ->
-         TcExprThenDynamic cenv overallTy env tpenv isArg e1 mQmark e2 delayed
-
-    // e<tyargs>
-    | SynExpr.TypeApp (func, _, typeArgs, _, _, mTypeArgs, mFuncAndTypeArgs) ->
-        TcExprThen cenv overallTy env tpenv false func ((DelayedTypeApp (typeArgs, mTypeArgs, mFuncAndTypeArgs)) :: delayed)
-
-    // expr1.id1
-    // expr1.id1.id2
-    // etc.
-    | SynExpr.DotGet (expr1, _, SynLongIdent(longId, _, _), _) ->
-        TcNonControlFlowExpr env <| fun env ->
-        TcExprThen cenv overallTy env tpenv false expr1 ((DelayedDotLookup (longId, synExpr.Range)) :: delayed)
-
-    // expr1.[expr2]
-    // expr1.[e21, ..., e2n]
-    // etc.
-    | SynExpr.DotIndexedGet (expr1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
-        TcNonControlFlowExpr env <| fun env ->
-        if not isArg && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-            informationalWarning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None expr1 indexArgs delayed
-
-    // expr1.[expr2] <- expr3
-    // expr1.[e21, ..., e2n] <- expr3
-    // etc.
-    | SynExpr.DotIndexedSet (expr1, IndexerArgs indexArgs, expr3, mOfLeftOfSet, mDot, mWholeExpr) ->
-        TcNonControlFlowExpr env <| fun env ->
-        if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
-        // Wrap in extra parens: like MakeDelayedSet,
-        // but we don't actually want to delay it here.
-        let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range), mOfLeftOfSet
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some setInfo) expr1 indexArgs delayed
-
-    // Part of 'T.Ident
-    | SynExpr.Typar (typar, m) ->
-        TcTyparExprThen cenv overallTy env tpenv typar m delayed
-
-    //  ^expr
-    | SynExpr.IndexFromEnd (rightExpr, m) ->
-        errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
-        // Incorporate the '^'  into the rightExpr, producing a nested SynExpr.Typar
-        let adjustedExpr = ParseHelpers.adjustHatPrefixToTyparLookup m rightExpr
-        TcExprThen cenv overallTy env tpenv isArg adjustedExpr delayed
-
+    match env.eCachedImplicitYieldExpressions |> List.tryPick (fun (se, e) -> if System.Object.ReferenceEquals(se, synExpr) then Some e else None) with
+    | Some expr ->
+        expr, tpenv
     | _ ->
-        match delayed with
-        | [] -> TcExprUndelayed cenv overallTy env tpenv synExpr
+        
+
+        match synExpr with
+
+        // A.
+        // A.B.
+        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
+            let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
+            mkDefault(m, overallTy.Commit), tpenv
+
+        // A
+        // A.B.C
+        | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
+            TcNonControlFlowExpr env <| fun env ->
+
+            if isOpt then errorR(Error(FSComp.SR.tcSyntaxErrorUnexpectedQMark(), mLongId))
+
+            // Check to see if pattern translation decided to use an alternative identifier.
+            match altNameRefCellOpt with
+            | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId} -> 
+                TcExprThen cenv overallTy env tpenv isArg (SynExpr.LongIdent (isOpt, SynLongIdent([altId], [], [None]), None, mLongId)) delayed
+            | _ ->
+                TcLongIdentThen cenv overallTy env tpenv longId delayed
+
+        // f?x<-v
+        | SynExpr.Set(SynExpr.Dynamic(e1, _, e2, _) , rhsExpr, m) ->
+            TcExprThenSetDynamic cenv overallTy env tpenv isArg e1 e2 rhsExpr m delayed
+        
+        // f x
+        // f(x)  // hpa=true
+        // f[x]  // hpa=true
+        | SynExpr.App (hpa, isInfix, func, arg, mFuncAndArg) ->
+            match func with
+            | SynExpr.DotLambda _ -> errorR(Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression(), func.Range))
+            | _ -> ()
+
+            TcNonControlFlowExpr env <| fun env ->
+           
+            CheckForAdjacentListExpression cenv synExpr hpa isInfix delayed arg
+
+            TcExprThen cenv overallTy env tpenv false func ((DelayedApp (hpa, isInfix, Some func, arg, mFuncAndArg)) :: delayed)
+
+        // e1?e2
+        | SynExpr.Dynamic(e1, mQmark, e2, _) ->
+             TcExprThenDynamic cenv overallTy env tpenv isArg e1 mQmark e2 delayed
+
+        // e<tyargs>
+        | SynExpr.TypeApp (func, _, typeArgs, _, _, mTypeArgs, mFuncAndTypeArgs) ->
+            TcExprThen cenv overallTy env tpenv false func ((DelayedTypeApp (typeArgs, mTypeArgs, mFuncAndTypeArgs)) :: delayed)
+
+        // expr1.id1
+        // expr1.id1.id2
+        // etc.
+        | SynExpr.DotGet (expr1, _, SynLongIdent(longId, _, _), _) ->
+            TcNonControlFlowExpr env <| fun env ->
+            TcExprThen cenv overallTy env tpenv false expr1 ((DelayedDotLookup (longId, synExpr.Range)) :: delayed)
+
+        // expr1.[expr2]
+        // expr1.[e21, ..., e2n]
+        // etc.
+        | SynExpr.DotIndexedGet (expr1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
+            TcNonControlFlowExpr env <| fun env ->
+            if not isArg && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                informationalWarning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+            TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None expr1 indexArgs delayed
+
+        // expr1.[expr2] <- expr3
+        // expr1.[e21, ..., e2n] <- expr3
+        // etc.
+        | SynExpr.DotIndexedSet (expr1, IndexerArgs indexArgs, expr3, mOfLeftOfSet, mDot, mWholeExpr) ->
+            TcNonControlFlowExpr env <| fun env ->
+            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+            // Wrap in extra parens: like MakeDelayedSet,
+            // but we don't actually want to delay it here.
+            let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range), mOfLeftOfSet
+            TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some setInfo) expr1 indexArgs delayed
+
+        // Part of 'T.Ident
+        | SynExpr.Typar (typar, m) ->
+            TcTyparExprThen cenv overallTy env tpenv typar m delayed
+
+        //  ^expr
+        | SynExpr.IndexFromEnd (rightExpr, m) ->
+            errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
+            // Incorporate the '^'  into the rightExpr, producing a nested SynExpr.Typar
+            let adjustedExpr = ParseHelpers.adjustHatPrefixToTyparLookup m rightExpr
+            TcExprThen cenv overallTy env tpenv isArg adjustedExpr delayed
+
         | _ ->
-            let expr, exprTy, tpenv = TcExprUndelayedNoType cenv env tpenv synExpr
-            PropagateThenTcDelayed cenv overallTy env tpenv synExpr.Range (MakeApplicableExprNoFlex cenv expr) exprTy ExprAtomicFlag.NonAtomic delayed
+            match delayed with
+            | [] -> TcExprUndelayed cenv overallTy env tpenv synExpr
+            | _ ->
+                let expr, exprTy, tpenv = TcExprUndelayedNoType cenv env tpenv synExpr
+                PropagateThenTcDelayed cenv overallTy env tpenv synExpr.Range (MakeApplicableExprNoFlex cenv expr) exprTy ExprAtomicFlag.NonAtomic delayed
 
 and TcExprThenSetDynamic (cenv: cenv) overallTy env tpenv isArg e1 e2 rhsExpr m delayed =
     let e2 = mkDynamicArgExpr e2
@@ -6177,7 +6183,13 @@ and TcExprSequentialOrImplicitYield (cenv: cenv) overallTy env tpenv (sp, synExp
         // The first expression wasn't unit-typed, so proceed to the alternative interpretation
         // Note a copy of the first expression is embedded in 'otherExpr' and thus
         // this will type-check the first expression over again.
-        TcExpr cenv overallTy env tpenv otherExpr
+        let cachedExpr =
+            match expr1 with
+            | Expr.DebugPoint(_,e) -> e
+            | _ -> expr1
+        
+        let newEnv = { env with eCachedImplicitYieldExpressions = (synExpr1, cachedExpr) :: env.eCachedImplicitYieldExpressions }
+        TcExpr cenv overallTy newEnv tpenv otherExpr
 
 and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synExpr2, expr3, m) =
     let constraintsR, tpenv = List.mapFold (TcStaticOptimizationConstraint cenv env) tpenv constraints

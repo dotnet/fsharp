@@ -243,6 +243,10 @@ type TcEnv =
 
       // Do we lay down an implicit debug point?
       eIsControlFlow: bool
+      
+      // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
+      // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
+      eCachedImplicitYieldExpressions : list<SynExpr * Expr>
     }
 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv

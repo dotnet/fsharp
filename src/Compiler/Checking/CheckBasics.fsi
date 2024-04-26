@@ -128,6 +128,10 @@ type TcEnv =
         eLambdaArgInfos: ArgReprInfo list list
 
         eIsControlFlow: bool
+            
+        // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
+        // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
+        eCachedImplicitYieldExpressions : list<SynExpr * Expr>
     }
 
     member DisplayEnv: DisplayEnv
