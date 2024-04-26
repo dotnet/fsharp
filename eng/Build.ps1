@@ -213,10 +213,12 @@ function Process-Arguments() {
     }
 
     if ($buildnorealsig) {
-        $script:buildnorealsig = $True;
+        $script:buildnorealsig = $True
+        $env:FSHARP_REALSIG="false"
     }
     else {
-        $script:buildnorealsig = $False;
+        $script:buildnorealsig = $False
+        $env:FSHARP_REALSIG="true"
     }        
     if ($verifypackageshipstatus) {
         $script:verifypackageshipstatus = $True;
