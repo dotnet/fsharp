@@ -29,7 +29,8 @@ let (|A|) a b c d = d
 match 1 with
 | A -> ()
 | _ -> ()
-        """ |> typecheck
+        """ |> withLangVersionPreview
+            |> typecheck
             |> shouldSucceed
             |> withDiagnostics [
         (Error 3868, Line 4, Col 3, Line 4, Col 13, "This active pattern does not expect any arguments, i.e., it should be used like 'IsEven' instead of 'IsEven x'.")
