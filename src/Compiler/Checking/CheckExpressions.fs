@@ -5134,13 +5134,22 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
         let paramCount = if dtys.Length = 0 then 0 else dtys.Length - 1
 
         let showErrMsg returnCount =
+            let fmtExprArgs paramCount =
+                let rec loop i (sb: Text.StringBuilder) =
+                    let cutoff = 10
+                    if i > paramCount then sb.ToString()
+                    elif i > cutoff then sb.Append("...").ToString()
+                    else loop (i + 1) (sb.Append(" e").Append i)
+            
+                loop 1 (Text.StringBuilder())
+
             let caseName = apinfo.ActiveTags[idx]
             let msg =
                 match paramCount, returnCount with
                 | 0, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchNoArgsNoPat(caseName, caseName)
                 | 0, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchOnlyPat(caseName)
-                | _, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchArgs(paramCount, caseName)
-                | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName)
+                | _, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchArgs(paramCount, caseName, fmtExprArgs paramCount)
+                | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName, fmtExprArgs paramCount)
             error(Error(msg, m))
 
         // partial active pattern (returning bool) doesn't have output arg
