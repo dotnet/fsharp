@@ -31,7 +31,7 @@ match 1 with
 | _ -> ()
         """ |> withLangVersionPreview
             |> typecheck
-            |> shouldSucceed
+            |> shouldFail
             |> withDiagnostics [
         (Error 3868, Line 4, Col 3, Line 4, Col 13, "This active pattern does not expect any arguments, i.e., it should be used like 'IsEven' instead of 'IsEven x'.")
         (Error 3868, Line 9, Col 3, Line 9, Col 15, "This active pattern expects exactly one pattern argument, e.g., 'Ignore pat'.")
