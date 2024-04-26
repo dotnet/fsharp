@@ -2614,13 +2614,8 @@ module EventDeclarationNormalization =
 let FreshenObjectArgType (cenv: cenv) m rigid tcref isExtrinsic declaredTyconTypars =
     let g = cenv.g
 
-#if EXTENDED_EXTENSION_MEMBERS // indicates if extension members can add additional constraints to type parameters
-    let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy =
-        FreshenTyconRef g m (if isExtrinsic then TyparRigidity.Flexible else rigid) tcref declaredTyconTypars
-#else
     let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy =
         FreshenTyconRef g m rigid tcref declaredTyconTypars
-#endif
 
     // Struct members have a byref 'this' type (unless they are extrinsic extension members)
     let thisTy =
@@ -12430,11 +12425,7 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
 
     // Check coherence of generalization of variables for memberInfo members in generic classes
     match vspec.MemberInfo with
-#if EXTENDED_EXTENSION_MEMBERS // indicates if extension members can add additional constraints to type parameters
-    | Some _ when not vspec.IsExtensionMember ->
-#else
     | Some _ ->
-#endif
        match PartitionValTyparsForApparentEnclosingType g vspec with
        | Some(parentTypars, memberParentTypars, _, _, _) ->
           ignore(SignatureConformance.Checker(g, cenv.amap, denv, SignatureRepackageInfo.Empty, false).CheckTypars vspec.Range TypeEquivEnv.Empty memberParentTypars parentTypars)
