@@ -701,7 +701,7 @@ val TcLinearExprs:
 
 /// Try to check a syntactic statement and indicate if it's type is not unit without emitting a warning
 val TryTcStmt:
-    cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> synExpr: SynExpr -> bool * Expr * UnscopedTyparEnv
+    cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> synExpr: SynExpr -> bool * TType * Expr * UnscopedTyparEnv
 
 /// Check a pattern being used as a pattern match
 val TcMatchPattern:

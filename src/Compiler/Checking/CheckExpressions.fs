@@ -5299,7 +5299,7 @@ and TryTcStmt (cenv: cenv) env tpenv synExpr =
     let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
     let m = synExpr.Range
     let hasTypeUnit = TryUnifyUnitTypeWithoutWarning cenv env m ty
-    hasTypeUnit, expr, tpenv
+    hasTypeUnit, ty, expr, tpenv
 
 and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg: SynExpr) =
     let g = cenv.g
@@ -5336,7 +5336,14 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     let g = cenv.g
     
-    match env.eCachedImplicitYieldExpressions |> List.tryPick (fun (se, ty, e) -> if System.Object.ReferenceEquals(se, synExpr) then Some (ty, e) else None) with
+    let cachedExpression = 
+        match env.eCachedImplicitYieldExpressions.TryFind synExpr.Range with
+        | Some (se, ty, e) ->
+            if System.Object.ReferenceEquals(se, synExpr) then Some (ty, e) else None
+        | None ->
+            None
+    
+    match cachedExpression with
     | Some (ty, expr) ->
         UnifyOverallType cenv env range0 overallTy ty
         expr, tpenv
@@ -6171,12 +6178,9 @@ and TcExprSequential (cenv: cenv) overallTy env tpenv (synExpr, _sp, dir, synExp
 
 and TcExprSequentialOrImplicitYield (cenv: cenv) overallTy env tpenv (sp, synExpr1, synExpr2, otherExpr, m) =
 
-    let isStmt, expr1, expr1Ty, tpenv =
+    let isStmt, expr1Ty, expr1, tpenv =
         let env1 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
-        let expr, ty, tpenv = TcExprOfUnknownType cenv env1 tpenv synExpr1
-        let m = synExpr1.Range
-        let hasTypeUnit = TryUnifyUnitTypeWithoutWarning cenv env m ty
-        hasTypeUnit, expr, ty, tpenv
+        TryTcStmt cenv env1 tpenv synExpr1
 
     if isStmt then
         let env2 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressStmt -> true | _ -> false) }
@@ -6192,8 +6196,9 @@ and TcExprSequentialOrImplicitYield (cenv: cenv) overallTy env tpenv (sp, synExp
             | Expr.DebugPoint(_,e) -> e
             | _ -> expr1
         
-        let newEnv = { env with eCachedImplicitYieldExpressions = (synExpr1, expr1Ty, cachedExpr) :: env.eCachedImplicitYieldExpressions }
-        TcExpr cenv overallTy newEnv tpenv otherExpr
+        env.eCachedImplicitYieldExpressions.Add(synExpr1.Range, (synExpr1, expr1Ty, cachedExpr))
+        try TcExpr cenv overallTy env tpenv otherExpr
+        finally env.eCachedImplicitYieldExpressions.Remove synExpr1.Range
 
 and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synExpr2, expr3, m) =
     let constraintsR, tpenv = List.mapFold (TcStaticOptimizationConstraint cenv env) tpenv constraints

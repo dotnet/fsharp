@@ -5537,7 +5537,7 @@ let emptyTcEnv g =
       eCallerMemberName = None 
       eLambdaArgInfos = []
       eIsControlFlow = false
-      eCachedImplicitYieldExpressions = [] }
+      eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural) }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 

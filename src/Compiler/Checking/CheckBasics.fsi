@@ -6,6 +6,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
+open Internal.Utilities.Collections
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
@@ -131,7 +132,7 @@ type TcEnv =
             
         // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
         // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
-        eCachedImplicitYieldExpressions : list<SynExpr * TType * Expr>
+        eCachedImplicitYieldExpressions : HashMultiMap<range, SynExpr * TType * Expr>
     }
 
     member DisplayEnv: DisplayEnv
