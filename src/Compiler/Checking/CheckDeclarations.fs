@@ -817,12 +817,18 @@ module AddAugmentationDeclarations =
             if hasExplicitIStructuralEquatable then
                 errorR(Error(FSComp.SR.tcImplementsIStructuralEquatableExplicitly(tycon.DisplayName), m))
             else
-                let evspec1, evspec2, evspec3 = AugmentTypeDefinitions.MakeValsForEqualityWithComparerAugmentation g tcref
+                let augmentation = AugmentTypeDefinitions.MakeValsForEqualityWithComparerAugmentation g tcref
                 PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralEquatable_ty
-                tcaug.SetHashAndEqualsWith (mkLocalValRef evspec1, mkLocalValRef evspec2, mkLocalValRef evspec3)
-                PublishValueDefn cenv env ModuleOrMemberBinding evspec1
-                PublishValueDefn cenv env ModuleOrMemberBinding evspec2
-                PublishValueDefn cenv env ModuleOrMemberBinding evspec3
+                tcaug.SetHashAndEqualsWith (
+                    mkLocalValRef augmentation.GetHashCode,
+                    mkLocalValRef augmentation.GetHashCodeWithComparer,
+                    mkLocalValRef augmentation.EqualsWithComparer,
+                    Some (mkLocalValRef augmentation.EqualsExactWithComparer))
+
+                PublishValueDefn cenv env ModuleOrMemberBinding augmentation.GetHashCode
+                PublishValueDefn cenv env ModuleOrMemberBinding augmentation.GetHashCodeWithComparer
+                PublishValueDefn cenv env ModuleOrMemberBinding augmentation.EqualsWithComparer
+                PublishValueDefnMaybeInclCompilerGenerated cenv env true ModuleOrMemberBinding augmentation.EqualsExactWithComparer
 
     let AddGenericCompareBindings (cenv: cenv) (tycon: Tycon) =
         if (* AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToValues then 
@@ -919,11 +925,6 @@ module MutRecBindingChecking =
 
       /// A 'member' definition in a class
       | Phase2AMember of PreCheckingRecursiveBinding
-
-#if OPEN_IN_TYPE_DECLARATIONS
-      /// A dummy declaration, should we ever support 'open' in type definitions
-      | Phase2AOpen of SynOpenDeclTarget * range
-#endif
 
       /// Indicates the super init has just been called, 'this' may now be published
       | Phase2AIncrClassCtorJustAfterSuperInit 
@@ -1142,13 +1143,6 @@ module MutRecBindingChecking =
 
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, List.rev binds @ uncheckedBindsRev)
                             cbinds, innerState
-                        
-#if OPEN_IN_TYPE_DECLARATIONS
-                        | Some (SynMemberDefn.Open (target, m)), _ ->
-                            let innerState = (incrCtorInfoOpt, env, tpenv, recBindIdx, prelimRecValuesRev, uncheckedBindsRev)
-                            [ Phase2AOpen (target, m) ], innerState
-#endif
-                        
                         | definition -> 
                             error(InternalError(sprintf "Unexpected definition %A" definition, m)))
 
@@ -1196,9 +1190,6 @@ module MutRecBindingChecking =
                         let rest = 
                             let isAfter b = 
                                 match b with 
-#if OPEN_IN_TYPE_DECLARATIONS
-                                | Phase2AOpen _ 
-#endif
                                 | Phase2AIncrClassCtor _ | Phase2AInherit _ | Phase2AIncrClassCtorJustAfterSuperInit -> false
                                 | Phase2AIncrClassBindings (_, binds, _, _, _) -> binds |> List.exists (function SynBinding (kind=SynBindingKind.Do) -> true | _ -> false)
                                 | Phase2AIncrClassCtorJustAfterLastLet
@@ -1417,16 +1408,6 @@ module MutRecBindingChecking =
                         | Phase2AIncrClassCtorJustAfterLastLet -> 
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             Phase2BIncrClassCtorJustAfterLastLet, innerState
-                            
-                            
-#if OPEN_IN_TYPE_DECLARATIONS
-                        | Phase2AOpen(target, m) -> 
-                            let envInstance = TcOpenDecl cenv m scopem envInstance target
-                            let envStatic = TcOpenDecl cenv m scopem envStatic target
-                            let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            Phase2BOpen, innerState
-#endif
-
 
                         // Note: this path doesn't add anything the environment, because the member is already available off via its type 
                         

@@ -214,9 +214,11 @@ function Process-Arguments() {
 
     if ($norealsig) {
         $script:realsig = $False;
+        $env:FSHARP_REALSIG="false"
     }
     else {
         $script:realsig = $True;
+        $env:FSHARP_REALSIG="true"
     }        
     if ($verifypackageshipstatus) {
         $script:verifypackageshipstatus = $True;
