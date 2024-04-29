@@ -1561,7 +1561,7 @@ type Typar =
     override ToString: unit -> string
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
-    member AsType: TType
+    member AsType: nullness: Nullness -> TType
 
     /// The declared attributes of the type parameter. Empty for type inference variables type parameters from .NET.
     member Attribs: Attribs
@@ -1645,6 +1645,9 @@ type TyparConstraint =
 
     /// A constraint that a type has a 'null' value
     | SupportsNull of range: range
+
+    /// A constraint that a type doesn't support nullness
+    | NotSupportsNull of range
 
     /// A constraint that a type has a member with the given signature
     | MayResolveMember of constraintInfo: TraitConstraintInfo * range: range
@@ -3052,6 +3055,39 @@ type RecdFieldRef =
     /// Get a reference to the type containing this record field
     member TyconRef: TyconRef
 
+[<RequireQualifiedAccess>]
+type NullnessInfo =
+
+    /// we know that there is an extra null value in the type
+    | WithNull
+
+    /// we know that there is no extra null value in the type
+    | WithoutNull
+
+    /// we know we don't care
+    | AmbivalentToNull
+
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
+type Nullness =
+    | Known of NullnessInfo
+    | Variable of NullnessVar
+
+    member Evaluate: unit -> NullnessInfo
+
+    member TryEvaluate: unit -> NullnessInfo voption
+
+    member ToFsharpCodeString: unit -> string
+
+[<NoComparison; NoEquality>]
+type NullnessVar =
+    new: unit -> NullnessVar
+    member Evaluate: unit -> NullnessInfo
+    member TryEvaluate: unit -> NullnessInfo voption
+    member IsSolved: bool
+    member Set: Nullness -> unit
+    member Unset: unit -> unit
+    member Solution: Nullness
+
 /// Represents a type in the typed abstract syntax
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TType =
@@ -3062,7 +3098,7 @@ type TType =
     /// Indicates the type is built from a named type and a number of type arguments.
     ///
     /// 'flags' is a placeholder for future features, in particular nullness analysis
-    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst * flags: byte
+    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst * nullness: Nullness
 
     /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
@@ -3073,7 +3109,7 @@ type TType =
     /// Indicates the type is a function type.
     ///
     /// 'flags' is a placeholder for future features, in particular nullness analysis.
-    | TType_fun of domainType: TType * rangeType: TType * flags: byte
+    | TType_fun of domainType: TType * rangeType: TType * nullness: Nullness
 
     /// Indicates the type is a non-F#-visible type representing a "proof" that a union value belongs to a particular union case
     /// These types are not user-visible type will never appear as an inferred type. They are the types given to
@@ -3083,7 +3119,7 @@ type TType =
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter
     ///
     /// 'flags' is a placeholder for future features, in particular nullness analysis
-    | TType_var of typar: Typar * flags: byte
+    | TType_var of typar: Typar * nullness: Nullness
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure

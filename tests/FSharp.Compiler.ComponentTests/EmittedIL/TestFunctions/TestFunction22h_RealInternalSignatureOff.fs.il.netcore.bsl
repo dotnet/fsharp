@@ -18,16 +18,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
