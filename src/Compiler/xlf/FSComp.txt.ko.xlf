@@ -1127,6 +1127,11 @@
         <target state="translated">(제안된 이름)</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
+        <source>Access modifiers cannot be applied to an SRTP constraint.</source>
+        <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="translated">여기서 _의 의미가 모호합니다. 삭제된 변수와 동일한 범위의 함수 줄임에는 사용할 수 없습니다.</target>

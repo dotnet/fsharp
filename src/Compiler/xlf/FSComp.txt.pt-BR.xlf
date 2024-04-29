@@ -1127,6 +1127,11 @@
         <target state="translated">(Nome sugerido)</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
+        <source>Access modifiers cannot be applied to an SRTP constraint.</source>
+        <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="translated">O significado de _ é ambíguo aqui. Ele não pode ser usado para uma variável descartada e uma abreviação de função no mesmo escopo.</target>

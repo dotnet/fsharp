@@ -1749,3 +1749,4 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3866,chkStaticAbstractInterfaceMembers,"A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.%s)."
 3867,chkStaticAbstractMembersOnClasses,"Classes cannot contain static abstract members."
 featureAllowAccessModifiersToAutoPropertiesGettersAndSetters,"Allow access modifiers to auto properties getters and setters"
+3868,tcAccessModifiersNotAllowedInSRTPConstraint,"Access modifiers cannot be applied to an SRTP constraint."
