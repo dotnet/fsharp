@@ -1557,7 +1557,7 @@ type Typar =
     member SetIsCompatFlex: b: bool -> unit
 
     /// Set whether this type parameter is flexible for 'supports null' constraint, e.g. in the case of assignment to a mutable value
-    member SetSupportsNullFlex: b:bool -> unit
+    member SetSupportsNullFlex: b: bool -> unit
 
     /// Sets the rigidity of a type variable
     member SetRigidity: b: TyparRigidity -> unit
