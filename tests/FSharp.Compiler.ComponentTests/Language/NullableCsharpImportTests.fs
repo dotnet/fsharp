@@ -12,6 +12,7 @@ let typeCheckWithStrictNullness cu =
     |> withOptions ["--warnaserror+"]
     |> compile
 
+
 [<FactForNETCOREAPP>]
 let ``Passing null to IlGenerator BeginCatchBlock is fine`` () = 
     FSharp """module MyLibrary
@@ -41,6 +42,30 @@ let ec =
     { new System.Collections.Generic.IEqualityComparer<int> with
           member this.Equals(x, y) = (x+0) = (y+0)
           member this.GetHashCode(obj) = obj * 2}
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``TypeBuilder CreateTypeInfo with an upcast`` () = 
+    FSharp """module MyLibrary
+open System
+open System.Reflection.Emit
+
+let createType (typB:TypeBuilder) : Type=
+    typB.CreateTypeInfo() :> Type
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``CurrentDomain ProcessExit add to event`` () = 
+    FSharp """module MyLibrary
+open System
+
+do System.AppDomain.CurrentDomain.ProcessExit |> Event.add (fun args -> failwith $"{args.GetHashCode()}")
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
