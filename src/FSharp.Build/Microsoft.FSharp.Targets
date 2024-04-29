@@ -235,7 +235,7 @@ this file.
         </FSharpEmbedResXSource>
 
         <ItemGroup>
-            <Compile Include="@(_FsGeneratedResXSource)" CompileOrder="CompileBefore" />
+            <CompileBefore Include="@(_FsGeneratedResXSource)" />
             <FsGeneratedSource Include="@(_FsGeneratedResXSource)" />
             <FileWrites Include="@(_FsGeneratedResXSource)" />
         </ItemGroup>
@@ -247,33 +247,12 @@ this file.
         </FSharpEmbedResourceText>
 
         <ItemGroup>
-            <Compile Include="@(_FsGeneratedTxtSource)" CompileOrder="CompileBefore" />
+            <CompileBefore Include="@(_FsGeneratedTxtSource)" />
             <FsGeneratedSource Include="@(_FsGeneratedTxtSource)" />
             <EmbeddedResource Include="@(_FsGeneratedResx)" />
             <FileWrites Include="@(_FsGeneratedTxtSource)" />
             <FileWrites Include="@(_FsGeneratedResx)" />
         </ItemGroup>
-    </Target>
-
-    <Target Name="FSharpSourceCodeCompileOrder">
-        <!-- implement <CompileOrder>CompileBefore</CompileOrder> -->
-        <ItemGroup>
-            <__Sources Remove="@(__Sources)" />
-            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileFirst'))" />
-            <__Sources Include="@(CompileBefore)" />
-            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileBefore'))" />
-            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', ''))" />
-            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileAfter'))" />
-            <__Sources Include="@(CompileAfter)" />
-            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileLast'))" />
-        </ItemGroup>
-        <ItemGroup>
-            <Compile Remove="@(Compile)" />
-            <CompileBefore Remove="@(CompileBefore)" />
-            <CompileAfter Remove="@(CompileAfter)" />
-            <Compile Include="@(__Sources)" />
-        </ItemGroup>
-        <Message Importance="low" Text="FSharpSourceCodeCompileOrder:Sources: '@(__Sources)'" />
     </Target>
 
     <Target
@@ -305,7 +284,7 @@ this file.
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
         Returns="@(FscCommandLineArgs)"
-        DependsOnTargets="$(CoreCompileDependsOn);FSharpSourceCodeCompileOrder"
+        DependsOnTargets="$(CoreCompileDependsOn)"
     >
 
         <Error
@@ -341,7 +320,6 @@ this file.
             <EmbeddedFiles Include="@(Embed)" KeepDuplicates="false" />
             <EmbeddedFiles Include="@(FsGeneratedSource)"  KeepDuplicates="false" Condition="'$(SourceLink)'!='' or '$(EmbeddedFiles)'!='' or '$(EmbedAllSources)'!=''" />
         </ItemGroup>
-
 
         <!-- Dotnet SDK requires SimpleResolution to be true Legacy project system build not -->
         <PropertyGroup>
@@ -394,7 +372,7 @@ this file.
               Resources="@(ActualEmbeddedResources)"
               SkipCompilerExecution="$(SkipCompilerExecution)"
               SourceLink="$(SourceLink)"
-              Sources="@(Compile)"
+              Sources="@(CompileBefore);@(Compile);@(CompileAfter)"
               SubsystemVersion="$(SubsystemVersion)"
               Tailcalls="$(Tailcalls)"
               TargetType="$(OutputType)"
@@ -457,7 +435,7 @@ this file.
             Overwrite="true"/>
 
         <ItemGroup Condition="'$(AdditionalSourcesText)' != ''">
-            <Compile Include="$(TargetFrameworkMonikerAssemblyAttributesPath)"><CompileOrder>CompileBefore</CompileOrder></Compile>
+            <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" />
             <_FsGeneratedTfmAttributesSource Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" />
         </ItemGroup>
     </Target>

@@ -66,25 +66,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ILLink.LinkAttributes.xml" LogicalName="ILLink.LinkAttributes.xml" />
     <EmbeddedResource Include="ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
-    <!-- This can be removed once CompileBefore support is shipped in an rtm relase -->
     <CompileBefore Include="prim-types-prelude.fsi">
       <Link>Primitives/prim-types-prelude.fsi</Link>
     </CompileBefore>
     <CompileBefore Include="prim-types-prelude.fs">
       <Link>Primitives/prim-types-prelude.fs</Link>
     </CompileBefore>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
-    <Compile Include="prim-types-prelude.fsi" CompileOrder="CompileFirst">
-      <Link>Primitives/prim-types-prelude.fsi</Link>
-    </Compile>
-    <Compile Include="prim-types-prelude.fs" CompileOrder="CompileFirst">
-      <Link>Primitives/prim-types-prelude.fs</Link>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="prim-types.fsi">
       <Link>Primitives/prim-types.fsi</Link>
     </Compile>
