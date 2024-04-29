@@ -1271,24 +1271,38 @@ type A () =
         ]
 
     
-    [<FactForNETCOREAPP>]
-    let ``Access modifiers cannot be applied to an SRTP constraint`` () =
+    [<Fact>]
+    let ``Access modifiers cannot be applied to an SRTP constraint in preview`` () =
         FSharp """
 let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
-let inline length (x: ^a when ^a: (member Length: int with public get)) = x.Length
-let inline length (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
-let inline length (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
+let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
+let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
+let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
         """
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3868, Line 2, Col 43, Line 2, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
-            (Error 0072, Line 2, Col 66, Line 2, Col 74, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
-            (Error 3868, Line 3, Col 60, Line 3, Col 66, "Access modifiers cannot be applied to an SRTP constraint.")
-            (Error 0072, Line 3, Col 75, Line 3, Col 83, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
-            (Error 3868, Line 4, Col 60, Line 4, Col 66, "Access modifiers cannot be applied to an SRTP constraint.")
-            (Error 0072, Line 4, Col 75, Line 4, Col 87, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
-            (Error 3868, Line 5, Col 43, Line 5, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
-            (Error 0072, Line 5, Col 78, Line 5, Col 90, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 3868, Line 3, Col 61, Line 3, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3868, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3868, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
+        ]
+        
+    [<Fact>]
+    let ``Access modifiers in an SRTP constraint generate warning in F# 8.0`` () =
+        FSharp """
+let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
+let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
+let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
+let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
+        """
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3868, Line 2, Col 43, Line 2, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3868, Line 3, Col 61, Line 3, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3868, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3868, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
         ]

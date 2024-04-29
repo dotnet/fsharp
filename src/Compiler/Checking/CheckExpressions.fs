@@ -4142,6 +4142,20 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
         let members, tpenv = TcValSpec cenv env ModuleOrMemberBinding newOk ExprContainerInfo (Some memberFlags) (Some (List.head tys)) tpenv synValSig []
         match members with
         | [ValSpecResult(_, _, id, _, _, memberConstraintTy, prelimValReprInfo, _)] ->
+
+            match synValSig with
+            | SynValSig(accessibility = access) ->
+                match access with
+                | SynValSigAccess.Single(Some access)
+                | SynValSigAccess.GetSet(Some access, _, _)
+                | SynValSigAccess.GetSet(_, Some access, _)
+                | SynValSigAccess.GetSet(_, _, Some access) ->
+                    if g.langVersion.SupportsFeature(LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters) then
+                        errorR(Error(FSComp.SR.tcAccessModifiersNotAllowedInSRTPConstraint(), access.Range))
+                    else
+                        warning(Error(FSComp.SR.tcAccessModifiersNotAllowedInSRTPConstraint(), access.Range))
+                | _ -> ()
+
             let memberConstraintTypars, _ = tryDestForallTy g memberConstraintTy
             let valReprInfo = TranslatePartialValReprInfo memberConstraintTypars prelimValReprInfo
             let _, _, curriedArgInfos, returnTy, _ = GetValReprTypeInCompiledForm g valReprInfo 0 memberConstraintTy m
@@ -4171,16 +4185,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
 /// Check a value specification, e.g. in a signature, interface declaration or a constraint
 and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv synValSig attrs =
     let g = cenv.g
-    let (SynValSig(ident=SynIdent(id,_); explicitTypeParams=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m; accessibility = access)) = synValSig
-    
-    match access with
-    | SynValSigAccess.Single(Some access)
-    | SynValSigAccess.GetSet(Some access, _, _)
-    | SynValSigAccess.GetSet(_, Some access, _)
-    | SynValSigAccess.GetSet(_, _, Some access) ->
-        error(Error(FSComp.SR.tcAccessModifiersNotAllowedInSRTPConstraint(), access.Range))
-    | _ -> ()
-
+    let (SynValSig(ident=SynIdent(id,_); explicitTypeParams=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = synValSig
     let declaredTypars = TcTyparDecls cenv env synTypars
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 

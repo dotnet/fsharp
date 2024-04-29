@@ -1338,8 +1338,8 @@ type SynValSigAccess =
 
     member this.GetSetAccessNoCheck() =
         match this with
-        | SynValSigAccess.Single(access) -> access, access
-        | SynValSigAccess.GetSet(access, getterAccess, setterAccess) ->
+        | Single(access) -> access, access
+        | GetSet(access, getterAccess, setterAccess) ->
             let getterAccess = getterAccess |> Option.orElse access
             let setterAccess = setterAccess |> Option.orElse access
             getterAccess, setterAccess
