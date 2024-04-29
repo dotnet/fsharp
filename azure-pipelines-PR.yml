@@ -713,8 +713,8 @@ stages:
           - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
-            condition: succeeded()
+            continueOnError: false
+            condition: always()
 
         # Plain FCS build Linux
         - job: Plain_Build_Linux
@@ -739,8 +739,8 @@ stages:
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
-            condition: succeeded()
+            continueOnError: false
+            condition: always()
 
         # Plain FCS build Mac
         - job: Plain_Build_MacOS
@@ -765,8 +765,8 @@ stages:
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
-            condition: succeeded()
+            continueOnError: false
+            condition: always()
 
         # Build and run fast benchmarks
         - job: Benchmarks
