@@ -5264,6 +5264,7 @@ and TcExprFlex (cenv: cenv) flex compat (desiredTy: TType) (env: TcEnv) tpenv (s
 
     if flex then
         let argTy = NewInferenceType g
+        (destTyparTy g argTy).SetSupportsNullFlex(true)
         if compat then
             (destTyparTy g argTy).SetIsCompatFlex(true)
 

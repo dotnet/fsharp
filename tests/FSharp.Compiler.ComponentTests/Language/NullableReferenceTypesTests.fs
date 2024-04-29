@@ -27,6 +27,37 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
         Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
 
 [<Fact>]
+let ``Mutable binding initially assigned to null should not need type annotation``() = 
+    FSharp """
+module MyLib
+open System.Collections.Concurrent
+open System
+
+let mkCacheInt32 ()   =
+        let mutable cache  = null 
+
+        fun f (idx: int32) ->
+            let cache =
+                match cache with
+                | null ->
+                    let v = ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
+                    cache <- v
+                    v
+                | v -> v
+
+            match cache.TryGetValue idx with
+            | true, res -> res
+            | _ ->
+                let res = f idx
+                cache[idx] <- res
+                res
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
 let ``Boolean literal to string is not nullable`` () = 
     FSharp """module MyLibrary
 let onlyWantNotNullString(x:string) = ()

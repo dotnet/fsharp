@@ -308,6 +308,9 @@ type ConstraintSolverEnv =
       // Is this speculative, with a trace allowing undo, and trial method overload resolution 
       IsSpeculativeForMethodOverloading: bool
 
+      // Can this ignore the 'must support null' constraint, e.g. in a mutable assignment scenario
+      IsSupportsNullFlex: bool
+
       /// Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved. Constraints
       /// can't be added to type variables in ty2
       MatchingOnly: bool
@@ -344,6 +347,7 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv
       IsSpeculativeForMethodOverloading = false
+      IsSupportsNullFlex = false
       ExtraRigidTypars = emptyFreeTypars
     }
 
@@ -953,6 +957,13 @@ let rec SolveTyparEqualsTypePart1 (csenv: ConstraintSolverEnv) m2 (trace: Option
         // Record the solution before we solve the constraints, since 
         // We may need to make use of the equation when solving the constraints. 
         // Record a entry in the undo trace if one is provided 
+
+        //let ty1AllowsNull = r.Constraints |> List.exists (function | TyparConstraint.SupportsNull _ -> true | _ -> false )
+        //let tyAllowsNull() = TypeNullIsExtraValueNew csenv.g m2 ty
+        //if ty1AllowsNull && not (tyAllowsNull()) then
+        //     trace.Exec (fun () -> r.typar_solution <- Some (ty |> replaceNullnessOfTy csenv.g.knownWithNull)) (fun () -> r.typar_solution <- None)
+        //else
+        //    trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
         trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
     }  
 
@@ -1006,7 +1017,8 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
                     AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.DefaultsTo(priority, dty, m))
             
         | TyparConstraint.NotSupportsNull m2             -> SolveTypeUseNotSupportsNull         csenv ndeep m2 trace ty
-        | TyparConstraint.SupportsNull m2                -> SolveTypeUseSupportsNull            csenv ndeep m2 trace ty
+        | TyparConstraint.SupportsNull _ when csenv.IsSupportsNullFlex  -> CompleteD
+        | TyparConstraint.SupportsNull m2 -> SolveTypeUseSupportsNull            csenv ndeep m2 trace ty
         | TyparConstraint.IsEnum(underlyingTy, m2)       -> SolveTypeIsEnum                     csenv ndeep m2 trace ty underlyingTy
         | TyparConstraint.SupportsComparison(m2)         -> SolveTypeSupportsComparison         csenv ndeep m2 trace ty
         | TyparConstraint.SupportsEquality(m2)           -> SolveTypeSupportsEquality           csenv ndeep m2 trace ty
@@ -1221,6 +1233,11 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     let canShortcut = not trace.HasTrace
     let sty1 = stripTyEqnsA csenv.g canShortcut ty1
     let sty2 = stripTyEqnsA csenv.g canShortcut ty2
+
+    let csenv = 
+        match ty1 with 
+        | TType.TType_var(r,_) when r.typar_flags.IsSupportsNullFlex -> { csenv with IsSupportsNullFlex = true}
+        | _ -> csenv
 
     match sty1, sty2 with
     // type vars inside forall-types may be alpha-equivalent 

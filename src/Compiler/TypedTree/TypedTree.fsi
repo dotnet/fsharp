@@ -205,7 +205,8 @@ type TyparFlags =
         staticReq: Syntax.TyparStaticReq *
         dynamicReq: TyparDynamicReq *
         equalityDependsOn: bool *
-        comparisonDependsOn: bool ->
+        comparisonDependsOn: bool *
+        supportsNullFlex: bool ->
             TyparFlags
 
     new: flags: int32 -> TyparFlags
@@ -231,6 +232,9 @@ type TyparFlags =
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
     member IsFromError: bool
+
+    /// Indicates whether this type parameter is flexible for 'supports null' constraint, e.g. in the case of assignment to a mutable value
+    member IsSupportsNullFlex: bool
 
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member Kind: TyparKind
@@ -1551,6 +1555,9 @@ type Typar =
 
     /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
     member SetIsCompatFlex: b: bool -> unit
+
+    /// Set whether this type parameter is flexible for 'supports null' constraint, e.g. in the case of assignment to a mutable value
+    member SetSupportsNullFlex: b:bool -> unit
 
     /// Sets the rigidity of a type variable
     member SetRigidity: b: TyparRigidity -> unit
