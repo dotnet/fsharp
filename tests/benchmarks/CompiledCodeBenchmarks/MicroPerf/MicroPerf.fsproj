@@ -1,14 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
-    <OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
     <!-- Turn off "Experimental" -->
-    <OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
-    <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
-    <OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
+    <NoWarn>$(NoWarn);1204;57</NoWarn>
+    <Optimize>true</Optimize>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Preview'">
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/$(TargetFramework)/fsc.dll</DotnetFscCompilerPath>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
   <ItemGroup>
+    <Compile Include="ComputedCollections\Arrays\IntegralRanges.fs" />
     <Compile Include="Equality\BasicTypes.fs" />
     <Compile Include="Equality\FSharpCoreFunctions.fs" />
     <Compile Include="Equality\Arrays.fs" />
@@ -18,12 +24,26 @@
     <Compile Include="Equality\Misc.fs" />
     <Compile Include="Equality\Structs.fs" />
     <Compile Include="Equality\OptionsAndCo.fs" />
+    <Compile Include="Equality\ExactEquals.fs" />
     <Compile Include="Async.fs" />
     <Compile Include="Conditions.fs" />
     <Compile Include="Collections.fs" />
-    <Compile Include="Benchmarks.fs" />
-    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+    <Compile Include="Program.fs" />
     <ProjectReference Include="CS\MicroPerfCSharp.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
   </ItemGroup>
+
+  <Choose>
+    <When Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+      <ItemGroup>
+        <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
 </Project>

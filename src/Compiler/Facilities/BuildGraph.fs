@@ -28,11 +28,7 @@ module GraphNode =
         match preferredUiLang with
         | Some s ->
             culture <- CultureInfo s
-#if FX_RESHAPED_GLOBALIZATION
-            CultureInfo.CurrentUICulture <- culture
-#else
             Thread.CurrentThread.CurrentUICulture <- culture
-#endif
         | None -> ()
 
 [<Sealed>]

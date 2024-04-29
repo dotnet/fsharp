@@ -2340,12 +2340,6 @@ and [<Sealed>] TcImports
             match resolutions.TryFindByOriginalReference assemblyReference with
             | Some assemblyResolution -> ResultD [ assemblyResolution ]
             | None ->
-#if NO_MSBUILD_REFERENCE_RESOLUTION
-                try
-                    ResultD [ tcConfig.ResolveLibWithDirectories assemblyReference ]
-                with e ->
-                    ErrorD e
-#else
                 // Next try to lookup up by the exact full resolved path.
                 match resolutions.TryFindByResolvedPath assemblyReference.Text with
                 | Some assemblyResolution -> ResultD [ assemblyResolution ]
@@ -2378,7 +2372,6 @@ and [<Sealed>] TcImports
                             // Note, if mode=ResolveAssemblyReferenceMode.Speculative and the resolution failed then TryResolveLibsUsingMSBuildRules returns
                             // the empty list and we convert the failure into an AssemblyNotResolved here.
                             ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
-#endif
         )
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list =
