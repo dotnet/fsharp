@@ -43,410 +43,42 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit f1@1
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field static assembly initonly class assembly/f1@1 @_instance
-    .method assembly specialname rtspecialname instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/f1@1::.ctor()
-      IL_0005:  stsfld     class assembly/f1@1 assembly/f1@1::@_instance
-      IL_000a:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f2@2<a>
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!a>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!a> f
-    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!a> f) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!a>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!0> class assembly/f2@2<!a>::f
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance !a Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!0> class assembly/f2@2<!a>::f
-      IL_0006:  ldarg.1
-      IL_0007:  tail.
-      IL_0009:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!a>::Invoke(!0)
-      IL_000e:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f3@3
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f
-    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f3@3::f
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f3@3::f
-      IL_0006:  ldnull
-      IL_0007:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_000c:  pop
-      IL_000d:  ldarg.1
-      IL_000e:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f4@4
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
-                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f4@4::f
-      IL_000d:  ldarg.0
-      IL_000e:  ldarg.2
-      IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f4@4::g
-      IL_0014:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f4@4::f
-      IL_0006:  ldnull
-      IL_0007:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_000c:  pop
-      IL_000d:  ldarg.0
-      IL_000e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f4@4::g
-      IL_0013:  ldnull
-      IL_0014:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_0019:  pop
-      IL_001a:  ldarg.1
-      IL_001b:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f5@5
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field static assembly initonly class assembly/f5@5 @_instance
-    .method assembly specialname rtspecialname instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/f5@5::.ctor()
-      IL_0005:  stsfld     class assembly/f5@5 assembly/f5@5::@_instance
-      IL_000a:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f6@6
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.Collections.Generic.IEnumerable`1<int32>>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f
-    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.Collections.Generic.IEnumerable`1<int32>>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f6@6::f
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<int32> Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f6@6::f
-      IL_0006:  ldnull
-      IL_0007:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_000c:  pop
-      IL_000d:  ldarg.1
-      IL_000e:  tail.
-      IL_0010:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Singleton<int32>(!!0)
-      IL_0015:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f7@7
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.Collections.Generic.IEnumerable`1<int32>>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
-                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.Collections.Generic.IEnumerable`1<int32>>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f7@7::f
-      IL_000d:  ldarg.0
-      IL_000e:  ldarg.2
-      IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f7@7::g
-      IL_0014:  ret
-    } 
-
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<int32> Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f7@7::f
-      IL_0006:  ldnull
-      IL_0007:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_000c:  pop
-      IL_000d:  ldarg.0
-      IL_000e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/f7@7::g
-      IL_0013:  ldnull
-      IL_0014:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_0019:  pop
-      IL_001a:  ldarg.1
-      IL_001b:  tail.
-      IL_001d:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Singleton<int32>(!!0)
-      IL_0022:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f8@9
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field public int32 y
-    .field public int32 z
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(int32 y,
-                                 int32 z) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      int32 assembly/f8@9::y
-      IL_000d:  ldarg.0
-      IL_000e:  ldarg.2
-      IL_000f:  stfld      int32 assembly/f8@9::z
-      IL_0014:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 assembly/f8@9::y
-      IL_0007:  add
-      IL_0008:  ldarg.0
-      IL_0009:  ldfld      int32 assembly/f8@9::z
-      IL_000e:  add
-      IL_000f:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f9@10
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field public int32 y
-    .method assembly specialname rtspecialname instance void  .ctor(int32 y) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      int32 assembly/f9@10::y
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 assembly/f9@10::y
-      IL_0007:  add
-      IL_0008:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f10@11
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field static assembly initonly class assembly/f10@11 @_instance
-    .method assembly specialname rtspecialname instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/f10@11::.ctor()
-      IL_0005:  stsfld     class assembly/f10@11 assembly/f10@11::@_instance
-      IL_000a:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f11@12
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field public int32 y
-    .method assembly specialname rtspecialname instance void  .ctor(int32 y) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      int32 assembly/f11@12::y
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 assembly/f11@12::y
-      IL_0007:  add
-      IL_0008:  ret
-    } 
-
-  } 
-
   .method public static int32[]  f1(int32[] 'array') cil managed
   {
     
-    .maxstack  8
-    IL_0000:  ldsfld     class assembly/f1@1 assembly/f1@1::@_instance
-    IL_0005:  ldarg.0
-    IL_0006:  tail.
-    IL_0008:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_000d:  ret
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32 V_1,
+             int32 V_2)
+    IL_0000:  ldarg.0
+    IL_0001:  ldlen
+    IL_0002:  conv.i4
+    IL_0003:  newarr     [runtime]System.Int32
+    IL_0008:  stloc.0
+    IL_0009:  ldc.i4.0
+    IL_000a:  stloc.1
+    IL_000b:  br.s       IL_0019
+
+    IL_000d:  ldloc.0
+    IL_000e:  ldloc.1
+    IL_000f:  ldarg.0
+    IL_0010:  ldloc.1
+    IL_0011:  ldelem.i4
+    IL_0012:  stloc.2
+    IL_0013:  ldloc.2
+    IL_0014:  stelem.i4
+    IL_0015:  ldloc.1
+    IL_0016:  ldc.i4.1
+    IL_0017:  add
+    IL_0018:  stloc.1
+    IL_0019:  ldloc.1
+    IL_001a:  ldloc.0
+    IL_001b:  ldlen
+    IL_001c:  conv.i4
+    IL_001d:  blt.s      IL_000d
+
+    IL_001f:  ldloc.0
+    IL_0020:  ret
   } 
 
   .method public static !!a[]  f2<a>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!a> f,
@@ -454,14 +86,41 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void class assembly/f2@2<!!a>::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!0>)
-    IL_0006:  ldarg.1
-    IL_0007:  tail.
-    IL_0009:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,!!0>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                     !!0[])
-    IL_000e:  ret
+    .maxstack  6
+    .locals init (!!a[] V_0,
+             int32 V_1,
+             int32 V_2)
+    IL_0000:  ldarg.1
+    IL_0001:  ldlen
+    IL_0002:  conv.i4
+    IL_0003:  newarr     !!a
+    IL_0008:  stloc.0
+    IL_0009:  ldc.i4.0
+    IL_000a:  stloc.1
+    IL_000b:  br.s       IL_0023
+
+    IL_000d:  ldloc.0
+    IL_000e:  ldloc.1
+    IL_000f:  ldarg.1
+    IL_0010:  ldloc.1
+    IL_0011:  ldelem.i4
+    IL_0012:  stloc.2
+    IL_0013:  ldarg.0
+    IL_0014:  ldloc.2
+    IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!a>::Invoke(!0)
+    IL_001a:  stelem     !!a
+    IL_001f:  ldloc.1
+    IL_0020:  ldc.i4.1
+    IL_0021:  add
+    IL_0022:  stloc.1
+    IL_0023:  ldloc.1
+    IL_0024:  ldloc.0
+    IL_0025:  ldlen
+    IL_0026:  conv.i4
+    IL_0027:  blt.s      IL_000d
+
+    IL_0029:  ldloc.0
+    IL_002a:  ret
   } 
 
   .method public static int32[]  f3(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
@@ -469,14 +128,43 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/f3@3::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0006:  ldarg.1
-    IL_0007:  tail.
-    IL_0009:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_000e:  ret
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32 V_1,
+             int32 V_2)
+    IL_0000:  ldarg.1
+    IL_0001:  ldlen
+    IL_0002:  conv.i4
+    IL_0003:  newarr     [runtime]System.Int32
+    IL_0008:  stloc.0
+    IL_0009:  ldc.i4.0
+    IL_000a:  stloc.1
+    IL_000b:  br.s       IL_0021
+
+    IL_000d:  ldloc.0
+    IL_000e:  ldloc.1
+    IL_000f:  ldarg.1
+    IL_0010:  ldloc.1
+    IL_0011:  ldelem.i4
+    IL_0012:  stloc.2
+    IL_0013:  ldarg.0
+    IL_0014:  ldnull
+    IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001a:  pop
+    IL_001b:  ldloc.2
+    IL_001c:  stelem.i4
+    IL_001d:  ldloc.1
+    IL_001e:  ldc.i4.1
+    IL_001f:  add
+    IL_0020:  stloc.1
+    IL_0021:  ldloc.1
+    IL_0022:  ldloc.0
+    IL_0023:  ldlen
+    IL_0024:  conv.i4
+    IL_0025:  blt.s      IL_000d
+
+    IL_0027:  ldloc.0
+    IL_0028:  ret
   } 
 
   .method public static int32[]  f4(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
@@ -486,28 +174,85 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  newobj     instance void assembly/f4@4::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,
-                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0007:  ldarg.2
-    IL_0008:  tail.
-    IL_000a:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_000f:  ret
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32 V_1,
+             int32 V_2)
+    IL_0000:  ldarg.2
+    IL_0001:  ldlen
+    IL_0002:  conv.i4
+    IL_0003:  newarr     [runtime]System.Int32
+    IL_0008:  stloc.0
+    IL_0009:  ldc.i4.0
+    IL_000a:  stloc.1
+    IL_000b:  br.s       IL_0029
+
+    IL_000d:  ldloc.0
+    IL_000e:  ldloc.1
+    IL_000f:  ldarg.2
+    IL_0010:  ldloc.1
+    IL_0011:  ldelem.i4
+    IL_0012:  stloc.2
+    IL_0013:  ldarg.0
+    IL_0014:  ldnull
+    IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001a:  pop
+    IL_001b:  ldarg.1
+    IL_001c:  ldnull
+    IL_001d:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0022:  pop
+    IL_0023:  ldloc.2
+    IL_0024:  stelem.i4
+    IL_0025:  ldloc.1
+    IL_0026:  ldc.i4.1
+    IL_0027:  add
+    IL_0028:  stloc.1
+    IL_0029:  ldloc.1
+    IL_002a:  ldloc.0
+    IL_002b:  ldlen
+    IL_002c:  conv.i4
+    IL_002d:  blt.s      IL_000d
+
+    IL_002f:  ldloc.0
+    IL_0030:  ret
   } 
 
   .method public static int32[]  f5(int32[] 'array') cil managed
   {
     
-    .maxstack  8
-    IL_0000:  ldsfld     class assembly/f5@5 assembly/f5@5::@_instance
-    IL_0005:  ldarg.0
-    IL_0006:  tail.
-    IL_0008:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_000d:  ret
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32 V_1,
+             int32 V_2)
+    IL_0000:  ldarg.0
+    IL_0001:  ldlen
+    IL_0002:  conv.i4
+    IL_0003:  newarr     [runtime]System.Int32
+    IL_0008:  stloc.0
+    IL_0009:  ldc.i4.0
+    IL_000a:  stloc.1
+    IL_000b:  br.s       IL_0019
+
+    IL_000d:  ldloc.0
+    IL_000e:  ldloc.1
+    IL_000f:  ldarg.0
+    IL_0010:  ldloc.1
+    IL_0011:  ldelem.i4
+    IL_0012:  stloc.2
+    IL_0013:  ldloc.2
+    IL_0014:  stelem.i4
+    IL_0015:  ldloc.1
+    IL_0016:  ldc.i4.1
+    IL_0017:  add
+    IL_0018:  stloc.1
+    IL_0019:  ldloc.1
+    IL_001a:  ldloc.0
+    IL_001b:  ldlen
+    IL_001c:  conv.i4
+    IL_001d:  blt.s      IL_000d
+
+    IL_001f:  ldloc.0
+    IL_0020:  ret
   } 
 
   .method public static int32[]  f6(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
@@ -515,14 +260,43 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/f6@6::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0006:  ldarg.1
-    IL_0007:  tail.
-    IL_0009:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_000e:  ret
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32 V_1,
+             int32 V_2)
+    IL_0000:  ldarg.1
+    IL_0001:  ldlen
+    IL_0002:  conv.i4
+    IL_0003:  newarr     [runtime]System.Int32
+    IL_0008:  stloc.0
+    IL_0009:  ldc.i4.0
+    IL_000a:  stloc.1
+    IL_000b:  br.s       IL_0021
+
+    IL_000d:  ldloc.0
+    IL_000e:  ldloc.1
+    IL_000f:  ldarg.1
+    IL_0010:  ldloc.1
+    IL_0011:  ldelem.i4
+    IL_0012:  stloc.2
+    IL_0013:  ldarg.0
+    IL_0014:  ldnull
+    IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001a:  pop
+    IL_001b:  ldloc.2
+    IL_001c:  stelem.i4
+    IL_001d:  ldloc.1
+    IL_001e:  ldc.i4.1
+    IL_001f:  add
+    IL_0020:  stloc.1
+    IL_0021:  ldloc.1
+    IL_0022:  ldloc.0
+    IL_0023:  ldlen
+    IL_0024:  conv.i4
+    IL_0025:  blt.s      IL_000d
+
+    IL_0027:  ldloc.0
+    IL_0028:  ret
   } 
 
   .method public static int32[]  f7(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
@@ -532,16 +306,47 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  newobj     instance void assembly/f7@7::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,
-                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0007:  ldarg.2
-    IL_0008:  tail.
-    IL_000a:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_000f:  ret
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32 V_1,
+             int32 V_2)
+    IL_0000:  ldarg.2
+    IL_0001:  ldlen
+    IL_0002:  conv.i4
+    IL_0003:  newarr     [runtime]System.Int32
+    IL_0008:  stloc.0
+    IL_0009:  ldc.i4.0
+    IL_000a:  stloc.1
+    IL_000b:  br.s       IL_0029
+
+    IL_000d:  ldloc.0
+    IL_000e:  ldloc.1
+    IL_000f:  ldarg.2
+    IL_0010:  ldloc.1
+    IL_0011:  ldelem.i4
+    IL_0012:  stloc.2
+    IL_0013:  ldarg.0
+    IL_0014:  ldnull
+    IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001a:  pop
+    IL_001b:  ldarg.1
+    IL_001c:  ldnull
+    IL_001d:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0022:  pop
+    IL_0023:  ldloc.2
+    IL_0024:  stelem.i4
+    IL_0025:  ldloc.1
+    IL_0026:  ldc.i4.1
+    IL_0027:  add
+    IL_0028:  stloc.1
+    IL_0029:  ldloc.1
+    IL_002a:  ldloc.0
+    IL_002b:  ldlen
+    IL_002c:  conv.i4
+    IL_002d:  blt.s      IL_000d
+
+    IL_002f:  ldloc.0
+    IL_0030:  ret
   } 
 
   .method public static int32[]  f8(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> f,
@@ -551,9 +356,12 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
     
-    .maxstack  4
+    .maxstack  6
     .locals init (int32 V_0,
-             int32 V_1)
+             int32 V_1,
+             int32[] V_2,
+             int32 V_3,
+             int32 V_4)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldnull
@@ -563,15 +371,39 @@
     IL_000a:  ldnull
     IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
     IL_0010:  stloc.1
-    IL_0011:  ldloc.0
-    IL_0012:  ldloc.1
-    IL_0013:  newobj     instance void assembly/f8@9::.ctor(int32,
-                                                                       int32)
-    IL_0018:  ldarg.2
-    IL_0019:  tail.
-    IL_001b:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_0020:  ret
+    IL_0011:  ldarg.2
+    IL_0012:  ldlen
+    IL_0013:  conv.i4
+    IL_0014:  newarr     [runtime]System.Int32
+    IL_0019:  stloc.2
+    IL_001a:  ldc.i4.0
+    IL_001b:  stloc.3
+    IL_001c:  br.s       IL_0030
+
+    IL_001e:  ldloc.2
+    IL_001f:  ldloc.3
+    IL_0020:  ldarg.2
+    IL_0021:  ldloc.3
+    IL_0022:  ldelem.i4
+    IL_0023:  stloc.s    V_4
+    IL_0025:  ldloc.s    V_4
+    IL_0027:  ldloc.0
+    IL_0028:  add
+    IL_0029:  ldloc.1
+    IL_002a:  add
+    IL_002b:  stelem.i4
+    IL_002c:  ldloc.3
+    IL_002d:  ldc.i4.1
+    IL_002e:  add
+    IL_002f:  stloc.3
+    IL_0030:  ldloc.3
+    IL_0031:  ldloc.2
+    IL_0032:  ldlen
+    IL_0033:  conv.i4
+    IL_0034:  blt.s      IL_001e
+
+    IL_0036:  ldloc.2
+    IL_0037:  ret
   } 
 
   .method public static int32[]  f9(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> f,
@@ -581,8 +413,11 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
     
-    .maxstack  4
-    .locals init (int32 V_0)
+    .maxstack  6
+    .locals init (int32 V_0,
+             int32[] V_1,
+             int32 V_2,
+             int32 V_3)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldnull
@@ -592,13 +427,37 @@
     IL_000a:  ldnull
     IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_0010:  pop
-    IL_0011:  ldloc.0
-    IL_0012:  newobj     instance void assembly/f9@10::.ctor(int32)
-    IL_0017:  ldarg.2
-    IL_0018:  tail.
-    IL_001a:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_001f:  ret
+    IL_0011:  ldarg.2
+    IL_0012:  ldlen
+    IL_0013:  conv.i4
+    IL_0014:  newarr     [runtime]System.Int32
+    IL_0019:  stloc.1
+    IL_001a:  ldc.i4.0
+    IL_001b:  stloc.2
+    IL_001c:  br.s       IL_002c
+
+    IL_001e:  ldloc.1
+    IL_001f:  ldloc.2
+    IL_0020:  ldarg.2
+    IL_0021:  ldloc.2
+    IL_0022:  ldelem.i4
+    IL_0023:  stloc.3
+    IL_0024:  ldloc.3
+    IL_0025:  ldloc.0
+    IL_0026:  add
+    IL_0027:  stelem.i4
+    IL_0028:  ldloc.2
+    IL_0029:  ldc.i4.1
+    IL_002a:  add
+    IL_002b:  stloc.2
+    IL_002c:  ldloc.2
+    IL_002d:  ldloc.1
+    IL_002e:  ldlen
+    IL_002f:  conv.i4
+    IL_0030:  blt.s      IL_001e
+
+    IL_0032:  ldloc.1
+    IL_0033:  ret
   } 
 
   .method public static int32[]  f10(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
@@ -608,7 +467,10 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
     
-    .maxstack  8
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32 V_1,
+             int32 V_2)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldnull
@@ -618,12 +480,35 @@
     IL_000a:  ldnull
     IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_0010:  pop
-    IL_0011:  ldsfld     class assembly/f10@11 assembly/f10@11::@_instance
-    IL_0016:  ldarg.2
-    IL_0017:  tail.
-    IL_0019:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_001e:  ret
+    IL_0011:  ldarg.2
+    IL_0012:  ldlen
+    IL_0013:  conv.i4
+    IL_0014:  newarr     [runtime]System.Int32
+    IL_0019:  stloc.0
+    IL_001a:  ldc.i4.0
+    IL_001b:  stloc.1
+    IL_001c:  br.s       IL_002a
+
+    IL_001e:  ldloc.0
+    IL_001f:  ldloc.1
+    IL_0020:  ldarg.2
+    IL_0021:  ldloc.1
+    IL_0022:  ldelem.i4
+    IL_0023:  stloc.2
+    IL_0024:  ldloc.2
+    IL_0025:  stelem.i4
+    IL_0026:  ldloc.1
+    IL_0027:  ldc.i4.1
+    IL_0028:  add
+    IL_0029:  stloc.1
+    IL_002a:  ldloc.1
+    IL_002b:  ldloc.0
+    IL_002c:  ldlen
+    IL_002d:  conv.i4
+    IL_002e:  blt.s      IL_001e
+
+    IL_0030:  ldloc.0
+    IL_0031:  ret
   } 
 
   .method public static int32[]  f11(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
@@ -633,8 +518,11 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
     
-    .maxstack  4
-    .locals init (int32 V_0)
+    .maxstack  6
+    .locals init (int32 V_0,
+             int32[] V_1,
+             int32 V_2,
+             int32 V_3)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldnull
@@ -644,13 +532,37 @@
     IL_000a:  ldnull
     IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
     IL_0010:  stloc.0
-    IL_0011:  ldloc.0
-    IL_0012:  newobj     instance void assembly/f11@12::.ctor(int32)
-    IL_0017:  ldarg.2
-    IL_0018:  tail.
-    IL_001a:  call       !!1[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
-                                                                                                       !!0[])
-    IL_001f:  ret
+    IL_0011:  ldarg.2
+    IL_0012:  ldlen
+    IL_0013:  conv.i4
+    IL_0014:  newarr     [runtime]System.Int32
+    IL_0019:  stloc.1
+    IL_001a:  ldc.i4.0
+    IL_001b:  stloc.2
+    IL_001c:  br.s       IL_002c
+
+    IL_001e:  ldloc.1
+    IL_001f:  ldloc.2
+    IL_0020:  ldarg.2
+    IL_0021:  ldloc.2
+    IL_0022:  ldelem.i4
+    IL_0023:  stloc.3
+    IL_0024:  ldloc.3
+    IL_0025:  ldloc.0
+    IL_0026:  add
+    IL_0027:  stelem.i4
+    IL_0028:  ldloc.2
+    IL_0029:  ldc.i4.1
+    IL_002a:  add
+    IL_002b:  stloc.2
+    IL_002c:  ldloc.2
+    IL_002d:  ldloc.1
+    IL_002e:  ldlen
+    IL_002f:  conv.i4
+    IL_0030:  blt.s      IL_001e
+
+    IL_0032:  ldloc.1
+    IL_0033:  ret
   } 
 
 } 
