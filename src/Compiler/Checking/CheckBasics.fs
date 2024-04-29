@@ -246,7 +246,7 @@ type TcEnv =
       
       // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
       // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
-      eCachedImplicitYieldExpressions : list<SynExpr * Expr>
+      eCachedImplicitYieldExpressions : list<SynExpr * TType * Expr>
     }
 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv

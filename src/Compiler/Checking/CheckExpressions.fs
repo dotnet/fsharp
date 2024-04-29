@@ -5336,8 +5336,9 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     let g = cenv.g
     
-    match env.eCachedImplicitYieldExpressions |> List.tryPick (fun (se, e) -> if System.Object.ReferenceEquals(se, synExpr) then Some e else None) with
-    | Some expr ->
+    match env.eCachedImplicitYieldExpressions |> List.tryPick (fun (se, ty, e) -> if System.Object.ReferenceEquals(se, synExpr) then Some (ty, e) else None) with
+    | Some (ty, expr) ->
+        UnifyOverallType cenv env range0 overallTy ty
         expr, tpenv
     | _ ->
         
@@ -6170,9 +6171,12 @@ and TcExprSequential (cenv: cenv) overallTy env tpenv (synExpr, _sp, dir, synExp
 
 and TcExprSequentialOrImplicitYield (cenv: cenv) overallTy env tpenv (sp, synExpr1, synExpr2, otherExpr, m) =
 
-    let isStmt, expr1, tpenv =
+    let isStmt, expr1, expr1Ty, tpenv =
         let env1 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
-        TryTcStmt cenv env1 tpenv synExpr1
+        let expr, ty, tpenv = TcExprOfUnknownType cenv env1 tpenv synExpr1
+        let m = synExpr1.Range
+        let hasTypeUnit = TryUnifyUnitTypeWithoutWarning cenv env m ty
+        hasTypeUnit, expr, ty, tpenv
 
     if isStmt then
         let env2 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressStmt -> true | _ -> false) }
@@ -6188,7 +6192,7 @@ and TcExprSequentialOrImplicitYield (cenv: cenv) overallTy env tpenv (sp, synExp
             | Expr.DebugPoint(_,e) -> e
             | _ -> expr1
         
-        let newEnv = { env with eCachedImplicitYieldExpressions = (synExpr1, cachedExpr) :: env.eCachedImplicitYieldExpressions }
+        let newEnv = { env with eCachedImplicitYieldExpressions = (synExpr1, expr1Ty, cachedExpr) :: env.eCachedImplicitYieldExpressions }
         TcExpr cenv overallTy newEnv tpenv otherExpr
 
 and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synExpr2, expr3, m) =
