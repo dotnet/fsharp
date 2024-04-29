@@ -5339,7 +5339,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     let cachedExpression = 
         env.eCachedImplicitYieldExpressions.FindAll synExpr.Range
         |> List.tryPick (fun (se, ty, e) ->
-            if System.Object.ReferenceEquals(se, synExpr) then Some (ty, e) else None
+            if obj.ReferenceEquals(se, synExpr) then Some (ty, e) else None
         )
     
     match cachedExpression with
