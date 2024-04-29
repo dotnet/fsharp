@@ -217,6 +217,78 @@ module GenericComparison =
         compilation
         |> verifyCompilation
 
+    // SOURCE=Equals10.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals10.dll"	# Equals10.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals10.fsx"|])>]
+    let ``Equals10_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+        
+    // SOURCE=Equals11.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals11.dll"	# Equals11.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals11.fsx"|])>]
+    let ``Equals11_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+   
+    // SOURCE=Equals12.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals12.dll"	# Equals12.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals12.fsx"|])>]
+    let ``Equals12_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+
+    // SOURCE=Equals13.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals13.dll"	# Equals13.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals13.fsx"|])>]
+    let ``Equals13_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+        
+    // SOURCE=Equals14.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals14.dll"	# Equals14.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals14.fsx"|])>]
+    let ``Equals14_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+   
+    // SOURCE=Equals15.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals15.dll"	# Equals15.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals15.fsx"|])>]
+    let ``Equals15_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+
+    // SOURCE=Equals16.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals16.dll"	# Equals16.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals16.fsx"|])>]
+    let ``Equals16_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+        
+    // SOURCE=Equals17.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals17.dll"	# Equals17.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals17.fsx"|])>]
+    let ``Equals17_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+   
+    // SOURCE=Equals18.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals18.dll"	# Equals18.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals18.fsx"|])>]
+    let ``Equals18_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+
+    // SOURCE=Equals19.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals19.dll"	# Equals19.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals19.fsx"|])>]
+    let ``Equals19_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+
+    // SOURCE=Equals20.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals20.dll"	# Equals20.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals20.fsx"|])>]
+    let ``Equals20_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+
+    // SOURCE=Equals21.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals21.dll"	# Equals21.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equals21.fsx"|])>]
+    let ``Equals21_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NativeIntComparison.fs"|])>]
     let ``NativeIntComparison_fs`` compilation =
         compilation
