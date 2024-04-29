@@ -1081,7 +1081,7 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.Lang
             | Some x, Some _ ->
                 errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), x.Range))
                 None
-            | Some x, None -> 
+            | Some x, None ->
                 checkLanguageFeatureAndRecover
                     langVersion
                     Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
