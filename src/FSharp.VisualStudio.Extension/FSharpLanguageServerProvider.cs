@@ -96,8 +96,9 @@ internal class VsDiagnosticsHandler
                  {
                      Range = new Microsoft.VisualStudio.LanguageServer.Protocol.Range
                      {
-                         Start = new Position { Line = d.StartLine, Character = d.StartColumn },
-                         End = new Position { Line = d.EndLine, Character = d.EndColumn }
+                         // F# uses 1-based indexing for lines, need to adjust
+                         Start = new Position { Line = d.StartLine-1, Character = d.StartColumn },
+                         End = new Position { Line = d.EndLine-1, Character = d.EndColumn }
                      },
                      Severity = DiagnosticSeverity.Error,
                      Message = $"LSP: {d.Message}",
@@ -182,7 +183,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                     foreach (var ruleResults in config.RuleResults)
                     {
                         // XXX Idk why `.Where` does not work with these IAsyncQuerable type
-                        if (ruleResults?.RuleName == "CompilerCommandLineArguments")
+                        if (ruleResults?.RuleName == "CompilerCommandLineArgs")
                         {
                             // XXX Not sure why there would be more than one item for this rule result
                             // Taking first one, ignoring the rest
