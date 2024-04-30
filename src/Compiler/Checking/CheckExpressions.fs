@@ -5127,6 +5127,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                 | None -> false
             | TType_var _ -> true
             | _ -> false
+
+        // only cases which return unit or unresolved type (in AP definition) can omit output arg 
         let canOmit retTy = isUnitTy g retTy || IsNotSolved retTy 
 
         // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
@@ -5150,12 +5152,12 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                 | 0, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchOnlyPat(caseName)
                 | _, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchArgs(paramCount, caseName, fmtExprArgs paramCount)
                 | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName, fmtExprArgs paramCount)
-            errorR(Error(msg, m))
+            error(Error(msg, m))
 
         // partial active pattern (returning bool) doesn't have output arg
         if (not apinfo.IsTotal && isBoolTy g retTy) then
             checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
-            if paramCount = (args: _ list).Length then
+            if paramCount = List.length args then
                 args, SynPat.Const(SynConst.Unit, m)
             else
                 showErrMsg 0
@@ -5165,7 +5167,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
         elif apinfo.IsTotal && apinfo.ActiveTags.Length = 1 && dtys.Length >= args.Length && not args.IsEmpty then
             List.frontAndBack args
 
-        // active pattern (returning unit or 'Boxed<unit>) can omit output arg 
+        // active pattern cases returning unit or unknown things (in AP definition) can omit output arg 
         elif paramCount = args.Length then
              let caseRetTy =
                  if isOptionTy g retTy then destOptionTy g retTy
@@ -5173,17 +5175,13 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                  elif isChoiceTy g retTy then destChoiceTy g retTy idx
                  else retTy
 
-             // only 0 parameter single case active pattern can omit output arg 
+             // only cases which return unit or unresolved type (in AP definition) can omit output arg 
              if canOmit caseRetTy then
                 args, SynPat.Const(SynConst.Unit, m)
              else
                  showErrMsg 1
         
-        // active pattern (returning unknown things) can not omit output arg
-        elif IsNotSolved vExprTy then
-            List.frontAndBack args
-
-        // active pattern (returning 'a or 'Boxed<'a>) can not omit output arg
+        // args count should equal to AP function params count
         elif dtys.Length <> args.Length then
             showErrMsg 1
         else
