@@ -579,7 +579,7 @@ let (|SeqMap|_|) g =
     gatherPrelude (function
         | ValApp g g.seq_map_vref ([ty1; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = body; range = mIn) as mapping; input], mFor) ->
             let spIn = match mIn.NotedSourceConstruct with NotedSourceConstruct.InOrTo -> DebugPointAtInOrTo.Yes mIn | _ -> DebugPointAtInOrTo.No
-            let spFor = match mFor.NotedSourceConstruct with NotedSourceConstruct.For -> DebugPointAtBinding.Yes mFor | _ -> DebugPointAtBinding.NoneAtInvisible
+            let spFor = DebugPointAtBinding.Yes mFor
             let spInWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
             let ranges = body.Range, spFor, spIn, mFor, mIn, spInWhile
             ValueSome (ty1, ty2, input, mapping, loopVal, body, ranges)
@@ -594,7 +594,7 @@ let (|SeqCollectSingle|_|) g =
     gatherPrelude (function
         | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = SimpleSequential g body; range = mIn) as mapping; input], mFor) ->
             let spIn = match mIn.NotedSourceConstruct with NotedSourceConstruct.InOrTo -> DebugPointAtInOrTo.Yes mIn | _ -> DebugPointAtInOrTo.No
-            let spFor = match mFor.NotedSourceConstruct with NotedSourceConstruct.For -> DebugPointAtBinding.Yes mFor | _ -> DebugPointAtBinding.NoneAtInvisible
+            let spFor = DebugPointAtBinding.Yes mFor
             let spInWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
             let ranges = body.Range, spFor, spIn, mFor, mIn, spInWhile
             ValueSome (ty1, ty2, input, mapping, loopVal, body, ranges)
