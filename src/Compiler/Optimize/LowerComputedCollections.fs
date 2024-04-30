@@ -391,38 +391,42 @@ module Array =
         let ldelem = mkIlInstr g I_ldelem (fun ilTy -> I_ldelem_any (ILArrayShape.SingleDimensional, ilTy)) srcIlTy
         let stelem = mkIlInstr g I_stelem (fun ilTy -> I_stelem_any (ILArrayShape.SingleDimensional, ilTy)) destIlTy
 
-        mkCompGenLetIn m (nameof array) arrayTy array (fun (_, array) ->
-            mkCompGenLetMutableIn mIn "i" g.int32_ty (mkTypedZero g mIn g.int32_ty) (fun (iVal, i) ->
-                let body =
-                    // Rebind the loop val to pull directly from the source array.
-                    let body = mkInvisibleLet mBody loopVal (mkAsmExpr ([ldelem], [], [srcArray; i], [loopVal.val_type], mBody)) body
+        let mapping =
+            mkCompGenLetIn m (nameof array) arrayTy array (fun (_, array) ->
+                mkCompGenLetMutableIn mFor "i" g.int32_ty (mkTypedZero g mIn g.int32_ty) (fun (iVal, i) ->
+                    let body =
+                        // Rebind the loop val to pull directly from the source array.
+                        let body = mkInvisibleLet mBody loopVal (mkAsmExpr ([ldelem], [], [srcArray; i], [loopVal.val_type], mBody)) body
 
-                    // destArray[i] <- body srcArray[i]
-                    let setArrSubI = mkAsmExpr ([stelem], [], [array; i; body], [], mIn)
+                        // destArray[i] <- body srcArray[i]
+                        let setArrSubI = mkAsmExpr ([stelem], [], [array; i; body], [], mIn)
 
-                    // i <- i + 1
-                    let incrI = mkValSet mIn (mkLocalValRef iVal) (mkAsmExpr ([AI_add], [], [i; mkTypedOne g mIn g.int32_ty], [g.int32_ty], mIn))
+                        // i <- i + 1
+                        let incrI = mkValSet mIn (mkLocalValRef iVal) (mkAsmExpr ([AI_add], [], [i; mkTypedOne g mIn g.int32_ty], [g.int32_ty], mIn))
 
-                    mkSequential mIn setArrSubI incrI
+                        mkSequential mIn setArrSubI incrI
 
-                let guard = mkILAsmClt g mFor i (mkLdlen g mFor array)
+                    let guard = mkILAsmClt g mFor i (mkLdlen g mFor array)
 
-                let loop =
-                    mkWhile
-                        g
-                        (
-                            spInWhile,
-                            WhileLoopForCompiledForEachExprMarker,
-                            guard,
-                            body,
-                            mFor
-                        )
+                    let loop =
+                        mkWhile
+                            g
+                            (
+                                spInWhile,
+                                NoSpecialWhileLoopMarker,
+                                guard,
+                                body,
+                                mIn
+                            )
 
-                // while i < array.Length do <body> done
-                // array
-                mkSequential m loop array
+                    // while i < array.Length do <body> done
+                    // array
+                    mkSequential m loop array
+                )
             )
-        )
+
+        // Add a debug point at the `for`, before anything gets evaluated.
+        Expr.DebugPoint (DebugPointAtLeafExpr.Yes mFor, mapping)
 
     /// Whether to check for overflow when converting a value to a native int.
     [<NoEquality; NoComparison>]
