@@ -12,7 +12,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 
-
 module BuildGraphTests =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
@@ -302,14 +301,45 @@ module BuildGraphTests =
 
         override this.ErrorCount = errorCount
 
+    let loggerShouldBe logger =
+        DiagnosticsThreadStatics.DiagnosticsLogger |> Assert.shouldBe logger
+
+    let errorCountShouldBe ec =
+        DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount |> Assert.shouldBe ec
+
+    [<Fact>]
+    let ``AsyncLocal diagnostics context works with TPL`` () =
+
+        let task1 () = 
+            List.init 100 (sprintf "ListParallel logger %d")
+            |> Extras.ListParallel.map (fun name -> 
+                let logger = CapturingDiagnosticsLogger(name)
+                use _ = UseDiagnosticsLogger logger
+                for _ in 1 .. 10 do
+                    errorR TestException
+                    Thread.Sleep 5
+                errorCountShouldBe 10
+                loggerShouldBe logger )
+            |> ignore
+
+        let task2 () =         
+            let commonLogger = SimpleConcurrentLogger "ListParallel concurrent logger"
+            use _ = UseDiagnosticsLogger commonLogger
+
+            [1 .. 100]
+            |> Extras.ListParallel.map (fun _ -> 
+                for _ in 1 .. 10 do
+                    errorR TestException
+                    Thread.Sleep 5
+                loggerShouldBe commonLogger )
+            |> ignore
+            errorCountShouldBe 1000
+            loggerShouldBe commonLogger
+
+        Tasks.Parallel.Invoke(task1, task2)
+
     [<Fact>]
     let ``AsyncLocal diagnostics context flows correctly`` () =
-
-        let loggerShouldBe logger =
-            DiagnosticsThreadStatics.DiagnosticsLogger |> Assert.shouldBe logger
-
-        let errorCountShouldBe ec =
-            DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount |> Assert.shouldBe ec
 
         let work logger = async {
             SetThreadDiagnosticsLoggerNoUnwind logger
@@ -381,10 +411,23 @@ module BuildGraphTests =
             loggerShouldBe logger
         }
 
+        // A thread with inner logger.
+        let thread = Thread(ThreadStart(fun () ->
+            use _ = UseDiagnosticsLogger (CapturingDiagnosticsLogger("Thread logger"))
+            errorR TestException
+            errorR TestException
+            errorCountShouldBe 2
+            ))
+        thread.Start()
+        thread.Join()
+
+        loggerShouldBe logger
+
+        // Ambient logger flows into this thread.
         let thread = Thread(ThreadStart(fun () ->
             errorR TestException
             errorR TestException
-            loggerShouldBe logger))
+            ))
         thread.Start()
         thread.Join()
 
