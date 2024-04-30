@@ -5181,6 +5181,10 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
              else
                  showErrMsg 1
         
+        // active pattern in function param (e.g. let f (|P|_|) = ...)
+        elif IsNotSolved vExprTy then
+            List.frontAndBack args
+
         // args count should equal to AP function params count
         elif dtys.Length <> args.Length then
             showErrMsg 1
