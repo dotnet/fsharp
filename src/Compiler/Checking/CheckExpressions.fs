@@ -5150,7 +5150,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                 | 0, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchOnlyPat(caseName)
                 | _, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchArgs(paramCount, caseName, fmtExprArgs paramCount)
                 | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName, fmtExprArgs paramCount)
-            error(Error(msg, m))
+            errorR(Error(msg, m))
 
         // partial active pattern (returning bool) doesn't have output arg
         if (not apinfo.IsTotal && isBoolTy g retTy) then
