@@ -5344,7 +5344,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     
     match cachedExpression with
     | Some (ty, expr) ->
-        UnifyOverallType cenv env range0 overallTy ty
+        UnifyOverallType cenv env synExpr.Range overallTy ty
         expr, tpenv
     | _ ->
         
