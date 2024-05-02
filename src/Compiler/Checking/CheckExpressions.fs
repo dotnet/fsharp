@@ -5119,22 +5119,77 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let vExprTy = vExpr.Type
 
     let activePatArgsAsSynPats, patArg =
-        match args with
-        | [] -> [], SynPat.Const(SynConst.Unit, m)
-        | _ ->
-            // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
-            let dtys, retTy = stripFunTy g vExprTy
+        let rec IsNotSolved ty =
+            match ty with
+            | TType_var(v, _) when v.IsSolved ->
+                match v.Solution with
+                | Some t -> IsNotSolved t
+                | None -> false
+            | TType_var _ -> true
+            | _ -> false
 
-            if dtys.Length = args.Length + 1 &&
-                ((isOptionTy g retTy && isUnitTy g (destOptionTy g retTy)) ||
-                (isValueOptionTy g retTy && isUnitTy g (destValueOptionTy g retTy))) ||
-                // `bool` partial AP always be treated as `unit option`
-                // For `val (|P|_|) : _ -> bool`, only allow `match x with | P -> ...`
-                // For `val (|P|_|) : _ -> _ -> bool`, only allow `match x with | P parameter -> ...`
-                (not apinfo.IsTotal && isBoolTy g retTy) then
+        // only cases which return unit or unresolved type (in AP definition) can omit output arg 
+        let canOmit retTy = isUnitTy g retTy || IsNotSolved retTy 
+
+        // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
+        let dtys, retTy = stripFunTy g vExprTy
+        let paramCount = if dtys.Length = 0 then 0 else dtys.Length - 1
+
+        let showErrMsg returnCount =
+            let fmtExprArgs paramCount =
+                let rec loop i (sb: Text.StringBuilder) =
+                    let cutoff = 10
+                    if i > paramCount then sb.ToString()
+                    elif i > cutoff then sb.Append("...").ToString()
+                    else loop (i + 1) (sb.Append(" e").Append i)
+            
+                loop 1 (Text.StringBuilder())
+
+            let caseName = apinfo.ActiveTags[idx]
+            let msg =
+                match paramCount, returnCount with
+                | 0, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchNoArgsNoPat(caseName, caseName)
+                | 0, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchOnlyPat(caseName)
+                | _, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchArgs(paramCount, caseName, fmtExprArgs paramCount)
+                | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName, fmtExprArgs paramCount)
+            error(Error(msg, m))
+
+        // partial active pattern (returning bool) doesn't have output arg
+        if (not apinfo.IsTotal && isBoolTy g retTy) then
+            checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
+            if paramCount = List.length args then
                 args, SynPat.Const(SynConst.Unit, m)
             else
-                List.frontAndBack args
+                showErrMsg 0
+
+        // for single case active pattern, if not all parameter provided, output will be a function
+        // that takes the remaining parameter as input
+        elif apinfo.IsTotal && apinfo.ActiveTags.Length = 1 && dtys.Length >= args.Length && not args.IsEmpty then
+            List.frontAndBack args
+
+        // active pattern cases returning unit or unknown things (in AP definition) can omit output arg 
+        elif paramCount = args.Length then
+             let caseRetTy =
+                 if isOptionTy g retTy then destOptionTy g retTy
+                 elif isValueOptionTy g retTy then destValueOptionTy g retTy
+                 elif isChoiceTy g retTy then destChoiceTy g retTy idx
+                 else retTy
+
+             // only cases which return unit or unresolved type (in AP definition) can omit output arg 
+             if canOmit caseRetTy then
+                args, SynPat.Const(SynConst.Unit, m)
+             else
+                 showErrMsg 1
+        
+        // active pattern in function param (e.g. let f (|P|_|) = ...)
+        elif IsNotSolved vExprTy then
+            List.frontAndBack args
+
+        // args count should equal to AP function params count
+        elif dtys.Length <> args.Length then
+            showErrMsg 1
+        else
+            List.frontAndBack args
 
     if not (isNil activePatArgsAsSynPats) && apinfo.ActiveTags.Length <> 1 then
         errorR (Error (FSComp.SR.tcRequireActivePatternWithOneResult (), m))
