@@ -9431,7 +9431,16 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         TcTraitItemThen cenv overallTy env (Some objExpr) traitInfo tpenv mItem delayed
 
     | Item.DelegateCtor _ -> error (Error (FSComp.SR.tcConstructorsCannotBeFirstClassValues(), mItem))
+    
+    | Item.UnionCase(info, _) ->
+        let clashingNames = info.Tycon.MembersOfFSharpTyconSorted |> List.tryFind(fun mem -> mem.DisplayNameCore = info.DisplayNameCore)
+        match clashingNames with
+        | None -> ()
+        | Some value ->
+            let kind = if value.IsMember then "member" else "value"
+            errorR (NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, value.Range, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, value.Range))
 
+        error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
     // These items are not expected here - they can't be the result of a instance member dot-lookup "expr.Ident"
     | Item.ActivePatternResult _
     | Item.CustomOperation _
@@ -9441,7 +9450,6 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
     | Item.ModuleOrNamespaces _
     | Item.TypeVar _
     | Item.Types _
-    | Item.UnionCase _
     | Item.UnionCaseField _
     | Item.UnqualifiedType _
     | Item.Value _
@@ -10645,6 +10653,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
     | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), mBinding, debugPoint) ->
         let (SynValData(memberFlags = memberFlagsOpt)) = valSynData
 
+        let isClassLetBinding =
+            match declKind, kind with
+            | ClassLetBinding _, SynBindingKind.Normal -> true
+            | _ -> false
+
         let callerName =
             match declKind, kind, pat with
             | ExpressionBinding, _, _ -> envinner.eCallerMemberName
@@ -10900,14 +10913,14 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
             
         if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && memberFlagsOpt.IsNone && not attrs.IsEmpty then
-            TcAttributeTargetsOnLetBindings cenv env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty)
+            TcAttributeTargetsOnLetBindings cenv env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding
 
         CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
 
 // Note:
 // - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
 // - Let function bindings can only have attributes that uses AttributeTargets.Method ||| AttributeTargets.ReturnValue
-and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy areTyparsDeclared =
+and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallExprTy areTyparsDeclared isClassLetBinding =
     let attrTgt =
         if
             // It's a type function:
@@ -10919,7 +10932,11 @@ and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallE
             || isFunTy cenv.g overallPatTy
             || isFunTy cenv.g overallExprTy
         then
-            AttributeTargets.ReturnValue ||| AttributeTargets.Method
+            // Class let bindings are a special case, they can have attributes that target fields and properties, since they might be lifted to those and contain lambdas/functions.
+            if isClassLetBinding then
+                AttributeTargets.ReturnValue ||| AttributeTargets.Method ||| AttributeTargets.Field ||| AttributeTargets.Property
+            else
+                AttributeTargets.ReturnValue ||| AttributeTargets.Method
         else
             AttributeTargets.ReturnValue ||| AttributeTargets.Field ||| AttributeTargets.Property
 
