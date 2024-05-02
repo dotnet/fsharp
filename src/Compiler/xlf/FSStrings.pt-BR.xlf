@@ -7,6 +7,11 @@
         <target state="translated">Os nomes de argumento na assinatura '{0}' e na implementação '{1}' não coincidem. O nome do argumento do arquivo da assinatura será usado. Isso pode causar problemas durante a depuração ou a criação de perfil.</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e na implementação não são compatíveis porque as abreviações são diferentes:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Tipo incompatível. Esperando uma tupla de comprimento {0} do tipo\n    {1}    \nmas recebeu uma tupla de comprimento {2} do tipo\n    {3}{4}\n</target>
@@ -243,8 +248,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Esse tipo é 'abstrato', pois alguns membros abstratos não receberam uma implementação. Se isso for intencional, adicione o atributo '[&lt;AbstractClass&gt;]' ao seu tipo.</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="needs-review-translation">Esse tipo é 'abstrato', pois alguns membros abstratos não receberam uma implementação. Se isso for intencional, adicione o atributo '[&lt;AbstractClass&gt;]' ao seu tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">

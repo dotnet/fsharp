@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="AddReturnTypeAnnotation">
         <source>Add return type annotation</source>
-        <target state="new">Add return type annotation</target>
+        <target state="translated">戻り値の型の注釈の追加</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -44,16 +44,17 @@ Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
 Use live (unsaved) buffers for analysis</source>
-        <target state="needs-review-translation">ブロック構造ガイド;
-F# コードの構造ガイドラインを表示する;
-アウトラインを表示する;
-アウトラインと折りたたみ可能なノードを F# コードに表示する;
+        <target state="translated">ブロック構造のガイド;
+F# コードの構造のガイドラインを表示;
+アウトライン表示;
+F# コードのアウトラインおよび折りたたみ可能なノードを表示する;
 インライン ヒント;
-インライン型ヒントを表示する (プレビュー);
-戻り値の型ヒントを表示する (プレビュー);
-インライン パラメーター名のヒントを表示する (プレビュー);
+インライン型のヒントを表示する (プレビュー);
+戻り値型のヒントを表示する (プレビュー);
+インライン パラメーター名のヒントを表示 (プレビュー);
+Transparent Compiler を使用する (試験段階);
 ライブ バッファー;
-ライブ (保存されていない) バッファーを使用してチェックする</target>
+分析にライブ (未保存) バッファーを使用する</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -231,7 +232,7 @@ F# 構文規則に準拠した改行を追加して、署名を指定された�
       </trans-unit>
       <trans-unit id="RemoveUnnecessaryParentheses">
         <source>Remove unnecessary parentheses</source>
-        <target state="new">Remove unnecessary parentheses</target>
+        <target state="translated">不要なかっこの削除</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -256,7 +257,7 @@ F# 構文規則に準拠した改行を追加して、署名を指定された�
       </trans-unit>
       <trans-unit id="ReturnsHeader">
         <source>Returns:</source>
-        <target state="new">Returns:</target>
+        <target state="translated">戻り値:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">

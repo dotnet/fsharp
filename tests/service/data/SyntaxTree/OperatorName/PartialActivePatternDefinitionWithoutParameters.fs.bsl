@@ -16,12 +16,12 @@ ImplFile
                     (SynIdent
                        (|Boolean|_|,
                         Some (HasParenthesis ((2,4--2,5), (2,16--2,17)))), false,
-                     None, (2,5--2,16)), None,
+                     None, (2,4--2,17)), None,
                   LongIdent
                     (false,
                      SynLongIdent
                        ([Boolean; parse], [(2,27--2,28)], [None; None]), None,
-                     (2,20--2,33)), (2,5--2,16), Yes (2,0--2,33),
+                     (2,20--2,33)), (2,4--2,17), Yes (2,0--2,33),
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange = Some (2,18--2,19) })], (2,0--2,33))],

@@ -73,6 +73,7 @@ module ImportDeclarations =
             (Error 10, Line 9, Col 5, Line 9, Col 9, "Unexpected keyword 'open' in binding. Expected incomplete structured construct at or before this point or other token.")
             (Error 10, Line 17, Col 9, Line 17, Col 13, "Unexpected keyword 'open' in binding")
             (Error 10, Line 23, Col 9, Line 23, Col 13, "Unexpected keyword 'open' in expression")
+            (Error 3567, Line 23, Col 9, Line 23, Col 13, "Expecting member body")
         ]
 
     // SOURCE=OpenNestedModule01.fs					# OpenNestedModule01.fs

@@ -859,9 +859,6 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
 
 type ProvidedExprType =
     | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
-#if PROVIDED_ADDRESS_OF
-    | ProvidedAddressOfExpr of ProvidedExpr
-#endif
     | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
     | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
     | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar[] * ProvidedExpr
@@ -924,9 +921,6 @@ type ProvidedExpr (x: Expr, ctxt) =
             Some (ProvidedTryFinallyExpr (ProvidedExpr.Create ctxt b1, ProvidedExpr.Create ctxt b2))
         | Patterns.TryWith(b, v1, e1, v2, e2) ->
             Some (ProvidedTryWithExpr (ProvidedExpr.Create ctxt b, ProvidedVar.Create ctxt v1, ProvidedExpr.Create ctxt e1, ProvidedVar.Create ctxt v2, ProvidedExpr.Create ctxt e2))
-#if PROVIDED_ADDRESS_OF
-        | Patterns.AddressOf e -> Some (ProvidedAddressOfExpr (ProvidedExpr.Create ctxt e))
-#endif
         | Patterns.TypeTest(e, ty) ->
             Some (ProvidedTypeTestExpr(ProvidedExpr.Create ctxt e, ProvidedType.Create ctxt ty))
         | Patterns.Let(v, e, b) ->

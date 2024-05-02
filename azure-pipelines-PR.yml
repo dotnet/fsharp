@@ -11,7 +11,7 @@ trigger:
     - '*'
     exclude:
     - .github/*
-    - docs/
+    - docs/*
     - .vscode/*
     - .devcontainer/*
     - tests/scripts/
@@ -37,7 +37,7 @@ pr:
     - '*'
     exclude:
     - .github/*
-    - docs/
+    - docs/*
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -55,15 +55,11 @@ variables:
     value: Release
   - name: _PublishUsingPipelines
     value: true
-  - name: _DotNetArtifactsCategory
-    value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
     value: true
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - name: _DotNetValidationArtifactsCategory
-      value: .NETCoreValidation
     - group: DotNet-FSharp-SDLValidation-Params
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
@@ -126,14 +122,9 @@ stages:
                     /p:SignType=$(_SignType)
                     /p:DotNetSignType=$(_SignType)
                     /p:MicroBuild_SigningEnabled=true
-                    /p:OverridePackageSource=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
                     /p:TeamName=$(_TeamName)
                     /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
-                    /p:DotNetArtifactsCategory=$(_DotNetArtifactsCategory)
-                    /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
-                    /p:DotNetSymbolServerTokenSymWeb=$(symweb-symbol-server-pat)
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
-                    /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
                     /p:GenerateSbom=true
             env:
@@ -722,7 +713,7 @@ stages:
           - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
+            continueOnError: false
             condition: always()
 
         # Plain FCS build Linux
@@ -748,7 +739,7 @@ stages:
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
+            continueOnError: false
             condition: always()
 
         # Plain FCS build Mac
@@ -774,7 +765,7 @@ stages:
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
-            continueOnError: true
+            continueOnError: false
             condition: always()
 
         # Build and run fast benchmarks

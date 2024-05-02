@@ -291,3 +291,39 @@ let _ = asQ.Select _.Length
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
+
+[<Fact>]
+    let ``Error when property has same name as DU case`` () =
+        Fsx """
+type MyId =
+    | IdA of int
+    | IdB of string
+    | IdC of float
+
+    member this.IdA =
+        match this with
+        | IdA x -> Some x
+        | _ -> None
+        
+    member this.IdX =
+        match this with
+        | IdB x -> Some x
+        | _ -> None
+
+    member this.IdC =
+        match this with
+        | IdC x -> Some x
+        | _ -> None
+
+let onlyIdA (ids: MyId list) = ids |> List.choose _.IdA
+let onlyIdX (ids: MyId list) = ids |> List.choose _.IdX
+let onlyIdC (ids: MyId list) = ids |> List.choose _.IdC
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 23, Line 7, Col 17, Line 7, Col 20, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module");
+            (Error 812, Line 22, Col 51, Line 22, Col 56, "The syntax 'expr.id' may only be used with record labels, properties and fields");
+            (Error 23, Line 17, Col 17, Line 17, Col 20, "The member 'IdC' can not be defined because the name 'IdC' clashes with the union case 'IdC' in this type or module");
+            (Error 812, Line 24, Col 51, Line 24, Col 56, "The syntax 'expr.id' may only be used with record labels, properties and fields")
+        ]

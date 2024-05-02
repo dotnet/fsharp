@@ -374,10 +374,6 @@ type ProvidedExprType =
 
     | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
 
-#if PROVIDED_ADDRESS_OF
-    | ProvidedAddressOfExpr of ProvidedExpr
-#endif
-
     | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
 
     | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
