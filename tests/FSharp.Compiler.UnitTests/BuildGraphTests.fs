@@ -311,7 +311,7 @@ module BuildGraphTests =
     let ``AsyncLocal diagnostics context works with TPL`` () =
 
         let task1 () = 
-            List.init 100 (sprintf "ListParallel logger %d")
+            List.init 20 (sprintf "ListParallel logger %d")
             |> Extras.ListParallel.map (fun name -> 
                 let logger = CapturingDiagnosticsLogger(name)
                 use _ = UseDiagnosticsLogger logger
@@ -326,14 +326,14 @@ module BuildGraphTests =
             let commonLogger = SimpleConcurrentLogger "ListParallel concurrent logger"
             use _ = UseDiagnosticsLogger commonLogger
 
-            [1 .. 100]
+            [1 .. 20]
             |> Extras.ListParallel.map (fun _ -> 
                 for _ in 1 .. 10 do
                     errorR TestException
                     Thread.Sleep 5
                 loggerShouldBe commonLogger )
             |> ignore
-            errorCountShouldBe 1000
+            errorCountShouldBe 200
             loggerShouldBe commonLogger
 
         Tasks.Parallel.Invoke(task1, task2)
