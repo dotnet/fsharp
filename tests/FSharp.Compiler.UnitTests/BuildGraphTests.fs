@@ -439,20 +439,23 @@ module BuildGraphTests =
         errorCountShouldBe 17
 
         async {
-            // Async.Parallel continues context from the last computation that finished.
+
+            // After Async.Parallel the continuation runs in the context of the last computation that finished.
             do! 
                 [ async {
-                    do! Async.SwitchToNewThread()
                     SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
                 |> Async.Parallel
                 |> Async.Ignore
             loggerShouldBe DiscardErrorsLogger
 
-            do! async {
-                do! Async.SwitchToNewThread()
-                SetThreadDiagnosticsLoggerNoUnwind logger
-            }
+            SetThreadDiagnosticsLoggerNoUnwind logger
 
+            // On the other hand, MultipleDiagnosticsLoggers.Parallel restores caller's context.
+            do!
+                [ async {
+                    SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
+                |> MultipleDiagnosticsLoggers.Parallel
+                |> Async.Ignore
             loggerShouldBe logger
         }
         |> Async.RunImmediate
