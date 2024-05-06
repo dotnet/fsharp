@@ -3694,6 +3694,17 @@ let isOptionTy (g: TcGlobals) ty =
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.option_tcr_canon tcref
 
+let isChoiceTy (g: TcGlobals) ty = 
+    match tryTcrefOfAppTy g ty with 
+    | ValueNone -> false
+    | ValueSome tcref ->
+        tyconRefEq g g.choice2_tcr tcref ||
+        tyconRefEq g g.choice3_tcr tcref ||
+        tyconRefEq g g.choice4_tcr tcref ||
+        tyconRefEq g g.choice5_tcr tcref ||
+        tyconRefEq g g.choice6_tcr tcref ||
+        tyconRefEq g g.choice7_tcr tcref
+
 let tryDestOptionTy g ty = 
     match argsOfAppTy g ty with 
     | [ty1] when isOptionTy g ty -> ValueSome ty1
@@ -3702,6 +3713,11 @@ let tryDestOptionTy g ty =
 let tryDestValueOptionTy g ty = 
     match argsOfAppTy g ty with 
     | [ty1] when isValueOptionTy g ty -> ValueSome ty1
+    | _ -> ValueNone
+
+let tryDestChoiceTy g ty idx = 
+    match argsOfAppTy g ty with 
+    | ls when isChoiceTy g ty && ls.Length > idx -> ValueSome ls[idx]
     | _ -> ValueNone
 
 let destOptionTy g ty = 
@@ -3713,6 +3729,11 @@ let destValueOptionTy g ty =
     match tryDestValueOptionTy g ty with 
     | ValueSome ty -> ty
     | ValueNone -> failwith "destValueOptionTy: not a value option type"
+
+let destChoiceTy g ty idx = 
+    match tryDestChoiceTy g ty idx with 
+    | ValueSome ty -> ty
+    | ValueNone -> failwith "destChoiceTy: not a Choice type"
 
 let isNullableTy (g: TcGlobals) ty = 
     match tryTcrefOfAppTy g ty with 
@@ -6121,7 +6142,7 @@ and remapTyconAug tmenv (x: TyconAugmentation) =
           tcaug_equals = x.tcaug_equals |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
           tcaug_compare = x.tcaug_compare |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
           tcaug_compare_withc = x.tcaug_compare_withc |> Option.map(remapValRef tmenv)
-          tcaug_hash_and_equals_withc = x.tcaug_hash_and_equals_withc |> Option.map (mapTriple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv))
+          tcaug_hash_and_equals_withc = x.tcaug_hash_and_equals_withc |> Option.map (mapQuadruple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv, Option.map (remapValRef tmenv)))
           tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
           tcaug_adhoc_list = x.tcaug_adhoc_list |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
           tcaug_super = x.tcaug_super |> Option.map (remapType tmenv)

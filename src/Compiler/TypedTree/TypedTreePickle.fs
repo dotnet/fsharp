@@ -540,18 +540,7 @@ let u_list_ext extra f st =
     let list = u_list_core f (n &&& 0x7FFFFFFF) st
     extraItem, list
 
-#if FLAT_LIST_AS_LIST
-#else
 let u_List f st = u_list f st // new List<_> (u_array f st)
-#endif
-#if FLAT_LIST_AS_ARRAY_STRUCT
-//#else
-let u_List f st = List(u_array f st)
-#endif
-#if FLAT_LIST_AS_ARRAY
-//#else
-let u_List f st = u_array f st
-#endif
 
 // Mark up default constraints with a priority in reverse order: last gets 0 etc. See comment on TyparConstraint.DefaultsTo
 let u_list_revi f st =
@@ -569,12 +558,6 @@ let u_option f st =
     | 1 -> Some (f st)
     | n -> ufailwith st ("u_option: found number " + string n)
 
-// Boobytrap an OSGN node with a force of a lazy load of a bunch of pickled data
-#if LAZY_UNPICKLE
-let wire (x: osgn<_>) (res: Lazy<_>) =
-    x.osgnTripWire <- Some(fun () -> res.Force() |> ignore)
-#endif
-
 let u_lazy u st =
 
     // Read the number of bytes in the record
@@ -587,26 +570,8 @@ let u_lazy u st =
     let ovalsIdx1   = prim_u_int32 st // fixupPos6
     let ovalsIdx2   = prim_u_int32 st // fixupPos7
 
-#if LAZY_UNPICKLE
-    // Record the position in the bytestream to use when forcing the read of the data
-    let idx1 = st.is.Position
-    // Skip the length of data
-    st.is.Skip len
-    // This is the lazy computation that wil force the unpickling of the term.
-    // This term must contain OSGN definitions of the given nodes.
-    let res =
-        lazy (let st = { st with is = st.is.CloneAndSeek idx1 }
-              u st)
-    // Force the reading of the data as a "tripwire" for each of the OSGN thunks
-    for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.ientities.Get i) res done
-    for i = ovalsIdx1   to ovalsIdx2-1   do wire (st.ivals.Get i)   res done
-    for i = otyparsIdx1 to otyparsIdx2-1 do wire (st.itypars.Get i) res done
-    res
-#else
     ignore (len, otyconsIdx1, otyconsIdx2, otyparsIdx1, otyparsIdx2, ovalsIdx1, ovalsIdx2)
     InterruptibleLazy.FromValue(u st)
-#endif
-
 
 let u_hole () =
     let mutable h = None
@@ -1952,7 +1917,7 @@ and p_tcaug p st =
       (p_space 1)
       (p.tcaug_compare,
        p.tcaug_compare_withc,
-       p.tcaug_hash_and_equals_withc,
+       p.tcaug_hash_and_equals_withc |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
        p.tcaug_equals,
        (p.tcaug_adhoc_list
            |> ResizeArray.toList
@@ -2259,7 +2224,7 @@ and u_tcaug st =
         st
     {tcaug_compare=a1
      tcaug_compare_withc=a2
-     tcaug_hash_and_equals_withc=a3
+     tcaug_hash_and_equals_withc=a3 |> Option.map (fun (v1, v2, v3) -> (v1, v2, v3, None))
      tcaug_equals=b2
      // only used for code generation and checking - hence don't care about the values when reading back in
      tcaug_hasObjectGetHashCode=false

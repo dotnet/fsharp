@@ -372,19 +372,6 @@ module internal Impl =
     //-----------------------------------------------------------------
     // UNION DECOMPILATION
 
-    // Get the type where the type definitions are stored
-    let getUnionCasesTyp (typ: Type, _bindingFlags) =
-#if CASES_IN_NESTED_CLASS
-        let casesTyp = typ.GetNestedType("Cases", bindingFlags)
-
-        if casesTyp.IsGenericTypeDefinition then
-            casesTyp.MakeGenericType(typ.GetGenericArguments())
-        else
-            casesTyp
-#else
-        typ
-#endif
-
     let getUnionTypeTagNameMap (typ: Type, bindingFlags) =
         let enumTyp = typ.GetNestedType("Tags", bindingFlags)
         // Unions with a singleton case do not get a Tags type (since there is only one tag), hence enumTyp may be null in this case
@@ -441,12 +428,11 @@ module internal Impl =
             if isTwoCasedDU then
                 typ
             else
-                let casesTyp = getUnionCasesTyp (typ, bindingFlags)
-                let caseTyp = casesTyp.GetNestedType(tagField, bindingFlags) // if this is null then the union is nullary
+                let caseTyp = typ.GetNestedType(tagField, bindingFlags) // if this is null then the union is nullary
 
                 match caseTyp with
                 | null -> null
-                | _ when caseTyp.IsGenericTypeDefinition -> caseTyp.MakeGenericType(casesTyp.GetGenericArguments())
+                | _ when caseTyp.IsGenericTypeDefinition -> caseTyp.MakeGenericType(typ.GetGenericArguments())
                 | _ -> caseTyp
 
     let getUnionTagConverter (typ: Type, bindingFlags) =

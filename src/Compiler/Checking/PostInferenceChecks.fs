@@ -2144,10 +2144,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                     error(Duplicate(kind, v.DisplayName, v.Range))
 
-#if CASES_IN_NESTED_CLASS
-                if tcref.IsUnionTycon && nm = "Cases" then
-                    errorR(NameClash(nm, kind, v.DisplayName, v.Range, "generated type", "Cases", tcref.Range))
-#endif
                 if tcref.IsUnionTycon then
                     match nm with
                     | "Tag" -> errorR(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), "Tag", tcref.Range))
@@ -2284,7 +2280,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             else MethInfosEquivByNameAndPartialSig eraseFlag true g cenv.amap m minfo minfo2 (* partial ignores return type *)
 
         let immediateMeths =
-            [ for v in tycon.AllGeneratedValues do yield FSMeth (g, ty, v, None)
+            [ for v in tycon.AllGeneratedInterfaceImplsAndOverrides do yield FSMeth (g, ty, v, None)
               yield! GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty ]
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty

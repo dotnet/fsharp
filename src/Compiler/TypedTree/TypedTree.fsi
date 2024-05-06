@@ -508,7 +508,7 @@ type Entity =
     member AllFieldsAsList: RecdField list
 
     /// Gets all implicit hash/equals/compare methods added to an F# record, union or struct type definition.
-    member AllGeneratedValues: ValRef list
+    member AllGeneratedInterfaceImplsAndOverrides: ValRef list
 
     /// Get a list of all instance fields for F#-defined record, struct type class fields in this type definition.
     /// including hidden fields from the compilation of implicit class constructions.
@@ -587,7 +587,7 @@ type Entity =
     member GeneratedHashAndEqualsValues: (ValRef * ValRef) option
 
     /// Gets any implicit hash/equals (with comparer argument) methods added to an F# record, union or struct type definition.
-    member GeneratedHashAndEqualsWithComparerValues: (ValRef * ValRef * ValRef) option
+    member GeneratedHashAndEqualsWithComparerValues: (ValRef * ValRef * ValRef * ValRef option) option
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member HasSelfReferentialConstructor: bool
@@ -845,10 +845,10 @@ type TyconAugmentation =
         /// of Object.Equals or if the type doesn't override Object.Equals implicitly.
         mutable tcaug_equals: (ValRef * ValRef) option
 
-        /// This is the value implementing the auto-generated comparison
+        /// This is the value implementing the auto-generated equality
         /// semantics if any. It is not present if the type defines its own implementation
-        /// of IStructuralEquatable or if the type doesn't implement IComparable implicitly.
-        mutable tcaug_hash_and_equals_withc: (ValRef * ValRef * ValRef) option
+        /// of IStructuralEquatable or if the type doesn't override Object.Equals implicitly.
+        mutable tcaug_hash_and_equals_withc: (ValRef * ValRef * ValRef * ValRef option) option
 
         /// True if the type defined an Object.GetHashCode method. In this
         /// case we give a warning if we auto-generate a hash method since the semantics may not match up
@@ -885,7 +885,7 @@ type TyconAugmentation =
 
     member SetHasObjectGetHashCode: b: bool -> unit
 
-    member SetHashAndEqualsWith: x: (ValRef * ValRef * ValRef) -> unit
+    member SetHashAndEqualsWith: x: (ValRef * ValRef * ValRef * ValRef option) -> unit
 
     override ToString: unit -> string
 
@@ -2509,7 +2509,7 @@ type EntityRef =
     member GeneratedHashAndEqualsValues: (ValRef * ValRef) option
 
     /// Gets any implicit hash/equals (with comparer argument) methods added to an F# record, union or struct type definition.
-    member GeneratedHashAndEqualsWithComparerValues: (ValRef * ValRef * ValRef) option
+    member GeneratedHashAndEqualsWithComparerValues: (ValRef * ValRef * ValRef * ValRef option) option
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member HasSelfReferentialConstructor: bool
@@ -3068,7 +3068,7 @@ type TType =
     /// Indicates the type is a universal type, only used for types of values type members
     | TType_forall of typars: Typars * bodyTy: TType
 
-    /// Indicates the type is built from a named type type a number of type arguments.
+    /// Indicates the type is built from a named type and a number of type arguments.
     ///
     /// 'flags' is a placeholder for future features, in particular nullness analysis
     | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst * flags: byte
