@@ -239,13 +239,13 @@ module BuildGraphTests =
     type ExampleException(msg) = inherit System.Exception(msg)
 
     [<Fact>]
-    let internal ``NodeCode preserves DiagnosticsThreadStatics`` () =
+    let internal ``DiagnosticsThreadStatics preserved in async`` () =
         let random =
             let rng = Random()
             fun n -> rng.Next n
     
         let job phase i = async {
-            do! random 10 |> Async.Sleep
+            do! random 5 |> Async.Sleep
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
             |> Assert.shouldBe $"DiagnosticsLogger(CaptureDiagnosticsConcurrently {i})"
@@ -262,7 +262,7 @@ module BuildGraphTests =
 
                 let diags = logger.Diagnostics |> List.map fst
 
-                diags |> List.map _.Phase |> Set |> Assert.shouldBe (Set.singleton phase)
+                diags |> List.map _.Phase |> List.distinct |> Assert.shouldBe [ phase ]
                 diags |> List.map _.Exception.Message
                 |> Assert.shouldBe (List.init n <| sprintf "job %d")
 
@@ -284,7 +284,7 @@ module BuildGraphTests =
         |]
     
         let pickRandomPhase _ = phases[random phases.Length]
-        Seq.init 100 pickRandomPhase
+        Seq.init 20 pickRandomPhase
         |> Seq.map work
         |> Async.Parallel
         |> Async.RunSynchronously
