@@ -528,18 +528,15 @@ module Array =
 ///
 /// E.g., in [for x in … do f (); …; yield x]
 [<return: Struct>]
-let (|SimpleSequential|_|) g expr =
+let (|SimpleSequential|_|) g expr : Expr voption =
     let rec loop expr cont =
         match expr with
-        | Expr.Sequential (expr1, DebugPoints (ValApp g g.seq_singleton_vref (_, [body], _), debug), kind, m) ->
-            ValueSome (cont (expr1, debug body, kind, m))
-
-        | Expr.Sequential (expr1, body, kind, m) ->
-            loop body (cont >> fun body -> Expr.Sequential (expr1, body, kind, m))
+        | Expr.Sequential (expr1, DebugPoints ((ValApp g g.seq_singleton_vref (_, [body], _) | body), debug), kind, m) ->
+            loop body (cont << fun body -> Expr.Sequential (expr1, debug body, kind, m))
 
         | _ -> ValueNone
 
-    loop expr Expr.Sequential
+    loop expr id
 
 /// Extracts any let-bindings or sequential
 /// expressions that directly precede the specified mapping application, e.g.,
