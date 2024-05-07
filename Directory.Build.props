@@ -38,7 +38,7 @@
      -->
     <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' != 'true'">$(OtherFlags) --realsig-</OtherFlags>
     <!-- TBD: Fix MEF Export visibility issues in VS -->
-    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig-</OtherFlags>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto' and '$(TestingLegacyInternalSignature)' == 'true'">$(OtherFlags) --realsig+</OtherFlags>
 
   </PropertyGroup>
 
