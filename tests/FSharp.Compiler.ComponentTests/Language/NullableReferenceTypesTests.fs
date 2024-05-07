@@ -3,15 +3,18 @@ module Language.NullableReferenceTypes
 open Xunit
 open FSharp.Test.Compiler
 
-let typeCheckWithStrictNullness cu =
+let withNullnessOptions cu =
     cu
     |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
     |> withWarnOn 3262
     |> withOptions ["--warnaserror+"]
-    |> compile
 
+let typeCheckWithStrictNullness cu =
+    cu
+    |> withNullnessOptions
+    |> typecheck
     
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =
@@ -26,22 +29,118 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
     |> withDiagnostics [
         Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
 
+
+// P1: inline or not
+// P2: type annotation for function argument
+// P3: type annotation for cache
+let MutableBindingAnnotationCombinations =
+    [|
+        for functionInlineFlag in [""
+                                   "inline"] do
+            for xArg in [""
+                         ":'T"
+                         ":'T|null"
+                         ": _"
+                         ": _|null"
+                         ": string|null"
+                         ": string"] do
+                // No annotation or _ must work all the time
+                for cacheArg in [""
+                                 ": _"] do
+                    yield [|functionInlineFlag :> obj; xArg :> obj; cacheArg :> obj|]
+
+                // If we have a named type, the same one must work for cache binding as well
+                if xArg.Contains("'T") || xArg.Contains("string|null") then
+                    yield [|functionInlineFlag :> obj; xArg :> obj; xArg :> obj|]
+
+                // If we have a type WithNull, using _|null should infer the exact same type
+                if xArg.Contains("|null") || xArg.Contains("string") then
+                    yield [|functionInlineFlag :> obj; xArg :> obj; ":_|null" :> obj|]
+
+                if xArg = ":'T" then
+                    for guard in [" when 'T:null"
+                                  " when 'T:null and 'T:not struct"] do
+                        yield [|functionInlineFlag :> obj; (xArg + guard) :> obj; "" :> obj|]
+
+                if xArg = ":'T|null" then
+                    for guard in [" when 'T:not struct"
+                                  " when 'T:not null"
+                                  " when 'T:not struct and 'T:not null"] do
+                        yield [|functionInlineFlag :> obj; (xArg + guard) :> obj; "" :> obj|]
+    |]
+
+[<MemberData(nameof MutableBindingAnnotationCombinations)>]
+[<Theory>]
+let ``Mutable binding with a null literal`` inln xArg cache =
+    FSharp $"""module MyLib
+
+let %s{inln} f (x %s{xArg}) = 
+    let mutable cache %s{cache} = null
+    cache <- x
+    
+    match cache with
+    | null -> failwith "It was null"
+    | c -> c
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 [<Fact>]
-let ``Mutable binding initially assigned to null should not need type annotation``() = 
+let ``Mutable string binding initially assigned to null should not need type annotation``() = 
+    FSharp """
+module MyLib
+
+
+let name = "abc"
+let mutable cache  = null 
+cache <- name 
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Mutable string binding assigned to null and matched againts null``() = 
+    FSharp """
+module MyLib
+
+let whatEver() =
+    let mutable x = null
+    x <- "abc"
+    x
+
+
+(* This is a comment 
+let name = "abc"
+let mutable cache  = null 
+cache <- name 
+
+match cache with
+| null -> ()
+| c -> ()*)
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Mutable cache binding initially assigned to null should not need type annotation``() = 
     FSharp """
 module MyLib
 open System.Collections.Concurrent
 open System
 
 let mkCacheInt32 ()   =
-        let mutable cache  = null 
+        let mutable topLevelCache  = null 
 
         fun f (idx: int32) ->
             let cache =
-                match cache with
+                match topLevelCache with
                 | null ->
                     let v = ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
-                    cache <- v
+                    topLevelCache <- v
                     v
                 | v -> v
 
@@ -326,8 +425,73 @@ strictFunc("hi") |> ignore   """
     |> shouldFail
     |> withDiagnostics     
             [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
-         
-    
+      
+[<Fact>]
+let ``Supports null in generic code`` () =
+    FSharp """module MyLibrary
+let myGenericFunction p = 
+    match p with
+    | null -> ()
+    | p -> printfn "%s" (p.ToString()) 
+
+[<AllowNullLiteral>]
+type X(p:int) =
+    member _.P = p
+
+let myValOfX : X = null
+
+myGenericFunction "HiThere"
+myGenericFunction ("HiThere":string | null)
+myGenericFunction (System.DateTime.Now)
+myGenericFunction 123
+myGenericFunction myValOfX
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [Error 3261, Line 13, Col 19, Line 13, Col 28, "Nullness warning: The type 'string' does not support 'null'."
+             Error 3261, Line 15, Col 20, Line 15, Col 39, "Nullness warning: The type 'System.DateTime' does not support 'null'."
+             Error 3261, Line 16, Col 19, Line 16, Col 22, "Nullness warning: The type 'int' does not support 'null'."]
+
+[<Fact>]
+let ``Null assignment in generic code`` () =
+    FSharp """module MyLibrary
+let myNullReturningFunction p  = 
+    let mutable x = p
+    x <- null
+    x
+
+[<AllowNullLiteral>]
+type X(p:int) =
+    member _.P = p
+
+type Y (p:int) =
+    member _.P = p
+
+let myValOfX : X = null
+let myValOfY : Y = Unchecked.defaultof<Y>
+
+myNullReturningFunction "HiThere"                    |> ignore
+myNullReturningFunction ("HiThere":string | null)    |> ignore
+myNullReturningFunction (System.DateTime.Now)        |> ignore
+myNullReturningFunction {|Anon=42|}                  |> ignore
+myNullReturningFunction (1,2,3)                      |> ignore
+myNullReturningFunction myValOfX                     |> ignore
+myNullReturningFunction myValOfY                     |> ignore
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+                [Error 3261, Line 17, Col 25, Line 17, Col 34, "Nullness warning: The type 'string' does not support 'null'."
+                 Error 3261, Line 19, Col 26, Line 19, Col 45, "Nullness warning: The type 'System.DateTime' does not support 'null'."
+                 Error 3261, Line 20, Col 25, Line 20, Col 36, "Nullness warning: The type '{| Anon: 'a |}' does not support 'null'."
+                 Error 3261, Line 21, Col 26, Line 21, Col 31, "Nullness warning: The type '('a * 'b * 'c)' does not support 'null'."
+                 Error 3261, Line 23, Col 25, Line 23, Col 33, "Nullness warning: The type 'Y' does not support 'null'."]
+                 
 [<Fact>]
 let ``Nullnesss support for F# types`` () = 
     FSharp """module MyLibrary
