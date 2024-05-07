@@ -538,7 +538,7 @@ try {
     $nativeTools = InitializeNativeTools
 
     if (-not (Test-Path variable:NativeToolsOnMachine)) {
-        $env:PERL5Path = Join-Path $nativeTools "perl\5.38.0.1\perl\bin\perl.exe"
+        $env:PERL5Path = Join-Path $nativeTools "perl\5.38.2.2\perl\bin\perl.exe"
         write-host "variable:NativeToolsOnMachine = unset or false"
         $nativeTools
         write-host "Path = $env:PERL5Path"
