@@ -35,9 +35,4 @@ type SurfaceAreaTest() =
 
         let baseline = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Compiler.Service.SurfaceArea.{platform}.{flavor}.bsl")
         let outFileName = $"FSharp.Compiler.Service.SurfaceArea.{platform}.{flavor}.out"
-
-        let realSig = Environment.GetEnvironmentVariable("FSHARP_REALSIG")
-        match realSig with
-        | "false" -> Assert.True(true, "Skipping the test, the surface area without real sig differs and doesn't matter.")
-        | _ -> FSharp.Test.SurfaceArea.verify assembly baseline outFileName
-
+        FSharp.Test.SurfaceArea.verify assembly baseline outFileName
