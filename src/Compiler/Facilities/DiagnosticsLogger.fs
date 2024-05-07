@@ -899,12 +899,11 @@ module MultipleDiagnosticsLoggers =
         let computationsWithLoggers, diagnosticsReady =
             [
                 for i, computation in computations |> Seq.indexed do
-                    let diagnosticsReady =
-                        TaskCompletionSource<_>(TaskCreationOptions.RunContinuationsAsynchronously)
+                    let diagnosticsReady = TaskCompletionSource<_>()
 
                     let logger = CapturingDiagnosticsLogger($"CaptureDiagnosticsConcurrently {i}")
 
-                    // Inject capturing loger into the computation. Signal the TaskCompletionSource when done.
+                    // Inject capturing logger into the computation. Signal the TaskCompletionSource when done.
                     let computationsWithLoggers =
                         async {
                             SetThreadDiagnosticsLoggerNoUnwind logger
@@ -927,8 +926,6 @@ module MultipleDiagnosticsLoggers =
                 for tcs in diagnosticsReady do
                     let! finishedLogger = tcs.Task
                     finishedLogger.CommitDelayedDiagnostics target
-
-                return target
             }
 
         async {

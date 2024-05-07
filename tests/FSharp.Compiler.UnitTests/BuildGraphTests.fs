@@ -245,7 +245,7 @@ module BuildGraphTests =
             fun n -> rng.Next n
     
         let job phase i = async {
-            do! random 5 |> Async.Sleep
+            do! random 10 |> Async.Sleep
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
             |> Assert.shouldBe $"DiagnosticsLogger(CaptureDiagnosticsConcurrently {i})"
@@ -284,7 +284,7 @@ module BuildGraphTests =
         |]
     
         let pickRandomPhase _ = phases[random phases.Length]
-        Seq.init 20 pickRandomPhase
+        Seq.init 100 pickRandomPhase
         |> Seq.map work
         |> Async.Parallel
         |> Async.RunSynchronously
