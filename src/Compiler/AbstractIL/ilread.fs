@@ -965,6 +965,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
         let mutable cache: ConcurrentDictionary<_, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
 #if STATISTICS
         let mutable count = 0
+
         addReport (fun oc ->
             if !count <> 0 then
                 oc.WriteLine((_inbase + string !count + " " + _nm + " cache hits"): string))
