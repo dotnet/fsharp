@@ -4617,7 +4617,7 @@ type FsiEvaluationSession
                 unresolvedReferences,
                 fsiOptions.DependencyProvider
             )
-            |> Async.RunSynchronously
+            |> Async.RunImmediate
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e

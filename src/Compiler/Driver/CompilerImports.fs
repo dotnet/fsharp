@@ -2232,8 +2232,6 @@ and [<Sealed>] TcImports
         async {
             CheckDisposed()
 
-            // Prevent deadlocks in FSI.
-            do! Async.SwitchToThreadPool()
 
             let tcConfig = tcConfigP.Get ctok
 
