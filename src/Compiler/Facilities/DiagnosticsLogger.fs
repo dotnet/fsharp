@@ -895,6 +895,7 @@ type StackGuard(maxDepth: int, name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
 module MultipleDiagnosticsLoggers =
+
     let Parallel computations =
         let computationsWithLoggers, diagnosticsReady =
             [
@@ -942,6 +943,8 @@ module MultipleDiagnosticsLoggers =
             let results = ResizeArray()
 
             for computation in computations do
+                // Encapsulate computation's diagnostics scope.
+                use _ = new CompilationGlobalsScope()
                 let! result = computation
                 results.Add result
 

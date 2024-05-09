@@ -474,12 +474,13 @@ type CompilationGlobalsScope =
 
 module MultipleDiagnosticsLoggers =
 
-    /// Execute computations using Async.Parallel.
-    /// Captures the diagnostics in correct order and keeps a common error count for all computations.
-    /// When done, restores caller's build phase and diagnostics logger, commiting captured diagnostics.
+    /// Runs computations using Async.Parallel.
+    /// Capturing the diagnostics from each separately.
+    /// When done, restores caller's BuildPhase and DiagnosticsLogger
+    /// and commits captured diagnostics preserving the order.
     val Parallel: computations: Async<'T> seq -> Async<'T array>
 
-    /// Execute computations using Async.Sequential.
-    /// Captures the diagnostics in correct order and keeps a common error count for all computations.
-    /// When done, restores caller's build phase and diagnostics logger, commiting captured diagnostics.
+    /// Run computations sequentially starting on current thread
+    /// using caller's DiagnosticsLogger and BuildPhase for each computation.
+    /// When done, restores caller's BuildPhase and DiagnosticsLogger.
     val Sequential: computations: Async<'T> seq -> Async<'T array>
