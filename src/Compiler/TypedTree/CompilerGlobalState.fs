@@ -5,9 +5,7 @@
 module FSharp.Compiler.CompilerGlobalState
 
 open System
-open System.Collections.Generic
 open System.Collections.Concurrent
-open System.Threading
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 
@@ -19,14 +17,17 @@ open FSharp.Compiler.Text
 /// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
 /// are used to host multiple concurrent instances of compilation.
 type NiceNameGenerator() =    
-    let basicNameCounts = ConcurrentDictionary<string,Ref<int>>(max Environment.ProcessorCount 1, 127)
+    let basicNameCounts = ConcurrentDictionary<string, int>(max Environment.ProcessorCount 1, 127)
+    // Cache this as a delegate.
+    let basicNameCountsUpdateDelegate = Func<string, int, int>(fun _k count -> count + 1)
    
-    member _.FreshCompilerGeneratedName (name, m: range) =
-        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        let countCell = basicNameCounts.GetOrAdd(basicName,fun k -> ref 0)
-        let count = Interlocked.Increment(countCell)
-        
-        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count-1) with 0 -> "" | n -> "-" + string n))
+    member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
+        let count = basicNameCounts.AddOrUpdate(basicName, 0, basicNameCountsUpdateDelegate)
+        let suffix = match count with 0 -> string m.StartLine | n -> string m.StartLine + "-" + string n
+        CompilerGeneratedNameSuffix basicName suffix
+
+    member this.FreshCompilerGeneratedName (name, m: range) =
+        this.FreshCompilerGeneratedNameOfBasicName (GetBasicNameOfPossibleCompilerGeneratedName name, m)
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
@@ -42,7 +43,7 @@ type StableNiceNameGenerator() =
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
-        niceNames.GetOrAdd(key, fun _ -> innerGenerator.FreshCompilerGeneratedName(name, m))
+        niceNames.GetOrAdd(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
 
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
