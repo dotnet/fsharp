@@ -387,6 +387,7 @@ this file.
               PreferredUILang="$(PreferredUILang)"
               ProvideCommandLineArgs="$(ProvideCommandLineArgs)"
               PublicSign="$(PublicSign)"
+              RealSig="$(RealSig)"
               References="@(ReferencePathWithRefAssemblies)"
               ReferencePath="$(ReferencePathWithRefAssemblies)"
               RefOnly="$(ProduceOnlyReferenceAssembly)"
