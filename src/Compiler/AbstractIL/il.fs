@@ -158,10 +158,10 @@ let splitTypeNameRightAux (nm: string) =
         Some s1, s2
 
 // Cache this as a delegate.
-let splitTypeNameRightDelegate = Func<string, string option * string> splitTypeNameRightAux
+let splitTypeNameRightAuxDelegate = Func<string, string option * string> splitTypeNameRightAux
 
 let splitTypeNameRight nm =
-    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightDelegate)
+    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAuxDelegate)
 
 // --------------------------------------------------------------------
 // Ordered lists with a lookup table
