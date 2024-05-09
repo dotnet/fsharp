@@ -2126,8 +2126,8 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             | ClosedExprSln expr ->
                 Choice4Of6 expr
 
-            | ILFieldSln (ty, tinst, ilfref, isSet) ->
-                Choice5Of6 (ty, tinst, ilfref, isSet)
+            | ILFieldSln (ty, tinst, ilfref, isStruct, isStatic, isSet) ->
+                Choice5Of6 (ty, tinst, ilfref, isStruct, isStatic, isSet)
             | BuiltInSln ->
                 Choice6Of6 ()
 
@@ -2217,20 +2217,22 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
     | Choice4Of6 expr -> // Closed expression solution
         Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
 
-    | Choice5Of6 (ty, tinst, ilfref, isSet) -> // IL Field
-        let isStatic = false // TODO: need to know whether field is static or instance
-        let boxity = ilfref.Type.Boxity
+    | Choice5Of6 (ty, tinst, ilfref, isStruct, isStatic, isSet) -> // IL Field
+        let boxity = if isStruct then AsValue else AsObject
         let ilTy = mkILNamedTy boxity ilfref.DeclaringTypeRef []
-        let fieldSpec = mkILFieldSpec (ilfref, ilTy)
+        let fSpec = mkILFieldSpec (ilfref, ilTy)
 
         match isStatic, isSet with
         | false, false -> // Instance getter
-            let expr =
-                Expr.Op (TOp.ILAsm ([mkNormalLdfld fieldSpec], [ty]), tinst, argExprs, m)
-            Some (expr)
+            Some(Expr.Op(TOp.ILAsm ([mkNormalLdfld fSpec], [ty]), tinst, argExprs, m))
         | false, true -> // Instance setter
+            //Some(Expr.Op(TOp.ILAsm ([mkNormalStfld fieldSpec], [ty]), tinst, argExprs, m))
+            //TODO(vlza): do the address trick
+            // let wrap, objExpr, _, _ = mkExprAddrOfExpr g isStruct false NeverMutates argExprs[0] None m
+
             failwith "5of6 - instance setter"
         | true, false -> // Static getter
+            //Some(Expr.Op(TOp.ILAsm ([mkNormalLdsfld fieldSpec], [ty]), tinst, argExprs, m))
             failwith "5of6 - static getter"
         | true, true -> // Static setter
             failwith "5of6 - static setter"

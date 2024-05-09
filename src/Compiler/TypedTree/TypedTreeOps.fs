@@ -278,8 +278,8 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, source, slnCell)
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
                 | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
                      FSAnonRecdFieldSln(anonInfo, remapTypesAux tyenv tinst, n)
-                | ILFieldSln(ty, tinst, ilfref, isSet) ->
-                     ILFieldSln(remapTypeAux tyenv ty, remapTypesAux tyenv tinst, ilfref, isSet)
+                | ILFieldSln(ty, tinst, ilfref, isStruct, isStatic, isSet) ->
+                     ILFieldSln(remapTypeAux tyenv ty, remapTypesAux tyenv tinst, ilfref, isStruct, isStatic, isSet)
                 | BuiltInSln -> 
                      BuiltInSln
                 | ClosedExprSln e -> 
@@ -2314,7 +2314,7 @@ and accFreeInTraitSln opts sln acc =
          accFreeInTypes opts tinst acc
     | FSRecdFieldSln(tinst, _rfref, _isSet) ->
          accFreeInTypes opts tinst acc
-    | ILFieldSln (ty, tinst, _ilfref, _isSet) ->
+    | ILFieldSln (ty, tinst, _ilfref, _isStruct, _isStatic, _isSet) ->
         (accFreeInType opts) ty
             (accFreeInTypes opts tinst acc)
     | BuiltInSln -> acc

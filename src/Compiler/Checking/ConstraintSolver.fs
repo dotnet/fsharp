@@ -68,6 +68,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.AbstractIL.IL
 
 //-------------------------------------------------------------------------
 // Unification of types: solve/record equality constraints
@@ -1358,8 +1359,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
     let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
         
-    let! res = 
-     trackErrors {
+    let! res = trackErrors {
       match minfos, supportTys, memFlags.IsInstance, nm, argTys with
       | _, _, false, ("op_Division" | "op_Multiply"), [argTy1;argTy2]
           when 
@@ -1399,7 +1399,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
                    checkRuleAppliesInPreferenceToMethods argTy1 argTy2 || 
                    checkRuleAppliesInPreferenceToMethods argTy2 argTy1) ->
-                   
+
           match getMeasureOfType g argTy1 with
           | Some (tcref, ms1) -> 
             let ms2 = freshMeasure ()
@@ -1657,27 +1657,28 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                 let nm = nm[4..]
 
                 let fields =
-                    [| for ty in supportTys do
-                        let item = TryFindIntrinsicNamedItemOfType csenv.InfoReader (nm, AccessibleFromEverywhere, false) FindMemberFlag.IgnoreOverrides m ty
-                        match item with
-                        | Some (ILFieldItem [ ilfinfo ]) ->
-                            (* let _calconvMatches = ilfinfo.IsStatic = (not memFlags.IsInstance)
-                            let _canCall = ((ilfinfo.IsInitOnly && isGet) || (not ilfinfo.IsInitOnly && isSet))
-                            let _accessible = IsILFieldInfoAccessible g amap m AccessibleFromEverywhere ilfinfo
-                            let _isNotLiteral = ilfinfo.LiteralValue.IsNone
-                            let _isNotSpecialName = not ilfinfo.IsSpecialName *)
+                    [|
+                        for ty in supportTys do
+                            let item = TryFindIntrinsicNamedItemOfType csenv.InfoReader (nm, AccessibleFromEverywhere, false) FindMemberFlag.IgnoreOverrides m ty
+                            match item with
+                            | Some (ILFieldItem [ ilfinfo ]) ->
+                                (* let _calconvMatches = ilfinfo.IsStatic = (not memFlags.IsInstance)
+                                let _canCall = ((ilfinfo.IsInitOnly && isGet) || (not ilfinfo.IsInitOnly && isSet))
+                                let _accessible = IsILFieldInfoAccessible g amap m AccessibleFromEverywhere ilfinfo
+                                let _isNotLiteral = ilfinfo.LiteralValue.IsNone
+                                let _isNotSpecialName = not ilfinfo.IsSpecialName *)
 
-                            if ilfinfo.IsStatic = (not memFlags.IsInstance)
-                                // If the field is backing init-only property, we don't want solution to be selected as "setter".
-                                && (isGet || not ilfinfo.IsInitOnly)
-                                // We only consider public fields
-                                && IsILFieldInfoAccessible g amap m AccessibleFromEverywhere ilfinfo
-                                // We don't consider constant fields
-                                && ilfinfo.LiteralValue.IsNone
-                                // We don't consider special name fields
-                                && not ilfinfo.IsSpecialName then
-                                    yield ilfinfo
-                        | _ -> ()
+                                if ilfinfo.IsStatic = (not memFlags.IsInstance)
+                                    // If the field is backing init-only property, we don't want solution to be selected as "setter".
+                                    && (isGet || not ilfinfo.IsInitOnly)
+                                    // We only consider public fields
+                                    && IsILFieldInfoAccessible g amap m AccessibleFromEverywhere ilfinfo
+                                    // We don't consider constant fields
+                                    && ilfinfo.LiteralValue.IsNone
+                                    // We don't consider special name fields
+                                    && not ilfinfo.IsSpecialName then
+                                        yield ilfinfo
+                            | _ -> ()
                     |]
                 if fields.Length = 1 then
                     Some (fields[0], isSet)
@@ -1847,7 +1848,8 @@ and RecordMemberConstraintSolution css m trace traitInfo traitConstraintSln =
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
     | TTraitSolvedField (ty, ilfinfo, isSet) ->
-        let sln = ILFieldSln(ty, ilfinfo.TypeInst, ilfinfo.ILFieldRef, isSet)
+        let isStruct = match ilfinfo.ILFieldRef.Type.Boxity with | AsValue -> true | _ -> false
+        let sln = ILFieldSln(ty, ilfinfo.TypeInst, ilfinfo.ILFieldRef, isStruct, ilfinfo.IsStatic, isSet)
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 

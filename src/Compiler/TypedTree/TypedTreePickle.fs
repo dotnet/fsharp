@@ -1401,8 +1401,8 @@ let p_trait_sln sln st =
          p_byte 6 st; p_tup5 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys p_ty (a, b, c, d, e) st
     | FSMethSln(a, b, c, Some d) ->
          p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
-    | ILFieldSln(a, b, c, d) ->
-         p_byte 8 st; p_tup4 p_ty p_tys p_ILFieldRef p_bool (a, b, c, d) st
+    | ILFieldSln(a, b, c, d, e, f) ->
+         p_byte 8 st; p_tup6 p_ty p_tys p_ILFieldRef p_bool p_bool p_bool (a, b, c, d, e, f) st
 
 
 let p_trait (TTrait(a, b, c, d, e, _, f)) st  =
@@ -1433,14 +1433,17 @@ let u_trait_sln st =
         let a, b, c = u_tup3 u_tys u_rfref u_bool st
         FSRecdFieldSln(a, b, c)
     | 5 ->
-         let a, b, c = u_tup3 u_anonInfo u_tys u_int st
-         FSAnonRecdFieldSln(a, b, c)
+        let a, b, c = u_tup3 u_anonInfo u_tys u_int st
+        FSAnonRecdFieldSln(a, b, c)
     | 6 ->
         let a, b, c, d, e = u_tup5 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys u_ty st
         ILMethSln(a, b, c, d, Some e)
     | 7 ->
         let a, b, c, d = u_tup4 u_ty u_vref u_tys u_ty st
         FSMethSln(a, b, c, Some d)
+    | 8 ->
+        let a, b, c, d, e, f = u_tup6 u_ty u_tys u_ILFieldRef u_bool u_bool u_bool st
+        ILFieldSln(a, b, c, d, e, f)
     | _ -> ufailwith st "u_trait_sln"
 
 let u_trait st =
