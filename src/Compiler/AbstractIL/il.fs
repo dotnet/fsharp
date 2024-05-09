@@ -103,7 +103,8 @@ let splitNamespace nm =
 let memoizeNamespaceArrayTable = ConcurrentDictionary<string, string[]>()
 
 // Cache this as a delegate.
-let splitNamespaceToArrayDelegate = Func<string, string array>(splitNamespace >> Array.ofList)
+let splitNamespaceToArrayDelegate =
+    Func<string, string array>(splitNamespace >> Array.ofList)
 
 let splitNamespaceToArray nm =
     memoizeNamespaceArrayTable.GetOrAdd(nm, splitNamespaceToArrayDelegate)
@@ -158,7 +159,8 @@ let splitTypeNameRightAux (nm: string) =
         Some s1, s2
 
 // Cache this as a delegate.
-let splitTypeNameRightAuxDelegate = Func<string, string option * string> splitTypeNameRightAux
+let splitTypeNameRightAuxDelegate =
+    Func<string, string option * string> splitTypeNameRightAux
 
 let splitTypeNameRight nm =
     memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAuxDelegate)

@@ -393,20 +393,20 @@ let compileCustomOpName =
     let compiledOperatorsAddDelegate =
         Func<string, string>(fun (op: string) ->
             let opLength = op.Length
-    
+
             let sb =
                 StringBuilder(opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
-    
+
             for i = 0 to opLength - 1 do
                 let c = op[i]
-    
+
                 match t2.TryGetValue c with
                 | true, x -> sb.Append(x) |> ignore
                 | false, _ -> sb.Append(c) |> ignore
-    
+
             /// The compiled (mangled) operator name.
             let opName = sb.ToString()
-    
+
             // Cache the compiled name so it can be reused.
             opName)
 
