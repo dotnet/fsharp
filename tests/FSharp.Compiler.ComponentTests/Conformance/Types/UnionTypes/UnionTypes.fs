@@ -721,3 +721,33 @@ type U =
         |> shouldFail
         |>  withSingleDiagnostic (Error 912, Line 4, Col 3, Line 4, Col 28, "This declaration element is not permitted in an augmentation")
         
+        
+    [<Fact>]
+    let ``Error when property has same name as DU case`` () =
+        Fsx """
+type MyId =
+    | IdA of int
+    | IdB of string
+    | IdC of float
+
+    member this.IdA =
+        match this with
+        | IdA x -> Some x
+        | _ -> None
+        
+    member this.IdX =
+        match this with
+        | IdB x -> Some x
+        | _ -> None
+
+    member this.IdC =
+        match this with
+        | IdC x -> Some x
+        | _ -> None
+       """
+        |> typecheck 
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 23, Line 7, Col 17, Line 7, Col 20, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module")
+            (Error 23, Line 17, Col 17, Line 17, Col 20, "The member 'IdC' can not be defined because the name 'IdC' clashes with the union case 'IdC' in this type or module")
+        ]
