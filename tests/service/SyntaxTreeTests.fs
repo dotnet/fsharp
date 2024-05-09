@@ -153,6 +153,8 @@ let parseSourceCode (name: string, code: string) =
 /// Assuming your current directory is tests/FSharp.Compiler.Service.Tests
 [<TestCaseSource(nameof allTestCases)>]
 let ParseFile fileName =
+    Assert.True(false)
+
     let fullPath = Path.Combine(testCasesDir, fileName)
     let contents = File.ReadAllText fullPath
     let ast, diagnostics = parseSourceCode (fileName, contents)
