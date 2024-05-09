@@ -102,42 +102,42 @@ module ForLoop =
 
     // SOURCE=NoIEnumerable01.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd NoIEnumerable01.dll"            # NoIEnumerable01.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"NoIEnumerable01.fsx"|])>]
-    let ``NoIEnumerable01_fs_RealInternalSignatureOffx`` compilation =
+    let ``NoIEnumerable01_fsx_RealInternalSignatureOff`` compilation =
         compilation
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
     // SOURCE=NoIEnumerable01.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd NoIEnumerable01.dll"            # NoIEnumerable01.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"NoIEnumerable01.fsx"|])>]
-    let ``NoIEnumerable01_fs_RealInternalSignatureOnx`` compilation =
+    let ``NoIEnumerable01_fsx_RealInternalSignatureOn`` compilation =
         compilation
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
     // SOURCE=NoIEnumerable02.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd NoIEnumerable02.dll"            # NoIEnumerable02.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"NoIEnumerable02.fsx"|])>]
-    let ``NoIEnumerable02_fs_RealInternalSignatureOffx`` compilation =
+    let ``NoIEnumerable02_fsx_RealInternalSignatureOff`` compilation =
         compilation
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
     // SOURCE=NoIEnumerable02.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd NoIEnumerable02.dll"            # NoIEnumerable02.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"NoIEnumerable02.fsx"|])>]
-    let ``NoIEnumerable02_fs_RealInternalSignatureOnx`` compilation =
+    let ``NoIEnumerable02_fsx_RealInternalSignatureOn`` compilation =
         compilation
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
     // SOURCE=NoIEnumerable03.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd NoIEnumerable03.dll"            # NoIEnumerable03.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"NoIEnumerable03.fsx"|])>]
-    let ``NoIEnumerable03_fs_RealInternalSignatureOffx`` compilation =
+    let ``NoIEnumerable03_fsx_RealInternalSignatureOff`` compilation =
         compilation
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
     // SOURCE=NoIEnumerable03.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd NoIEnumerable03.dll"            # NoIEnumerable03.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"NoIEnumerable03.fsx"|])>]
-    let ``NoIEnumerable03_fs_RealInternalSignatureOnx`` compilation =
+    let ``NoIEnumerable03_fsx_RealInternalSignatureOn`` compilation =
         compilation
         |> withRealInternalSignatureOn
         |> verifyCompilation
