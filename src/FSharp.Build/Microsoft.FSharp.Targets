@@ -235,7 +235,7 @@ this file.
         </FSharpEmbedResXSource>
 
         <ItemGroup>
-            <CompileBefore Include="@(_FsGeneratedResXSource)" />
+            <Compile Include="@(_FsGeneratedResXSource)" CompileOrder="CompileBefore" />
             <FsGeneratedSource Include="@(_FsGeneratedResXSource)" />
             <FileWrites Include="@(_FsGeneratedResXSource)" />
         </ItemGroup>
@@ -247,12 +247,33 @@ this file.
         </FSharpEmbedResourceText>
 
         <ItemGroup>
-            <CompileBefore Include="@(_FsGeneratedTxtSource)" />
+            <Compile Include="@(_FsGeneratedTxtSource)" CompileOrder="CompileBefore" />
             <FsGeneratedSource Include="@(_FsGeneratedTxtSource)" />
             <EmbeddedResource Include="@(_FsGeneratedResx)" />
             <FileWrites Include="@(_FsGeneratedTxtSource)" />
             <FileWrites Include="@(_FsGeneratedResx)" />
         </ItemGroup>
+    </Target>
+
+    <Target Name="FSharpSourceCodeCompileOrder">
+        <!-- implement <CompileOrder>CompileBefore</CompileOrder> -->
+        <ItemGroup>
+            <__Sources Remove="@(__Sources)" />
+            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileFirst'))" />
+            <__Sources Include="@(CompileBefore)" />
+            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileBefore'))" />
+            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', ''))" />
+            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileAfter'))" />
+            <__Sources Include="@(CompileAfter)" />
+            <__Sources Include="@(Compile->WithMetadataValue('CompileOrder', 'CompileLast'))" />
+        </ItemGroup>
+        <ItemGroup>
+            <Compile Remove="@(Compile)" />
+            <CompileBefore Remove="@(CompileBefore)" />
+            <CompileAfter Remove="@(CompileAfter)" />
+            <Compile Include="@(__Sources)" />
+        </ItemGroup>
+        <Message Importance="low" Text="FSharpSourceCodeCompileOrder:Sources: '@(__Sources)'" />
     </Target>
 
     <Target
@@ -284,7 +305,7 @@ this file.
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
         Returns="@(FscCommandLineArgs)"
-        DependsOnTargets="$(CoreCompileDependsOn)"
+        DependsOnTargets="$(CoreCompileDependsOn);FSharpSourceCodeCompileOrder"
     >
 
         <Error
@@ -320,6 +341,7 @@ this file.
             <EmbeddedFiles Include="@(Embed)" KeepDuplicates="false" />
             <EmbeddedFiles Include="@(FsGeneratedSource)"  KeepDuplicates="false" Condition="'$(SourceLink)'!='' or '$(EmbeddedFiles)'!='' or '$(EmbedAllSources)'!=''" />
         </ItemGroup>
+
 
         <!-- Dotnet SDK requires SimpleResolution to be true Legacy project system build not -->
         <PropertyGroup>
@@ -365,13 +387,14 @@ this file.
               PreferredUILang="$(PreferredUILang)"
               ProvideCommandLineArgs="$(ProvideCommandLineArgs)"
               PublicSign="$(PublicSign)"
+              RealSig="$(RealSig)"
               References="@(ReferencePathWithRefAssemblies)"
               ReferencePath="$(ReferencePathWithRefAssemblies)"
               RefOnly="$(ProduceOnlyReferenceAssembly)"
               Resources="@(ActualEmbeddedResources)"
               SkipCompilerExecution="$(SkipCompilerExecution)"
               SourceLink="$(SourceLink)"
-              Sources="@(CompileBefore);@(Compile);@(CompileAfter)"
+              Sources="@(Compile)"
               SubsystemVersion="$(SubsystemVersion)"
               Tailcalls="$(Tailcalls)"
               TargetType="$(OutputType)"
@@ -434,7 +457,7 @@ this file.
             Overwrite="true"/>
 
         <ItemGroup Condition="'$(AdditionalSourcesText)' != ''">
-            <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" />
+            <Compile Include="$(TargetFrameworkMonikerAssemblyAttributesPath)"><CompileOrder>CompileBefore</CompileOrder></Compile>
             <_FsGeneratedTfmAttributesSource Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" />
         </ItemGroup>
     </Target>

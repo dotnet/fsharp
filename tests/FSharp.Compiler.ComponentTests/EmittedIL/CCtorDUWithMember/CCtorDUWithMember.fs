@@ -80,3 +80,69 @@ module CCtorDUWithMember =
         |> asFs
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "CCtorDUWithMember04.fs"))
         |> verifyCompilation 
+
+    let withRealInternalSignature realSig compilation =
+        compilation
+        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``public - DU internal case specified in fsi file`` (realSig) =
+        Fsi """
+namespace RealInternalSignature
+
+[<StructuralEquality; StructuralComparison>]
+type ILArrayShape =
+    internal 
+    | One
+"""
+        |> withAdditionalSourceFile (FsSource ("""
+namespace RealInternalSignature
+
+[<StructuralEquality; StructuralComparison>]
+type ILArrayShape =
+    | One
+        """))
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withRealInternalSignature realSig
+        |> compile
+        |> withILContains [
+            """
+  .method public hidebysig instance bool 
+          Equals(class RealInternalSignature.ILArrayShape obj,
+                 class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+"""
+            ]
+        |> shouldSucceed
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``public - DU internal case specified in fs file`` (realSig) =
+        FSharp """
+namespace RealInternalSignature
+
+[<StructuralEquality; StructuralComparison>]
+type ILArrayShape =
+    internal 
+    | One
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withRealInternalSignature realSig
+        |> compile
+        |> withILContains [
+            """
+  .method public hidebysig instance bool 
+          Equals(class RealInternalSignature.ILArrayShape obj,
+                 class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+"""
+            ]
+        |> shouldSucceed
+
