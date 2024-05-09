@@ -2583,11 +2583,11 @@ typeConstraints:
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 intersectionConstraints:
-  | intersectionConstraints AMP hashConstraint
+  | intersectionConstraints AMP hashConstraint %prec prec_no_more_attr_bindings
       { let constraints, mAmpersands = $1
         ($3 :: constraints), (rhs parseState 2 :: mAmpersands) }
 
-  | intersectionConstraints AMP atomType
+  | intersectionConstraints AMP atomType %prec prec_no_more_attr_bindings
       { let constraints, mAmpersands = $1
         errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), $3.Range))
         ($3 :: constraints), (rhs parseState 2 :: mAmpersands) }
@@ -5997,11 +5997,11 @@ tupleOrQuotTypeElements:
       { [ SynTupleTypeSegment.Type $1 ] }
 
 intersectionType:
-  | typar AMP intersectionConstraints
+  | typar AMP intersectionConstraints %prec prec_no_more_attr_bindings
     { let constraints, mAmpersands = $3
       SynType.Intersection(Some $1, List.rev constraints, lhs parseState, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
-  | hashConstraint AMP intersectionConstraints
+  | hashConstraint AMP intersectionConstraints %prec prec_no_more_attr_bindings
     { let constraints, mAmpersands = $3
       SynType.Intersection(None, $1 :: List.rev constraints, lhs parseState, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
