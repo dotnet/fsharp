@@ -1130,6 +1130,13 @@
       <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
         <source>Access modifiers cannot be applied to an SRTP constraint.</source>
         <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
+        <source>Access modifiers cannot be applied to an SRTP constraint.</source>
+        <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
         <source>This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</source>
         <target state="new">This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</target>
