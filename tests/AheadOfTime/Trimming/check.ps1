@@ -5,7 +5,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
     Set-Location (Join-Path $PSScriptRoot "${root}")
     $build_output = dotnet publish -restore -c release -f:$tfm "${root}.fsproj" -bl:"../../../../artifacts/log/Release/AheadOfTime/Trimming/${root}_${tfm}.binlog"
     Set-Location ${cwd}
-    if (-not ($LASTEXITCODE -eq 0))
+    if ($LASTEXITCODE -ne 0)
     {
         Write-Error "Build failed with exit code ${LASTEXITCODE}"
         Write-Error "${build_output}" -ErrorAction Stop
