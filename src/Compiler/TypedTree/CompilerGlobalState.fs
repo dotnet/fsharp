@@ -22,8 +22,8 @@ type NiceNameGenerator() =
     let basicNameCountsUpdateDelegate = Func<string, int, int>(fun _k count -> count + 1)
    
     member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
-        let count = basicNameCounts.AddOrUpdate(basicName, 0, basicNameCountsUpdateDelegate)
-        let suffix = match count with 0 -> string m.StartLine | n -> string m.StartLine + "-" + string n
+        let count = basicNameCounts.AddOrUpdate(basicName, 1, basicNameCountsUpdateDelegate)
+        let suffix = match count with 1 -> string m.StartLine | n -> string m.StartLine + "-" + string n
         CompilerGeneratedNameSuffix basicName suffix
 
     member this.FreshCompilerGeneratedName (name, m: range) =
