@@ -186,17 +186,15 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       | Some tcrefR -> TType_ucase (UnionCaseRef(tcrefR, n), remapTypesAux tyenv tinst)
       | None -> TType_ucase (UnionCaseRef(tcref, n), remapTypesAux tyenv tinst)
 
-  | TType_anon (anonInfo, l) as ty -> 
-      let tupInfoR = remapTupInfoAux tyenv anonInfo.TupInfo
+  | TType_anon (anonInfo, l) as ty ->
       let lR = remapTypesAux tyenv l
-      if anonInfo.TupInfo === tupInfoR && l === lR then ty else  
-      TType_anon (AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfoR, anonInfo.SortedIds), lR)
+      if l === lR then ty else
+        TType_anon (AnonRecdTypeInfo.Create(anonInfo.Assembly, anonInfo.IsStruct, anonInfo.SortedIds), lR)
 
-  | TType_tuple (tupInfo, l) as ty -> 
-      let tupInfoR = remapTupInfoAux tyenv tupInfo
+  | TType_tuple (isStruct, l) as ty ->
       let lR = remapTypesAux tyenv l
-      if tupInfo === tupInfoR && l === lR then ty else  
-      TType_tuple (tupInfoR, lR)
+      if l === lR then ty else  
+      TType_tuple (isStruct, lR)
 
   | TType_fun (domainTy, rangeTy, flags) as ty -> 
       let domainTyR = remapTypeAux tyenv domainTy
@@ -233,10 +231,6 @@ and remapMeasureAux tyenv unt =
           | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
        | Some ty -> failwithf "incorrect kinds: %A" ty
-
-and remapTupInfoAux _tyenv unt =
-    match unt with
-    | TupInfo.Const _ -> unt
 
 and remapTypesAux tyenv types = List.mapq (remapTypeAux tyenv) types
 and remapTyparConstraintsAux tyenv cs =
@@ -674,22 +668,27 @@ let rec mkCompiledTupleTy g isStruct tupElemTys =
         let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
         TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB], g.knownWithoutNull)
 
+[<Struct>]
+type TupleInfo(isStruct: bool, argTypes: TType list) =
+    member _.IsStruct = isStruct
+    member _.ArgTypes = argTypes
+
 /// Convert from F# tuple types to .NET tuple types, but only the outermost level
-let mkOuterCompiledTupleTy g isStruct tupElemTys = 
-    let n = List.length tupElemTys 
+let mkOuterCompiledTupleTy g (tInfo: TupleInfo) = 
+    let n = List.length tInfo.ArgTypes
     if n < maxTuple then 
-        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, g.knownWithoutNull)
+        TType_app (mkCompiledTupleTyconRef g tInfo.IsStruct n, tInfo.ArgTypes, g.knownWithoutNull)
     else 
-        let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
-        let tcref = (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
+        let tysA, tysB = List.splitAfter goodTupleFields tInfo.ArgTypes
+        let tcref = (if tInfo.IsStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
         // In the case of an 8-tuple we add the Tuple<_> marker. For other sizes we keep the type 
         // as a regular F# tuple type.
         match tysB with 
         | [ tyB ] -> 
-            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB], g.knownWithoutNull)
+            let marker = TType_app (mkCompiledTupleTyconRef g tInfo.IsStruct 1, [tyB], g.knownWithoutNull)
             TType_app (tcref, tysA@[marker], g.knownWithoutNull)
         | _ ->
-            TType_app (tcref, tysA@[TType_tuple (mkTupInfo isStruct, tysB)], g.knownWithoutNull)
+            TType_app (tcref, tysA@[TType_tuple (tInfo.IsStruct, tysB)], g.knownWithoutNull)
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -751,13 +750,6 @@ let rec stripTyEqnsA g canShortcut ty =
 
 let stripTyEqns g ty = stripTyEqnsA g false ty
 
-let evalTupInfoIsStruct aexpr = 
-    match aexpr with 
-    | TupInfo.Const b -> b
-
-let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) = 
-    evalTupInfoIsStruct anonInfo.TupInfo
-
 /// This erases outermost occurrences of inference equations, type abbreviations, non-generated provided types
 /// and measureable types (float<_>).
 /// It also optionally erases all "compilation representations", i.e. function and
@@ -777,8 +769,8 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
     | TType_fun(domainTy, rangeTy, flags) when eraseFuncAndTuple ->
         TType_app(g.fastFunc_tcr, [ domainTy; rangeTy ], flags) 
 
-    | TType_tuple(tupInfo, l) when eraseFuncAndTuple ->
-        mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+    | TType_tuple(isStruct, l) when eraseFuncAndTuple ->
+        mkCompiledTupleTy g (isStruct) l
 
     | ty -> ty
 
@@ -803,11 +795,11 @@ let primDestForallTy g ty = ty |> stripTyEqns g |> (function TType_forall (tyvs,
 
 let destFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (domainTy, rangeTy, _) -> (domainTy, rangeTy) | _ -> failwith "destFunTy: not a function type")
 
-let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) -> tupInfo, l | _ -> failwith "destAnyTupleTy: not a tuple type")
+let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) -> TupleInfo(isStruct, l) | _ -> failwith "destAnyTupleTy: not a tuple type")
 
-let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when not (evalTupInfoIsStruct tupInfo) -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
+let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) when not isStruct -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
 
-let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when evalTupInfoIsStruct tupInfo -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
+let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, l) when isStruct -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
 
 let destTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> v | _ -> failwith "destTyparTy: not a typar type")
 
@@ -825,13 +817,13 @@ let isForallTy g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | 
 
 let isAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> true | _ -> false)
 
-let isRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, _) -> not (evalTupInfoIsStruct tupInfo) | _ -> false)
+let isRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, _) -> not isStruct | _ -> false)
 
-let isStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, _) -> evalTupInfoIsStruct tupInfo | _ -> false)
+let isStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (isStruct, _) -> isStruct | _ -> false)
 
 let isAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | _ -> false)
 
-let isStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, _) -> evalAnonInfoIsStruct anonInfo | _ -> false)
+let isStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonRecTyInfo, _) -> anonRecTyInfo.IsStruct | _ -> false)
 
 let isUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsUnionTycon | _ -> false)
 
@@ -883,7 +875,7 @@ let tryAnyParTyOption g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -
 
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> Some (tcref, tinst) | _ -> None) 
 
-let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo, tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
+let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(isStruct, tys) when not isStruct -> Some tys | _ -> None)
 
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(domainTy, rangeTy, _) -> Some (domainTy, rangeTy) | _ -> None)
 
@@ -911,8 +903,8 @@ let rangeOfFunTy g ty = snd (destFunTy g ty)
 
 let convertToTypeWithMetadataIfPossible g ty = 
     if isAnyTupleTy g ty then 
-        let tupInfo, tupElemTys = destAnyTupleTy g ty
-        mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
+        let tInfo = destAnyTupleTy g ty
+        mkOuterCompiledTupleTy g tInfo
     elif isFunTy g ty then 
         let a,b = destFunTy g ty
         mkAppTy g.fastFunc_tcr [a; b]
@@ -1054,8 +1046,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         tcrefAEquiv g aenv tcref1 tcref2 &&
         typesAEquivAux erasureFlag g aenv tinst1 tinst2
 
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) -> 
-        structnessAEquiv tupInfo1 tupInfo2 && typesAEquivAux erasureFlag g aenv l1 l2
+    | TType_tuple (isStruct1, l1), TType_tuple (isStruct2, l2) -> 
+        isStruct1 = isStruct2 && typesAEquivAux erasureFlag g aenv l1 l2
 
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2) -> 
         anonInfoEquiv anonInfo1 anonInfo2 &&
@@ -1073,12 +1065,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
 
 and anonInfoEquiv (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =
     ccuEq anonInfo1.Assembly anonInfo2.Assembly && 
-    structnessAEquiv anonInfo1.TupInfo anonInfo2.TupInfo && 
+    anonInfo1.IsStruct = anonInfo2.IsStruct && 
     anonInfo1.SortedNames = anonInfo2.SortedNames 
-
-and structnessAEquiv un1 un2 =
-    match un1, un2 with 
-    | TupInfo.Const b1, TupInfo.Const b2 -> (b1 = b2)
 
 and measureAEquiv g aenv un1 un2 =
     let vars1 = ListMeasureVarOccs un1
@@ -1241,9 +1229,9 @@ let (|DebugPoints|) expr =
 
 let mkCase (a, b) = TCase(a, b)
 
-let isRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, _, _) -> not (evalTupInfoIsStruct tupInfo) | _ -> false
+let isRefTupleExpr e = match e with Expr.Op (TOp.Tuple isStruct, _, _, _) -> not isStruct | _ -> false
 
-let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, es, _) when not (evalTupInfoIsStruct tupInfo) -> es | _ -> [e]
+let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple false, _, es, _) -> es | _ -> [e]
 
 //---------------------------------------------------------------------------
 // Build nodes in decision graphs
@@ -1436,8 +1424,8 @@ let mkUnionCaseExpr(uc, tinst, args, m) =
 let mkExnExpr(uc, args, m) =
     Expr.Op (TOp.ExnConstr uc, [], args, m)
 
-let mkTupleFieldGetViaExprAddr(tupInfo, e, tinst, i, m) =
-    Expr.Op (TOp.TupleFieldGet (tupInfo, i), tinst, [e], m)
+let mkTupleFieldGetViaExprAddr(isStruct, e, tinst, i, m) =
+    Expr.Op (TOp.TupleFieldGet (isStruct, i), tinst, [e], m)
 
 let mkAnonRecdFieldGetViaExprAddr(anonInfo, e, tinst, i, m) =
     Expr.Op (TOp.AnonRecdGet (anonInfo, i), tinst, [e], m)
@@ -1702,7 +1690,7 @@ let rec stripFunTyN g n ty =
     else [], ty
         
 let tryDestAnyTupleTy g ty = 
-    if isAnyTupleTy g ty then destAnyTupleTy g ty else tupInfoRef, [ty]
+    if isAnyTupleTy g ty then destAnyTupleTy g ty else TupleInfo(false, [ty])
 
 let tryDestRefTupleTy g ty = 
     if isRefTupleTy g ty then destRefTupleTy g ty else [ty]
@@ -2335,11 +2323,10 @@ and accFreeTyparRef opts (tp: Typar) acc =
 
 and accFreeInType opts ty acc = 
     match stripTyparEqns ty with 
-    | TType_tuple (tupInfo, l) ->
-        accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
+    | TType_tuple _ -> acc
 
-    | TType_anon (anonInfo, l) ->
-        accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
+    | TType_anon (_, l) ->
+        accFreeInTypes opts l acc
 
     | TType_app (tcref, tinst, _) -> 
         let acc = accFreeTycon opts tcref acc
@@ -2362,9 +2349,7 @@ and accFreeInType opts ty acc =
 
     | TType_measure unt -> accFreeInMeasure opts unt acc
 
-and accFreeInTupInfo _opts unt acc = 
-    match unt with 
-    | TupInfo.Const _ -> acc
+and accFreeInTupInfo _opts _ acc = acc
 and accFreeInMeasure opts unt acc = List.foldBack (fun (tp, _) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 and accFreeInTypes opts tys acc = 
     match tys with 
@@ -2444,12 +2429,10 @@ and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp: Typar) =
 
 and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty = 
     match (if thruFlag then stripTyEqns g ty else stripTyparEqns ty) with 
-    | TType_anon (anonInfo, anonTys) ->
-        let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc anonInfo.TupInfo 
+    | TType_anon (_anonInfo, anonTys) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc anonTys 
 
-    | TType_tuple (tupInfo, tupTys) -> 
-        let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
+    | TType_tuple (_isStruct, tupTys) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc tupTys 
 
     | TType_app (_, tinst, _) ->
@@ -2472,10 +2455,6 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty =
     | TType_measure unt -> 
         let mvars = ListMeasureVarOccsWithNonZeroExponents unt
         List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
-
-and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt = 
-    match unt with 
-    | TupInfo.Const _ -> acc
 
 and accFreeInTypesLeftToRight g cxFlag thruFlag acc tys = 
     match tys with 
@@ -3987,7 +3966,7 @@ module DebugPrint =
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
 
-        | TType_tuple (_tupInfo, tys) ->
+        | TType_tuple (_isStruct, tys) ->
             sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
 
         | TType_fun (domainTy, rangeTy, _) ->
@@ -5372,12 +5351,12 @@ and accFreeInOp opts op acc =
     | TOp.Goto _ | TOp.Label _ | TOp.Return 
     | TOp.TupleFieldGet _ -> acc
 
-    | TOp.Tuple tupInfo -> 
-        accFreeTyvars opts accFreeInTupInfo tupInfo acc
+    | TOp.Tuple isStruct -> 
+        accFreeTyvars opts accFreeInTupInfo isStruct acc
 
     | TOp.AnonRecd anonInfo 
     | TOp.AnonRecdGet (anonInfo, _) -> 
-        accFreeTyvars opts accFreeInTupInfo anonInfo.TupInfo acc
+        accFreeTyvars opts accFreeInTupInfo anonInfo.IsStruct acc
     
     | TOp.UnionCaseTagGet tcref -> 
         accUsedRecdOrUnionTyconRepr opts tcref.Deref acc
@@ -6530,16 +6509,16 @@ let mkQuotedExprTy (g: TcGlobals) ty = TType_app(g.expr_tcr, [ty], g.knownWithou
 
 let mkRawQuotedExprTy (g: TcGlobals) = TType_app(g.raw_expr_tcr, [], g.knownWithoutNull)
 
-let mkAnyTupledTy (g: TcGlobals) tupInfo tys = 
-    match tys with 
-    | [] -> g.unit_ty 
+let mkAnyTupledTy (g: TcGlobals) (isStruct: bool) tys =
+    match tys with
+    | [] -> g.unit_ty
     | [h] -> h
-    | _ -> TType_tuple(tupInfo, tys)
+    | _ -> TType_tuple(isStruct, tys)
 
-let mkAnyAnonRecdTy (_g: TcGlobals) anonInfo tys = 
+let mkAnyAnonRecdTy (_g: TcGlobals) anonInfo tys =
     TType_anon(anonInfo, tys)
 
-let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
+let mkRefTupledTy g tys = mkAnyTupledTy g false tys
 
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
@@ -6603,7 +6582,7 @@ let rec tyOfExpr g expr =
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
         | TOp.AnonRecdGet (_, i) -> List.item i tinst
         | TOp.TupleFieldGet (_, i) -> List.item i tinst
-        | TOp.Tuple tupInfo -> mkAnyTupledTy g tupInfo tinst
+        | TOp.Tuple isStruct -> mkAnyTupledTy g isStruct tinst
         | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
         | TOp.IntegerForLoop _ | TOp.While _ -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
@@ -7127,12 +7106,12 @@ let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e a
     | None -> id, addre, readonly, writeonly
     | Some (tmp, rval) -> (fun x -> mkCompGenLet m tmp rval x), addre, readonly, writeonly
 
-let mkTupleFieldGet g (tupInfo, e, tinst, i, m) = 
-    let wrap, eR, _readonly, _writeonly = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
-    wrap (mkTupleFieldGetViaExprAddr(tupInfo, eR, tinst, i, m))
+let mkTupleFieldGet g (isStruct, e, tinst, i, m) = 
+    let wrap, eR, _readonly, _writeonly = mkExprAddrOfExpr g isStruct false NeverMutates e None m
+    wrap (mkTupleFieldGetViaExprAddr(isStruct, eR, tinst, i, m))
 
 let mkAnonRecdFieldGet g (anonInfo: AnonRecdTypeInfo, e, tinst, i, m) = 
-    let wrap, eR, _readonly, _writeonly = mkExprAddrOfExpr g (evalAnonInfoIsStruct anonInfo) false NeverMutates e None m
+    let wrap, eR, _readonly, _writeonly = mkExprAddrOfExpr g anonInfo.IsStruct false NeverMutates e None m
     wrap (mkAnonRecdFieldGetViaExprAddr(anonInfo, eR, tinst, i, m))
 
 let mkRecdFieldGet g (e, fref: RecdFieldRef, tinst, m) = 
@@ -7171,10 +7150,10 @@ let rec IterateRecursiveFixups g (selfv: Val option) rvs (access: Expr, set) exp
     let exprToFix = stripExpr exprToFix
     match exprToFix with 
     | Expr.Const _ -> ()
-    | Expr.Op (TOp.Tuple tupInfo, argTys, args, m) when not (evalTupInfoIsStruct tupInfo) ->
+    | Expr.Op (TOp.Tuple isStruct, argTys, args, m) when not isStruct ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
-            (mkTupleFieldGet g (tupInfo, access, argTys, n, m), 
+            (mkTupleFieldGet g (isStruct, access, argTys, n, m), 
             (fun e -> 
               // NICE: it would be better to do this check in the type checker 
               errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeInConstructionOfTuple(), m))
@@ -7513,13 +7492,13 @@ let mkGetArg0 m ty = mkAsmExpr ( [ mkLdarg0 ], [], [], [ty], m)
 // Tuples...
 //------------------------------------------------------------------------- 
  
-let mkAnyTupled g m tupInfo es tys = 
+let mkAnyTupled g m isStruct es tys = 
     match es with 
     | [] -> mkUnit g m 
     | [e] -> e
-    | _ -> Expr.Op (TOp.Tuple tupInfo, tys, es, m)
+    | _ -> Expr.Op (TOp.Tuple isStruct, tys, es, m)
 
-let mkRefTupled g m es tys = mkAnyTupled g m tupInfoRef es tys
+let mkRefTupled g m es tys = mkAnyTupled g m false es tys
 
 let mkRefTupledNoTypes g m args = mkRefTupled g m args (List.map (tyOfExpr g) args)
 
@@ -8184,7 +8163,7 @@ let untupledToRefTupled g vs =
     let untupledTys = typesOfVals vs
     let m = (List.head vs).Range
     let tupledv, tuplede = mkCompGenLocal m "tupledArg" (mkRefTupledTy g untupledTys)
-    let untupling_es = List.mapi (fun i _ -> mkTupleFieldGet g (tupInfoRef, tuplede, untupledTys, i, m)) untupledTys
+    let untupling_es = List.mapi (fun i _ -> mkTupleFieldGet g (false, tuplede, untupledTys, i, m)) untupledTys
     // These are non-sticky - at the caller,any sequence point for 'body' goes on 'body' _after_ the binding has been made
     tupledv, mkInvisibleLets m vs untupling_es 
     
@@ -8212,17 +8191,17 @@ let AdjustArityOfLambdaBody g arity (vs: Val list) body =
         let tupledv, untupler = untupledToRefTupled g vs
         [tupledv], untupler body
 
-let MultiLambdaToTupledLambda g vs body = 
-    match vs with 
+let MultiLambdaToTupledLambda g vs body =
+    match vs with
     | [] -> failwith "MultiLambdaToTupledLambda: expected some arguments"
-    | [v] -> v, body 
-    | vs -> 
+    | [v] -> v, body
+    | vs ->
         let tupledv, untupler = untupledToRefTupled g vs
-        tupledv, untupler body 
+        tupledv, untupler body
 
-let (|RefTuple|_|) expr = 
+let (|RefTuple|_|) expr =
     match expr with
-    | Expr.Op (TOp.Tuple (TupInfo.Const false), _, args, _) -> Some args
+    | Expr.Op (TOp.Tuple false, _, args, _) -> Some args
     | _ -> None
 
 let MultiLambdaToTupledLambdaIfNeeded g (vs, arg) body = 
@@ -8506,7 +8485,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             
                 mkRefTupled g appm 
                    ((actualTys, argTys) ||> List.mapi2 (fun i actualTy dummyTy ->  
-                       let argExprElement = mkTupleFieldGet g (tupInfoRef, tupleVar, argTys, i, appm)
+                       let argExprElement = mkTupleFieldGet g (false, tupleVar, argTys, i, appm)
                        mkCoerceIfNeeded g actualTy dummyTy argExprElement))
                    actualTys
 
@@ -8736,7 +8715,7 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
         match tys with 
         | [] -> failwith "itemsProj: no items?"
         | [_] -> x (* no projection needed *)
-        | tys -> Expr.Op (TOp.TupleFieldGet (tupInfoRef, i), tys, [x], m)
+        | tys -> Expr.Op (TOp.TupleFieldGet (false, i), tys, [x], m)
     let isThrowingTarget = function TTarget(_, x, _) -> isThrow x
     if 1 + List.count isThrowingTarget targetsL = targetsL.Length then
         // Have failing targets and ONE successful one, so linearize
@@ -8837,8 +8816,8 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
     | TType_anon (anonInfo, tinst) -> 
         sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)
 
-    | TType_tuple (tupInfo, tys) -> 
-        if evalTupInfoIsStruct tupInfo then 
+    | TType_tuple (isStruct, tys) -> 
+        if isStruct then 
             sprintf "System.ValueTuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
         else 
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
@@ -9072,8 +9051,8 @@ let rec TypeHasDefaultValue g m ty =
 /// a set of residual types that must also satisfy the constraint
 let (|SpecialComparableHeadType|_|) g ty =           
     if isAnyTupleTy g ty then 
-        let _tupInfo, elemTys = destAnyTupleTy g ty
-        Some elemTys 
+        let tInfo = destAnyTupleTy g ty
+        Some tInfo.ArgTypes 
     elif isAnonRecdTy g ty then 
         match tryDestAnonRecdTy g ty with
         | ValueNone -> Some []
@@ -10080,12 +10059,12 @@ let rec mkCompiledTuple g isStruct (argTys, args, m) =
                     ty8, arg8
                 | _ ->
                     let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [ty8], g.knownWithoutNull)
-                    let v8enc = Expr.Op (TOp.Tuple (mkTupInfo isStruct), [ty8], [arg8], m) 
+                    let v8enc = Expr.Op (TOp.Tuple isStruct, [ty8], [arg8], m) 
                     ty8enc, v8enc
             | _ -> 
                 let a, b, c, d = mkCompiledTuple g isStruct (argTysB, argsB, m)
                 let ty8plus = TType_app(a, b, g.knownWithoutNull)
-                let v8plus = Expr.Op (TOp.Tuple (mkTupInfo isStruct), b, c, d)
+                let v8plus = Expr.Op (TOp.Tuple isStruct, b, c, d)
                 ty8plus, v8plus
         let argTysAB = argTysA @ [ty8] 
         (mkCompiledTupleTyconRef g isStruct (List.length argTysAB), argTysAB, argsA @ [v8], m)

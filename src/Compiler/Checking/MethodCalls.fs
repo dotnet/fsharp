@@ -1875,8 +1875,8 @@ module ProvidedMethodCalls =
                 let exprTy =
                     let t = tyOfExpr g inpR
                     stripTyEqnsWrtErasure EraseMeasures g t
-                let tupInfo, tysT = tryDestAnyTupleTy g exprTy
-                let exprR = mkTupleFieldGet g (tupInfo, inpR, tysT, n.PUntaint(id, m), m)
+                let tInfo = tryDestAnyTupleTy g exprTy
+                let exprR = mkTupleFieldGet g (tInfo.IsStruct, inpR, tInfo.ArgTypes, n.PUntaint(id, m), m)
                 None, (exprR, tyOfExpr g exprR)
             | ProvidedLambdaExpr (v, b) ->
                 let v, b = exprType.PApply2((fun _ -> (v, b)), m)
@@ -2204,9 +2204,8 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         | _ -> None 
 
-    | Choice3Of5 (anonInfo, tinst, i) -> 
-        let tupInfo = anonInfo.TupInfo
-        if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs[0]) then 
+    | Choice3Of5 (anonInfo, tinst, i) ->
+        if anonInfo.IsStruct && isByrefTy g (tyOfExpr g argExprs[0]) then 
             Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
         else 
             Some (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))

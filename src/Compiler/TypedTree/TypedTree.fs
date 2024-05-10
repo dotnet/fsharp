@@ -4300,7 +4300,7 @@ type TType =
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
 
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
-    | TType_tuple of tupInfo: TupInfo * elementTypes: TTypes
+    | TType_tuple of isStruct: bool * elementTypes: TTypes
 
     /// Indicates the type is a function type.
     ///
@@ -4342,15 +4342,10 @@ type TType =
         match x with 
         | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
         | TType_app (tcref, tinst, _) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_tuple (tupInfo, tinst) -> 
-            (match tupInfo with 
-             | TupInfo.Const false -> ""
-             | TupInfo.Const true -> "struct ")
-             + String.concat "," (List.map string tinst) 
+        | TType_tuple (isStruct, tinst) -> 
+            if isStruct then "struct " else "" + "(" + String.concat "," (List.map string tinst) + ")"
         | TType_anon (anonInfo, tinst) -> 
-            (match anonInfo.TupInfo with 
-             | TupInfo.Const false -> ""
-             | TupInfo.Const true -> "struct ")
+            (if anonInfo.IsStruct then "struct " else "")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + "|}"
         | TType_fun (domainTy, retTy, _) -> "(" + string domainTy + " -> " + string retTy + ")"
         | TType_ucase (uc, tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
@@ -4371,7 +4366,7 @@ type AnonRecdTypeInfo =
       // Mutability for pickling/unpickling only
       mutable Assembly: CcuThunk 
 
-      mutable TupInfo: TupInfo
+      mutable IsStruct: bool
 
       mutable SortedIds: Ident[]
 
@@ -4383,7 +4378,7 @@ type AnonRecdTypeInfo =
     }
 
     /// Create an AnonRecdTypeInfo from the basic data
-    static member Create(ccu: CcuThunk, tupInfo, ids: Ident[]) = 
+    static member Create(ccu: CcuThunk, isStruct: bool, ids: Ident[]) = 
         let sortedIds = ids |> Array.sortBy (fun id -> id.idText)
 
         // Hash all the data to form a unique stamp.
@@ -4392,8 +4387,7 @@ type AnonRecdTypeInfo =
         let stamp =
             sha1HashInt64
                 [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
-                   match tupInfo with 
-                   | TupInfo.Const b -> yield (if b then 0uy else 1uy)
+                   yield (if isStruct then 0uy else 1uy)
                    for id in sortedIds do 
                        for c in id.idText do yield byte c; yield byte (int32 c >>> 8)
                        yield 0uy |]
@@ -4409,16 +4403,16 @@ type AnonRecdTypeInfo =
                        for c in id.idText do yield byte c; yield byte (int32 c >>> 8) |]
 
         let sortedNames = Array.map textOfId sortedIds
-        { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames; IlTypeName = ilName }
+        { Assembly = ccu; IsStruct = isStruct; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames; IlTypeName = ilName }
 
     /// Get the ILTypeRef for the generated type implied by the anonymous type
     member x.ILTypeRef = 
-        let ilTypeName = sprintf "<>f__AnonymousType%s%u`%d" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.IlTypeName) x.SortedIds.Length
+        let ilTypeName = sprintf "<>f__AnonymousType%s%u`%d" (if x.IsStruct then "1000" else "") (uint32 x.IlTypeName) x.SortedIds.Length
         mkILTyRef(x.Assembly.ILScopeRef, ilTypeName)
 
     static member NewUnlinked() : AnonRecdTypeInfo = 
         { Assembly = Unchecked.defaultof<_>
-          TupInfo = Unchecked.defaultof<_>
+          IsStruct = Unchecked.defaultof<_>
           SortedIds = Unchecked.defaultof<_>
           Stamp = Unchecked.defaultof<_>
           SortedNames = Unchecked.defaultof<_>
@@ -4427,7 +4421,7 @@ type AnonRecdTypeInfo =
     member x.Link d = 
         let sortedNames = Array.map textOfId d.SortedIds
         x.Assembly <- d.Assembly
-        x.TupInfo <- d.TupInfo
+        x.IsStruct <- d.IsStruct
         x.SortedIds <- d.SortedIds
         x.Stamp <- d.Stamp
         x.SortedNames <- sortedNames
@@ -4438,11 +4432,6 @@ type AnonRecdTypeInfo =
     member x.DisplayNameCoreByIdx idx = x.SortedNames[idx]
 
     member x.DisplayNameByIdx idx = x.SortedNames[idx] |> ConvertLogicalNameToDisplayName
-
-[<RequireQualifiedAccess>] 
-type TupInfo = 
-    /// Some constant, e.g. true or false for tupInfo
-    | Const of bool
 
 /// Represents a unit of measure in the typed AST
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -5062,7 +5051,7 @@ type TOp =
     | ExnConstr of TyconRef
 
     /// An operation representing the creation of a tuple value
-    | Tuple of TupInfo 
+    | Tuple of isStruct: bool
 
     /// An operation representing the creation of an anonymous record
     | AnonRecd of AnonRecdTypeInfo
@@ -5129,7 +5118,7 @@ type TOp =
     | ExnFieldSet of TyconRef * int 
 
     /// An operation representing a field-get from an F# tuple value.
-    | TupleFieldGet of TupInfo * int 
+    | TupleFieldGet of isStruct:bool * int 
 
     /// IL assembly code - type list are the types pushed on the stack 
     | ILAsm of 

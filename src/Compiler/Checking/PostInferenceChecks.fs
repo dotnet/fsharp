@@ -1486,7 +1486,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
             else
                 CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes
 
-    | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->
+    | TOp.Tuple tupInfo, _, _ when not isStruct ->
         match ctxt with
         | PermitByRefExpr.YesTupleOfArgs nArity ->
             if cenv.reportErrors then

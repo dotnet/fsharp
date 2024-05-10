@@ -634,26 +634,26 @@ type TcGlobals(
 
                     yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
 
-  let tryDecodeTupleTy tupInfo l =
+  let tryDecodeTupleTy isStruct l =
       match l with
       | [t1;t2;t3;t4;t5;t6;t7;markerTy] ->
           match markerTy with
           | TType_app(tcref, [t8], _) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_app(tcref, [t8], _) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
-          | TType_tuple (_structness2, t8plus) -> TType_tuple (tupInfo, [t1;t2;t3;t4;t5;t6;t7] @ t8plus) |> Some
+          | TType_tuple (_structness2, t8plus) -> TType_tuple (isStruct, [t1;t2;t3;t4;t5;t6;t7] @ t8plus) |> Some
           | _ -> None
       | [] -> None
       | [_] -> None
-      | _ -> TType_tuple (tupInfo, l)  |> Some
+      | _ -> TType_tuple (isStruct, l)  |> Some
 
 
-  let decodeTupleTy tupInfo l =
-      match tryDecodeTupleTy tupInfo l with
+  let decodeTupleTy isStruct l =
+      match tryDecodeTupleTy isStruct l with
       | Some ty -> ty
       | None -> failwith "couldn't decode tuple ty"
 
-  let decodeTupleTyIfPossible tcref tupInfo l =
-      match tryDecodeTupleTy tupInfo l with
+  let decodeTupleTyIfPossible tcref isStruct l =
+      match tryDecodeTupleTy isStruct l with
       | Some ty -> ty
       | None -> TType_app(tcref, l, v_knownWithoutNull)
 
@@ -688,19 +688,19 @@ type TcGlobals(
   let v_enumOfValue_info                     = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,          "EnumOfValue"                          , None                 , None          , [vara; varb],     ([[varaTy]], varbTy))
 
   let v_generic_comparison_withc_outer_info = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,           "GenericComparisonWithComparer"        , None                 , None          , [vara],     mk_compare_withc_sig  varaTy)
-  let v_generic_hash_withc_tuple2_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple2"                                   , None                 , None          , [vara;varb],               mk_hash_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy]))
-  let v_generic_hash_withc_tuple3_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple3"                                   , None                 , None          , [vara;varb;varc],          mk_hash_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy]))
-  let v_generic_hash_withc_tuple4_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple4"                                   , None                 , None          , [vara;varb;varc;vard],     mk_hash_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy; vardTy]))
-  let v_generic_hash_withc_tuple5_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple5"                                   , None                 , None          , [vara;varb;varc;vard;vare], mk_hash_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy; vardTy; vareTy]))
-  let v_generic_equals_withc_tuple2_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastEqualsTuple2"                               , None                 , None          , [vara;varb],               mk_equality_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy]))
-  let v_generic_equals_withc_tuple3_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastEqualsTuple3"                               , None                 , None          , [vara;varb;varc],          mk_equality_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy]))
-  let v_generic_equals_withc_tuple4_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastEqualsTuple4"                               , None                 , None          , [vara;varb;varc;vard],     mk_equality_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy; vardTy]))
-  let v_generic_equals_withc_tuple5_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastEqualsTuple5"                               , None                 , None          , [vara;varb;varc;vard;vare], mk_equality_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy; vardTy; vareTy]))
+  let v_generic_hash_withc_tuple2_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple2"                                   , None                 , None          , [vara;varb],               mk_hash_withc_sig (decodeTupleTy false [varaTy; varbTy]))
+  let v_generic_hash_withc_tuple3_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple3"                                   , None                 , None          , [vara;varb;varc],          mk_hash_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy]))
+  let v_generic_hash_withc_tuple4_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple4"                                   , None                 , None          , [vara;varb;varc;vard],     mk_hash_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy; vardTy]))
+  let v_generic_hash_withc_tuple5_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple5"                                   , None                 , None          , [vara;varb;varc;vard;vare], mk_hash_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy; vardTy; vareTy]))
+  let v_generic_equals_withc_tuple2_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastEqualsTuple2"                               , None                 , None          , [vara;varb],               mk_equality_withc_sig (decodeTupleTy false [varaTy; varbTy]))
+  let v_generic_equals_withc_tuple3_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastEqualsTuple3"                               , None                 , None          , [vara;varb;varc],          mk_equality_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy]))
+  let v_generic_equals_withc_tuple4_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastEqualsTuple4"                               , None                 , None          , [vara;varb;varc;vard],     mk_equality_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy; vardTy]))
+  let v_generic_equals_withc_tuple5_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastEqualsTuple5"                               , None                 , None          , [vara;varb;varc;vard;vare], mk_equality_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy; vardTy; vareTy]))
 
-  let v_generic_compare_withc_tuple2_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastCompareTuple2"                             , None                 , None          , [vara;varb],               mk_compare_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy]))
-  let v_generic_compare_withc_tuple3_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastCompareTuple3"                             , None                 , None          , [vara;varb;varc],          mk_compare_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy]))
-  let v_generic_compare_withc_tuple4_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastCompareTuple4"                             , None                 , None          , [vara;varb;varc;vard],     mk_compare_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy; vardTy]))
-  let v_generic_compare_withc_tuple5_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastCompareTuple5"                             , None                 , None          , [vara;varb;varc;vard;vare], mk_compare_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy; varcTy; vardTy; vareTy]))
+  let v_generic_compare_withc_tuple2_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastCompareTuple2"                             , None                 , None          , [vara;varb],               mk_compare_withc_sig (decodeTupleTy false [varaTy; varbTy]))
+  let v_generic_compare_withc_tuple3_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastCompareTuple3"                             , None                 , None          , [vara;varb;varc],          mk_compare_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy]))
+  let v_generic_compare_withc_tuple4_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastCompareTuple4"                             , None                 , None          , [vara;varb;varc;vard],     mk_compare_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy; vardTy]))
+  let v_generic_compare_withc_tuple5_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastCompareTuple5"                             , None                 , None          , [vara;varb;varc;vard;vare], mk_compare_withc_sig (decodeTupleTy false [varaTy; varbTy; varcTy; vardTy; vareTy]))
 
 
   let v_generic_equality_er_outer_info             = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,    "GenericEqualityER"                    , None                 , None          , [vara],     mk_rel_sig varaTy)
@@ -976,20 +976,20 @@ type TcGlobals(
   let decompileTyconEntries =
         [|
             "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
-            "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`5"      ,       v_ref_tuple5_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`6"      ,       v_ref_tuple6_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`7"      ,       v_ref_tuple7_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTyIfPossible v_ref_tuple8_tcr tupInfoRef
-            "ValueTuple`2" ,       v_struct_tuple2_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`3" ,       v_struct_tuple3_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`4" ,       v_struct_tuple4_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`5" ,       v_struct_tuple5_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`6" ,       v_struct_tuple6_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTyIfPossible v_struct_tuple8_tcr tupInfoStruct |]
+            "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTy false
+            "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTy false
+            "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTy false
+            "Tuple`5"      ,       v_ref_tuple5_tcr    , decodeTupleTy false
+            "Tuple`6"      ,       v_ref_tuple6_tcr    , decodeTupleTy false
+            "Tuple`7"      ,       v_ref_tuple7_tcr    , decodeTupleTy false
+            "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTyIfPossible v_ref_tuple8_tcr false
+            "ValueTuple`2" ,       v_struct_tuple2_tcr , decodeTupleTy true
+            "ValueTuple`3" ,       v_struct_tuple3_tcr , decodeTupleTy true
+            "ValueTuple`4" ,       v_struct_tuple4_tcr , decodeTupleTy true
+            "ValueTuple`5" ,       v_struct_tuple5_tcr , decodeTupleTy true
+            "ValueTuple`6" ,       v_struct_tuple6_tcr , decodeTupleTy true
+            "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTy true
+            "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTyIfPossible v_struct_tuple8_tcr true |]
 
   let betterEntries = Array.append betterTyconEntries decompileTyconEntries
 

@@ -46,7 +46,7 @@ type Pattern =
     | TPat_query of (Expr * TType list * ActivePatternReturnKind * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
     | TPat_exnconstr of TyconRef * Pattern list * range
-    | TPat_tuple of  TupInfo * Pattern list * TType list * range
+    | TPat_tuple of isStruct: bool * Pattern list * TType list * range
     | TPat_array of  Pattern list * TType * range
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
     | TPat_null of range
@@ -916,7 +916,7 @@ let rec erasePartialPatterns inpPat =
     | TPat_as (p, x, m) -> TPat_as (erasePartialPatterns p, x, m)
     | TPat_disjs (subPats, m) -> TPat_disjs(erasePartials subPats, m)
     | TPat_conjs(subPats, m) -> TPat_conjs(erasePartials subPats, m)
-    | TPat_tuple (tupInfo, subPats, x, m) -> TPat_tuple(tupInfo, erasePartials subPats, x, m)
+    | TPat_tuple (isStruct, subPats, x, m) -> TPat_tuple(isStruct, erasePartials subPats, x, m)
     | TPat_exnconstr(x, subPats, m) -> TPat_exnconstr(x, erasePartials subPats, m)
     | TPat_array (subPats, x, m) -> TPat_array (erasePartials subPats, x, m)
     | TPat_unioncase (x, y, ps, m) -> TPat_unioncase (x, y, erasePartials ps, m)
@@ -1577,8 +1577,8 @@ let CompilePatternBasic
             let asVal, subExpr =  BindSubExprOfInput g amap origInputValTypars asValBind m inpExpr
             BindProjectionPattern (Active(inpPath, inpExpr, leftPat)) (accActive, accValMap.Add asVal subExpr )
 
-        | TPat_tuple(tupInfo, tupFieldPats, tyargs, _m) ->
-            let subAccess j tpinst subExpr = mkTupleFieldGet g (tupInfo, inpAccess tpinst subExpr, instTypes tpinst tyargs, j, mExpr)
+        | TPat_tuple(isStruct, tupFieldPats, tyargs, _m) ->
+            let subAccess j tpinst subExpr = mkTupleFieldGet g (isStruct, inpAccess tpinst subExpr, instTypes tpinst tyargs, j, mExpr)
             let pathBuilder path j = PathTuple(path, tyargs, j)
             let newActives = List.mapi (mkSubActive pathBuilder subAccess) tupFieldPats
             BindProjectionPatterns newActives activeState

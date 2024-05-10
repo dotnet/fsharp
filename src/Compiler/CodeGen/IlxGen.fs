@@ -657,7 +657,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     match stripTyEqnsAndMeasureEqns g ty with
     | TType_app(tcref, tinst, _) -> GenNamedTyAppAux cenv m tyenv ptrsOK tcref tinst
 
-    | TType_tuple(tupInfo, args) -> GenTypeAux cenv m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
+    | TType_tuple(isStruct, args) -> GenTypeAux cenv m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g isStruct args)
 
     | TType_fun(dty, returnTy, _) ->
         EraseClosures.mkILFuncTy cenv.ilxPubCloEnv (GenTypeArgAux cenv m tyenv dty) (GenTypeArgAux cenv m tyenv returnTy)
@@ -666,7 +666,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         let tref = anonInfo.ILTypeRef
 
         let boxity =
-            if evalAnonInfoIsStruct anonInfo then
+            if anonInfo.IsStruct then
                 ILBoxity.AsValue
             else
                 ILBoxity.AsObject
@@ -2262,11 +2262,10 @@ type AnonTypeGenerationTable() =
         (ilCtorRef, ilMethodRefs, ilTy)
 
     member this.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo: AnonRecdTypeInfo) =
-        let isStruct = evalAnonInfoIsStruct anonInfo
         let key = anonInfo.Stamp
 
         let at =
-            dict.GetOrAdd(key, lazy (generateAnonType cenv mgbuf genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)))
+            dict.GetOrAdd(key, lazy (generateAnonType cenv mgbuf genToStringMethod (anonInfo.IsStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)))
 
         at.Force() |> ignore
 
@@ -3028,7 +3027,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             | TOp.Recd(isCtor, tcref), _, _ -> GenAllocRecd cenv cgbuf eenv isCtor (tcref, tyargs, args, m) sequel
             | TOp.AnonRecd anonInfo, _, _ -> GenAllocAnonRecd cenv cgbuf eenv (anonInfo, tyargs, args, m) sequel
             | TOp.AnonRecdGet(anonInfo, n), [ e ], _ -> GenGetAnonRecdField cenv cgbuf eenv (anonInfo, e, tyargs, n, m) sequel
-            | TOp.TupleFieldGet(tupInfo, n), [ e ], _ -> GenGetTupleField cenv cgbuf eenv (tupInfo, e, tyargs, n, m) sequel
+            | TOp.TupleFieldGet(isStruct, n), [ e ], _ -> GenGetTupleField cenv cgbuf eenv (isStruct, e, tyargs, n, m) sequel
             | TOp.ExnFieldGet(ecref, n), [ e ], _ -> GenGetExnField cenv cgbuf eenv (e, ecref, n, m) sequel
             | TOp.UnionCaseFieldGet(ucref, n), [ e ], _ -> GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel
             | TOp.UnionCaseFieldGetAddr(ucref, n, _readonly), [ e ], _ ->
@@ -3043,7 +3042,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             | TOp.ValFieldGetAddr(f, _readonly), [], _ -> GenGetStaticFieldAddr cenv cgbuf eenv (f, tyargs, m) sequel
             | TOp.ValFieldSet f, [ e1; e2 ], _ -> GenSetRecdField cenv cgbuf eenv (e1, f, tyargs, e2, m) sequel
             | TOp.ValFieldSet f, [ e2 ], _ -> GenSetStaticField cenv cgbuf eenv (f, tyargs, e2, m) sequel
-            | TOp.Tuple tupInfo, _, _ -> GenAllocTuple cenv cgbuf eenv (tupInfo, args, tyargs, m) sequel
+            | TOp.Tuple isStruct, _, _ -> GenAllocTuple cenv cgbuf eenv (isStruct, args, tyargs, m) sequel
             | TOp.ILAsm(instrs, retTypes), _, _ -> GenAsmCode cenv cgbuf eenv (instrs, tyargs, args, retTypes, m) sequel
             | TOp.While(sp, _), [ Expr.Lambda(_, _, _, [ _ ], e1, _, _); Expr.Lambda(_, _, _, [ _ ], e2, _, _) ], [] ->
                 GenWhileLoop cenv cgbuf eenv (sp, e1, e2, m) sequel
@@ -3323,10 +3322,9 @@ and GenUnitThenSequel cenv eenv m cloc cgbuf sequel =
 // Generate simple data-related constructs
 //--------------------------------------------------------------------------
 
-and GenAllocTuple cenv cgbuf eenv (tupInfo, args, argTys, m) sequel =
+and GenAllocTuple cenv cgbuf eenv (isStruct, args, argTys, m) sequel =
 
-    let tupInfo = evalTupInfoIsStruct tupInfo
-    let tcref, tys, args, newm = mkCompiledTuple cenv.g tupInfo (argTys, args, m)
+    let tcref, tys, args, newm = mkCompiledTuple cenv.g isStruct (argTys, args, m)
     let ty = GenNamedTyApp cenv newm eenv.tyenv tcref tys
 
     let ntyvars =
@@ -3346,8 +3344,7 @@ and GenAllocTuple cenv cgbuf eenv (tupInfo, args, argTys, m) sequel =
     CG.EmitInstr cgbuf (pop args.Length) (Push [ ty ]) (mkNormalNewobj (mkILCtorMethSpecForTy (ty, formalTyvars)))
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenGetTupleField cenv cgbuf eenv (tupInfo, e, tys, n, m) sequel =
-    let tupInfo = evalTupInfoIsStruct tupInfo
+and GenGetTupleField cenv cgbuf eenv (isStruct, e, tys, n, m) sequel =
 
     let rec getCompiledTupleItem g (e, tys: TTypes, n, m) =
         let ar = tys.Length
@@ -3355,17 +3352,17 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo, e, tys, n, m) sequel =
         if ar <= 0 then
             failwith "getCompiledTupleItem"
         elif ar < maxTuple then
-            let tcref = mkCompiledTupleTyconRef g tupInfo ar
+            let tcref = mkCompiledTupleTyconRef g isStruct ar
             let ty = GenNamedTyApp cenv m eenv.tyenv tcref tys
-            mkGetTupleItemN g m n ty tupInfo e tys[n]
+            mkGetTupleItemN g m n ty isStruct e tys[n]
         else
             let tysA, tysB = List.splitAfter goodTupleFields tys
-            let tyB = mkCompiledTupleTy g tupInfo tysB
+            let tyB = mkCompiledTupleTy g isStruct tysB
             let tysC = tysA @ [ tyB ]
-            let tcref = mkCompiledTupleTyconRef g tupInfo (List.length tysC)
+            let tcref = mkCompiledTupleTyconRef g isStruct (List.length tysC)
             let tyR = GenNamedTyApp cenv m eenv.tyenv tcref tysC
             let nR = min n goodTupleFields
-            let elast = mkGetTupleItemN g m nR tyR tupInfo e tysC[nR]
+            let elast = mkGetTupleItemN g m nR tyR isStruct e tysC[nR]
 
             if n < goodTupleFields then
                 elast
@@ -4031,7 +4028,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr =
             assert (tys.Length = numRequiredExprs)
 
             argInfos
-            |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef, loce, tys, i, m) Continue))
+            |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (false, loce, tys, i, m) Continue))
 
 //--------------------------------------------------------------------------
 // Generate calls (try to detect direct calls)

@@ -1377,7 +1377,7 @@ let fill_u_Expr_hole, u_expr_fwd = u_hole()
 let fill_p_Expr_hole, p_expr_fwd = p_hole()
 
 let p_anonInfo_data (anonInfo: AnonRecdTypeInfo) st =
-    p_tup3 p_ccuref p_bool (p_array p_ident) (anonInfo.Assembly, evalTupInfoIsStruct anonInfo.TupInfo, anonInfo.SortedIds) st
+    p_tup3 p_ccuref p_bool (p_array p_ident) (anonInfo.Assembly, anonInfo.IsStruct, anonInfo.SortedIds) st
 
 let p_anonInfo x st =
     p_osgn_decl st.oanoninfos p_anonInfo_data x st
@@ -1406,8 +1406,8 @@ let p_trait (TTrait(a, b, c, d, e, _, f)) st  =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
-    let ccu, info, nms = u_tup3 u_ccuref u_bool (u_array u_ident) st
-    AnonRecdTypeInfo.Create (ccu, mkTupInfo info, nms)
+    let ccu, isStruct, nms = u_tup3 u_ccuref u_bool (u_array u_ident) st
+    AnonRecdTypeInfo.Create (ccu, isStruct, nms)
 
 let u_anonInfo st =
     u_osgn_decl st.ianoninfos u_anonInfo_data st
@@ -1598,8 +1598,8 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
             ty
 
     match ty with
-    | TType_tuple (tupInfo, l) ->
-          if evalTupInfoIsStruct tupInfo then
+    | TType_tuple (isStruct, l) ->
+          if isStruct then
               p_byte 8 st; p_tys l st
           else
               p_byte 0 st; p_tys l st
@@ -1645,7 +1645,7 @@ let _ = fill_u_ty (fun st ->
     match tag with
     | 0 ->
         let l = u_tys st
-        TType_tuple (tupInfoRef, l)
+        TType_tuple (false, l)
 
     | 1 ->
         u_simpletyp st
@@ -1680,7 +1680,7 @@ let _ = fill_u_ty (fun st ->
 
     | 8 ->
         let l = u_tys st
-        TType_tuple (tupInfoStruct, l)
+        TType_tuple (true, l)
 
     | 9 ->
         let anonInfo = u_anonInfo st
@@ -2462,8 +2462,8 @@ and p_op x st =
     match x with
     | TOp.UnionCase c               -> p_byte 0 st; p_ucref c st
     | TOp.ExnConstr c               -> p_byte 1 st; p_tcref "op"  c st
-    | TOp.Tuple tupInfo             ->
-         if evalTupInfoIsStruct tupInfo then
+    | TOp.Tuple isStruct             ->
+         if isStruct then
               p_byte 29 st
          else
               p_byte 2 st
@@ -2475,8 +2475,8 @@ and p_op x st =
     | TOp.UnionCaseFieldSet (a, b)    -> p_byte 8 st; p_tup2 p_ucref p_int (a, b) st
     | TOp.ExnFieldGet (a, b)          -> p_byte 9 st; p_tup2 (p_tcref "exn op") p_int (a, b) st
     | TOp.ExnFieldSet (a, b)          -> p_byte 10 st; p_tup2 (p_tcref "exn op")  p_int (a, b) st
-    | TOp.TupleFieldGet (tupInfo, a)       ->
-         if evalTupInfoIsStruct tupInfo then
+    | TOp.TupleFieldGet (isStruct, a)       ->
+         if isStruct then
               p_byte 30 st; p_int a st
          else
               p_byte 11 st; p_int a st
@@ -2500,8 +2500,8 @@ and p_op x st =
     | TOp.UnionCaseFieldGetAddr (a, b, _) -> p_byte 28 st; p_tup2 p_ucref p_int (a, b) st
        // Note tag byte 29 is taken for struct tuples, see above
        // Note tag byte 30 is taken for struct tuples, see above
-    (* 29: TOp.Tuple when evalTupInfoIsStruct tupInfo = true *)
-    (* 30: TOp.TupleFieldGet  when evalTupInfoIsStruct tupInfo = true *)
+    (* 29: TOp.Tuple when isStruct = true *)
+    (* 30: TOp.TupleFieldGet  when isStruct = true *)
     | TOp.AnonRecd info   -> p_byte 31 st; p_anonInfo info st
     | TOp.AnonRecdGet (info, n)   -> p_byte 32 st; p_anonInfo info st; p_int n st
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
@@ -2513,7 +2513,7 @@ and u_op st =
            TOp.UnionCase a
     | 1 -> let a = u_tcref st
            TOp.ExnConstr a
-    | 2 -> TOp.Tuple tupInfoRef
+    | 2 -> TOp.Tuple false
     | 3 -> let b = u_tcref st
            TOp.Recd (RecdExpr, b)
     | 4 -> let a = u_rfref st
@@ -2535,7 +2535,7 @@ and u_op st =
             let b = u_int st
             TOp.ExnFieldSet (a, b)
     | 11 -> let a = u_int st
-            TOp.TupleFieldGet (tupInfoRef, a)
+            TOp.TupleFieldGet (false, a)
     | 12 -> let a = (u_list u_ILInstr) st
             let b = u_tys st
             TOp.ILAsm (a, b)
@@ -2567,9 +2567,9 @@ and u_op st =
     | 28 -> let a = u_ucref st
             let b = u_int st
             TOp.UnionCaseFieldGetAddr (a, b, false)
-    | 29 -> TOp.Tuple tupInfoStruct
+    | 29 -> TOp.Tuple true
     | 30 -> let a = u_int st
-            TOp.TupleFieldGet (tupInfoStruct, a)
+            TOp.TupleFieldGet (true, a)
     | 31 -> let info = u_anonInfo st
             TOp.AnonRecd info
     | 32 -> let info = u_anonInfo st

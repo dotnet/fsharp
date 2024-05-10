@@ -1938,7 +1938,7 @@ let rec RearrangeTupleBindings expr fin =
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
 
-    | Expr.Op (TOp.Tuple tupInfo, _, _, _) when not (evalTupInfoIsStruct tupInfo) ->
+    | Expr.Op (TOp.Tuple isStruct, _, _, _) when not isStruct ->
         Some (fin expr)
 
     | Expr.Sequential (e1, e2, kind, m) ->
@@ -2000,7 +2000,7 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
             else
                 Expr.Match (sp, inputRange, decision, rewrittenTargets, fullRange, ty) |> Some
 
-        | Expr.Op (TOp.Tuple tupInfo, _, tupleElements, m) when not (evalTupInfoIsStruct tupInfo) ->
+        | Expr.Op (TOp.Tuple isStruct, _, tupleElements, m) when not isStruct ->
             // Replace tuple allocation with mutations of locals
             let _, _, _, vrefs = requisites.Value
             List.map2 (mkValSet m) vrefs tupleElements
@@ -2132,7 +2132,7 @@ let (|QueryZero|_|) g = function
 /// Look for a possible tuple and transform
 let (|AnyRefTupleTrans|) e = 
     match e with 
-    | Expr.Op (TOp.Tuple tupInfo, tys, es, m) when not (evalTupInfoIsStruct tupInfo) -> (es, (fun es -> Expr.Op (TOp.Tuple tupInfo, tys, es, m)))  
+    | Expr.Op (TOp.Tuple isStruct, tys, es, m) when not isStruct -> (es, (fun es -> Expr.Op (TOp.Tuple isStruct, tys, es, m)))  
     | _ -> [e], (function [e] -> e | _ -> assert false; failwith "unreachable")
 
 /// Look for any QueryBuilder.* operation and transform
@@ -2633,7 +2633,7 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
     let knownValue = 
         match op, arginfos with 
         | TOp.ValFieldGet rf, [e1info] -> TryOptimizeRecordFieldGet cenv env (e1info, rf, tyargs, m) 
-        | TOp.TupleFieldGet (tupInfo, n), [e1info] -> TryOptimizeTupleFieldGet cenv env (tupInfo, e1info, tyargs, n, m)
+        | TOp.TupleFieldGet (isStruct, n), [e1info] -> TryOptimizeTupleFieldGet cenv env (isStruct, e1info, tyargs, n, m)
         | TOp.UnionCaseFieldGet (cspec, n), [e1info] -> TryOptimizeUnionCaseGet cenv env (e1info, cspec, tyargs, n, m)
         | _ -> None
     match knownValue with 
@@ -2657,14 +2657,12 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
       | TOp.ExnConstr _ -> 2, valu
 
-      | TOp.Tuple tupInfo -> 
-          let isStruct = evalTupInfoIsStruct tupInfo 
+      | TOp.Tuple isStruct ->
           if isStruct then 0, valu 
-          else 1,MakeValueInfoForTuple (Array.ofList argValues)
+          else 1, MakeValueInfoForTuple (Array.ofList argValues)
 
-      | TOp.AnonRecd anonInfo -> 
-          let isStruct = evalAnonInfoIsStruct anonInfo 
-          if isStruct then 0, valu 
+      | TOp.AnonRecd anonInfo ->
+          if anonInfo.IsStruct then 0, valu 
           else 1, valu
 
       | TOp.AnonRecdGet _ 
@@ -2764,7 +2762,7 @@ and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r)
             Some finfos[n]
     | _ -> None
   
-and TryOptimizeTupleFieldGet cenv _env (_tupInfo, e1info, tys, n, m) =
+and TryOptimizeTupleFieldGet cenv _env (_isStruct, e1info, tys, n, m) =
     match destTupleValue e1info.Info with
     | Some tups when cenv.settings.EliminateTupleFieldGet && not e1info.HasEffect ->
         let len = tups.Length 
@@ -3926,7 +3924,7 @@ and ReshapeExpr cenv (shape, e) =
     | TupleValue subshapes, Expr.Val (_vref, _vFlags, m) ->
         let tinst = destRefTupleTy g (tyOfExpr g e)
         let subshapes = Array.toList subshapes
-        mkRefTupled g m (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape, mkTupleFieldGet g (tupInfoRef, e, tinst, i, m))) subshapes) tinst
+        mkRefTupled g m (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape, mkTupleFieldGet g (false, e, tinst, i, m))) subshapes) tinst
     | _ ->  
         e
 

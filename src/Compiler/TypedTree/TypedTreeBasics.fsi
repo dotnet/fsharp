@@ -47,12 +47,6 @@ val arityOfVal: v: Val -> ValReprInfo
 
 val arityOfValForDisplay: v: Val -> ValReprInfo
 
-val tupInfoRef: TupInfo
-
-val tupInfoStruct: TupInfo
-
-val mkTupInfo: b: bool -> TupInfo
-
 val structnessDefault: bool
 
 val mkRawRefTupleTy: tys: TTypes -> TType
