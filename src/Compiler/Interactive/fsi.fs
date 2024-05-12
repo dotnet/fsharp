@@ -1239,6 +1239,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn """    #load "file.fs" ...;;                         // %s""" (FSIstrings.SR.fsiIntroTextHashloadInfo ())
         fsiConsoleOutput.uprintfn """    #time ["on"|"off"];;                          // %s""" (FSIstrings.SR.fsiIntroTextHashtimeInfo ())
         fsiConsoleOutput.uprintfn """    #help;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo ())
+        fsiConsoleOutput.uprintfn """    #h "expr";;                                   // %s""" (FSIstrings.SR.fsiIntroTextHashhInfo ())
 
         if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
             for msg in
@@ -1409,6 +1410,268 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
             dropPrompt <- dropPrompt + 1
 
     member _.FsiOptions = fsiOptions
+
+//----------------------------------------------------------------------------
+// fsi #h
+//----------------------------------------------------------------------------
+module Fsih =
+
+    module Parser =
+
+        open System.Xml
+
+        type Help =
+            {
+                Summary: string
+                Remarks: string option
+                Parameters: (string * string) list
+                Returns: string option
+                Exceptions: (string * string) list
+                Examples: (string * string) list
+                FullName: string
+                Assembly: string
+            }
+
+            member this.Print(fsiConsoleOutput: FsiConsoleOutput) =
+                let parameters =
+                    this.Parameters
+                    |> List.map (fun (name, description) -> sprintf "- %s: %s" name description)
+                    |> String.concat "\n"
+
+                fsiConsoleOutput.uprintfn "\nDescription:\n%s" this.Summary
+
+                match this.Remarks with
+                | Some r -> fsiConsoleOutput.uprintfn "\nRemarks:\n%s" r
+                | None -> ()
+
+                if not (String.IsNullOrWhiteSpace(parameters)) then
+                    fsiConsoleOutput.uprintfn "\nParameters:\n%s" parameters
+
+                match this.Returns with
+                | Some r -> fsiConsoleOutput.uprintfn "Returns:\n%s" r
+                | None -> ()
+
+                if not this.Exceptions.IsEmpty then
+                    fsiConsoleOutput.uprintfn "\nExceptions:"
+
+                    for (exType, exDesc) in this.Exceptions do
+                        fsiConsoleOutput.uprintfn "%s: %s" exType exDesc
+
+                if not this.Examples.IsEmpty then
+                    fsiConsoleOutput.uprintfn "\nExamples:"
+
+                    for example, desc in this.Examples do
+                        fsiConsoleOutput.uprintfn "%s" example
+
+                        if not (String.IsNullOrWhiteSpace(desc)) then
+                            fsiConsoleOutput.uprintfn $"""// {desc.Replace("\n", "\n// ")}"""
+
+                        fsiConsoleOutput.uprintfn ""
+
+                fsiConsoleOutput.uprintfn "Full name: %s" this.FullName
+                fsiConsoleOutput.uprintfn "Assembly: %s\n" this.Assembly
+
+        let cleanupXmlContent (s: string) = s.Replace("\n ", "\n").Trim() // some stray whitespace from the XML
+
+        // remove any leading `X:` and trailing `N
+        let trimDotNet (s: string) =
+            let s = if s.Length > 2 && s[1] = ':' then s.Substring(2) else s
+            let idx = s.IndexOf('`')
+            let s = if idx > 0 then s.Substring(0, idx) else s
+            s
+
+        let xmlDocCache = Dictionary<string, string>()
+
+        let getXmlDocument xmlPath =
+            match xmlDocCache.TryGetValue(xmlPath) with
+            | true, value ->
+                let xmlDocument = XmlDocument()
+                xmlDocument.LoadXml(value)
+                xmlDocument
+            | _ ->
+                let rawXml = File.ReadAllText(xmlPath)
+                let xmlDocument = XmlDocument()
+                xmlDocument.LoadXml(rawXml)
+                xmlDocCache.Add(xmlPath, rawXml)
+                xmlDocument
+
+        let getTexts (node: Xml.XmlNode) =
+            seq {
+                for child in node.ChildNodes do
+                    if child.Name = "#text" then
+                        yield child.Value
+
+                    if child.Name = "c" then
+                        yield child.InnerText
+
+                    if child.Name = "see" then
+                        let cref = child.Attributes.GetNamedItem("cref")
+
+                        if not (isNull cref) then
+                            yield cref.Value |> trimDotNet
+            }
+            |> String.concat ""
+
+        let helpText (xmlPath: string) (assembly: string) (modName: string) (implName: string) (sourceName: string) =
+            let sourceName = sourceName.Replace('.', '#') // for .ctor
+            let implName = implName.Replace('.', '#') // for .ctor
+            let xmlName = $"{modName}.{implName}"
+            let xmlDocument = getXmlDocument xmlPath
+
+            let node =
+                let toTry =
+                    [
+                        $"/doc/members/member[contains(@name, ':{xmlName}`')]"
+                        $"/doc/members/member[contains(@name, ':{xmlName}(')]"
+                        $"/doc/members/member[contains(@name, ':{xmlName}')]"
+                    ]
+
+                seq {
+                    for t in toTry do
+                        let node = xmlDocument.SelectSingleNode(t)
+                        if not (isNull node) then Some node else None
+                }
+                |> Seq.tryPick id
+
+            match node with
+            | None -> None
+            | Some n ->
+                let summary =
+                    n.SelectSingleNode("summary")
+                    |> Option.ofObj
+                    |> Option.map getTexts
+                    |> Option.map cleanupXmlContent
+
+                let remarks =
+                    n.SelectSingleNode("remarks")
+                    |> Option.ofObj
+                    |> Option.map getTexts
+                    |> Option.map cleanupXmlContent
+
+                let parameters =
+                    n.SelectNodes("param")
+                    |> Seq.cast<XmlNode>
+                    |> Seq.map (fun n -> n.Attributes.GetNamedItem("name").Value.Trim(), n.InnerText.Trim())
+                    |> List.ofSeq
+
+                let returns =
+                    n.SelectSingleNode("returns")
+                    |> Option.ofObj
+                    |> Option.map (fun n -> getTexts(n).Trim())
+
+                let exceptions =
+                    n.SelectNodes("exception")
+                    |> Seq.cast<XmlNode>
+                    |> Seq.map (fun n ->
+                        let exType = n.Attributes.GetNamedItem("cref").Value
+                        let idx = exType.IndexOf(':')
+                        let exType = if idx >= 0 then exType.Substring(idx + 1) else exType
+                        exType.Trim(), n.InnerText.Trim())
+                    |> List.ofSeq
+
+                let examples =
+                    n.SelectNodes("example")
+                    |> Seq.cast<XmlNode>
+                    |> Seq.map (fun n ->
+                        let codeNode = n.SelectSingleNode("code")
+
+                        let code =
+                            if isNull codeNode then
+                                ""
+                            else
+                                n.RemoveChild(codeNode) |> ignore
+                                cleanupXmlContent codeNode.InnerText
+
+                        code, cleanupXmlContent n.InnerText)
+                    |> List.ofSeq
+
+                match summary with
+                | Some s ->
+                    {
+                        Summary = s
+                        Remarks = remarks
+                        Parameters = parameters
+                        Returns = returns
+                        Exceptions = exceptions
+                        Examples = examples
+                        FullName = $"{modName}.{sourceName}" // the long ident as users see it
+                        Assembly = assembly
+                    }
+                    |> Some
+                | None -> None
+
+    module Expr =
+
+        open Microsoft.FSharp.Quotations.Patterns
+
+        let tryGetSourceName (methodInfo: MethodInfo) =
+            try
+                let attr = methodInfo.GetCustomAttribute<CompilationSourceNameAttribute>()
+                Some attr.SourceName
+            with _ ->
+                None
+
+        let getInfos (declaringType: Type) (sourceName: string option) (implName: string) =
+            let xmlPath = Path.ChangeExtension(declaringType.Assembly.Location, ".xml")
+            let assembly = Path.GetFileName(declaringType.Assembly.Location)
+
+            if File.Exists(xmlPath) then
+                // for FullName cases like Microsoft.FSharp.Core.FSharpOption`1[System.Object]
+                let fullName =
+                    let idx = declaringType.FullName.IndexOf('[')
+
+                    if idx >= 0 then
+                        declaringType.FullName.Substring(0, idx)
+                    else
+                        declaringType.FullName
+
+                let fullName = fullName.Replace('+', '.') // for FullName cases like Microsoft.FSharp.Collections.ArrayModule+Parallel
+
+                Some(xmlPath, assembly, fullName, implName, sourceName |> Option.defaultValue implName)
+            else
+                None
+
+        let rec exprNames expr =
+            match expr with
+            | Call(exprOpt, methodInfo, _exprList) ->
+                match exprOpt with
+                | Some _ -> None
+                | None ->
+                    let sourceName = tryGetSourceName methodInfo
+                    getInfos methodInfo.DeclaringType sourceName methodInfo.Name
+            | Lambda(_param, body) -> exprNames body
+            | Let(_, _, body) -> exprNames body
+            | Value(_o, t) -> getInfos t (Some t.Name) t.Name
+            | DefaultValue t -> getInfos t (Some t.Name) t.Name
+            | PropertyGet(_o, info, _) -> getInfos info.DeclaringType (Some info.Name) info.Name
+            | NewUnionCase(info, _exprList) -> getInfos info.DeclaringType (Some info.Name) info.Name
+            | NewObject(ctorInfo, _e) -> getInfos ctorInfo.DeclaringType (Some ctorInfo.Name) ctorInfo.Name
+            | NewArray(t, _exprs) -> getInfos t (Some t.Name) t.Name
+            | NewTuple _ ->
+                let x = (23, 42)
+                let t = x.GetType()
+                getInfos t (Some t.Name) t.Name
+            | NewStructTuple _ ->
+                let x = struct (23, 42)
+                let t = x.GetType()
+                getInfos t (Some t.Name) t.Name
+            | _ -> None
+
+    module Logic =
+
+        open Expr
+        open Parser
+
+        module Quoted =
+            let tryGetDocumentation expr =
+                match exprNames expr with
+                | Some(xmlPath, assembly, modName, implName, sourceName) -> helpText xmlPath assembly modName implName sourceName
+                | _ -> None
+
+            let h (fsiConsoleOutput: FsiConsoleOutput) (expr: Quotations.Expr) =
+                match tryGetDocumentation expr with
+                | None -> fsiConsoleOutput.uprintfn "unable to get documentation"
+                | Some d -> d.Print(fsiConsoleOutput)
 
 //----------------------------------------------------------------------------
 // Startup processing
@@ -2499,7 +2762,7 @@ type internal FsiDynamicCompiler
         processContents newState declaredImpls
 
     /// Evaluate the given expression and produce a new interactive state.
-    member fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr) =
+    member fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr, suppressItPrint) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
         let itName = "it"
 
@@ -2513,7 +2776,7 @@ type internal FsiDynamicCompiler
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with
         | Item.Value vref ->
-            if not tcConfig.noFeedback then
+            if not tcConfig.noFeedback && not suppressItPrint then
                 let infoReader = InfoReader(istate.tcGlobals, istate.tcImports.GetImportMap())
 
                 valuePrinter.InvokeExprPrinter(
@@ -3724,9 +3987,35 @@ type FsiInteractionProcessor
             stopProcessingRecovery e range0
             None
 
+    let runhDirective diagnosticsLogger ctok istate source =
+        let lexbuf =
+            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, $"<@@ {source} @@>")
+
+        let tokenizer =
+            fsiStdinLexerProvider.CreateBufferLexer("hdummy.fsx", lexbuf, diagnosticsLogger)
+
+        let parsedInteraction = ParseInteraction tokenizer
+
+        match parsedInteraction with
+        | Some(ParsedScriptInteraction.Definitions([ SynModuleDecl.Expr(e, _) ], _)) ->
+
+            let _state, status =
+                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, e, true)
+
+            match status with
+            | Completed(Some compStatus) ->
+                match compStatus.ReflectionValue with
+                | :? FSharp.Quotations.Expr as qex -> Fsih.Logic.Quoted.h fsiConsoleOutput qex
+                | _ -> ()
+            | _ -> ()
+        | _ -> ()
+
     /// Partially process a hash directive, leaving state in packageManagerLines and required assemblies
     let PartiallyProcessHashDirective (ctok, istate, hash, diagnosticsLogger: DiagnosticsLogger) =
         match hash with
+        | ParsedHashDirective("h", ParsedHashDirectiveArguments [ source ], _m) ->
+            runhDirective diagnosticsLogger ctok istate source
+            istate, Completed None
         | ParsedHashDirective("load", ParsedHashDirectiveArguments sourceFiles, m) ->
             let istate =
                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger)
@@ -3866,7 +4155,7 @@ type FsiInteractionProcessor
                         | InteractionGroup.HashDirectives [] -> istate, Completed None
 
                         | InteractionGroup.Definitions([ SynModuleDecl.Expr(expr, _) ], _) ->
-                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)
+                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false)
 
                         | InteractionGroup.Definitions(defs, _) ->
                             fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, true, false, defs)
@@ -4060,7 +4349,7 @@ type FsiInteractionProcessor
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             istate
             |> mainThreadProcessAction ctok (fun ctok istate ->
-                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)))
+                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false)))
 
     let commitResult (istate, result) =
         match result with
