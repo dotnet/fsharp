@@ -17,6 +17,11 @@
         <target state="translated">Effacer l'écran</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashhInfo">
+        <source>Display documentation for an expression, e.g. #h \"List.map\";;</source>
+        <target state="new">Display documentation for an expression, e.g. #h \"List.map\";;</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Impossible d'exécuter l'opération en raison d'une erreur antérieure</target>
