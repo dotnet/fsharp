@@ -72,11 +72,15 @@ module ILChecker =
             |> unifyRuntimeAssemblyName
             |> unifyImageBase
 
+        // This lets the same test be used when targeting both netfx and netcore.
+        let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
+
         ilCode.Trim()
         |> normalizeNewLines
         |> stripComments
         |> unifyingAssemblyNames
         |> unifyMethodLine
+        |> unifyNetStandardVersions
 
     let private generateIlFile dllFilePath ildasmArgs =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
@@ -120,9 +124,9 @@ module ILChecker =
         match expectedIL with
         | [] -> errorMsgOpt <- Some "No Expected IL"
         | expectedIL ->
-            expectedIL
-            |> List.map (fun (ilCode: string) -> ilCode.Trim())
-            |> List.iter (fun (ilCode: string) ->
+            let (|Trimmed|) (ilCode: string) = ilCode.Trim()
+
+            for Trimmed ilCode in expectedIL do
                 let expectedLines = ilCode |> normalizeILText (Some assemblyName) |> prepareLines
 
                 if expectedLines.Length = 0 then
@@ -150,7 +154,6 @@ module ILChecker =
                         if errors.Count > 0 then
                             let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
                             errorMsgOpt <- Some(msg + "\n\n\nActual:\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
-            )
 
         match errorMsgOpt with
         | Some msg ->
