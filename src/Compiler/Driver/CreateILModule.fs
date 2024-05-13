@@ -54,11 +54,12 @@ module AttributeHelpers =
             | Some(Attrib(_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some p
             | _ -> None
 
+    [<return: Struct>]
     let (|ILVersion|_|) (versionString: string) =
         try
-            Some(parseILVersion versionString)
+            ValueSome(parseILVersion versionString)
         with e ->
-            None
+            ValueNone
 
 //----------------------------------------------------------------------------
 // ValidateKeySigningAttributes, GetStrongNameSigner
