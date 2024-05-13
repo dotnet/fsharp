@@ -69,10 +69,11 @@ exception StopProcessingExn of exn option with
         | StopProcessingExn(Some exn) -> "StopProcessingExn, originally (" + exn.ToString() + ")"
         | _ -> "StopProcessingExn"
 
+[<return: Struct>]
 let (|StopProcessing|_|) exn =
     match exn with
-    | StopProcessingExn _ -> Some()
-    | _ -> None
+    | StopProcessingExn _ -> ValueSome()
+    | _ -> ValueNone
 
 let StopProcessing<'T> = StopProcessingExn None
 
