@@ -221,6 +221,20 @@ type BuildPhase =
     | Output
     | Interactive // An error seen during interactive execution
 
+    override this.ToString() =
+        match this with
+        | DefaultPhase -> nameof DefaultPhase
+        | Compile -> nameof Compile
+        | Parameter -> nameof Parameter
+        | Parse -> nameof Parse
+        | TypeCheck -> nameof TypeCheck
+        | CodeGen -> nameof CodeGen
+        | Optimize -> nameof Optimize
+        | IlxGen -> nameof IlxGen
+        | IlGen -> nameof IlGen
+        | Output -> nameof Output
+        | Interactive -> nameof Interactive
+
 /// Literal build phase subcategory strings.
 module BuildPhaseSubcategory =
     [<Literal>]
