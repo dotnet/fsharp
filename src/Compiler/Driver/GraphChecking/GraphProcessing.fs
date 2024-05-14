@@ -180,8 +180,7 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
         let! parentCt = Async.CancellationToken
         use localCts = new CancellationTokenSource()
 
-        let completionSignal =
-            TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+        let completionSignal = TaskCompletionSource()
 
         use _ = parentCt.Register(fun () -> completionSignal.TrySetCanceled() |> ignore)
 
