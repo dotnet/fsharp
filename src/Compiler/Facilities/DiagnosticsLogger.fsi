@@ -464,7 +464,7 @@ type StackGuard =
 type CompilationGlobalsScope =
     new: diagnosticsLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
 
-    /// When dispoed, restores caller's diagnostics logger and build phase.
+    /// When disposed, restores caller's diagnostics logger and build phase.
     new: unit -> CompilationGlobalsScope
 
     interface IDisposable
@@ -475,12 +475,10 @@ type CompilationGlobalsScope =
 
 module MultipleDiagnosticsLoggers =
 
-    /// Execute computations using Async.Parallel.
-    /// Captures the diagnostics in correct order and keeps a common error count for all computations.
-    /// When done, restores caller's build phase and diagnostics logger, commiting captured diagnostics.
+    /// Run computations using Async.Parallel.
+    /// Captures the diagnostics from each computation and commits them to the caller's logger preserving their order.
+    /// When done, restores caller's build phase and diagnostics logger.
     val Parallel: computations: Async<'T> seq -> Async<'T array>
 
-    /// Execute computations using Async.Sequential.
-    /// Captures the diagnostics in correct order and keeps a common error count for all computations.
-    /// When done, restores caller's build phase and diagnostics logger, commiting captured diagnostics.
+    /// Run computations sequentially starting immediately on the current thread.
     val Sequential: computations: Async<'T> seq -> Async<'T array>
