@@ -1414,7 +1414,7 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
 //----------------------------------------------------------------------------
 // fsi #h
 //----------------------------------------------------------------------------
-module Fsih =
+module FsiHelp =
 
     module Parser =
 
@@ -4005,7 +4005,7 @@ type FsiInteractionProcessor
             match status with
             | Completed(Some compStatus) ->
                 match compStatus.ReflectionValue with
-                | :? FSharp.Quotations.Expr as qex -> Fsih.Logic.Quoted.h fsiConsoleOutput qex
+                | :? FSharp.Quotations.Expr as qex -> FsiHelp.Logic.Quoted.h fsiConsoleOutput qex
                 | _ -> ()
             | _ -> ()
         | _ -> ()
