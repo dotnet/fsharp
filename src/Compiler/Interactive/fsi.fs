@@ -1432,44 +1432,48 @@ module FsiHelp =
                 Assembly: string
             }
 
-            member this.Print(fsiConsoleOutput: FsiConsoleOutput) =
+            member this.ToDisplayString() =
+                let sb = StringBuilder()
+
                 let parameters =
                     this.Parameters
                     |> List.map (fun (name, description) -> sprintf "- %s: %s" name description)
                     |> String.concat "\n"
 
-                fsiConsoleOutput.uprintfn "\nDescription:\n%s" this.Summary
+                sb.AppendLine($"\nDescription:\n%s{this.Summary}") |> ignore
 
                 match this.Remarks with
-                | Some r -> fsiConsoleOutput.uprintfn "\nRemarks:\n%s" r
+                | Some r -> sb.AppendLine $"\nRemarks:\n%s{r}" |> ignore
                 | None -> ()
 
                 if not (String.IsNullOrWhiteSpace(parameters)) then
-                    fsiConsoleOutput.uprintfn "\nParameters:\n%s" parameters
+                    sb.AppendLine $"\nParameters:\n%s{parameters}" |> ignore
 
                 match this.Returns with
-                | Some r -> fsiConsoleOutput.uprintfn "Returns:\n%s" r
+                | Some r -> sb.AppendLine $"Returns:\n%s{r}" |> ignore
                 | None -> ()
 
                 if not this.Exceptions.IsEmpty then
-                    fsiConsoleOutput.uprintfn "\nExceptions:"
+                    sb.AppendLine "\nExceptions:" |> ignore
 
                     for (exType, exDesc) in this.Exceptions do
-                        fsiConsoleOutput.uprintfn "%s: %s" exType exDesc
+                        sb.AppendLine $"%s{exType}: %s{exDesc}" |> ignore
 
                 if not this.Examples.IsEmpty then
-                    fsiConsoleOutput.uprintfn "\nExamples:"
+                    sb.AppendLine "\nExamples:" |> ignore
 
                     for example, desc in this.Examples do
-                        fsiConsoleOutput.uprintfn "%s" example
+                        sb.AppendLine example |> ignore
 
                         if not (String.IsNullOrWhiteSpace(desc)) then
-                            fsiConsoleOutput.uprintfn $"""// {desc.Replace("\n", "\n// ")}"""
+                            sb.AppendLine $"""// {desc.Replace("\n", "\n// ")}""" |> ignore
 
-                        fsiConsoleOutput.uprintfn ""
+                        sb.AppendLine "" |> ignore
 
-                fsiConsoleOutput.uprintfn "Full name: %s" this.FullName
-                fsiConsoleOutput.uprintfn "Assembly: %s\n" this.Assembly
+                sb.AppendLine $"Full name: %s{this.FullName}" |> ignore
+                sb.AppendLine $"Assembly: %s{this.Assembly}\n" |> ignore
+
+                sb.ToString()
 
         let cleanupXmlContent (s: string) = s.Replace("\n ", "\n").Trim() // some stray whitespace from the XML
 
@@ -1668,10 +1672,10 @@ module FsiHelp =
                 | Some(xmlPath, assembly, modName, implName, sourceName) -> helpText xmlPath assembly modName implName sourceName
                 | _ -> None
 
-            let h (fsiConsoleOutput: FsiConsoleOutput) (expr: Quotations.Expr) =
+            let h (expr: Quotations.Expr) =
                 match tryGetDocumentation expr with
-                | None -> fsiConsoleOutput.uprintfn "unable to get documentation"
-                | Some d -> d.Print(fsiConsoleOutput)
+                | None -> "unable to get documentation"
+                | Some d -> d.ToDisplayString()
 
 //----------------------------------------------------------------------------
 // Startup processing
@@ -4005,7 +4009,9 @@ type FsiInteractionProcessor
             match status with
             | Completed(Some compStatus) ->
                 match compStatus.ReflectionValue with
-                | :? FSharp.Quotations.Expr as qex -> FsiHelp.Logic.Quoted.h fsiConsoleOutput qex
+                | :? FSharp.Quotations.Expr as qex ->
+                    let s = FsiHelp.Logic.Quoted.h qex
+                    fsiConsoleOutput.uprintf "%s" s
                 | _ -> ()
             | _ -> ()
         | _ -> ()
