@@ -11,6 +11,7 @@ open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Tokenization.FSharpTokenTag
 
 module BuildGraphTests =
     
@@ -337,6 +338,45 @@ module BuildGraphTests =
             loggerShouldBe commonLogger
 
         Tasks.Parallel.Invoke(task1, task2)
+
+
+    type internal DiagnosticsLoggerWithCallback(callback) =
+        inherit CapturingDiagnosticsLogger("test")
+        override _.DiagnosticSink(e, s) =
+            base.DiagnosticSink(e, s)
+            callback e.Exception.Message |> ignore
+
+    [<Fact>]
+    let ``MultipleDiagnosticsLoggers capture diagnostics in correct order`` () =
+
+        let mutable prevError = "000."
+
+        let errorCommitted msg =
+            // errors come in correct order
+            Assert.shouldBeTrue (msg > prevError)
+            prevError <- msg
+
+        let work i = async {
+            for c in 'A' .. 'F' do
+                do! Async.SwitchToThreadPool()
+                errorR (ExampleException $"%03d{i}{c}")
+        }
+
+        let tasks = Seq.init 100 work
+
+        let logger = DiagnosticsLoggerWithCallback errorCommitted
+        use _ = UseDiagnosticsLogger logger
+        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async.Ignore |> Async.RunImmediate
+
+        // all errors committed
+        errorCountShouldBe 300
+
+        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async.Ignore |> Async.RunImmediate
+
+        errorCountShouldBe 600
+
+
+
 
     [<Fact>]
     let ``AsyncLocal diagnostics context flows correctly`` () =
