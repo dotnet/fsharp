@@ -523,6 +523,8 @@
     <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
     <Compile Include="Interactive\FSharpInteractiveServer.fs" />
     <Compile Include="Interactive\ControlledExecution.fs" />
+    <Compile Include="Interactive\fsihelp.fsi" />
+    <Compile Include="Interactive\fsihelp.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
