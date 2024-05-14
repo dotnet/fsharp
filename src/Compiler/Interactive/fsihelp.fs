@@ -10,6 +10,7 @@ open System.IO
 open System.Text
 open System.Reflection
 open FSharp.Compiler
+open FSharp.Compiler.IO
 
 module Parser =
 
@@ -88,7 +89,8 @@ module Parser =
             xmlDocument.LoadXml(value)
             xmlDocument
         | _ ->
-            let rawXml = File.ReadAllText(xmlPath)
+            use stream = FileSystem.OpenFileForReadShim(xmlPath)
+            let rawXml = stream.ReadAllText()
             let xmlDocument = XmlDocument()
             xmlDocument.LoadXml(rawXml)
             xmlDocCache.Add(xmlPath, rawXml)
@@ -214,7 +216,7 @@ module Expr =
         let xmlPath = Path.ChangeExtension(declaringType.Assembly.Location, ".xml")
         let assembly = Path.GetFileName(declaringType.Assembly.Location)
 
-        if File.Exists(xmlPath) then
+        if FileSystem.FileExistsShim(xmlPath) then
             // for FullName cases like Microsoft.FSharp.Core.FSharpOption`1[System.Object]
             let fullName =
                 let idx = declaringType.FullName.IndexOf('[')
