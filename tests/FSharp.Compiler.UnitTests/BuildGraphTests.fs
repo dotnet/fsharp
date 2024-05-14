@@ -11,7 +11,6 @@ open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Tokenization.FSharpTokenTag
 
 module BuildGraphTests =
     
