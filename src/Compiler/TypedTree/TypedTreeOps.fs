@@ -34,9 +34,12 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeProviders
 #endif
 
-let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
-let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
-let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
+let AccFreeVarsStackGuardDepth =
+    StackGuard.GetOsDependentDepth(100, 110, 110, 100, "FSHARP_AccFreeVars")
+let RemapExprStackGuardDepth =
+    StackGuard.GetOsDependentDepth(50, 55, 55, 50, "FSHARP_RemapExpr")
+let FoldExprStackGuardDepth =
+    StackGuard.GetOsDependentDepth(50, 55, 55, 50, "FSHARP_FoldExpr")
 
 //---------------------------------------------------------------------------
 // Basic data structures

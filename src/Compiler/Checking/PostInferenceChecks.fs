@@ -56,7 +56,8 @@ open FSharp.Compiler.TypeRelations
 //     b) a lambda expression - rejected.
 //     c) none of the above - rejected as when checking outmost expressions.
 
-let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_PostInferenceChecks" 50
+let PostInferenceChecksStackGuardDepth =
+    StackGuard.GetOsDependentDepth(50, 55, 55, 50, "FSHARP_PostInferenceChecks")
 
 //--------------------------------------------------------------------------
 // check environment
