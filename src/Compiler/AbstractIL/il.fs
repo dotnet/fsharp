@@ -39,7 +39,7 @@ let lazyMap f (x: InterruptibleLazy<_>) =
     else
         InterruptibleLazy(fun _ -> f (x.Force()))
 
-[<RequireQualifiedAccess; NoComparison; NoEquality>]
+[<RequireQualifiedAccess>]
 type PrimaryAssembly =
     | Mscorlib
     | System_Runtime
