@@ -34,7 +34,10 @@ module Parser =
                 |> List.map (fun (name, description) -> sprintf "- %s: %s" name description)
                 |> String.concat "\n"
 
-            sb.AppendLine($"\nDescription:\n%s{this.Summary}") |> ignore
+            sb.AppendLine()
+                .AppendLine("Description:")
+                .AppendLine(this.Summary)
+                |> ignore
 
             match this.Remarks with
             | Some r -> sb.AppendLine $"\nRemarks:\n%s{r}" |> ignore
