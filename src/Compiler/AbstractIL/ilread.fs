@@ -934,6 +934,7 @@ let mkCacheGeneric lowMem _inbase _nm (sz: int) =
 
 #if STATISTICS
         let mutable _count = 0
+
         addReport (fun oc ->
             if !_count <> 0 then
                 oc.WriteLine((_inbase + string !_count + " " + _nm + " cache hits"): string))
