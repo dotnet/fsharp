@@ -47,9 +47,9 @@
   <ItemGroup>
     <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)" Condition="'$(VersionSuffix)'==''" />
     <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
-    <NuspecProperty Include="MicrosoftBuildFrameworkPackageVersion=$(MicrosoftBuildVersion)" />
-    <NuspecProperty Include="MicrosoftBuildTasksCorePackageVersion=$(MicrosoftBuildVersion)" />
-    <NuspecProperty Include="MicrosoftBuildUtilitiesCorePackageVersion=$(MicrosoftBuildVersion)" />
+    <NuspecProperty Include="MicrosoftBuildFrameworkPackageVersion=$(MicrosoftBuildFrameworkVersion)" />
+    <NuspecProperty Include="MicrosoftBuildTasksCorePackageVersion=$(MicrosoftBuildTasksCoreVersion)" />
+    <NuspecProperty Include="MicrosoftBuildUtilitiesCorePackageVersion=$(MicrosoftBuildUtilitiesCoreVersion)" />
     <NuspecProperty Include="SystemBuffersPackageVersion=$(SystemBuffersVersion)" />
     <NuspecProperty Include="SystemCollectionsImmutablePackageVersion=$(SystemCollectionsImmutableVersion)" />
     <NuspecProperty Include="SystemMemoryPackageVersion=$(SystemMemoryVersion)" />
