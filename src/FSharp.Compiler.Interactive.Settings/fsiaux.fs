@@ -181,10 +181,10 @@ type InteractiveSession() =
 module Settings =
     let fsi = new InteractiveSession()
 
-    fsi.AddPrinter<FsiHelp.Parser.Help option>(fun help ->
+    fsi.AddPrinter<FsiHelp.Parser.Help voption>(fun help ->
         match help with
-        | None -> "No help available"
-        | Some help -> help.ToDisplayString())
+        | ValueNone -> "No help available"
+        | ValueSome help -> help.ToDisplayString())
 
     [<assembly: AutoOpen("FSharp.Compiler.Interactive.Settings")>]
     do ()

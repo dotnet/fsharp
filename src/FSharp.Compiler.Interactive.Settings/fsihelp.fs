@@ -135,7 +135,7 @@ module Parser =
             |> Seq.tryPick id
 
         match node with
-        | None -> None
+        | None -> ValueNone
         | Some n ->
             let summary =
                 n.SelectSingleNode("summary")
@@ -198,8 +198,8 @@ module Parser =
                     FullName = $"{modName}.{sourceName}" // the long ident as users see it
                     Assembly = assembly
                 }
-                |> Some
-            | None -> None
+                |> ValueSome
+            | None -> ValueNone
 
 module Expr =
 
@@ -265,4 +265,4 @@ module Logic =
         let tryGetDocumentation (expr: Quotations.Expr) =
             match exprNames expr with
             | Some(xmlPath, assembly, modName, implName, sourceName) -> helpText xmlPath assembly modName implName sourceName
-            | _ -> None
+            | _ -> ValueNone
