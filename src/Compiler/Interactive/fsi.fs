@@ -2500,7 +2500,7 @@ type internal FsiDynamicCompiler
         processContents newState declaredImpls
 
     /// Evaluate the given expression and produce a new interactive state.
-    member fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr, suppressItPrint) =
+    member fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
         let itName = "it"
 
@@ -2514,7 +2514,7 @@ type internal FsiDynamicCompiler
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with
         | Item.Value vref ->
-            if not tcConfig.noFeedback && not suppressItPrint then
+            if not tcConfig.noFeedback then
                 let infoReader = InfoReader(istate.tcGlobals, istate.tcImports.GetImportMap())
 
                 valuePrinter.InvokeExprPrinter(
@@ -3867,7 +3867,7 @@ type FsiInteractionProcessor
                         | InteractionGroup.HashDirectives [] -> istate, Completed None
 
                         | InteractionGroup.Definitions([ SynModuleDecl.Expr(expr, _) ], _) ->
-                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false)
+                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)
 
                         | InteractionGroup.Definitions(defs, _) ->
                             fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, true, false, defs)
@@ -4061,7 +4061,7 @@ type FsiInteractionProcessor
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             istate
             |> mainThreadProcessAction ctok (fun ctok istate ->
-                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false)))
+                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)))
 
     let commitResult (istate, result) =
         match result with
