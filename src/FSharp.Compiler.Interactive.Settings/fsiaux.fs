@@ -162,6 +162,8 @@ type InteractiveSession() =
     member _.AddPrintTransformer(printer: 'T -> obj) =
         addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
 
+    member _.h([<ReflectedDefinition>] expr: Quotations.Expr<_>) = FsiHelp.Logic.Quoted.h expr
+
     member internal self.SetEventLoop(run: (unit -> bool), invoke: ((unit -> obj) -> obj), restart: (unit -> unit)) =
         evLoop.ScheduleRestart()
 
