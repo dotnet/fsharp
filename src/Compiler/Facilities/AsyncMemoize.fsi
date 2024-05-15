@@ -66,9 +66,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member Clear: predicate: ('TKey -> bool) -> unit
 
-    member Get: key: ICacheKey<'TKey, 'TVersion> * computation: NodeCode<'TValue> -> NodeCode<'TValue>
+    member Get: key: ICacheKey<'TKey, 'TVersion> * computation: Async<'TValue> -> Async<'TValue>
 
-    member Get': key: 'TKey * computation: NodeCode<'TValue> -> NodeCode<'TValue>
+    member Get': key: 'TKey * computation: Async<'TValue> -> Async<'TValue>
 
     member TryGet: key: 'TKey * predicate: ('TVersion -> bool) -> 'TValue option
 
