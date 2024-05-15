@@ -15,6 +15,10 @@
     <UsagePattern IdentityGlob="System.Configuration.ConfigurationManager/8.0.0" />
     <UsagePattern IdentityGlob="System.Diagnostics.EventLog/8.0.0" />
     <UsagePattern IdentityGlob="System.Security.Cryptography.ProtectedData/8.0.0" />
+    <UsagePattern IdentityGlob="System.CodeDom/8.0.0" />
+    <UsagePattern IdentityGlob="System.Resources.Extensions/8.0.0" />
+
+    <UsagePattern IdentityGlob="System.Diagnostics.DiagnosticSource/8.0.0" />
 
     <!-- Tracked in https://github.com/dotnet/source-build/issues/3438 -->
     <UsagePattern IdentityGlob="Microsoft.VisualStudio.Setup.Configuration.Interop/3.2.2146" />
