@@ -16,8 +16,11 @@ let iPatternMatchOnArg arg =
     | null -> "null"
     | _ -> "not null"
 
-//let iAcceptNullPartiallyInfered(arg: _ | null) =
-let iAcceptNullPartiallyInfered(arg: 'a | null when 'a: not struct) =
+let iAcceptNullPartiallyInferedFromUnderscore(arg: _ | null) = 0
+
+let iAcceptNullPartiallyInferedFromNamedTypar(arg: 'a | null) = 0
+
+let iAcceptNullWithNullAnnotation(arg: 'a | null when 'a: not struct) =
     if isNull arg then
         1
     else
@@ -31,10 +34,10 @@ let iAcceptNullExplicitAnnotation(arg: 'T when 'T:null) =
 
 
 let fullyInferedTestCase arg1 arg2 = 
-    System.Console.Write(iAcceptNullPartiallyInfered arg1)
+    System.Console.Write(iAcceptNullPartiallyInferedFromUnderscore arg1)
     let maybeNull = iCanProduceNullSometimes arg2
     maybeNull
 
 let structShouldBeAllowedHere arg = 
     let boxed : obj | null = box arg
-    iAcceptNullPartiallyInfered boxed
+    iAcceptNullPartiallyInferedFromUnderscore boxed

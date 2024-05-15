@@ -161,10 +161,27 @@ let ``Can  infer underscore or null``() =
     FSharp """
 module MyLib
 let iAcceptNullPartiallyInfered(arg: _ | null) = 42
+let iHaveMissingContraint(arg: 'a | null) = 42
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+[<Fact>]
+let ``Invalid usages of WithNull syntax``() = 
+    FSharp """
+module MyLib
+let f1(x: option<string> | null) = ()
+let f2(x: int | null) = ()
+let f3(x: ('a*'b) | null) = ()
+let f4(x: option<'a> | null) = ()
+let f5(x: ('a | null) when 'a:struct) = ()
+let f6(x: 'a | null when 'a:null) = ()
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics []
 
 [<Fact>]
 let ``Boolean literal to string is not nullable`` () = 
