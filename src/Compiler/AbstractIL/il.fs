@@ -39,7 +39,7 @@ let lazyMap f (x: InterruptibleLazy<_>) =
     else
         InterruptibleLazy(fun _ -> f (x.Force()))
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type PrimaryAssembly =
     | Mscorlib
     | System_Runtime
@@ -54,10 +54,10 @@ type PrimaryAssembly =
     static member IsPossiblePrimaryAssembly(fileName: string) =
         let name = System.IO.Path.GetFileNameWithoutExtension(fileName)
 
-        String.Compare(name, "mscorlib", true) <> 0
-        || String.Compare(name, "System.Runtime", true) <> 0
-        || String.Compare(name, "netstandard", true) <> 0
-        || String.Compare(name, "System.Private.CoreLib", true) <> 0
+        String.Equals(name, "System.Runtime", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "mscorlib", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "netstandard", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase)
 
 // --------------------------------------------------------------------
 // Utilities: type names
