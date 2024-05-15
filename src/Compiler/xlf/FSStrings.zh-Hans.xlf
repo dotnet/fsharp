@@ -7,6 +7,11 @@
         <target state="translated">签名“{0}”和实现“{1}”中的参数名称不匹配。将使用签名文件中的参数名称。在进行调试或分析时这可能会导致问题。</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="translated">签名和实现中类型“{1}”的 {0} 定义不兼容，因为缩写不同:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">类型不匹配。应为长度为 {0} 的类型的元组\n    {1}    \n但提供了长度为 {2} 的类型的元组\n    {3}{4}\n</target>
@@ -24,12 +29,12 @@
       </trans-unit>
       <trans-unit id="OverrideShouldBeInstance">
         <source> Non-static member is expected.</source>
-        <target state="new"> Non-static member is expected.</target>
+        <target state="translated"> 应为非静态成员。</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
-        <target state="new"> Static member is expected.</target>
+        <target state="translated"> 应为静态成员。</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -202,6 +207,16 @@
         <target state="translated">字段“{0}”和“{1}”来自不同的类型</target>
         <note />
       </trans-unit>
+      <trans-unit id="ValueRestriction">
+        <source>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">值限制: 值“{0}”具有推断的泛型类型\n    {1}\n但是，值不能具有泛型类型变量，如“let x: '_a”中的 '_a。可以执行下列操作之一:\n- 将其定义为简单数据词，如整数文本、字符串文本或联合大小写(如“let x = 1”)\n- 添加显式类型批注(如“let x : int”)\n- 在后面的代码中将该值用作非泛型类型，以进行类型推理(如“do x”)\n如果仍需要依赖类型的结果，可以改为通过执行以下任一操作来定义“{2}”:\n- 添加单元参数(如“let x（）”)\n- 编写显式类型参数，如“let x&lt;'a&gt;”。\n此错误是因为没有参数的 let 绑定定义了一个值，而不是函数。值不能是泛型的，因为会假定读取值会导致所有位置都相同，但泛型类型参数可能通过启用依赖类型的结果来使此假设失效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestrictionFunction">
+        <source>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">值限制: 值“{0}”具有推断的泛型函数类型\n    {1}\n但是，值不能具有泛型类型变量，如“let f: '_a”中的 '_a。你应该将“{2}”定义为一个函数，而不是通过以下方式之一进行定义:\n- 添加一个显式参数，以替代使用部分应用“let f param”\n- 添加一个单位参数，如“let f()”\n- 编写显式类型参数，如“let f&lt;'a&gt;”\n如果不打算使其成为泛型的话，则可以选择:\n- 添加显式类型注释，如“let f : obj -&gt; obj”\n- 在后续代码中对非泛型类型的参数应用于函数值以进行类型推断，例如“do f()”。\n此错误是因为没有参数的 let 绑定定义了一个值，而不是函数。值不能是泛型的，因为会假定读取值会导致所有位置都相同，但泛型类型参数可能通过启用依赖类型的结果来使此假设失效。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="VarBoundTwice">
         <source>'{0}' is bound twice in this pattern</source>
         <target state="translated">“{0}”在此模式中绑定了两次</target>
@@ -233,8 +248,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">由于未向一些抽象成员提供实现，因此该类型为 "abstract"。如果是故意如此，请向你的类型添加 "[&lt;AbstractClass&gt;]" 属性。</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="needs-review-translation">由于未向一些抽象成员提供实现，因此该类型为 "abstract"。如果是故意如此，请向你的类型添加 "[&lt;AbstractClass&gt;]" 属性。</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1530,31 +1545,6 @@
       <trans-unit id="MissingFields">
         <source>The following fields require values: {0}</source>
         <target state="translated">以下字段需要值: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction1">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。值“{0}”具有泛型类型\n    {1}    \n使“{2}”的参数成为显式参数，或添加类型批注(如果您不希望它是泛型的)。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction2">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。值“{0}”具有泛型类型\n    {1}    \n使“{2}”成为具有显式参数的函数，或添加类型批注(如果您不希望它是泛型的)。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction3">
-        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">值限制。已推理出此成员具有泛型类型\n    {0}    \n构造函数和属性 Getter/Setter 不能比封闭类型更通用。    添加类型批注以指示涉及到的确切类型。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction4">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。已推理出值“{0}”具有泛型类型\n    {1}    \n使“{2}”的参数成为显式参数，或添加类型批注(如果您不希望它是泛型的)。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction5">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。已推理出值“{0}”具有泛型类型\n    {1}    \n将“{2}”定义为简单的数据条目，使其成为具有显式参数的函数，或添加类型批注(如果您不希望它是泛型的)。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">

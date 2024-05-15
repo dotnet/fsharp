@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="needs-review-translation">Usar buffers dinâmicos (não salvos) para verificação (reinicialização necessária)</target>
+        <target state="translated">Usar buffers dinâmicos (não salvos) para verificação (reinicialização necessária)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="needs-review-translation">Buffers Dinâmicos (experimental)</target>
+        <target state="translated">Buffers Dinâmicos</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="Remove_parens_code_fix">
         <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
-        <target state="new">Remove unnecessary parentheses (experimental, might affect typing performance)</target>
+        <target state="translated">Remover parênteses desnecessários (experimental, pode afetar o desempenho da digitação)</target>
         <note />
       </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="Show_remarks_in_Quick_Info">
         <source>Show remarks in Quick Info</source>
-        <target state="new">Show remarks in Quick Info</target>
+        <target state="translated">Mostrar os comentários nas Informações Rápidas</target>
         <note />
       </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
@@ -200,6 +200,41 @@
       <trans-unit id="Tooltip_preferred_description_width_in_characters">
         <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
         <target state="translated">Formate a assinatura para a largura fornecida adicionando quebras de linha em conformidade com as regras de sintaxe F#. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="translated">Compilador Transparente (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="translated">AVISO! O Compilador Transparente ainda não é dá suporte para todos os recursos e pode causar falhas ou fornecer resultados incorretos.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="translated">Use por sua própria conta e risco!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="translated">Ao marcar essa opção, você também aceita a telemetria de desempenho adicional</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor">
+        <source>Transparent Compiler Cache Factor</source>
+        <target state="translated">Fator de cache do Compilador Transparente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
+        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
+        <target state="translated">Um número maior significa que mais memória será usada para o cache. A alteração do valor apaga o cache.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="translated">Criar novos instantâneos de projeto a partir dos existentes</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -285,6 +320,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Sugerir nomes para identificadores não resolvidos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="translated">Use o Compilador Transparente (é necessário reiniciar)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">

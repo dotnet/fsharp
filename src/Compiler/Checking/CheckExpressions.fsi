@@ -75,7 +75,7 @@ exception UnionPatternsBindDifferentNames of range
 
 exception VarBoundTwice of Ident
 
-exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
+exception ValueRestriction of DisplayEnv * InfoReader * Val * Typar * range
 
 exception ValNotMutable of DisplayEnv * ValRef * range
 
@@ -256,7 +256,7 @@ type NormalizedBinding =
     | NormalizedBinding of
         visibility: SynAccess option *
         kind: SynBindingKind *
-        mustInline: bool *
+        shouldInline: bool *
         isMutable: bool *
         attribs: SynAttribute list *
         xmlDoc: XmlDoc *
@@ -430,6 +430,7 @@ val ComputeAccessRights:
 
 /// Compute the available access rights and module/entity compilation path for a paricular location in code
 val ComputeAccessAndCompPath:
+    g: TcGlobals ->
     env: TcEnv ->
     declKindOpt: DeclKind option ->
     m: range ->
@@ -700,7 +701,11 @@ val TcLinearExprs:
 
 /// Try to check a syntactic statement and indicate if it's type is not unit without emitting a warning
 val TryTcStmt:
-    cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> synExpr: SynExpr -> bool * Expr * UnscopedTyparEnv
+    cenv: TcFileState ->
+    env: TcEnv ->
+    tpenv: UnscopedTyparEnv ->
+    synExpr: SynExpr ->
+        bool * TType * Expr * UnscopedTyparEnv
 
 /// Check a pattern being used as a pattern match
 val TcMatchPattern:
@@ -712,7 +717,8 @@ val TcMatchPattern:
     synWhenExprOpt: SynExpr option ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
 
-val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) option
+[<return: Struct>]
+val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) voption
 
 /// Check a set of let bindings in a class or module
 val TcLetBindings:

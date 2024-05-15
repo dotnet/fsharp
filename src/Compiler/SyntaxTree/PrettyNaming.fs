@@ -389,29 +389,30 @@ let compileCustomOpName =
     /// They're typically used more than once so this avoids some CPU and GC overhead.
     let compiledOperators = ConcurrentDictionary<_, string> StringComparer.Ordinal
 
+    // Cache this as a delegate.
+    let compiledOperatorsAddDelegate =
+        Func<string, string>(fun (op: string) ->
+            let opLength = op.Length
+
+            let sb =
+                StringBuilder(opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
+
+            for i = 0 to opLength - 1 do
+                let c = op[i]
+
+                match t2.TryGetValue c with
+                | true, x -> sb.Append(x) |> ignore
+                | false, _ -> sb.Append(c) |> ignore
+
+            /// The compiled (mangled) operator name.
+            let opName = sb.ToString()
+
+            // Cache the compiled name so it can be reused.
+            opName)
+
     fun opp ->
         // Has this operator already been compiled?
-        compiledOperators.GetOrAdd(
-            opp,
-            fun (op: string) ->
-                let opLength = op.Length
-
-                let sb =
-                    StringBuilder(opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
-
-                for i = 0 to opLength - 1 do
-                    let c = op[i]
-
-                    match t2.TryGetValue c with
-                    | true, x -> sb.Append(x) |> ignore
-                    | false, _ -> sb.Append(c) |> ignore
-
-                /// The compiled (mangled) operator name.
-                let opName = sb.ToString()
-
-                // Cache the compiled name so it can be reused.
-                opName
-        )
+        compiledOperators.GetOrAdd(opp, compiledOperatorsAddDelegate)
 
 /// Maps the built-in F# operators to their mangled operator names.
 let standardOpNames =
@@ -1034,7 +1035,7 @@ let MangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
     let nonDefaultArgsText =
         nonDefaultArgs |> Array.map mangleStaticStringArg |> String.concat ","
 
-    if nonDefaultArgsText = "" then
+    if String.IsNullOrEmpty(nonDefaultArgsText) then
         typeLogicalName
     else
         typeLogicalName + "," + nonDefaultArgsText

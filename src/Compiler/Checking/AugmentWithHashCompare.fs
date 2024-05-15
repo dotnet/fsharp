@@ -106,6 +106,9 @@ let mkEqualsTy g ty =
 let mkEqualsWithComparerTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [ g.obj_ty; g.IEqualityComparer_ty ]) g.bool_ty)
 
+let mkEqualsWithComparerTyExact g ty =
+    mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [ ty; g.IEqualityComparer_ty ]) g.bool_ty)
+
 let mkHashTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.int_ty)
 
@@ -361,7 +364,7 @@ let mkRecdEquality g tcref (tycon: Tycon) =
     thisv, thatv, expr
 
 /// Build the equality implementation for a record type when parameterized by a comparer
-let mkRecdEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje (thatv, thate) compe =
+let mkRecdEqualityWithComparer g tcref (tycon: Tycon) thise thatobje (thatv, thate) compe isexact =
     let m = tycon.Range
     let fields = tycon.AllInstanceFieldsAsList
     let tinst, ty = mkMinimalTy g tcref
@@ -382,14 +385,21 @@ let mkRecdEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje (
     let expr = mkEqualsTestConjuncts g m (List.map mkTest fields)
 
     let expr = mkBindThatAddr g m ty thataddrv thatv thate expr
-    // will be optimized away if not necessary
-    let expr = mkIsInstConditional g m ty thatobje thatv expr (mkFalse g m)
+
+    let expr = 
+        if isexact then 
+            expr
+        else
+            mkIsInstConditional g m ty thatobje thatv expr (mkFalse g m)
 
     let expr =
         if tycon.IsStructOrEnumTycon then
             expr
         else
-            mkBindThisNullEquals g m thise thatobje expr
+            if isexact then
+                mkBindThatNullEquals g m thise thate expr
+            else
+                mkBindThisNullEquals g m thise thatobje expr
 
     expr
 
@@ -425,7 +435,7 @@ let mkExnEquality (g: TcGlobals) exnref (exnc: Tycon) =
     thisv, thatv, expr
 
 /// Build the equality implementation for an exception definition when parameterized by a comparer
-let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (thatv, thate) compe =
+let mkExnEqualityWithComparer g exnref (exnc: Tycon) thise thatobje (thatv, thate) compe isexact =
     let m = exnc.Range
     let thataddrv, thataddre = mkThatAddrLocal g m g.exn_ty
 
@@ -453,13 +463,21 @@ let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (t
         mbuilder.Close(dtree, m, g.bool_ty)
 
     let expr = mkBindThatAddr g m g.exn_ty thataddrv thatv thate expr
-    let expr = mkIsInstConditional g m g.exn_ty thatobje thatv expr (mkFalse g m)
+
+    let expr = 
+        if isexact then
+            expr
+        else 
+            mkIsInstConditional g m g.exn_ty thatobje thatv expr (mkFalse g m)
 
     let expr =
         if exnc.IsStructOrEnumTycon then
             expr
         else
-            mkBindThisNullEquals g m thise thatobje expr
+            if isexact then
+                mkBindThatNullEquals g m thise thate expr
+            else
+                mkBindThisNullEquals g m thise thatobje expr
 
     expr
 
@@ -758,7 +776,7 @@ let mkUnionEquality g tcref (tycon: Tycon) =
     thisv, thatv, expr
 
 /// Build the equality implementation for a union type when parameterized by a comparer
-let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje (thatv, thate) compe =
+let mkUnionEqualityWithComparer g tcref (tycon: Tycon) thise thatobje (thatv, thate) compe isexact =
     let m = tycon.Range
     let ucases = tycon.UnionCasesAsList
     let tinst, ty = mkMinimalTy g tcref
@@ -846,13 +864,21 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
                 (mkCompGenLet m thattagv (mkUnionCaseTagGetViaExprAddr (thataddre, tcref, tinst, m)) tagsEqTested)
 
     let expr = mkBindThatAddr g m ty thataddrv thatv thate expr
-    let expr = mkIsInstConditional g m ty thatobje thatv expr (mkFalse g m)
+
+    let expr = 
+        if isexact then
+            expr
+        else
+            mkIsInstConditional g m ty thatobje thatv expr (mkFalse g m)
 
     let expr =
         if tycon.IsStructOrEnumTycon then
             expr
         else
-            mkBindThisNullEquals g m thise thatobje expr
+            if isexact then
+                mkBindThatNullEquals g m thise thate expr
+            else
+                mkBindThisNullEquals g m thise thatobje expr
 
     expr
 
@@ -1013,6 +1039,15 @@ let getAugmentationAttribs g (tycon: Tycon) =
     TryFindFSharpBoolAttribute g g.attrib_NoComparisonAttribute tycon.Attribs,
     TryFindFSharpBoolAttribute g g.attrib_CustomComparisonAttribute tycon.Attribs,
     TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs
+
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+type EqualityWithComparerAugmentation = 
+    {
+        GetHashCode: Val
+        GetHashCodeWithComparer: Val
+        EqualsWithComparer: Val
+        EqualsExactWithComparer: Val
+    }
 
 let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
     let m = tycon.Range
@@ -1312,7 +1347,10 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
 
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let _, ty = mkMinimalTy g tcref
-    let vis = tcref.TypeReprAccessibility
+    let vis =
+        // Equality method for union types match the union type visibility rather than the TypeReprAccessibility
+        if tcref.IsUnionTycon then tcref.Accessibility
+        else tcref.TypeReprAccessibility
     let tps = tcref.Typars tcref.Range
 
     let objGetHashCodeVal =
@@ -1333,7 +1371,25 @@ let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let withcEqualsVal =
         mkValSpec g tcref ty vis (Some(mkIStructuralEquatableEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsWithComparerTy g ty)) tupArg false
 
-    objGetHashCodeVal, withcGetHashCodeVal, withcEqualsVal
+    let withcEqualsValExact =
+        mkValSpec
+            g 
+            tcref 
+            ty
+            vis
+            // This doesn't implement any interface.
+            None 
+            "Equals" 
+            (tps +-> (mkEqualsWithComparerTyExact g ty)) 
+            tupArg 
+            false
+
+    {
+        GetHashCode = objGetHashCodeVal
+        GetHashCodeWithComparer = withcGetHashCodeVal
+        EqualsWithComparer = withcEqualsVal
+        EqualsExactWithComparer = withcEqualsValExact
+    }    
 
 let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
@@ -1419,7 +1475,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
     let mkStructuralEquatable hashf equalsf =
         match tycon.GeneratedHashAndEqualsWithComparerValues with
         | None -> []
-        | Some(objGetHashCodeVal, withcGetHashCodeVal, withcEqualsVal) ->
+        | Some(objGetHashCodeVal, withcGetHashCodeVal, withcEqualsVal, withcEqualsExactValOption) ->
 
             // build the hash rhs
             let withcGetHashCodeExpr =
@@ -1451,12 +1507,33 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
 
             // build the equals rhs
             let withcEqualsExpr =
-                let _tinst, ty = mkMinimalTy g tcref
+                let tinst, ty = mkMinimalTy g tcref
                 let thisv, thise = mkThisVar g m ty
                 let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty
                 let thatv, thate = mkCompGenLocal m "that" ty
                 let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
-                let equalse = equalsf g tcref tycon (thisv, thise) thatobje (thatv, thate) compe
+
+                // if the new overload is available, use it
+                // otherwise, generate the whole equals thing
+                let equalse =
+                    match withcEqualsExactValOption with
+                    | Some withcEqualsExactVal ->
+                         mkIsInstConditional
+                             g
+                             m
+                             ty
+                             thatobje
+                             thatv
+                             (mkApps
+                                 g
+                                 ((exprForValRef m withcEqualsExactVal, withcEqualsExactVal.Type),
+                                  (if isNil tinst then [] else [ tinst ]),
+                                  [ thise; mkRefTupled g m [ thate; compe ] [ty; g.IEqualityComparer_ty ] ],
+                                  m))
+                             (mkFalse g m)
+                    | None ->
+                        equalsf g tcref tycon thise thatobje (thatv, thate) compe false
+
                 mkMultiLambdas g m tps [ [ thisv ]; [ thatobjv; compv ] ] (equalse, g.bool_ty)
 
             let objGetHashCodeExpr =
@@ -1481,9 +1558,22 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
 
                 mkLambdas g m tps [ thisv; unitv ] (hashe, g.int_ty)
 
+            let withcEqualsExactExpr =
+                let _tinst, ty = mkMinimalTy g tcref
+                let thisv, thise = mkThisVar g m ty
+                let thatv, thate = mkCompGenLocal m "obj" ty
+                let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
+
+                let equalse = equalsf g tcref tycon thise thate (thatv, thate) compe true
+
+                mkMultiLambdas g m tps [ [ thisv ]; [ thatv; compv ] ] (equalse, g.bool_ty)
+
             [
                 (mkCompGenBind withcGetHashCodeVal.Deref withcGetHashCodeExpr)
                 (mkCompGenBind objGetHashCodeVal.Deref objGetHashCodeExpr)
+                match withcEqualsExactValOption with
+                | Some withcEqualsExactVal -> mkCompGenBind withcEqualsExactVal.Deref withcEqualsExactExpr
+                | None -> ()
                 (mkCompGenBind withcEqualsVal.Deref withcEqualsExpr)
             ]
 

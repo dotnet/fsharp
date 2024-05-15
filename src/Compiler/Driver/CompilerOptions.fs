@@ -109,7 +109,7 @@ let compilerOptionUsage (CompilerOption(s, tag, spec, _, _)) =
     | OptionFloat _ -> sprintf "--%s:%s" s tag
     | OptionRest _ -> sprintf "--%s ..." s
     | OptionGeneral _ ->
-        if tag = "" then
+        if String.IsNullOrEmpty(tag) then
             sprintf "%s" s
         else
             sprintf "%s:%s" s tag (* still being decided *)
@@ -270,7 +270,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
         let optArgs = String.Join(":", opts[1..])
 
         let opt =
-            if option = "" then
+            if String.IsNullOrEmpty(option) then
                 ""
             // if it doesn't start with a '-' or '/', reject outright
             elif option[0] <> '-' && option[0] <> '/' then
@@ -298,13 +298,13 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
         opt, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
-        if argString = "" then
+        if String.IsNullOrEmpty(argString) then
             errorR (Error(FSComp.SR.buildOptionRequiresParameter (compilerOptionUsage compilerOption), rangeCmdArgs))
 
         argString
 
     let getOptionArgList compilerOption (argString: string) =
-        if argString = "" then
+        if String.IsNullOrEmpty(argString) then
             errorR (Error(FSComp.SR.buildOptionRequiresParameter (compilerOptionUsage compilerOption), rangeCmdArgs))
             []
         else
@@ -375,19 +375,19 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                     reportDeprecatedOption d
                     f blocks
                     t
-                | CompilerOption(s, _, OptionUnit f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption(s, _, OptionUnit f, d, _) :: _ when optToken = s && String.IsNullOrEmpty(argString) ->
                     reportDeprecatedOption d
                     f ()
                     t
-                | CompilerOption(s, _, OptionSwitch f, d, _) :: _ when getSwitchOpt optToken = s && argString = "" ->
+                | CompilerOption(s, _, OptionSwitch f, d, _) :: _ when getSwitchOpt optToken = s && String.IsNullOrEmpty(argString) ->
                     reportDeprecatedOption d
                     f (getSwitch opt)
                     t
-                | CompilerOption(s, _, OptionSet f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption(s, _, OptionSet f, d, _) :: _ when optToken = s && String.IsNullOrEmpty(argString) ->
                     reportDeprecatedOption d
                     f.Value <- true
                     t
-                | CompilerOption(s, _, OptionClear f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption(s, _, OptionClear f, d, _) :: _ when optToken = s && String.IsNullOrEmpty(argString) ->
                     reportDeprecatedOption d
                     f.Value <- false
                     t
@@ -567,6 +567,9 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
+
+let SetRealsig (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.realsig <- (switch = OptionSwitch.On)
 
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
     match tcConfigB.emitMetadataAssembly with
@@ -1025,6 +1028,8 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 None,
                 Some(FSComp.SR.optsDeterministic ())
             )
+
+            CompilerOption("realsig", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsRealsig ()))
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))
 

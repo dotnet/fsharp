@@ -75,6 +75,11 @@ type LanguageFeature =
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
+    | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | EnforceAttributeTargets
+    | LowerInterpolatedStringToConcat
+    | LowerIntegralRangesToFastLoops
+    | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
 
 /// LanguageVersion management
 type LanguageVersion =

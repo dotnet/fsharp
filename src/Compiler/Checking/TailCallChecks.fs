@@ -18,11 +18,12 @@ open FSharp.Compiler.TypeRelations
 
 let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_TailCallChecks" 50
 
+[<return: Struct>]
 let (|ValUseAtApp|_|) e =
     match e with
     | InnerExprPat(Expr.App(funcExpr = InnerExprPat(Expr.Val(valRef = vref; flags = valUseFlags))) | Expr.Val(
-        valRef = vref; flags = valUseFlags)) -> Some(vref, valUseFlags)
-    | _ -> None
+        valRef = vref; flags = valUseFlags)) -> ValueSome(vref, valUseFlags)
+    | _ -> ValueNone
 
 type TailCallReturnType =
     | MustReturnVoid // indicates "has unit return type and must return void"
@@ -66,8 +67,6 @@ type cenv =
         g: TcGlobals
 
         amap: Import.ImportMap
-
-        reportErrors: bool
 
         /// Values in module that have been marked [<TailCall>]
         mustTailCall: Zset<Val>
@@ -139,12 +138,8 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     | Expr.Op(TOp.Coerce, _, [ f ], _) -> mkArgsForAppliedExpr isBaseCall argsl f
     | _ -> []
 
-/// Check an expression, where the expression is in a position where byrefs can be generated
-let rec CheckExprNoByrefs cenv (tailCall: TailCall) expr =
-    CheckExpr cenv expr PermitByRefExpr.No tailCall
-
 /// Check an expression, warn if it's attributed with TailCall but our analysis concludes it's not a valid tail call
-and CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
+let CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
     let g = cenv.g
     let expr = stripExpr expr
     let expr = stripDebugPoints expr
@@ -152,67 +147,69 @@ and CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
     match expr with
     | Expr.App(f, _fty, _tyargs, argsl, m) ->
 
-        if cenv.reportErrors then
-            if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
-                match f with
-                | ValUseAtApp(vref, valUseFlags) when cenv.mustTailCall.Contains vref.Deref ->
+        match f with
+        | ValUseAtApp(vref, valUseFlags) when cenv.mustTailCall.Contains vref.Deref ->
 
-                    let canTailCall =
-                        match tailCall with
-                        | TailCall.No -> // an upper level has already decided that this is not in a tailcall position
-                            false
-                        | TailCall.Yes returnType ->
-                            if vref.IsMemberOrModuleBinding && vref.ValReprInfo.IsSome then
-                                let topValInfo = vref.ValReprInfo.Value
+            let canTailCall =
+                match tailCall with
+                | TailCall.No -> // an upper level has already decided that this is not in a tailcall position
+                    false
+                | TailCall.Yes returnType ->
+                    if vref.IsMemberOrModuleBinding && vref.ValReprInfo.IsSome then
+                        let topValInfo = vref.ValReprInfo.Value
 
-                                let nowArgs, laterArgs =
-                                    let _, curriedArgInfos, _, _ =
-                                        GetValReprTypeInFSharpForm cenv.g topValInfo vref.Type m
+                        let nowArgs, laterArgs =
+                            let _, curriedArgInfos, _, _ =
+                                GetValReprTypeInFSharpForm cenv.g topValInfo vref.Type m
 
-                                    if argsl.Length >= curriedArgInfos.Length then
-                                        (List.splitAfter curriedArgInfos.Length argsl)
-                                    else
-                                        ([], argsl)
-
-                                let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
-
-                                let _, _, _, returnTy, _ =
-                                    GetValReprTypeInCompiledForm g topValInfo numEnclosingTypars vref.Type m
-
-                                let _, _, isNewObj, isSuperInit, isSelfInit, _, _, _ =
-                                    GetMemberCallInfo cenv.g (vref, valUseFlags)
-
-                                let isCCall =
-                                    match valUseFlags with
-                                    | PossibleConstrainedCall _ -> true
-                                    | _ -> false
-
-                                let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g)
-
-                                let mustGenerateUnitAfterCall =
-                                    (Option.isNone returnTy && returnType <> TailCallReturnType.MustReturnVoid)
-
-                                let noTailCallBlockers =
-                                    not isNewObj
-                                    && not isSuperInit
-                                    && not isSelfInit
-                                    && not mustGenerateUnitAfterCall
-                                    && isNil laterArgs
-                                    && not (IsValRefIsDllImport cenv.g vref)
-                                    && not isCCall
-                                    && not hasByrefArg
-
-                                noTailCallBlockers // blockers that will prevent the IL level from emmiting a tail instruction
+                            if argsl.Length >= curriedArgInfos.Length then
+                                (List.splitAfter curriedArgInfos.Length argsl)
                             else
-                                true
+                                ([], argsl)
 
-                    // warn if we call inside of recursive scope in non-tail-call manner/with tail blockers. See
-                    // ``Warn successfully in match clause``
-                    // ``Warn for byref parameters``
-                    if not canTailCall then
-                        warning (Error(FSComp.SR.chkNotTailRecursive vref.DisplayName, m))
-                | _ -> ()
+                        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
+
+                        let _, _, _, returnTy, _ =
+                            GetValReprTypeInCompiledForm g topValInfo numEnclosingTypars vref.Type m
+
+                        let _, _, isNewObj, isSuperInit, isSelfInit, _, _, _ =
+                            GetMemberCallInfo cenv.g (vref, valUseFlags)
+
+                        let isCCall =
+                            match valUseFlags with
+                            | PossibleConstrainedCall _ -> true
+                            | _ -> false
+
+                        let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g)
+
+                        let mustGenerateUnitAfterCall =
+                            (Option.isNone returnTy && returnType <> TailCallReturnType.MustReturnVoid)
+
+                        let noTailCallBlockers =
+                            not isNewObj
+                            && not isSuperInit
+                            && not isSelfInit
+                            && not mustGenerateUnitAfterCall
+                            && isNil laterArgs
+                            && not (IsValRefIsDllImport cenv.g vref)
+                            && not isCCall
+                            && not hasByrefArg
+
+                        noTailCallBlockers // blockers that will prevent the IL level from emmiting a tail instruction
+                    else
+                        true
+
+            // warn if we call inside of recursive scope in non-tail-call manner/with tail blockers. See
+            // ``Warn successfully in match clause``
+            // ``Warn for byref parameters``
+            if not canTailCall then
+                warning (Error(FSComp.SR.chkNotTailRecursive vref.DisplayName, m))
+        | _ -> ()
     | _ -> ()
+
+/// Check an expression, where the expression is in a position where byrefs can be generated
+let rec CheckExprNoByrefs cenv (tailCall: TailCall) expr =
+    CheckExpr cenv expr PermitByRefExpr.No tailCall
 
 /// Check call arguments, including the return argument.
 and CheckCall cenv args ctxts (tailCall: TailCall) =
@@ -225,6 +222,13 @@ and CheckCall cenv args ctxts (tailCall: TailCall) =
             | Expr.App _ -> Some(TailCall.YesFromExpr cenv.g e)
             | IsAppInLambdaBody t -> Some t
             | _ -> None
+        | Expr.App(args = args) ->
+            args
+            |> List.tryPick (fun a ->
+                match a with
+                | IsAppInLambdaBody t -> Some t
+                | _ -> None)
+
         | _ -> None
 
     // if we haven't already decided this is no tail call, try to detect CPS-like expressions
@@ -542,12 +546,10 @@ and CheckExprOp cenv (op, tyargs, args, m) ctxt : unit =
     | TOp.ValFieldSet _rf, _, [ _arg1; _arg2 ] -> ()
 
     | TOp.Coerce, [ tgtTy; srcTy ], [ x ] ->
-        let tailCall = TailCall.YesFromExpr cenv.g x
-
         if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
-            CheckExpr cenv x ctxt tailCall
+            CheckExpr cenv x ctxt TailCall.No
         else
-            CheckExprNoByrefs cenv tailCall x
+            CheckExprNoByrefs cenv TailCall.No x
 
     | TOp.Reraise, [ _ty1 ], [] -> ()
 
@@ -720,7 +722,7 @@ and CheckBinding cenv alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bind) :
         | Some info -> info
         | _ -> ValReprInfo.emptyValData
 
-    CheckLambdas isTop (Some v) cenv v.MustInline valReprInfo tailCall alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
+    CheckLambdas isTop (Some v) cenv v.ShouldInline valReprInfo tailCall alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv binds =
     for bind in binds do
@@ -729,19 +731,8 @@ and CheckBindings cenv binds =
 let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
 
     // warn for non-rec functions which have the attribute
-    if
-        cenv.reportErrors
-        && cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailCallAttrOnNonRec
-    then
-        let isNotAFunction =
-            match bind.Var.ValReprInfo with
-            | Some info -> info.HasNoArgs
-            | _ -> false
-
-        if
-            (not isRec || isNotAFunction)
-            && HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute bind.Var.Attribs
-        then
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailCallAttrOnNonRec then
+        if not isRec && cenv.g.HasTailCallAttrib bind.Var.Attribs then
             warning (Error(FSComp.SR.chkTailCallAttrOnNonRec (), bind.Var.Range))
 
     // Check if a let binding to the result of a rec expression is not inside the rec expression
@@ -807,7 +798,7 @@ and CheckDefnInModule cenv mdef =
                 let mustTailCall =
                     Seq.fold
                         (fun mustTailCall (v: Val) ->
-                            if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
+                            if cenv.g.HasTailCallAttrib v.Attribs then
                                 let newSet = Zset.add v mustTailCall
                                 newSet
                             else
@@ -844,14 +835,17 @@ and CheckModuleSpec cenv isRec mbind =
 
     | ModuleOrNamespaceBinding.Module(_mspec, rhs) -> CheckDefnInModule cenv rhs
 
-let CheckImplFile (g, amap, reportErrors, implFileContents) =
-    let cenv =
-        {
-            g = g
-            reportErrors = reportErrors
-            stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
-            amap = amap
-            mustTailCall = Zset.empty valOrder
-        }
+let CheckImplFile (g: TcGlobals, amap, reportErrors, implFileContents) =
+    if
+        reportErrors
+        && g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage
+    then
+        let cenv =
+            {
+                g = g
+                stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
+                amap = amap
+                mustTailCall = Zset.empty valOrder
+            }
 
-    CheckDefnInModule cenv implFileContents
+        CheckDefnInModule cenv implFileContents

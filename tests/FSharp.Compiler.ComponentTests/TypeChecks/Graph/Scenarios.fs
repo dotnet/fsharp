@@ -796,8 +796,172 @@ type Foo = class end
                 sourceFile
                     "Program"
                     """
+module RunMe
 printfn "Hello"
 """
                     Set.empty
+            ]
+        scenario
+            "Nameof module with namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace X.Y.Z
+
+module Foo =
+    let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace X.Y.Z
+
+module Point =
+    let y = nameof Foo
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Nameof module without namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module Foo
+
+let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Point
+
+let y = nameof Foo
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Single module name should always be checked, regardless of own namespace"
+            [
+                sourceFile "X.fs" "namespace X.Y" Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+module Foo
+
+let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace X.Y
+
+type T() =
+    let _ = nameof Foo
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof Foo -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "parentheses around module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof ((Foo)) -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+            
+        scenario
+            "parentheses around module name in nameof expression"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+let _ = nameof ((Foo))
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof expression"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+open System.ComponentModel
+
+[<Description(nameof X.Y.Z)>]
+let v = 2
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+do ignore (match "" with | nameof X.Y.Z -> () | _ -> ())
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "nameof type with generic parameters"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace A
+
+module B =
+    module C =
+        type D = class end
+"""
+                    Set.empty
+                sourceFile
+                    "Z.fs"
+                    """
+module Z
+
+open System.Threading.Tasks
+
+let _ = nameof Task<A.B.C.D>
+"""
+                    (set [| 0 |])
             ]
     ]

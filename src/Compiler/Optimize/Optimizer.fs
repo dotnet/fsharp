@@ -230,20 +230,23 @@ type Summary<'Info> =
 // Note, this is a different notion of "size" to the one used for inlining heuristics
 //------------------------------------------------------------------------- 
 
-let rec SizeOfValueInfos (arr:_[]) =
-    if arr.Length <= 0 then 0 else max 0 (SizeOfValueInfo arr[0])
+let SizeOfValueInfo valueInfo =
+    let rec loop acc valueInfo =
+        match valueInfo with
+        | SizeValue (vdepth, _v) -> assert (vdepth >= 0); acc + vdepth // terminate recursion at CACHED size nodes
+        | CurriedLambdaValue _
+        | ConstExprValue _
+        | ConstValue _
+        | UnknownValue -> acc + 1
+        | TupleValue vinfos
+        | RecdValue (_, vinfos)
+        | UnionCaseValue (_, vinfos) when vinfos.Length = 0 -> acc + 1
+        | TupleValue vinfos
+        | RecdValue (_, vinfos)
+        | UnionCaseValue (_, vinfos) -> loop (acc + 1) vinfos[0]
+        | ValValue (_vr, vinfo) -> loop (acc + 1) vinfo
 
-and SizeOfValueInfo x =
-    match x with
-    | SizeValue (vdepth, _v) -> vdepth // terminate recursion at CACHED size nodes
-    | ConstValue (_x, _) -> 1
-    | UnknownValue -> 1
-    | ValValue (_vr, vinfo) -> SizeOfValueInfo vinfo + 1
-    | TupleValue vinfos
-    | RecdValue (_, vinfos)
-    | UnionCaseValue (_, vinfos) -> 1 + SizeOfValueInfos vinfos
-    | CurriedLambdaValue _ -> 1
-    | ConstExprValue (_size, _) -> 1
+    loop 0 valueInfo
 
 let [<Literal>] minDepthForASizeNode = 5  // for small vinfos do not record size info, save space
 
@@ -432,6 +435,7 @@ type cenv =
 
       stackGuard: StackGuard
 
+      realsig: bool
     }
 
     override x.ToString() = "<cenv>"
@@ -493,10 +497,10 @@ let rec IsPartialExprVal x =
     | TupleValue args | RecdValue (_, args) | UnionCaseValue (_, args) -> Array.exists IsPartialExprVal args
     | ConstValue _ | CurriedLambdaValue _ | ConstExprValue _ -> false
     | ValValue (_, a) 
-    | SizeValue(_, a) -> IsPartialExprVal a
+    | SizeValue (_, a) -> IsPartialExprVal a
 
 let CheckInlineValueIsComplete (v: Val) res =
-    if v.MustInline && IsPartialExprVal res then
+    if v.ShouldInline && IsPartialExprVal res then
         errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
         //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
 
@@ -554,7 +558,7 @@ let UnknownValInfo = { ValExprInfo=UnknownValue; ValMakesNoCriticalTailcalls=fal
 let mkValInfo info (v: Val) = { ValExprInfo=info.Info; ValMakesNoCriticalTailcalls= v.MakesNoCriticalTailcalls }
 
 (* Bind a value *)
-let BindInternalLocalVal cenv (v: Val) vval env = 
+let BindInternalLocalVal cenv (v: Val) vval env =
     let vval = if v.IsMutable then UnknownValInfo else vval
 
     match vval.ValExprInfo with 
@@ -562,7 +566,7 @@ let BindInternalLocalVal cenv (v: Val) vval env =
     | _ ->
         cenv.localInternalVals[v.Stamp] <- vval
         env
-        
+
 let BindExternalLocalVal cenv (v: Val) vval env = 
     let g = cenv.g
 
@@ -632,7 +636,7 @@ let GetInfoForLocalValue cenv env (v: Val) m =
             match env.localExternalVals.TryFind v.Stamp with 
             | Some vval -> vval
             | None -> 
-                if v.MustInline then
+                if v.ShouldInline then
                     errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
                 UnknownValInfo 
 
@@ -660,7 +664,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     if vref.IsDispatchSlot then 
         UnknownValInfo
     // REVIEW: optionally turn x-module on/off on per-module basis or  
-    elif cenv.settings.crossAssemblyOpt () || vref.MustInline then 
+    elif cenv.settings.crossAssemblyOpt () || vref.ShouldInline then 
         match TryGetInfoForNonLocalEntityRef env vref.nlr.EnclosingEntity.nlr with
         | Some structInfo ->
             match structInfo.ValInfos.TryFind vref with 
@@ -687,9 +691,24 @@ let GetInfoForVal cenv env m (vref: ValRef) =
             GetInfoForLocalValue cenv env vref.binding m
         else
             GetInfoForNonLocalVal cenv env vref
+    res
 
+let GetInfoForValWithCheck cenv env m (vref: ValRef) =  
+    let res = GetInfoForVal cenv env m vref
     check vref res |> ignore
     res
+
+let IsPartialExpr cenv env m x =
+    let rec isPartialExpression x =
+        match x with
+        | Expr.App (func, _, _, args, _) -> func :: args |> Seq.exists isPartialExpression
+        | Expr.Lambda (_, _, _, _, expr, _, _) -> expr |> isPartialExpression 
+        | Expr.Let (TBind (_,expr,_), body, _, _) -> expr :: [body] |> List.exists isPartialExpression
+        | Expr.LetRec (bindings, body, _, _) -> body :: (bindings |> List.map (fun (TBind (_,expr,_)) -> expr)) |> List.exists isPartialExpression
+        | Expr.Sequential (expr1, expr2, _, _) -> [expr1; expr2] |> Seq.exists isPartialExpression
+        | Expr.Val (vr, _, _) when not vr.IsLocalRef -> ((GetInfoForVal cenv env m vr).ValExprInfo) |> IsPartialExprVal
+        | _ -> false
+    isPartialExpression x
 
 //-------------------------------------------------------------------------
 // Try to get information about values of particular types
@@ -700,15 +719,17 @@ let rec stripValue = function
   | SizeValue(_, details) -> stripValue details (* step through SizeValue "aliases" *) 
   | vinfo -> vinfo
 
+[<return: Struct>]
 let (|StripConstValue|_|) ev = 
   match stripValue ev with
-  | ConstValue(c, _) -> Some c
-  | _ -> None
+  | ConstValue(c, _) -> ValueSome c
+  | _ -> ValueNone
 
+[<return: Struct>]
 let (|StripLambdaValue|_|) ev = 
   match stripValue ev with 
-  | CurriedLambdaValue (id, arity, sz, expr, ty) -> Some (id, arity, sz, expr, ty)
-  | _ -> None
+  | CurriedLambdaValue (id, arity, sz, expr, ty) -> ValueSome (id, arity, sz, expr, ty)
+  | _ -> ValueNone
 
 let destTupleValue ev = 
   match stripValue ev with 
@@ -720,10 +741,11 @@ let destRecdValue ev =
   | RecdValue (_tcref, info) -> Some info
   | _ -> None
 
+[<return: Struct>]
 let (|StripUnionCaseValue|_|) ev = 
   match stripValue ev with 
-  | UnionCaseValue (c, info) -> Some (c, info)
-  | _ -> None
+  | UnionCaseValue (c, info) -> ValueSome (c, info)
+  | _ -> ValueNone
 
 let mkBoolVal (g: TcGlobals) n = ConstValue(Const.Bool n, g.bool_ty)
 
@@ -1394,7 +1416,7 @@ let AbstractOptimizationInfoToEssentials =
 
     let rec abstractModulInfo (ss: ModuleInfo) =
          { ModuleOrNamespaceInfos = NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) ss.ModuleOrNamespaceInfos
-           ValInfos = ss.ValInfos.Filter (fun (v, _) -> v.MustInline) }
+           ValInfos = ss.ValInfos.Filter (fun (v, _) -> v.ShouldInline) }
 
     and abstractLazyModulInfo ss = ss |> InterruptibleLazy.force |> abstractModulInfo |> notlazy
       
@@ -1454,11 +1476,11 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
           | UnknownValue -> ivalue
           | SizeValue (_vdepth, vinfo) -> MakeSizedValueInfo (abstractExprInfo vinfo)
 
-      and abstractValInfo v = 
+      let abstractValInfo v = 
           { ValExprInfo=abstractExprInfo v.ValExprInfo 
             ValMakesNoCriticalTailcalls=v.ValMakesNoCriticalTailcalls }
 
-      and abstractModulInfo ss =
+      let rec abstractModulInfo ss =
          { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
            ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
                check vref (abstractValInfo e) ) }
@@ -1534,11 +1556,11 @@ let ValueOfExpr expr =
 
 let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.EndsWith suffixForTupleElementAssignmentTarget
+    vref.LogicalName.EndsWithOrdinal suffixForTupleElementAssignmentTarget
 
 let IsMutableForOutArg (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.StartsWith(outArgCompilerGeneratedName)
+    vref.LogicalName.StartsWithOrdinal(outArgCompilerGeneratedName)
 
 let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
     IsMutableStructuralBindingForTupleElement vref || 
@@ -1589,7 +1611,7 @@ let ValueIsUsedOrHasEffect cenv fvs (b: Binding, binfo) =
     // No discarding for things that are used
     Zset.contains v (fvs())
 
-let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 
+let SplitValuesByIsUsedOrHasEffect cenv fvs x = 
     x |> List.filter (ValueIsUsedOrHasEffect cenv fvs) |> List.unzip
 
 let IlAssemblyCodeInstrHasEffect i = 
@@ -1672,7 +1694,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
-    elif vspec1.LogicalName.StartsWith stackVarPrefix ||
+    elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
 
@@ -1761,26 +1783,29 @@ let TryEliminateLet cenv env bind e2 m =
     | None -> mkLetBind m bind e2, 0
 
 /// Detect the application of a value to an arbitrary number of arguments
+[<return: Struct>]
 let rec (|KnownValApp|_|) expr = 
     match stripDebugPoints expr with
-    | Expr.Val (vref, _, _) -> Some(vref, [], [])
-    | Expr.App (KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> Some(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
-    | _ -> None
+    | Expr.Val (vref, _, _) -> ValueSome(vref, [], [])
+    | Expr.App (KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> ValueSome(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
+    | _ -> ValueNone
 
 /// Matches boolean decision tree:
 /// check single case with bool const.
+[<return: Struct>]
 let (|TDBoolSwitch|_|) dtree =
     match dtree with
     | TDSwitch(expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
-        Some (expr, testBool, caseTree, defaultTree, range)
+        ValueSome (expr, testBool, caseTree, defaultTree, range)
     | _ -> 
-        None
+        ValueNone
 
 /// Check target that have a constant bool value
+[<return: Struct>]
 let (|ConstantBoolTarget|_|) target =
     match target with
-    | TTarget([], Expr.Const (Const.Bool b, _, _), _) -> Some b
-    | _ -> None
+    | TTarget([], Expr.Const (Const.Bool b, _, _), _) -> ValueSome b
+    | _ -> ValueNone
 
 /// Is this a tree, where each decision is a two-way switch (to prevent later duplication of trees), and each branch returns or true/false,
 /// apart from one branch which defers to another expression
@@ -2013,7 +2038,7 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
         mkLetsBind m binds rhsAndTupleBinding |> Some
     | _ -> None
 
-let rec ExpandStructuralBinding cenv expr =
+let ExpandStructuralBinding cenv expr =
     let g = cenv.g
 
     assert cenv.settings.ExpandStructuralValues()
@@ -2050,50 +2075,59 @@ let rec ExpandStructuralBinding cenv expr =
         ExpandStructuralBindingRaw cenv e
 
 /// Detect a query { ... }
+[<return: Struct>]
 let (|QueryRun|_|) g expr = 
     match expr with
     | Expr.App (Expr.Val (vref, _, _), _, _, [_builder; arg], _) when valRefEq g vref g.query_run_value_vref ->  
-        Some (arg, None)
+        ValueSome (arg, None)
     | Expr.App (Expr.Val (vref, _, _), _, [ elemTy ], [_builder; arg], _) when valRefEq g vref g.query_run_enumerable_vref ->  
-        Some (arg, Some elemTy)
+        ValueSome (arg, Some elemTy)
     | _ -> 
-        None
+        ValueNone
 
 let (|MaybeRefTupled|) e = tryDestRefTupleExpr e 
 
+[<return: Struct>]
 let (|AnyInstanceMethodApp|_|) e = 
     match e with 
-    | Expr.App (Expr.Val (vref, _, _), _, tyargs, [obj; MaybeRefTupled args], _) -> Some (vref, tyargs, obj, args)
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, tyargs, [obj; MaybeRefTupled args], _) -> ValueSome (vref, tyargs, obj, args)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|InstanceMethodApp|_|) g (expectedValRef: ValRef) e = 
     match e with 
-    | AnyInstanceMethodApp (vref, tyargs, obj, args) when valRefEq g vref expectedValRef -> Some (tyargs, obj, args)
-    | _ -> None
+    | AnyInstanceMethodApp (vref, tyargs, obj, args) when valRefEq g vref expectedValRef -> ValueSome (tyargs, obj, args)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QuerySourceEnumerable|_|) g = function
-    | InstanceMethodApp g g.query_source_vref ([resTy], _builder, [res]) -> Some (resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_source_vref ([resTy], _builder, [res]) -> ValueSome (resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryFor|_|) g = function
-    | InstanceMethodApp g g.query_for_vref ([srcTy;qTy;resTy;_qInnerTy], _builder, [src;selector]) -> Some (qTy, srcTy, resTy, src, selector)
-    | _ -> None
+    | InstanceMethodApp g g.query_for_vref ([srcTy;qTy;resTy;_qInnerTy], _builder, [src;selector]) -> ValueSome (qTy, srcTy, resTy, src, selector)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryYield|_|) g = function
-    | InstanceMethodApp g g.query_yield_vref ([resTy;qTy], _builder, [res]) -> Some (qTy, resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_yield_vref ([resTy;qTy], _builder, [res]) -> ValueSome (qTy, resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryYieldFrom|_|) g = function
-    | InstanceMethodApp g g.query_yield_from_vref ([resTy;qTy], _builder, [res]) -> Some (qTy, resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_yield_from_vref ([resTy;qTy], _builder, [res]) -> ValueSome (qTy, resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QuerySelect|_|) g = function
-    | InstanceMethodApp g g.query_select_vref ([srcTy;qTy;resTy], _builder, [src;selector]) -> Some (qTy, srcTy, resTy, src, selector)
-    | _ -> None
+    | InstanceMethodApp g g.query_select_vref ([srcTy;qTy;resTy], _builder, [src;selector]) -> ValueSome (qTy, srcTy, resTy, src, selector)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryZero|_|) g = function
-    | InstanceMethodApp g g.query_zero_vref ([resTy;qTy], _builder, _) -> Some (qTy, resTy)
-    | _ -> None
+    | InstanceMethodApp g g.query_zero_vref ([resTy;qTy], _builder, _) -> ValueSome (qTy, resTy)
+    | _ -> ValueNone
 
 /// Look for a possible tuple and transform
 let (|AnyRefTupleTrans|) e = 
@@ -2102,11 +2136,12 @@ let (|AnyRefTupleTrans|) e =
     | _ -> [e], (function [e] -> e | _ -> assert false; failwith "unreachable")
 
 /// Look for any QueryBuilder.* operation and transform
+[<return: Struct>]
 let (|AnyQueryBuilderOpTrans|_|) g = function
     | Expr.App (Expr.Val (vref, _, _) as v, vty, tyargs, [builder; AnyRefTupleTrans( src :: rest, replaceArgs) ], m) when 
           (match vref.ApparentEnclosingEntity with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
-         Some (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
-    | _ -> None
+         ValueSome (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
+    | _ -> ValueNone
 
 /// If this returns "Some" then the source is not IQueryable.
 //  <qexprInner> := 
@@ -2279,7 +2314,7 @@ let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
                                               ilTy.IsNominal &&
                                               ilTy.TypeRef.Name = "System.String" -> true
             | _ -> false))
-    
+
 let rec IsDebugPipeRightExpr cenv expr =
     let g = cenv.g
     match expr with
@@ -2292,6 +2327,13 @@ let rec IsDebugPipeRightExpr cenv expr =
             | OpPipeRight3 g _  -> true
             | _ -> false
         else false
+    | _ -> false
+
+let inline IsStateMachineExpr g overallExpr =
+    //printfn "%s" (DebugPrint.showExpr overallExpr)
+    match overallExpr with
+    | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
+        isReturnsResumableCodeTy g valRef.TauType
     | _ -> false
 
 /// Optimize/analyze an expression
@@ -2308,6 +2350,10 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     if IsDebugPipeRightExpr cenv expr then OptimizeDebugPipeRights cenv env expr else 
 
+    let isStateMachineE = IsStateMachineExpr g expr
+
+    let env = { env with disableMethodSplitting = env.disableMethodSplitting || isStateMachineE }
+
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
     | LinearOpExpr _
@@ -2320,8 +2366,17 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.Const (c, m, ty) -> 
         OptimizeConst cenv env expr (c, m, ty)
 
-    | Expr.Val (v, _vFlags, m) -> 
-        OptimizeVal cenv env expr (v, m)
+    | Expr.Val (v, _vFlags, m) ->
+        if not (v.Accessibility.IsPrivate) then
+            OptimizeVal cenv env expr (v, m)
+        else
+            expr,
+            { TotalSize = 10
+              FunctionSize = 1
+              HasEffect = false  
+              MightMakeCriticalTailcall=false
+              Info=UnknownValue }
+
 
     | Expr.Quote (ast, splices, isFromQueryExpression, m, ty) -> 
           let doData data = map3Of4 (List.map (OptimizeExpr cenv env >> fst)) data
@@ -2465,13 +2520,6 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
         | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args, _), _ 
           when IsILMethodRefSystemStringConcat ilMethRef ->
             optimizeArgs args accArgs
-
-// String constant folding requires a bit more work as we cannot quadratically concat strings at compile time.
-#if STRING_CONSTANT_FOLDING
-        // Optimize string constants, e.g. "1" + "2" will turn into "12"
-        | Expr.Const (Const.String str1, _, _), Expr.Const (Const.String str2, _, _) :: accArgs ->
-            mkString g m (str1 + str2) :: accArgs
-#endif
 
         | arg, _ -> arg :: accArgs
 
@@ -3001,8 +3049,7 @@ and CopyExprForInlining cenv isInlineIfLambda expr (m: range) =
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
-and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, inlineIfLambda, valInfoForVal, m) = 
-
+and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, valInfoForVal, m) = 
     let g = cenv.g
 
     match valInfoForVal with 
@@ -3011,13 +3058,13 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, inlineIfLambda, va
         Some (Expr.Const (c, m, ty))
 
     | SizeValue (_, detail) ->
-        TryOptimizeVal cenv env (vOpt, mustInline, inlineIfLambda, detail, m) 
+        TryOptimizeVal cenv env (vOpt, shouldInline, inlineIfLambda, detail, m) 
 
     | ValValue (vR, detail) -> 
          // Inline values bound to other values immediately 
          // Prefer to inline using the more specific info if possible 
          // If the more specific info didn't reveal an inline then use the value 
-         match TryOptimizeVal cenv env (vOpt, mustInline, inlineIfLambda, detail, m) with 
+         match TryOptimizeVal cenv env (vOpt, shouldInline, inlineIfLambda, detail, m) with 
           | Some e -> Some e
           | None -> 
               // If we have proven 'v = compilerGeneratedValue'
@@ -3035,18 +3082,29 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, inlineIfLambda, va
     | ConstExprValue(_size, expr) ->
         Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
-    | CurriedLambdaValue (_, _, _, expr, _) when mustInline || inlineIfLambda ->
-        let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
-        Some exprCopy
+    | CurriedLambdaValue (_, _, _, expr, _) when shouldInline || inlineIfLambda ->
+        let fvs = freeInExpr CollectLocals expr
+        if fvs.UsesMethodLocalConstructs then
+            // Discarding lambda for binding because uses protected members --- TBD: Should we warn or error here
+            None 
+        elif fvs.FreeLocals |> Seq.exists(fun v -> v.Accessibility.IsPrivate ) then
+            // Discarding lambda for binding because uses private members --- TBD: Should we warn or error here
+            None
+        else
+            let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
+            Some exprCopy
 
-    | TupleValue _ | UnionCaseValue _ | RecdValue _ when mustInline ->
+    | TupleValue _ | UnionCaseValue _ | RecdValue _ when shouldInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
 
-    | UnknownValue when mustInline ->
-        warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m)); None
+    | UnknownValue when shouldInline ->
+        warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
+        None
 
-    | _ when mustInline ->
-        warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m)); None
+    | _ when shouldInline ->
+        warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
+        None
+
     | _ -> None 
   
 and TryOptimizeValInfo cenv env m vinfo = 
@@ -3070,9 +3128,9 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     let g = cenv.g
 
-    let valInfoForVal = GetInfoForVal cenv env m v 
+    let valInfoForVal = GetInfoForValWithCheck cenv env m v 
 
-    match TryOptimizeVal cenv env (Some v, v.MustInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
+    match TryOptimizeVal cenv env (Some v, v.ShouldInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
     | Some e -> 
        // don't reoptimize inlined lambdas until they get applied to something
        match e with 
@@ -3088,9 +3146,9 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            let e, einfo = OptimizeExpr cenv env e 
            e, AddValEqualityInfo g m v einfo 
 
-    | None -> 
-       if v.MustInline then
-           error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+    | None ->
+       if v.ShouldInline then
+           warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
        if v.InlineIfLambda then 
            warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
        expr, (AddValEqualityInfo g m v 
@@ -3189,30 +3247,47 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         | Some (_, vref) -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)
         | _ -> None
         
-    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerFast
+    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_withc_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, _, withcEqualsVal), [comp; x; y] -> 
+        | Some (_, _, _, Some withcEqualsExactVal), [comp; x; y] -> 
+            // push the comparer to the end
+            let args2 = [x; mkRefTupledNoTypes g m [y; comp]]
+            Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
+        | Some (_, _, withcEqualsVal, _ ), [comp; x; y] -> 
             // push the comparer to the end and box the argument
             let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
-    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparer
+    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_per_inner_vref ty args && not(isRefTupleTy g ty) ->
        let tcref, tyargs = StripToNominalTyconRef cenv ty
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-       | Some (_, _, withcEqualsVal), [x; y] -> 
-           let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
-           Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+       | Some (_, _, _, Some withcEqualsExactVal), [x; y] ->
+           let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
+           Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
+       | Some (_, _, withcEqualsVal, _), [x; y] -> 
+           let equalsExactOpt = 
+               tcref.MembersOfFSharpTyconByName.TryFind("Equals")
+               |> Option.map (List.where (fun x -> x.IsCompilerGenerated))
+               |> Option.bind List.tryExactlyOne
+
+           match equalsExactOpt with
+           | Some equalsExact ->
+               let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
+               Some (DevirtualizeApplication cenv env equalsExact ty tyargs args2 m)
+           | None ->
+               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
+               Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_hash_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, withcGetHashCodeVal, _), [x] -> 
+        | Some (_, withcGetHashCodeVal, _, _), [x] -> 
             let args2 = [x; mkCallGetGenericEREqualityComparer g m]
             Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
         | _ -> None 
@@ -3221,7 +3296,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_hash_withc_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, withcGetHashCodeVal, _), [comp; x] -> 
+        | Some (_, withcGetHashCodeVal, _, _), [comp; x] -> 
             let args2 = [x; comp]
             Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
         | _ -> None 
@@ -3383,7 +3458,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                                 | _ -> false
                             | _ -> false
                     | _ -> false
-                | _ -> false                                          
+                | _ -> false
         
         if isValFromLazyExtensions then None else
 
@@ -3391,7 +3466,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
           match finfo.Info with
           | ValValue(vref, _) ->
                 vref.Attribs |> List.exists (fun a -> (IsSecurityAttribute g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute g a))
-          | _ -> false                              
+          | _ -> false
 
         if isSecureMethod then None else
 
@@ -3401,6 +3476,13 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
             | _ -> false
 
         if isGetHashCode then None else
+
+        let isApplicationPartialExpr =
+            match finfo.Info with
+            | ValValue (_, CurriedLambdaValue (_, _, _, expr, _) ) -> IsPartialExpr cenv env m expr
+            | _ -> false
+
+        if isApplicationPartialExpr then None else
 
         // Inlining lambda 
         let f2R = CopyExprForInlining cenv false f2 m
@@ -3534,52 +3616,53 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     | Choice2Of2 (newf0, remake) -> 
 
     match TryInlineApplication cenv env finfo (tyargs, args, m) with 
-    | Some (res, info) -> 
+    | Some (res, info) ->
         // inlined
         (res |> remake), info
-    | None -> 
 
-    let shapes = 
-        match newf0 with 
-        | Expr.Val (vref, _, _) ->
-            match vref.ValReprInfo with
-            | Some(ValReprInfo(_, detupArgsL, _)) ->
-                let nargs = args.Length
-                let nDetupArgsL = detupArgsL.Length
-                let nShapes = min nargs nDetupArgsL 
-                let detupArgsShapesL = 
-                    List.truncate nShapes detupArgsL 
-                    |> List.map (fun detupArgs -> 
-                        match detupArgs with 
-                        | [] | [_] -> UnknownValue
-                        | _ -> TupleValue(Array.ofList (List.map (fun _ -> UnknownValue) detupArgs))) 
-                List.zip (detupArgsShapesL @ List.replicate (nargs - nShapes) UnknownValue) args
-            | _ -> args |> List.map (fun arg -> UnknownValue, arg)     
-        | _ -> args |> List.map (fun arg -> UnknownValue, arg) 
-
-    let newArgs, arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
-    // beta reducing
-    let reducedExpr = MakeApplicationAndBetaReduce g (newf0, f0ty, [tyargs], newArgs, m) 
-    let newExpr = reducedExpr |> remake
-    
-    match newf0, reducedExpr with 
-    | (Expr.Lambda _ | Expr.TyLambda _), Expr.Let _ -> 
-       // we beta-reduced, hence reoptimize 
-        OptimizeExpr cenv env newExpr
     | _ -> 
-        // regular
 
-        // Determine if this application is a critical tailcall
-        let mayBeCriticalTailcall = 
+        let shapes = 
             match newf0 with 
-            | KnownValApp(vref, _typeArgs, otherArgs) ->
+            | Expr.Val (vref, _, _) ->
+                match vref.ValReprInfo with
+                | Some(ValReprInfo(_, detupArgsL, _)) ->
+                    let nargs = args.Length
+                    let nDetupArgsL = detupArgsL.Length
+                    let nShapes = min nargs nDetupArgsL 
+                    let detupArgsShapesL = 
+                        List.truncate nShapes detupArgsL 
+                        |> List.map (fun detupArgs -> 
+                            match detupArgs with 
+                            | [] | [_] -> UnknownValue
+                            | _ -> TupleValue(Array.ofList (List.map (fun _ -> UnknownValue) detupArgs))) 
+                    List.zip (detupArgsShapesL @ List.replicate (nargs - nShapes) UnknownValue) args
+                | _ -> args |> List.map (fun arg -> UnknownValue, arg)     
+            | _ -> args |> List.map (fun arg -> UnknownValue, arg) 
+
+        let newArgs, arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
+        // beta reducing
+        let reducedExpr = MakeApplicationAndBetaReduce g (newf0, f0ty, [tyargs], newArgs, m) 
+        let newExpr = reducedExpr |> remake
+    
+        match newf0, reducedExpr with 
+        | (Expr.Lambda _ | Expr.TyLambda _), Expr.Let _ -> 
+           // we beta-reduced, hence reoptimize 
+            OptimizeExpr cenv env newExpr
+        | _ -> 
+            // regular
+
+            // Determine if this application is a critical tailcall
+            let mayBeCriticalTailcall = 
+                match newf0 with 
+                | KnownValApp(vref, _typeArgs, otherArgs) ->
 
                  // Check if this is a call to a function of known arity that has been inferred to not be a critical tailcall when used as a direct call
                  // This includes recursive calls to the function being defined (in which case we get a non-critical, closed-world tailcall).
                  // Note we also have to check the argument count to ensure this is a direct call (or a partial application).
                  let doesNotMakeCriticalTailcall = 
-                     vref.MakesNoCriticalTailcalls || 
-                     (let valInfoForVal = GetInfoForVal cenv env m vref in valInfoForVal.ValMakesNoCriticalTailcalls) ||
+                     vref.MakesNoCriticalTailcalls ||
+                     (let valInfoForVal = GetInfoForValWithCheck cenv env m vref in valInfoForVal.ValMakesNoCriticalTailcalls) ||
                      (match env.functionVal with | None -> false | Some (v, _) -> valEq vref.Deref v)
                  if doesNotMakeCriticalTailcall then
                     let numArgs = otherArgs.Length + newArgs.Length
@@ -3591,16 +3674,16 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
                     | None -> true // over-application of a known function, which presumably returns a function. This counts as an indirect call
                  else
                     true // application of a function that may make a critical tailcall
-                
-            | _ -> 
-                // All indirect calls (calls to unknown functions) are assumed to be critical tailcalls 
-                true
 
-        newExpr, { TotalSize=finfo.TotalSize + AddTotalSizes arginfos
-                   FunctionSize=finfo.FunctionSize + AddFunctionSizes arginfos
-                   HasEffect=true
-                   MightMakeCriticalTailcall = mayBeCriticalTailcall
-                   Info=ValueOfExpr newExpr }
+                | _ ->
+                    // All indirect calls (calls to unknown functions) are assumed to be critical tailcalls 
+                    true
+
+            newExpr, { TotalSize=finfo.TotalSize + AddTotalSizes arginfos
+                       FunctionSize=finfo.FunctionSize + AddFunctionSizes arginfos
+                       HasEffect=true
+                       MightMakeCriticalTailcall = mayBeCriticalTailcall
+                       Info=ValueOfExpr newExpr }
     
 /// Extract a sequence of pipe-right operations (note the pipe-right operator is left-associative
 /// so we start with the full thing and descend down taking apps off the end first)
@@ -4043,7 +4126,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         
         let exprOptimized, einfo = 
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
-            let cenv = if vref.InlineInfo.MustInline then { cenv with optimizing=false} else cenv 
+            let cenv = if vref.InlineInfo.ShouldInline then { cenv with optimizing=false} else cenv 
             let arityInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.No vref expr
             let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type 
             let size = localVarSize 
@@ -4062,6 +4145,9 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     if fvs.UsesMethodLocalConstructs then
                         // Discarding lambda for binding because uses protected members
                         UnknownValue 
+                    elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
+                        // Discarding lambda for binding because uses private members
+                        UnknownValue 
                     else
                         ivalue
 
@@ -4072,10 +4158,10 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             | UnknownValue | ConstValue _ | ConstExprValue _ -> ivalue
             | SizeValue(_, a) -> MakeSizedValueInfo (cut a) 
 
-        let einfo = if vref.MustInline || vref.InlineIfLambda then einfo else {einfo with Info = cut einfo.Info } 
+        let einfo = if vref.ShouldInline || vref.InlineIfLambda then einfo else {einfo with Info = cut einfo.Info } 
 
         let einfo = 
-            if (not vref.MustInline && not vref.InlineIfLambda && not cenv.settings.KeepOptimizationValues) ||
+            if (not vref.ShouldInline && not vref.InlineIfLambda && not cenv.settings.KeepOptimizationValues) ||
                
                // Bug 4916: do not record inline data for initialization trigger expressions
                // Note: we can't eliminate these value infos at the file boundaries because that would change initialization
@@ -4122,8 +4208,8 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     valRefEq g nvref g.generic_hash_inner_vref))
             then {einfo with Info=UnknownValue} 
             else einfo 
-        if vref.MustInline && IsPartialExprVal einfo.Info then 
-            errorR(InternalError("the mustinline value '"+vref.LogicalName+"' was not inferred to have a known value", vref.Range))
+        if vref.ShouldInline && IsPartialExprVal einfo.Info then 
+            errorR(InternalError("the inline value '"+vref.LogicalName+"' was not inferred to have a known value", vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env 
         (TBind(vref, exprOptimized, spBind), einfo), env
@@ -4322,7 +4408,8 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=Dictionary<Stamp, bool>() 
-          stackGuard = StackGuard(OptimizerStackGuardDepth, "OptimizerStackGuardDepth") 
+          stackGuard = StackGuard(OptimizerStackGuardDepth, "OptimizerStackGuardDepth")
+          realsig = tcGlobals.realsig
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  

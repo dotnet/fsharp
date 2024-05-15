@@ -33,6 +33,13 @@ module internal Activity =
         let gc2 = "gc2"
         let outputDllFile = "outputDllFile"
         let buildPhase = "buildPhase"
+        let version = "version"
+        let stackGuardName = "stackGuardName"
+        let stackGuardCurrentDepth = "stackGuardCurrentDepth"
+        let stackGuardMaxDepth = "stackGuardMaxDepth"
+        let callerMemberName = "callerMemberName"
+        let callerFilePath = "callerFilePath"
+        let callerLineNumber = "callerLineNumber"
 
         let AllKnownTags =
             [|
@@ -49,6 +56,12 @@ module internal Activity =
                 gc2
                 outputDllFile
                 buildPhase
+                stackGuardName
+                stackGuardCurrentDepth
+                stackGuardMaxDepth
+                callerMemberName
+                callerFilePath
+                callerLineNumber
             |]
 
     module Events =

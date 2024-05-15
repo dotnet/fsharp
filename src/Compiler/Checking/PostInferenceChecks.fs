@@ -346,7 +346,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
     | TType_var (tp, _) when tp.Solution.IsSome ->
         for cx in tp.Constraints do
             match cx with
-            | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, soln), _) ->
+            | TyparConstraint.MayResolveMember(TTrait(solution=soln), _) ->
                  match visitTraitSolutionOpt, soln.Value with
                  | Some visitTraitSolution, Some sln -> visitTraitSolution sln
                  | _ -> ()
@@ -432,11 +432,11 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.IsReferenceType _
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
-and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env (TTrait(tys, _, _, argTys, retTy, soln))  =
-    CheckTypesDeep cenv f g env tys
-    CheckTypesDeep cenv f g env argTys
-    Option.iter (CheckTypeDeep cenv f g env true ) retTy
-    match visitTraitSolutionOpt, soln.Value with
+and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env traitInfo =
+    CheckTypesDeep cenv f g env traitInfo.SupportTypes
+    CheckTypesDeep cenv f g env traitInfo.CompiledObjectAndArgumentTypes
+    Option.iter (CheckTypeDeep cenv f g env true ) traitInfo.CompiledReturnType
+    match visitTraitSolutionOpt, traitInfo.Solution with
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
 
@@ -1307,14 +1307,14 @@ and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyarg
     match tryTcrefOfAppTy g baseVal.Type with
     | ValueSome tcref when tcref.IsILTycon ->
         try
-            // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
-            // We believe this may be fragile in some situations, since we are using the Abstract IL code to compare
-            // type equality, and it would be much better to remove any F# dependency on that implementation of IL type
-            // equality. It would be better to make this check in tc.fs when we have the Abstract IL metadata for the method to hand.
-            let mdef = resolveILMethodRef tcref.ILTyconRawMetadata ilMethRef
+            let mdef =
+                match tcref.ILTyconInfo with
+                | TILObjectReprData(scoref, _, _) ->
+                    resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
+
             if mdef.IsAbstract then
                 errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(mdef.Name), m))
-        with _ -> () // defensive coding
+        with _ -> ()
     | _ -> ()
 
     CheckTypeInstNoByrefs cenv env m tyargs
@@ -1970,7 +1970,8 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         let (TAccess l) = access
         // FSharp 1.0 bug 1908: Values hidden by signatures are implicitly at least 'internal'
         let scoref = cpath().ILScopeRef
-        TAccess(CompPath(scoref, []) :: l)
+        let sa = cpath().SyntaxAccess
+        TAccess(CompPath(scoref, sa, []) :: l)
     else
         access
 
@@ -2076,7 +2077,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         if cenv.reportErrors && isReturnsResumableCodeTy g v.TauType then
             if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                 error(Error(FSComp.SR.tcResumableCodeNotSupported(), bind.Var.Range))
-            if not v.MustInline then
+            if not v.ShouldInline then
                 warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
 
         if isReturnsResumableCodeTy g v.TauType then
@@ -2084,7 +2085,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         else
             env
 
-    CheckLambdas isTop (Some v) cenv env v.MustInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
+    CheckLambdas isTop (Some v) cenv env v.ShouldInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv env binds =
     for bind in binds do
@@ -2143,10 +2144,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                     error(Duplicate(kind, v.DisplayName, v.Range))
 
-#if CASES_IN_NESTED_CLASS
-                if tcref.IsUnionTycon && nm = "Cases" then
-                    errorR(NameClash(nm, kind, v.DisplayName, v.Range, "generated type", "Cases", tcref.Range))
-#endif
                 if tcref.IsUnionTycon then
                     match nm with
                     | "Tag" -> errorR(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), "Tag", tcref.Range))
@@ -2283,7 +2280,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             else MethInfosEquivByNameAndPartialSig eraseFlag true g cenv.amap m minfo minfo2 (* partial ignores return type *)
 
         let immediateMeths =
-            [ for v in tycon.AllGeneratedValues do yield FSMeth (g, ty, v, None)
+            [ for v in tycon.AllGeneratedInterfaceImplsAndOverrides do yield FSMeth (g, ty, v, None)
               yield! GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty ]
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty

@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="needs-review-translation">Pro kontrolu používat živé (neuložené) vyrovnávací paměti (vyžaduje se restartování)</target>
+        <target state="translated">Pro analýzu používat živé (neuložené) vyrovnávací paměti (vyžaduje se restartování)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers</source>
-        <target state="needs-review-translation">Živé vyrovnávací paměti (experimentální)</target>
+        <target state="translated">Živé vyrovnávací paměti</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="Remove_parens_code_fix">
         <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
-        <target state="new">Remove unnecessary parentheses (experimental, might affect typing performance)</target>
+        <target state="translated">Odebrání nepotřebných závorek (experimentální, může mít vliv na výkon při psaní)</target>
         <note />
       </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="Show_remarks_in_Quick_Info">
         <source>Show remarks in Quick Info</source>
-        <target state="new">Show remarks in Quick Info</target>
+        <target state="translated">Zobrazit poznámky v Rychlých informacích</target>
         <note />
       </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
@@ -200,6 +200,41 @@
       <trans-unit id="Tooltip_preferred_description_width_in_characters">
         <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
         <target state="translated">Umožňuje formátovat podpis na danou šířku přidáním konců řádků odpovídajících pravidlům syntaxe F#. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="translated">Transparentní kompilátor (experimentální)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="translated">UPOZORNĚNÍ! Transparentní kompilátor zatím nepodporuje všechny funkce a může způsobit chybové ukončení nebo předat nesprávné výsledky.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="translated">Používejte na vlastní nebezpečí!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="translated">Zaškrtnutím tohoto políčka také udělíte výslovný souhlas s další telemetrií výkonu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor">
+        <source>Transparent Compiler Cache Factor</source>
+        <target state="translated">Faktor mezipaměti transparentního kompilátoru</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
+        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
+        <target state="translated">Vyšší počet znamená, že pro ukládání do mezipaměti se bude používat více paměti. Změna hodnoty vymaže mezipaměť.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="translated">Vytvořit nové snímky projektu z existujících</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -285,6 +320,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Navrhovat názvy pro nerozpoznané identifikátory</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="translated">Použít transparentní kompilátor (vyžaduje se restart)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">

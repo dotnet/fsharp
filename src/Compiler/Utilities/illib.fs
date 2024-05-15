@@ -14,7 +14,10 @@ open System.Runtime.CompilerServices
 [<Class>]
 type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
     let syncObj = obj ()
+
+    [<VolatileField>]
     let mutable valueFactory = valueFactory
+
     let mutable value = value
 
     new(valueFactory: unit -> 'T) = InterruptibleLazy(Unchecked.defaultof<_>, valueFactory)
@@ -28,7 +31,6 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
         match box valueFactory with
         | null -> value
         | _ ->
-
             Monitor.Enter(syncObj)
 
             try
@@ -124,6 +126,15 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
+        member inline x.IndexOfOrdinal value =
+            x.IndexOf(value, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex) =
+            x.IndexOf(value, startIndex, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex, count) =
+            x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
+
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with
@@ -151,12 +162,17 @@ module internal PervasiveAutoOpens =
 
         static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+
             let ts = TaskCompletionSource<'T>()
+
             let task = ts.Task
 
             Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
 
-            task.Result
+            try
+                task.Result
+            with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+                raise (ex.InnerExceptions[0])
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
@@ -787,7 +803,7 @@ module String =
 
         String digits
         |> function
-            | "" -> str, None
+            | x when String.IsNullOrEmpty(x) -> str, None
             | index -> str.Substring(0, str.Length - index.Length), Some(int index)
 
     /// Splits a string into substrings based on the strings in the array separators

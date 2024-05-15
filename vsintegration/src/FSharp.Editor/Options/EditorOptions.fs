@@ -83,6 +83,7 @@ type CodeFixesOptions =
 type LanguageServicePerformanceOptions =
     {
         EnableInMemoryCrossProjectReferences: bool
+        TransparentCompilerCacheFactor: int
         AllowStaleCompletionResults: bool
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
@@ -97,6 +98,7 @@ type LanguageServicePerformanceOptions =
     static member Default =
         {
             EnableInMemoryCrossProjectReferences = true
+            TransparentCompilerCacheFactor = 100
             AllowStaleCompletionResults = true
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
@@ -117,6 +119,8 @@ type AdvancedOptions =
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
         IsUseLiveBuffersEnabled: bool
+        UseTransparentCompiler: bool
+        TransparentCompilerSnapshotReuse: bool
         SendAdditionalTelemetry: bool
         SolutionBackgroundAnalysis: bool
     }
@@ -128,6 +132,8 @@ type AdvancedOptions =
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
+            UseTransparentCompiler = false
+            TransparentCompilerSnapshotReuse = false
             IsUseLiveBuffersEnabled = true
             SendAdditionalTelemetry = true
             SolutionBackgroundAnalysis = false
@@ -162,7 +168,7 @@ type EditorOptions() =
     member _.Formatting: FormattingOptions = store.Get()
 
     [<Export(typeof<SettingsStore.ISettingsStore>)>]
-    member private _.SettingsStore = store
+    member _.SettingsStore = store
 
     member _.With value = store.Register value
 
@@ -265,3 +271,11 @@ module EditorOptionsExtensions =
 
         member this.IsFastFindReferencesEnabled =
             this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
+
+        member this.UseTransparentCompiler = this.EditorOptions.Advanced.UseTransparentCompiler
+
+        member this.IsTransparentCompilerSnapshotReuseEnabled =
+            this.EditorOptions.Advanced.TransparentCompilerSnapshotReuse
+
+        member this.TransparentCompilerCacheFactor =
+            this.EditorOptions.LanguageServicePerformance.TransparentCompilerCacheFactor

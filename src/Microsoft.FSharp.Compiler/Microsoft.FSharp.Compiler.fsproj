@@ -3,19 +3,12 @@
   <PropertyGroup>
     <PreRelease>true</PreRelease>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Tools-$(FSProductVersionReleaseNotesVersion)</PackageReleaseNotes>
     <NoDefaultExcludes>true</NoDefaultExcludes>
-    <!-- Workaround to get rid of:
-        error NU1505: Duplicate 'PackageDownload' items found.
-        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
-        The duplicate 'PackageDownload' items are:
-          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
-    -->
-    <NoWarn>$(NoWarn);NU1505</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -31,15 +24,12 @@
     <NuspecProperty Include="fSharpCompilerServicePackagePreviewPackageVersion=$(FSharpCompilerServicePackageVersion)-$(VersionSuffix)" />
     <NuspecProperty Include="fSharpCompilerServicePackageVersion=$(FSharpCompilerServicePackageVersion)" />
     <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
+    <NuspecProperty Include="fSharpNetCoreProductTargetFramework=$(FSharpNetCoreProductTargetFramework)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj">
-        <AdditionalProperties>Configuration=ReleaseCompressed;CompressAllMetadata=true</AdditionalProperties>
-    </ProjectReference>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj">
-        <AdditionalProperties>Configuration=ReleaseCompressed;CompressAllMetadata=true</AdditionalProperties>
-    </ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,6 +44,9 @@
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
+    </DependentProjects>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
+        <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>

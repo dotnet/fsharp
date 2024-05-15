@@ -567,7 +567,7 @@ and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
 /// the return ModuleOrNamespaceType will contain namespace entities for "System" and "Library", which in turn contain
 /// type definition entities for ["Char"; "Int32"]  and ["C"] respectively.  
 let ImportILAssemblyMainTypeDefs amap m scoref modul = 
-    modul.TypeDefs |> ImportILTypeDefs amap m scoref (CompPath(scoref, [])) [] 
+    modul.TypeDefs |> ImportILTypeDefs amap m scoref (CompPath(scoref, SyntaxAccess.Unknown, [])) [] 
 
 /// Import the "exported types" table for multi-module assemblies. 
 let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (exportedType: ILExportedTypeOrForwarder) = 
@@ -591,7 +591,7 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
                     scoref, preTypeDef
             )
 
-        [ ImportILTypeDefList amap m (CompPath(scoref, [])) [] [(ns, (n, info))]  ]
+        [ ImportILTypeDefList amap m (CompPath(scoref, SyntaxAccess.Unknown, [])) [] [(ns, (n, info))]  ]
 
 /// Import the "exported types" table for multi-module assemblies. 
 let ImportILAssemblyExportedTypes amap m auxModLoader scoref (exportedTypes: ILExportedTypesAndForwarders) = 

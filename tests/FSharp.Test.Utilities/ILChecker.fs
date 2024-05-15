@@ -29,12 +29,17 @@ module ILChecker =
             (fun me -> String.Empty)
         )
 
-    let private normalizeILText assemblyName (ilCode: string) =
+    let normalizeILText assemblyName (ilCode: string) =
         let blockComments = @"/\*(.*?)\*/"
         let lineComments = @"//(.*?)\r?\n"
         let lineCommentsEof = @"//(.*?)$"
         let strings = @"""((\\[^\n]|[^""\n])*)"""
         let verbatimStrings = @"@(""[^""]*"")+"
+        let methodSingleLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(\s*\{)"
+        let methodMultiLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(\s*\{)"
+
+        let normalizeNewLines (text: string) = text.Replace("\r\n", "\n").Replace("\r\n", "\r")
+
         let stripComments (text:string) =
             Regex.Replace(text,
                 $"{blockComments}|{lineComments}|{lineCommentsEof}|{strings}|{verbatimStrings}",
@@ -44,6 +49,11 @@ module ILChecker =
                     else
                         me.Value), RegexOptions.Singleline)
             |> filterSpecialComment
+
+        let unifyMethodLine (text:string) =
+            let text1 = Regex.Replace(text, $"{methodSingleLine}", (fun me -> $"{me.Groups[1].Value}\n{me.Groups[2].Value}"), RegexOptions.Multiline)
+            let text2 = Regex.Replace(text1, $"{methodMultiLine}", (fun me -> $"{me.Groups[1].Value} {me.Groups[2].Value}\n{me.Groups[3].Value}"), RegexOptions.Multiline)
+            text2
 
         let replace input (pattern, replacement: string) = Regex.Replace(input, pattern, replacement, RegexOptions.Singleline)
 
@@ -62,8 +72,15 @@ module ILChecker =
             |> unifyRuntimeAssemblyName
             |> unifyImageBase
 
-        ilCode.Trim() |> stripComments |> unifyingAssemblyNames
+        // This lets the same test be used when targeting both netfx and netcore.
+        let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
 
+        ilCode.Trim()
+        |> normalizeNewLines
+        |> stripComments
+        |> unifyingAssemblyNames
+        |> unifyMethodLine
+        |> unifyNetStandardVersions
 
     let private generateIlFile dllFilePath ildasmArgs =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
@@ -107,9 +124,9 @@ module ILChecker =
         match expectedIL with
         | [] -> errorMsgOpt <- Some "No Expected IL"
         | expectedIL ->
-            expectedIL
-            |> List.map (fun (ilCode: string) -> ilCode.Trim())
-            |> List.iter (fun (ilCode: string) ->
+            let (|Trimmed|) (ilCode: string) = ilCode.Trim()
+
+            for Trimmed ilCode in expectedIL do
                 let expectedLines = ilCode |> normalizeILText (Some assemblyName) |> prepareLines
 
                 if expectedLines.Length = 0 then
@@ -137,7 +154,6 @@ module ILChecker =
                         if errors.Count > 0 then
                             let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
                             errorMsgOpt <- Some(msg + "\n\n\nActual:\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
-            )
 
         match errorMsgOpt with
         | Some msg ->
@@ -165,8 +181,8 @@ module ILChecker =
     let verifyIL (dllFilePath: string) (expectedIL: string) =
         checkIL dllFilePath [expectedIL]
 
-    let verifyILAndReturnActual (dllFilePath: string) (expectedIL: string) =
-        checkILPrim [] dllFilePath [expectedIL]
+    let verifyILAndReturnActual args dllFilePath expectedIL =
+        checkILPrim args dllFilePath expectedIL
 
     let checkILNotPresent dllFilePath unexpectedIL =
         let actualIL = generateIL dllFilePath []

@@ -50,6 +50,13 @@ let emitBytesViaBuffer f = use bb = ByteBuffer.Create EmitBytesViaBufferCapacity
 /// Alignment and padding
 let align alignment n = ((n + alignment - 1) / alignment) * alignment
 
+
+/// Maximum number of methods in a dotnet type
+/// This differs from the spec and file formats slightly which suggests 0xfffe is the maximum
+/// this value was identified empirically.
+[<Literal>]
+let maximumMethodsPerDotNetType = 0xfff0
+
 //---------------------------------------------------------------------
 // Concrete token representations etc. used in PE files
 //---------------------------------------------------------------------
@@ -652,7 +659,7 @@ let GetBytesAsBlobIdx cenv (bytes: byte[]) =
     else cenv.blobs.FindOrAddSharedEntry bytes
 
 let GetStringHeapIdx cenv s =
-    if s = "" then 0
+    if String.IsNullOrEmpty(s) then 0
     else cenv.strings.FindOrAddSharedEntry s
 
 let GetGuidIdx cenv info = cenv.guids.FindOrAddSharedEntry info
@@ -672,8 +679,14 @@ let GetTypeNameAsElemPair cenv n =
 //=====================================================================
 
 let rec GenTypeDefPass1 enc cenv (tdef: ILTypeDef) =
-  ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, tdef.Name)))
-  GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
+    ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, tdef.Name)))
+ 
+    // Verify that the typedef contains fewer than maximumMethodsPerDotNetType
+    let count = tdef.Methods.AsArray().Length
+    if count > maximumMethodsPerDotNetType then
+        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
+
+    GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
 
 and GenTypeDefsPass1 enc cenv tdefs = List.iter (GenTypeDefPass1 enc cenv) tdefs
 
@@ -682,7 +695,8 @@ and GenTypeDefsPass1 enc cenv tdefs = List.iter (GenTypeDefPass1 enc cenv) tdefs
 //=====================================================================
 
 let rec GetIdxForTypeDef cenv key =
-    try cenv.typeDefs.GetTableEntry key
+    try
+        cenv.typeDefs.GetTableEntry key
     with
       :? KeyNotFoundException ->
         let (TdKey (enc, n) ) = key

@@ -48,8 +48,8 @@ type ValInline =
     /// Indicates the value must never be inlined by the optimizer
     | Never
 
-    /// Returns true if the implementation of a value must always be inlined
-    member x.MustInline = 
+    /// Returns true if the implementation of a value should be inlined
+    member x.ShouldInline = 
         match x with 
         | ValInline.Always -> true 
         | ValInline.Optional | ValInline.Never -> false
@@ -519,14 +519,21 @@ type PublicPath =
         assert (pp.Length >= 1)
         pp[0..pp.Length-2]
 
+/// Represents the specified visibility of the accessibility -- used to ensure IL visibility
+[<RequireQualifiedAccess>]
+type SyntaxAccess =
+    | Public
+    | Internal
+    | Private
+    | Unknown
 
 /// The information ILXGEN needs about the location of an item
-type CompilationPath = 
-    | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
+type CompilationPath =
+    | CompPath of ILScopeRef * SyntaxAccess * (string * ModuleOrNamespaceKind) list
 
-    member x.ILScopeRef = let (CompPath(scoref, _)) = x in scoref
+    member x.ILScopeRef = let (CompPath(scoref, _, _)) = x in scoref
 
-    member x.AccessPath = let (CompPath(_, p)) = x in p
+    member x.AccessPath = let (CompPath(_, _, p)) = x in p
 
     member x.MangledPath = List.map fst x.AccessPath
 
@@ -534,10 +541,10 @@ type CompilationPath =
 
     member x.ParentCompPath = 
         let a, _ = List.frontAndBack x.AccessPath
-        CompPath(x.ILScopeRef, a)
+        CompPath(x.ILScopeRef, x.SyntaxAccess, a)
 
     member x.NestedCompPath n moduleKind =
-        CompPath(x.ILScopeRef, x.AccessPath@[(n, moduleKind)])
+        CompPath(x.ILScopeRef, x.SyntaxAccess, x.AccessPath@[(n, moduleKind)])
 
     member x.DemangledPath = 
         x.AccessPath |> List.map (fun (nm, k) -> CompilationPath.DemangleEntityName nm k)
@@ -547,6 +554,8 @@ type CompilationPath =
         match k with 
         | FSharpModuleWithSuffix -> String.dropSuffix nm FSharpModuleSuffix
         | _ -> nm
+
+    member x.SyntaxAccess = let (CompPath(_, access, _)) = x in access
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -1237,7 +1246,7 @@ type Entity =
     member x.GeneratedHashAndEqualsValues = x.TypeContents.tcaug_equals
 
     /// Gets all implicit hash/equals/compare methods added to an F# record, union or struct type definition.
-    member x.AllGeneratedValues = 
+    member x.AllGeneratedInterfaceImplsAndOverrides = 
         [ match x.GeneratedCompareToValues with 
           | None -> ()
           | Some (vref1, vref2) -> yield vref1; yield vref2
@@ -1249,7 +1258,8 @@ type Entity =
           | Some (vref1, vref2) -> yield vref1; yield vref2
           match x.GeneratedHashAndEqualsWithComparerValues with
           | None -> ()
-          | Some (vref1, vref2, vref3) -> yield vref1; yield vref2; yield vref3 ]
+          // vref4 is compiled as a sealed instance member, not an interface impl or an override.
+          | Some (vref1, vref2, vref3, _) -> yield vref1; yield vref2; yield vref3 ]
     
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
@@ -1271,7 +1281,7 @@ type Entity =
         | TProvidedNamespaceRepr _ -> failwith "No compiled representation for provided namespace"
         | _ ->
 #endif
-            let ilTypeRefForCompilationPath (CompPath(sref, p)) item = 
+            let ilTypeRefForCompilationPath (CompPath(sref, _, p)) item = 
                 let rec top racc p = 
                     match p with 
                     | [] -> ILTypeRef.Create(sref, [], textOfPath (List.rev (item :: racc)))
@@ -1389,10 +1399,10 @@ type TyconAugmentation =
       /// of Object.Equals or if the type doesn't override Object.Equals implicitly. 
       mutable tcaug_equals: (ValRef * ValRef) option
 
-      /// This is the value implementing the auto-generated comparison
+      /// This is the value implementing the auto-generated equality
       /// semantics if any. It is not present if the type defines its own implementation
-      /// of IStructuralEquatable or if the type doesn't implement IComparable implicitly.
-      mutable tcaug_hash_and_equals_withc: (ValRef * ValRef * ValRef) option                                    
+      /// of IStructuralEquatable or if the type doesn't override Object.Equals implicitly.
+      mutable tcaug_hash_and_equals_withc: (ValRef * ValRef * ValRef * ValRef option) option                                    
 
       /// True if the type defined an Object.GetHashCode method. In this 
       /// case we give a warning if we auto-generate a hash method since the semantics may not match up
@@ -2138,19 +2148,78 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 type ModuleOrNamespace = Entity 
 
 /// Represents a type or exception definition in the typed AST
-type Tycon = Entity 
+type Tycon = Entity
+
+let getNameOfScopeRef sref = 
+    match sref with 
+    | ILScopeRef.Local -> "<local>"
+    | ILScopeRef.Module mref -> mref.Name
+    | ILScopeRef.Assembly aref -> aref.Name
+    | ILScopeRef.PrimaryAssembly -> "<primary>"
+
+let private isInternalCompPath x =
+    match x with
+    | CompPath(ILScopeRef.Local, _, []) -> true
+    | _ -> false
+
+let private (|Public|Internal|Private|) (TAccess p) =
+    match p with
+    | [] -> Public
+    | _ when List.forall isInternalCompPath p -> Internal 
+    | _ -> Private
+
+let getSyntaxAccessForCompPath (TAccess a) = match a with | CompPath(_, sa, _) :: _ -> sa | _ -> TypedTree.SyntaxAccess.Unknown
+
+let updateSyntaxAccessForCompPath access syntaxAccess =
+    match access with
+    | CompPath(sc, sa, p) :: rest when sa <> syntaxAccess -> ([CompPath(sc, syntaxAccess, p)]@rest)
+    | _ -> access
 
 /// Represents the constraint on access for a construct
 [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type Accessibility = 
-
+type Accessibility =
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
     | TAccess of compilationPaths: CompilationPath list
-    
+
+    member public x.IsPublic = match x with Public -> true | _ -> false
+
+    member public x.IsInternal = match x with Internal -> true | _ -> false
+
+    member public x.IsPrivate = match x with Private -> true | _ -> false
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "Accessibility(...)"
+    member x.AsILMemberAccess () =
+        match getSyntaxAccessForCompPath x with
+        | TypedTree.SyntaxAccess.Public -> ILMemberAccess.Public
+        | TypedTree.SyntaxAccess.Internal -> ILMemberAccess.Assembly
+        | TypedTree.SyntaxAccess.Private -> ILMemberAccess.Private
+        | _ ->
+            if x.IsPublic then ILMemberAccess.Public
+            elif x.IsInternal then ILMemberAccess.Assembly
+            else ILMemberAccess.Private
+
+    member x.AsILTypeDefAccess () =
+        if x.IsPublic then ILTypeDefAccess.Public
+        else ILTypeDefAccess.Private
+
+    member x.CompilationPaths = match x with | TAccess compilationPaths -> compilationPaths
+
+    override x.ToString() =
+        match x with
+        | TAccess (paths) ->
+            let mangledTextOfCompPath (CompPath(scoref, _, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+            let scopename =
+                if x.IsPublic then "public"
+                elif x.IsInternal then "internal"
+                else "private"
+            let paths = String.concat ";" (List.map mangledTextOfCompPath paths)
+            if paths = "" then
+                scopename
+            else
+                $"{scopename} {paths}"
+
 
 /// Represents less-frequently-required data about a type parameter of type inference variable
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -2454,29 +2523,41 @@ type TraitWitnessInfo =
 type TraitConstraintInfo = 
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
-    /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref 
+    /// to store the inferred solution of the constraint. And a mutable source cell to store
+    /// the name of the type or member that defined the constraint.
+    | TTrait of
+        tys: TTypes * 
+        memberName: string * 
+        memberFlags: SynMemberFlags * 
+        objAndArgTys: TTypes * 
+        returnTyOpt: TType option * 
+        source: string option ref * 
+        solution: TraitConstraintSln option ref 
 
     /// Get the types that may provide solutions for the traits
-    member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _)) = x in tys)
+    member x.SupportTypes = (let (TTrait(tys = tys)) = x in tys)
 
     /// Get the logical member name associated with the member constraint.
-    member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    member x.MemberLogicalName = (let (TTrait(memberName = nm)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
-    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
+    member x.MemberFlags = (let (TTrait(memberFlags = flags)) = x in flags)
 
-    member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _)) = x in objAndArgTys)
-
-    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f))
-
+    member x.CompiledObjectAndArgumentTypes = (let (TTrait(objAndArgTys = objAndArgTys)) = x in objAndArgTys)
+    
     /// Get the optional return type recorded in the member constraint.
-    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _)) = x in retTy)
-
+    member x.CompiledReturnType = (let (TTrait(returnTyOpt = retTy)) = x in retTy)
+    
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
-        with get() = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value)
-        and set v = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value <- v)
+        with get() = (let (TTrait(solution = sln)) = x in sln.Value)
+        and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
+
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
+
+    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g)) = x in TTrait(tys, b, c, d, e, f, g))
+
+    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g)) = x in TTrait(a, name, c, d, e, f, g))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -2894,8 +2975,8 @@ type Val =
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member x.IsImplied = x.val_flags.IsImplied
 
-    /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
-    member x.MustInline = x.InlineInfo.MustInline
+    /// Indicates whether the inline declaration for the value indicate that the value should be inlined?
+    member x.ShouldInline = x.InlineInfo.ShouldInline
 
     /// Indicates whether this value was generated by the compiler.
     ///
@@ -4053,7 +4134,7 @@ type ValRef =
     member x.InlineIfLambda = x.Deref.InlineIfLambda
 
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
-    member x.MustInline = x.Deref.MustInline
+    member x.ShouldInline = x.Deref.ShouldInline
 
     /// Indicates whether this value was generated by the compiler.
     ///
@@ -4553,6 +4634,17 @@ type DecisionTreeCase =
     member x.DebugText = x.ToString()
 
     override x.ToString() = sprintf "DecisionTreeCase(...)"
+    
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
+type ActivePatternReturnKind =
+    | RefTypeWrapper
+    | StructTypeWrapper
+    | Boolean
+    member this.IsStruct with get () = 
+        match this with
+        | RefTypeWrapper -> false
+        | StructTypeWrapper
+        | Boolean -> true
 
 [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
 type DecisionTreeTest = 
@@ -4573,20 +4665,20 @@ type DecisionTreeTest =
     /// Test if the input to a decision tree is an instance of the given type 
     | IsInst of source: TType * target: TType
 
-    /// Test.ActivePatternCase(activePatExpr, activePatResTys, isStructRetTy, activePatIdentity, idx, activePatInfo)
+    /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatRetKind, activePatIdentity, idx, activePatInfo)
     ///
     /// Run the active pattern and bind a successful result to a 
     /// variable in the remaining tree. 
     ///     activePatExpr -- The active pattern function being called, perhaps applied to some active pattern parameters.
     ///     activePatResTys -- The result types (case types) of the active pattern.
-    ///     isStructRetTy -- Is the active pattern a struct return
+    ///     activePatRetKind -- Indicating what is returning from the active pattern
     ///     activePatIdentity -- The value and the types it is applied to. If there are any active pattern parameters then this is empty. 
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of
         activePatExpr: Expr *        
         activePatResTys: TTypes *
-        isStructRetTy: bool *
+        activePatRetKind: ActivePatternReturnKind *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
         activePatternInfo: ActivePatternInfo
@@ -4655,7 +4747,7 @@ type ActivePatternElemRef =
         activePatternInfo: ActivePatternInfo *
         activePatternVal: ValRef *
         caseIndex: int *
-        isStructRetTy: bool
+        activePatRetKind: ActivePatternReturnKind
 
     /// Get the full information about the active pattern being referred to
     member x.ActivePatternInfo = (let (APElemRef(info, _, _, _)) = x in info)
@@ -4664,7 +4756,7 @@ type ActivePatternElemRef =
     member x.ActivePatternVal = (let (APElemRef(_, vref, _, _)) = x in vref)
 
     /// Get a reference to the value for the active pattern being referred to
-    member x.IsStructReturn = (let (APElemRef(_, _, _, isStructRetTy)) = x in isStructRetTy)
+    member x.ActivePatternRetKind = (let (APElemRef(_, _, _, activePatRetKind)) = x in activePatRetKind)
 
     /// Get the index of the active pattern element within the overall active pattern 
     member x.CaseIndex = (let (APElemRef(_, _, n, _)) = x in n)
@@ -5875,7 +5967,7 @@ type Construct() =
             | None -> 
                 let ilScopeRef = st.TypeProviderAssemblyRef
                 let enclosingName = GetFSharpPathToProvidedType(st, m)
-                CompPath(ilScopeRef, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace true))
+                CompPath(ilScopeRef, SyntaxAccess.Unknown, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace true))
             | Some p -> p
         let pubpath = cpath.NestedPublicPath id
 
@@ -6104,7 +6196,7 @@ type Construct() =
 
     /// Create the new contents of an overall assembly
     static member NewCcuContents sref m nm mty =
-        Construct.NewModuleOrNamespace (Some(CompPath(sref, []))) taccessPublic (ident(nm, m)) XmlDoc.Empty [] (MaybeLazy.Strict mty)
+        Construct.NewModuleOrNamespace (Some(CompPath(sref, SyntaxAccess.Unknown, []))) taccessPublic (ident(nm, m)) XmlDoc.Empty [] (MaybeLazy.Strict mty)
 
     /// Create a tycon based on an existing one using the function 'f'. 
     /// We require that we be given the new parent for the new tycon. 

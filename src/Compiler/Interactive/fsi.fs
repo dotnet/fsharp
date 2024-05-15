@@ -933,12 +933,12 @@ type DiagnosticsLogger with
 
 /// Get the directory name from a string, with some defaults if it doesn't have one
 let internal directoryName (s: string) =
-    if s = "" then
+    if String.IsNullOrEmpty(s) then
         "."
     else
         match Path.GetDirectoryName s with
         | null -> if FileSystem.IsPathRootedShim s then s else "."
-        | res -> if res = "" then "." else res
+        | res -> if String.IsNullOrEmpty(res) then "." else res
 
 //----------------------------------------------------------------------------
 // cmd line - state for options
@@ -1526,7 +1526,7 @@ let ConvReflectionTypeToILTypeRef (reflectionTy: Type) =
     let scoref = ILScopeRef.Assembly aref
 
     let fullName = reflectionTy.FullName
-    let index = fullName.IndexOf("[")
+    let index = fullName.IndexOfOrdinal("[")
 
     let fullName =
         if index = -1 then
@@ -1606,7 +1606,10 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
 let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
-    let compPath = (CompilationPath.CompPath(ILScopeRef.Local, []))
+
+    let compPath =
+        (CompilationPath.CompPath(ILScopeRef.Local, SyntaxAccess.Unknown, []))
+
     let mutable mty = Unchecked.defaultof<_>
 
     let entity =
@@ -4089,7 +4092,6 @@ type FsiInteractionProcessor
             ?cancellationToken: CancellationToken
         ) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        use _ = Cancellable.UsingToken(cancellationToken)
 
         if tokenizer.LexBuffer.IsPastEndOfStream then
             let stepStatus =
@@ -4218,7 +4220,6 @@ type FsiInteractionProcessor
 
     member _.EvalInteraction(ctok, sourceText, scriptFileName, diagnosticsLogger, ?cancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        use _ = Cancellable.UsingToken(cancellationToken)
         use _ = UseBuildPhase BuildPhase.Interactive
         use _ = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
@@ -4257,7 +4258,14 @@ type FsiInteractionProcessor
             let m = expr.Range
             // Make this into "(); expr" to suppress generalization and compilation-as-function
             let exprWithSeq =
-                SynExpr.Sequential(DebugPointAtSequential.SuppressExpr, true, SynExpr.Const(SynConst.Unit, m.StartRange), expr, m)
+                SynExpr.Sequential(
+                    DebugPointAtSequential.SuppressExpr,
+                    true,
+                    SynExpr.Const(SynConst.Unit, m.StartRange),
+                    expr,
+                    m,
+                    SynExprSequentialTrivia.Zero
+                )
 
             ExecuteParsedExpressionOnMainThread(ctok, diagnosticsLogger, exprWithSeq, istate))
         |> commitResult
@@ -4595,8 +4603,7 @@ type FsiEvaluationSession
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
 
-            checker.FrameworkImportsCache.Get tcConfig
-            |> NodeCode.RunImmediateWithoutCancellation
+            checker.FrameworkImportsCache.Get tcConfig |> Async.RunImmediate
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e
@@ -4610,7 +4617,7 @@ type FsiEvaluationSession
                 unresolvedReferences,
                 fsiOptions.DependencyProvider
             )
-            |> NodeCode.RunImmediateWithoutCancellation
+            |> Async.RunImmediate
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e
@@ -4895,7 +4902,6 @@ type FsiEvaluationSession
             SpawnInteractiveServer(fsi, fsiOptions, fsiConsoleOutput)
 
         use _ = UseBuildPhase BuildPhase.Interactive
-        use _ = Cancellable.UsingToken(CancellationToken.None)
 
         if fsiOptions.Interact then
             // page in the type check env

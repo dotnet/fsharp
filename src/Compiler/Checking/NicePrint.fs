@@ -55,7 +55,7 @@ module internal PrintUtilities =
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
-    let isDiscard (name: string) = name.StartsWith("_")
+    let isDiscard (name: string) = name.StartsWithOrdinal("_")
 
     let ensureFloat (s: string) =
         if String.forall (fun c -> Char.IsDigit c || c = '-') s then
@@ -224,7 +224,7 @@ module internal PrintUtilities =
                         else s)
 
             let pathText = trimPathByDisplayEnv denv path
-            if pathText = "" then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
+            if String.IsNullOrEmpty(pathText) then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
 
     let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
         let tcref = attrib.TyconRef
@@ -495,7 +495,7 @@ module PrintTypes =
     let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
         let isInternalCompPath x = 
             match x with 
-            | CompPath(ILScopeRef.Local, []) -> true 
+            | CompPath(ILScopeRef.Local, _, []) -> true 
             | _ -> false
         let (|Public|Internal|Private|) (TAccess p) = 
             match p with 
@@ -823,7 +823,7 @@ module PrintTypes =
 
     and layoutTraitWithInfo denv env traitInfo =
         let g = denv.g
-        let (TTrait(tys, _, memFlags, _, _, _)) = traitInfo
+        let (TTrait(tys=tys;memberFlags=memFlags)) = traitInfo
         let nm = traitInfo.MemberDisplayNameCore
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> wordL) nm
         if denv.shortConstraints then 
@@ -1254,7 +1254,7 @@ module PrintTastMemberOrVals =
     open PrintTypes 
 
     let mkInlineL denv (v: Val) nameL = 
-        if v.MustInline && not denv.suppressInlineKeyword then 
+        if v.ShouldInline && not denv.suppressInlineKeyword then 
             WordL.keywordInline ++ nameL 
         else 
             nameL
@@ -1909,6 +1909,7 @@ module TastDefinitionPrinting =
             match vrefOpt with
             | None -> true
             | Some vref ->
+                (not vref.IsCompilerGenerated) &&
                 (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g vref.Attribs)) &&
                 (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g vref.Attribs))
                 
@@ -2793,7 +2794,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> fun name -> if String.IsNullOrEmpty(name) then "" else sprintf " (%s)" name
             sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName ty1, makeName ty2, stringOfTyparConstraints denv tpcs)

@@ -540,6 +540,27 @@ let ``Tries are built up incrementally`` () =
                     ParsedInput = parseSourceCode ("D.fs", "module D")
                 }
             |]
-            
+
     for idx, t in trie do
         Assert.AreEqual(idx + 1, t.Children.Count)
+
+
+module InvalidSyntax =
+
+    [<Test>]
+    let ``Unnamed module`` () =
+        let trie =
+            getLastTrie
+                [| { Idx = 0
+                     FileName = "A.fs"
+                     ParsedInput =
+                       parseSourceCode (
+                           "A.fs",
+                           """
+                        module
+
+                        ()
+                        """
+                       ) } |]
+
+        Assert.True trie.Children.IsEmpty

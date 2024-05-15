@@ -7,6 +7,8 @@
 module Tests.Service.ProjectAnalysisTests
 #endif
 
+#nowarn "57" // Experimental stuff
+
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
 open NUnit.Framework
@@ -90,9 +92,10 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
     FileSystem.OpenFileForWriteShim(fileName2).Write(fileSource2Text)
 
     let fileNames = [fileName1; fileName2]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-    let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames |> List.toArray }
+    let parsingOptions', _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let parsingOptions = { parsingOptions' with SourceFiles = fileNames |> List.toArray }
     let cleanFileName a = if a = fileName1 then "file1" else if a = fileName2 then "file2" else "??"
 
 [<Test; SetUICulture("en-US"); SetCulture("en-US")>]
@@ -675,9 +678,9 @@ let _ = GenericFunction(3, 4)
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 
@@ -713,11 +716,11 @@ let ``Test project2 all symbols in signature`` () =
              "DUWithNormalFields"; "member get_IsD"; "member get_IsDU1"; "member get_IsDU2";
              "property IsD"; "property IsDU1"; "property IsDU2"; "DU1"; "field Item1";
              "field Item2"; "DU2"; "field Item1"; "field Item2"; "D"; "field Item1";
-             "field Item2"; "DUWithNamedFields"; "member get_IsDU"; "property IsDU"; "DU";
+             "field Item2"; "DUWithNamedFields"; "DU";
              "field x"; "field y"; "GenericClass`1"; "generic parameter T"; "member .ctor";
              "member GenericMethod"; "generic parameter U"] |> List.sort
 
-    shouldEqual e r
+    shouldPairwiseEqual e r
 
 [<Test>]
 let ``Test project2 all uses of all signature symbols`` () =
@@ -735,12 +738,10 @@ let ``Test project2 all uses of all signature symbols`` () =
                ("generic parameter T",
                 [("file1", ((22, 23), (22, 25))); ("file1", ((22, 30), (22, 32)));
                  ("file1", ((22, 45), (22, 47))); ("file1", ((22, 50), (22, 52)))]);
-               ("member get_IsD", []);
-               ("member get_IsDU", []);
+               ("member get_IsD", []);             
                ("member get_IsDU1", []);
                ("member get_IsDU2", []);
-               ("property IsD", []);
-               ("property IsDU", []);
+               ("property IsD", []);            
                ("property IsDU1", []);
                ("property IsDU2", []);
                ("DUWithNormalFields", [("file1", ((3, 5), (3, 23)))]);
@@ -928,9 +929,9 @@ let getM (foo: IFoo) = foo.InterfaceMethod("d")
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 
@@ -1297,9 +1298,9 @@ let inline twice(x : ^U, y : ^U) = x + y
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 
@@ -1471,9 +1472,9 @@ let parseNumeric str =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options =  { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -1683,9 +1684,9 @@ let f () =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -1739,9 +1740,9 @@ let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -1800,9 +1801,9 @@ let x =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -1880,9 +1881,9 @@ let inline check< ^T when ^T : (static member IsInfinity : ^T -> bool)> (num: ^T
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -1959,9 +1960,9 @@ C.M("http://goo", query = 1)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2039,9 +2040,9 @@ let fff (x:System.Collections.Generic.Dictionary<int,int>.Enumerator) = ()
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2108,9 +2109,9 @@ let x2 = query { for i in 0 .. 100 do
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2175,9 +2176,9 @@ let x3 = new System.DateTime()
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2334,9 +2335,9 @@ let x2  = S(3)
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2359,8 +2360,10 @@ let ``Test Project14 all symbols`` () =
         |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project14.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su)
 
     allUsesOfAllSymbols |> shouldEqual
-          [|("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)),
-             ["attribute"]);
+          [|
+            ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
+            ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), [])
+            ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
             ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
@@ -2401,9 +2404,9 @@ let f x =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2488,9 +2491,9 @@ and G = Case1 | Case2 of int
     FileSystem.OpenFileForWriteShim(sigFileName1).Write(sigFileSource1Text)
     let cleanFileName a = if a = fileName1 then "file1" elif a = sigFileName1 then "sig1"  else "??"
 
-    let fileNames = [sigFileName1; fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|sigFileName1; fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2513,14 +2516,14 @@ let ``Test Project16 all symbols`` () =
         |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project16.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
-          [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)),
-             ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [],
-             ["member"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)),
-             ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [],
-             ["member"]);
+          [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
+            ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
+            ("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
+            ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
+            ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
+            ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
+            ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
+            ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
             ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
             ("int", "int", "sig1", ((16, 33), (16, 36)), ["type"], ["abbrev"]);
             ("int", "int", "sig1", ((17, 25), (17, 28)), ["type"], ["abbrev"]);
@@ -2754,9 +2757,9 @@ let f3 (x: System.Exception) = x.HelpLink <- "" // check use of .NET setter prop
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2841,9 +2844,9 @@ let _ = list<_>.Empty
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2897,9 +2900,9 @@ let s = System.DayOfWeek.Monday
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -2972,9 +2975,9 @@ type A<'T>() =
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -3033,9 +3036,9 @@ let _ = { new IMyInterface<int> with
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -3107,9 +3110,9 @@ let f5 (x: int[,,]) = () // test a multi-dimensional array
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 
@@ -3254,9 +3257,9 @@ module Setter =
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test Project23 whole project errors`` () =
@@ -3425,9 +3428,9 @@ TypeWithProperties.StaticAutoPropGetSet  <- 3
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test Project24 whole project errors`` () =
@@ -3682,12 +3685,12 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args =
-        [| yield! mkProjectCommandLineArgs (dllName, fileNames)
+        [| yield! mkProjectCommandLineArgs (dllName, [])
            yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "FSharp.Data.dll"))
            yield @"-r:" + sysLib "System.Xml.Linq" |]
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 #if NETCOREAPP
@@ -3822,9 +3825,9 @@ type Class() =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -3912,9 +3915,9 @@ type CFooImpl() =
 """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test project27 whole project errors`` () =
@@ -3977,9 +3980,9 @@ type Use() =
 """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 #if !NO_TYPEPROVIDERS
 [<Test>]
 let ``Test project28 all symbols in signature`` () =
@@ -4055,9 +4058,9 @@ let f (x: INotifyPropertyChanged) = failwith ""
 """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -4114,9 +4117,9 @@ type T() =
 """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 let ``Test project30 whole project errors`` () =
 
@@ -4174,10 +4177,9 @@ let g = Console.ReadKey()
 """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 let ``Test project31 whole project errors`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project31.options) |> Async.RunImmediate
@@ -4317,9 +4319,9 @@ val func : int -> int
     FileSystem.OpenFileForWriteShim(sigFileName1).Write(sigFileSource1)
     let cleanFileName a = if a = fileName1 then "file1" elif a = sigFileName1 then "sig1"  else "??"
 
-    let fileNames = [sigFileName1; fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|sigFileName1; fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -4385,9 +4387,9 @@ type System.Int32 with
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test Project33 whole project errors`` () =
@@ -4424,17 +4426,17 @@ module internal Project34 =
     FileSystem.OpenFileForWriteShim(sourceFileName).Write(fileSource)
     let cleanFileName a = if a = sourceFileName then "file1" else "??"
 
-    let fileNames = [sourceFileName]
+    let fileNames = [|sourceFileName|]
     let args =
         [|
-            yield! mkProjectCommandLineArgs (dllName, fileNames)
+            yield! mkProjectCommandLineArgs (dllName, [])
             // We use .NET-built version of System.Data.dll since the tests depend on implementation details
             // i.e. the private type System.Data.Listeners may not be available on Mono.
             yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "System.Data.dll"))
         |]
         |> Array.filter(fun arg -> not((arg.Contains("System.Data")) && not (arg.Contains(@"service\data\System.Data.dll"))))
 
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test Project34 whole project errors`` () =
@@ -4502,9 +4504,9 @@ type Test =
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 [<Test>]
@@ -4574,13 +4576,13 @@ module internal Project35b =
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
 #if NETCOREAPP
     let projPath = Path.ChangeExtension(fileName1, ".fsproj")
     let dllPath = Path.ChangeExtension(fileName1, ".dll")
     let args = mkProjectCommandLineArgs(dllPath, fileNames)
     let args2 = Array.append args [| "-r:notexist.dll" |]
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projPath, args2)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projPath, args2) with SourceFiles = fileNames }
 #else
     let options =  checker.GetProjectOptionsFromScript(fileName1, fileSource1) |> Async.RunImmediate |> fst
 #endif
@@ -4595,8 +4597,13 @@ let ``Test project35b Dependency files for ParseAndCheckFileInProject`` () =
     for d in checkFileResults.DependencyFiles do
         printfn "ParseAndCheckFileInProject dependency: %s" d
     checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
-    // The file itself is not a dependency since it is never read from the file system when using ParseAndCheckFileInProject
-    checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual false
+
+    if not checker.UsesTransparentCompiler then
+        // The file itself is not a dependency since it is never read from the file system when using ParseAndCheckFileInProject
+        checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual false
+    else
+        // Transparent compiler doesn't differentiate between foreground and background requests. All files have to be present in the input snapshot so the filesystem doesn't have to be watched for those. Maybe source files shouldn't be included in the dependency list at all. But they show the dependencies gathered from graph-based checking which could be useful?
+        ()
 
 [<Test>]
 let ``Test project35b Dependency files for GetBackgroundCheckResultsForFileInProject`` () =
@@ -4604,8 +4611,13 @@ let ``Test project35b Dependency files for GetBackgroundCheckResultsForFileInPro
     for d in checkFileResults.DependencyFiles do
         printfn "GetBackgroundCheckResultsForFileInProject dependency: %s" d
     checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
-    // The file is a dependency since it is read from the file system when using GetBackgroundCheckResultsForFileInProject
-    checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual true
+
+    if not checker.UsesTransparentCompiler then
+        // The file is a dependency since it is read from the file system when using GetBackgroundCheckResultsForFileInProject
+        checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual true
+    else
+        // Transparent compiler doesn't differentiate between foreground and background requests. All files have to be present in the input snapshot so the filesystem doesn't have to be watched for those. Maybe source files shouldn't be included in the dependency list at all. But they show the dependencies gathered from graph-based checking which could be useful?
+        ()
 
 [<Test>]
 let ``Test project35b Dependency files for check of project`` () =
@@ -4641,13 +4653,15 @@ let callToOverload = B(5).Overload(4)
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
 
 [<Test>]
-let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` () =
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args)
+// [<TestCase true>] // Flaky, reenable when stable
+[<TestCase false>]
+let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` useTransparentCompiler =
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args) with SourceFiles = Project36.fileNames }
     let wholeProjectResults =
         keepAssemblyContentsChecker.ParseAndCheckProject(options)
         |> Async.RunImmediate
@@ -4660,9 +4674,11 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` () =
     |> fun baseSymbol -> shouldEqual true baseSymbol.IsBaseValue
 
 [<Test>]
-let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMemberThisValue`` () =
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args)
+// [<TestCase true>] // Flaky, reenable when stable
+[<TestCase false>]
+let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMemberThisValue`` useTransparentCompiler =
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args) with SourceFiles = Project36.fileNames }
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(options) |> Async.RunImmediate
     let declarations =
         let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
@@ -4697,9 +4713,11 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
     |> shouldEqual true
 
 [<Test>]
-let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` () =
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args)
+// [<TestCase true>] // Flaky, reenable when stable
+[<TestCase false>]
+let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` useTransparentCompiler =
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args) with SourceFiles = Project36.fileNames }
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(options) |> Async.RunImmediate
     let project36Module = wholeProjectResults.AssemblySignature.Entities[0]
     let lit = project36Module.MembersFunctionsAndValues[0]
@@ -4735,17 +4753,17 @@ type TestRecord = { B : int }
 
 module Test =
     [<AttrTest(typeof<int>)>]
-    let withType = 0
+    let withType() = 0
     [<AttrTest(typeof<list<int>>)>]
-    let withGenericType = 0
+    let withGenericType() = 0
     [<AttrTest(typeof<int * int>)>]
-    let withTupleType = 0
+    let withTupleType() = 0
     [<AttrTest(typeof<int -> int>)>]
-    let withFuncType = 0
+    let withFuncType() = 0
     [<AttrTest([| typeof<TestUnion>; typeof<TestRecord> |])>]
-    let withTypeArray = 0
+    let withTypeArray() = 0
     [<AttrTest([| 0; 1; 2 |])>]
-    let withIntArray = 0
+    let withIntArray() = 0
     module NestedModule =
         type NestedRecordType = { B : int }
 
@@ -4760,9 +4778,9 @@ namespace AttrTests
 do ()
 """
     FileSystem.OpenFileForWriteShim(fileName2).Write(fileSource2)
-    let fileNames = [fileName1; fileName2]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1; fileName2|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
@@ -4902,9 +4920,9 @@ type A<'XX, 'YY>() =
         member this.Property = 1
 """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test project38 abstract slot information`` () =
@@ -4988,9 +5006,9 @@ let uses () =
    C().CurriedMemberWithIncompleteSignature (failwith "x1") (failwith "x2") (failwith "x3", failwith "x4")
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -5063,9 +5081,9 @@ let g (x: C) = x.IsItAnA,x.IsItAnAMethod()
     """
 
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -5134,9 +5152,9 @@ module M
         if true then Foo else Bar 
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -5226,9 +5244,9 @@ open File1
 let test2() = test()
     """
     FileSystem.OpenFileForWriteShim(fileName2).Write(fileSource2)
-    let fileNames = [fileName1;fileName2]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1;fileName2|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test project42 to ensure cached checked results are invalidated`` () =
@@ -5261,21 +5279,21 @@ module internal ProjectBig =
     let fileSources2 = [ for i,f in fileSources -> SourceText.ofString f ]
 
     let fileNames = [ for _,f in fileNamesI -> f ]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let args = mkProjectCommandLineArgs (dllName, [])
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-    let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-
+    let parsingOptions', _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let parsingOptions = { parsingOptions' with SourceFiles = fileNames |> List.toArray }
 
 
 [<Test>]
 // Simplified repro for https://github.com/dotnet/fsharp/issues/2679
 let ``add files with same name from different folders`` () =
     let fileNames =
-        [ __SOURCE_DIRECTORY__ + "/data/samename/folder1/a.fs"
-          __SOURCE_DIRECTORY__ + "/data/samename/folder2/a.fs" ]
+        [| __SOURCE_DIRECTORY__ + "/data/samename/folder1/a.fs"
+           __SOURCE_DIRECTORY__ + "/data/samename/folder2/a.fs" |]
     let projFileName = __SOURCE_DIRECTORY__ + "/data/samename/tempet.fsproj"
     let args = mkProjectCommandLineArgs ("test.dll", fileNames)
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     let errors =
         wholeProjectResults.Diagnostics
@@ -5308,13 +5326,15 @@ let foo (a: Foo): bool =
     """
 
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
-let ``Test typed AST for struct unions`` () = // See https://github.com/fsharp/FSharp.Compiler.Service/issues/756
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+// [<TestCase true>] // Flaky, reenable when stable
+[<TestCase false>]
+let ``Test typed AST for struct unions`` useTransparentCompiler = // See https://github.com/fsharp/FSharp.Compiler.Service/issues/756
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(ProjectStructUnions.options) |> Async.RunImmediate
 
     let declarations =
@@ -5350,9 +5370,9 @@ let x = (1 = 3.0)
     """
     let fileSource1 = SourceText.ofString fileSource1Text
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [| fileName1 |]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 [<Test>]
 let ``Test diagnostics with line directives active`` () =
@@ -5401,7 +5421,9 @@ let ``Test diagnostics with line directives ignored`` () =
 //------------------------------------------------------
 
 [<Test>]
-let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is created with keepAssemblyContent flag set to true``() =
+// [<TestCase true>] // Flaky, reenable when stable
+[<TestCase false>]
+let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is created with keepAssemblyContent flag set to true`` useTransparentCompiler =
 
     let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
     let base2 = tryCreateTemporaryFileName ()
@@ -5414,10 +5436,10 @@ type A(i:int) =
     let fileSource1 = SourceText.ofString fileSource1Text
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
     let fileCheckResults =
         keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunImmediate
@@ -5442,7 +5464,6 @@ type A(i:int) =
     | Some decl -> failwithf "unexpected declaration %A" decl
     | None -> failwith "declaration list is empty"
 
-
 [<TestCase(([||]: string[]), ([||]: bool[]))>]
 [<TestCase([| "--times" |], [| false |])>]
 [<TestCase([| "--times"; "--nowarn:75" |], ([||]: bool[]))>]
@@ -5459,7 +5480,9 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
 //------------------------------------------------------
 
 [<Test>]
-let ``Unused opens in rec module smoke test 1``() =
+// [<TestCase true>] // Flaky, reenable when stable
+[<TestCase false>]
+let ``Unused opens in rec module smoke test 1`` useTransparentCompiler =
 
     let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
     let base2 = tryCreateTemporaryFileName ()
@@ -5505,10 +5528,10 @@ type UseTheThings(i:int) =
     let fileSource1 = SourceText.ofString fileSource1Text
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
     let fileCheckResults =
         keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunImmediate
@@ -5532,7 +5555,9 @@ type UseTheThings(i:int) =
     unusedOpensData |> shouldEqual expected
 
 [<Test>]
-let ``Unused opens in non rec module smoke test 1``() =
+// [<TestCase true>] // Flaky, reenable when stable
+[<TestCase false>]
+let ``Unused opens in non rec module smoke test 1`` useTransparentCompiler =
 
     let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
     let base2 = tryCreateTemporaryFileName ()
@@ -5578,10 +5603,10 @@ type UseTheThings(i:int) =
     let fileSource1 = SourceText.ofString fileSource1Text
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
     let fileCheckResults =
         keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunImmediate
@@ -5605,7 +5630,9 @@ type UseTheThings(i:int) =
     unusedOpensData |> shouldEqual expected
 
 [<Test>]
-let ``Unused opens smoke test auto open``() =
+// [<TestCase true>] // Flaky, reenable when stable
+[<TestCase false>]
+let ``Unused opens smoke test auto open`` useTransparentCompiler =
 
     let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
     let base2 = tryCreateTemporaryFileName ()
@@ -5659,10 +5686,10 @@ module M2 =
     let fileSource1 = SourceText.ofString fileSource1Text
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
 
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
     let fileCheckResults =
         keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunImmediate

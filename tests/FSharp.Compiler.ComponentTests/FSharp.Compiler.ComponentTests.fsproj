@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net8.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
+    <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <OutputType>Library</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -19,6 +19,7 @@
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
     <!-- allow testing of static methods in interfaces on .NET 6  -->
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
 </PropertyGroup>
 
 <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -71,13 +72,14 @@
     <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
-	<Compile Include="Conformance\Constraints\Unmanaged.fs" />
+    <Compile Include="Conformance\Constraints\Unmanaged.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
+    <Compile Include="Conformance\Expressions\ComputationExpressions\CustomOperations.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
@@ -124,10 +126,18 @@
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
+    <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\ModuleVisibility.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\ModuleInitialization.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityNamespaceRootWithFsi.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityNamespaceRoot.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityModuleRootWithFsi.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityModuleRoot.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeInitialization.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
     <!--<Compile Include="EmittedIL\StructGettersReadOnly.fs" />-->
@@ -142,9 +152,11 @@
     <Compile Include="EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs" />
     <Compile Include="EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs" />
     <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
+    <Compile Include="EmittedIL\ComputedCollections\ComputedCollections.fs" />
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
     <Compile Include="EmittedIL\ForLoop\ForLoop.fs" />
     <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
+    <Compile Include="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <Compile Include="EmittedIL\GenericComparison\GenericComparison.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
@@ -195,6 +207,7 @@
     <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
     <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />
     <Compile Include="ErrorMessages\ExtendedDiagnosticDataTests.fs" />
+    <Compile Include="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
@@ -217,9 +230,11 @@
     <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
     <Compile Include="Language\PrintfFormatTests.fs" />
-	<Compile Include="Language\InterfaceTests.fs" />
-	<Compile Include="Language\CopyAndUpdateTests.fs" />
-	<Compile Include="Language\ConstraintIntersectionTests.fs" />
+    <Compile Include="Language\InterfaceTests.fs" />
+    <Compile Include="Language\CopyAndUpdateTests.fs" />
+    <Compile Include="Language\ConstraintIntersectionTests.fs" />
+    <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
+    <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
@@ -245,7 +260,7 @@
     <Compile Include="TypeChecks\Graph\GraphProcessingTests.fs" />
     <Compile Include="TypeChecks\TyparNameTests.fs" />
     <Compile Include="TypeChecks\CheckTypeTests.fs" />
-    <Compile Include="TypeChecks\TypeExtensions\PropertyShadowingTests.fs" />
+    <Compile Include="TypeChecks\PropertyShadowingTests.fs" />
     <Compile Include="CompilerOptions\fsc\checked\checked.fs" />
     <Compile Include="CompilerOptions\fsc\cliversion.fs" />
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
@@ -266,6 +281,9 @@
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
+    <Compile Include="CompilerService\LruCache.fs" />
+    <Compile Include="CompilerService\AsyncLock.fs" />
+    <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -294,6 +312,8 @@
     <Compile Include="Signatures\MemberTests.fs" />
     <Compile Include="StaticLinking\StaticLinking.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
+    <Compile Include="FSharpChecker\ProjectSnapshot.fs" />
+    <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
   </ItemGroup>
@@ -302,9 +322,6 @@
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
       <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
     </None>
@@ -313,8 +330,11 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
+    <None Remove="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />

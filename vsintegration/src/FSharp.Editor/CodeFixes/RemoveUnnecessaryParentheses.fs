@@ -15,6 +15,27 @@ open CancellableTasks
 module private Patterns =
     let inline toPat f x = if f x then ValueSome() else ValueNone
 
+    /// Starts with //.
+    [<return: Struct>]
+    let (|StartsWithSingleLineComment|_|) (s: string) =
+        if s.AsSpan().TrimStart(' ').StartsWith("//".AsSpan()) then
+            ValueSome StartsWithSingleLineComment
+        else
+            ValueNone
+
+    /// Starts with match, e.g.,
+    ///
+    ///     (match … with
+    ///     | … -> …)
+    [<return: Struct>]
+    let (|StartsWithMatch|_|) (s: string) =
+        let s = s.AsSpan().TrimStart ' '
+
+        if s.StartsWith("match".AsSpan()) && (s.Length = 5 || s[5] = ' ') then
+            ValueSome StartsWithMatch
+        else
+            ValueNone
+
     [<AutoOpen>]
     module Char =
         [<return: Struct>]
@@ -28,85 +49,37 @@ module private Patterns =
 
     [<AutoOpen>]
     module SourceText =
-        /// Returns true if the given span contains an expression
-        /// whose indentation would be made invalid if the open paren
-        /// were removed (because the offside line would be shifted), e.g.,
+        /// E.g., something like:
         ///
-        ///     // Valid.
-        ///     (let x = 2
-        ///      x)
-        ///
-        ///     // Invalid.
-        ///    ←let x = 2
-        ///      x◌
-        ///
-        ///     // Valid.
-        ///     ◌let x = 2
-        ///      x◌
-        let containsSensitiveIndentation (span: TextSpan) (sourceText: SourceText) =
-            let startLinePosition = sourceText.Lines.GetLinePosition span.Start
-            let endLinePosition = sourceText.Lines.GetLinePosition span.End
-            let startLine = startLinePosition.Line
-            let startCol = startLinePosition.Character
-            let endLine = endLinePosition.Line
-
-            if startLine = endLine then
-                false
-            else
-                let rec loop offsides lineNo startCol =
-                    if lineNo <= endLine then
-                        let line = sourceText.Lines[lineNo].ToString()
-
-                        match offsides with
-                        | ValueNone ->
-                            let i = line.AsSpan(startCol).IndexOfAnyExcept(' ', ')')
-
-                            if i >= 0 then
-                                loop (ValueSome(i + startCol)) (lineNo + 1) 0
-                            else
-                                loop offsides (lineNo + 1) 0
-
-                        | ValueSome offsidesCol ->
-                            let i = line.AsSpan(0, min offsidesCol line.Length).IndexOfAnyExcept(' ', ')')
-                            i <= offsidesCol || loop offsides (lineNo + 1) 0
-                    else
-                        false
-
-                loop ValueNone startLine startCol
-
-        let hasPrecedingConstructOnSameLine (span: TextSpan) (sourceText: SourceText) =
+        ///     let … = (␤
+        ///     …
+        ///     )
+        [<return: Struct>]
+        let (|TrailingOpen|_|) (span: TextSpan) (sourceText: SourceText) =
             let linePosition = sourceText.Lines.GetLinePosition span.Start
             let line = (sourceText.Lines.GetLineFromPosition span.Start).ToString()
-            line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0
 
-        let followingLineMovesOffsidesRightward (span: TextSpan) (sourceText: SourceText) =
-            let startLinePosition = sourceText.Lines.GetLinePosition span.Start
-            let startLine = startLinePosition.Line
-            let endLinePosition = sourceText.Lines.GetLinePosition span.End
-            let endLine = endLinePosition.Line
-            let offsides = startLinePosition.Character
+            if
+                line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0
+                && line.AsSpan(linePosition.Character).IndexOfAnyExcept('(', ' ') < 0
+            then
+                ValueSome TrailingOpen
+            else
+                ValueNone
 
-            let rec loop lineNo =
-                if lineNo <= endLine then
-                    let line = sourceText.Lines[lineNo].ToString().AsSpan()
-                    let i = line.IndexOfAnyExcept("*/%-+:^@><=!|0$.?) ".AsSpan())
-                    i > offsides || loop (lineNo + 1)
-                else
-                    false
+[<NoEquality; NoComparison>]
+type private InnerOffsides =
+    /// We haven't found an inner construct yet.
+    | NoneYet
 
-            loop (startLine + 1)
+    /// The start column of the first inner construct we find.
+    /// This may not be on the same line as the open paren.
+    | FirstLine of col: int
 
-        [<return: Struct>]
-        let (|ContainsSensitiveIndentation|_|) span sourceText =
-            toPat (containsSensitiveIndentation span) sourceText
-
-        [<return: Struct>]
-        let (|HasPrecedingConstructOnSameLine|_|) span sourceText =
-            toPat (hasPrecedingConstructOnSameLine span) sourceText
-
-        [<return: Struct>]
-        let (|FollowingLineMovesOffsidesRightward|_|) span sourceText =
-            toPat (followingLineMovesOffsidesRightward span) sourceText
+    /// The leftmost start column of an inner construct on a line
+    /// following the first inner construct we found.
+    /// We keep the first column of the first inner construct for comparison at the end.
+    | FollowingLine of firstLine: int * followingLine: int
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnnecessaryParentheses); Shared; Sealed>]
 type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConstructor>] () =
@@ -154,60 +127,132 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
                 match firstChar, lastChar with
                 | '(', ')' ->
-                    let (|ShouldPutSpaceBefore|_|) (s: string) =
-                        // "……(……)"
-                        //  ↑↑ ↑
-                        match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[1] with
-                        | _, _, ('\n' | '\r') -> None
-                        | '[', '|', (Punctuation | LetterOrDigit) -> None
-                        | _, '[', '<' -> Some ShouldPutSpaceBefore
-                        | _, ('(' | '[' | '{'), _ -> None
-                        | _, '>', _ -> Some ShouldPutSpaceBefore
-                        | ' ', '=', _ -> Some ShouldPutSpaceBefore
-                        | _, '=', ('(' | '[' | '{') -> None
-                        | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                        | _, LetterOrDigit, '(' -> None
-                        | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
-                        | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                        | _ -> None
+                    /// Trim only spaces from the start if there is something else
+                    /// before the open paren on the same line (or else we could move
+                    /// the whole inner expression up a line); otherwise trim all whitespace
+                    /// from start and end.
+                    let (|Trim|) (sourceText: SourceText) =
+                        let linePosition = sourceText.Lines.GetLinePosition context.Span.Start
+                        let line = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()
 
-                    let (|ShouldPutSpaceAfter|_|) (s: string) =
-                        // "(……)…"
-                        //    ↑ ↑
-                        match s[s.Length - 2], sourceText[min context.Span.End (sourceText.Length - 1)] with
-                        | '>', ('|' | ']') -> Some ShouldPutSpaceAfter
-                        | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
-                        | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
-                        | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
-                        | _ -> None
-
-                    let (|NewOffsidesOnFirstLine|_|) (s: string) =
-                        let s = s.AsSpan 1 // (…
-                        let newline = s.IndexOfAny('\n', '\r')
-
-                        if newline < 0 || s.Slice(0, newline).IndexOfAnyExcept(@"\r\n ".AsSpan()) >= 0 then
-                            Some NewOffsidesOnFirstLine
+                        if line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0 then
+                            fun (s: string) -> s.TrimEnd().TrimStart ' '
                         else
-                            None
+                            fun (s: string) -> s.Trim()
+
+                    let (|ShiftLeft|NoShift|ShiftRight|) (sourceText: SourceText) =
+                        let startLinePosition = sourceText.Lines.GetLinePosition context.Span.Start
+                        let endLinePosition = sourceText.Lines.GetLinePosition context.Span.End
+                        let startLineNo = startLinePosition.Line
+                        let endLineNo = endLinePosition.Line
+
+                        if startLineNo = endLineNo then
+                            NoShift
+                        else
+                            let outerOffsides = startLinePosition.Character
+
+                            let rec loop innerOffsides lineNo startCol =
+                                if lineNo <= endLineNo then
+                                    let line = sourceText.Lines[lineNo].ToString()
+
+                                    match line.AsSpan(startCol).IndexOfAnyExcept(' ', ')') with
+                                    | -1 -> loop innerOffsides (lineNo + 1) 0
+                                    | i ->
+                                        match line[i + startCol ..] with
+                                        | StartsWithMatch
+                                        | StartsWithSingleLineComment -> loop innerOffsides (lineNo + 1) 0
+                                        | _ ->
+                                            match innerOffsides with
+                                            | NoneYet -> loop (FirstLine(i + startCol)) (lineNo + 1) 0
+
+                                            | FirstLine inner -> loop (FollowingLine(inner, i + startCol)) (lineNo + 1) 0
+
+                                            | FollowingLine(firstLine, innerOffsides) ->
+                                                loop (FollowingLine(firstLine, min innerOffsides (i + startCol))) (lineNo + 1) 0
+                                else
+                                    innerOffsides
+
+                            match loop NoneYet startLineNo (startLinePosition.Character + 1) with
+                            | NoneYet -> NoShift
+                            | FirstLine innerOffsides when innerOffsides < outerOffsides -> ShiftRight(outerOffsides - innerOffsides)
+                            | FirstLine innerOffsides -> ShiftLeft(innerOffsides - outerOffsides)
+                            | FollowingLine(firstLine, followingLine) ->
+                                match firstLine - outerOffsides with
+                                | 0 -> NoShift
+                                | 1 when firstLine < followingLine -> NoShift
+                                | primaryOffset when primaryOffset < 0 -> ShiftRight -primaryOffset
+                                | primaryOffset -> ShiftLeft primaryOffset
+
+                    let adjusted =
+                        match sourceText with
+                        | TrailingOpen context.Span -> txt[1 .. txt.Length - 2].TrimEnd()
+                        | Trim trim & NoShift -> trim txt[1 .. txt.Length - 2]
+                        | Trim trim & ShiftLeft spaces -> trim (txt[1 .. txt.Length - 2].Replace("\n" + String(' ', spaces), "\n"))
+                        | Trim trim & ShiftRight spaces -> trim (txt[1 .. txt.Length - 2].Replace("\n", "\n" + String(' ', spaces)))
 
                     let newText =
-                        match txt, sourceText with
-                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter, _ -> " " + txt[1 .. txt.Length - 2] + " "
-                        | ShouldPutSpaceBefore, _ -> " " + txt[1 .. txt.Length - 2]
-                        | ShouldPutSpaceAfter, _ -> txt[1 .. txt.Length - 2] + " "
-                        | NewOffsidesOnFirstLine,
-                          ContainsSensitiveIndentation context.Span & (HasPrecedingConstructOnSameLine context.Span | FollowingLineMovesOffsidesRightward context.Span) ->
-                            txt[1 .. txt.Length - 2].Replace("\n ", "\n")
-                        | NewOffsidesOnFirstLine, ContainsSensitiveIndentation context.Span -> " " + txt[1 .. txt.Length - 2]
-                        | _ -> txt[1 .. txt.Length - 2]
+                        let (|ShouldPutSpaceBefore|_|) (s: string) =
+                            match s with
+                            | StartsWithMatch -> None
+                            | _ ->
+                                // ……(……)
+                                // ↑↑ ↑
+                                match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[0] with
+                                | _, _, ('\n' | '\r') -> None
+                                | '[', '|', (Punctuation | LetterOrDigit) -> None
+                                | _, '[', '<' -> Some ShouldPutSpaceBefore
+                                | _, ('(' | '[' | '{'), _ -> None
+                                | _, '>', _ -> Some ShouldPutSpaceBefore
+                                | ' ', '=', _ -> Some ShouldPutSpaceBefore
+                                | _, '=', ('(' | '[' | '{') -> None
+                                | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
+                                | _, ('_' | LetterOrDigit), '(' -> None
+                                | _, ('_' | LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
+                                | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
+                                | _ -> None
+
+                        let (|ShouldPutSpaceAfter|_|) (s: string) =
+                            // (……)…
+                            //   ↑ ↑
+                            match s[s.Length - 1], sourceText[min context.Span.End (sourceText.Length - 1)] with
+                            | '>', ('|' | ']') -> Some ShouldPutSpaceAfter
+                            | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
+                            | _, ('+' | '-' | '%' | '&' | '!' | '~') -> None
+                            | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
+                            | ('_' | LetterOrDigit), ('_' | LetterOrDigit) -> Some ShouldPutSpaceAfter
+                            | _ -> None
+
+                        let (|WouldTurnInfixIntoPrefix|_|) (s: string) =
+                            // (……)…
+                            //   ↑ ↑
+                            match s[s.Length - 1], sourceText[min context.Span.End (sourceText.Length - 1)] with
+                            | (Punctuation | Symbol), ('+' | '-' | '%' | '&' | '!' | '~') ->
+                                let linePos = sourceText.Lines.GetLinePosition context.Span.End
+                                let line = sourceText.Lines[linePos.Line].ToString()
+
+                                // (……)+…
+                                //      ↑
+                                match line.AsSpan(linePos.Character).IndexOfAnyExcept("*/%-+:^@><=!|$.?".AsSpan()) with
+                                | -1 -> None
+                                | i when line[linePos.Character + i] <> ' ' -> Some WouldTurnInfixIntoPrefix
+                                | _ -> None
+                            | _ -> None
+
+                        match adjusted with
+                        | WouldTurnInfixIntoPrefix -> ValueNone
+                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter -> ValueSome(" " + adjusted + " ")
+                        | ShouldPutSpaceBefore -> ValueSome(" " + adjusted)
+                        | ShouldPutSpaceAfter -> ValueSome(adjusted + " ")
+                        | adjusted -> ValueSome adjusted
 
                     return
-                        ValueSome
+                        newText
+                        |> ValueOption.map (fun newText ->
                             {
                                 Name = CodeFix.RemoveUnnecessaryParentheses
                                 Message = title
                                 Changes = [ TextChange(context.Span, newText) ]
-                            }
+                            })
 
                 | notParens ->
                     System.Diagnostics.Debug.Fail $"%A{notParens} <> ('(', ')')"

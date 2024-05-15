@@ -263,8 +263,8 @@ module ParsedInput =
 
         let rec collect expr acc =
             match expr with
-            | SynExpr.Sequential(_, _, e1, (SynExpr.Sequential _ as e2), _) -> collect e2 (e1 :: acc)
-            | SynExpr.Sequential(_, _, e1, e2, _) -> e2 :: e1 :: acc
+            | SynExpr.Sequential(expr1 = e1; expr2 = (SynExpr.Sequential _ as e2)) -> collect e2 (e1 :: acc)
+            | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> e2 :: e1 :: acc
             | _ -> acc
 
         match collect expr [] with
@@ -888,9 +888,8 @@ module ParsedInput =
                 | None, Some binding -> walkBinding binding
                 | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
 
-            | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats(pats = simplePats)) ->
-                List.tryPick walkAttribute attrs
-                |> Option.orElseWith (fun () -> List.tryPick walkSimplePat simplePats)
+            | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = pat) ->
+                List.tryPick walkAttribute attrs |> Option.orElseWith (fun _ -> walkPat pat)
 
             | SynMemberDefn.ImplicitInherit(t, e, _, _) -> walkType t |> Option.orElseWith (fun () -> walkExpr e)
 
@@ -1577,25 +1576,36 @@ module ParsedInput =
                     | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                     | _ -> None
 
-                member _.VisitSimplePats(_, pats) =
+                member _.VisitSimplePats(_, pat) =
                     // Lambdas and their patterns are processed above in VisitExpr,
                     // so VisitSimplePats is only called for primary constructors
 
-                    pats
-                    |> List.tryPick (fun pat ->
-                        match pat with
-                        // type C (x| )
-                        | SynSimplePat.Id(range = range) when rangeContainsPos range pos -> Some CompletionContext.Invalid
-                        | SynSimplePat.Typed(pat = SynSimplePat.Id(range = idRange); targetType = synType) ->
-                            // type C (x|: int) ->
-                            if rangeContainsPos idRange pos then
-                                Some CompletionContext.Invalid
-                            // type C (x: int|) ->
-                            elif rangeContainsPos synType.Range pos then
-                                Some CompletionContext.Type
-                            else
-                                None
-                        | _ -> None)
+                    let rec loop (pat: SynPat) =
+                        if not (rangeContainsPos pat.Range pos) then
+                            None
+                        else
+
+                            match pat with
+                            // type C (x{caret} )
+                            | SynPat.Named _
+                            | SynPat.Const(SynConst.Unit, _) -> Some CompletionContext.Invalid
+
+                            | SynPat.Attrib(pat, _, _)
+                            | SynPat.Paren(pat, _) -> loop pat
+
+                            | SynPat.Tuple(_, pats, _, _) -> List.tryPick loop pats
+
+                            | SynPat.Typed(pat, synType, _) ->
+                                // type C (x: int{caret}) ->
+                                if rangeContainsPos synType.Range pos then
+                                    Some CompletionContext.Type
+                                else
+                                    // type C (x{caret}: int) ->
+                                    loop pat
+
+                            | _ -> None
+
+                    loop pat
 
                 member _.VisitPat(_, defaultTraverse, pat) =
                     TryGetCompletionContextInPattern false pat None pos
@@ -1634,16 +1644,21 @@ module ParsedInput =
                     | SynType.LongIdent _ when rangeContainsPos ty.Range pos -> Some CompletionContext.Type
                     | _ -> defaultTraverse ty
 
-                member _.VisitRecordDefn(_, fields, _) =
+                member _.VisitRecordDefn(_, fields, range) =
                     fields
-                    |> List.tryPick (fun (SynField(idOpt = idOpt; range = fieldRange)) ->
-                        match idOpt with
-                        | Some id when rangeContainsPos id.idRange pos ->
+                    |> List.tryPick (fun (SynField(idOpt = idOpt; range = fieldRange; fieldType = fieldType)) ->
+                        match idOpt, fieldType with
+                        | Some id, _ when rangeContainsPos id.idRange pos ->
                             Some(CompletionContext.RecordField(RecordContext.Declaration true))
                         | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
+                        | _, SynType.FromParseError _ -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
                         | _ -> None)
                     // No completions in a record outside of all fields, except in attributes, which is established earlier in VisitAttributeApplication
-                    |> Option.orElse (Some CompletionContext.Invalid)
+                    |> Option.orElseWith (fun _ ->
+                        if rangeContainsPos range pos then
+                            Some CompletionContext.Invalid
+                        else
+                            None)
 
                 member _.VisitUnionDefn(_, cases, _) =
                     cases
@@ -2085,9 +2100,9 @@ module ParsedInput =
             | SynMemberDefn.GetSetMember(getBinding, setBinding, _, _) ->
                 Option.iter walkBinding getBinding
                 Option.iter walkBinding setBinding
-            | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats(pats = simplePats)) ->
+            | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = pat) ->
                 List.iter walkAttribute attrs
-                List.iter walkSimplePat simplePats
+                walkPat pat
             | SynMemberDefn.ImplicitInherit(t, e, _, _) ->
                 walkType t
                 walkExpr e

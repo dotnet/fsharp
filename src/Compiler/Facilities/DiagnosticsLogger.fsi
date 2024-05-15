@@ -6,6 +6,8 @@ open System
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -37,7 +39,8 @@ val NoSuggestions: Suggestions
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option
 
-val (|StopProcessing|_|): exn: exn -> unit option
+[<return: Struct>]
+val (|StopProcessing|_|): exn: exn -> unit voption
 
 val StopProcessing<'T> : exn
 
@@ -232,8 +235,6 @@ type DiagnosticsThreadStatics =
 
     static member BuildPhase: BuildPhase with get, set
 
-    static member BuildPhaseUnchecked: BuildPhase
-
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
 [<AutoOpen>]
@@ -278,7 +279,7 @@ module DiagnosticsLoggerExtensions =
 val UseBuildPhase: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> DiagnosticsLogger) -> IDisposable
 
 val UseDiagnosticsLogger: newLogger: DiagnosticsLogger -> IDisposable
 
@@ -448,7 +449,12 @@ type StackGuard =
     new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
-    member Guard: f: (unit -> 'T) -> 'T
+    member Guard:
+        f: (unit -> 'T) *
+        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string *
+        [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string *
+        [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
+            'T
 
     static member GetDepthOption: string -> int
 
@@ -458,8 +464,21 @@ type StackGuard =
 type CompilationGlobalsScope =
     new: diagnosticsLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
 
+    /// When disposed, restores caller's diagnostics logger and build phase.
+    new: unit -> CompilationGlobalsScope
+
     interface IDisposable
 
     member DiagnosticsLogger: DiagnosticsLogger
 
     member BuildPhase: BuildPhase
+
+module MultipleDiagnosticsLoggers =
+
+    /// Run computations using Async.Parallel.
+    /// Captures the diagnostics from each computation and commits them to the caller's logger preserving their order.
+    /// When done, restores caller's build phase and diagnostics logger.
+    val Parallel: computations: Async<'T> seq -> Async<'T array>
+
+    /// Run computations sequentially starting immediately on the current thread.
+    val Sequential: computations: Async<'T> seq -> Async<'T array>

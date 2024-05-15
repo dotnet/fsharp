@@ -220,7 +220,7 @@
     <value>A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</value>
   </data>
   <data name="TypeIsImplicitlyAbstract" xml:space="preserve">
-    <value>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</value>
+    <value>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</value>
   </data>
   <data name="NonRigidTypar1" xml:space="preserve">
     <value>This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</value>
@@ -1029,20 +1029,11 @@
   <data name="MissingFields" xml:space="preserve">
     <value>The following fields require values: {0}</value>
   </data>
-  <data name="ValueRestriction1" xml:space="preserve">
-    <value>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</value>
+  <data name="ValueRestrictionFunction" xml:space="preserve">
+    <value>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</value>
   </data>
-  <data name="ValueRestriction2" xml:space="preserve">
-    <value>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</value>
-  </data>
-  <data name="ValueRestriction3" xml:space="preserve">
-    <value>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</value>
-  </data>
-  <data name="ValueRestriction4" xml:space="preserve">
-    <value>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</value>
-  </data>
-  <data name="ValueRestriction5" xml:space="preserve">
-    <value>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</value>
+  <data name="ValueRestriction" xml:space="preserve">
+    <value>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</value>
   </data>
   <data name="RecoverableParseError" xml:space="preserve">
     <value>syntax error</value>
@@ -1121,6 +1112,9 @@
   </data>
   <data name="ArgumentsInSigAndImplMismatch" xml:space="preserve">
     <value>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</value>
+  </data>
+  <data name="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer" xml:space="preserve">
+    <value>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</value>
   </data>
   <data name="Parser.TOKEN.WHILE.BANG" xml:space="preserve">
     <value>keyword 'while!'</value>

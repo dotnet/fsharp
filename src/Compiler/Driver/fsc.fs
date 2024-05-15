@@ -204,6 +204,7 @@ let AdjustForScriptCompile (tcConfigB: TcConfigBuilder, commandLineSourceFiles, 
             error (Error(FSComp.SR.pathIsInvalid file, rangeStartup))
 
     let commandLineSourceFiles = commandLineSourceFiles |> List.map combineFilePath
+    tcConfigB.embedSourceList <- tcConfigB.embedSourceList |> List.map combineFilePath
 
     // Script compilation is active if the last item being compiled is a script and --noframework has not been specified
     let mutable allSources = []
@@ -349,7 +350,7 @@ module InterfaceFileWriter =
         let writeAllToSameFile declaredImpls =
             /// Use a UTF-8 Encoding with no Byte Order Mark
             let os =
-                if tcConfig.printSignatureFile = "" then
+                if String.IsNullOrEmpty(tcConfig.printSignatureFile) then
                     Console.Out
                 else
                     FileSystem
@@ -481,14 +482,15 @@ let main1
 
     // See Bug 735819
     let lcidFromCodePage =
+        let thread = Thread.CurrentThread
+
         if
             (Console.OutputEncoding.CodePage <> 65001)
-            && (Console.OutputEncoding.CodePage
-                <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage)
-            && (Console.OutputEncoding.CodePage
-                <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage)
+            && (Console.OutputEncoding.CodePage <> thread.CurrentUICulture.TextInfo.OEMCodePage)
+            && (Console.OutputEncoding.CodePage <> thread.CurrentUICulture.TextInfo.ANSICodePage)
+            && (CultureInfo.InvariantCulture <> thread.CurrentUICulture)
         then
-            Thread.CurrentThread.CurrentUICulture <- CultureInfo("en-US")
+            thread.CurrentUICulture <- CultureInfo("en-US")
             Some 1033
         else
             None
@@ -524,7 +526,7 @@ let main1
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
     let delayForFlagsLogger = CapturingDiagnosticsLogger("DelayFlagsLogger")
 
-    let _holder = UseDiagnosticsLogger delayForFlagsLogger
+    SetThreadDiagnosticsLoggerNoUnwind delayForFlagsLogger
 
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = Lexhelp.LexResourceManager()
@@ -595,7 +597,7 @@ let main1
     let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _holder = UseDiagnosticsLogger diagnosticsLogger
+    SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
     // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics diagnosticsLogger
@@ -613,7 +615,7 @@ let main1
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
         TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
-        |> NodeCode.RunImmediateWithoutCancellation
+        |> Async.RunImmediate
 
     let ilSourceDocs =
         [
@@ -662,7 +664,7 @@ let main1
 
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> NodeCode.RunImmediateWithoutCancellation
+        |> Async.RunImmediate
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
@@ -748,7 +750,7 @@ let main2
 
         GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
-    let _holder = UseDiagnosticsLogger diagnosticsLogger
+    SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
     // Try to find an AssemblyVersion attribute
     let assemVerFromAttrib =

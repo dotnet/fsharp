@@ -614,16 +614,16 @@ type DefaultFileSystem() as this =
 
     default _.IsInvalidPathShim(path: string) =
         let isInvalidPath (p: string MaybeNull) =
-            match p with
-            | Null
-            | "" -> true
-            | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+            if String.IsNullOrEmpty(p) then
+                true
+            else
+                p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
         let isInvalidFilename (p: string MaybeNull) =
-            match p with
-            | Null
-            | "" -> true
-            | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+            if String.IsNullOrEmpty(p) then
+                true
+            else
+                p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
         let isInvalidDirectory (d: string MaybeNull) =
             match d with
@@ -643,7 +643,7 @@ type DefaultFileSystem() as this =
     default _.GetDirectoryNameShim(path: string) =
         FileSystemUtils.checkPathForIllegalChars path
 
-        if path = "" then
+        if String.IsNullOrEmpty(path) then
             "."
         else
             match Path.GetDirectoryName(path) with
@@ -652,7 +652,7 @@ type DefaultFileSystem() as this =
                     path
                 else
                     "."
-            | res -> if res = "" then "." else res
+            | res -> if String.IsNullOrEmpty(res) then "." else res
 
     abstract GetLastWriteTimeShim: fileName: string -> DateTime
     default _.GetLastWriteTimeShim(fileName: string) = File.GetLastWriteTimeUtc fileName
@@ -918,16 +918,6 @@ type internal ByteStream =
         res
 
     member b.Position = b.pos
-#if LAZY_UNPICKLE
-    member b.CloneAndSeek =
-        {
-            bytes = b.bytes
-            pos = pos
-            max = b.max
-        }
-
-    member b.Skip = b.pos <- b.pos + n
-#endif
 
 type internal ByteBuffer =
     {

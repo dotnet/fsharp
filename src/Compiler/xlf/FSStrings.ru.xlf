@@ -7,6 +7,11 @@
         <target state="translated">Имена аргументов в сигнатуре "{0}" и реализации "{1}" не совпадают. Будет использоваться имя аргумента из файла сигнатуры. Это может вызвать проблемы при отладке или профилировании.</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="translated">Определения {0} для типа "{1}" в сигнатуре и реализации несовместимы, так как сокращения различаются:\n    {2}\nв сравнении с\n    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Несоответствие типов. Ожидается кортеж длиной {0} типа\n    {1},    \nно предоставлен кортеж длиной {2} типа\n    {3}{4}\n</target>
@@ -24,12 +29,12 @@
       </trans-unit>
       <trans-unit id="OverrideShouldBeInstance">
         <source> Non-static member is expected.</source>
-        <target state="new"> Non-static member is expected.</target>
+        <target state="translated"> Ожидается нестатический элемент.</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
-        <target state="new"> Static member is expected.</target>
+        <target state="translated"> Ожидается статический элемент.</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -202,6 +207,16 @@
         <target state="translated">Поля "{0}" и "{1}" принадлежат различным типам</target>
         <note />
       </trans-unit>
+      <trans-unit id="ValueRestriction">
+        <source>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">Ограничение на значение: значение '{0}' имеет предполагаемый универсальный тип\n    {1}\nОднако значения не могут иметь переменные универсального типа, такие как '_a в "let x: '_a". Вы можете сделать одно из следующих действий:\n- Определите его как простой термин данных, например целочисленный литерал, строковый литерал или случай объединения, например "let x = 1".\n- Добавьте явную аннотацию типа, например "let x: int"\n- Используйте значение как необобщенный тип в более позднем коде для вывода типа, например "do x"\nили, если вам все еще нужны результаты, зависящие от типа, вы можете вместо этого определить '{2}' как функцию, выполнив одно из следующих действий:\n- Добавьте параметр модуля, например "let x()"\n- Запишите явные параметры типа, например "let x&lt;'a&gt;".\nЭта ошибка связана с тем, что привязка let без параметров определяет значение, а не функцию. Значения не могут быть универсальными, поскольку предполагается, что чтение значения везде приводит к одному и тому же результату, но параметры универсального типа могут сделать это предположение недействительным, включив результаты, зависящие от типа.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestrictionFunction">
+        <source>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">Ограничение значения: значение '{0}' имеет предполагаемый тип универсальной функции\n    {1}\nОднако значения не могут иметь переменные универсального типа, такие как '_a в "let f: '_a". Вместо этого вам следует определить '{2}' как функцию, выполнив одно из следующих действий:\n- Добавьте явный параметр, который применяется вместо использования частичного приложения "let f param"\n- Добавьте параметр модуля, например "let f() "\n- Запишите явные параметры типа, например "let f&lt;'a&gt;"\nили, если вы не планируете, чтобы они были универсальными, либо:\n- Добавьте явную аннотацию типа, например "let f : obj -&gt; obj" \n- Применить аргументы неуниверсальных типов к значению функции в более позднем коде для вывода типа, например «do f()».\nЭта ошибка связана с тем, что привязка let без параметров определяет значение, а не функцию. Значения не могут быть универсальными, поскольку предполагается, что чтение значения везде приводит к одному и тому же результату, но параметры универсального типа могут сделать это предположение недействительным, включив результаты, зависящие от типа.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="VarBoundTwice">
         <source>'{0}' is bound twice in this pattern</source>
         <target state="translated">{0} в данном шаблоне привязан дважды</target>
@@ -233,8 +248,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Этот тип является абстрактным ('abstract'), так как для нескольких абстрактных членов не указана реализация. Если это сделано намеренно, добавьте атрибут '[&lt;AbstractClass&gt;]' к своему типу.</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="needs-review-translation">Этот тип является абстрактным ('abstract'), так как для нескольких абстрактных членов не указана реализация. Если это сделано намеренно, добавьте атрибут '[&lt;AbstractClass&gt;]' к своему типу.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1530,31 +1545,6 @@
       <trans-unit id="MissingFields">
         <source>The following fields require values: {0}</source>
         <target state="translated">Для следующих полей требуются значения: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction1">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Ограничение значения. Значение "{0}" имеет универсальный тип\n    {1}    \nЛибо сделайте аргументы для "{2}" явными либо (если универсальный тип не требуется) добавьте аннотацию типа.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction2">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Ограничение значения. Значение "{0}" имеет универсальный тип\n    {1}    \nЛибо сделайте "{2}" функцией с явными аргументами, либо (если универсальный тип не требуется) добавьте аннотацию типа.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction3">
-        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">Ограничение значения. Данный выведенный элемент должен иметь универсальный тип\n    {0}    \nМетоды получения или задания свойств и конструкторов не могут быть более универсальными, чем вмещающий тип.  Добавьте аннотацию типа, чтобы точно обозначить затрагиваемые типы.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction4">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Ограничение значения. Выведенное значение "{0}" должно иметь универсальный тип\n    {1}    \nЛибо сделайте аргументы для "{2}" явными, либо (если универсальный тип не требуется) добавьте аннотацию типа.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction5">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Ограничение значения. Выведенное значение "{0}" должно иметь универсальный тип\n    {1}    \nЛибо определите "{2}" как простой член данных, либо сделайте его функцией с явными аргументами, либо (если универсальный тип не требуется) добавьте аннотацию типа.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">

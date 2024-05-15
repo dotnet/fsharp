@@ -39,6 +39,14 @@ exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
+exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
+    denv: DisplayEnv *
+    implTycon:Tycon *
+    sigTycon:Tycon *
+    implTypeAbbrev:TType *
+    sigTypeAbbrev:TType *
+    range: range
+
 // Use a type to capture the constant, common parameters 
 type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) = 
 
@@ -338,7 +346,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
             elif implVal.DisplayName <> sigVal.DisplayName then (err denv FSComp.SR.ValueNotContainedMutabilityDisplayNamesDiffer)
             elif isLessAccessible implVal.Accessibility sigVal.Accessibility then (err denv FSComp.SR.ValueNotContainedMutabilityAccessibilityMore)
-            elif implVal.MustInline <> sigVal.MustInline then (err denv FSComp.SR.ValueNotContainedMutabilityInlineFlagsDiffer)
+            elif implVal.ShouldInline <> sigVal.ShouldInline then (err denv FSComp.SR.ValueNotContainedMutabilityInlineFlagsDiffer)
             elif implVal.LiteralValue <> sigVal.LiteralValue then (err denv FSComp.SR.ValueNotContainedMutabilityLiteralConstantValuesDiffer)
             elif implVal.IsTypeFunction <> sigVal.IsTypeFunction then (err denv FSComp.SR.ValueNotContainedMutabilityOneIsTypeFunction)
             else 
@@ -589,8 +597,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
               match implTycon.TypeAbbrev, sigTycon.TypeAbbrev with 
               | Some ty1, Some ty2 -> 
                   if not (typeAEquiv g aenv ty1 ty2) then 
-                      let s1, s2, _  = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-                      errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, s1, s2), m)) 
+                      errorR (DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(denv, implTycon, sigTycon, ty1, ty2, m))
                       false 
                   else 
                       true

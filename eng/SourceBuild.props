@@ -11,7 +11,9 @@
     The build script passes in the full path of the sln to build.  This must be overridden in order to build
     the cloned source in the inner build.
   -->
-  <Target Name="ConfigureInnerBuildArg" BeforeTargets="GetSourceBuildCommandConfiguration">
+  <Target Name="ConfigureInnerBuildArg"
+          BeforeTargets="GetSourceBuildCommandConfiguration"
+          Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'">
     <PropertyGroup>
       <InnerBuildArgs>$(InnerBuildArgs) /p:Projects="$(InnerSourceBuildRepoRoot)\Microsoft.FSharp.Compiler.sln"</InnerBuildArgs>
     </PropertyGroup>
@@ -23,7 +25,12 @@
   -->
   <Target Name="BuildBootstrap"
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
-          BeforeTargets="RunInnerSourceBuildCommand">
+          BeforeTargets="RunInnerSourceBuildCommand"
+          Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'">
+          
+    <PropertyGroup>
+      <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>
+    </PropertyGroup>
 
     <!-- this runs the source-build bootstrap path as described in https://github.com/dotnet/fsharp/blob/95df49e380ea8dbf33653fa4209f89dba29413f5/eng/build.sh#L247
          Note that we *are not* passing -source-build here so we do this bootstrap build in the outer build.
@@ -33,7 +40,7 @@
          -bl enables the binlogs for the tools and Proto builds, which make debugging failures here easier
     -->
     <Exec
-      Command="./build.sh --bootstrap --skipBuild -bl"
+      Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg)"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
       EnvironmentVariables="@(InnerBuildEnv);DotNetBuildFromSource=true" />
   </Target>

@@ -6,8 +6,11 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.IO
+open System.Threading
+open System.Threading.Tasks
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
@@ -15,12 +18,6 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
-
-[<Experimental "This type is experimental and likely to be removed in the future.">]
-[<RequireQualifiedAccess>]
-type DocumentSource =
-    | FileSystem
-    | Custom of (string -> Async<ISourceText option>)
 
 /// Used to parse and check F# source code.
 [<Sealed; AutoSerializable(false)>]
@@ -42,6 +39,7 @@ type public FSharpChecker =
     /// <param name="captureIdentifiersWhenParsing">When set to true we create a set of all identifiers for each parsed file which can be used to speed up finding references.</param>
     /// <param name="documentSource">Default: FileSystem. You can use Custom source to provide a function that will return the source for a given file path instead of reading it from the file system. Note that with this option the FSharpChecker will also not monitor the file system for file changes. It will expect to be notified of changes via the NotifyFileChanged method.</param>
     /// <param name="useSyntaxTreeCache">Default: true. Indicates whether to keep parsing results in a cache.</param>
+    /// <param name="useTransparentCompiler">Default: false. Indicates whether we use a new experimental background compiler. This does not yet support all features</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -57,8 +55,13 @@ type public FSharpChecker =
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource:
             DocumentSource *
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache:
+            bool *
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useTransparentCompiler:
             bool ->
             FSharpChecker
+
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member UsesTransparentCompiler: bool
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -94,11 +97,15 @@ type public FSharpChecker =
     /// <param name="fileName">The path for the file. The file name is used as a module name for implicit top level modules (e.g. in scripts).</param>
     /// <param name="sourceText">The source to be parsed.</param>
     /// <param name="options">Parsing options for the project or script.</param>
-    /// <param name="cache">Store the parse in a size-limited cache assocaited with the FSharpChecker. Default: true</param>
+    /// <param name="cache">Store the parse in a size-limited cache associated with the FSharpChecker. Default: true</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseFile:
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?cache: bool * ?userOpName: string ->
             Async<FSharpParseFileResults>
+
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member ParseFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// Parses a source code for a file. Returns an AST that can be traversed for various features.
@@ -193,6 +200,11 @@ type public FSharpChecker =
         ?userOpName: string ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member ParseAndCheckFileInProject:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+            Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>
     /// <para>All files are read from the FileSystem API</para>
@@ -202,6 +214,10 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseAndCheckProject: options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckProjectResults>
+
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member ParseAndCheckProject:
+        projectSnapshot: FSharpProjectSnapshot * ?userOpName: string -> Async<FSharpCheckProjectResults>
 
     /// <summary>
     /// <para>For a given script file, get the FSharpProjectOptions implied by the #load closure.</para>
@@ -234,6 +250,36 @@ type public FSharpChecker =
         ?optionsStamp: int64 *
         ?userOpName: string ->
             Async<FSharpProjectOptions * FSharpDiagnostic list>
+
+    /// <param name="fileName">Used to differentiate between scripts, to consider each script a separate project. Also used in formatted error messages.</param>
+    /// <param name="source">The source for the file.</param>
+    /// <param name="documentSource">DocumentSource to load any additional files.</param>
+    /// <param name="previewEnabled">Is the preview compiler enabled.</param>
+    /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
+    /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
+    /// so that references are re-resolved.</param>
+    /// <param name="otherFlags">Other flags for compilation.</param>
+    /// <param name="useFsiAuxLib">Add a default reference to the FSharp.Compiler.Interactive.Settings library.</param>
+    /// <param name="useSdkRefs">Use the implicit references from the .NET SDK.</param>
+    /// <param name="assumeDotNetFramework">Set up compilation and analysis for .NET Framework scripts.</param>
+    /// <param name="sdkDirOverride">Override the .NET SDK used for default references.</param>
+    /// <param name="optionsStamp">An optional unique stamp for the options.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member GetProjectSnapshotFromScript:
+        fileName: string *
+        source: ISourceTextNew *
+        ?documentSource: DocumentSource *
+        ?previewEnabled: bool *
+        ?loadedTimeStamp: DateTime *
+        ?otherFlags: string[] *
+        ?useFsiAuxLib: bool *
+        ?useSdkRefs: bool *
+        ?assumeDotNetFramework: bool *
+        ?sdkDirOverride: string *
+        ?optionsStamp: int64 *
+        ?userOpName: string ->
+            Async<FSharpProjectSnapshot * FSharpDiagnostic list>
 
     /// <summary>Get the FSharpProjectOptions implied by a set of command line arguments.</summary>
     ///
@@ -323,6 +369,11 @@ type public FSharpChecker =
         ?userOpName: string ->
             Async<range seq>
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member FindBackgroundReferencesInFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharpSymbol * ?userOpName: string ->
+            Async<range seq>
+
     /// <summary>
     /// <para>Get semantic classification for a file.</para>
     /// <para>All files are read from the FileSystem API, including the file being checked.</para>
@@ -334,6 +385,18 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member GetBackgroundSemanticClassificationForFile:
         fileName: string * options: FSharpProjectOptions * ?userOpName: string ->
+            Async<SemanticClassificationView option>
+
+    /// <summary>
+    /// <para>Get semantic classification for a file.</para>
+    /// </summary>
+    ///
+    /// <param name="fileName">The file name for the file.</param>
+    /// <param name="snapshot">The project snapshot for which we want to get the semantic classification.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member GetBackgroundSemanticClassificationForFile:
+        fileName: string * snapshot: FSharpProjectSnapshot * ?userOpName: string ->
             Async<SemanticClassificationView option>
 
     /// <summary>
@@ -361,6 +424,11 @@ type public FSharpChecker =
         fileName: string * options: FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string ->
             (FSharpParseFileResults * FSharpCheckFileResults (* hash *) * int64) option
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member TryGetRecentCheckResultsForFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+            (FSharpParseFileResults * FSharpCheckFileResults) option
+
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit
 
@@ -372,10 +440,19 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateConfiguration: options: FSharpProjectOptions * ?userOpName: string -> unit
 
+    /// <summary>
+    ///  This function is called when the configuration is known to have changed for reasons not encoded in the projectSnapshot.
+    ///  For example, dependent references may have been deleted or created.
+    /// </summary>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * ?userOpName: string -> unit
+
     /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ClearCache: options: FSharpProjectOptions seq * ?userOpName: string -> unit
+
+    member ClearCache: projects: ProjectSnapshot.FSharpProjectIdentifier seq * ?userOpName: string -> unit
 
     /// Report a statistic for testability
     static member ActualParseFileCount: int
@@ -420,6 +497,10 @@ type public FSharpChecker =
     ///
     /// The event may be raised on a background thread.
     member ProjectChecked: IEvent<FSharpProjectOptions>
+
+    member internal TransparentCompiler: TransparentCompiler
+
+    member internal Caches: CompilerCaches
 
     [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance: FSharpChecker
