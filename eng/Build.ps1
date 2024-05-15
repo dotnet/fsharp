@@ -35,7 +35,7 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net472",
+    [string]$bootstrapTfm = "net8.0",
     [string]$fsharpNetCoreProductTfm = "net8.0",
     [switch][Alias('bl')]$binaryLog = $true,
     [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
@@ -69,7 +69,7 @@ param (
     [switch]$sourceBuild,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
-    [switch]$norealsig,
+    [switch]$buildnorealsig,
     [switch]$verifypackageshipstatus = $false,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
@@ -132,7 +132,7 @@ function Print-Usage() {
     Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host "  -skipbuild                    Skip building product"
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
-    Write-Host "  -norealsig                    Build product with realsig- (default use realsig+)"
+    Write-Host "  -buildnorealsig               Build product with realsig- (default use realsig+, where necessary)"
     Write-Host "  -verifypackageshipstatus      Verify whether the packages we are building have already shipped to nuget"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
@@ -212,12 +212,12 @@ function Process-Arguments() {
         $script:compressAllMetadata = $True;
     }
 
-    if ($norealsig) {
-        $script:realsig = $False;
+    if ($buildnorealsig) {
+        $script:buildnorealsig = $True
         $env:FSHARP_REALSIG="false"
     }
     else {
-        $script:realsig = $True;
+        $script:buildnorealsig = $False
         $env:FSHARP_REALSIG="true"
     }        
     if ($verifypackageshipstatus) {
@@ -298,7 +298,7 @@ function BuildSolution([string] $solutionName, $nopack) {
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
         /p:CompressAllMetadata=$CompressAllMetadata `
-        /p:TestingLegacyInternalSignature=$realsig `
+        /p:BuildNoRealsig=$buildnorealsig `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
@@ -554,7 +554,7 @@ try {
     }
 
     $script:BuildMessage = "Failure building product"
-    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild) {
+    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild -and -not $sourceBuild) {
         if ($noVisualStudio) {
             BuildSolution "FSharp.sln" $False
         }
@@ -683,7 +683,7 @@ try {
 
     if ($testAOT) {
         Push-Location "$RepoRoot\tests\AheadOfTime"
-        ./check.cmd
+        ./check.ps1
         Pop-Location
     }
 

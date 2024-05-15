@@ -240,33 +240,15 @@ function Make-BootstrapBuild() {
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-    $buildToolsProject = "`"$RepoRoot\buildtools\buildtools.proj`""
-
-    $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
-    $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
-
-    $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity" + $argNoRestore + $argNoIncremental
-    if ($binaryLog) {
-        $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
-        $args += " /bl:`"$logFilePath`""
-    }
-    Exec-Console $dotnetExe $args
-
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\$fsharpNetCoreProductTfm" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\$fsharpNetCoreProductTfm" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\$fsharpNetCoreProductTfm" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
-    $protoProject = "`"$RepoRoot\proto.sln`""
-    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity " + $argNoRestore + $argNoIncremental
+    $projectpath = "$RepoRoot" + "proto.proj"
+    $args = "publish $projectpath -c $bootstrapConfiguration"
     if ($binaryLog) {
-        $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
+        $logFilePath = Join-Path $LogDir "bootstrap.binlog"
         $args += " /bl:`"$logFilePath`""
     }
+    Write-Host "$dotnetExe $args"
     Exec-Console $dotnetExe $args
-
-    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsc" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsi" -Force -Recurse
-
     return $dir
 }
