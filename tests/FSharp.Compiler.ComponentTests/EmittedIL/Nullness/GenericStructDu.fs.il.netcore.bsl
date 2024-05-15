@@ -27,7 +27,7 @@
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-  .class sequential autochar serializable sealed nested public beforefieldinit MyStructOption`1<class T>
+  .class sequential autochar serializable sealed nested public beforefieldinit MyStructOption`1<T>
          extends [runtime]System.ValueType
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -39,7 +39,7 @@
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .param type T 
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-    .class abstract auto ansi sealed nested public Tags<class T>
+    .class abstract auto ansi sealed nested public Tags<T>
            extends [runtime]System.Object
     {
       .param type T 
@@ -334,8 +334,8 @@
   } 
 
   .method public static valuetype TestModule/MyStructOption`1<!!b> 
-          mapStructContents<class a,class b>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!b> f,
-                                             valuetype TestModule/MyStructOption`1<!!a> myOpt) cil managed
+          mapStructContents<a,b>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!b> f,
+                                 valuetype TestModule/MyStructOption`1<!!a> myOpt) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     .param type a 

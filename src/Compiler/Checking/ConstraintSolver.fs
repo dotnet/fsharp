@@ -2636,7 +2636,6 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
             match tryDestTyparTy g ty with
             | ValueSome tp ->
                 do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.NotSupportsNull m)
-                do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.IsReferenceType m)
             | ValueNone ->
                 let nullness = nullnessOfTy g ty
                 do! SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nullness
