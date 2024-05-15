@@ -246,13 +246,11 @@ module Expr =
         | NewObject(ctorInfo, _e) -> getInfos ctorInfo.DeclaringType (Some ctorInfo.Name) ctorInfo.Name
         | NewArray(t, _exprs) -> getInfos t (Some t.Name) t.Name
         | NewTuple _ ->
-            let x = (23, 42)
-            let t = x.GetType()
-            getInfos t (Some t.Name) t.Name
+            let ty = typeof<_ * _>
+            getInfos ty (Some ty.Name) ty.Name
         | NewStructTuple _ ->
-            let x = struct (23, 42)
-            let t = x.GetType()
-            getInfos t (Some t.Name) t.Name
+            let ty = typeof<struct (_ * _)>
+            getInfos ty (Some ty.Name) ty.Name
         | _ -> None
 
 module Logic =
