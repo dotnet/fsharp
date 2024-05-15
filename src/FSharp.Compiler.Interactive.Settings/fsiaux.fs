@@ -162,7 +162,8 @@ type InteractiveSession() =
     member _.AddPrintTransformer(printer: 'T -> obj) =
         addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
 
-    member _.h([<ReflectedDefinition>] expr: Quotations.Expr<_>) = FsiHelp.Logic.Quoted.h expr
+    member _.h([<ReflectedDefinition>] expr: Quotations.Expr<_>) =
+        FsiHelp.Logic.Quoted.tryGetDocumentation expr
 
     member internal self.SetEventLoop(run: (unit -> bool), invoke: ((unit -> obj) -> obj), restart: (unit -> unit)) =
         evLoop.ScheduleRestart()
@@ -179,6 +180,11 @@ type InteractiveSession() =
 
 module Settings =
     let fsi = new InteractiveSession()
+
+    fsi.AddPrinter<FsiHelp.Parser.Help option>(fun help ->
+        match help with
+        | None -> "No help available"
+        | Some help -> help.ToDisplayString())
 
     [<assembly: AutoOpen("FSharp.Compiler.Interactive.Settings")>]
     do ()

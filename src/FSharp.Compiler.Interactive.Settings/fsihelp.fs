@@ -65,7 +65,7 @@ module Parser =
                     sb.AppendLine "" |> ignore
 
             sb.AppendLine $"Full name: %s{this.FullName}" |> ignore
-            sb.AppendLine $"Assembly: %s{this.Assembly}\n" |> ignore
+            sb.AppendLine $"Assembly: %s{this.Assembly}" |> ignore
 
             sb.ToString()
 
@@ -261,12 +261,7 @@ module Logic =
     open Parser
 
     module Quoted =
-        let tryGetDocumentation expr =
+        let tryGetDocumentation (expr: Quotations.Expr) =
             match exprNames expr with
             | Some(xmlPath, assembly, modName, implName, sourceName) -> helpText xmlPath assembly modName implName sourceName
             | _ -> None
-
-        let h (expr: Quotations.Expr) =
-            match tryGetDocumentation expr with
-            | None -> "unable to get documentation"
-            | Some d -> d.ToDisplayString()
