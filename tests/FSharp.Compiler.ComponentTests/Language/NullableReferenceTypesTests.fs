@@ -157,6 +157,16 @@ let mkCacheInt32 ()   =
     |> shouldSucceed
 
 [<Fact>]
+let ``Can  infer underscore or null``() = 
+    FSharp """
+module MyLib
+let iAcceptNullPartiallyInfered(arg: _ | null) = 42
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
 let ``Boolean literal to string is not nullable`` () = 
     FSharp """module MyLibrary
 let onlyWantNotNullString(x:string) = ()
@@ -260,6 +270,18 @@ let doStuff() =
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
+[<Fact>]
+let ``Match null on two strings`` () = 
+    FSharp """module MyLibrary
+let len2r (str1: string | null) (str2: string | null) =
+    match str1, str2 with
+    | null, _ -> -1
+    | _, null -> -1
+    | s1, s2 -> s1.Length + s2.Length
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
 
 [<InlineData("null")>]
 [<InlineData(""" null | "" """)>]
@@ -320,7 +342,7 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
 let ``Eliminate aliased nullness after matching`` () = 
     FSharp $"""module MyLibrary
 
-type Maybe<'T> = 'T | null
+type Maybe<'T when 'T:not struct> = 'T | null
 
 let myFunction (input : string Maybe) : string = 
     match input with

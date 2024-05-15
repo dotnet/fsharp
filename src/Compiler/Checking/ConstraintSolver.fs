@@ -2636,6 +2636,7 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
             match tryDestTyparTy g ty with
             | ValueSome tp ->
                 do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.NotSupportsNull m)
+                do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.IsReferenceType m)
             | ValueNone ->
                 let nullness = nullnessOfTy g ty
                 do! SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nullness
@@ -2668,7 +2669,9 @@ and SolveTypeCanCarryNullness (csenv: ConstraintSolverEnv)  ty nullness =
         let m = csenv.m
         let strippedTy = stripTyEqnsA g true ty
         match tryAddNullnessToTy nullness strippedTy with
-        | Some _ -> ()
+        | Some _ -> 
+            if isTyparTy g strippedTy && not (isReferenceTyparTy g strippedTy) then
+                return! AddConstraint csenv 0 m NoTrace (destTyparTy g strippedTy) (TyparConstraint.IsReferenceType m)
         | None -> 
             let tyString = NicePrint.minimalStringOfType csenv.DisplayEnv strippedTy
             return! ErrorD(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m))
