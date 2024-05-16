@@ -15,7 +15,7 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open System.Collections.Concurrent
+open System.Threading.Tasks
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -392,29 +392,19 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let errors = diagnostics.ToArray()
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
+let buildPhase = AsyncLocal<BuildPhase voption>()
+let diagnosticsLogger = AsyncLocal<DiagnosticsLogger voption>()
+
 /// Type holds thread-static globals for use by the compiler.
 type internal DiagnosticsThreadStatics =
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private buildPhase: BuildPhase
-
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private diagnosticsLogger: DiagnosticsLogger
-
-    static member BuildPhaseUnchecked = DiagnosticsThreadStatics.buildPhase
 
     static member BuildPhase
-        with get () =
-            match box DiagnosticsThreadStatics.buildPhase with
-            | Null -> BuildPhase.DefaultPhase
-            | _ -> DiagnosticsThreadStatics.buildPhase
-        and set v = DiagnosticsThreadStatics.buildPhase <- v
+        with get () = buildPhase.Value |> ValueOption.defaultValue BuildPhase.DefaultPhase
+        and set v = buildPhase.Value <- ValueSome v
 
     static member DiagnosticsLogger
-        with get () =
-            match box DiagnosticsThreadStatics.diagnosticsLogger with
-            | Null -> AssertFalseDiagnosticsLogger
-            | _ -> DiagnosticsThreadStatics.diagnosticsLogger
-        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
+        with get () = diagnosticsLogger.Value |> ValueOption.defaultValue AssertFalseDiagnosticsLogger
+        and set v = diagnosticsLogger.Value <- ValueSome v
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
@@ -445,6 +435,7 @@ module DiagnosticsLoggerExtensions =
     type DiagnosticsLogger with
 
         member x.EmitDiagnostic(exn, severity) =
+
             match exn with
             | InternalError(s, _)
             | InternalException(_, s, _)
@@ -516,16 +507,15 @@ module DiagnosticsLoggerExtensions =
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let UseBuildPhase (phase: BuildPhase) =
-    let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
+    let oldBuildPhase = buildPhase.Value
     DiagnosticsThreadStatics.BuildPhase <- phase
 
     { new IDisposable with
-        member x.Dispose() =
-            DiagnosticsThreadStatics.BuildPhase <- oldBuildPhase
+        member x.Dispose() = buildPhase.Value <- oldBuildPhase
     }
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
+let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> DiagnosticsLogger) =
     let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
     DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
 
@@ -549,6 +539,8 @@ let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
 type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: BuildPhase) =
     let unwindEL = UseDiagnosticsLogger diagnosticsLogger
     let unwindBP = UseBuildPhase buildPhase
+
+    new() = new CompilationGlobalsScope(DiagnosticsThreadStatics.DiagnosticsLogger, DiagnosticsThreadStatics.BuildPhase)
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase
@@ -893,14 +885,11 @@ type StackGuard(maxDepth: int, name: string) =
 
         try
             if depth % maxDepth = 0 then
-                let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                let buildPhase = DiagnosticsThreadStatics.BuildPhase
                 let ct = Cancellable.Token
 
                 async {
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
-                    use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
                     use _token = Cancellable.UsingToken ct
                     return f ()
                 }
@@ -920,16 +909,58 @@ type StackGuard(maxDepth: int, name: string) =
     static member GetDepthOption(name: string) =
         GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
-type CaptureDiagnosticsConcurrently() =
-    let target = DiagnosticsThreadStatics.DiagnosticsLogger
-    let loggers = ResizeArray()
+// UseMultipleDiagnosticLoggers in ParseAndCheckProject.fs provides similar functionality.
+// We should probably adapt and reuse that code.
+module MultipleDiagnosticsLoggers =
+    let Parallel computations =
+        let computationsWithLoggers, diagnosticsReady =
+            [
+                for i, computation in computations |> Seq.indexed do
+                    let diagnosticsReady = TaskCompletionSource<_>()
 
-    member _.GetLoggerForTask(name) : DiagnosticsLogger =
-        let logger = CapturingDiagnosticsLogger(name)
-        loggers.Add logger
-        logger
+                    let logger = CapturingDiagnosticsLogger($"CaptureDiagnosticsConcurrently {i}")
 
-    interface IDisposable with
-        member _.Dispose() =
-            for logger in loggers do
-                logger.CommitDelayedDiagnostics target
+                    // Inject capturing logger into the computation. Signal the TaskCompletionSource when done.
+                    let computationsWithLoggers =
+                        async {
+                            SetThreadDiagnosticsLoggerNoUnwind logger
+
+                            try
+                                return! computation
+                            finally
+                                diagnosticsReady.SetResult logger
+                        }
+
+                    computationsWithLoggers, diagnosticsReady
+            ]
+            |> List.unzip
+
+        // Commit diagnostics from computations as soon as it is possible, preserving the order.
+        let replayDiagnostics =
+            backgroundTask {
+                let target = DiagnosticsThreadStatics.DiagnosticsLogger
+
+                for tcs in diagnosticsReady do
+                    let! finishedLogger = tcs.Task
+                    finishedLogger.CommitDelayedDiagnostics target
+            }
+
+        async {
+            try
+                // We want to restore the current diagnostics context when finished.
+                use _ = new CompilationGlobalsScope()
+                return! Async.Parallel computationsWithLoggers
+            finally
+                replayDiagnostics.Wait()
+        }
+
+    let Sequential computations =
+        async {
+            let results = ResizeArray()
+
+            for computation in computations do
+                let! result = computation
+                results.Add result
+
+            return results.ToArray()
+        }
