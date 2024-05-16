@@ -2,20 +2,9 @@
 
 module FSharp.Compiler.BuildGraph
 
-open System
 open System.Threading
 open System.Threading.Tasks
 open System.Globalization
-
-type Async with
-
-    static member FlattenException(computation: Async<'T>) =
-        async {
-            try
-                return! computation
-            with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-                return raise (ex.InnerExceptions[0])
-        }
 
 [<RequireQualifiedAccess>]
 module GraphNode =
@@ -102,7 +91,6 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                 finally
                     Interlocked.Decrement(&requestCount) |> ignore
             }
-            |> Async.FlattenException
 
     member _.TryPeekValue() = cachedResult
 
