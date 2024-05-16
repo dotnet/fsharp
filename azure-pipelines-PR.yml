@@ -357,7 +357,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testCoreclr -configuration Release
+          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -testCoreclr -configuration Release
             env:
               NativeToolsOnMachine: true
             displayName: Build
@@ -385,7 +385,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -norealsig -testDesktop -configuration Release
+          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release
             env:
               NativeToolsOnMachine: true
             displayName: Build
@@ -816,7 +816,7 @@ stages:
             env:
               NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
-          - script: $(Build.SourcesDirectory)/tests/AheadOfTime/check.cmd
+          - powershell: $(Build.SourcesDirectory)/tests/AheadOfTime/check.ps1
             displayName: Build, trim, publish and check the state of the trimmed app.
             workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime
           - task: PublishPipelineArtifact@1
