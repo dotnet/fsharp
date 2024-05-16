@@ -28,3 +28,21 @@ module FsiHelpTests =
             h.Returns.IsSome |> shouldBeTrue
             h.Examples |> shouldNotBeEmpty
         | ValueNone -> Assert.True(false, "No xml documentation found")
+
+    [<Fact>]
+    let ``Can get help for FSComp.SR.considerUpcast`` () =
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetDocumentation <@ FSComp.SR.considerUpcast @> with
+        | ValueSome h ->
+            h.Assembly |> shouldBe "FSharp.Compiler.Service.dll"
+            h.FullName |> shouldBe "FSComp.SR.considerUpcast"
+            Assert.StartsWith("The conversion from %s to %s is a compile-time safe upcast", h.Summary)
+        | ValueNone -> Assert.True(false, "No xml documentation found")
+
+    [<Fact>]
+    let ``Can get help for FSharp.Test.ReflectionHelper.shouldn't`` () =
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetDocumentation <@ FSharp.Test.ReflectionHelper.shouldn't @> with
+        | ValueSome h ->
+            h.Assembly |> shouldBe "FSharp.Test.Utilities.dll"
+            h.FullName |> shouldBe "FSharp.Test.ReflectionHelper.shouldn't"
+            Assert.StartsWith("Assert that function f ", h.Summary)
+        | ValueNone -> Assert.True(false, "No xml documentation found")

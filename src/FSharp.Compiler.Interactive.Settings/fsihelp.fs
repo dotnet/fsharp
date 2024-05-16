@@ -120,9 +120,9 @@ module Parser =
 
         let toTry =
             [
-                $"/doc/members/member[contains(@name, ':{xmlName}`')]"
-                $"/doc/members/member[contains(@name, ':{xmlName}(')]"
-                $"/doc/members/member[contains(@name, ':{xmlName}')]"
+                $"""/doc/members/member[contains(@name, ":{xmlName}`")]"""
+                $"""/doc/members/member[contains(@name, ":{xmlName}(")]"""
+                $"""/doc/members/member[contains(@name, ":{xmlName}")]"""
             ]
 
         xmlDocument
