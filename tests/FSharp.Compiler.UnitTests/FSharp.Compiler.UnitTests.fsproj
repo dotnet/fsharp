@@ -26,6 +26,7 @@
     <Compile Include="BlockTests.fs" />
     <Compile Include="BuildGraphTests.fs" />
     <Compile Include="FsiTests.fs" />
+    <Compile Include="FsiHelpTests.fs" />
     <Compile Include="AssemblySigningAttributes.fs" />
     <Compile Include="PostInferenceChecksTests.fs" />
     <Compile Include="PrettyNaming.fs" />
@@ -81,6 +82,7 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="..\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
     <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
   </ItemGroup>
