@@ -928,7 +928,7 @@ type GenericParamsIdx = GenericParamsIdx of numTypars: int * TypeOrMethodDefTag 
 
 let mkCacheGeneric lowMem _inbase _nm (sz: int) =
     if lowMem then
-        id
+        (fun f x -> f x)
     else
         let mutable cache = Unchecked.defaultof<_>
 
