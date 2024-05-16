@@ -30,3 +30,8 @@ let f25 f g h = [|for n in f ()..g ()..h () -> n|]
 let f26 start step finish = [|for n in start..step..finish -> n, float n|]
 let f27 start step finish = [|for n in start..step..finish -> struct (n, float n)|]
 let f28 start step finish = [|for n in start..step..finish -> let x = n + 1 in n * n|]
+
+let f29 f g = [|let y = f () in let z = g () in for x in 1..2..10 -> x + y + z|]
+let f30 f g = [|let y = f () in g (); for x in 1..2..10 -> x + y|]
+let f31 f g = [|f (); g (); for x in 1..2..10 -> x|]
+let f32 f g = [|f (); let y = g () in for x in 1..2..10 -> x + y|]

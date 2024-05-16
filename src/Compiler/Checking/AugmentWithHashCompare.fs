@@ -1347,7 +1347,10 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
 
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let _, ty = mkMinimalTy g tcref
-    let vis = tcref.TypeReprAccessibility
+    let vis =
+        // Equality method for union types match the union type visibility rather than the TypeReprAccessibility
+        if tcref.IsUnionTycon then tcref.Accessibility
+        else tcref.TypeReprAccessibility
     let tps = tcref.Typars tcref.Range
 
     let objGetHashCodeVal =

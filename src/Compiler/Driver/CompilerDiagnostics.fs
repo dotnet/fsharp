@@ -628,10 +628,11 @@ module OldStyleMessages =
 let mutable showParserStackOnParseError = false
 #endif
 
+[<return: Struct>]
 let (|InvalidArgument|_|) (exn: exn) =
     match exn with
-    | :? ArgumentException as e -> Some e.Message
-    | _ -> None
+    | :? ArgumentException as e -> ValueSome e.Message
+    | _ -> ValueNone
 
 let OutputNameSuggestions (os: StringBuilder) suggestNames suggestionsF idText =
     if suggestNames then
