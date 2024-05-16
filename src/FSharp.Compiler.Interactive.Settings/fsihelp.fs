@@ -80,18 +80,21 @@ module Parser =
 
     let xmlDocCache = Dictionary<string, string>()
 
-    let getXmlDocument xmlPath =
-        match xmlDocCache.TryGetValue(xmlPath) with
-        | true, value ->
-            let xmlDocument = XmlDocument()
-            xmlDocument.LoadXml(value)
-            xmlDocument
-        | _ ->
-            let rawXml = System.IO.File.ReadAllText(xmlPath)
-            let xmlDocument = XmlDocument()
-            xmlDocument.LoadXml(rawXml)
-            xmlDocCache.Add(xmlPath, rawXml)
-            xmlDocument
+    let tryGetXmlDocument xmlPath =
+        try
+            match xmlDocCache.TryGetValue(xmlPath) with
+            | true, value ->
+                let xmlDocument = XmlDocument()
+                xmlDocument.LoadXml(value)
+                Some xmlDocument
+            | _ ->
+                let rawXml = System.IO.File.ReadAllText(xmlPath)
+                let xmlDocument = XmlDocument()
+                xmlDocument.LoadXml(rawXml)
+                xmlDocCache.Add(xmlPath, rawXml)
+                Some xmlDocument
+        with _ ->
+            None
 
     let getTexts (node: Xml.XmlNode) =
         seq {
@@ -110,93 +113,92 @@ module Parser =
         }
         |> String.concat ""
 
-    let helpText (xmlPath: string) (assembly: string) (modName: string) (implName: string) (sourceName: string) =
+    let tryMkHelp (xmlDocument: XmlDocument option) (assembly: string) (modName: string) (implName: string) (sourceName: string) =
         let sourceName = sourceName.Replace('.', '#') // for .ctor
         let implName = implName.Replace('.', '#') // for .ctor
         let xmlName = $"{modName}.{implName}"
-        let xmlDocument = getXmlDocument xmlPath
 
-        let node =
-            let toTry =
-                [
-                    $"/doc/members/member[contains(@name, ':{xmlName}`')]"
-                    $"/doc/members/member[contains(@name, ':{xmlName}(')]"
-                    $"/doc/members/member[contains(@name, ':{xmlName}')]"
-                ]
+        let toTry =
+            [
+                $"/doc/members/member[contains(@name, ':{xmlName}`')]"
+                $"/doc/members/member[contains(@name, ':{xmlName}(')]"
+                $"/doc/members/member[contains(@name, ':{xmlName}')]"
+            ]
 
+        xmlDocument
+        |> Option.bind (fun xmlDocument ->
             seq {
                 for t in toTry do
                     let node = xmlDocument.SelectSingleNode(t)
                     if not (isNull node) then Some node else None
             }
-            |> Seq.tryPick id
-
-        match node with
-        | None -> ValueNone
-        | Some n ->
-            let summary =
-                n.SelectSingleNode("summary")
-                |> Option.ofObj
-                |> Option.map getTexts
-                |> Option.map cleanupXmlContent
-
-            let remarks =
-                n.SelectSingleNode("remarks")
-                |> Option.ofObj
-                |> Option.map getTexts
-                |> Option.map cleanupXmlContent
-
-            let parameters =
-                n.SelectNodes("param")
-                |> Seq.cast<XmlNode>
-                |> Seq.map (fun n -> n.Attributes.GetNamedItem("name").Value.Trim(), n.InnerText.Trim())
-                |> List.ofSeq
-
-            let returns =
-                n.SelectSingleNode("returns")
-                |> Option.ofObj
-                |> Option.map (fun n -> getTexts(n).Trim())
-
-            let exceptions =
-                n.SelectNodes("exception")
-                |> Seq.cast<XmlNode>
-                |> Seq.map (fun n ->
-                    let exType = n.Attributes.GetNamedItem("cref").Value
-                    let idx = exType.IndexOf(':')
-                    let exType = if idx >= 0 then exType.Substring(idx + 1) else exType
-                    exType.Trim(), n.InnerText.Trim())
-                |> List.ofSeq
-
-            let examples =
-                n.SelectNodes("example")
-                |> Seq.cast<XmlNode>
-                |> Seq.map (fun n ->
-                    let codeNode = n.SelectSingleNode("code")
-
-                    let code =
-                        if isNull codeNode then
-                            ""
-                        else
-                            n.RemoveChild(codeNode) |> ignore
-                            cleanupXmlContent codeNode.InnerText
-
-                    code, cleanupXmlContent n.InnerText)
-                |> List.ofSeq
-
-            match summary with
-            | Some s ->
-                {
-                    Summary = s
-                    Remarks = remarks
-                    Parameters = parameters
-                    Returns = returns
-                    Exceptions = exceptions
-                    Examples = examples
-                    FullName = $"{modName}.{sourceName}" // the long ident as users see it
-                    Assembly = assembly
-                }
-                |> ValueSome
+            |> Seq.tryPick id)
+        |> function
             | None -> ValueNone
+            | Some n ->
+                let summary =
+                    n.SelectSingleNode("summary")
+                    |> Option.ofObj
+                    |> Option.map getTexts
+                    |> Option.map cleanupXmlContent
+
+                let remarks =
+                    n.SelectSingleNode("remarks")
+                    |> Option.ofObj
+                    |> Option.map getTexts
+                    |> Option.map cleanupXmlContent
+
+                let parameters =
+                    n.SelectNodes("param")
+                    |> Seq.cast<XmlNode>
+                    |> Seq.map (fun n -> n.Attributes.GetNamedItem("name").Value.Trim(), n.InnerText.Trim())
+                    |> List.ofSeq
+
+                let returns =
+                    n.SelectSingleNode("returns")
+                    |> Option.ofObj
+                    |> Option.map (fun n -> getTexts(n).Trim())
+
+                let exceptions =
+                    n.SelectNodes("exception")
+                    |> Seq.cast<XmlNode>
+                    |> Seq.map (fun n ->
+                        let exType = n.Attributes.GetNamedItem("cref").Value
+                        let idx = exType.IndexOf(':')
+                        let exType = if idx >= 0 then exType.Substring(idx + 1) else exType
+                        exType.Trim(), n.InnerText.Trim())
+                    |> List.ofSeq
+
+                let examples =
+                    n.SelectNodes("example")
+                    |> Seq.cast<XmlNode>
+                    |> Seq.map (fun n ->
+                        let codeNode = n.SelectSingleNode("code")
+
+                        let code =
+                            if isNull codeNode then
+                                ""
+                            else
+                                n.RemoveChild(codeNode) |> ignore
+                                cleanupXmlContent codeNode.InnerText
+
+                        code, cleanupXmlContent n.InnerText)
+                    |> List.ofSeq
+
+                match summary with
+                | Some s ->
+                    {
+                        Summary = s
+                        Remarks = remarks
+                        Parameters = parameters
+                        Returns = returns
+                        Exceptions = exceptions
+                        Examples = examples
+                        FullName = $"{modName}.{sourceName}" // the long ident as users see it
+                        Assembly = assembly
+                    }
+                    |> ValueSome
+                | None -> ValueNone
 
 module Expr =
 
@@ -211,23 +213,21 @@ module Expr =
 
     let getInfos (declaringType: Type) (sourceName: string option) (implName: string) =
         let xmlPath = Path.ChangeExtension(declaringType.Assembly.Location, ".xml")
+        let xmlDoc = Parser.tryGetXmlDocument xmlPath
         let assembly = Path.GetFileName(declaringType.Assembly.Location)
 
-        if System.IO.File.Exists(xmlPath) then
-            // for FullName cases like Microsoft.FSharp.Core.FSharpOption`1[System.Object]
-            let fullName =
-                let idx = declaringType.FullName.IndexOf('[')
+        // for FullName cases like Microsoft.FSharp.Core.FSharpOption`1[System.Object]
+        let fullName =
+            let idx = declaringType.FullName.IndexOf('[')
 
-                if idx >= 0 then
-                    declaringType.FullName.Substring(0, idx)
-                else
-                    declaringType.FullName
+            if idx >= 0 then
+                declaringType.FullName.Substring(0, idx)
+            else
+                declaringType.FullName
 
-            let fullName = fullName.Replace('+', '.') // for FullName cases like Microsoft.FSharp.Collections.ArrayModule+Parallel
+        let fullName = fullName.Replace('+', '.') // for FullName cases like Microsoft.FSharp.Collections.ArrayModule+Parallel
 
-            Some(xmlPath, assembly, fullName, implName, sourceName |> Option.defaultValue implName)
-        else
-            None
+        (xmlDoc, assembly, fullName, implName, sourceName |> Option.defaultValue implName)
 
     let rec exprNames expr =
         match expr with
@@ -236,21 +236,21 @@ module Expr =
             | Some _ -> None
             | None ->
                 let sourceName = tryGetSourceName methodInfo
-                getInfos methodInfo.DeclaringType sourceName methodInfo.Name
+                getInfos methodInfo.DeclaringType sourceName methodInfo.Name |> Some
         | Lambda(_param, body) -> exprNames body
         | Let(_, _, body) -> exprNames body
-        | Value(_o, t) -> getInfos t (Some t.Name) t.Name
-        | DefaultValue t -> getInfos t (Some t.Name) t.Name
-        | PropertyGet(_o, info, _) -> getInfos info.DeclaringType (Some info.Name) info.Name
-        | NewUnionCase(info, _exprList) -> getInfos info.DeclaringType (Some info.Name) info.Name
-        | NewObject(ctorInfo, _e) -> getInfos ctorInfo.DeclaringType (Some ctorInfo.Name) ctorInfo.Name
-        | NewArray(t, _exprs) -> getInfos t (Some t.Name) t.Name
+        | Value(_o, t) -> getInfos t (Some t.Name) t.Name |> Some
+        | DefaultValue t -> getInfos t (Some t.Name) t.Name |> Some
+        | PropertyGet(_o, info, _) -> getInfos info.DeclaringType (Some info.Name) info.Name |> Some
+        | NewUnionCase(info, _exprList) -> getInfos info.DeclaringType (Some info.Name) info.Name |> Some
+        | NewObject(ctorInfo, _e) -> getInfos ctorInfo.DeclaringType (Some ctorInfo.Name) ctorInfo.Name |> Some
+        | NewArray(t, _exprs) -> getInfos t (Some t.Name) t.Name |> Some
         | NewTuple _ ->
             let ty = typeof<_ * _>
-            getInfos ty (Some ty.Name) ty.Name
+            getInfos ty (Some ty.Name) ty.Name |> Some
         | NewStructTuple _ ->
             let ty = typeof<struct (_ * _)>
-            getInfos ty (Some ty.Name) ty.Name
+            getInfos ty (Some ty.Name) ty.Name |> Some
         | _ -> None
 
 module Logic =
@@ -261,5 +261,5 @@ module Logic =
     module Quoted =
         let tryGetDocumentation (expr: Quotations.Expr) =
             match exprNames expr with
-            | Some(xmlPath, assembly, modName, implName, sourceName) -> helpText xmlPath assembly modName implName sourceName
+            | Some(xmlDocument, assembly, modName, implName, sourceName) -> tryMkHelp xmlDocument assembly modName implName sourceName
             | _ -> ValueNone
