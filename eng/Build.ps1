@@ -683,7 +683,7 @@ try {
 
     if ($testAOT) {
         Push-Location "$RepoRoot\tests\AheadOfTime"
-        ./check.cmd
+        ./check.ps1
         Pop-Location
     }
 

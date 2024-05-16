@@ -87,7 +87,31 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns09.fs"|])>]
+    let ``Named - activePatterns09_fs`` compilation =
+        compilation
+        |> asFs
+        |> typecheck
+        |> shouldSucceed
         
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns10.fs"|])>]
+    let ``Named - activePatterns10_fs`` compilation =
+        compilation
+        |> asFs
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 6, Col 5, Line 6, Col 26, "Incomplete pattern matches on this expression.")
+            (Warning 25, Line 7, Col 5, Line 7, Col 28, "Incomplete pattern matches on this expression.")
+            (Warning 25, Line 8, Col 5, Line 8, Col 28, "Incomplete pattern matches on this expression.")
+            (Warning 25, Line 9, Col 5, Line 9, Col 30, "Incomplete pattern matches on this expression.")
+            (Warning 25, Line 13, Col 5, Line 13, Col 22, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
+            (Warning 25, Line 14, Col 5, Line 14, Col 24, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
+            (Warning 25, Line 15, Col 5, Line 15, Col 24, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
+            (Warning 25, Line 16, Col 5, Line 16, Col 26, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
+        ]
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActivePatternUnconstrained01.fs"|])>]
     let ``Named - ActivePatternUnconstrained01_fs - --test:ErrorRanges`` compilation =

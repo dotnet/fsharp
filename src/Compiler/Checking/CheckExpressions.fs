@@ -7442,8 +7442,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
         if List.isEmpty synFillExprs then
             if isString then
-                let sb = System.Text.StringBuilder(printfFormatString).Replace("%%", "%")
-                let str = mkString g m (sb.ToString())
+                let str = mkString g m (printfFormatString.Replace("%%", "%"))
                 TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
                     str, tpenv
                 )
