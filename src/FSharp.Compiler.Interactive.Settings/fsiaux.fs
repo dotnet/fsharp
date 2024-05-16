@@ -9,10 +9,6 @@ open System
 open System.Diagnostics
 open System.Threading
 
-[<assembly: System.Runtime.InteropServices.ComVisible(false)>]
-[<assembly: System.CLSCompliant(true)>]
-do ()
-
 type IEventLoop =
     abstract Run: unit -> bool
     abstract Invoke: (unit -> 'T) -> 'T
