@@ -16,17 +16,18 @@ $process = Start-Process `
     -PassThru `
     -RedirectStandardOutput $(Join-Path $PSScriptRoot output.txt)
 
+# Checking that the test passed
 $output = Get-Content $(Join-Path $PSScriptRoot output.txt)
-
-# Checking that it is actually running.
+$expected = "All tests passed"
 if ($LASTEXITCODE -ne 0)
 {
     Write-Error "Test failed with exit code ${LASTEXITCODE}" -ErrorAction Stop
 }
-
-# Checking that the output is as expected.
-$expected = "All tests passed"
-if ($output -ne $expected)
+if ($output -eq $expected)
+{
+    Write-Host "Test passed"
+}
+else
 {
     Write-Error "Test failed with unexpected output:`nExpected:`n`t${expected}`nActual`n`t${output}" -ErrorAction Stop
 }

@@ -332,10 +332,11 @@ let replaceNullnessOfTy nullness (ty:TType) =
     | sty -> sty
 
 /// Detect a use of a nominal type, including type abbreviations.
+[<return: Struct>]
 let (|AbbrevOrAppTy|_|) (ty: TType) =
     match stripTyparEqns ty with
-    | TType_app (tcref, tinst, _) -> Some(tcref, tinst)
-    | _ -> None
+    | TType_app (tcref, tinst, _) -> ValueSome(tcref, tinst)
+    | _ -> ValueNone
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether

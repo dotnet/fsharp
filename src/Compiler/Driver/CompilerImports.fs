@@ -2253,14 +2253,14 @@ and [<Sealed>] TcImports
         (
             ctok,
             r: AssemblyResolution
-        ) : NodeCode<(_ * (unit -> AvailableImportedAssembly list)) option> =
-        node {
+        ) : Async<(_ * (unit -> AvailableImportedAssembly list)) option> =
+        async {
             CheckDisposed()
             let m = r.originalReference.Range
             let fileName = r.resolvedPath
 
             let! contentsOpt =
-                node {
+                async {
                     match r.ProjectReference with
                     | Some ilb -> return! ilb.EvaluateRawContents()
                     | None -> return ProjectAssemblyDataResult.Unavailable true
@@ -2323,21 +2323,23 @@ and [<Sealed>] TcImports
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndImportReferencedAssemblies(ctok, nms: AssemblyResolution list) =
-        node {
+        async {
             CheckDisposed()
+
 
             let tcConfig = tcConfigP.Get ctok
 
             let runMethod =
                 match tcConfig.parallelReferenceResolution with
-                | ParallelReferenceResolution.On -> NodeCode.Parallel
-                | ParallelReferenceResolution.Off -> NodeCode.Sequential
+                | ParallelReferenceResolution.On -> MultipleDiagnosticsLoggers.Parallel
+                | ParallelReferenceResolution.Off -> MultipleDiagnosticsLoggers.Sequential
 
             let! results =
                 nms
                 |> List.map (fun nm ->
-                    node {
+                    async {
                         try
+                            use _ = new CompilationGlobalsScope()
                             return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
                         with e ->
                             errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
@@ -2377,7 +2379,7 @@ and [<Sealed>] TcImports
                     ReportWarnings warns
 
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res)
-                    |> NodeCode.RunImmediateWithoutCancellation
+                    |> Async.RunImmediate
                     |> ignore
 
                     true
@@ -2430,12 +2432,6 @@ and [<Sealed>] TcImports
             match resolutions.TryFindByOriginalReference assemblyReference with
             | Some assemblyResolution -> ResultD [ assemblyResolution ]
             | None ->
-#if NO_MSBUILD_REFERENCE_RESOLUTION
-                try
-                    ResultD [ tcConfig.ResolveLibWithDirectories assemblyReference ]
-                with e ->
-                    ErrorD e
-#else
                 // Next try to lookup up by the exact full resolved path.
                 match resolutions.TryFindByResolvedPath assemblyReference.Text with
                 | Some assemblyResolution -> ResultD [ assemblyResolution ]
@@ -2468,7 +2464,6 @@ and [<Sealed>] TcImports
                             // Note, if mode=ResolveAssemblyReferenceMode.Speculative and the resolution failed then TryResolveLibsUsingMSBuildRules returns
                             // the empty list and we convert the failure into an AssemblyNotResolved here.
                             ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
-#endif
         )
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list =
@@ -2478,7 +2473,7 @@ and [<Sealed>] TcImports
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
     // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
     static member BuildFrameworkTcImports(tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
-        node {
+        async {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
@@ -2555,7 +2550,7 @@ and [<Sealed>] TcImports
                 resolvedAssemblies |> List.choose tryFindEquivPrimaryAssembly
 
             let! fslibCcu, fsharpCoreAssemblyScopeRef =
-                node {
+                async {
                     if tcConfig.compilingFSharpCore then
                         // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
                         return CcuThunk.CreateDelayed getFSharpCoreLibraryName, ILScopeRef.Local
@@ -2650,7 +2645,7 @@ and [<Sealed>] TcImports
             dependencyProvider
         ) =
 
-        node {
+        async {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
@@ -2668,7 +2663,7 @@ and [<Sealed>] TcImports
         }
 
     static member BuildTcImports(tcConfigP: TcConfigProvider, dependencyProvider) =
-        node {
+        async {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
@@ -2700,7 +2695,7 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
 
     let ccuinfos =
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions)
-        |> NodeCode.RunImmediateWithoutCancellation
+        |> Async.RunImmediate
 
     let asms =
         ccuinfos

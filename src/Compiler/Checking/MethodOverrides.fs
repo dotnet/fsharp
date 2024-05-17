@@ -776,7 +776,7 @@ module DispatchSlotChecking =
 
         // Get all the members that are immediately part of this type
         // Include the auto-generated members
-        let allImmediateMembers = tycon.MembersOfFSharpTyconSorted @ tycon.AllGeneratedValues
+        let allImmediateMembers = tycon.MembersOfFSharpTyconSorted @ tycon.AllGeneratedInterfaceImplsAndOverrides
 
         // Get all the members we have to implement, organized by each type we explicitly implement
         let slotImplSets = GetSlotImplSets infoReader denv AccessibleFromSomewhere false allReqdTys

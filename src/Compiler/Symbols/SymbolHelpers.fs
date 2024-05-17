@@ -356,12 +356,13 @@ module internal SymbolHelpers =
         [ for tp, ty in prettyTyparInst -> 
             wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ wordL (tagText (FSComp.SR.descriptionWordIs())) ^^ NicePrint.layoutType denv ty  ]
 
+    [<return: Struct>]
     let (|ItemWhereTypIsPreferred|_|) item = 
         match item with 
         | Item.DelegateCtor ty
         | Item.CtorGroup(_, [DefaultStructCtor(_, ty)])
-        | Item.Types(_, [ty])  -> Some ty
-        | _ -> None
+        | Item.Types(_, [ty])  -> ValueSome ty
+        | _ -> ValueNone
 
     /// Specifies functions for comparing 'Item' objects with respect to the user 
     /// (this means that some values that are not technically equal are treated as equal 
@@ -731,19 +732,21 @@ module internal SymbolHelpers =
 #if !NO_TYPEPROVIDERS
 
     /// Determine if an item is a provided type 
+    [<return: Struct>]
     let (|ItemIsProvidedType|_|) g item =
         match item with
         | Item.Types(_name, tys) ->
             match tys with
             | [AppTy g (tcref, _typeInst)] ->
                 if tcref.IsProvidedErasedTycon || tcref.IsProvidedGeneratedTycon then
-                    Some tcref
+                    ValueSome tcref
                 else
-                    None
-            | _ -> None
-        | _ -> None
+                    ValueNone
+            | _ -> ValueNone
+        | _ -> ValueNone
 
     /// Determine if an item is a provided type that has static parameters
+    [<return: Struct>]
     let (|ItemIsProvidedTypeWithStaticArguments|_|) m g item =
         match item with
         | Item.Types(_name, tys) ->
@@ -756,31 +759,33 @@ module internal SymbolHelpers =
                         | _ -> failwith "unreachable"
                     let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
                     let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
-                    Some staticParameters
+                    ValueSome staticParameters
                 else
-                    None
-            | _ -> None
-        | _ -> None
+                    ValueNone
+            | _ -> ValueNone
+        | _ -> ValueNone
 
+    [<return: Struct>]
     let (|ItemIsProvidedMethodWithStaticArguments|_|) item =
         match item with
         // Prefer the static parameters from the uninstantiated method info
         | Item.MethodGroup(_, _, Some minfo) ->
             match minfo.ProvidedStaticParameterInfo  with 
-            | Some (_, staticParameters) -> Some staticParameters
-            | _ -> None
+            | Some (_, staticParameters) -> ValueSome staticParameters
+            | _ -> ValueNone
         | Item.MethodGroup(_, [minfo], _) ->
             match minfo.ProvidedStaticParameterInfo  with 
-            | Some (_, staticParameters) -> Some staticParameters
-            | _ -> None
-        | _ -> None
+            | Some (_, staticParameters) -> ValueSome staticParameters
+            | _ -> ValueNone
+        | _ -> ValueNone
 
     /// Determine if an item has static arguments
+    [<return: Struct>]
     let (|ItemIsWithStaticArguments|_|) m g item =
         match item with
-        | ItemIsProvidedTypeWithStaticArguments m g staticParameters -> Some staticParameters
-        | ItemIsProvidedMethodWithStaticArguments staticParameters -> Some staticParameters
-        | _ -> None
+        | ItemIsProvidedTypeWithStaticArguments m g staticParameters -> ValueSome staticParameters
+        | ItemIsProvidedMethodWithStaticArguments staticParameters -> ValueSome staticParameters
+        | _ -> ValueNone
 
 #endif
 
