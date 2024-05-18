@@ -161,12 +161,13 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     // Used to get us sorted appropriately with the other MSFT products in the splash screen and about box
     [<Guid("591E80E4-5F44-11d3-8BDC-00C04F8EC28C")>]
     [<InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
-    [<ComImport>] 
-    [<Interface>] 
+    [<ComImport>]
     [<ComVisible(true)>]
     [<System.Runtime.InteropServices.ClassInterface(ClassInterfaceType.None)>]
+    [<AbstractClass>]
     type public IVsMicrosoftInstalledProduct =
-        inherit IVsInstalledProduct
+        interface IVsInstalledProduct
+
         abstract IdBmpSplashM : byref<uint32> -> unit
         abstract OfficialNameM : on : byref<string> -> unit
         abstract ProductIDM : pid : byref<string> -> unit
