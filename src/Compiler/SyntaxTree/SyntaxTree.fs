@@ -1042,6 +1042,8 @@ type SynMatchClause =
 type SynAttribute =
     {
         TypeName: SynLongIdent
+        
+        TypeParams: SynTyparDecls option
 
         ArgExpr: SynExpr
 
