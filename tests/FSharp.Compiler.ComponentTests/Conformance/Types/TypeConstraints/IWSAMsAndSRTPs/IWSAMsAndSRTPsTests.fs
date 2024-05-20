@@ -1269,3 +1269,133 @@ type A () =
         |> withDiagnostics [
             (Error 3867, Line 3, Col 21, Line 3, Col 22, "Classes cannot contain static abstract members.")
         ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error for partial implementation of interface with static abstract members`` () =
+        Fsx """
+type IFace =
+    static abstract P1 : int
+    static abstract P2 : int
+
+type T =
+    interface IFace with
+        static member P1 = 1
+
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for 'static abstract IFace.P2: int'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+        
+    [<FactForNETCOREAPP>]
+    let ``Error for no implementation of interface with static abstract members`` () =
+        Fsx """
+type IFace =
+    static abstract P1 : int
+    static abstract P2 : int
+
+type T =
+    interface IFace with
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for those members: 
+	'static abstract IFace.P1: int'
+	'static abstract IFace.P2: int'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error for partial implementation of interface with static and non static abstract members`` () =
+        Fsx """
+type IFace =
+    static abstract P1 : int
+    static abstract P2 : int
+    abstract member P3 : int
+    abstract member P4 : int
+
+type T =
+    interface IFace with
+        static member P1 = 1
+        member this.P3 = 3
+    
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 9, Col 15, Line 9, Col 20, "No implementation was given for those members: 
+	'static abstract IFace.P2: int'
+	'abstract IFace.P4: int'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+        
+    [<FactForNETCOREAPP>]
+    let ``Error for no implementation of interface with static and non static abstract members`` () =
+        Fsx """
+type IFace =
+    static abstract P1 : int
+    static abstract P2 : int
+    abstract member P3 : int
+    abstract member P4 : int
+
+type T =
+    interface IFace with
+    
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 9, Col 15, Line 9, Col 20, "No implementation was given for those members: 
+	'static abstract IFace.P1: int'
+	'static abstract IFace.P2: int'
+	'abstract IFace.P3: int'
+	'abstract IFace.P4: int'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error for partial implementation of interface with non static abstract members`` () =
+        Fsx """
+type IFace =
+    abstract member P3 : int
+    abstract member P4 : int
+
+type T =
+    interface IFace with
+        member this.P3 = 3
+    
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for 'abstract IFace.P4: int'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+        
+    [<FactForNETCOREAPP>]
+    let ``Error for no implementation of interface with non static abstract members`` () =
+        Fsx """
+type IFace =
+    abstract member P3 : int
+    abstract member P4 : int
+
+type T =
+    interface IFace with
+
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for those members: 
+	'abstract IFace.P3: int'
+	'abstract IFace.P4: int'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+
