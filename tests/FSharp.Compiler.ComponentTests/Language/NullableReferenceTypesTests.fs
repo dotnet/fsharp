@@ -181,7 +181,14 @@ let f6(x: 'a | null when 'a:null) = ()
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics []
+    |> withDiagnostics 
+        [ Error 3261, Line 3, Col 11, Line 3, Col 32, "Nullness warning: The type 'string option' uses 'null' as a representation value but a non-null type is expected."
+          Error 3260, Line 4, Col 11, Line 4, Col 21, "The type 'int' does not support a nullness qualitification."
+          Error 43, Line 4, Col 11, Line 4, Col 21, "A generic construct requires that the type 'int' have reference semantics, but it does not, i.e. it is a struct"
+          Error 3260, Line 5, Col 11, Line 5, Col 25, "The type '('a * 'b)' does not support a nullness qualitification."
+          Error 3261, Line 6, Col 11, Line 6, Col 28, "Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected."
+          Error 43, Line 7, Col 28, Line 7, Col 37, "The constraints 'struct' and 'not struct' are inconsistent"
+          Error 43, Line 8, Col 26, Line 8, Col 33, "The constraints 'null' and 'not null' are inconsistent"]
 
 [<Fact>]
 let ``Boolean literal to string is not nullable`` () = 
@@ -449,7 +456,7 @@ strictFunc(null) |> ignore    """
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+            [ Error 43, Line 4, Col 12, Line 4, Col 16, "The constraints 'null' and 'not null' are inconsistent"]
     
 [<Fact>]
 let ``Strict func null literal2`` () = 
@@ -463,7 +470,7 @@ strictFunc("hi") |> ignore   """
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+            [ Error 43, Line 4, Col 12, Line 4, Col 16, "The constraints 'null' and 'not null' are inconsistent"]
       
 [<Fact>]
 let ``Supports null in generic code`` () =
@@ -580,7 +587,8 @@ looseFunc(maybeTuple2) |> ignore
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualitification."
+            [ Error 43, Line 21, Col 12, Line 21, Col 16, "The constraints 'null' and 'not null' are inconsistent"
+              Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualitification."
               Error 3261, Line 27, Col 37, Line 27, Col 41, "Nullness warning: The type '(int * int)' does not support 'null'."
               Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
