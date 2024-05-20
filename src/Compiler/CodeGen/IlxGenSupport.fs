@@ -447,8 +447,7 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
     | TType_forall _
     | TType_ucase _
     | TType_measure _ -> []
-    | TType_var (nullness=nullness) -> [nullness.Evaluate()]
-    
+    | TType_var(nullness = nullness) -> [ nullness.Evaluate() ]
 
 let GenNullnessIfNecessary (g: TcGlobals) ty =
     if g.langFeatureNullness && g.checkNullness then

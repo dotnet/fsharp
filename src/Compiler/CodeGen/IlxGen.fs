@@ -5650,7 +5650,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
                     | TyparConstraint.NotSupportsNull _ -> true
                     | _ -> false)
 
-            let hasSupportsNull() =
+            let hasSupportsNull () =
                 tp.Constraints
                 |> List.exists (function
                     | TyparConstraint.SupportsNull _ -> true
@@ -5658,7 +5658,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
 
             if hasNotSupportsNull || notNullableValueTypeConstraint then
                 NullnessInfo.WithoutNull
-            elif refTypeConstraint || hasSupportsNull() then
+            elif refTypeConstraint || hasSupportsNull () then
                 NullnessInfo.WithNull
             else
                 NullnessInfo.AmbivalentToNull
