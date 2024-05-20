@@ -2,6 +2,8 @@
 
 namespace Internal.Utilities.Library
 
+#nowarn "842" //This attribute is not valid for use on this language element for `valueFactory` below
+
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
