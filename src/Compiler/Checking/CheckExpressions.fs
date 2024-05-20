@@ -5128,7 +5128,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                     | TyparConstraint.IsReferenceType _
                     | TyparConstraint.SupportsComparison _
                     | TyparConstraint.SupportsEquality _ -> false
-                    // This could apply to unit if this RFC is implemented:
+                    // This could apply to unit if the member is a method on obj, or if this RFC is implemented:
                     // https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md
                     | TyparConstraint.MayResolveMember _ -> false
                     // Any other kind of constraint cannot apply to unit.
