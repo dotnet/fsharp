@@ -528,8 +528,13 @@ type IProvidedCustomAttributeProvider =
     abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
 
 type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAttributeData>) = 
-    let (|Member|_|) (s: string) (x: CustomAttributeNamedArgument) = if x.MemberName = s then Some x.TypedValue else None
-    let (|Arg|_|) (x: CustomAttributeTypedArgument) = match x.Value with null -> None | v -> Some v
+
+    [<return: Struct>]
+    let (|Member|_|) (s: string) (x: CustomAttributeNamedArgument) = if x.MemberName = s then ValueSome x.TypedValue else ValueNone
+
+    [<return: Struct>]
+    let (|Arg|_|) (x: CustomAttributeTypedArgument) = match x.Value with null -> ValueNone | v -> ValueSome v
+
     let findAttribByName tyFullName (a: CustomAttributeData) = (a.Constructor.DeclaringType.FullName = tyFullName)  
     let findAttrib (ty: Type) a = findAttribByName ty.FullName a
     interface IProvidedCustomAttributeProvider with 
@@ -965,9 +970,6 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
 
 type ProvidedExprType =
     | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
-#if PROVIDED_ADDRESS_OF
-    | ProvidedAddressOfExpr of ProvidedExpr
-#endif
     | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
     | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
     | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar[] * ProvidedExpr
@@ -1034,9 +1036,6 @@ type ProvidedExpr (x: Expr, ctxt) =
             Some (ProvidedTryFinallyExpr (ProvidedExpr.CreateNonNull ctxt b1, ProvidedExpr.CreateNonNull ctxt b2))
         | Patterns.TryWith(b, v1, e1, v2, e2) ->
             Some (ProvidedTryWithExpr (ProvidedExpr.CreateNonNull ctxt b, ProvidedVar.CreateNonNull ctxt v1, ProvidedExpr.CreateNonNull ctxt e1, ProvidedVar.CreateNonNull ctxt v2, ProvidedExpr.CreateNonNull ctxt e2))
-#if PROVIDED_ADDRESS_OF
-        | Patterns.AddressOf e -> Some (ProvidedAddressOfExpr (ProvidedExpr.CreateNonNull ctxt e))
-#endif
         | Patterns.TypeTest(e, ty) ->
             Some (ProvidedTypeTestExpr(ProvidedExpr.CreateNonNull ctxt e, ProvidedType.CreateNonNull ctxt ty))
         | Patterns.Let(v, e, b) ->

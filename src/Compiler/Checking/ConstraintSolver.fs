@@ -1217,10 +1217,6 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     let aenv = csenv.EquivEnv
     let g = csenv.g
 
-    // Pre F# 6.0 we asssert the trait solution here
-#if TRAIT_CONSTRAINT_CORRECTIONS
-    if not (csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections) then
-#endif
     match cxsln with
     | Some (traitInfo, traitSln) when traitInfo.Solution.IsNone -> 
         // If this is an overload resolution at this point it's safe to assume the candidate member being evaluated solves this member constraint.
@@ -3333,22 +3329,11 @@ and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMet
 ///
 /// In F# 5.0 and 6.0 we assert this late by passing the cxsln parameter around. However this
 /// relies on not checking return types for SRTP constraints eagerly
-///
-/// Post F# 6.0 (TraitConstraintCorrections) we will assert this early and add a proper check that return types match for SRTP constraint solving
-/// (see alwaysCheckReturn)
-and AssumeMethodSolvesTrait (csenv: ConstraintSolverEnv) (cx: TraitConstraintInfo option) m trace (calledMeth: CalledMeth<_>) = 
+and AssumeMethodSolvesTrait (csenv: ConstraintSolverEnv) (cx: TraitConstraintInfo option) m _trace (calledMeth: CalledMeth<_>) = 
     match cx with
     | Some traitInfo when traitInfo.Solution.IsNone -> 
         let staticTyOpt = if calledMeth.Method.IsInstance then None else calledMeth.OptionalStaticType
         let traitSln = MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs staticTyOpt
-#if TRAIT_CONSTRAINT_CORRECTIONS
-        if csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections then
-            TransactMemberConstraintSolution traitInfo trace traitSln
-            None
-        else
-#else
-        ignore trace
-#endif
         Some (traitInfo, traitSln)
     | _ -> 
         None
@@ -3409,13 +3394,9 @@ and ResolveOverloading
           // Always take the return type into account for
           //    -- op_Explicit, op_Implicit
           //    -- candidate method sets that potentially use tupling of unfilled out args
-          ///   -- if TraitConstraintCorrections is enabled, also check return types for SRTP constraints
           let alwaysCheckReturn =
               isOpConversion ||
               candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) 
-#if TRAIT_CONSTRAINT_CORRECTIONS
-              || (csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections && cx.IsSome)
-#endif
 
           // Exact match rule.
           //

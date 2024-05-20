@@ -171,27 +171,7 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersionPreview
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 842, Line 11, Col 6, Line 11, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 14, Col 6, Line 14, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 17, Col 6, Line 17, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 19, Col 10, Line 19, Col 19, "This attribute is not valid for use on this language element")
-            (Error 842, Line 21, Col 6, Line 21, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 24, Col 6, Line 24, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 27, Col 6, Line 27, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 30, Col 6, Line 30, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 33, Col 6, Line 33, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 36, Col 6, Line 36, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 39, Col 6, Line 39, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 42, Col 6, Line 42, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 45, Col 6, Line 45, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 49, Col 6, Line 49, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 56, Col 6, Line 56, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 64, Col 6, Line 64, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 66, Col 10, Line 66, Col 19, "This attribute is not valid for use on this language element")
-            (Error 842, Line 68, Col 6, Line 68, Col 15, "This attribute is not valid for use on this language element")
-        ]
+        |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsMethod02.fs					# E_AttributeTargetIsMethod02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod02.fs"|])>]
@@ -592,3 +572,15 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
             (Error 842, Line 22, Col 3, Line 22, Col 13, "This attribute is not valid for use on this language element")
         ]
+
+    [<Fact>]
+    let ``Type-level let bindings allowed to use attribute with Field target`` () =
+        FSharp"""
+module Foo
+type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
+    [<VolatileField>]
+    let mutable valueFactory = valueFactory
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed

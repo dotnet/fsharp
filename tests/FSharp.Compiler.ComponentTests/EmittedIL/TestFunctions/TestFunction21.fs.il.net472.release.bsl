@@ -89,8 +89,7 @@
       IL_0014:  ret
     } 
 
-    .method public hidebysig instance int32 
-            get_Item1() cil managed
+    .method public hidebysig instance int32 get_Item1() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -101,8 +100,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig instance int32 
-            get_Item2() cil managed
+    .method public hidebysig instance int32 get_Item2() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -113,8 +111,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig instance int32 
-            get_Tag() cil managed
+    .method public hidebysig instance int32 get_Tag() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -126,8 +123,7 @@
       IL_0003:  ret
     } 
 
-    .method assembly hidebysig specialname 
-            instance object  __DebugDisplay() cil managed
+    .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -141,8 +137,7 @@
       IL_0015:  ret
     } 
 
-    .method public strict virtual instance string 
-            ToString() cil managed
+    .method public strict virtual instance string ToString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -155,8 +150,7 @@
       IL_0015:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(class assembly/U obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(class assembly/U obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -242,8 +236,7 @@
       IL_0069:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -349,8 +342,7 @@
       IL_0073:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -407,8 +399,7 @@
       IL_003c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  GetHashCode() cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -419,9 +410,9 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool 
+            Equals(class assembly/U obj,
+                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -429,60 +420,80 @@
       .locals init (class assembly/U V_0,
                class assembly/U V_1,
                class assembly/U V_2,
-               class assembly/U V_3,
-               class [runtime]System.Collections.IEqualityComparer V_4,
-               class [runtime]System.Collections.IEqualityComparer V_5)
+               class [runtime]System.Collections.IEqualityComparer V_3,
+               class [runtime]System.Collections.IEqualityComparer V_4)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_003e
+      IL_0001:  brfalse.s  IL_0036
 
       IL_0003:  ldarg.1
-      IL_0004:  isinst     assembly/U
-      IL_0009:  stloc.0
-      IL_000a:  ldloc.0
-      IL_000b:  brfalse.s  IL_003c
+      IL_0004:  brfalse.s  IL_0034
 
-      IL_000d:  ldloc.0
-      IL_000e:  stloc.1
-      IL_000f:  ldarg.0
-      IL_0010:  pop
-      IL_0011:  ldarg.0
-      IL_0012:  stloc.2
-      IL_0013:  ldloc.1
-      IL_0014:  stloc.3
-      IL_0015:  ldarg.2
-      IL_0016:  stloc.s    V_4
-      IL_0018:  ldloc.2
-      IL_0019:  ldfld      int32 assembly/U::item1
-      IL_001e:  ldloc.3
-      IL_001f:  ldfld      int32 assembly/U::item1
-      IL_0024:  ceq
-      IL_0026:  brfalse.s  IL_003a
+      IL_0006:  ldarg.1
+      IL_0007:  stloc.0
+      IL_0008:  ldarg.0
+      IL_0009:  pop
+      IL_000a:  ldarg.0
+      IL_000b:  stloc.1
+      IL_000c:  ldloc.0
+      IL_000d:  stloc.2
+      IL_000e:  ldarg.2
+      IL_000f:  stloc.3
+      IL_0010:  ldloc.1
+      IL_0011:  ldfld      int32 assembly/U::item1
+      IL_0016:  ldloc.2
+      IL_0017:  ldfld      int32 assembly/U::item1
+      IL_001c:  ceq
+      IL_001e:  brfalse.s  IL_0032
 
-      IL_0028:  ldarg.2
-      IL_0029:  stloc.s    V_5
-      IL_002b:  ldloc.2
-      IL_002c:  ldfld      int32 assembly/U::item2
-      IL_0031:  ldloc.3
-      IL_0032:  ldfld      int32 assembly/U::item2
-      IL_0037:  ceq
-      IL_0039:  ret
+      IL_0020:  ldarg.2
+      IL_0021:  stloc.s    V_4
+      IL_0023:  ldloc.1
+      IL_0024:  ldfld      int32 assembly/U::item2
+      IL_0029:  ldloc.2
+      IL_002a:  ldfld      int32 assembly/U::item2
+      IL_002f:  ceq
+      IL_0031:  ret
 
+      IL_0032:  ldc.i4.0
+      IL_0033:  ret
+
+      IL_0034:  ldc.i4.0
+      IL_0035:  ret
+
+      IL_0036:  ldarg.1
+      IL_0037:  ldnull
+      IL_0038:  cgt.un
       IL_003a:  ldc.i4.0
-      IL_003b:  ret
-
-      IL_003c:  ldc.i4.0
+      IL_003b:  ceq
       IL_003d:  ret
-
-      IL_003e:  ldarg.1
-      IL_003f:  ldnull
-      IL_0040:  cgt.un
-      IL_0042:  ldc.i4.0
-      IL_0043:  ceq
-      IL_0045:  ret
     } 
 
     .method public hidebysig virtual final 
-            instance bool  Equals(class assembly/U obj) cil managed
+            instance bool  Equals(object obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (class assembly/U V_0)
+      IL_0000:  ldarg.1
+      IL_0001:  isinst     assembly/U
+      IL_0006:  stloc.0
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0013
+
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  ldarg.2
+      IL_000d:  callvirt   instance bool assembly/U::Equals(class assembly/U,
+                                                                  class [runtime]System.Collections.IEqualityComparer)
+      IL_0012:  ret
+
+      IL_0013:  ldc.i4.0
+      IL_0014:  ret
+    } 
+
+    .method public hidebysig virtual final instance bool  Equals(class assembly/U obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -528,8 +539,7 @@
       IL_0034:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -584,8 +594,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -599,8 +608,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
-            Invoke(int32 arg20) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(int32 arg20) cil managed
     {
       
       .maxstack  8
@@ -621,8 +629,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -636,8 +643,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> 
-            Invoke(int32 arg10) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(int32 arg10) cil managed
     {
       
       .maxstack  6
@@ -754,8 +760,7 @@
     IL_0014:  ret
   } 
 
-  .method public hidebysig specialname instance class [runtime]System.Type 
-          get_Type() cil managed
+  .method public hidebysig specialname instance class [runtime]System.Type get_Type() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -766,8 +771,7 @@
     IL_0006:  ret
   } 
 
-  .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes 
-          get_MemberType() cil managed
+  .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes get_MemberType() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 

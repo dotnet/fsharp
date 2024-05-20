@@ -90,22 +90,24 @@ let rec splitNamespaceAux (nm: string) =
     | -1 -> [ nm ]
     | idx ->
         let s1, s2 = splitNameAt nm idx
-        let s1 = memoizeNamespacePartTable.GetOrAdd(s1, id)
+        let s1 = memoizeNamespacePartTable.GetOrAdd(s1, s1)
         s1 :: splitNamespaceAux s2
 
+// Cache this as a delegate.
+let splitNamespaceAuxDelegate = Func<string, string list> splitNamespaceAux
+
 let splitNamespace nm =
-    memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAux)
+    memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAuxDelegate)
 
 // ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceArrayTable = ConcurrentDictionary<string, string[]>()
 
+// Cache this as a delegate.
+let splitNamespaceToArrayDelegate =
+    Func<string, string array>(splitNamespace >> Array.ofList)
+
 let splitNamespaceToArray nm =
-    memoizeNamespaceArrayTable.GetOrAdd(
-        nm,
-        fun nm ->
-            let x = Array.ofList (splitNamespace nm)
-            x
-    )
+    memoizeNamespaceArrayTable.GetOrAdd(nm, splitNamespaceToArrayDelegate)
 
 let splitILTypeName (nm: string) =
     match nm.LastIndexOf '.' with
@@ -156,8 +158,12 @@ let splitTypeNameRightAux (nm: string) =
         let s1, s2 = splitNameAt nm idx
         Some s1, s2
 
+// Cache this as a delegate.
+let splitTypeNameRightAuxDelegate =
+    Func<string, string option * string> splitTypeNameRightAux
+
 let splitTypeNameRight nm =
-    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAux)
+    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAuxDelegate)
 
 // --------------------------------------------------------------------
 // Ordered lists with a lookup table
