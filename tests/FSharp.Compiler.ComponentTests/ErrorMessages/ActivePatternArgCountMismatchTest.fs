@@ -22,7 +22,6 @@ match 1 with P -> ()
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
-            //|> withSingleDiagnostic (Error 3868, Line 3, Col 14, Line 3, Col 15, "This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'P e1 ()'.")
             |> withSingleDiagnostic (Error 3868, Line 3, Col 14, Line 3, Col 15, "This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'P e1 pat'.")
 
     module ``int → int → unit option`` =
