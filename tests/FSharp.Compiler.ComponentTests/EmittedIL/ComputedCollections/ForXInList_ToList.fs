@@ -5,3 +5,8 @@ let f4 f g (list: int list) = [for x in list -> f (); g(); x]
 let f5 (list: int list) = [for x in list do yield x]
 let f6 f (list: int list) = [for x in list do f (); yield x]
 let f7 f g (list: int list) = [for x in list do f (); g (); yield x]
+
+let f8 f g (list: int list) = [let y = f () in let z = g () in for x in list -> x + y + z]
+let f9 f g (list: int list) = [let y = f () in g (); for x in list -> x + y]
+let f10 f g (list: int list) = [f (); g (); for x in list -> x]
+let f11 f g (list: int list) = [f (); let y = g () in for x in list -> x + y]

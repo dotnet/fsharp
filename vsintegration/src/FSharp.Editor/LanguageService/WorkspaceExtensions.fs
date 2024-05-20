@@ -317,15 +317,14 @@ module private CheckerExtensions =
 
         snapshotCache.Get(
             key,
-            node {
-                let! ct = NodeCode.CancellationToken
+            async {
+                let! ct = Async.CancellationToken
 
                 return!
                     createProjectSnapshot snapshotAccumulatorOpt project options ct
-                    |> NodeCode.AwaitTask
+                    |> Async.AwaitTask
             }
         )
-        |> Async.AwaitNodeCode
 
     let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
         getOrCreateSnapshotForProject document.Project (Some options) None

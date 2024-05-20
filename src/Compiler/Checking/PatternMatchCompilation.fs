@@ -735,26 +735,6 @@ let ChooseInvestigationPointLeftToRight frontiers =
     | [] -> failwith "ChooseInvestigationPointLeftToRight: no frontiers!"
 
 
-
-#if OPTIMIZE_LIST_MATCHING
-// This is an initial attempt to remove extra typetests/castclass for simple list pattern matching "match x with h :: t -> ... | [] -> ..."
-// The problem with this technique is that it creates extra locals which inhibit the process of converting pattern matches into linear let bindings.
-
-[<return: Struct>]
-let (|ListConsDiscrim|_|) g = function
-     | (DecisionTreeTest.UnionCase (ucref, tinst))
-                (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_ColonColon" -> ValueSome tinst
-     | _ -> ValueNone
-
-[<return: Struct>]
-let (|ListEmptyDiscrim|_|) g = function
-     | (DecisionTreeTest.UnionCase (ucref, tinst))
-                (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_Nil" -> ValueSome tinst
-     | _ -> ValueNone
-#endif
-
 [<return: Struct>]
 let (|ConstNeedsDefaultCase|_|) c =
     match c with
@@ -805,17 +785,6 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // isnull and isinst tests
     | TCase((DecisionTreeTest.IsNull | DecisionTreeTest.IsInst _), _) as edge :: edges, dflt  ->
         TDSwitch(expr, [edge], Some (BuildSwitch None g expr edges dflt m), m)
-
-#if OPTIMIZE_LIST_MATCHING
-    // 'cons/nil' tests where we have stored the result of the cons test in an 'isinst' in a variable
-    // In this case the 'expr' already holds the result of the 'isinst' test.
-    | [TCase(ListConsDiscrim g tinst, consCase)], Some emptyCase
-    | [TCase(ListEmptyDiscrim g tinst, emptyCase)], Some consCase
-    | [TCase(ListEmptyDiscrim g _, emptyCase); TCase(ListConsDiscrim g tinst, consCase)], None
-    | [TCase(ListConsDiscrim g tinst, consCase); TCase(ListEmptyDiscrim g _, emptyCase)], None
-                     when Option.isSome inpExprOpt ->
-        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, emptyCase)], Some consCase, m)
-#endif
 
     // All these should also always have default cases
     | TCase(DecisionTreeTest.Const ConstNeedsDefaultCase, _) :: _, None ->
@@ -1272,25 +1241,6 @@ let CompilePatternBasic
                      AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                  Some addrExp, Some (mkInvisibleBind v e)
 
-
-
-#if OPTIMIZE_LIST_MATCHING
-         | [EdgeDiscrim(_, ListConsDiscrim g tinst, m); EdgeDiscrim(_, ListEmptyDiscrim g _, _)]
-         | [EdgeDiscrim(_, ListEmptyDiscrim g _, _); EdgeDiscrim(_, ListConsDiscrim g tinst, m)]
-         | [EdgeDiscrim(_, ListConsDiscrim g tinst, m)]
-         | [EdgeDiscrim(_, ListEmptyDiscrim g tinst, m)]
-                    (* check we can use a simple 'isinst' instruction *)
-                    when isNil origInputValTypars ->
-
-             let ucaseTy = (mkProvenUnionCaseTy g.cons_ucref tinst)
-             let v, vExpr = mkCompGenLocal m "unionTestResult" ucaseTy
-             if origInputVal.IsMemberOrModuleBinding then
-                 AdjustValToHaveValReprInfo v origInputVal.DeclaringEntity ValReprInfo.emptyValData
-             let argExpr = GetSubExprOfInput subexpr
-             let appExpr = mkIsInst ucaseTy argExpr mMatch
-             Some vExpr, Some (mkInvisibleBind v appExpr)
-#endif
-
          // Active pattern matches: create a variable to hold the results of executing the active pattern.
          // If a struct return we continue with an expression for taking the address of that location.
          | EdgeDiscrim(_, DecisionTreeTest.ActivePatternCase(activePatExpr, resTys, retKind, _apatVrefOpt, _, apinfo), m) :: _ ->
@@ -1343,9 +1293,6 @@ let CompilePatternBasic
                  let resPostBindOpt, ucaseBindOpt =
                      match discrim with
                      | DecisionTreeTest.UnionCase (ucref, tinst) when
-#if OPTIMIZE_LIST_MATCHING
-                                                           isNone inpExprOpt &&
-#endif
                                                           (isNil origInputValTypars &&
                                                            not origInputVal.IsMemberOrModuleBinding &&
                                                            not ucref.Tycon.IsStructRecordOrUnionTycon  &&

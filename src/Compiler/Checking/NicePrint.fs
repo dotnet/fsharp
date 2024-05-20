@@ -1909,6 +1909,7 @@ module TastDefinitionPrinting =
             match vrefOpt with
             | None -> true
             | Some vref ->
+                (not vref.IsCompilerGenerated) &&
                 (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g vref.Attribs)) &&
                 (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g vref.Attribs))
                 

@@ -38,8 +38,10 @@ module internal Adapters =
 
     let memoize f =
         let d = new ConcurrentDictionary<Type, 'b>(HashIdentity.Structural)
+        // Cache this as a delegate.
+        let valueFactory = Func<Type, 'b> f
 
-        fun x -> d.GetOrAdd(x, (fun r -> f r))
+        fun x -> d.GetOrAdd(x, valueFactory)
 
     let isPartiallyImmutableRecord: Type -> bool =
         memoize (fun t ->
