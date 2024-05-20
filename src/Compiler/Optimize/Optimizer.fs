@@ -2245,7 +2245,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 | QuerySelect g (qTy, _, resultElemTy, _, _) 
                 | QueryYield g (qTy, resultElemTy, _) 
                 | QueryYieldFrom g (qTy, resultElemTy, _) 
-                     when typeEquiv g qTy (mkAppTy g.tcref_System_Collections_IEnumerable []) -> 
+                     when typeEquiv g qTy (mkWoNullAppTy g.tcref_System_Collections_IEnumerable []) -> 
 
                     match tryRewriteToSeqCombinators g e with 
                     | Some newSource -> 
@@ -3232,7 +3232,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             // the target takes a tupled argument, so we need to reorder the arg expressions in the
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
         | _ -> None
         
@@ -3257,7 +3257,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
         | Some (_, _, withcEqualsVal, _ ), [comp; x; y] -> 
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
@@ -3279,7 +3279,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
                let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
                Some (DevirtualizeApplication cenv env equalsExact ty tyargs args2 m)
            | None ->
-               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
+               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
                Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     
