@@ -5119,33 +5119,41 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let vExprTy = vExpr.Type
 
     let activePatArgsAsSynPats, patArg =
-        let isSolved ty =
-            let couldResolveToUnit constraints =
-                constraints
-                |> List.exists (fun c ->
-                    match c with
-                    // These apply to unit.
-                    | TyparConstraint.IsReferenceType _
-                    | TyparConstraint.SupportsComparison _
-                    | TyparConstraint.SupportsEquality _ -> false
-                    // This could apply to unit if the member is a method on obj, or if this RFC is implemented:
-                    // https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md
-                    | TyparConstraint.MayResolveMember _ -> false
-                    // Any other kind of constraint cannot apply to unit.
-                    | _ -> true)
-
-            tryDestTyparTy g ty
-            |> ValueOption.forall (fun typar -> typar.IsSolved || couldResolveToUnit typar.Constraints)
-
-        // only cases which return unit or unresolved type (in AP definition) can omit output arg 
+        // only cases which return unit or unresolved type (in AP definition) compatible with unit can omit output arg 
         let canOmit retTy =
+            let couldResolveToUnit ty =
+                tryDestTyparTy g ty
+                |> ValueOption.exists (fun typar ->
+                    not typar.IsSolved
+                    && typar.Constraints |> List.forall (fun c ->
+                        let (|Unit|_|) ty = if isUnitTy g ty then Some Unit else None
+
+                        match c with
+                        // These apply or could apply to unit.
+                        | TyparConstraint.IsReferenceType _
+                        | TyparConstraint.SupportsComparison _
+                        | TyparConstraint.SupportsEquality _
+                        | TyparConstraint.DefaultsTo (ty = Unit)
+                        | TyparConstraint.MayResolveMember _ -> true
+
+                        // Any other kind of constraint is incompatible with unit.
+                        | TyparConstraint.CoercesTo _
+                        | TyparConstraint.DefaultsTo _
+                        | TyparConstraint.IsDelegate _
+                        | TyparConstraint.IsEnum _
+                        | TyparConstraint.IsNonNullableStruct _
+                        | TyparConstraint.IsUnmanaged _
+                        | TyparConstraint.RequiresDefaultConstructor _
+                        | TyparConstraint.SimpleChoice _
+                        | TyparConstraint.SupportsNull _ -> false))
+
             let caseRetTy =
                 if isOptionTy g retTy then destOptionTy g retTy
                 elif isValueOptionTy g retTy then destValueOptionTy g retTy
                 elif isChoiceTy g retTy then destChoiceTy g retTy idx
                 else retTy
 
-            isUnitTy g caseRetTy || not (isSolved caseRetTy)
+            isUnitTy g caseRetTy || couldResolveToUnit caseRetTy
 
         // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
         let dtys, retTy = stripFunTy g vExprTy
@@ -5192,7 +5200,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                  showErrMsg 1
         
         // active pattern in function param (e.g. let f (|P|_|) = ...)
-        elif not (isSolved vExprTy) then
+        elif tryDestTyparTy g vExprTy |> ValueOption.exists (fun typar -> not typar.IsSolved) then
             List.frontAndBack args
 
         // args count should equal to AP function params count
