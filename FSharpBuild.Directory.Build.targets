@@ -2,7 +2,6 @@
 
   <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
   <Import Project="eng\targets\Imports.targets" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
-  <Import Project="eng\targets\NGenBinaries.targets" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
   <Import Project="eng\targets\NuGet.targets" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
   <Import Project="FSharp.Profiles.props" />
 

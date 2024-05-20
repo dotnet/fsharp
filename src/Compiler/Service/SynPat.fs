@@ -127,6 +127,52 @@ module SynPat =
                                          MemberKind = SynMemberKind.PropertyGetSet | SynMemberKind.PropertyGet | SynMemberKind.PropertySet
                                      }))) :: _ -> true
 
+        // Parens must be kept when there is a multiline expression
+        // to the right whose offsides line would be shifted if the
+        // parentheses were removed from a leading pattern on the same line, e.g.,
+        //
+        //     match maybe with
+        //     | Some(x) -> let y = x * 2
+        //                  let z = 99
+        //                  x + y + z
+        //     | None -> 3
+        //
+        // or
+        //
+        //     let (x) = printfn "…"
+        //               printfn "…"
+        | _ when
+            // This is arbitrary and will result in some false positives.
+            let maxBacktracking = 10
+
+            let rec wouldMoveRhsOffsides n pat path =
+                if n = maxBacktracking then
+                    true
+                else
+                    // This does not thoroughly search the trailing
+                    // expression — nor does it go up the expression
+                    // tree and search farther rightward, or look at record bindings,
+                    // etc., etc., etc. — and will result in some false negatives.
+                    match path with
+                    // Expand the range to that of the outer pattern, since
+                    // the parens may extend beyond the inner pat
+                    | SyntaxNode.SynPat outer :: path when n = 1 -> wouldMoveRhsOffsides (n + 1) outer path
+                    | SyntaxNode.SynPat _ :: path -> wouldMoveRhsOffsides (n + 1) pat path
+
+                    | SyntaxNode.SynExpr(SynExpr.Lambda(body = rhs)) :: _
+                    | SyntaxNode.SynExpr(SynExpr.LetOrUse(body = rhs)) :: _
+                    | SyntaxNode.SynExpr(SynExpr.LetOrUseBang(body = rhs)) :: _
+                    | SyntaxNode.SynBinding(SynBinding(expr = rhs)) :: _
+                    | SyntaxNode.SynMatchClause(SynMatchClause(resultExpr = rhs)) :: _ ->
+                        let rhsRange = rhs.Range
+                        rhsRange.StartLine <> rhsRange.EndLine && pat.Range.EndLine = rhsRange.StartLine
+
+                    | _ -> false
+
+            wouldMoveRhsOffsides 1 pat path
+            ->
+            true
+
         // () is parsed as this.
         | SynPat.Const(SynConst.Unit, _), _ -> true
 

@@ -430,14 +430,7 @@ let AdjustCalledArgType (infoReader: InfoReader) ad isConstraint enforceNullable
 
         // If the called method argument is an inref type, then the caller may provide a byref or value
         if isInByrefTy g calledArgTy then
-#if IMPLICIT_ADDRESS_OF
-            if isByrefTy g callerArgTy then 
-                calledArgTy
-            else 
-                destByrefTy g calledArgTy
-#else
             calledArgTy, TypeDirectedConversionUsed.No, None
-#endif
 
         // If the called method argument is a (non inref) byref type, then the caller may provide a byref or ref.
         elif isByrefTy g calledArgTy then
@@ -906,8 +899,8 @@ let IsBaseCall objArgs =
 /// For example, when calling an interface method on a struct, or a method on a constrained 
 /// variable type. 
 let ComputeConstrainedCallInfo g amap m staticTyOpt args (minfo: MethInfo) =
-    match args, staticTyOpt with 
-    | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && minfo.IsAbstract -> Some staticTy
+    match args, staticTyOpt with
+    | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && (minfo.IsAbstract || minfo.IsVirtual) -> Some staticTy
 
     | (objArgExpr :: _), _ when minfo.IsInstance && not minfo.IsExtensionMember -> 
         let methObjTy = minfo.ApparentEnclosingType
@@ -1370,12 +1363,6 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
 let AdjustCallerArgExpr tcVal (g: TcGlobals) amap infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
    if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
        None, Expr.Op (TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
-
-#if IMPLICIT_ADDRESS_OF
-   elif isInByrefTy g calledArgTy && not (isByrefTy g callerArgTy) then 
-       let wrap, callerArgExprAddress, _readonly, _writeonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
-       Some wrap, callerArgExprAddress
-#endif
 
    // auto conversions to quotations (to match auto conversions to LINQ expressions)
    elif reflArgInfo.AutoQuote && isQuotedExprTy g calledArgTy && not (isQuotedExprTy g callerArgTy) then 
@@ -1943,13 +1930,6 @@ module ProvidedMethodCalls =
                 let infoReader = InfoReader(g, amap)
                 let exprR = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyR
                 None, (exprR, tyOfExpr g exprR)
-#if PROVIDED_ADDRESS_OF
-            | ProvidedAddressOfExpr e ->
-                let eR =  exprToExpr (exprType.PApply((fun _ -> e), m))
-                let wrap,exprR, _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates eR None m
-                let exprR = wrap exprR
-                None, (exprR, tyOfExpr g exprR)
-#endif
             | ProvidedDefaultExpr pty ->
                 let ty = Import.ImportProvidedType amap m (exprType.PApply((fun _ -> pty), m))
                 let exprR = mkDefault (m, ty)
