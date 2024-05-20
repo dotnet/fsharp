@@ -14,7 +14,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>8</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>301</FSBuildVersion>
+    <FSBuildVersion>300</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
