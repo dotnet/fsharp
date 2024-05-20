@@ -779,3 +779,30 @@ let mappableFunc =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+[<Fact>]
+let ``Notnull constraint and inline annotated value`` () = 
+    FSharp """module MyLibrary
+open System
+
+let f3 (x: 'T when 'T : not null) = 1
+
+let v3 = f3 (null: obj) 
+let v4 = f3 (null: String | null) 
+let v5 = f3 (Some 1) 
+
+let w3 = (null: obj) |> f3
+let w4 = (null: String | null) |> f3
+
+let v3WithNull = f3 (null: obj | null) 
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ Error 3261, Line 6, Col 14, Line 6, Col 18, "Nullness warning: The type 'obj' does not support 'null'."
+              Error 3261, Line 7, Col 14, Line 7, Col 33, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 8, Col 14, Line 8, Col 20, "Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected."
+              Error 3261, Line 10, Col 11, Line 10, Col 15, "Nullness warning: The type 'obj' does not support 'null'."
+              Error 3261, Line 11, Col 35, Line 11, Col 37, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 13, Col 22, Line 13, Col 38, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
