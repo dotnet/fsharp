@@ -9538,7 +9538,7 @@ and GenPInvokeMethod (nm, dll, namedArgs) =
                     PInvokeCharBestFit.UseAssembly
         }
 
-    MethodBody.PInvoke(lazy pinvoke)
+    MethodBody.PInvoke(InterruptibleLazy.FromValue(pinvoke))
 
 and GenBindings cenv cgbuf eenv binds stateVarFlagsOpt =
     match stateVarFlagsOpt with

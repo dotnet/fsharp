@@ -1828,7 +1828,7 @@ type ILMethodVirtualInfo =
 [<RequireQualifiedAccess>]
 type MethodBody =
     | IL of InterruptibleLazy<ILMethodBody>
-    | PInvoke of Lazy<PInvokeMethod> (* platform invoke to native *)
+    | PInvoke of InterruptibleLazy<PInvokeMethod> (* platform invoke to native *)
     | Abstract
     | Native
     | NotAvailable
@@ -3577,6 +3577,8 @@ let isILObjectTy ilg ty = isILBoxedBuiltInTy ilg ty tname_Object
 
 let isILStringTy ilg ty = isILBoxedBuiltInTy ilg ty tname_String
 
+let isILTypeTy ilg ty = isILBoxedBuiltInTy ilg ty tname_Type
+
 let isILTypedReferenceTy ilg ty =
     isILValueBuiltInTy ilg ty tname_TypedReference
 
@@ -4970,7 +4972,7 @@ type ILTypeSigParser(tstring: string) =
     //   Since we're only reading valid IL, we assume that the signature is properly formed
     //   For type parameters, if the type is non-local, it will be wrapped in brackets ([])
     //   Still needs testing with jagged arrays and byref parameters
-    member private x.ParseType() =
+    member internal x.ParseType() =
 
         // Does the type name start with a leading '['? If so, ignore it
         // (if the specialization type is in another module, it will be wrapped in bracket)
@@ -5100,6 +5102,11 @@ type ILTypeSigParser(tstring: string) =
         reset ()
         let ilTy = x.ParseType()
         ILAttribElem.Type(Some ilTy)
+
+type ILType with
+
+    static member Parse assemblyQualifiedName =
+        (ILTypeSigParser assemblyQualifiedName).ParseType()
 
 let decodeILAttribData (ca: ILAttribute) =
     match ca with
