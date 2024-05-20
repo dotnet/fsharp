@@ -9,7 +9,8 @@ module internal Utils =
     /// Return file name with one directory above it
     val shortPath: path: string -> string
 
-    val (|TaskCancelled|_|): ex: exn -> TaskCanceledException option
+    [<return: Struct>]
+    val (|TaskCancelled|_|): ex: exn -> TaskCanceledException voption
 
 type internal JobEvent =
     | Requested
@@ -65,9 +66,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member Clear: predicate: ('TKey -> bool) -> unit
 
-    member Get: key: ICacheKey<'TKey, 'TVersion> * computation: NodeCode<'TValue> -> NodeCode<'TValue>
+    member Get: key: ICacheKey<'TKey, 'TVersion> * computation: Async<'TValue> -> Async<'TValue>
 
-    member Get': key: 'TKey * computation: NodeCode<'TValue> -> NodeCode<'TValue>
+    member Get': key: 'TKey * computation: Async<'TValue> -> Async<'TValue>
 
     member TryGet: key: 'TKey * predicate: ('TVersion -> bool) -> 'TValue option
 

@@ -59,13 +59,16 @@ module internal SymbolHelpers =
     val SelectMethodGroupItems2: TcGlobals -> range -> ItemWithInst -> ItemWithInst list
 
 #if !NO_TYPEPROVIDERS
-    val (|ItemIsProvidedType|_|): TcGlobals -> Item -> TyconRef option
+    [<return: Struct>]
+    val (|ItemIsProvidedType|_|): TcGlobals -> Item -> TyconRef voption
 
+    [<return: Struct>]
     val (|ItemIsWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] voption
 
+    [<return: Struct>]
     val (|ItemIsProvidedTypeWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] voption
 #endif
 
     val SimplerDisplayEnv: DisplayEnv -> DisplayEnv

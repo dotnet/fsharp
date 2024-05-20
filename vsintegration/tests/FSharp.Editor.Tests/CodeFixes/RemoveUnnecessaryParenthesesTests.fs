@@ -388,6 +388,21 @@ let _ =
              | _ -> 3)
             "
 
+            "match () with () when (box x :? int) -> () | _ -> ()", "match () with () when (box x :? int) -> () | _ -> ()"
+
+            "
+            match () with
+            | () when (box x :? int)
+                -> ()
+            | _ -> ()
+            ",
+            "
+            match () with
+            | () when box x :? int
+                -> ()
+            | _ -> ()
+            "
+
             // Do
             "do (ignore 3)", "do ignore 3"
 
@@ -886,6 +901,127 @@ in x
             """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
 
+            """
+            [
+                ()
+                (printfn "1"; ())
+                ()
+            ]
+            """,
+            """
+            [
+                ()
+                (printfn "1"; ())
+                ()
+            ]
+            """
+
+            // Technically we could remove some parens in some of these,
+            // but additional exprs above or below can suddenly move the offsides line,
+            // and we don't want to do unbounded lookahead or lookbehind.
+
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                    y
+                ]
+            ",
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                    y
+                ]
+            "
+
+            "
+            let _ =
+                [
+                    (if p then q else r);
+                    y
+                ]
+            ",
+            "
+            let _ =
+                [
+                    if p then q else r;
+                    y
+                ]
+            "
+
+            "
+            let _ =
+                [
+                    x;
+                   (if p then q else r);
+                   (if foo then bar else baz);
+                ]
+            ",
+            "
+            let _ =
+                [
+                    x;
+                   (if p then q else r);
+                   if foo then bar else baz;
+                ]
+            "
+
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                    y;
+                   (if foo then bar else baz);
+                ]
+            ",
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                    y;
+                   if foo then bar else baz;
+                ]
+            "
+
+            "
+            let _ =
+                [
+                   (if p then q else r);
+                   (if foo then bar else baz);
+                    z
+                ]
+            ",
+            "
+            let _ =
+                [
+                   if p then q else r;
+                   (if foo then bar else baz);
+                    z
+                ]
+            "
+
+            "
+            let _ =
+                [
+                    x;
+                   (if a then b else c);
+                   (if p then q else r);
+                   (if foo then bar else baz);
+                    z
+                ]
+            ",
+            "
+            let _ =
+                [
+                    x;
+                   (if a then b else c);
+                   (if p then q else r);
+                   (if foo then bar else baz);
+                    z
+                ]
+            "
+
             "
             let _ =
                 let y = 100
@@ -960,6 +1096,23 @@ in x
                 let y = 99
                 ignore (y - x)
                 x
+            "
+
+            "
+            [
+                1, 2,
+                3, 4
+                (1, 2,
+                3, 4)
+            ]
+            ",
+            "
+            [
+                1, 2,
+                3, 4
+                (1, 2,
+                3, 4)
+            ]
             "
 
             // IfThenElse
@@ -1265,8 +1418,11 @@ in x
             memberData {
                 // Paren
                 "id ()", "id ()"
-                "id (())", "id ()"
+                "id (())", "id (())"
                 "id ((x))", "id (x)"
+                "x.M(())", "x.M(())"
+                "x.M (())", "x.M (())"
+                "x.M.N(())", "x.M.N(())"
 
                 // Quote
                 "id (<@ x @>)", "id <@ x @>"
@@ -1368,6 +1524,11 @@ in x
                 "{| A = (fun () -> ()); B = 3 |}", "{| A = (fun () -> ()); B = 3 |}"
                 "{| A = (let x = 3 in x); B = 3 |}", "{| A = (let x = 3 in x); B = 3 |}"
                 "{| (try {||} with _ -> reraise ()) with A = 4 |}", "{| (try {||} with _ -> reraise ()) with A = 4 |}"
+                "{| (x |> id) with A = 4 |}", "{| (x |> id) with A = 4 |}"
+                "{| (box x :?> T) with A = 4 |}", "{| (box x :?> T) with A = 4 |}"
+                "{| (+x) with A = 4 |}", "{| (+x) with A = 4 |}"
+                "{| (!x) with A = 4 |}", "{| !x with A = 4 |}"
+                "{| (! x) with A = 4 |}", "{| ! x with A = 4 |}"
 
                 "
                 {| A = (fun () -> ())
@@ -1407,6 +1568,17 @@ in x
                     A = 4 |}
                 "
 
+                "
+                {|
+                    A = ([] : int list list)
+                |}
+                ",
+                "
+                {|
+                    A = ([] : int list list)
+                |}
+                "
+
                 // ArrayOrList
                 "id ([])", "id []"
                 "id ([||])", "id [||]"
@@ -1420,6 +1592,11 @@ in x
                 "{ A = (let x = 3 in x); B = 3 }", "{ A = (let x = 3 in x); B = 3 }"
                 "{ A.B.C.D.X = (match () with () -> ()); A.B.C.D.Y = 3 }", "{ A.B.C.D.X = (match () with () -> ()); A.B.C.D.Y = 3 }"
                 "{ (try { A = 3 } with _ -> reraise ()) with A = 4 }", "{ (try { A = 3 } with _ -> reraise ()) with A = 4 }"
+                "{ (x |> id) with A = 4 }", "{ (x |> id) with A = 4 }"
+                "{ (box x :?> T) with A = 4 }", "{ (box x :?> T) with A = 4 }"
+                "{ (+x) with A = 4 }", "{ (+x) with A = 4 }"
+                "{ (!x) with A = 4 }", "{ !x with A = 4 }"
+                "{ (! x) with A = 4 }", "{ ! x with A = 4 }"
 
                 "
                 { A = (fun () -> ())
@@ -1457,6 +1634,17 @@ in x
                 { (try { A = 3 } with _ -> reraise ())
                   with
                     A = 4 }
+                "
+
+                "
+                {
+                    A = ([] : int list list)
+                }
+                ",
+                "
+                {
+                    A = ([] : int list list)
+                }
                 "
 
                 // New
@@ -1615,6 +1803,11 @@ in x
                 "id(id<int>)id", "id id<int> id"
                 "id (id id) id", "id (id id) id" // While it would be valid in this case to remove the parens, it is not in general.
                 "id ((<|) ((+) x)) y", "id ((<|) ((+) x)) y"
+                "(int)x", "int x"
+                "(uint32)x", "uint32 x"
+                "(int)_x", "int _x"
+                "(uint32)_x", "uint32 _x"
+                "(f_)x", "f_ x"
 
                 "~~~(-1)", "~~~ -1"
                 "~~~(-x)", "~~~(-x)"
@@ -1712,6 +1905,9 @@ in x
                 "let mutable x = y in (x <- z) |> id", "let mutable x = y in (x <- z) |> id"
                 "let mutable x = y in ((); x <- z) |> id", "let mutable x = y in ((); x <- z) |> id"
                 "let mutable x = y in (if true then x <- z) |> id", "let mutable x = y in (if true then x <- z) |> id"
+                "M(x).N <- y", "M(x).N <- y"
+                "A(x).B(x).M(x).N <- y", "A(x).B(x).M(x).N <- y"
+                "A(x)(x)(x).N <- y", "A(x)(x)(x).N <- y"
 
                 // DotIndexedGet
                 "id ([x].[y])", "id [x].[y]"
@@ -2118,6 +2314,93 @@ let _ = (2 + 2) { return 5 }
 
             [<Theory; MemberData(nameof infixOperatorsWithLeadingAndTrailingChars)>]
             let ``Infix operators with leading and trailing chars`` expr expected = expectFix expr expected
+
+    let failing =
+        memberData {
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            (x) < (printfn $"{y}"
+                   y)
+            """,
+            """
+            (x) < (printfn $"{y}"
+                   y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            id (x) < (printfn $"{y}"
+                      y)
+            """,
+            """
+            id (x) < (printfn $"{y}"
+                      y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            id (id (id (x))) < (printfn $"{y}"
+                                y)
+            """,
+            """
+            id (id (id (x))) < (printfn $"{y}"
+                                y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            (x) <> z && x < (printfn $"{y}"
+                             y)
+            """,
+            """
+            (x) <> z && x < (printfn $"{y}"
+                             y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            (x) < match y with
+                  | Some y -> let y = y
+                              y
+                  | y)
+            """,
+            """
+            (x) < match y with
+                  | Some y -> let y = y
+                              y
+                  | y)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            printfn "1"; printfn ("2"); (id <| match y with Some y -> let y = y
+                                                                      y
+                                                          | None -> 3)
+            """,
+            """
+            printfn "1"; printfn ("2"); (id <| match y with Some y -> let y = y
+                                                                      y
+                                                          | None -> 3)
+            """
+
+            // See https://github.com/dotnet/fsharp/issues/16999
+            """
+            printfn ("1"
+                        ); printfn "2"; (id <| match y with Some y -> let y = y
+                                                                      y
+                                                          | None -> 3)
+            """,
+            """
+            printfn ("1"
+                        ); printfn "2"; (id <| match y with Some y -> let y = y
+                                                                      y
+                                                          | None -> 3)
+            """
+        }
+
+    [<Theory; MemberData(nameof failing)>]
+    let ``Failing tests`` expr expected =
+        Assert.ThrowsAsync<UnexpectedCodeFixException>(fun () -> expectFix expr expected)
 
 module Patterns =
     type SynPat =
@@ -2803,6 +3086,113 @@ module Patterns =
             match 1, [2] with
             | _, (1 as x :: _ :: _) -> ()
             | _ -> ()
+            "
+
+            "
+            match maybe with
+            | Some(x) -> let y = x * 2
+                         let z = 99
+                         x + y + z
+            | None -> 3
+            ",
+            "
+            match maybe with
+            | Some(x) -> let y = x * 2
+                         let z = 99
+                         x + y + z
+            | None -> 3
+            "
+
+            "
+            match maybe with
+            | Some(x) -> id <| (let y = x * 2
+                                let z = 99
+                                x + y + z)
+            | None -> 3
+            ",
+            "
+            match maybe with
+            | Some(x) -> id <| (let y = x * 2
+                                let z = 99
+                                x + y + z)
+            | None -> 3
+            "
+
+            "
+            match maybe with
+            | Some(
+                    x
+                  ) -> let y = x * 2
+                       let z = 99
+                       x + y + z
+            | None -> 3
+            ",
+            "
+            match maybe with
+            | Some(
+                    x
+                  ) -> let y = x * 2
+                       let z = 99
+                       x + y + z
+            | None -> 3
+            "
+
+            "
+            match q with
+            | { A = Some(
+                         x
+                        ) } -> let y = x * 2
+                               let z = 99
+                               x + y + z
+            | { A = None } -> 3
+            ",
+            "
+            match q with
+            | { A = Some(
+                         x
+                        ) } -> let y = x * 2
+                               let z = 99
+                               x + y + z
+            | { A = None } -> 3
+            "
+
+            // This removal is somewhat ugly, albeit valid.
+            // Maybe we can make it nicer someday.
+            "
+            match q with
+            | { A = Some (
+                           x
+                         )
+              } -> let y = x * 2
+                   let z = 99
+                   x + y + z
+            | { A = None } -> 3
+            ",
+            "
+            match q with
+            | { A = Some 
+                           x
+              } -> let y = x * 2
+                   let z = 99
+                   x + y + z
+            | { A = None } -> 3
+            "
+
+            "
+            match q with
+            | { A = Some (x)
+              } -> let y = x * 2
+                   let z = 99
+                   x + y + z
+            | { A = None } -> 3
+            ",
+            "
+            match q with
+            | { A = Some x
+              } -> let y = x * 2
+                   let z = 99
+                   x + y + z
+            | { A = None } -> 3
             "
 
             "
