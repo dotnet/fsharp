@@ -2,8 +2,6 @@
 
 namespace Internal.Utilities.Library
 
-#nowarn "842" //This attribute is not valid for use on this language element for `valueFactory` below
-
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -18,29 +16,30 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
     let syncObj = obj ()
 
     [<VolatileField>]
-    let mutable valueFactory = valueFactory
+    // TODO nullness - this is boxed to obj because of an attribute targets bug fixed in main, but not yet shipped (needs shipped 8.0.400)
+    let mutable valueFactory : obj = valueFactory
 
     let mutable value = value
 
     new(valueFactory: unit -> 'T) = InterruptibleLazy(Unchecked.defaultof<_>, valueFactory)
 
     member this.IsValueCreated =
-        match box valueFactory with
+        match valueFactory with
         | null -> true
         | _ -> false
 
     member this.Value =
-        match box valueFactory with
+        match valueFactory with
         | null -> value
         | _ ->
             Monitor.Enter(syncObj)
 
             try
-                match box valueFactory with
+                match valueFactory with
                 | null -> ()
                 | _ ->
 
-                    value <- valueFactory ()
+                    value <- (valueFactory |> unbox<unit -> 'T>) ()
                     valueFactory <- Unchecked.defaultof<_>
             finally
                 Monitor.Exit(syncObj)
