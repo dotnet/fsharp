@@ -75,7 +75,7 @@ extends:
         justificationForDisabling: 'SBOM for F# is generated via build process. Will be migrated at later date.'
       sourceAnalysisPool:
         name: NetCore1ESPool-Svc-Internal
-        image: 1es-windows-2022-pt
+        image: 1es-windows-2022
         os: windows
     stages:
     - stage: build
