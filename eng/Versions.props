@@ -39,7 +39,7 @@
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>8.0.200</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>8.0.300</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
