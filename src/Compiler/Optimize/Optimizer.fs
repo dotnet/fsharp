@@ -2356,7 +2356,15 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         OptimizeConst cenv env expr (c, m, ty)
 
     | Expr.Val (v, _vFlags, m) ->
-        OptimizeVal cenv env expr (v, m)
+        if not (v.Accessibility.IsPrivate) then
+            OptimizeVal cenv env expr (v, m)
+        else
+            expr,
+            { TotalSize = 10
+              FunctionSize = 1
+              HasEffect = false  
+              MightMakeCriticalTailcall=false
+              Info=UnknownValue }
 
 
     | Expr.Quote (ast, splices, isFromQueryExpression, m, ty) -> 
@@ -3074,6 +3082,9 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         let fvs = freeInExpr CollectLocals expr
         if fvs.UsesMethodLocalConstructs then
             // Discarding lambda for binding because uses protected members --- TBD: Should we warn or error here
+            None 
+        elif fvs.FreeLocals |> Seq.exists(fun v -> v.Accessibility.IsPrivate ) then
+            // Discarding lambda for binding because uses private members --- TBD: Should we warn or error here
             None
         else
             let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
@@ -4112,10 +4123,10 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     let fvs = freeInExpr CollectLocals body
                     if fvs.UsesMethodLocalConstructs then
                         // Discarding lambda for binding because uses protected members
-                        UnknownValue
+                        UnknownValue 
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
                         // Discarding lambda for binding because uses private members
-                        UnknownValue
+                        UnknownValue 
                     else
                         ivalue
 
