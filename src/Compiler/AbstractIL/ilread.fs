@@ -931,8 +931,9 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
         (fun f x -> f x)
     else
         let mutable cache: ConcurrentDictionary<int32, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
-        let mutable count = 0
 #if STATISTICS
+        let mutable count = 0
+
         addReport (fun oc ->
             if count <> 0 then
                 oc.WriteLine((_inbase + string count + " " + _nm + " cache hits"): string))
@@ -948,7 +949,9 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
 
             match cache.TryGetValue idx with
             | true, res ->
+#if STATISTICS
                 count <- count + 1
+#endif
                 res
             | _ ->
                 let res = f idx
@@ -960,8 +963,9 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
         (fun f x -> f x)
     else
         let mutable cache: ConcurrentDictionary<_, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
-        let mutable count = 0
 #if STATISTICS
+        let mutable count = 0
+
         addReport (fun oc ->
             if !count <> 0 then
                 oc.WriteLine((_inbase + string !count + " " + _nm + " cache hits"): string))
@@ -977,7 +981,9 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
 
             match cache.TryGetValue idx with
             | true, v ->
+#if STATISTICS
                 count <- count + 1
+#endif
                 v
             | _ ->
                 let res = f idx

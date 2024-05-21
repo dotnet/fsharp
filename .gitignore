@@ -128,3 +128,5 @@ tests/FSharp.Compiler.Service.Tests/FSharp.CompilerService.SurfaceArea.netstanda
 *.vsp
 /tests/AheadOfTime/Trimming/output.txt
 *.svclog
+micro.exe
+positive.exe

@@ -48,19 +48,19 @@ type C(s: String) =
 
 
 // This give a warning since 'T is not known to be reference type non-null
-let f<'T when 'T: not null > (x: 'T | null, y: 'T | null) = ()
+let f<'T when 'T: not null and 'T: not struct > (x: 'T | null, y: 'T | null) = ()
 
 module Extractions0c =
 
     let x = null
-    let f<'T when 'T : not null> (x: 'T | null, y: 'T | null) = ()
+    let f<'T when 'T : not null and 'T: not struct> (x: 'T | null, y: 'T | null) = ()
     let s : String = ""
     let result = f (x, s)   // expect no warning in any configuration
 
 module Extractions0e =
 
     let x = null
-    let f<'T when 'T : not null> (x: 'T | null, y: 'T | null) = ()
+    let f<'T when 'T : not null and 'T: not struct> (x: 'T | null, y: 'T | null) = ()
     let result = f (x, "") // expect no warning in any configuration
 
 module Extractions1 =

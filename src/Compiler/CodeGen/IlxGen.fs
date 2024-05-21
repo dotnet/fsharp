@@ -5648,7 +5648,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | TyparConstraint.IsNonNullableStruct _ -> true
             | _ -> false)
 
-    let notNullReferenceTypeConstraint =
+    let nullnessOfTypar =
         if g.langFeatureNullness && g.checkNullness then
             let hasNotSupportsNull =
                 tp.Constraints
@@ -5656,9 +5656,15 @@ and GenGenericParam cenv eenv (tp: Typar) =
                     | TyparConstraint.NotSupportsNull _ -> true
                     | _ -> false)
 
+            let hasSupportsNull () =
+                tp.Constraints
+                |> List.exists (function
+                    | TyparConstraint.SupportsNull _ -> true
+                    | _ -> false)
+
             if hasNotSupportsNull || notNullableValueTypeConstraint then
                 NullnessInfo.WithoutNull
-            elif hasNotSupportsNull || refTypeConstraint then
+            elif refTypeConstraint || hasSupportsNull () then
                 NullnessInfo.WithNull
             else
                 NullnessInfo.AmbivalentToNull
@@ -5711,7 +5717,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             yield! GenAttrs cenv eenv tp.Attribs
             if emitUnmanagedInIlOutput then
                 yield (GetIsUnmanagedAttribute g)
-            match notNullReferenceTypeConstraint with
+            match nullnessOfTypar with
             | Some nullInfo -> yield GetNullableAttribute g [ nullInfo ]
             | _ -> ()
         ]
