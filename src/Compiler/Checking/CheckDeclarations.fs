@@ -2841,6 +2841,7 @@ module EstablishTypeDefinitionCores =
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
         let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
+        let hasRQAAttr = HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute attrs
 
         let isStructRecordOrUnionType = 
             match synTyconRepr with
@@ -2900,7 +2901,10 @@ module EstablishTypeDefinitionCores =
                 
                 if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
                     if hasStructAttr then
-                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                        if hasRQAAttr then
+                            TcAttributesWithPossibleTargets false cenv envinner (AttributeTargets.Class ||| AttributeTargets.Struct) synAttrs |> ignore
+                        else
+                            TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
                     else
                         TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
 

@@ -1,5 +1,9 @@
 open System
 
+[<AttributeUsage(AttributeTargets.Class)>]
+type ClassTargetAttribute() =
+    inherit Attribute()
+
 [<AttributeUsage(AttributeTargets.Interface)>]
 type InterfaceTargetAttribute() =
     inherit Attribute()
@@ -8,13 +12,12 @@ type InterfaceTargetAttribute() =
 type StructTargetAttribute() =
     inherit Attribute()
 
-[<InterfaceTarget>] // Should this be allowed?
-[<StructTarget>] // Should this be allowed?
+[<InterfaceTarget>]
+[<StructTarget>]
+[<ClassTarget>]
 type Record = { Prop: string }
 
-
-[<ClassTarget>] // Should this be allowed?
-[<InterfaceTarget>]// Should this be allowed?
-[<StructTarget>]
+[<ClassTarget>]
+[<InterfaceTarget>]
 [<Struct>]
 type StructRecord = { Prop: string }
