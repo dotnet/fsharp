@@ -535,8 +535,8 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
             (Error 842, Line 22, Col 3, Line 22, Col 17, "This attribute is not valid for use on this language element")
-        ]
-        
+        ]        
+
      // SOURCE=AttributeTargetsIsDelegate01.fs	# AttributeTargetsIsDelegate01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsDelegate01.fs"|])>]
     let ``AttributeTargetsIsDelegate01_fs`` compilation =

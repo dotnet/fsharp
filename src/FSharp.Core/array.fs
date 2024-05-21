@@ -836,12 +836,21 @@ module Array =
 
             count
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
         let private createMask<'a>
             (f: 'a -> bool)
             (src: 'a array)
             (maskArrayOut: byref<uint32 array>)
             (leftoverMaskOut: byref<uint32>)
             =
+#else
+        let private createMask<'a>
+            (f: 'a -> bool)
+            (src: array<'a>)
+            (maskArrayOut: byref<array<uint32> | null>)
+            (leftoverMaskOut: byref<uint32>)
+            =
+#endif
             let maskArrayLength = src.Length / 0x20
 
             // null when there are less than 32 items in src array.
@@ -1031,7 +1040,11 @@ module Array =
 
             dstIdx
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
         let private filterViaMask (maskArray: uint32 array) (leftoverMask: uint32) (count: int) (src: _ array) =
+#else
+        let private filterViaMask (maskArray: uint32 array | null) (leftoverMask: uint32) (count: int) (src: _ array) =
+#endif
             let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
             let mutable dstIdx = 0
