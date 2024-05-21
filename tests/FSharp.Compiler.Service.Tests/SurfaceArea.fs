@@ -2,6 +2,7 @@
 
 namespace Tests.Service.SurfaceArea
 
+open System
 open System.IO
 open System.Reflection
 open NUnit.Framework
@@ -35,4 +36,3 @@ type SurfaceAreaTest() =
         let baseline = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Compiler.Service.SurfaceArea.{platform}.{flavor}.bsl")
         let outFileName = $"FSharp.Compiler.Service.SurfaceArea.{platform}.{flavor}.out"
         FSharp.Test.SurfaceArea.verify assembly baseline outFileName
-

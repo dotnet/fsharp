@@ -76,7 +76,7 @@ namespace Microsoft.FSharp.Core
     type ComparisonConditionalOnAttribute() =
         inherit Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface, AllowMultiple=false)>]
     [<Sealed>]
     type AllowNullLiteralAttribute(value: bool) =
         inherit Attribute()

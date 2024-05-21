@@ -29,13 +29,13 @@ variables:
   # Should be 'current' release branch name, i.e. 'release/dev17.10' in dotnet/fsharp/refs/heads/main, 'release/dev17.10' in dotnet/fsharp/refs/heads/release/dev17.10 and 'release/dev17.9' in dotnet/fsharp/refs/heads/release/dev17.9
   # Should **never** be 'main' in dotnet/fsharp/refs/heads/main, since it will start inserting to VS twice.
   - name: FSharpReleaseBranchName
-    value: release/dev17.10
+    value: release/dev17.11
   # VS Insertion branch name (NOT the same as F# branch)
-  # Should be previous release branch in 'main' and 'main' in release branch
+  # Should be previous release branch or 'main' in 'main' and 'main' in release branch
   # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
-  # i.e. 'rel/d17.9' in dotnet/fsharp/refs/heads/main and 'main' in F# dotnet/fsharp/refs/heads/release/dev17.10
+  # i.e. 'rel/d17.9' *or* 'main' in dotnet/fsharp/refs/heads/main and 'main' in F# dotnet/fsharp/refs/heads/release/dev17.10 (latest release branch)
   - name: VSInsertionTargetBranchName
-    value: rel/d17.10
+    value: main
   - name: _TeamName
     value: FSharp
   - name: TeamName
@@ -75,7 +75,7 @@ extends:
         justificationForDisabling: 'SBOM for F# is generated via build process. Will be migrated at later date.'
       sourceAnalysisPool:
         name: NetCore1ESPool-Svc-Internal
-        image: 1es-windows-2022-pt
+        image: 1es-windows-2022
         os: windows
     stages:
     - stage: build
@@ -85,7 +85,7 @@ extends:
       #                                                  Signed build                                                     #
       #-------------------------------------------------------------------------------------------------------------------#
       # Localization: we only run it for specific release branches
-      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.10') }}:
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.11') }}:
         - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
             MirrorRepo: fsharp

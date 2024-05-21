@@ -85,3 +85,17 @@ let y (f: #seq<int> & System.IDisposable) = ()
         Error 3572, Line 2, Col 25, Line 2, Col 43, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
         Error 3572, Line 4, Col 23, Line 4, Col 41, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
     ]
+
+// bug 16309
+[<Fact>]
+let ``Constraint intersection handles invalid types``() =
+    FSharp """
+let f (x: 't when 't :> ABRAKADABRAA & #seq<int>) = ()
+    """
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        Error 0010, Line 2, Col 40, Line 2, Col 41, "Unexpected symbol # in pattern"
+        Error 0583, Line 2, Col 7, Line 2, Col 8, "Unmatched '('"
+    ]

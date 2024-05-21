@@ -18,13 +18,13 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] (metadataAsSo
 
     interface IFSharpGoToDefinitionService with
         /// Invoked with Peek Definition.
-        member _.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
+        member _.FindDefinitionsAsync(document: Document, position: int, _cancellationToken: CancellationToken) =
             cancellableTask {
                 let navigation = FSharpNavigation(metadataAsSource, document, rangeStartup)
                 let! res = navigation.FindDefinitionsAsync(position)
                 return (res :> IEnumerable<_>)
             }
-            |> CancellableTask.start cancellationToken
+            |> CancellableTask.startWithoutCancellation
 
         /// Invoked with Go to Definition.
         /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument

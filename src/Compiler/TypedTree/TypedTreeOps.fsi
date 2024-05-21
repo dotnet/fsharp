@@ -73,7 +73,8 @@ val (|DebugPoints|): Expr -> Expr * (Expr -> Expr)
 val valsOfBinds: Bindings -> Vals
 
 /// Look for a use of an F# value, possibly including application of a generic thing to a set of type arguments
-val (|ExprValWithPossibleTypeInst|_|): Expr -> (ValRef * ValUseFlag * TType list * range) option
+[<return: Struct>]
+val (|ExprValWithPossibleTypeInst|_|): Expr -> (ValRef * ValUseFlag * TType list * range) voption
 
 /// Build decision trees imperatively
 type MatchBuilder =
@@ -1547,6 +1548,9 @@ val isValueOptionTy: TcGlobals -> TType -> bool
 /// Determine if a type is an option type
 val isOptionTy: TcGlobals -> TType -> bool
 
+/// Determine if a type is an Choice type
+val isChoiceTy: TcGlobals -> TType -> bool
+
 /// Take apart an option type
 val destOptionTy: TcGlobals -> TType -> TType
 
@@ -1555,6 +1559,12 @@ val tryDestOptionTy: TcGlobals -> TType -> TType voption
 
 /// Try to take apart an option type
 val destValueOptionTy: TcGlobals -> TType -> TType
+
+/// Take apart an Choice type
+val tryDestChoiceTy: TcGlobals -> TType -> int -> TType voption
+
+/// Try to take apart an Choice type
+val destChoiceTy: TcGlobals -> TType -> int -> TType
 
 /// Determine is a type is a System.Nullable type
 val isNullableTy: TcGlobals -> TType -> bool
@@ -1750,16 +1760,20 @@ val isStructRecordOrUnionTyconTy: TcGlobals -> TType -> bool
 val StripSelfRefCell: TcGlobals * ValBaseOrThisInfo * TType -> TType
 
 /// An active pattern to determine if a type is a nominal type, possibly instantiated
-val (|AppTy|_|): TcGlobals -> TType -> (TyconRef * TType list) option
+[<return: Struct>]
+val (|AppTy|_|): TcGlobals -> TType -> (TyconRef * TType list) voption
 
 /// An active pattern to match System.Nullable types
-val (|NullableTy|_|): TcGlobals -> TType -> TType option
+[<return: Struct>]
+val (|NullableTy|_|): TcGlobals -> TType -> TType voption
 
 /// An active pattern to transform System.Nullable types to their input, otherwise leave the input unchanged
+[<return: Struct>]
 val (|StripNullableTy|): TcGlobals -> TType -> TType
 
 /// Matches any byref type, yielding the target type
-val (|ByrefTy|_|): TcGlobals -> TType -> TType option
+[<return: Struct>]
+val (|ByrefTy|_|): TcGlobals -> TType -> TType voption
 
 //-------------------------------------------------------------------------
 // Special semantic constraints
@@ -2518,19 +2532,25 @@ type EntityRef with
 
     member HasMember: TcGlobals -> string -> TType list -> bool
 
-val (|AttribBitwiseOrExpr|_|): TcGlobals -> Expr -> (Expr * Expr) option
+[<return: Struct>]
+val (|AttribBitwiseOrExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
 
-val (|EnumExpr|_|): TcGlobals -> Expr -> Expr option
+[<return: Struct>]
+val (|EnumExpr|_|): TcGlobals -> Expr -> Expr voption
 
-val (|TypeOfExpr|_|): TcGlobals -> Expr -> TType option
+[<return: Struct>]
+val (|TypeOfExpr|_|): TcGlobals -> Expr -> TType voption
 
-val (|TypeDefOfExpr|_|): TcGlobals -> Expr -> TType option
+[<return: Struct>]
+val (|TypeDefOfExpr|_|): TcGlobals -> Expr -> TType voption
 
 val isNameOfValRef: TcGlobals -> ValRef -> bool
 
-val (|NameOfExpr|_|): TcGlobals -> Expr -> TType option
+[<return: Struct>]
+val (|NameOfExpr|_|): TcGlobals -> Expr -> TType voption
 
-val (|SeqExpr|_|): TcGlobals -> Expr -> unit option
+[<return: Struct>]
+val (|SeqExpr|_|): TcGlobals -> Expr -> unit voption
 
 val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 
@@ -2538,27 +2558,37 @@ val EvaledAttribExprEquality: TcGlobals -> Expr -> Expr -> bool
 
 val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
 
-val (|ConstToILFieldInit|_|): Const -> ILFieldInit option
+[<return: Struct>]
+val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
 
-val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr option
+[<return: Struct>]
+val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
 
-val (|AttribInt32Arg|_|): AttribExpr -> int32 option
+[<return: Struct>]
+val (|AttribInt32Arg|_|): (AttribExpr -> int32 voption)
 
-val (|AttribInt16Arg|_|): AttribExpr -> int16 option
+[<return: Struct>]
+val (|AttribInt16Arg|_|): (AttribExpr -> int16 voption)
 
-val (|AttribBoolArg|_|): AttribExpr -> bool option
+[<return: Struct>]
+val (|AttribBoolArg|_|): (AttribExpr -> bool voption)
 
-val (|AttribStringArg|_|): AttribExpr -> string option
+[<return: Struct>]
+val (|AttribStringArg|_|): (AttribExpr -> string voption)
 
-val (|Int32Expr|_|): Expr -> int32 option
+[<return: Struct>]
+val (|Int32Expr|_|): Expr -> int32 voption
 
 /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
 /// a set of residual types that must also satisfy the constraint
-val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list option
+[<return: Struct>]
+val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list voption
 
-val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list option
+[<return: Struct>]
+val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list voption
 
-val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
+[<return: Struct>]
+val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit voption
 
 /// Matches if the given expression is an application
 /// of the range or range-step operator on an integral type
@@ -2618,18 +2648,21 @@ val ValIsExplicitImpl: TcGlobals -> Val -> bool
 
 val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
+[<return: Struct>]
 val (|LinearMatchExpr|_|):
-    Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * range * TType) option
+    Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * range * TType) voption
 
 val rebuildLinearMatchExpr:
     DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * range * TType -> Expr
 
-val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) option
+[<return: Struct>]
+val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) voption
 
 val rebuildLinearOpExpr: TOp * TypeInst * Expr list * Expr * range -> Expr
 
 val mkCoerceIfNeeded: TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
+[<return: Struct>]
 val (|InnerExprPat|): Expr -> Expr
 
 val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
@@ -2659,48 +2692,61 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
 
 /// Match expressions that are an application of a particular F# function value
-val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
+[<return: Struct>]
+val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) voption
 
 /// Match expressions that represent the creation of an instance of an F# delegate value
-val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list * Expr * range * (Expr -> Expr)) option
+[<return: Struct>]
+val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list * Expr * range * (Expr -> Expr)) voption
 
 /// Match a .Invoke on a delegate
-val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr * range) option
+[<return: Struct>]
+val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr * range) voption
 
 /// Match 'if __useResumableCode then ... else ...' expressions
-val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) option
+[<return: Struct>]
+val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
 
 val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
 
 /// Recognise a 'match __resumableEntry() with ...' expression
-val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) option
+[<return: Struct>]
+val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) voption
 
 /// Recognise a '__stateMachine' expression
+[<return: Struct>]
 val (|StructStateMachineExpr|_|):
-    g: TcGlobals -> expr: Expr -> (TType * (Val * Expr) * (Val * Val * Expr) * (Val * Expr)) option
+    g: TcGlobals -> expr: Expr -> (TType * (Val * Expr) * (Val * Val * Expr) * (Val * Expr)) voption
 
 /// Recognise a sequential or binding construct in a resumable code
-val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) option
+[<return: Struct>]
+val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) voption
 
 /// Recognise a '__debugPoint' expression
-val (|DebugPointExpr|_|): g: TcGlobals -> Expr -> string option
+[<return: Struct>]
+val (|DebugPointExpr|_|): g: TcGlobals -> Expr -> string voption
 
 /// Recognise a '__resumeAt' expression
-val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr option
+[<return: Struct>]
+val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr voption
 
 /// Recognise a while expression
-val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) option
+[<return: Struct>]
+val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) voption
 
 /// Recognise an integer for-loop expression
+[<return: Struct>]
 val (|IntegerForLoopExpr|_|):
-    Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * range) option
+    Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * range) voption
 
 /// Recognise a try-with expression
+[<return: Struct>]
 val (|TryWithExpr|_|):
-    Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) option
+    Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) voption
 
 /// Recognise a try-finally expression
-val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) option
+[<return: Struct>]
+val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) voption
 
 /// Add a label to use as the target for a goto
 val mkLabelled: range -> ILCodeLabel -> Expr -> Expr
@@ -2724,49 +2770,63 @@ val TryBindTyconRefAttribute:
 
 val HasDefaultAugmentationAttribute: g: TcGlobals -> tcref: TyconRef -> bool
 
+[<return: Struct>]
 val (|ResumableCodeInvoke|_|):
-    g: TcGlobals -> expr: Expr -> (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) option
+    g: TcGlobals -> expr: Expr -> (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) voption
 
-val (|OpPipeRight|_|): g: TcGlobals -> expr: Expr -> (TType * Expr * Expr * range) option
+[<return: Struct>]
+val (|OpPipeRight|_|): g: TcGlobals -> expr: Expr -> (TType * Expr * Expr * range) voption
 
-val (|OpPipeRight2|_|): g: TcGlobals -> expr: Expr -> (TType * Expr * Expr * Expr * range) option
+[<return: Struct>]
+val (|OpPipeRight2|_|): g: TcGlobals -> expr: Expr -> (TType * Expr * Expr * Expr * range) voption
 
-val (|OpPipeRight3|_|): g: TcGlobals -> expr: Expr -> (TType * Expr * Expr * Expr * Expr * range) option
+[<return: Struct>]
+val (|OpPipeRight3|_|): g: TcGlobals -> expr: Expr -> (TType * Expr * Expr * Expr * Expr * range) voption
 
 val mkDebugPoint: m: range -> expr: Expr -> Expr
 
 /// Match an if...then...else expression or the result of "a && b" or "a || b"
-val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) option
+[<return: Struct>]
+val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) voption
 
 /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
 val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
 
 /// Detect the de-sugared form of a 'yield x' within a 'seq { ... }'
-val (|SeqYield|_|): TcGlobals -> Expr -> (Expr * range) option
+[<return: Struct>]
+val (|SeqYield|_|): TcGlobals -> Expr -> (Expr * range) voption
 
 /// Detect the de-sugared form of a 'expr; expr' within a 'seq { ... }'
-val (|SeqAppend|_|): TcGlobals -> Expr -> (Expr * Expr * range) option
+[<return: Struct>]
+val (|SeqAppend|_|): TcGlobals -> Expr -> (Expr * Expr * range) voption
 
 /// Detect the de-sugared form of a 'while gd do expr' within a 'seq { ... }'
-val (|SeqWhile|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtWhile * range) option
+[<return: Struct>]
+val (|SeqWhile|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtWhile * range) voption
 
 /// Detect the de-sugared form of a 'try .. finally .. ' within a 'seq { ... }'
-val (|SeqTryFinally|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtTry * DebugPointAtFinally * range) option
+[<return: Struct>]
+val (|SeqTryFinally|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtTry * DebugPointAtFinally * range) voption
 
 /// Detect the de-sugared form of a 'use x = ..' within a 'seq { ... }'
-val (|SeqUsing|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * DebugPointAtBinding * range) option
+[<return: Struct>]
+val (|SeqUsing|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * DebugPointAtBinding * range) voption
 
 /// Detect the de-sugared form of a 'for x in collection do ..' within a 'seq { ... }'
-val (|SeqForEach|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * range * range * DebugPointAtInOrTo) option
+[<return: Struct>]
+val (|SeqForEach|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * range * range * DebugPointAtInOrTo) voption
 
 /// Detect the outer 'Seq.delay' added for a construct 'seq { ... }'
-val (|SeqDelay|_|): TcGlobals -> Expr -> (Expr * TType) option
+[<return: Struct>]
+val (|SeqDelay|_|): TcGlobals -> Expr -> (Expr * TType) voption
 
 /// Detect a 'Seq.empty' implicit in the implied 'else' branch of an 'if .. then' in a seq { ... }
-val (|SeqEmpty|_|): TcGlobals -> Expr -> range option
+[<return: Struct>]
+val (|SeqEmpty|_|): TcGlobals -> Expr -> range voption
 
 /// Detect a 'seq { ... }' expression
-val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) option
+[<return: Struct>]
+val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) voption
 
 /// Indicates if an F# type is the type associated with an F# exception declaration
 val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool
@@ -2792,8 +2852,9 @@ type TraitConstraintInfo with
 /// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
 /// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
 /// This will match anything that does not have any types or bindings.
+[<return: Struct>]
 val (|EmptyModuleOrNamespaces|_|):
-    moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
+    moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) voption
 
 val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
 
