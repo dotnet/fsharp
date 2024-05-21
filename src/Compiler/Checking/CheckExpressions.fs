@@ -1040,6 +1040,7 @@ let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC
 
             if not g.compilingFSharpCore || not (isTyparTy g innerTyC) then 
                 AddCxTypeDefnNotSupportsNull env.DisplayEnv cenv.css m NoTrace innerTyC
+                AddCxTypeIsReferenceType env.DisplayEnv cenv.css m NoTrace innerTyC
 
             if not g.compilingFSharpCore && isTyparTy g innerTyC then
                 // A typar might be later infered into a type not supporting `| null|, like tuple or anon.
@@ -5314,6 +5315,7 @@ and TcExprFlex (cenv: cenv) flex compat (desiredTy: TType) (env: TcEnv) tpenv (s
 
     if flex then
         let argTy = NewInferenceType g
+        (destTyparTy g argTy).SetSupportsNullFlex(true)
         if compat then
             (destTyparTy g argTy).SetIsCompatFlex(true)
 
@@ -9601,7 +9603,8 @@ and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mExprAndItem objDetai
     | None, false -> error (Error (FSComp.SR.tcEventIsNotStatic nm, mItem))
     | _ -> ()
 
-    let delTy = einfo.GetDelegateType(cenv.amap, mItem)
+    // The F# wrappers around events are null safe (impl is in FSharp.Core). Therefore, from an F# perspective, the type of the delegate can be considered Not Null.
+    let delTy = einfo.GetDelegateType(cenv.amap, mItem) |> replaceNullnessOfTy KnownWithoutNull 
     let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, _)) = GetSigOfFunctionForDelegate cenv.infoReader delTy mItem ad
     let objArgs = Option.toList (Option.map fst objDetails)
     MethInfoChecks g cenv.amap true None objArgs env.eAccessRights mItem delInvokeMeth

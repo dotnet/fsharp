@@ -283,7 +283,12 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | _ -> 
     match ty with
     | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
-    | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        let tycon = tcr.Deref
+        if tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon then
+            ty
+        else 
+            TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
     | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
     //| TType_ucase _ -> None // TODO NULLNESS
     //| TType_tuple _ -> None // TODO NULLNESS

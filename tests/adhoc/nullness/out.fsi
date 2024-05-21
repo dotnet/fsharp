@@ -5,9 +5,9 @@ val internal fsProductVersion: string
 
 val internal fsLanguageVersion: string
 
-
-
 namespace FSharp
+
+
 
 
 module ExistingPositive
@@ -152,7 +152,7 @@ module Basics2 =
     
     val f2: unit -> System.String | null
     
-    val f3: unit -> 'T | null when 'T: not null
+    val f3: unit -> 'T | null when 'T: not null and 'T: not struct
     
     val f4: unit -> 'T | null when 'T: not null and 'T: not struct
     
@@ -166,13 +166,14 @@ type C =
     
     member Value: System.String
 
-val f: x: 'T | null * y: 'T | null -> unit when 'T: not null
+val f: x: 'T | null * y: 'T | null -> unit when 'T: not null and 'T: not struct
 
 module Extractions0c =
     
     val x: 'a when 'a: null
     
-    val f: x: 'T | null * y: 'T | null -> unit when 'T: not null
+    val f:
+      x: 'T | null * y: 'T | null -> unit when 'T: not null and 'T: not struct
     
     val s: System.String
     
@@ -182,7 +183,8 @@ module Extractions0e =
     
     val x: 'a when 'a: null
     
-    val f: x: 'T | null * y: 'T | null -> unit when 'T: not null
+    val f:
+      x: 'T | null * y: 'T | null -> unit when 'T: not null and 'T: not struct
     
     val result: unit
 
