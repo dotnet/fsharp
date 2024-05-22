@@ -497,6 +497,9 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Error 842, Line 14, Col 5, Line 14, Col 18, "This attribute is not valid for use on this language element")
             (Error 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
+            (Error 842, Line 23, Col 9, Line 23, Col 19, "This attribute is not valid for use on this language element")
+            (Error 842, Line 25, Col 9, Line 25, Col 22, "This attribute is not valid for use on this language element")
+            (Error 842, Line 27, Col 9, Line 27, Col 32, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
