@@ -110,7 +110,7 @@ namespace Microsoft.FSharp.Core
         inherit Attribute()
         member _.Value = value
 
-    [<AttributeUsage (AttributeTargets.Field ||| AttributeTargets.Method, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field ||| AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute(check:bool) = 
         inherit Attribute()
