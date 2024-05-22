@@ -12,9 +12,13 @@
     <UsagePattern IdentityGlob="Microsoft.AspNetCore.App.Ref/8.0.2" />
     <UsagePattern IdentityGlob="Microsoft.NETCore.App.Host.linux-x64/8.0.2" />
     <UsagePattern IdentityGlob="Microsoft.NETCore.App.Ref/8.0.2" />
-    <UsagePattern IdentityGlob="System.Configuration.ConfigurationManager/7.0.0" />
-    <UsagePattern IdentityGlob="System.Diagnostics.EventLog/7.0.0" />
-    <UsagePattern IdentityGlob="System.Security.Cryptography.ProtectedData/7.0.0" />
+    <UsagePattern IdentityGlob="System.Configuration.ConfigurationManager/8.0.0" />
+    <UsagePattern IdentityGlob="System.Diagnostics.EventLog/8.0.0" />
+    <UsagePattern IdentityGlob="System.Security.Cryptography.ProtectedData/8.0.0" />
+    <UsagePattern IdentityGlob="System.CodeDom/8.0.0" />
+    <UsagePattern IdentityGlob="System.Resources.Extensions/8.0.0" />
+
+    <UsagePattern IdentityGlob="System.Diagnostics.DiagnosticSource/8.0.0" />
 
     <UsagePattern IdentityGlob="Microsoft.AspNetCore.App.Runtime.linux-x64/8.0.2" />
     <UsagePattern IdentityGlob="Microsoft.NETCore.App.Crossgen2.linux-x64/8.0.2" />
