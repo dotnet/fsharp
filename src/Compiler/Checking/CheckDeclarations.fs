@@ -2912,7 +2912,10 @@ module EstablishTypeDefinitionCores =
                             if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
                                 TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
                             TFSharpClass
-                        | SynTypeDefnKind.Interface -> TFSharpInterface
+                        | SynTypeDefnKind.Interface ->
+                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Interface synAttrs |> ignore
+                            TFSharpInterface
                         | SynTypeDefnKind.Delegate _ ->
                             if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
                                 TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Delegate synAttrs |> ignore
