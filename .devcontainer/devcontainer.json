@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
 {
     "name": "F#",
-    "image": "mcr.microsoft.com/dotnet/sdk:9.0.100-preview.3",
+    "image": "mcr.microsoft.com/dotnet/sdk:9.0.100-preview.4",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2.4.2": {},
         "ghcr.io/devcontainers/features/git:1.2.0": {},
