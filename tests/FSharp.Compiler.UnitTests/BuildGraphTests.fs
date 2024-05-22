@@ -376,25 +376,15 @@ module BuildGraphTests =
 
     [<Fact>]
     let ``MultipleDiagnosticsLoggers.Parallel finishes when any computation throws`` () =
-
-        let work i = async {
-            errorR (ExampleException $"{i}")
-        }
-
-        let failing = Task.FromException(ExampleException "computation failed") |> Async.AwaitTask
-
         use _ = UseDiagnosticsLogger (CapturingDiagnosticsLogger "test logger")
 
         let tasks = [
-            failing
-            for i in 1 .. 300 do work i
+            async { failwith "computation failed" }
+            for i in 1 .. 300 do async { errorR (ExampleException $"{i}") }
         ]
 
-        let run = task {
-            try 
-                do! tasks |> MultipleDiagnosticsLoggers.Parallel |> Async.Ignore       
-            with _ -> ()          
-        }
+        let run =
+            tasks |> MultipleDiagnosticsLoggers.Parallel |> Async.Catch |> Async.StartAsTask
 
         Assert.True(
             run.Wait(1000),
