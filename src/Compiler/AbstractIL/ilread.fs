@@ -926,58 +926,33 @@ type GenericParamsIdx = GenericParamsIdx of numTypars: int * TypeOrMethodDefTag 
 // Polymorphic caches for row and heap readers
 //---------------------------------------------------------------------
 
-let mkCacheInt32 lowMem _inbase _nm _sz =
+let mkCacheGeneric lowMem _inbase _nm (sz: int) =
     if lowMem then
         (fun f x -> f x)
     else
-        let mutable cache = null
-        let mutable count = 0
-#if STATISTICS
-        addReport (fun oc ->
-            if count <> 0 then
-                oc.WriteLine((_inbase + string count + " " + _nm + " cache hits"): string))
-#endif
-        fun f (idx: int32) ->
-            let cache =
-                match cache with
-                | Null ->
-                    let v = ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
-                    cache <- v
-                    v
-                | NonNull v -> v
+        let mutable cache = Unchecked.defaultof<_>
 
-            match cache.TryGetValue idx with
-            | true, res ->
-                count <- count + 1
-                res
-            | _ ->
-                let res = f idx
-                cache[idx] <- res
-                res
-
-let mkCacheGeneric lowMem _inbase _nm _sz =
-    if lowMem then
-        (fun f x -> f x)
-    else
-        let mutable cache = null
-        let mutable count = 0
 #if STATISTICS
+        let mutable _count = 0
+
         addReport (fun oc ->
-            if !count <> 0 then
-                oc.WriteLine((_inbase + string !count + " " + _nm + " cache hits"): string))
+            if !_count <> 0 then
+                oc.WriteLine((_inbase + string !_count + " " + _nm + " cache hits"): string))
 #endif
         fun f (idx: 'T) ->
             let cache =
                 match cache with
                 | Null ->
-                    let v = ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
+                    let v = ConcurrentDictionary<_, _>(Environment.ProcessorCount, sz)
                     cache <- v
                     v
                 | NonNull v -> v
 
             match cache.TryGetValue idx with
             | true, v ->
-                count <- count + 1
+#if STATISTICS
+                _count <- _count + 1
+#endif
                 v
             | _ ->
                 let res = f idx
@@ -1700,7 +1675,7 @@ let readStringHeapUncached ctxtH idx =
 
 let readStringHeap (ctxt: ILMetadataReader) idx = ctxt.readStringHeap idx
 
-let readStringHeapOption (ctxt: ILMetadataReader) idx =
+let inline readStringHeapOption (ctxt: ILMetadataReader) idx =
     if idx = 0 then None else Some(readStringHeap ctxt idx)
 
 let readBlobHeapUncached ctxtH idx =
@@ -4375,7 +4350,7 @@ let openMetadataReader
 
     // All the caches. The sizes are guesstimates for the rough sharing-density of the assembly
     let cacheAssemblyRef =
-        mkCacheInt32 false inbase "ILAssemblyRef" (getNumRows TableNames.AssemblyRef)
+        mkCacheGeneric false inbase "ILAssemblyRef" (getNumRows TableNames.AssemblyRef)
 
     let cacheMethodSpecAsMethodData =
         mkCacheGeneric reduceMemoryUsage inbase "MethodSpecAsMethodData" (getNumRows TableNames.MethodSpec / 20 + 1)
@@ -4387,7 +4362,7 @@ let openMetadataReader
         mkCacheGeneric reduceMemoryUsage inbase "CustomAttr" (getNumRows TableNames.CustomAttribute / 50 + 1)
 
     let cacheTypeRef =
-        mkCacheInt32 false inbase "ILTypeRef" (getNumRows TableNames.TypeRef / 20 + 1)
+        mkCacheGeneric false inbase "ILTypeRef" (getNumRows TableNames.TypeRef / 20 + 1)
 
     let cacheTypeRefAsType =
         mkCacheGeneric reduceMemoryUsage inbase "TypeRefAsType" (getNumRows TableNames.TypeRef / 20 + 1)
@@ -4405,38 +4380,38 @@ let openMetadataReader
         mkCacheGeneric reduceMemoryUsage inbase "TypeDefAsType" (getNumRows TableNames.TypeDef / 20 + 1)
 
     let cacheMethodDefAsMethodData =
-        mkCacheInt32 reduceMemoryUsage inbase "MethodDefAsMethodData" (getNumRows TableNames.Method / 20 + 1)
+        mkCacheGeneric reduceMemoryUsage inbase "MethodDefAsMethodData" (getNumRows TableNames.Method / 20 + 1)
 
     let cacheGenericParams =
         mkCacheGeneric reduceMemoryUsage inbase "GenericParams" (getNumRows TableNames.GenericParam / 20 + 1)
 
     let cacheFieldDefAsFieldSpec =
-        mkCacheInt32 reduceMemoryUsage inbase "FieldDefAsFieldSpec" (getNumRows TableNames.Field / 20 + 1)
+        mkCacheGeneric reduceMemoryUsage inbase "FieldDefAsFieldSpec" (getNumRows TableNames.Field / 20 + 1)
 
     let cacheUserStringHeap =
-        mkCacheInt32 reduceMemoryUsage inbase "UserStringHeap" (userStringsStreamSize / 20 + 1)
+        mkCacheGeneric reduceMemoryUsage inbase "UserStringHeap" (userStringsStreamSize / 20 + 1)
     // nb. Lots and lots of cache hits on this cache, hence never optimize cache away
     let cacheStringHeap =
-        mkCacheInt32 false inbase "string heap" (stringsStreamSize / 50 + 1)
+        mkCacheGeneric false inbase "string heap" (stringsStreamSize / 50 + 1)
 
     let cacheBlobHeap =
-        mkCacheInt32 reduceMemoryUsage inbase "blob heap" (blobsStreamSize / 50 + 1)
+        mkCacheGeneric reduceMemoryUsage inbase "blob heap" (blobsStreamSize / 50 + 1)
 
     // These tables are not required to enforce sharing fo the final data
     // structure, but are very useful as searching these tables gives rise to many reads
     // in standard applications.
 
     let cacheNestedRow =
-        mkCacheInt32 reduceMemoryUsage inbase "Nested Table Rows" (getNumRows TableNames.Nested / 20 + 1)
+        mkCacheGeneric reduceMemoryUsage inbase "Nested Table Rows" (getNumRows TableNames.Nested / 20 + 1)
 
     let cacheConstantRow =
-        mkCacheInt32 reduceMemoryUsage inbase "Constant Rows" (getNumRows TableNames.Constant / 20 + 1)
+        mkCacheGeneric reduceMemoryUsage inbase "Constant Rows" (getNumRows TableNames.Constant / 20 + 1)
 
     let cacheMethodSemanticsRow =
-        mkCacheInt32 reduceMemoryUsage inbase "MethodSemantics Rows" (getNumRows TableNames.MethodSemantics / 20 + 1)
+        mkCacheGeneric reduceMemoryUsage inbase "MethodSemantics Rows" (getNumRows TableNames.MethodSemantics / 20 + 1)
 
     let cacheTypeDefRow =
-        mkCacheInt32 reduceMemoryUsage inbase "ILTypeDef Rows" (getNumRows TableNames.TypeDef / 20 + 1)
+        mkCacheGeneric reduceMemoryUsage inbase "ILTypeDef Rows" (getNumRows TableNames.TypeDef / 20 + 1)
 
     let rowAddr (tab: TableName) idx =
         tablePhysLocations[tab.Index] + (idx - 1) * tableRowSizes[tab.Index]
