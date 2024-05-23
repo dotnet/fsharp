@@ -947,9 +947,19 @@ module MultipleDiagnosticsLoggers =
             try
                 // We want to restore the current diagnostics context when finished.
                 use _ = new CompilationGlobalsScope()
-                return! Async.Parallel computationsWithLoggers
+                let! results = Async.Parallel computationsWithLoggers
+                do! replayDiagnostics |> Async.AwaitTask
+                return results
             finally
-                replayDiagnostics.Wait()
+                // When any of the computation throws, Async.Parallel may not start some remaining computations at all.
+                // We set dummy results for them to allow the task to finish and to not lose any already emitted diagnostics.
+                if not replayDiagnostics.IsCompleted then
+                    let emptyLogger = CapturingDiagnosticsLogger("empty")
+
+                    for tcs in diagnosticsReady do
+                        tcs.TrySetResult(emptyLogger) |> ignore
+
+                    replayDiagnostics.Wait()
         }
 
     let Sequential computations =
