@@ -1074,8 +1074,7 @@ let (|Get_OrSet_Ident|_|) (ident: Ident) =
 let addEmptyMatchClause (mBar1: range) (mBar2: range) (clauses: SynMatchClause list) =
     let rec addOrPat (pat: SynPat) =
         match pat with
-        | SynPat.As(lhsPat, rhsPat, range) ->
-            SynPat.As(addOrPat lhsPat, rhsPat, range)
+        | SynPat.As(lhsPat, rhsPat, range) -> SynPat.As(addOrPat lhsPat, rhsPat, range)
         | _ ->
             let mPat1 = mBar1.EndRange
             let pat1 = SynPat.Wild(mPat1)
@@ -1084,4 +1083,5 @@ let addEmptyMatchClause (mBar1: range) (mBar2: range) (clauses: SynMatchClause l
     match clauses with
     | [] -> []
     | SynMatchClause(pat, whenExpr, resultExpr, range, debugPoint, trivia) :: restClauses ->
-        SynMatchClause(addOrPat pat, whenExpr, resultExpr, range, debugPoint, trivia) :: restClauses
+        SynMatchClause(addOrPat pat, whenExpr, resultExpr, range, debugPoint, trivia)
+        :: restClauses
