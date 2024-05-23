@@ -684,7 +684,7 @@ let z as =
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token.";
         "(12,6--12,8): Expecting pattern";
         "(13,8--13,10): Unexpected keyword 'as' in binding";
-        "(14,8--14,10): Unexpected keyword 'as' in binding";
+        "(14,6--14,7): Expecting pattern";
         "(15,8--15,10): Unexpected keyword 'as' in pattern. Expected ')' or other token.";
         "(15,6--15,7): Unmatched '('";
         "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
@@ -702,6 +702,7 @@ let z as =
         "(8,29--8,30): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
         "(9,26--9,27): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
         "(10,14--10,15): This expression was expected to have type\u001d    ''a * 'b'    \u001dbut here has type\u001d    'int'";
+        "(14,4--14,7): The two sides of this 'or' pattern bind different sets of variables";
         "(12,16--12,18): This expression was expected to have type\u001d    ''a list'    \u001dbut here has type\u001d    'int'";
         "(12,4--12,13): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s).";
         "(15,4--15,5): The pattern discriminator 'r' is not defined.";
@@ -1088,7 +1089,7 @@ let as :? z =
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token.";
         "(12,6--12,8): Expecting pattern";
         "(13,8--13,10): Unexpected keyword 'as' in binding";
-        "(14,8--14,10): Unexpected keyword 'as' in binding";
+        "(14,6--14,7): Expecting pattern";
         "(15,13--15,15): Unexpected keyword 'as' in pattern. Expected '(' or other token.";
         "(16,8--16,10): Unexpected keyword 'as' in pattern. Expected ')' or other token.";
         "(16,6--16,7): Unmatched '('";
@@ -1114,6 +1115,9 @@ let as :? z =
         "(9,22--9,26): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(10,13--10,14): The type 'i' is not defined.";
         "(10,10--10,14): The type ''a * 'b' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
+        "(14,4--14,7): The two sides of this 'or' pattern bind different sets of variables";
+        "(14,14--14,15): The type 'q' is not defined.";
+        "(14,11--14,15): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(12,15--12,16): The type 'm' is not defined.";
         "(12,12--12,16): The type ''a list' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(16,4--16,5): The pattern discriminator 't' is not defined.";
