@@ -427,11 +427,7 @@ module TcRecdUnionAndEnumDeclarations =
     let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv (isStatic, synAttrs, id: Ident, nameGenerated, ty, isMutable, xmldoc, vis) =
         let g = cenv.g
         let m = id.idRange
-        let attrs, _ =
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
-                TcAttributesWithPossibleTargets false cenv env AttributeTargets.Property synAttrs
-            else
-                TcAttributesWithPossibleTargets false cenv env AttributeTargets.FieldDecl synAttrs
+        let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.FieldDecl synAttrs
 
         let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
         let attrsForProperty = (List.map snd attrsForProperty) 
