@@ -524,7 +524,7 @@ namespace Microsoft.FSharp.Core
     /// </summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Field |||AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field|||AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute =
         inherit Attribute
