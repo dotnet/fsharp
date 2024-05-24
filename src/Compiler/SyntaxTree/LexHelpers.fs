@@ -311,7 +311,7 @@ let failsWhenExtendedNumericLiteralNotAvailable (langVersion: LanguageVersion) (
     
     let isExtendedUserNum s = 
         let isXInteger = Regex.IsMatch(s, "^[+-]?0[xob]")
-        let isFloat = Regex.IsMatch(s, "[eE\.]")
+        let isFloat = Regex.IsMatch(s, @"[eE\.]")
         let isUserNum = Regex.IsMatch(s, "[INZQRG]$")
         
         isUserNum && (isXInteger || isFloat)
