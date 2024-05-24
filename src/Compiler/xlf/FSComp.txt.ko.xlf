@@ -337,6 +337,11 @@
         <target state="translated">byref 및 GetPinnableReference에 대한 확장된 고정 바인딩</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedNumericLiteral">
+        <source>Underscores in numeric literal after prefix or before suffix and Hexadecimal, octal, binary and floating custom numeric literal</source>
+        <target state="new">Underscores in numeric literal after prefix or before suffix and Hexadecimal, octal, binary and floating custom numeric literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
         <target state="translated">C# 원시 문자열 리터럴과 유사한 확장 문자열 보간입니다.</target>
@@ -4608,8 +4613,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNumericLiteralRequiresModule">
-        <source>This numeric literal requires that a module '{0}' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope</source>
-        <target state="translated">이 숫자 리터럴을 사용하려면 FromZero, FromOne, FromInt32, FromInt64 및 FromString 함수를 정의하는 '{0}' 모듈이 범위 내에 있어야 합니다.</target>
+        <source>This numeric literal requires that a module '{0}' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat, FromFloatString be in scope</source>
+        <target state="needs-review-translation">이 숫자 리터럴을 사용하려면 FromZero, FromOne, FromInt32, FromInt64 및 FromString 함수를 정의하는 '{0}' 모듈이 범위 내에 있어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidRecordConstruction">
@@ -6453,8 +6458,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="translated">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴은 1, 0x1, 0o1, 0b1, 1l(int/int32), 1u(uint/uint32), 1L(int64), 1UL(uint64), 1s(int16), 1us(uint16), 1y(int8/)입니다. sbyte), 1uy(uint8/byte), 1.0(float/double), 1.0f(float32/single), 1.0m(decimal), 1I(bigint).</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1n (nativeint), 1un (unativeint), 1I (bigint).</source>
+        <target state="needs-review-translation">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴은 1, 0x1, 0o1, 0b1, 1l(int/int32), 1u(uint/uint32), 1L(int64), 1UL(uint64), 1s(int16), 1us(uint16), 1y(int8/)입니다. sbyte), 1uy(uint8/byte), 1.0(float/double), 1.0f(float32/single), 1.0m(decimal), 1I(bigint).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">

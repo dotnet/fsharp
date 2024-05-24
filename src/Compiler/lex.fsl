@@ -368,6 +368,7 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | int8
      { let n = lexemeTrimRightToInt32 args lexbuf 1
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator.
        if Ranges.isInt8BadMax n then INT8(SByte.MinValue, true (* 'true' = 'bad'*) )
        else if n > int SByte.MaxValue || n < int SByte.MinValue then fail args lexbuf (FSComp.SR.lexOutsideEightBitSigned()) (INT8(0y, false))
@@ -375,16 +376,19 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | xint8
      { let n = lexemeTrimRightToInt32 args lexbuf 1
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        if n > int Byte.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitSignedHex()) (INT8(0y, false))
        else INT8(sbyte(byte(n)), false) }
 
  | uint8
      { let n = lexemeTrimRightToInt32 args lexbuf 2
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        if n > int Byte.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitUnsigned()) (UINT8(0uy))
        else UINT8(byte n)  }
 
  | int16
      { let n = lexemeTrimRightToInt32 args lexbuf 1
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator.
        if Ranges.isInt16BadMax n then INT16(Int16.MinValue, true (* 'true' = 'bad'*) )
        else if n > int Int16.MaxValue || n < int Int16.MinValue then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s, false))
@@ -392,11 +396,13 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | xint16
      { let n = lexemeTrimRightToInt32 args lexbuf 1
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        if n > int UInt16.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s,false))
        else INT16(int16(uint16(n)), false) }
 
  | uint16
      { let n = lexemeTrimRightToInt32 args lexbuf 2
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        if n > int UInt16.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitUnsigned()) (UINT16(0us))
        else UINT16(uint16 n) }
 
@@ -411,6 +417,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | xint
  | int
      { let s = removeUnderscores (lexeme lexbuf)
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator.
        if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
@@ -421,6 +428,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | xint32
  | int32
      { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator.
        if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
@@ -431,6 +439,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | uint32
      {
        let s = removeUnderscores (lexemeTrimRight lexbuf 1)
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        let n =
            try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) 0L
        if n > int64 UInt32.MaxValue || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
@@ -439,6 +448,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | uint32l
      {
        let s = removeUnderscores (lexemeTrimRight lexbuf 2)
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        let n =
            try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) 0L
        if n > int64 UInt32.MaxValue || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
@@ -446,6 +456,7 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | int64
      { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        // Allow <max_int+1> to parse as min_int.  Stupid but allowed because we parse '-' as an operator.
        if Ranges.isInt64BadMax s then INT64(Int64.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
@@ -455,12 +466,14 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | uint64
      { let s = removeUnderscores (lexemeTrimRight lexbuf 2)
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        let n =
          try uint64 s with _ -> fail args lexbuf (FSComp.SR.lexOutsideSixtyFourBitUnsigned()) 0UL
        UINT64(n) }
 
  | nativeint
      { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        // Allow <max_nativeint+1> to parse as min_nativeint.  Stupid but allowed because we parse '-' as an operator.
        if Ranges.isInt64BadMax s then NATIVEINT(Int64.MinValue, true) else
        let n =
@@ -470,24 +483,29 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | unativeint
      { try
+           failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
            UNATIVEINT(uint64 (removeUnderscores (lexemeTrimRight lexbuf 2)))
        with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeUnsigned())  (UNATIVEINT(0UL)) }
 
  | ieee32
-     { IEEE32 (evalFloat args lexbuf) }
+     { failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
+       IEEE32 (evalFloat args lexbuf) }
 
  | ieee32_dotless_no_exponent
      { if lexbuf.SupportsFeature LanguageFeature.DotlessFloat32Literal then
+          failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
           IEEE32 (evalFloat args lexbuf)
        else
           fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
      }
 
  | ieee64
-     { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
+     {  failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
+        IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
  | decimal
      { try
+          failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
           let s = removeUnderscores (lexemeTrimRight lexbuf 1)
           // This implements a range check for decimal literals
           let d = System.Decimal.Parse(s,System.Globalization.NumberStyles.AllowExponent ||| System.Globalization.NumberStyles.Number,System.Globalization.CultureInfo.InvariantCulture)
@@ -497,6 +515,7 @@ rule token (args: LexArgs) (skip: bool) = parse
      }
  | xieee32
      {
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        // Even though the intermediate step is an int64, display the "invalid float" message, since it will be less confusing to the user
        let n64 = (try (int64 s) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L)
@@ -505,11 +524,13 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | xieee64
      {
+       failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
        let n64 = (try int64 (removeUnderscores (lexemeTrimRight lexbuf 2)) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L)
        IEEE64 (System.BitConverter.Int64BitsToDouble(n64)) }
 
  | bignum
-       { let s = lexeme lexbuf
+       { failsWhenExtendedNumericLiteralNotAvailable lexbuf.LanguageVersion (lexeme lexbuf) lexbuf.LexemeRange
+         let s = lexeme lexbuf
          BIGNUM (removeUnderscores (lexemeTrimRight lexbuf 1), s.[s.Length-1..s.Length-1]) }
 
  | (int | xint | float) ident_char+

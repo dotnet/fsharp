@@ -12,26 +12,35 @@ module ``Numeric Literals`` =
 
     [<Theory>]
     [<InlineData("1up")>]
-    [<InlineData("0xABCI")>]
     [<InlineData("3._1415F")>]
-    [<InlineData("999_99_9999_L")>]
     [<InlineData("52_")>]
     [<InlineData("0_x52")>]
-    [<InlineData("0x_52")>]
     [<InlineData("0x52_")>]
     [<InlineData("052_")>]
     [<InlineData("0_o52")>]
-    [<InlineData("0o_52")>]
     [<InlineData("0o52_")>]
     [<InlineData("2.1_e2F")>]
     [<InlineData("2.1e_2F")>]
-    [<InlineData("1.0_F")>]
     let ``Invalid Numeric Literals`` literal =
         FSharp  ("let x = " + literal)
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 1156, Line 1, Col 9, Line 1, Col (9 + (String.length literal)),
-                                 "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).")
+                                 "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1n (nativeint), 1un (unativeint), 1I (bigint), .")
+
+    [<Theory>]
+    [<InlineData("0xABCI")>]
+    [<InlineData("999_99_9999_L")>]
+    [<InlineData("0x_52")>]
+    [<InlineData("0o_52")>]
+    [<InlineData("1.0_F")>]
+    let ``Invalid Numeric Literals In F#8`` literal =
+        FSharp  ("let x = " + literal)
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1156, Line 1, Col 9, Line 1, Col (9 + (String.length literal)),
+                                 "Feature 'Underscores in numeric literal after prefix or before suffix and Hexadecimal, octal, binary and floating custom numeric literal' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
 
     [<Fact>]
     let ``3_(dot)1415F is invalid numeric literal``() =
@@ -39,7 +48,7 @@ module ``Numeric Literals`` =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1156, Line 1, Col 9,  Line 1, Col 11, "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).")
+            (Error 1156, Line 1, Col 9,  Line 1, Col 11, "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1n (nativeint), 1un (unativeint), 1I (bigint).")
             (Error 599,  Line 1, Col 11, Line 1, Col 12,"Missing qualification after '.'")]
 
     [<Fact>]
@@ -56,7 +65,7 @@ module ``Numeric Literals`` =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 0784, Line 1, Col 9, Line 1, Col 11,
-                                 "This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope")
+                                 "This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat and FromFloatString be in scope")
 
     [<Fact>]
     let ``1N is invalid numeric literal in FSI``() =
@@ -65,7 +74,7 @@ module ``Numeric Literals`` =
 let x = 1N
                 """
                 [
-                    "This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope";
+                    "This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat and FromFloatString be in scope";
                     "Operation could not be completed due to earlier error"
                 ]
 

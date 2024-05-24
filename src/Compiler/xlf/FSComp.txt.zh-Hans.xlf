@@ -337,6 +337,11 @@
         <target state="translated">byref 和 GetPinnableReference 的扩展固定绑定</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedNumericLiteral">
+        <source>Underscores in numeric literal after prefix or before suffix and Hexadecimal, octal, binary and floating custom numeric literal</source>
+        <target state="new">Underscores in numeric literal after prefix or before suffix and Hexadecimal, octal, binary and floating custom numeric literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
         <target state="translated">扩展字符串内插类似于 C# 原始字符串字面量。</target>
@@ -4608,8 +4613,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNumericLiteralRequiresModule">
-        <source>This numeric literal requires that a module '{0}' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope</source>
-        <target state="translated">此数值文本要求定义函数 FromZero、FromOne、FromInt32、FromInt64 和 FromString 的模块“{0}”位于范围内</target>
+        <source>This numeric literal requires that a module '{0}' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat, FromFloatString be in scope</source>
+        <target state="needs-review-translation">此数值文本要求定义函数 FromZero、FromOne、FromInt32、FromInt64 和 FromString 的模块“{0}”位于范围内</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidRecordConstruction">
@@ -6453,8 +6458,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="translated">这不是有效的数值文本。有效数值包括 1、0x1、0o1、0b1、1l (int/int32)、1u (uint/uint32)、1L (int64)、1UL (uint64)、1s (int16)、1us (uint16)、1y (int8/sbyte)、1uy (uint8/byte)、1.0 (float/double)、1.0f (float32/single)、1.0m (decimal)、1I (bigint)。</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1n (nativeint), 1un (unativeint), 1I (bigint).</source>
+        <target state="needs-review-translation">这不是有效的数值文本。有效数值包括 1、0x1、0o1、0b1、1l (int/int32)、1u (uint/uint32)、1L (int64)、1UL (uint64)、1s (int16)、1us (uint16)、1y (int8/sbyte)、1uy (uint8/byte)、1.0 (float/double)、1.0f (float32/single)、1.0m (decimal)、1I (bigint)。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">

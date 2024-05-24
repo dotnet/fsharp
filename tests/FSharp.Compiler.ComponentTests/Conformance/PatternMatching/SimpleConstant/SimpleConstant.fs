@@ -50,7 +50,7 @@ module SimpleConstant =
         |> withDiagnostics [
             (Error 720, Line 10, Col 7, Line 10, Col 13, "Non-primitive numeric literal constants cannot be used in pattern matches because they can be mapped to multiple different types through the use of a NumericLiteral module. Consider using replacing with a variable, and use 'when <variable> = <constant>' at the end of the match clause.")
             (Error 720, Line 11, Col 7, Line 11, Col 9, "Non-primitive numeric literal constants cannot be used in pattern matches because they can be mapped to multiple different types through the use of a NumericLiteral module. Consider using replacing with a variable, and use 'when <variable> = <constant>' at the end of the match clause.")
-            (Error 784, Line 14, Col 17, Line 14, Col 19, "This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope")
+            (Error 784, Line 14, Col 17, Line 14, Col 19, "This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat and FromFloatString be in scope")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)

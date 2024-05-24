@@ -117,6 +117,10 @@ val unicodeGraphLong: string -> LongUnicodeLexResult
 
 val escape: char -> char
 
+/// fails when the input is a extended numeric literal (0x_1 or 0x1_l or 0x1I or 1.0I) if 
+/// the language of the lang version does not support ExtendedNumericLiteral
+val failsWhenExtendedNumericLiteralNotAvailable: Features.LanguageVersion -> string -> range -> unit
+
 exception ReservedKeyword of string * range
 
 module Keywords =

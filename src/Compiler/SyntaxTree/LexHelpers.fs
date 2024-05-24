@@ -4,6 +4,7 @@ module internal FSharp.Compiler.Lexhelp
 
 open System
 open System.Text
+open System.Text.RegularExpressions
 
 open Internal.Utilities
 open Internal.Utilities.Library
@@ -302,6 +303,21 @@ let escape c =
     | 'b' -> '\b'
     | 'r' -> '\r'
     | c -> c
+
+let failsWhenExtendedNumericLiteralNotAvailable (langVersion: LanguageVersion) (s: string) (m: range) =
+    let isSeperatorInNewPlace =
+        Regex.IsMatch(s, "^[+-]?0[xob]_")
+        || Regex.IsMatch(s, "_[uU]?[luLsyfmMnINZQRG]$")
+    
+    let isExtendedUserNum s = 
+        let isXInteger = Regex.IsMatch(s, "^[+-]?0[xob]")
+        let isFloat = Regex.IsMatch(s, "[eE\.]")
+        let isUserNum = Regex.IsMatch(s, "[INZQRG]$")
+        
+        isUserNum && (isXInteger || isFloat)
+
+    if isSeperatorInNewPlace || isExtendedUserNum s then
+        checkLanguageFeatureAndRecover langVersion LanguageFeature.ExtendedNumericLiteral m
 
 //------------------------------------------------------------------------
 // Keyword table
