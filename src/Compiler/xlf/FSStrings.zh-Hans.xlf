@@ -1379,7 +1379,7 @@
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
         <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
-        <target state="translated">将检查此递归使用能否在运行时完整地进行初始化。此警告通常是无害的，可以使用“#nowarn "21"”或“--nowarn:21”来取消显示此警告。</target>
+        <target state="needs-review-translation">将检查此递归使用能否在运行时完整地进行初始化。此警告通常是无害的，可以使用“#nowarn "21"”或“--nowarn:21”来取消显示此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecUnsound1">
@@ -1404,7 +1404,7 @@
       </trans-unit>
       <trans-unit id="LetRecCheckedAtRuntime">
         <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
-        <target state="translated">将检查对要定义的对象的此引用和其他递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。这是因为您定义的是一个或多个递归对象，而不是递归函数。可以使用“#nowarn "40"”或“--nowarn:40”来禁止显示此警告。</target>
+        <target state="needs-review-translation">将检查对要定义的对象的此引用和其他递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。这是因为您定义的是一个或多个递归对象，而不是递归函数。可以使用“#nowarn "40"”或“--nowarn:40”来禁止显示此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
@@ -1524,12 +1524,12 @@
       </trans-unit>
       <trans-unit id="Experimental">
         <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="translated">{0}。可以使用“--nowarn:57”或“#nowarn "57"”禁用此警告。</target>
+        <target state="needs-review-translation">{0}。可以使用“--nowarn:57”或“#nowarn "57"”禁用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">
         <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
-        <target state="translated">使用此构造可能会导致生成不可验证的 .NET IL 代码。可以使用“--nowarn:9”或“#nowarn "9"”禁用此警告。</target>
+        <target state="needs-review-translation">使用此构造可能会导致生成不可验证的 .NET IL 代码。可以使用“--nowarn:9”或“#nowarn "9"”禁用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="Deprecated">
@@ -1573,8 +1573,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">通常应在类型的初始声明中提供接口实现。扩充中的接口实现可能会导致在初始化静态绑定之前访问静态绑定，尽管只有在静态数据初始化期间调用了接口实现，并进而访问静态数据时才会发生这种情况。如果已经核实并非如此，则可以使用 #nowarn "69" 移除此警告。</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
+        <target state="needs-review-translation">通常应在类型的初始声明中提供接口实现。扩充中的接口实现可能会导致在初始化静态绑定之前访问静态绑定，尽管只有在静态数据初始化期间调用了接口实现，并进而访问静态数据时才会发生这种情况。如果已经核实并非如此，则可以使用 #nowarn "69" 移除此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">

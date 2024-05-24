@@ -491,6 +491,18 @@ hashDirectiveArg:
   | string
       { let s, kind = $1
         ParsedHashDirectiveArgument.String(s, kind, lhs parseState) }
+  | INT32
+      { let n, _ = $1
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ParsedHashDirectiveArgumentNonString (rhs parseState 1)
+        ParsedHashDirectiveArgument.Int32(n, lhs parseState) }
+  | IDENT
+      { let m = rhs parseState 1
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ParsedHashDirectiveArgumentNonString (rhs parseState 1)
+        ParsedHashDirectiveArgument.Ident(Ident($1, m), lhs parseState) }
+  | pathOp
+      { let path = $1
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ParsedHashDirectiveArgumentNonString (rhs parseState 1)
+        ParsedHashDirectiveArgument.LongIdent(path, lhs parseState) }
   | sourceIdentifier
       { let c, v = $1
         ParsedHashDirectiveArgument.SourceIdentifier(c, v, lhs parseState) }

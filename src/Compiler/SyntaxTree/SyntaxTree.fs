@@ -1647,13 +1647,19 @@ type SynModuleOrNamespaceSig =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
+    | Ident of value: Ident * range: range
+    | Int32 of value: Int32 * range: range
+    | LongIdent of value: SynLongIdent * range: range
     | String of value: string * stringKind: SynStringKind * range: range
     | SourceIdentifier of constant: string * value: string * range: range
 
     member this.Range =
         match this with
+        | ParsedHashDirectiveArgument.Ident(range = m)
+        | ParsedHashDirectiveArgument.Int32(range = m)
         | ParsedHashDirectiveArgument.String(range = m)
-        | ParsedHashDirectiveArgument.SourceIdentifier(range = m) -> m
+        | ParsedHashDirectiveArgument.SourceIdentifier(range = m)
+        | ParsedHashDirectiveArgument.LongIdent(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type ParsedHashDirective = ParsedHashDirective of ident: string * args: ParsedHashDirectiveArgument list * range: range

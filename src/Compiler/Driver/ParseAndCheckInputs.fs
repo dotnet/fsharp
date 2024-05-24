@@ -216,17 +216,26 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
-let GetScopedPragmasForHashDirective hd =
+let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
+    let supportsNonStringArguments =
+        langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonString)
+
     [
         match hd with
         | ParsedHashDirective("nowarn", numbers, m) ->
             for s in numbers do
-                match s with
-                | ParsedHashDirectiveArgument.SourceIdentifier _ -> ()
-                | ParsedHashDirectiveArgument.String(s, _, _) ->
-                    match GetWarningNumber(m, s) with
-                    | None -> ()
-                    | Some n -> ScopedPragma.WarningOff(m, n)
+                let warningNumber =
+                    match supportsNonStringArguments, s with
+                    | _, ParsedHashDirectiveArgument.SourceIdentifier _ -> None
+                    | true, ParsedHashDirectiveArgument.LongIdent _ -> None
+                    | true, ParsedHashDirectiveArgument.Int32(n, _) -> GetWarningNumber(m, string n, true)
+                    | true, ParsedHashDirectiveArgument.Ident(s, _) -> GetWarningNumber(m, s.idText, true)
+                    | _, ParsedHashDirectiveArgument.String(s, _, _) -> GetWarningNumber(m, s, true)
+                    | _ -> None
+
+                match warningNumber with
+                | None -> ()
+                | Some n -> ScopedPragma.WarningOff(m, n)
         | _ -> ()
     ]
 
@@ -272,10 +281,10 @@ let PostParseModuleImpls
             for SynModuleOrNamespace(decls = decls) in impls do
                 for d in decls do
                     match d with
-                    | SynModuleDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd
+                    | SynModuleDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
                     | _ -> ()
             for hd in hashDirectives do
-                yield! GetScopedPragmasForHashDirective hd
+                yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
         ]
 
     let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
@@ -323,10 +332,10 @@ let PostParseModuleSpecs
             for SynModuleOrNamespaceSig(decls = decls) in specs do
                 for d in decls do
                     match d with
-                    | SynModuleSigDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd
+                    | SynModuleSigDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
                     | _ -> ()
             for hd in hashDirectives do
-                yield! GetScopedPragmasForHashDirective hd
+                yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
         ]
 
     let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)

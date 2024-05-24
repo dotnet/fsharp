@@ -986,7 +986,10 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
     List.map
         (function
         | ParsedHashDirectiveArgument.String(s, _, _) -> s
-        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> v)
+        | ParsedHashDirectiveArgument.Int32(n, _) -> string n
+        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> v
+        | ParsedHashDirectiveArgument.Ident(ident, _) -> ident.idText
+        | ParsedHashDirectiveArgument.LongIdent(id, _) -> System.String.Join(".", id.LongIdent |> List.map (fun ident -> ident.ToString())))
         input
 
 let prependIdentInLongIdentWithTrivia (SynIdent(ident, identTrivia)) mDot lid =
