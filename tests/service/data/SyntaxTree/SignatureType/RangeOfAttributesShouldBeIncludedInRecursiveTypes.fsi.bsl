@@ -27,6 +27,7 @@ SigFile
                     ([{ Attributes =
                          [{ TypeName =
                              SynLongIdent ([CustomEquality], [], [None])
+                            TypeParams = []
                             ArgExpr = Const (Unit, (7,6--7,20))
                             Target = None
                             AppliesToGetterAndSetter = false

@@ -16,6 +16,7 @@ ImplFile
                            (None, Normal, false, false,
                             [{ Attributes =
                                 [{ TypeName = SynLongIdent ([A], [], [None])
+                                   TypeParams = []
                                    ArgExpr = Const (Unit, (4,6--4,7))
                                    Target = None
                                    AppliesToGetterAndSetter = false
@@ -46,6 +47,7 @@ ImplFile
                            (None, Normal, false, false,
                             [{ Attributes =
                                 [{ TypeName = SynLongIdent ([B], [], [None])
+                                   TypeParams = []
                                    ArgExpr = Const (Unit, (5,6--5,7))
                                    Target = None
                                    AppliesToGetterAndSetter = false
@@ -76,6 +78,7 @@ ImplFile
                            (None, Normal, false, false,
                             [{ Attributes =
                                 [{ TypeName = SynLongIdent ([C], [], [None])
+                                   TypeParams = []
                                    ArgExpr = Const (Unit, (6,6--6,7))
                                    Target = None
                                    AppliesToGetterAndSetter = false

@@ -962,7 +962,7 @@ let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attribu
     let optAttrs =
         if isOpt then
             [ ( { TypeName=SynLongIdent(pathToSynLid m ["Microsoft";"FSharp";"Core";"OptionalArgument"], [], [None;None;None;None])
-                  TypeParams = None
+                  TypeParams = []
                   ArgExpr=mkSynUnit m
                   Target=None
                   AppliesToGetterAndSetter=false
@@ -11068,15 +11068,30 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
 
     let (SynLongIdent(tycon, _, _)) = synAttr.TypeName
     let arg = synAttr.ArgExpr
-    let (TyparsAndConstraints(synTyparDecls, synTyparConstraints)) = synAttr.TypeParams
-    let declaredTypars = TcTyparDecls cenv env synTyparDecls
+    let paramSynTypes = synAttr.TypeParams
+    //check type parameters. tpenv remains empty if synAttr.TypeParams = []
+    // let paramTTypes, tpenv = 
+    //     List.mapFold (
+    //         fun typeParameterEnv ->
+    //         TcTypeOrMeasure 
+    //             (Some TyparKind.Type) 
+    //             cenv 
+    //             ImplicitlyBoundTyparsAllowed.NewTyparsOKButWarnIfNotRigid 
+    //             CheckConstraints.CheckCxs 
+    //             ItemOccurence.Open 
+    //             WarnOnIWSAM.Yes 
+    //             env 
+    //             typeParameterEnv ) 
+    //         emptyUnscopedTyparEnv
+    //         synAttr.TypeParams
+    let tyParEnv = emptyUnscopedTyparEnv
     let targetIndicator = synAttr.Target
     let isAppliedToGetterOrSetter = synAttr.AppliesToGetterAndSetter
     let mAttr = synAttr.Range
     let typath, tyid = List.frontAndBack tycon
     let ad = env.eAccessRights
-    let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
-    let tpenv = TcTyparConstraints cenv ImplicitlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.CheckCxs ItemOccurence.UseInAttribute envinner emptyUnscopedTyparEnv synTyparConstraints
+    // let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
+    // let tpenv = TcTyparConstraints cenv ImplicitlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.CheckCxs ItemOccurence.UseInAttribute envinner emptyUnscopedTyparEnv synTyparConstraints
     // if we're checking an attribute that was applied directly to a getter or a setter, then
     // what we're really checking against is a method, not a property
     let attrTgt = if isAppliedToGetterOrSetter then ((attrTgt ^^^ AttributeTargets.Property) ||| AttributeTargets.Method) else attrTgt
@@ -11086,9 +11101,9 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
             let tycon = (typath @ [tyid])
             
             
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon (TypeNameResolutionStaticArgsInfo.FromTyArgs declaredTypars.Length) PermitDirectReferenceToGeneratedType.No with
+            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon (TypeNameResolutionStaticArgsInfo.FromTyArgs paramSynTypes.Length) PermitDirectReferenceToGeneratedType.No with
             | Exception err -> raze err
-            | Result(tinstEnclosing, tcref, inst) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute env tpenv mAttr tcref tinstEnclosing [] inst)
+            | Result(tinstEnclosing, tcref, inst) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute env tyParEnv mAttr tcref tinstEnclosing paramSynTypes inst)
 
         ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
 

@@ -26,6 +26,7 @@ SigFile
                                              [{ TypeName =
                                                  SynLongIdent
                                                    ([SomeAttribute], [], [None])
+                                                TypeParams = []
                                                 ArgExpr =
                                                  Const (Unit, (3,16--3,29))
                                                 Target = None
@@ -41,6 +42,7 @@ SigFile
                                              [{ TypeName =
                                                  SynLongIdent
                                                    ([OtherAttribute], [], [None])
+                                                TypeParams = []
                                                 ArgExpr =
                                                  Const (Unit, (3,38--3,52))
                                                 Target = None
@@ -58,6 +60,7 @@ SigFile
                                         [{ TypeName =
                                             SynLongIdent
                                               ([SomeAttribute], [], [None])
+                                           TypeParams = []
                                            ArgExpr = Const (Unit, (3,16--3,29))
                                            Target = None
                                            AppliesToGetterAndSetter = false
@@ -68,6 +71,7 @@ SigFile
                                         [{ TypeName =
                                             SynLongIdent
                                               ([OtherAttribute], [], [None])
+                                           TypeParams = []
                                            ArgExpr = Const (Unit, (3,38--3,52))
                                            Target = None
                                            AppliesToGetterAndSetter = false

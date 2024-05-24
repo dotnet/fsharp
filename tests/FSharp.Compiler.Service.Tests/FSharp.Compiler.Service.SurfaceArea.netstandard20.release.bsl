@@ -6283,10 +6283,12 @@ FSharp.Compiler.Syntax.SynAttribute: FSharp.Compiler.Syntax.SynLongIdent TypeNam
 FSharp.Compiler.Syntax.SynAttribute: FSharp.Compiler.Syntax.SynLongIdent get_TypeName()
 FSharp.Compiler.Syntax.SynAttribute: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynAttribute: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] TypeParams
+FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] get_TypeParams()
 FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] Target
 FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] get_Target()
 FSharp.Compiler.Syntax.SynAttribute: System.String ToString()
-FSharp.Compiler.Syntax.SynAttribute: Void .ctor(FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynAttribute: Void .ctor(FSharp.Compiler.Syntax.SynLongIdent, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynAttributeList: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynAttributeList: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynAttributeList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttribute] Attributes

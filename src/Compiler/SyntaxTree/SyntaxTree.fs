@@ -1043,7 +1043,7 @@ type SynAttribute =
     {
         TypeName: SynLongIdent
         
-        TypeParams: SynTyparDecls option
+        TypeParams: SynType list
 
         ArgExpr: SynExpr
 

@@ -7,6 +7,7 @@ ImplFile
           [NestedModule
              (SynComponentInfo
                 ([{ Attributes = [{ TypeName = SynLongIdent ([Foo], [], [None])
+                                    TypeParams = []
                                     ArgExpr = Const (Unit, (4,2--4,5))
                                     Target = None
                                     AppliesToGetterAndSetter = false

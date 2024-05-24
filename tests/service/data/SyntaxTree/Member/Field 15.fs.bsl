@@ -15,6 +15,7 @@ ImplFile
                         (SynField
                            ([{ Attributes =
                                 [{ TypeName = SynLongIdent ([A], [], [None])
+                                   TypeParams = []
                                    ArgExpr = Const (Unit, (4,6--4,7))
                                    Target = None
                                    AppliesToGetterAndSetter = false
