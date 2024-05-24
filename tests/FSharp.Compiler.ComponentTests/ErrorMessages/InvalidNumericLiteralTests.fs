@@ -26,7 +26,7 @@ module ``Numeric Literals`` =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 1156, Line 1, Col 9, Line 1, Col (9 + (String.length literal)),
-                                 "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1n (nativeint), 1un (unativeint), 1I (bigint), .")
+                                 "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1n (nativeint), 1un (unativeint), 1I (bigint).")
 
     [<Theory>]
     [<InlineData("0xABCI")>]

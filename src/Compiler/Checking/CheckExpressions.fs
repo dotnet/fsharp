@@ -7612,10 +7612,12 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
                                 let res = Regex.Match(s, @"^-?0*(?<number>\d+\.?\d*?)0*(?:$|[eE][+-]?(?<exp>\d+))")
                                 let exp = res.Groups.["exp"]
                                 let number = res.Groups.["number"]
+                                let isNumberContainsDot = -1 <> number.Value.IndexOf '.'
+                                let maxLen = if isNumberContainsDot then 16 else 15
 
-                                if not res.Success || (-1 = number.Value.IndexOf '.' && not exp.Success) then 
+                                if not res.Success || (not isNumberContainsDot && not exp.Success) then 
                                     mkFunctionCall ("FromString", SynConst.String (s, SynStringKind.Regular, m))
-                                elif (not exp.Success || int exp.Value <= 300) && number.Length <= 15 then
+                                elif (not exp.Success || int exp.Value <= 300) && number.Length <= maxLen then
                                     let f64 = float s
                                     mkFunctionCall ("FromFloat", SynConst.Double f64)
                                 else
