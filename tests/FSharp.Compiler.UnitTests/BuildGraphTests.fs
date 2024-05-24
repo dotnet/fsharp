@@ -374,7 +374,32 @@ module BuildGraphTests =
 
         errorCountShouldBe 600
 
+    [<Fact>]
+    let ``MultipleDiagnosticsLoggers.Parallel finishes when any computation throws`` () =
 
+        let mutable count = 0
+        use _ = UseDiagnosticsLogger (CapturingDiagnosticsLogger "test logger")
+
+        let tasks = [
+            async { failwith "computation failed" }
+
+            for i in 1 .. 300 do
+                async {
+                    Interlocked.Increment(&count) |> ignore
+                    errorR (ExampleException $"{i}")
+                }
+        ]
+
+        let run =
+            tasks |> MultipleDiagnosticsLoggers.Parallel |> Async.Catch |> Async.StartAsTask
+
+        Assert.True(
+            run.Wait(1000),
+            "MultipleDiagnosticsLoggers.Parallel did not finish."
+        )
+
+        // Diagnostics from all started tasks should be collected despite the exception.
+        errorCountShouldBe count
 
 
     [<Fact>]
