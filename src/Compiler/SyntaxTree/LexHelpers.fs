@@ -308,12 +308,12 @@ let failsWhenExtendedNumericLiteralNotAvailable (langVersion: LanguageVersion) (
     let isSeperatorInNewPlace =
         Regex.IsMatch(s, "^[+-]?0[xob]_")
         || Regex.IsMatch(s, "_[uU]?[luLsyfmMnINZQRG]$")
-    
-    let isExtendedUserNum s = 
+
+    let isExtendedUserNum s =
         let isXInteger = Regex.IsMatch(s, "^[+-]?0[xob]")
         let isFloat = Regex.IsMatch(s, @"[eE\.]")
         let isUserNum = Regex.IsMatch(s, "[INZQRG]$")
-        
+
         isUserNum && (isXInteger || isFloat)
 
     if isSeperatorInNewPlace || isExtendedUserNum s then
