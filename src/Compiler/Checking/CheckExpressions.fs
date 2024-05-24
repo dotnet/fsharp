@@ -5119,17 +5119,41 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let vExprTy = vExpr.Type
 
     let activePatArgsAsSynPats, patArg =
-        let rec IsNotSolved ty =
-            match ty with
-            | TType_var(v, _) when v.IsSolved ->
-                match v.Solution with
-                | Some t -> IsNotSolved t
-                | None -> false
-            | TType_var _ -> true
-            | _ -> false
+        // only cases which return unit or unresolved type (in AP definition) compatible with unit can omit output arg 
+        let canOmit retTy =
+            let couldResolveToUnit ty =
+                tryDestTyparTy g ty
+                |> ValueOption.exists (fun typar ->
+                    not typar.IsSolved
+                    && typar.Constraints |> List.forall (fun c ->
+                        let (|Unit|_|) ty = if isUnitTy g ty then Some Unit else None
 
-        // only cases which return unit or unresolved type (in AP definition) can omit output arg 
-        let canOmit retTy = isUnitTy g retTy || IsNotSolved retTy 
+                        match c with
+                        // These apply or could apply to unit.
+                        | TyparConstraint.IsReferenceType _
+                        | TyparConstraint.SupportsComparison _
+                        | TyparConstraint.SupportsEquality _
+                        | TyparConstraint.DefaultsTo (ty = Unit)
+                        | TyparConstraint.MayResolveMember _ -> true
+
+                        // Any other kind of constraint is incompatible with unit.
+                        | TyparConstraint.CoercesTo _
+                        | TyparConstraint.DefaultsTo _
+                        | TyparConstraint.IsDelegate _
+                        | TyparConstraint.IsEnum _
+                        | TyparConstraint.IsNonNullableStruct _
+                        | TyparConstraint.IsUnmanaged _
+                        | TyparConstraint.RequiresDefaultConstructor _
+                        | TyparConstraint.SimpleChoice _
+                        | TyparConstraint.SupportsNull _ -> false))
+
+            let caseRetTy =
+                if isOptionTy g retTy then destOptionTy g retTy
+                elif isValueOptionTy g retTy then destValueOptionTy g retTy
+                elif isChoiceTy g retTy then destChoiceTy g retTy idx
+                else retTy
+
+            isUnitTy g caseRetTy || couldResolveToUnit caseRetTy
 
         // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
         let dtys, retTy = stripFunTy g vExprTy
@@ -5169,25 +5193,27 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
 
         // active pattern cases returning unit or unknown things (in AP definition) can omit output arg 
         elif paramCount = args.Length then
-             let caseRetTy =
-                 if isOptionTy g retTy then destOptionTy g retTy
-                 elif isValueOptionTy g retTy then destValueOptionTy g retTy
-                 elif isChoiceTy g retTy then destChoiceTy g retTy idx
-                 else retTy
-
              // only cases which return unit or unresolved type (in AP definition) can omit output arg 
-             if canOmit caseRetTy then
+             if canOmit retTy then
                 args, SynPat.Const(SynConst.Unit, m)
              else
                  showErrMsg 1
         
         // active pattern in function param (e.g. let f (|P|_|) = ...)
-        elif IsNotSolved vExprTy then
+        elif tryDestTyparTy g vExprTy |> ValueOption.exists (fun typar -> not typar.IsSolved) then
             List.frontAndBack args
 
         // args count should equal to AP function params count
         elif dtys.Length <> args.Length then
-            showErrMsg 1
+            let returnCount =
+                match dtys with
+                // val (|P|)   : expr1:_ -> unit
+                // val (|P|_|) : expr1:_ -> unit option
+                // val (|P|_|) : expr1:_ -> unit voption
+                | [_] when canOmit retTy -> 0
+                | _ -> 1
+
+            showErrMsg returnCount
         else
             List.frontAndBack args
 
