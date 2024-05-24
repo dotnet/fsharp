@@ -756,7 +756,29 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
                 | Expr.Lambda(bodyExpr = bodyExpr) -> checkTailCall insideSubBindingOrTry bodyExpr
                 | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBindingOrTry expr
                 | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
-                    checkTailCall true binding.Expr
+                    let isAsyncContinuation =
+                        match bodyExpr with
+                        | Expr.App(funcExpr = Expr.Val(valRef = valRef)) when
+                            valRef.DisplayNameCore = "MakeAsync"
+                            && valRef.HasDeclaringEntity
+                            && valRef.DeclaringEntity.LogicalName = "AsyncPrimitives"
+                            ->
+                            match valRef.GeneralizedType with
+                            | [ _ ],
+                              TType_fun(
+                                  domainType = TType_fun(
+                                      domainType = TType_app(tyconRef = funArgDomTypeTyconRef)
+                                      rangeType = TType_app(tyconRef = funArgRangeTypeTyconRef))
+                                  rangeType = TType_app(tyconRef = rangeTypeTyConRef)) when
+                                funArgDomTypeTyconRef.DemangledModuleOrNamespaceName = "AsyncActivation`1"
+                                && funArgRangeTypeTyconRef.DemangledModuleOrNamespaceName = "AsyncReturn"
+                                && rangeTypeTyConRef.DemangledModuleOrNamespaceName = "Async`1"
+                                ->
+                                true
+                            | _ -> false
+                        | _ -> false
+
+                    checkTailCall (not isAsyncContinuation) binding.Expr
 
                     let warnForBodyExpr =
                         insideSubBindingOrTry
