@@ -756,25 +756,18 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
                 | Expr.Lambda(bodyExpr = bodyExpr) -> checkTailCall insideSubBindingOrTry bodyExpr
                 | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBindingOrTry expr
                 | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
-                    let isAsyncContinuation =
+                    // detect continuation shapes like MakeAsyns
+                    let isContinuation =
                         match bodyExpr with
                         | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
                             match valRef.GeneralizedType with
                             | [ _ ],
-                              TType_fun(
-                                  domainType = TType_fun(
-                                      domainType = TType_app(tyconRef = funArgDomTypeTyconRef)
-                                      rangeType = TType_app(tyconRef = funArgRangeTypeTyconRef))
-                                  rangeType = TType_app(tyconRef = rangeTypeTyConRef)) when
-                                funArgDomTypeTyconRef.DemangledModuleOrNamespaceName = "AsyncActivation`1"
-                                && funArgRangeTypeTyconRef.DemangledModuleOrNamespaceName = "AsyncReturn"
-                                && rangeTypeTyConRef.DemangledModuleOrNamespaceName = "Async`1"
-                                ->
+                              TType_fun(domainType = TType_fun(domainType = TType_app _; rangeType = TType_app _); rangeType = TType_app _) ->
                                 true
                             | _ -> false
                         | _ -> false
 
-                    checkTailCall (not isAsyncContinuation) binding.Expr
+                    checkTailCall (not isContinuation) binding.Expr
 
                     let warnForBodyExpr =
                         insideSubBindingOrTry
