@@ -239,43 +239,46 @@ let ignored_op_char = '.' | '$' | '?'
 let separator = '_'
 
 let xinteger =
-  (  '0' ('x'| 'X')  hex ((hex | separator)* hex)?
-   | '0' ('o'| 'O')  (['0'-'7']) (((['0'-'7']) | separator)* (['0'-'7']))?
-   | '0' ('b'| 'B')  (['0'-'1']) (((['0'-'1']) | separator)* (['0'-'1']))?)
+  (  '0' ('x'| 'X') separator* hex ((hex | separator)* hex)?
+   | '0' ('o'| 'O') separator* (['0'-'7']) (((['0'-'7']) | separator)* (['0'-'7']))?
+   | '0' ('b'| 'B') separator* (['0'-'1']) (((['0'-'1']) | separator)* (['0'-'1']))?)
 
 let integer = digit ((digit | separator)* digit)?
 
-let int8 = integer 'y'
+let integerPrefix = integer separator*
+let xintegerPrefix = xinteger separator*
 
-let uint8 = (xinteger | integer) 'u' 'y'
+let int8 = integerPrefix 'y'
 
-let int16 = integer 's'
+let uint8 = (xintegerPrefix | integerPrefix) 'u' 'y'
 
-let uint16 = (xinteger | integer) 'u' 's'
+let int16 = integerPrefix 's'
+
+let uint16 = (xintegerPrefix | integerPrefix) 'u' 's'
 
 let int = integer
 
-let int32 = integer 'l'
+let int32 = integerPrefix 'l'
 
-let uint32 = (xinteger | integer) 'u'
+let uint32 = (xintegerPrefix | integerPrefix) 'u'
 
-let uint32l = (xinteger | integer) 'u' 'l'
+let uint32l = (xintegerPrefix | integerPrefix) 'u' 'l'
 
-let nativeint = (xinteger | integer) 'n'
+let nativeint = (xintegerPrefix | integerPrefix) 'n'
 
-let unativeint = (xinteger | integer) 'u' 'n'
+let unativeint = (xintegerPrefix | integerPrefix) 'u' 'n'
 
-let int64 = (xinteger | integer) 'L'
+let int64 = (xintegerPrefix | integerPrefix) 'L'
 
-let uint64 = (xinteger | integer) ('u' | 'U') 'L'
+let uint64 = (xintegerPrefix | integerPrefix) ('u' | 'U') 'L'
 
-let xint8 = xinteger 'y'
+let xint8 = xintegerPrefix 'y'
 
-let xint16 = xinteger 's'
+let xint16 = xintegerPrefix 's'
 
 let xint = xinteger
 
-let xint32 = xinteger 'l'
+let xint32 = xintegerPrefix 'l'
 
 let floatp = digit ((digit | separator)* digit)? '.' (digit ((digit | separator)* digit)?)?
 
@@ -283,19 +286,21 @@ let floate = digit ((digit | separator)* digit)? ('.' (digit ((digit | separator
 
 let float = floatp | floate
 
-let bignum =  integer ('I'  | 'N' | 'Z' | 'Q' | 'R' | 'G')
+let floatPrefix = float separator*
+
+let bignum =  (xintegerPrefix | integerPrefix | floatPrefix) ('I'  | 'N' | 'Z' | 'Q' | 'R' | 'G')
 
 let ieee64 = float
 
-let ieee32 = float ('f' | 'F')
+let ieee32 = floatPrefix ('f' | 'F')
 
-let ieee32_dotless_no_exponent = integer ('f' | 'F')
+let ieee32_dotless_no_exponent = integerPrefix ('f' | 'F')
 
-let decimal = (float | integer) ('m' | 'M')
+let decimal = (floatPrefix | integerPrefix) ('m' | 'M')
 
-let xieee32 = xinteger 'l' 'f'
+let xieee32 = xintegerPrefix 'l' 'f'
 
-let xieee64 = xinteger 'L' 'F'
+let xieee64 = xintegerPrefix 'L' 'F'
 
 let escape_char = ('\\' ( '\\' | "\"" | '\'' | 'a' | 'f' | 'v' | 'n' | 't' | 'b' | 'r'))
 
