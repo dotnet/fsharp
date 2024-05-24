@@ -758,11 +758,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
                 | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
                     let isAsyncContinuation =
                         match bodyExpr with
-                        | Expr.App(funcExpr = Expr.Val(valRef = valRef)) when
-                            valRef.DisplayNameCore = "MakeAsync"
-                            && valRef.HasDeclaringEntity
-                            && valRef.DeclaringEntity.LogicalName = "AsyncPrimitives"
-                            ->
+                        | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
                             match valRef.GeneralizedType with
                             | [ _ ],
                               TType_fun(
