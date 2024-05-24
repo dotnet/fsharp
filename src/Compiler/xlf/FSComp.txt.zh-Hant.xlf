@@ -4613,7 +4613,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNumericLiteralRequiresModule">
-        <source>This numeric literal requires that a module '{0}' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat, FromFloatString be in scope</source>
+        <source>This numeric literal requires that a module '{0}' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat and FromFloatString be in scope</source>
         <target state="needs-review-translation">這個數值常值要求定義函式 FromZero、FromOne、FromInt32、FromInt64 和 FromString 的模組 '{0}' 必須在範圍內</target>
         <note />
       </trans-unit>

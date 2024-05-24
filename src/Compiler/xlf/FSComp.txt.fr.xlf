@@ -4613,7 +4613,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNumericLiteralRequiresModule">
-        <source>This numeric literal requires that a module '{0}' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat, FromFloatString be in scope</source>
+        <source>This numeric literal requires that a module '{0}' defining functions FromZero, FromOne, FromInt32, FromInt64, FromString, FromFloat and FromFloatString be in scope</source>
         <target state="needs-review-translation">Ce littéral numérique requiert qu'un module '{0}' définissant les fonctions FromZero, FromOne, FromInt32, FromInt64 et FromString se trouve dans la portée</target>
         <note />
       </trans-unit>
