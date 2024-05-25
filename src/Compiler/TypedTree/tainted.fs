@@ -101,7 +101,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
             | :? TypeProviderError -> reraise()
             | :? AggregateException as ae ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let messages = [for e in ae.InnerExceptions -> if e.InnerException = null then e.Message else (e.Message + ": " + e.GetBaseException().Message)]
+                    let messages = [for e in ae.InnerExceptions -> if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)]
                     raise <| TypeProviderError(errNum, this.TypeProviderDesignation, range, messages)
             | e -> 
                     let errNum,_ = FSComp.SR.etProviderError("", "")
