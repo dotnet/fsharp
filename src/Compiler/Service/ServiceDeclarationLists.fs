@@ -86,7 +86,8 @@ type CompletionItem =
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option
-      Unresolved: UnresolvedSymbol option }
+      Unresolved: UnresolvedSymbol option
+      InsertFullName: bool }
     member x.Item = x.ItemWithInst.Item
 
 [<AutoOpen>]
@@ -1130,6 +1131,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 let textInDeclList item =
                     match item.Unresolved with
                     | Some u -> u.DisplayName
+                    | None when item.InsertFullName && item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
                     | None -> item.Item.DisplayNameCore
                 let textInCode (item: CompletionItem) =
                     match item.Item with
@@ -1137,6 +1139,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | _ ->
                         match item.Unresolved with
                         | Some u -> u.DisplayName
+                        | None when item.InsertFullName && item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
                         | None -> item.Item.DisplayName
                 if not supportsPreferExtsMethodsOverProperty then
                     // we don't pay the cost of filtering specific to RFC-1137

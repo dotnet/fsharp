@@ -81,6 +81,9 @@ type public CompletionContext =
     /// Completing a method override (e.g. override this.ToStr|)
     | MethodOverride of enclosingTypeNameRange: range
 
+    /// (s = | ) or (s <> | )
+    | CaretAfterOperator of mExprBeforeOperator: range
+
 type public ModuleKind =
     { IsAutoOpen: bool
       HasModuleSuffix: bool }

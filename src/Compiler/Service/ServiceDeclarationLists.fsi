@@ -91,6 +91,8 @@ type internal CompletionItem =
       Type: TyconRef option 
 
       Unresolved: UnresolvedSymbol option
+
+      InsertFullName: bool
     }
     member Item: Item
 
