@@ -952,7 +952,8 @@ type internal TypeCheckInfo
             InsertFullName = insertFullName
         }
 
-    let DefaultCompletionItem item = CompletionItem ValueNone ValueNone false item
+    let DefaultCompletionItem item =
+        CompletionItem ValueNone ValueNone false item
 
     let CompletionItemSuggestedName displayName =
         {
@@ -1649,10 +1650,8 @@ type internal TypeCheckInfo
             | Some(CompletionContext.CaretAfterOperator m) ->
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 let _, quals = GetExprTypingForPosition(m.End)
-                let bestQual =
-                    quals
-                    |> Array.tryFind (fun (_, _, _, r) -> posEq m.Start r.Start)
-                    
+                let bestQual = quals |> Array.tryFind (fun (_, _, _, r) -> posEq m.Start r.Start)
+
                 match bestQual with
                 | Some bestQual ->
                     let ty, nenv, ad, m = bestQual
@@ -1661,24 +1660,28 @@ type internal TypeCheckInfo
                         ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
                     let items = ResolveCompletionsInType ncenv nenv targets m ad true ty
-                    let items = items |> List.map ItemWithNoInst
-                    let items = items |> RemoveDuplicateItems g
-                    let items = 
-                        items 
-                        |> RemoveExplicitlySuppressed g
-                        |> List.filter (
-                            function 
-                            | { Item = Item.Value _ }
-                            | { Item = Item.ILField _ }
-                            | { Item = Item.UnionCase _ }
-                            | { Item = Item.Property _ } -> true 
+
+                    let items =
+                        items
+                        |> List.filter (function
+                            | Item.Value(valRef) -> typeEquiv g ty valRef.Type
+                            | Item.ILField(iLFieldInfo) -> typeEquiv g ty (iLFieldInfo.FieldType(amap, m))
+                            | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m))
                             | _ -> false)
 
+                    let items = items |> List.map ItemWithNoInst
+                    let items = items |> RemoveDuplicateItems g
+                    let items = items |> RemoveExplicitlySuppressed g
+
                     match declaredItems with
-                    | Some (declaredItems, _, _) -> 
-                        Some((items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone true)) @ declaredItems, nenv.DisplayEnv, m)
-                    | None ->
-                        Some(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone true), nenv.DisplayEnv, m)
+                    | Some(declaredItems, _, _) ->
+                        Some(
+                            (items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone true))
+                            @ declaredItems,
+                            nenv.DisplayEnv,
+                            m
+                        )
+                    | None -> Some(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone true), nenv.DisplayEnv, m)
                 | None -> declaredItems
 
             // Other completions
