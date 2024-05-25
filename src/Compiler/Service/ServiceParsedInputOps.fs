@@ -1424,8 +1424,11 @@ module ParsedInput =
 
                             match path with
                             | PartOfParameterList pos precedingArgument args -> Some(CompletionContext.ParameterList args)
-                            | _ when rangeAfterPos r.Range pos-> Some(CompletionContext.CaretAfterOperator id.idRange)
-                            | _ -> defaultTraverse expr
+                            | _ -> 
+                                match expr with
+                                | Operator "op_Equality" (l, r) when rangeAfterPos r.Range pos ->
+                                    Some(CompletionContext.CaretAfterOperator l.Range)
+                                | _ -> defaultTraverse expr
 
                         | SynExpr.Record(None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
 
