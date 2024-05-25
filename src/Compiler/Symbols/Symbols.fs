@@ -2718,7 +2718,11 @@ type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
         | _ -> arg
 
     member _.AttributeType =  
-        FSharpEntity(cenv, attrib.TyconRef)
+        FSharpEntity(cenv, attrib.TyconRef, [])
+
+    // member _.GenericArguments = 
+    //    protect <| fun () -> 
+    //         (attrib.TypeParams |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection) 
 
     member _.IsUnresolved = entityIsUnresolved(attrib.TyconRef)
 

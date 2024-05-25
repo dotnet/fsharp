@@ -265,6 +265,31 @@ let x = 123
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
 
+    [<Test>]
+    let ``Digest attribute type parameters`` () =
+        let source = """
+open System
+open System.Diagnostics
+
+[<Conditional("Bar")>]
+type FooAttribute<^T>() =
+    inherit Attribute()
+
+[<Foo<int>()>]
+let x = 123
+"""
+        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
+        let contents = System.IO.File.ReadAllText fileName
+        let parseResults = parseSourceCode(fileName, contents)
+        let _, checkResults = parseAndCheckFile fileName source options
+
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Array.ofSeq
+        |> Array.tryFind (fun su -> su.Symbol.DisplayName = "x")
+        |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+        |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
+        |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
+
 module Types =
     [<Test>]
     let ``FSharpType.Print parent namespace qualifiers`` () =

@@ -92,6 +92,13 @@ type AttribInfo =
          | ILAttribInfo (g, amap, scoref, a, m) -> 
              let ty = RescopeAndImportILType scoref amap m [] a.Method.DeclaringType
              tcrefOfAppTy g ty
+    
+    member x.TypeParams : TypeInst = [] 
+        //  match x with 
+        //  | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _)) -> tcref
+        //  | ILAttribInfo (g, amap, scoref, a, m) -> 
+        //      let ty = RescopeAndImportILType scoref amap m [] a.Method.DeclaringType
+        //      argsOfAppTy g ty
 
     member x.ConstructorArguments = 
          match x with 

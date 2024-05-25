@@ -33,27 +33,15 @@ ImplFile
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,24--1,25)
                     WithKeyword = None })], (1,0--2,13));
-           Let
-             (false,
-              [SynBinding
-                 (None, Normal, false, false, [],
-                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                  SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Named (SynIdent (myInstance, None), false, None, (4,4--4,14)),
-                  None,
-                  App
-                    (Atomic, false,
-                     TypeApp
-                       (Ident AGoodType, (4,26--4,27),
-                        [Var (SynTypar (P, None, false), (4,27--4,29));
-                         LongIdent (SynLongIdent ([int], [], [None]))],
-                        [(4,29--4,30)], Some (4,34--4,35), (4,26--4,35),
-                        (4,17--4,35)), Const (Unit, (4,35--4,37)), (4,17--4,37)),
-                  (4,4--4,14), Yes (4,0--4,37),
-                  { LeadingKeyword = Let (4,0--4,3)
-                    InlineKeyword = None
-                    EqualsRange = Some (4,15--4,16) })], (4,0--4,37))],
-          PreXmlDocEmpty, [], None, (1,0--4,37), { LeadingKeyword = None })],
+           Expr
+             (App
+                (Atomic, false,
+                 TypeApp
+                   (Ident AGoodType, (4,9--4,10),
+                    [Var (SynTypar (P, None, false), (4,10--4,12));
+                     LongIdent (SynLongIdent ([int], [], [None]))],
+                    [(4,12--4,13)], Some (4,17--4,18), (4,9--4,18), (4,0--4,18)),
+                 Const (Unit, (4,18--4,20)), (4,0--4,20)), (4,0--4,20))],
+          PreXmlDocEmpty, [], None, (1,0--4,20), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))
