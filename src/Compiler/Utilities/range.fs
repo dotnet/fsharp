@@ -512,6 +512,8 @@ module Range =
 
     let rangeBeforePos (m1: range) p = posGeq p m1.End
 
+    let rangeAfterPos (m1: range) p = posGeq m1.Start p
+
     let rangeN fileName line =
         mkRange fileName (mkPos line 0) (mkPos line 0)
 

@@ -109,7 +109,7 @@ type CompletionContext =
     /// Completing a method override (e.g. override this.ToStr|)
     | MethodOverride of enclosingTypeNameRange: range
 
-    /// (s = | ) or (s <> | )
+    /// (s =| ) or (s <>| )
     | CaretAfterOperator of mExprBeforeOperator: range
 
 type ShortIdent = string
@@ -1397,7 +1397,7 @@ module ParsedInput =
         let visitor =
             { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(path, _, defaultTraverse, expr) =
-
+                        
                     if isAtRangeOp path then
                         match defaultTraverse expr with
                         | None -> Some CompletionContext.RangeOperator // nothing was found - report that we were in the context of range operator
@@ -1424,7 +1424,8 @@ module ParsedInput =
 
                             match path with
                             | PartOfParameterList pos precedingArgument args -> Some(CompletionContext.ParameterList args)
-                            | _ -> Some(CompletionContext.CaretAfterOperator id.idRange)
+                            | _ when rangeAfterPos r.Range pos-> Some(CompletionContext.CaretAfterOperator id.idRange)
+                            | _ -> defaultTraverse expr
 
                         | SynExpr.Record(None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
 
@@ -1437,42 +1438,8 @@ module ParsedInput =
                             |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
                             |> Option.orElseWith (fun () -> defaultTraverse expr)
 
-                        | SynExpr.FromParseError(SynExpr.App(ExprAtomicFlag.NonAtomic,
-                                                             true,
-                                                             SynExpr.LongIdent(longDotId = SynLongIdent(id = ident :: _)),
-                                                             arg,
-                                                             _),
-                                                 _)
-                        | SynExpr.App(ExprAtomicFlag.NonAtomic,
-                                      false,
-                                      SynExpr.App(ExprAtomicFlag.NonAtomic,
-                                                  true,
-                                                  SynExpr.LongIdent(longDotId = SynLongIdent(id = ident :: _)),
-                                                  arg,
-                                                  _),
-                                      _,
-                                      _)
-                        | SynExpr.IfThenElse(
-                            ifExpr = SynExpr.App(ExprAtomicFlag.NonAtomic,
-                                                 false,
-                                                 SynExpr.App(ExprAtomicFlag.NonAtomic,
-                                                             true,
-                                                             SynExpr.LongIdent(longDotId = SynLongIdent(id = ident :: _)),
-                                                             arg,
-                                                             _),
-                                                 _,
-                                                 _))
-                        | SynExpr.While(
-                            whileExpr = SynExpr.App(ExprAtomicFlag.NonAtomic,
-                                                    false,
-                                                    SynExpr.App(ExprAtomicFlag.NonAtomic,
-                                                                true,
-                                                                SynExpr.LongIdent(longDotId = SynLongIdent(id = ident :: _)),
-                                                                arg,
-                                                                _),
-                                                    _,
-                                                    _)) when ident.idText = "op_Equality" || ident.idText = "op_Inequality" ->
-                            Some(CompletionContext.CaretAfterOperator arg.Range)
+                        | Operator "op_Equality" (l, r) | Operator "op_Inequality" (l, r) when rangeAfterPos r.Range pos ->
+                            Some(CompletionContext.CaretAfterOperator l.Range)
 
                         | _ -> defaultTraverse expr
 

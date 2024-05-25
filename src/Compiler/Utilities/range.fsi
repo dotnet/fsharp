@@ -236,6 +236,9 @@ module Range =
     /// Test to see if a range occurs fully before a position
     val rangeBeforePos: range -> pos -> bool
 
+    /// Test to see if a range occurs fully after a position
+    val rangeAfterPos: range -> pos -> bool
+
     /// Make a dummy range for a file
     val rangeN: string -> int -> range
 
