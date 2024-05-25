@@ -4,7 +4,7 @@ namespace ErrorMessages
 open Xunit
 open FSharp.Test.Compiler
 
-module NoWarnTest =
+module NoWarn =
 
     // #nowarn is super forgiving the only real error is FS alerts you that you forgot the error ID
     [<Fact>]
@@ -212,6 +212,92 @@ module MismatchedYields =
 module DoBinding =
     let square x = x * x
     square 32
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compile
+        |> shouldSucceed
+
+
+module Time =
+    [<Fact>]
+    let ``Time Errors F# 8`` () =
+
+        Fsx """
+#time ono;;
+#time 0n;;
+#time of;;
+printfn "Hello, World"
+        """
+        |> withLangVersion80
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 2, Col 7, Line 2, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            (Error 10, Line 3, Col 7, Line 3, Col 9, "Unexpected integer literal in implementation file")
+            (Error 235, Line 2, Col 1, Line 2, Col 10, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+            ]
+
+
+    [<Fact>]
+    let ``Time Errors F# 9`` () =
+
+        Fsx """
+#time ono;;
+#time 0n;;
+#time of;;
+printfn "Hello, World"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 10, Line 3, Col 7, Line 3, Col 9, "Unexpected integer literal in implementation file")
+            (Error 235, Line 2, Col 1, Line 2, Col 10, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+            ]
+
+    [<Fact>]
+    let ``Mixed time commands F# 8`` () =
+
+        Fsx """
+#time on;;
+#time on;;
+#time off;;
+#time off;;
+#time;;
+#time "on";;
+#time "on";;
+#time "off";;
+#time "off";;
+printfn "Hello, World"
+        """
+        |> withLangVersion80
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 2, Col 7, Line 2, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 3, Col 7, Line 3, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 4, Col 7, Line 4, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 5, Col 7, Line 5, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            ]
+
+    [<Fact>]
+    let ``Mixed time commands F# 9`` () =
+
+        Fsx """
+#time on;;
+#time on;;
+#time off;;
+#time off;;
+#time;;
+#time "on";;
+#time "on";;
+#time "off";;
+#time "off";;
+printfn "Hello, World"
         """
         |> withLangVersionPreview
         |> asExe
