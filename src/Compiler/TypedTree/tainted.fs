@@ -105,7 +105,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
                     raise <| TypeProviderError(errNum, this.TypeProviderDesignation, range, messages)
             | e -> 
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let error = if e.InnerException = null then e.Message else (e.Message + ": " + e.GetBaseException().Message)
+                    let error = if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)
                     raise <| TypeProviderError((errNum, error), this.TypeProviderDesignation, range)
 
     member _.TypeProvider = Tainted<_>(context, context.TypeProvider)
