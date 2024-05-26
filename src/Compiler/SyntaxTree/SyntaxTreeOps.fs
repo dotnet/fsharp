@@ -982,6 +982,9 @@ let rec synExprContainsError inpExpr =
 
     walkExpr inpExpr
 
+let longIdentToString (ident:SynLongIdent) =
+    System.String.Join(".", ident.LongIdent |> List.map (fun ident -> ident.idText.ToString()))
+
 let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
     List.map
         (function
@@ -989,8 +992,23 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.Int32(n, _) -> string n
         | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> v
         | ParsedHashDirectiveArgument.Ident(ident, _) -> ident.idText
-        | ParsedHashDirectiveArgument.LongIdent(id, _) -> System.String.Join(".", id.LongIdent |> List.map (fun ident -> ident.ToString())))
+        | ParsedHashDirectiveArgument.LongIdent(ident, _) -> longIdentToString ident)
         input
+
+let (|ParsedHashDirectiveStringArguments|) (input: ParsedHashDirectiveArgument list) =
+
+    let value =
+        List.map
+            (function
+            | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
+            | ParsedHashDirectiveArgument.Int32(n, m) -> errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger(n), m)); None
+            | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
+            | ParsedHashDirectiveArgument.Ident(ident, m) -> errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier(ident.idText), m)); None
+            | ParsedHashDirectiveArgument.LongIdent(ident, m) -> errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier(longIdentToString ident), m)); None)
+            input
+    value 
+    |> List.filter Option.isSome 
+    |> List.map (Option.defaultValue "")
 
 let prependIdentInLongIdentWithTrivia (SynIdent(ident, identTrivia)) mDot lid =
     match lid with

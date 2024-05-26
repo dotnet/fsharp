@@ -321,6 +321,8 @@ val synExprContainsError: inpExpr: SynExpr -> bool
 
 val (|ParsedHashDirectiveArguments|): ParsedHashDirectiveArgument list -> string list
 
+val (|ParsedHashDirectiveStringArguments|): ParsedHashDirectiveArgument list -> string list
+
 /// 'e1 && e2'
 [<return: Struct>]
 val (|SynAndAlso|_|): SynExpr -> (SynExpr * SynExpr) voption

@@ -462,6 +462,16 @@
         <target state="new"># directives with non-quoted string arguments</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureParsedHashDirectiveUnexpectedIdentifier">
+        <source>Unexpected identifier '{0}'.</source>
+        <target state="new">Unexpected identifier '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureParsedHashDirectiveUnexpectedInteger">
+        <source>Unexpected integer literal '{0}'.</source>
+        <target state="new">Unexpected integer literal '{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
         <target state="translated">preferir método de extensión sobre propiedad sin formato</target>

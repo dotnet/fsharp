@@ -3733,23 +3733,23 @@ type FsiInteractionProcessor
 
             istate, Completed None
 
-        | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [ path ], m) ->
+        | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveStringArguments [ path ], m) ->
             fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Resolution, path, true, m)
 
-        | ParsedHashDirective("i", ParsedHashDirectiveArguments [ path ], m) ->
+        | ParsedHashDirective("i", ParsedHashDirectiveStringArguments [ path ], m) ->
             fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Include, path, true, m)
 
-        | ParsedHashDirective("I", ParsedHashDirectiveArguments [ path ], m) ->
+        | ParsedHashDirective("I", ParsedHashDirectiveStringArguments [ path ], m) ->
             tcConfigB.AddIncludePath(m, path, tcConfigB.implicitIncludeDir)
             let tcConfig = TcConfig.Create(tcConfigB, validate = false)
             fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI (tcConfig.MakePathAbsolute path))
             istate, Completed None
 
-        | ParsedHashDirective("cd", ParsedHashDirectiveArguments [ path ], m) ->
+        | ParsedHashDirective("cd", ParsedHashDirectiveStringArguments [ path ], m) ->
             ChangeDirectory path m
             istate, Completed None
 
-        | ParsedHashDirective("silentCd", ParsedHashDirectiveArguments [ path ], m) ->
+        | ParsedHashDirective("silentCd", ParsedHashDirectiveStringArguments [ path ], m) ->
             ChangeDirectory path m
             fsiConsolePrompt.SkipNext() (* "silent" directive *)
             istate, Completed None

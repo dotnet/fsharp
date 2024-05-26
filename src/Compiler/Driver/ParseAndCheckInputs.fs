@@ -897,7 +897,7 @@ let ProcessMetaCommandsFromInput
 
         try
             match hash with
-            | ParsedHashDirective("I", ParsedHashDirectiveArguments args, m) ->
+            | ParsedHashDirective("I", ParsedHashDirectiveStringArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashIncludeNotAllowedInNonScript m)
 
@@ -909,14 +909,15 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                     errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
                     state
+
             | ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers, m) ->
                 List.fold (fun state d -> nowarnF state (m, d)) state numbers
 
-            | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
+            | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveStringArguments args, m) ->
                 matchedm <- m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
 
-            | ParsedHashDirective("i", ParsedHashDirectiveArguments args, m) ->
+            | ParsedHashDirective("i", ParsedHashDirectiveStringArguments args, m) ->
                 matchedm <- m
                 ProcessDependencyManagerDirective Directive.Include args m state
 
@@ -931,6 +932,7 @@ let ProcessMetaCommandsFromInput
                 | _ -> errorR (Error(FSComp.SR.buildInvalidHashloadDirective (), m))
 
                 state
+
             | ParsedHashDirective("time", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
