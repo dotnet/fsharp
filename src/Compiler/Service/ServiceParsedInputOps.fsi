@@ -42,6 +42,12 @@ type public PatternContext =
     /// Any other position in a pattern that does not need special handling
     | Other
 
+[<RequireQualifiedAccess; NoComparison; Struct>]
+type MethodOverrideCompletionContext =
+    | Class
+    | Interface
+    | ObjExpr
+
 [<RequireQualifiedAccess>]
 type public CompletionContext =
     /// Completion context cannot be determined due to errors
@@ -79,7 +85,7 @@ type public CompletionContext =
     | Pattern of context: PatternContext
 
     /// Completing a method override (e.g. override this.ToStr|)
-    | MethodOverride of enclosingTypeNameRange: range * spacesBeforeOverrideKeyword: int * hasThis: bool
+    | MethodOverride of ctx: MethodOverrideCompletionContext * enclosingTypeNameRange: range * spacesBeforeOverrideKeyword: int * hasThis: bool * isStatic: bool
 
     /// (s = | ) or (s <> | )
     | CaretAfterOperator of mExprBeforeOperator: range

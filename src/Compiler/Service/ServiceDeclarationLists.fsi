@@ -82,7 +82,7 @@ type public UnresolvedSymbol =
 type internal CompletionInsertType =
     | Default
     | FullName
-    | MethodOverride of spacesBeforeOverrideKeyword: int * hasThis: bool
+    | MethodOverride of spacesBeforeOverrideKeyword: int * hasThis: bool * isInterface: bool
 
 type internal CompletionItem =
     {

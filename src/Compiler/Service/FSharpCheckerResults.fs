@@ -955,8 +955,8 @@ type internal TypeCheckInfo
     let DefaultCompletionItem item =
         CompletionItem ValueNone ValueNone CompletionInsertType.Default item
 
-    let MethodOverrideCompletionItem spacesBeforeOverrideKeyword hasThis item =
-        CompletionItem ValueNone ValueNone (CompletionInsertType.MethodOverride(spacesBeforeOverrideKeyword, hasThis)) item
+    let MethodOverrideCompletionItem spacesBeforeOverrideKeyword hasThis isInterface item =
+        CompletionItem ValueNone ValueNone (CompletionInsertType.MethodOverride(spacesBeforeOverrideKeyword, hasThis, isInterface)) item
 
     let CompletionItemSuggestedName displayName =
         {
@@ -1051,7 +1051,7 @@ type internal TypeCheckInfo
         |> Option.defaultValue completions
 
     /// Gets all methods that a type can override, but has not yet done so.
-    let GetOverridableMethods pos typeNameRange spacesBeforeOverrideKeyword hasThis =
+    let GetOverridableMethods pos ctx (typeNameRange: range) spacesBeforeOverrideKeyword hasThis isStatic =
         let isMethodOverridable alreadyOverridden (candidate: MethInfo) =
             not candidate.IsFinal
             && not (
@@ -1061,62 +1061,75 @@ type internal TypeCheckInfo
 
         let (nenv, ad), m = GetBestEnvForPos pos
 
-        sResolutions.CapturedNameResolutions
-        |> ResizeArray.tryPick (fun r ->
-            match r.Item with
-            | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
-                let superTy =
-                    (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
+        let getOverridableMethods superTy overriddenMethods =
+            let isInterface = isInterfaceTy g superTy
+            GetIntrinsicMethInfosOfType
+                infoReader
+                None
+                ad
+                TypeHierarchy.AllowMultiIntfInstantiations.No
+                FindMemberFlag.PreferOverrides
+                range0
+                superTy
+            |> List.filter (isMethodOverridable overriddenMethods)
+            |> List.filter (fun i -> i.IsInstance <> isStatic)
+            |> List.map (fun meth ->
+                let getNameForNoNameArg =
+                    let mutable count = 1
 
-                let overriddenMethods =
-                    GetImmediateIntrinsicMethInfosOfType (None, ad) g amap typeNameRange ty
-                    |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
+                    fun () ->
+                        let name = $"arg{count}"
+                        count <- count + 1
+                        name
 
-                let overridableMethods =
-                    GetIntrinsicMethInfosOfType
-                        infoReader
-                        None
-                        ad
-                        TypeHierarchy.AllowMultiIntfInstantiations.No
-                        FindMemberFlag.PreferOverrides
-                        range0
-                        superTy
-                    |> List.filter (isMethodOverridable overriddenMethods)
-                    |> List.map (fun meth ->
-                        let getNameForNoNameArg =
-                            let mutable count = 1
+                let name = meth.DisplayName
 
-                            fun () ->
-                                let name = $"arg{count}"
-                                count <- count + 1
-                                name
+                let parameters =
+                    meth.GetParamNames()
+                    |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
+                    |> List.map (fun (types, names) ->
+                        let names =
+                            names
+                            |> List.zip types
+                            |> List.map (fun (ty, name) ->
+                                let name = Option.defaultWith getNameForNoNameArg name
 
-                        let name = meth.DisplayName
+                                match tryTcrefOfAppTy g ty with
+                                | ValueSome ty -> $"{name}: {ty}"
+                                | ValueNone -> $"{name}")
+                            |> String.concat ", "
 
-                        let parameters =
-                            meth.GetParamNames()
-                            |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
-                            |> List.map (fun (types, names) ->
-                                let names =
-                                    names
-                                    |> List.zip types
-                                    |> List.map (fun (ty, name) ->
-                                        let name = Option.defaultWith getNameForNoNameArg name
+                        $"({names})")
+                    |> String.concat " "
 
-                                        match tryTcrefOfAppTy g ty with
-                                        | ValueSome ty -> $"{name}: {ty}"
-                                        | ValueNone -> $"{name}")
-                                    |> String.concat ", "
+                Item.MethodGroup($"{name} {parameters}", [ meth ], None)
+                |> ItemWithNoInst
+                |> MethodOverrideCompletionItem spacesBeforeOverrideKeyword hasThis isInterface)
 
-                                $"({names})")
-                            |> String.concat " "
+        if ctx = MethodOverrideCompletionContext.Class then
+            sResolutions.CapturedNameResolutions
+            |> ResizeArray.tryPick (fun r ->
+                match r.Item with
+                | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
+                    let superTy =
+                        (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
 
-                        Item.MethodGroup($"{name} {parameters}", [ meth ], None)
-                        |> ItemWithNoInst
-                        |> MethodOverrideCompletionItem spacesBeforeOverrideKeyword hasThis)
+                    let overriddenMethods =
+                        GetImmediateIntrinsicMethInfosOfType (None, ad) g amap typeNameRange ty
+                        |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
 
-                Some(overridableMethods, nenv.DisplayEnv, m)
-            | _ -> None)
+                    let overridableMethods = getOverridableMethods superTy overriddenMethods
+                    Some(overridableMethods, nenv.DisplayEnv, m)
+                | _ -> None)
+        else
+            let nameResItems =
+                GetPreciseItemsFromNameResolution(typeNameRange.End.Line, typeNameRange.End.Column, None, ResolveTypeNamesToTypeRefs, ResolveOverloads.Yes)
+            match nameResItems with
+            | NameResResult.Members (ls, _, _) ->
+                ls 
+                |> List.tryPick (function {Item = Item.Types(_, ty::_)} -> Some ty | _ -> None)
+                |> Option.map (fun ty -> getOverridableMethods ty [], nenv.DisplayEnv, m)
+            | _ -> None
 
     /// Gets all field identifiers of a union case that can be referred to in a pattern.
     let GetUnionCaseFields caseIdRange alreadyReferencedFields =
@@ -1704,8 +1717,8 @@ type internal TypeCheckInfo
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
                     |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
 
-            | Some(CompletionContext.MethodOverride(enclosingTypeNameRange, spacesBeforeOverrideKeyword, hasThis)) ->
-                GetOverridableMethods pos enclosingTypeNameRange spacesBeforeOverrideKeyword hasThis
+            | Some(CompletionContext.MethodOverride(ctx, enclosingTypeNameRange, spacesBeforeOverrideKeyword, hasThis, isStatic)) ->
+                GetOverridableMethods pos ctx enclosingTypeNameRange spacesBeforeOverrideKeyword hasThis isStatic
 
             | Some(CompletionContext.CaretAfterOperator m) ->
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()

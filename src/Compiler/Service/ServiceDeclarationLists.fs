@@ -84,7 +84,7 @@ type UnresolvedSymbol =
 type CompletionInsertType =
     | Default
     | FullName
-    | MethodOverride of spacesBeforeOverrideKeyword: int * hasThis: bool
+    | MethodOverride of spacesBeforeOverrideKeyword: int * hasThis: bool * isInterface: bool
 
 type CompletionItem =
     { ItemWithInst: ItemWithInst
@@ -1157,11 +1157,16 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                         match item.Unresolved, item.InsertType with
                         | Some u, _ -> u.DisplayName
                         | None, CompletionInsertType.FullName when item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
-                        | None, CompletionInsertType.MethodOverride (spacesBeforeOverrideKeyword, hasThis) ->
+                        | None, CompletionInsertType.MethodOverride (spacesBeforeOverrideKeyword, hasThis, isInterface) ->
                             match item.Item with
-                            | Item.MethodGroup (name, _, _) -> 
-                                let nameWithThis = if hasThis then $"{name} = " else $"this.{name} = " 
-                                nameWithThis + System.Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' ' + $"base.{name}"
+                            | Item.MethodGroup (name, meth :: _, _) -> 
+                                let nameWithThis = if not meth.IsInstance || hasThis then $"{name} = " else $"this.{name} = "
+                                let nameWithBase = 
+                                    if meth.IsInstance then 
+                                        if isInterface then "raise (System.NotImplementedException())"
+                                        else $"base.{name}" 
+                                    else $"{meth.ApparentEnclosingTyconRef}.{name}"
+                                nameWithThis + System.Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' ' + nameWithBase
                             | _ -> item.Item.DisplayNameCore
                         | None, _ -> item.Item.DisplayName
                 if not supportsPreferExtsMethodsOverProperty then

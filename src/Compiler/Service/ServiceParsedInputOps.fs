@@ -70,6 +70,12 @@ type PatternContext =
     /// Any other position in a pattern that does not need special handling
     | Other
 
+[<RequireQualifiedAccess; NoComparison; Struct>]
+type MethodOverrideCompletionContext =
+    | Class
+    | Interface
+    | ObjExpr
+
 [<RequireQualifiedAccess>]
 type CompletionContext =
     /// Completion context cannot be determined due to errors
@@ -105,9 +111,9 @@ type CompletionContext =
 
     /// Completing a pattern in a match clause, member/let binding or lambda
     | Pattern of context: PatternContext
-
+    
     /// Completing a method override (e.g. override this.ToStr|)
-    | MethodOverride of enclosingTypeNameRange: range * spacesBeforeOverrideKeyword: int * hasThis: bool
+    | MethodOverride of ctx: MethodOverrideCompletionContext * enclosingTypeNameRange: range * spacesBeforeOverrideKeyword: int * hasThis: bool * isStatic: bool
 
     /// (s =| ) or (s <>| )
     | CaretAfterOperator of mExprBeforeOperator: range
@@ -1507,10 +1513,28 @@ module ParsedInput =
                         | SynLeadingKeyword.Override _ -> true
                         | _ -> false
 
-                    let overrideContext path (mOverride: range) hasThis =
+                    let isStaticMember leadingKeyword =
+                        match leadingKeyword with
+                        | SynLeadingKeyword.StaticMember _ -> true
+                        | _ -> false
+
+                    let overrideContext path (mOverride: range) hasThis isStatic =
                         match path with
                         | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
-                            Some(CompletionContext.MethodOverride(enclosingType.idRange, mOverride.StartColumn, hasThis))
+                            Some(CompletionContext.MethodOverride(MethodOverrideCompletionContext.Class, enclosingType.idRange, mOverride.StartColumn, hasThis, isStatic))
+                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: _
+                        | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: _ ->
+                            let ty = 
+                                match ty with
+                                | SynType.App (typeName = ty) -> ty
+                                | _ -> ty
+                            Some(CompletionContext.MethodOverride(MethodOverrideCompletionContext.Interface, ty.Range, mOverride.StartColumn, hasThis, isStatic))
+                        | SyntaxNode.SynExpr(SynExpr.ObjExpr(objType = ty)) :: _ ->
+                            let ty = 
+                                match ty with
+                                | SynType.App (typeName = ty) -> ty
+                                | _ -> ty
+                            Some(CompletionContext.MethodOverride(MethodOverrideCompletionContext.ObjExpr, ty.Range, mOverride.StartColumn, hasThis, isStatic))
                         | _ -> Some CompletionContext.Invalid
 
                     match returnInfo with
@@ -1520,23 +1544,27 @@ module ParsedInput =
 
                         // override |
                         | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword && lineStr.[pos.Column - 1] = ' ' ->
-                            overrideContext path trivia.LeadingKeyword.Range false
+                            overrideContext path trivia.LeadingKeyword.Range false false
+
+                        // override |
+                        | SynPat.FromParseError _ when isStaticMember trivia.LeadingKeyword ->
+                            overrideContext path trivia.LeadingKeyword.Range false true
 
                         // override _.|
                         | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword ->
-                            overrideContext path trivia.LeadingKeyword.Range true
+                            overrideContext path trivia.LeadingKeyword.Range true false
 
                         // override this.|
                         | SynPat.Named(ident = SynIdent(ident = selfId)) when
                             isOverride trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
                             ->
-                            overrideContext path trivia.LeadingKeyword.Range true
+                            overrideContext path trivia.LeadingKeyword.Range true false
 
                         // override this.ToStr|
                         | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
                             isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
                             ->
-                            overrideContext path trivia.LeadingKeyword.Range true
+                            overrideContext path trivia.LeadingKeyword.Range true false
 
                         | SynPat.LongIdent(longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
                             if rangeContainsPos lidwd.Range pos then
