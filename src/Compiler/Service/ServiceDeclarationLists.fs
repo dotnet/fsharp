@@ -80,6 +80,12 @@ type UnresolvedSymbol =
       DisplayName: string
       Namespace: string[] }
 
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
+type CompletionInsertType =
+    | Default
+    | FullName
+    | MethodOverride of spacesBeforeOverrideKeyword: int * hasThis: bool
+
 type CompletionItem =
     { ItemWithInst: ItemWithInst
       Kind: CompletionItemKind
@@ -87,7 +93,7 @@ type CompletionItem =
       MinorPriority: int
       Type: TyconRef option
       Unresolved: UnresolvedSymbol option
-      InsertFullName: bool }
+      InsertType: CompletionInsertType }
     member x.Item = x.ItemWithInst.Item
 
 [<AutoOpen>]
@@ -1126,21 +1132,38 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     match u.Namespace with
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
-                | None -> x.Item.DisplayName)
+                | None -> 
+                    match x.InsertType with
+                    | CompletionInsertType.MethodOverride _ ->
+                        match x.Item with
+                        | Item.MethodGroup (name, _, _) -> name
+                        | _ -> x.Item.DisplayNameCore
+                    | _ -> x.Item.DisplayName
+            )
             |> List.map (
                 let textInDeclList item =
-                    match item.Unresolved with
-                    | Some u -> u.DisplayName
-                    | None when item.InsertFullName && item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
-                    | None -> item.Item.DisplayNameCore
+                    match item.Unresolved, item.InsertType with
+                    | Some u, _ -> u.DisplayName
+                    | None, CompletionInsertType.FullName when item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
+                    | None, CompletionInsertType.MethodOverride _ ->
+                        match item.Item with
+                        | Item.MethodGroup (name, _, _) -> name
+                        | _ -> item.Item.DisplayNameCore
+                    | None, _ -> item.Item.DisplayNameCore
                 let textInCode (item: CompletionItem) =
                     match item.Item with
                     | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
                     | _ ->
-                        match item.Unresolved with
-                        | Some u -> u.DisplayName
-                        | None when item.InsertFullName && item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
-                        | None -> item.Item.DisplayName
+                        match item.Unresolved, item.InsertType with
+                        | Some u, _ -> u.DisplayName
+                        | None, CompletionInsertType.FullName when item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
+                        | None, CompletionInsertType.MethodOverride (spacesBeforeOverrideKeyword, hasThis) ->
+                            match item.Item with
+                            | Item.MethodGroup (name, _, _) -> 
+                                let nameWithThis = if hasThis then $"{name} = " else $"this.{name} = " 
+                                nameWithThis + System.Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' ' + $"base.{name}"
+                            | _ -> item.Item.DisplayNameCore
+                        | None, _ -> item.Item.DisplayName
                 if not supportsPreferExtsMethodsOverProperty then
                     // we don't pay the cost of filtering specific to RFC-1137
                     // nor risk a change in behaviour for the intellisense item list

@@ -984,6 +984,7 @@ module SyntaxTraversal =
                                 x
                                 |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path (fun _ -> None)
                         ]
+
                         |> pick x
                 | ok -> ok
             | SynMemberDefn.Inherit(synType, _identOption, range) -> traverseInherit (synType, range)

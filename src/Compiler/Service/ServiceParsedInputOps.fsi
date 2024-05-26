@@ -79,7 +79,7 @@ type public CompletionContext =
     | Pattern of context: PatternContext
 
     /// Completing a method override (e.g. override this.ToStr|)
-    | MethodOverride of enclosingTypeNameRange: range
+    | MethodOverride of enclosingTypeNameRange: range * spacesBeforeOverrideKeyword: int * hasThis: bool
 
     /// (s = | ) or (s <> | )
     | CaretAfterOperator of mExprBeforeOperator: range

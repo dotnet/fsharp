@@ -107,7 +107,7 @@ type CompletionContext =
     | Pattern of context: PatternContext
 
     /// Completing a method override (e.g. override this.ToStr|)
-    | MethodOverride of enclosingTypeNameRange: range
+    | MethodOverride of enclosingTypeNameRange: range * spacesBeforeOverrideKeyword: int * hasThis: bool
 
     /// (s =| ) or (s <>| )
     | CaretAfterOperator of mExprBeforeOperator: range
@@ -1397,7 +1397,7 @@ module ParsedInput =
         let visitor =
             { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(path, _, defaultTraverse, expr) =
-                        
+
                     if isAtRangeOp path then
                         match defaultTraverse expr with
                         | None -> Some CompletionContext.RangeOperator // nothing was found - report that we were in the context of range operator
@@ -1424,9 +1424,9 @@ module ParsedInput =
 
                             match path with
                             | PartOfParameterList pos precedingArgument args -> Some(CompletionContext.ParameterList args)
-                            | _ -> 
+                            | _ ->
                                 match expr with
-                                | Operator "op_Equality" (l, r) when rangeAfterPos r.Range pos ->
+                                | Operator "op_Equality" (l, r) when SyntaxTraversal.rangeContainsPosLeftEdgeInclusive r.Range pos ->
                                     Some(CompletionContext.CaretAfterOperator l.Range)
                                 | _ -> defaultTraverse expr
 
@@ -1441,7 +1441,8 @@ module ParsedInput =
                             |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
                             |> Option.orElseWith (fun () -> defaultTraverse expr)
 
-                        | Operator "op_Equality" (l, r) | Operator "op_Inequality" (l, r) when rangeAfterPos r.Range pos ->
+                        | Operator "op_Equality" (l, r)
+                        | Operator "op_Inequality" (l, r) when SyntaxTraversal.rangeContainsPosLeftEdgeInclusive r.Range pos ->
                             Some(CompletionContext.CaretAfterOperator l.Range)
 
                         | _ -> defaultTraverse expr
@@ -1506,10 +1507,10 @@ module ParsedInput =
                         | SynLeadingKeyword.Override _ -> true
                         | _ -> false
 
-                    let overrideContext path =
+                    let overrideContext path (mOverride: range) hasThis =
                         match path with
                         | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
-                            Some(CompletionContext.MethodOverride enclosingType.idRange)
+                            Some(CompletionContext.MethodOverride(enclosingType.idRange, mOverride.StartColumn, hasThis))
                         | _ -> Some CompletionContext.Invalid
 
                     match returnInfo with
@@ -1517,20 +1518,25 @@ module ParsedInput =
                     | _ ->
                         match headPat with
 
+                        // override |
+                        | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword && lineStr.[pos.Column - 1] = ' ' ->
+                            overrideContext path trivia.LeadingKeyword.Range false
+
                         // override _.|
-                        | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword -> overrideContext path
+                        | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword ->
+                            overrideContext path trivia.LeadingKeyword.Range true
 
                         // override this.|
                         | SynPat.Named(ident = SynIdent(ident = selfId)) when
                             isOverride trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
                             ->
-                            overrideContext path
+                            overrideContext path trivia.LeadingKeyword.Range true
 
                         // override this.ToStr|
                         | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
                             isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
                             ->
-                            overrideContext path
+                            overrideContext path trivia.LeadingKeyword.Range true
 
                         | SynPat.LongIdent(longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
                             if rangeContainsPos lidwd.Range pos then

@@ -899,7 +899,7 @@ type internal TypeCheckInfo
             if p >= 0 then Some p else None
 
     /// Build a CompetionItem
-    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) insertFullName (item: ItemWithInst) =
+    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) insertType (item: ItemWithInst) =
         let kind =
             match item.Item with
             | Item.DelegateCtor _
@@ -949,11 +949,14 @@ type internal TypeCheckInfo
             IsOwnMember = false
             Type = ty
             Unresolved = isUnresolved
-            InsertFullName = insertFullName
+            InsertType = insertType
         }
 
     let DefaultCompletionItem item =
-        CompletionItem ValueNone ValueNone false item
+        CompletionItem ValueNone ValueNone CompletionInsertType.Default item
+
+    let MethodOverrideCompletionItem spacesBeforeOverrideKeyword hasThis item =
+        CompletionItem ValueNone ValueNone (CompletionInsertType.MethodOverride(spacesBeforeOverrideKeyword, hasThis)) item
 
     let CompletionItemSuggestedName displayName =
         {
@@ -963,7 +966,7 @@ type internal TypeCheckInfo
             Kind = CompletionItemKind.SuggestedName
             IsOwnMember = false
             Unresolved = None
-            InsertFullName = false
+            InsertType = CompletionInsertType.Default
         }
 
     let getItem (x: ItemWithInst) = x.Item
@@ -1048,7 +1051,7 @@ type internal TypeCheckInfo
         |> Option.defaultValue completions
 
     /// Gets all methods that a type can override, but has not yet done so.
-    let GetOverridableMethods pos typeNameRange =
+    let GetOverridableMethods pos typeNameRange spacesBeforeOverrideKeyword hasThis =
         let isMethodOverridable alreadyOverridden (candidate: MethInfo) =
             not candidate.IsFinal
             && not (
@@ -1079,11 +1082,38 @@ type internal TypeCheckInfo
                         range0
                         superTy
                     |> List.filter (isMethodOverridable overriddenMethods)
-                    |> List.groupBy (fun x -> x.DisplayName)
-                    |> List.map (fun (name, overloads) ->
-                        Item.MethodGroup(name, overloads, None)
+                    |> List.map (fun meth ->
+                        let getNameForNoNameArg =
+                            let mutable count = 1
+
+                            fun () ->
+                                let name = $"arg{count}"
+                                count <- count + 1
+                                name
+
+                        let name = meth.DisplayName
+
+                        let parameters =
+                            meth.GetParamNames()
+                            |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
+                            |> List.map (fun (types, names) ->
+                                let names =
+                                    names
+                                    |> List.zip types
+                                    |> List.map (fun (ty, name) ->
+                                        let name = Option.defaultWith getNameForNoNameArg name
+
+                                        match tryTcrefOfAppTy g ty with
+                                        | ValueSome ty -> $"{name}: {ty}"
+                                        | ValueNone -> $"{name}")
+                                    |> String.concat ", "
+
+                                $"({names})")
+                            |> String.concat " "
+
+                        Item.MethodGroup($"{name} {parameters}", [ meth ], None)
                         |> ItemWithNoInst
-                        |> DefaultCompletionItem)
+                        |> MethodOverrideCompletionItem spacesBeforeOverrideKeyword hasThis)
 
                 Some(overridableMethods, nenv.DisplayEnv, m)
             | _ -> None)
@@ -1261,7 +1291,12 @@ type internal TypeCheckInfo
             | NameResResult.Cancel(denv, m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) ->
                 // lookup based on name resolution results successful
-                Some(items |> List.map (CompletionItem (getType ()) ValueNone false), denv, m)
+                Some(
+                    items
+                    |> List.map (CompletionItem (getType ()) ValueNone CompletionInsertType.Default),
+                    denv,
+                    m
+                )
             | _ ->
                 match origLongIdentOpt with
                 | None -> None
@@ -1302,7 +1337,12 @@ type internal TypeCheckInfo
                         isNil plid
                         ->
                         // lookup based on expression typings successful
-                        Some(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone false), denv, m)
+                        Some(
+                            items
+                            |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.Default),
+                            denv,
+                            m
+                        )
                     | ExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                         // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>
                         // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
@@ -1326,17 +1366,32 @@ type internal TypeCheckInfo
                             // First, use unfiltered name resolution items, if they're not empty
                             | NameResResult.Members(items, denv, m), _, _ when not (isNil items) ->
                                 // lookup based on name resolution results successful
-                                ValueSome(items |> List.map (CompletionItem (getType ()) ValueNone false), denv, m)
+                                ValueSome(
+                                    items
+                                    |> List.map (CompletionItem (getType ()) ValueNone CompletionInsertType.Default),
+                                    denv,
+                                    m
+                                )
 
                             // If we have nonempty items from environment that were resolved from a type, then use them...
                             // (that's better than the next case - here we'd return 'int' as a type)
                             | _, FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
                                 // lookup based on name and environment successful
-                                ValueSome(items |> List.map (CompletionItem (getType ()) ValueNone false), denv, m)
+                                ValueSome(
+                                    items
+                                    |> List.map (CompletionItem (getType ()) ValueNone CompletionInsertType.Default),
+                                    denv,
+                                    m
+                                )
 
                             // Try again with the qualItems
                             | _, _, ExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
-                                ValueSome(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone false), denv, m)
+                                ValueSome(
+                                    items
+                                    |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.Default),
+                                    denv,
+                                    m
+                                )
 
                             | _ -> ValueNone
 
@@ -1365,7 +1420,11 @@ type internal TypeCheckInfo
                                     ->
                                     globalItemsFiltered
                                     |> List.map (fun globalItem ->
-                                        CompletionItem (getType ()) (ValueSome globalItem) false (ItemWithNoInst globalItem.Symbol.Item))
+                                        CompletionItem
+                                            (getType ())
+                                            (ValueSome globalItem)
+                                            CompletionInsertType.Default
+                                            (ItemWithNoInst globalItem.Symbol.Item))
                                     |> fun r -> ValueSome(r, denv, m)
                                 | _ -> ValueNone
                             | _ -> ValueNone // do not return unresolved items after dot
@@ -1582,7 +1641,7 @@ type internal TypeCheckInfo
                                 IsOwnMember = false
                                 Type = None
                                 Unresolved = None
-                                InsertFullName = false
+                                InsertType = CompletionInsertType.Default
                             })
 
                     match declaredItems with
@@ -1645,7 +1704,8 @@ type internal TypeCheckInfo
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
                     |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
 
-            | Some(CompletionContext.MethodOverride enclosingTypeNameRange) -> GetOverridableMethods pos enclosingTypeNameRange
+            | Some(CompletionContext.MethodOverride(enclosingTypeNameRange, spacesBeforeOverrideKeyword, hasThis)) ->
+                GetOverridableMethods pos enclosingTypeNameRange spacesBeforeOverrideKeyword hasThis
 
             | Some(CompletionContext.CaretAfterOperator m) ->
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
@@ -1676,12 +1736,19 @@ type internal TypeCheckInfo
                     match declaredItems with
                     | Some(declaredItems, _, _) ->
                         Some(
-                            (items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone true))
+                            (items
+                             |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.FullName))
                             @ declaredItems,
                             nenv.DisplayEnv,
                             m
                         )
-                    | None -> Some(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone true), nenv.DisplayEnv, m)
+                    | None ->
+                        Some(
+                            items
+                            |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.FullName),
+                            nenv.DisplayEnv,
+                            m
+                        )
                 | None -> declaredItems
 
             // Other completions

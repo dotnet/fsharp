@@ -77,6 +77,12 @@ type public UnresolvedSymbol =
 
       Namespace: string[]
     }
+    
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
+type internal CompletionInsertType =
+    | Default
+    | FullName
+    | MethodOverride of spacesBeforeOverrideKeyword: int * hasThis: bool
 
 type internal CompletionItem =
     {
@@ -92,7 +98,7 @@ type internal CompletionItem =
 
       Unresolved: UnresolvedSymbol option
 
-      InsertFullName: bool
+      InsertType: CompletionInsertType
     }
     member Item: Item
 
