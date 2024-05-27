@@ -27,8 +27,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="Common\LifecycleManager.fs" />
+		<Compile Include="Common\CapabilitiesManager.fs" />
+		<Compile Include="Common\FSharpWorkspace.fs" />
+		<Compile Include="Common\FSharpRequestContext.fs" />
+		<Compile Include="Handlers\LanguageFeaturesHandler.fs" />
+		<Compile Include="Handlers\DocumentStateHandler.fs" />
 		<Compile Include="Utils.fs" />
-		<Compile Include="FSharpWorkspace.fs" />
 		<Compile Include="FSharpLanguageServer.fs" />
 		<Compile Include="Executable.fs" />
 	</ItemGroup>

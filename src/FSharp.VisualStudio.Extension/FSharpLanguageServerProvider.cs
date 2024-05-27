@@ -9,11 +9,11 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Documents;
 using FSharp.Compiler.LanguageServer;
+using FSharp.Compiler.LanguageServer.Common;
+
 using Microsoft.CommonLanguageServerProtocol.Framework;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Extensibility;
@@ -24,7 +24,6 @@ using Microsoft.VisualStudio.ProjectSystem.Query;
 using Microsoft.VisualStudio.RpcContracts.LanguageServerProvider;
 using Nerdbank.Streams;
 using static FSharp.Compiler.CodeAnalysis.ProjectSnapshot;
-using static FSharp.Compiler.LanguageServer.Workspace;
 
 /// <inheritdoc/>
 #pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
@@ -66,6 +65,10 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSyntax),
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
+            },
+            HoverProvider = new HoverOptions()
+            { 
+                WorkDoneProgress = true 
             }
         };
         return capabilities;

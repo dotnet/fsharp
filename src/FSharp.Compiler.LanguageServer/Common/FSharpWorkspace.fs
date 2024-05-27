@@ -1,4 +1,4 @@
-module FSharp.Compiler.LanguageServer.Workspace
+namespace FSharp.Compiler.LanguageServer.Common
 
 open FSharp.Compiler.Text
 
