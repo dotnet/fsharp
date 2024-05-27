@@ -3683,9 +3683,10 @@ constrPattern:
       { let m = unionRanges (rhs parseState 1) $2.Range
         SynPat.IsInst($2, m) }
 
-  | COLON_QMARK ends_coming_soon_or_recover %prec pat_isinst
+  | COLON_QMARK recover %prec pat_isinst
       { let mColon = rhs parseState 1
-        reportParseErrorAt mColon (FSComp.SR.parsExpectingPattern ())
+        if not $2 then
+            reportParseErrorAt mColon (FSComp.SR.parsExpectingPattern ())
         let ty = SynType.FromParseError(mColon.EndRange)
         SynPat.IsInst(ty, mColon) }
 
@@ -3868,9 +3869,10 @@ parenPattern:
       { let mLhs = lhs parseState
         SynPat.Typed($1, $3, mLhs) }
 
-  | parenPattern COLON ends_coming_soon_or_recover
+  | parenPattern COLON recover
       { let mColon = rhs parseState 2
-        reportParseErrorAt mColon (FSComp.SR.parsExpectingPattern ())
+        if not $3 then
+            reportParseErrorAt mColon (FSComp.SR.parsExpectingPattern ())
         let ty = SynType.FromParseError(mColon.EndRange)
         SynPat.Typed($1, ty, unionRanges $1.Range mColon) }
 
@@ -3882,9 +3884,10 @@ parenPattern:
       { let mColonColon = rhs parseState 2
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
-  | parenPattern COLON_COLON ends_coming_soon_or_recover
+  | parenPattern COLON_COLON recover
       { let mColonColon = rhs parseState 2
-        reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
+        if not $3 then
+            reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
         let pat2 = SynPat.Wild(mColonColon.EndRange)
         SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
 
