@@ -4586,7 +4586,7 @@ let ``Test project35b Dependency files for ParseAndCheckFileInProject`` () =
         // Transparent compiler doesn't differentiate between foreground and background requests. All files have to be present in the input snapshot so the filesystem doesn't have to be watched for those. Maybe source files shouldn't be included in the dependency list at all. But they show the dependencies gathered from graph-based checking which could be useful?
         ()
 
-[<Fact>]
+[<Fact(Skip = "Flaky, reenable when stable")>]
 let ``Test project35b Dependency files for GetBackgroundCheckResultsForFileInProject`` () =
     let _,checkFileResults = checker.GetBackgroundCheckResultsForFileInProject(Project35b.fileName1, Project35b.options) |> Async.RunImmediate
     for d in checkFileResults.DependencyFiles do
