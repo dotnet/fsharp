@@ -65,6 +65,10 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSyntax),
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
+            },
+            HoverProvider = new HoverOptions()
+            { 
+                WorkDoneProgress = true 
             }
         };
         return capabilities;
