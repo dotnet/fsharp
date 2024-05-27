@@ -24,7 +24,7 @@ ImplFile
                                ([op_Addition], [], [Some (OriginalNotation "+")]),
                              None, (3,2--3,3)), Ident a, (3,0--3,3)),
                        ArbitraryAfterError
-                         ("declExprInfixPlusMinus", (3,3--3,3)), (3,0--3,3)),
+                         ("declExprInfixPlusMinus2", (3,3--3,3)), (3,0--3,3)),
                     (3,0--4,2)), Const (Unit, (4,3--4,5)), (3,0--4,5)),
               (3,0--4,5))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
@@ -32,5 +32,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,0)-(4,2) parse error Unexpected infix operator in expression
 (3,2)-(3,3) parse error Unexpected token '+' or incomplete expression

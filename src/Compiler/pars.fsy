@@ -4435,7 +4435,12 @@ declExpr:
   | declExpr EQUALS ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "=")
-       mkSynInfix mOp $1 "=" (arbExpr ("declExprInfixEquals", mOp.EndRange)) }
+       mkSynInfix mOp $1 "=" (arbExpr ("declExprInfixEquals1", mOp.EndRange)) }
+
+  | declExpr EQUALS
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "=")
+       mkSynInfix mOp $1 "=" (arbExpr ("declExprInfixEquals2", mOp.EndRange)) }
 
   | declExpr INFIX_COMPARE_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
@@ -4443,7 +4448,12 @@ declExpr:
   | declExpr INFIX_COMPARE_OP ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
-       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfix", mOp.EndRange)) }
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfix1", mOp.EndRange)) }
+
+  | declExpr INFIX_COMPARE_OP
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfix2", mOp.EndRange)) }
 
   | declExpr DOLLAR declExpr
      { mkSynInfix (rhs parseState 2) $1 "$" $3 }
@@ -4451,7 +4461,12 @@ declExpr:
   | declExpr DOLLAR ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "$")
-       mkSynInfix mOp $1 "$" (arbExpr ("declExprInfixDollar", mOp.EndRange)) }
+       mkSynInfix mOp $1 "$" (arbExpr ("declExprInfixDollar1", mOp.EndRange)) }
+
+  | declExpr DOLLAR
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "$")
+       mkSynInfix mOp $1 "$" (arbExpr ("declExprInfixDollar2", mOp.EndRange)) }
 
   | declExpr LESS declExpr
      { mkSynInfix (rhs parseState 2) $1 "<" $3 }
@@ -4459,7 +4474,12 @@ declExpr:
   | declExpr LESS ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "<")
-       mkSynInfix mOp $1 "<" (arbExpr ("declExprInfixLess", mOp.EndRange)) }
+       mkSynInfix mOp $1 "<" (arbExpr ("declExprInfixLess1", mOp.EndRange)) }
+
+  | declExpr LESS
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "<")
+       mkSynInfix mOp $1 "<" (arbExpr ("declExprInfixLess2", mOp.EndRange)) }
 
   | declExpr GREATER declExpr
      { mkSynInfix (rhs parseState 2) $1 ">" $3 }
@@ -4467,7 +4487,12 @@ declExpr:
   | declExpr GREATER ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression ">")
-       mkSynInfix mOp $1 ">" (arbExpr ("declExprInfixGreater", mOp.EndRange)) }
+       mkSynInfix mOp $1 ">" (arbExpr ("declExprInfixGreater1", mOp.EndRange)) }
+
+  | declExpr GREATER
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression ">")
+       mkSynInfix mOp $1 ">" (arbExpr ("declExprInfixGreater2", mOp.EndRange)) }
 
   | declExpr INFIX_AT_HAT_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
@@ -4475,7 +4500,12 @@ declExpr:
   | declExpr INFIX_AT_HAT_OP ends_coming_soon_or_recover %prec infix_at_hat_op_binary
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
-       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfix", mOp.EndRange)) }
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfix1", mOp.EndRange)) }
+
+  | declExpr INFIX_AT_HAT_OP %prec infix_at_hat_op_binary
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfix2", mOp.EndRange)) }
 
   | declExpr PERCENT_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
@@ -4483,7 +4513,12 @@ declExpr:
   | declExpr PERCENT_OP ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
-       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixPercent", mOp.EndRange)) }
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixPercent1", mOp.EndRange)) }
+
+  | declExpr PERCENT_OP
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixPercent2", mOp.EndRange)) }
 
   | declExpr COLON_COLON declExpr
      { let mOp = rhs parseState 2
@@ -4497,7 +4532,15 @@ declExpr:
        let m = unionRanges $1.Range mOp
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "::")
        let identExpr = mkSynOperator mOp "::"
-       let tupExpr = SynExpr.Tuple(false, [$1; (arbExpr ("declExprInfixColonColon", mOp.EndRange))], [mOp], m)
+       let tupExpr = SynExpr.Tuple(false, [$1; (arbExpr ("declExprInfixColonColon1", mOp.EndRange))], [mOp], m)
+       SynExpr.App(ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, m) }
+
+  | declExpr COLON_COLON
+     { let mOp = rhs parseState 2
+       let m = unionRanges $1.Range mOp
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "::")
+       let identExpr = mkSynOperator mOp "::"
+       let tupExpr = SynExpr.Tuple(false, [$1; (arbExpr ("declExprInfixColonColon2", mOp.EndRange))], [mOp], m)
        SynExpr.App(ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, m) }
 
   | declExpr PLUS_MINUS_OP declExpr
@@ -4506,7 +4549,12 @@ declExpr:
   | declExpr PLUS_MINUS_OP ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
-       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixPlusMinus", mOp.EndRange)) }
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixPlusMinus1", mOp.EndRange)) }
+
+  | declExpr PLUS_MINUS_OP
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixPlusMinus2", mOp.EndRange)) }
 
   | declExpr MINUS declExpr
      { mkSynInfix (rhs parseState 2) $1 "-" $3 }
@@ -4514,7 +4562,12 @@ declExpr:
   | declExpr MINUS ends_coming_soon_or_recover
       { let mOp = rhs parseState 2
         reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "-")
-        mkSynInfix mOp $1 "-" (arbExpr ("declExprInfixMinus", mOp.EndRange)) }
+        mkSynInfix mOp $1 "-" (arbExpr ("declExprInfixMinus1", mOp.EndRange)) }
+
+  | declExpr MINUS
+      { let mOp = rhs parseState 2
+        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "-")
+        mkSynInfix mOp $1 "-" (arbExpr ("declExprInfixMinus2", mOp.EndRange)) }
 
   | declExpr STAR declExpr
      { mkSynInfix (rhs parseState 2) $1 "*" $3 }
@@ -4522,7 +4575,12 @@ declExpr:
   | declExpr STAR ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "*")
-       mkSynInfix mOp $1 "*" (arbExpr ("declExprInfixStar", mOp.EndRange)) }
+       mkSynInfix mOp $1 "*" (arbExpr ("declExprInfixStar1", mOp.EndRange)) }
+
+  | declExpr STAR
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "*")
+       mkSynInfix mOp $1 "*" (arbExpr ("declExprInfixStar2", mOp.EndRange)) }
 
   | declExpr INFIX_STAR_DIV_MOD_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
@@ -4530,7 +4588,12 @@ declExpr:
   | declExpr INFIX_STAR_DIV_MOD_OP ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
-       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixStarDivMod", mOp.EndRange)) }
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixStarDivMod1", mOp.EndRange)) }
+
+  | declExpr INFIX_STAR_DIV_MOD_OP
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixStarDivMod2", mOp.EndRange)) }
 
   | declExpr INFIX_STAR_STAR_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
@@ -4538,7 +4601,12 @@ declExpr:
   | declExpr INFIX_STAR_STAR_OP ends_coming_soon_or_recover
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
-       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixStarStar", mOp.EndRange)) }
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixStarStar1", mOp.EndRange)) }
+
+  | declExpr INFIX_STAR_STAR_OP
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixStarStar2", mOp.EndRange)) }
 
   | declExpr DOT_DOT declExpr
       { let wholem = rhs2 parseState 1 3

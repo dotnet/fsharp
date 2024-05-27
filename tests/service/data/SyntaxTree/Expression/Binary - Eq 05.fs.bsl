@@ -21,7 +21,7 @@ ImplFile
                                     [Some (OriginalNotation "=")]), None,
                                  (3,4--3,5)), Ident a, (3,2--3,5)),
                            ArbitraryAfterError
-                             ("declExprInfixEquals", (3,5--3,5)), (3,2--3,5));
+                             ("declExprInfixEquals2", (3,5--3,5)), (3,2--3,5));
                         App
                           (NonAtomic, false,
                            App
@@ -40,5 +40,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(3,5)-(3,6) parse error Unexpected symbol ',' in expression
 (3,4)-(3,5) parse error Unexpected token '=' or incomplete expression

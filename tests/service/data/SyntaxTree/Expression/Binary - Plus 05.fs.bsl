@@ -21,7 +21,7 @@ ImplFile
                            SynLongIdent
                              ([op_Addition], [], [Some (OriginalNotation "+")]),
                            None, (4,6--4,7)), Ident a, (4,4--4,7)),
-                     ArbitraryAfterError ("declExprInfixPlusMinus", (4,7--4,7)),
+                     ArbitraryAfterError ("declExprInfixPlusMinus1", (4,7--4,7)),
                      (4,4--4,7)), (3,4--3,5), Yes (3,0--4,7),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None

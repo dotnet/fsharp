@@ -32,7 +32,7 @@ ImplFile
                                     [Some (OriginalNotation "=")]), None,
                                  (3,11--3,12)), Ident b, (3,9--3,12)),
                            ArbitraryAfterError
-                             ("declExprInfixEquals", (3,12--3,12)), (3,9--3,12))],
+                             ("declExprInfixEquals2", (3,12--3,12)), (3,9--3,12))],
                        [(3,7--3,8)], (3,2--3,12)), (3,1--3,2), Some (3,12--3,13),
                     (3,1--3,13)), (3,0--3,13)), (3,0--3,13))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
