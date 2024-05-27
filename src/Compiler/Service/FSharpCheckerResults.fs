@@ -311,7 +311,7 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 /// (Depending on the kind of the items, we may stop processing or continue to find better items)
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type NameResResult =
-    | Members of (ItemWithInst list * DisplayEnv * range)
+    | Members of ((ItemWithInst * AssemblySymbol voption) list * DisplayEnv * range)
     | Cancel of DisplayEnv * range
     | Empty
 
@@ -325,7 +325,7 @@ type ExprTypingsResult =
     | NoneBecauseTypecheckIsStaleAndTextChanged
     | NoneBecauseThereWereTypeErrors
     | None
-    | Some of (ItemWithInst list * DisplayEnv * range) * TType
+    | Some of ((ItemWithInst * AssemblySymbol voption) list * DisplayEnv * range) * TType
 
 type Names = string list
 
@@ -443,6 +443,84 @@ type internal TypeCheckInfo
 
         items
 
+    let getExtMethsOfType m ty getAllSymbols =
+        /// Checks if the type is used for C# style extension members.
+        let IsTyconRefUsedForCSharpStyleExtensionMembers g m (tcref: TyconRef) =
+            // Type must be non-generic and have 'Extension' attribute
+            isNil(tcref.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcref
+            || g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired)
+        
+        /// A 'plain' method is an extension method not interpreted as an extension method.
+        let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy (minfo: MethInfo) =
+            // Method must be static, have 'Extension' attribute, must not be curried, must have at least one argument
+            isEnclExtTy &&
+            not minfo.IsInstance &&
+            not minfo.IsExtensionMember &&
+            (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) &&
+            AttributeChecking.MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
+        let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =                
+            try
+                let rs =
+                    match metadataOfTycon deref, minfo with
+                    | ILTypeMetadata (TILObjectReprData(scope=scoref)), ILMeth(ilMethInfo=ILMethInfo(ilMethodDef=ilMethod)) ->
+                        match ilMethod.ParameterTypes with
+                        | firstTy :: _ ->
+                            match firstTy with
+                            | ILType.Boxed  tspec | ILType.Value tspec ->
+                                let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
+                                if Import.CanImportILTypeRef amap m tref then
+                                    let tcref = tref |> Import.ImportILTypeRef amap m
+                                    if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
+                                    else Some tcref
+                                else None
+                            | _ -> None
+                        | _ -> None
+                    | _ ->
+                        // The results are indexed by the TyconRef of the first 'this' argument, if any.
+                        // So we need to go and crack the type of the 'this' argument.
+                        let thisTy = minfo.GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars).Head.Head
+                        match thisTy with
+                        | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
+                        | _ -> None
+                Some rs
+            with RecoverableException e -> // Import of the ILType may fail, if so report the error and skip on
+                errorRecovery e m
+                None
+            
+        let baseTys = 
+            ty :: infoReader.GetEntireTypeHierarchy(TypeHierarchy.AllowMultiIntfInstantiations.Yes, m, ty)
+            |> List.choose (fun ty -> match tryTcrefOfAppTy g ty with ValueSome ty' -> Some (ty, ty') | _-> None)
+        let checkTy ty2 =
+            baseTys |> List.tryPick (fun (ty, ty') -> if tyconRefEq g ty' ty2 then Some ty else None)
+
+        getAllSymbols()
+        |> List.collect (fun x ->
+            match x.Symbol.Item with
+            | Item.MethodGroup(name, meths, un) when not x.Symbol.IsExplicitlySuppressed ->
+                let meths =
+                    meths
+                    |> List.choose(fun i -> 
+                        let isEnclExtTy = IsTyconRefUsedForCSharpStyleExtensionMembers g m i.DeclaringTyconRef
+                        if IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy i then
+                            let ty2 = GetTyconRefForExtensionMembers i i.DeclaringTyconRef.Deref amap m g
+                            match ty2 with 
+                            | Some(Some ty2) -> 
+                                match checkTy ty2 with
+                                | Some ty ->
+                                    match i with
+                                    | ILMeth(_, mi, _) ->
+                                        Some(MethInfo.CreateILExtensionMeth(amap, m, ty, i.DeclaringTyconRef, Some 0UL, mi.RawMetadata))
+                                    | _ -> Some i
+                                | _ -> None
+                            | _ -> None
+                        else None
+                    )
+                if meths.IsEmpty then []
+                else (ItemWithNoInst(Item.MethodGroup(name, meths, un)), ValueSome({ x with UnresolvedSymbol = { x.UnresolvedSymbol with DisplayName = name } })) :: []
+            | _ -> []
+        )
+    let ItemWithNoInstWithNoSymbol (item: ItemWithInst) = item, (ValueNone: AssemblySymbol voption)
+
     // Filter items to show only valid & return Some if there are any
     let ReturnItemsOfType (items: ItemWithInst list) g denv (m: range) filterCtors =
         let items =
@@ -452,7 +530,7 @@ type internal TypeCheckInfo
             |> FilterItemsForCtors filterCtors
 
         if not (isNil items) then
-            NameResResult.Members(items, denv, m)
+            NameResResult.Members(items |> List.map ItemWithNoInstWithNoSymbol, denv, m)
         else
             NameResResult.Empty
 
@@ -477,7 +555,7 @@ type internal TypeCheckInfo
     /// Looks at the exact name resolutions that occurred during type checking
     /// If 'membersByResidue' is specified, we look for members of the item obtained
     /// from the name resolution and filter them by the specified residue (?)
-    let GetPreciseItemsFromNameResolution (line, colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads) =
+    let GetPreciseItemsFromNameResolution (line, colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads, getAllSymbols) =
         let endOfNamesPos = mkPos line colAtEndOfNames
 
         // Logic below expects the list to be in reverse order of resolution
@@ -543,9 +621,21 @@ type internal TypeCheckInfo
                 let targets =
                     ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
+                let globalItems = getExtMethsOfType m ty getAllSymbols
                 let items = ResolveCompletionsInType ncenv nenv targets m ad false ty
                 let items = List.map ItemWithNoInst items
-                ReturnItemsOfType items g denv m filterCtors
+                let items =
+                    items
+                    |> RemoveDuplicateItems g
+                    |> RemoveExplicitlySuppressed g
+                    |> FilterItemsForCtors filterCtors
+                    |> List.map ItemWithNoInstWithNoSymbol
+                let items = items @ globalItems
+
+                if not (isNil items) then
+                    NameResResult.Members(items, denv, m)
+                else
+                    NameResResult.Empty
 
         // No residue, so the items are the full resolution of the name
         | CNR(_, _, denv, _, _, m) :: _, None ->
@@ -709,7 +799,7 @@ type internal TypeCheckInfo
 
     /// Looks at the exact expression types at the position to the left of the
     /// residue then the source when it was typechecked.
-    let GetPreciseCompletionListFromExprTypings (parseResults: FSharpParseFileResults, endOfExprPos, filterCtors) =
+    let GetPreciseCompletionListFromExprTypings (parseResults: FSharpParseFileResults, endOfExprPos, filterCtors, getAllSymbols) =
 
         let thereWereSomeQuals, quals = GetExprTypingForPosition(endOfExprPos)
 
@@ -748,12 +838,16 @@ type internal TypeCheckInfo
 
                 let targets =
                     ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
-
+                
                 let items = ResolveCompletionsInType ncenv nenv targets m ad false ty
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
                 let items = items |> FilterItemsForCtors filterCtors
+                let globalItems = getExtMethsOfType m ty getAllSymbols
+                let items = 
+                    (items |> List.map (fun i -> i, ValueNone)) @ globalItems
+                    |> IPartialEqualityComparer.partialDistinctBy (IPartialEqualityComparer.On (fun (item, _) -> item.Item) (ItemDisplayPartialEquality g))
                 ExprTypingsResult.Some((items, nenv.DisplayEnv, m), ty)
             | None ->
                 if textChanged then
@@ -970,6 +1064,7 @@ type internal TypeCheckInfo
         }
 
     let getItem (x: ItemWithInst) = x.Item
+    let getItemTuple2 (x: ItemWithInst, _) = x.Item
 
     let getItem2 (x: CompletionItem) = x.Item
 
@@ -1123,11 +1218,11 @@ type internal TypeCheckInfo
                 | _ -> None)
         else
             let nameResItems =
-                GetPreciseItemsFromNameResolution(typeNameRange.End.Line, typeNameRange.End.Column, None, ResolveTypeNamesToTypeRefs, ResolveOverloads.Yes)
+                GetPreciseItemsFromNameResolution(typeNameRange.End.Line, typeNameRange.End.Column, None, ResolveTypeNamesToTypeRefs, ResolveOverloads.Yes, fun () -> [])
             match nameResItems with
             | NameResResult.Members (ls, _, _) ->
                 ls 
-                |> List.tryPick (function {Item = Item.Types(_, ty::_)} -> Some ty | _ -> None)
+                |> List.tryPick (function ({Item = Item.Types(_, ty::_)}, _) -> Some ty | _ -> None)
                 |> Option.map (fun ty -> getOverridableMethods ty [], nenv.DisplayEnv, m)
             | _ -> None
 
@@ -1248,7 +1343,7 @@ type internal TypeCheckInfo
             // This is based on position (i.e. colAtEndOfNamesAndResidue). This is not used if a residueOpt is given.
             let nameResItems =
                 match residueOpt with
-                | None -> GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors, resolveOverloads)
+                | None -> GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors, resolveOverloads, allSymbols)
                 | Some residue ->
                     // Deals with cases when we have spaces between dot and\or identifier, like A  . $
                     // if this is our case - then we need to locate end position of the name skipping whitespaces
@@ -1262,7 +1357,7 @@ type internal TypeCheckInfo
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
-                            GetPreciseItemsFromNameResolution(line, colAtEndOfNames, Some(residue), filterCtors, resolveOverloads)
+                            GetPreciseItemsFromNameResolution(line, colAtEndOfNames, Some(residue), filterCtors, resolveOverloads, allSymbols)
                         | None -> NameResResult.Empty
                     | _ -> NameResResult.Empty
 
@@ -1302,11 +1397,11 @@ type internal TypeCheckInfo
 
             match nameResItems with
             | NameResResult.Cancel(denv, m) -> Some([], denv, m)
-            | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) ->
+            | NameResResult.Members(FilterRelevantItems getItemTuple2 exactMatchResidueOpt (items, denv, m)) ->
                 // lookup based on name resolution results successful
                 Some(
                     items
-                    |> List.map (CompletionItem (getType ()) ValueNone CompletionInsertType.Default),
+                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm CompletionInsertType.Default item),
                     denv,
                     m
                 )
@@ -1334,7 +1429,7 @@ type internal TypeCheckInfo
                                 )
 
                             match leftOfDot with
-                            | Some(pos, _) -> GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors), true
+                            | Some(pos, _) -> GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors, allSymbols), true
                             | None ->
                                 // Can get here in a case like: if "f xxx yyy" is legal, and we do "f xxx y"
                                 // We have no interest in expression typings, those are only useful for dot-completion.  We want to fallback
@@ -1342,7 +1437,7 @@ type internal TypeCheckInfo
                                 ExprTypingsResult.None, false
 
                     match qualItems, thereIsADotInvolved with
-                    | ExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty), _ when
+                    | ExprTypingsResult.Some(FilterRelevantItems getItemTuple2 exactMatchResidueOpt (items, denv, m), ty), _ when
                         // Initially we only use the expression typings when looking up, e.g. (expr).Nam or (expr).Name1.Nam
                         // These come through as an empty plid and residue "". Otherwise we try an environment lookup
                         // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
@@ -1352,7 +1447,8 @@ type internal TypeCheckInfo
                         // lookup based on expression typings successful
                         Some(
                             items
-                            |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.Default),
+                            |> List.map (
+                                fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm CompletionInsertType.Default item),
                             denv,
                             m
                         )
@@ -1381,7 +1477,7 @@ type internal TypeCheckInfo
                                 // lookup based on name resolution results successful
                                 ValueSome(
                                     items
-                                    |> List.map (CompletionItem (getType ()) ValueNone CompletionInsertType.Default),
+                                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm CompletionInsertType.Default item),
                                     denv,
                                     m
                                 )
@@ -1398,10 +1494,11 @@ type internal TypeCheckInfo
                                 )
 
                             // Try again with the qualItems
-                            | _, _, ExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
+                            | _, _, ExprTypingsResult.Some(FilterRelevantItems getItemTuple2 exactMatchResidueOpt (items, denv, m), ty) ->
                                 ValueSome(
                                     items
-                                    |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.Default),
+                                    |> List.map (
+                                        fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm CompletionInsertType.Default item),
                                     denv,
                                     m
                                 )
@@ -1641,6 +1738,9 @@ type internal TypeCheckInfo
 
                 match results with
                 | NameResResult.Members(items, denv, m) ->
+                    let items =
+                        items
+                        |> List.map fst
                     let filtered =
                         items
                         |> RemoveDuplicateItems g
