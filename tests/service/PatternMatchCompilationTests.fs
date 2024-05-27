@@ -756,7 +756,7 @@ let z as =
         "(10,7--10,9): Unexpected keyword 'as' in binding";
         "(10,5--10,6): Expecting pattern";
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token.";
-        "(12,9--12,11): Unexpected keyword 'as' in binding";
+        "(12,6--12,8): Expecting pattern";
         "(13,8--13,10): Unexpected keyword 'as' in binding";
         "(14,8--14,10): Unexpected keyword 'as' in binding";
         "(15,8--15,10): Unexpected keyword 'as' in pattern. Expected ')' or other token.";
@@ -776,6 +776,8 @@ let z as =
         "(8,29--8,30): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
         "(9,26--9,27): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
         "(10,14--10,15): This expression was expected to have type\u001d    ''a * 'b'    \u001dbut here has type\u001d    'int'";
+        "(12,16--12,18): This expression was expected to have type\u001d    ''a list'    \u001dbut here has type\u001d    'int'";
+        "(12,4--12,13): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s).";
         "(15,4--15,5): The pattern discriminator 'r' is not defined.";
         "(15,4--15,12): Incomplete pattern matches on this expression."
     ]
@@ -1176,7 +1178,7 @@ let as :? z =
         "(10,7--10,9): Unexpected keyword 'as' in binding";
         "(10,5--10,6): Expecting pattern";
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token.";
-        "(12,9--12,11): Unexpected keyword 'as' in binding";
+        "(12,6--12,8): Expecting pattern";
         "(13,8--13,10): Unexpected keyword 'as' in binding";
         "(14,8--14,10): Unexpected keyword 'as' in binding";
         "(15,13--15,15): Unexpected keyword 'as' in pattern. Expected '(' or other token.";
@@ -1204,6 +1206,8 @@ let as :? z =
         "(9,22--9,26): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(10,13--10,14): The type 'i' is not defined.";
         "(10,10--10,14): The type ''a * 'b' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
+        "(12,15--12,16): The type 'm' is not defined.";
+        "(12,12--12,16): The type ''a list' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(16,4--16,5): The pattern discriminator 't' is not defined.";
         "(16,14--16,15): The type 'u' is not defined.";
         "(16,11--16,15): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."

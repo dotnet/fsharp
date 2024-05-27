@@ -3454,6 +3454,17 @@ headBindingPattern:
       { let mColonColon = rhs parseState 2
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
+  | headBindingPattern COLON_COLON recover
+      { let mColonColon = rhs parseState 2
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
+  | headBindingPattern COLON_COLON
+      { let mColonColon = rhs parseState 2
+        reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
   | tuplePatternElements %prec pat_tuple
       { let pats, commas = $1
         let pats, commas = normalizeTuplePat pats commas
@@ -3759,6 +3770,17 @@ parenPattern:
   | parenPattern COLON_COLON parenPattern
       { let mColonColon = rhs parseState 2
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
+
+  | parenPattern COLON_COLON recover
+      { let mColonColon = rhs parseState 2
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
+  | parenPattern COLON_COLON
+      { let mColonColon = rhs parseState 2
+        reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
 
   | constrPattern { $1 }
 
