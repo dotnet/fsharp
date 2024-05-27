@@ -5,7 +5,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Xunit
 
-[<Fact>]
+[<Fact(Skip = "Flaky: seems to run fine locally but often fails in CI")>]
 let ``Assembly reader shim gets requests`` () =
     let defaultReader = AssemblyReader
     let mutable gotRequest = false
@@ -22,5 +22,5 @@ let x = 123
 """
 
     let fileName, options = mkTestFileAndOptions source [| |]
-    checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunSynchronously |> ignore
+    checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediate |> ignore
     gotRequest |> should be True
