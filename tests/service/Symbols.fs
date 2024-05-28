@@ -280,7 +280,7 @@ let x = 123
 """
         let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
         let contents = System.IO.File.ReadAllText fileName
-        let parseResults = parseSourceCode(fileName, contents)
+        let parseResults = parseSourceCode(fileName, source)
         let _, checkResults = parseAndCheckFile fileName source options
 
         checkResults.GetAllUsesOfAllSymbolsInFile()
@@ -288,7 +288,10 @@ let x = 123
         |> Array.tryFind (fun su -> su.Symbol.DisplayName = "x")
         |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
-        |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
+        |> Option.iter (fun symbol -> 
+            let a = symbol.Attributes[0].TypeParameters[0]
+            Assert.AreEqual(a.AbbreviatedType.TypeDefinition.CompiledName, "Int32")
+            )
 
 module Types =
     [<Test>]

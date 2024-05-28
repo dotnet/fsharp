@@ -78,7 +78,7 @@ module FSharp.Test.SurfaceArea
             let msg = $"""Assembly: %A{asm}
 
               Expected and actual surface area don't match. To see the delta, run:
-                  windiff {baselinePath} {logFile}
+                  git diff --no-index --word-diff {baselinePath} {logFile}
 
               {diff}"""
 

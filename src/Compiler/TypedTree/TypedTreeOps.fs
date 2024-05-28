@@ -3421,13 +3421,13 @@ let TryDecodeILAttribute tref (attrs: ILAttributes) =
     attrs.AsArray() |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
 
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
-let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
+let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
 let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
 let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> List.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
-let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = match attrOpt with Some (AttribInfo(_, tcref)) -> tyconRefEq g tcref tcref2 | _ -> false
+let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _, _)) = match attrOpt with Some (AttribInfo(_, tcref)) -> tyconRefEq g tcref tcref2 | _ -> false
 
 [<return: Struct>]
 let (|ExtractAttribNamedArg|_|) nm args = 
@@ -3450,8 +3450,8 @@ let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _
 
 let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ ], _, _, _, _)) -> Some dflt
-    | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> Some b
+    | Some(Attrib(_, _, _, [ ], _, _, _, _)) -> Some dflt
+    | Some(Attrib(_, _, _, [ AttribBoolArg b ], _, _, _, _)) -> Some b
     | _ -> None
 
 let TryFindFSharpBoolAttribute g nm attrs = TryFindFSharpBoolAttributeWithDefault true g nm attrs
@@ -3459,12 +3459,12 @@ let TryFindFSharpBoolAttributeAssumeFalse g nm attrs = TryFindFSharpBoolAttribut
 
 let TryFindFSharpInt32Attribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ AttribInt32Arg b ], _, _, _, _)) -> Some b
+    | Some(Attrib(_, _, _, [ AttribInt32Arg b ], _, _, _, _)) -> Some b
     | _ -> None
     
 let TryFindFSharpStringAttribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> Some b
+    | Some(Attrib(_, _, _, [ AttribStringArg b ], _, _, _, _)) -> Some b
     | _ -> None
     
 let TryFindILAttribute (AttribInfo (atref, _)) attrs = 
@@ -3505,8 +3505,8 @@ let TryFindTyconRefBoolAttribute g m attribSpec tcref =
                    | [ILAttribElem.Bool v ], _ -> Some v 
                    | _ -> None)
                 (function 
-                   | Attrib(_, _, [ ], _, _, _, _) -> Some true
-                   | Attrib(_, _, [ AttribBoolArg v ], _, _, _, _) -> Some v 
+                   | Attrib(_, _, _, [ ], _, _, _, _) -> Some true
+                   | Attrib(_, _, _, [ AttribBoolArg v ], _, _, _, _) -> Some v 
                    | _ -> None)
                 (function 
                    | [ ], _ -> Some true
@@ -3520,7 +3520,7 @@ let TryFindAttributeUsageAttribute g m tcref =
     |> Array.tryPick (fun tcref ->
         TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref
                 (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", _, _, ILAttribElem.Bool res -> Some res | _ -> None))
-                (fun (Attrib(_, _, _, named, _, _, _)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res ) -> Some res | _ -> None))
+                (fun (Attrib(_, _, _, _, named, _, _, _)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res ) -> Some res | _ -> None))
                 (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", Some (:? bool as res : obj) -> Some res | _ -> None))
     )
 
@@ -3530,7 +3530,7 @@ let TryFindAttributeUsageAttribute g m tcref =
 let TryFindTyconRefStringAttribute g m attribSpec tcref =
     TryBindTyconRefAttribute g m attribSpec tcref 
                 (function [ILAttribElem.String (Some msg) ], _ -> Some msg | _ -> None)
-                (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
+                (function Attrib(_, _, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
                 (function [ Some (:? string as msg : obj) ], _ -> Some msg | _ -> None)
 
 /// Check if a type definition has a specific attribute
@@ -3543,8 +3543,8 @@ let TyconRefHasAttribute g m attribSpec tcref =
 
 let HasDefaultAugmentationAttribute g (tcref: TyconRef) =
     match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-    | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
-    | Some (Attrib(_, _, _, _, _, _, m)) ->
+    | Some(Attrib(_, _, _, [ AttribBoolArg b ], _, _, _, _)) -> b
+    | Some (Attrib(_, _, _, _, _, _, _, m)) ->
         errorR(Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded(), m))
         true
     | _ -> true
@@ -4182,7 +4182,7 @@ module DebugPrint =
     let valRefL (vr: ValRef) = 
         wordL (tagText vr.LogicalName) |> stampL vr.Stamp 
 
-    let layoutAttrib (Attrib(_, k, _, _, _, _, _)) = 
+    let layoutAttrib (Attrib(_, k, _, _, _, _, _, _)) = 
         leftL (tagText "[<") ^^ 
         (match k with 
          | ILAttrib ilmeth -> wordL (tagText ilmeth.Name)
@@ -5767,10 +5767,11 @@ type RemapContext =
     { g: TcGlobals
       stackGuard: StackGuard }
 
-let rec remapAttribImpl ctxt tmenv (Attrib (tcref, kind, args, props, isGetOrSetAttr, targets, m)) = 
+let rec remapAttribImpl ctxt tmenv (Attrib (tcref, kind, typeArgs, args, props, isGetOrSetAttr, targets, m)) = 
     Attrib(
         remapTyconRef tmenv.tyconRefRemap tcref, 
         remapAttribKind tmenv kind, 
+        typeArgs,
         args |> List.map (remapAttribExpr ctxt tmenv), 
         props |> List.map (fun (AttribNamedArg(nm, ty, flg, expr)) -> AttribNamedArg(nm, remapType tmenv ty, flg, remapAttribExpr ctxt tmenv expr)), 
         isGetOrSetAttr, 

@@ -222,7 +222,7 @@ type OptionalArgInfo =
         else
             NotOptional
 
-    static member ValueOfDefaultParameterValueAttrib (Attrib (_, _, exprs, _, _, _, _)) =
+    static member ValueOfDefaultParameterValueAttrib (Attrib (_, _, _, exprs, _, _, _, _)) =
         let (AttribExpr (_, defaultValueExpr)) = List.head exprs
         match defaultValueExpr with
         | Expr.Const _ -> Some defaultValueExpr
@@ -324,7 +324,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, false, true -> CallerMemberName
         | false, true, true -> 
             match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
-            | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
+            | Some(Attrib(_, _, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"

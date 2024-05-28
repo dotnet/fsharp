@@ -1742,7 +1742,7 @@ type internal TransparentCompiler
                         // We return 'None' for the assembly portion of the cross-assembly reference
                         let hasTypeProviderAssemblyAttrib =
                             topAttrs.assemblyAttrs
-                            |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
+                            |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _, _)) ->
                                 let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
 
                                 nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)

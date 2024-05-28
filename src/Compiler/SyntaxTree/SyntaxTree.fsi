@@ -1171,7 +1171,7 @@ type SynAttribute =
         TypeName: SynLongIdent
         
         /// The type parameters of the attribute.
-        TypeParams: SynType list
+        TypeArgs: SynType list
 
         /// The argument of the attribute, perhaps a tuple
         ArgExpr: SynExpr

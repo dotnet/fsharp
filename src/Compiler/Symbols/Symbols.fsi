@@ -1185,6 +1185,8 @@ type FSharpAttribute =
     /// The arguments to the constructor for the attribute
     member ConstructorArguments: IList<FSharpType * obj>
 
+    member TypeParameters: IList<FSharpType>
+
     /// The named arguments for the attribute
     member NamedArguments: IList<FSharpType * string * bool * obj>
 

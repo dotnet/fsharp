@@ -2926,7 +2926,7 @@ type Val =
 
     /// Indicates if the backing field for a static value is suppressed.
     member x.IsCompiledAsStaticPropertyWithoutField = 
-            let hasValueAsStaticProperty = x.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute")
+            let hasValueAsStaticProperty = x.Attribs |> List.exists(fun (Attrib(tc, _, _, _,_, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute")
             x.val_flags.IsCompiledAsStaticPropertyWithoutField || hasValueAsStaticProperty
 
     /// Indicates if the value is pinned/fixed
@@ -4496,6 +4496,7 @@ type Attrib =
     | Attrib of
         tyconRef: TyconRef *
         kind: AttribKind *
+        typeArgs: TypeInst *
         unnamedArgs: AttribExpr list *
         propVal: AttribNamedArg list *
         appliedToAGetterOrSetter: bool *
@@ -4505,9 +4506,9 @@ type Attrib =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    member x.TyconRef = (let (Attrib(tcref, _, _, _, _, _, _)) = x in tcref)
+    member x.TyconRef = (let (Attrib(tcref, _, _, _, _, _, _, _)) = x in tcref)
 
-    member x.Range = (let (Attrib(_, _, _, _, _, _, m)) = x in m)
+    member x.Range = (let (Attrib(_, _, _, _, _, _, _, m)) = x in m)
 
     override x.ToString() = "attrib" + x.TyconRef.ToString()
 

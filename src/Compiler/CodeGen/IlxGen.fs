@@ -754,8 +754,8 @@ and ComputeUnionHasHelpers g (tcref: TyconRef) =
         SpecialFSharpOptionHelpers
     else
         match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-        | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> if b then AllHelpers else NoHelpers
-        | Some(Attrib(_, _, _, _, _, _, m)) ->
+        | Some(Attrib(_, _, _, [ AttribBoolArg b ], _, _, _, _)) -> if b then AllHelpers else NoHelpers
+        | Some(Attrib(_, _, _, _, _, _, _, m)) ->
             errorR (Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded (), m))
             AllHelpers
         | _ -> AllHelpers (* not hiddenRepr *)
@@ -8538,7 +8538,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
             let ilAttribs =
                 if not hasLiteralAttr then
                     vspec.Attribs
-                    |> List.filter (fun (Attrib(_, _, _, _, _, targets, _)) -> canTarget (targets, System.AttributeTargets.Field))
+                    |> List.filter (fun (Attrib(_, _, _, _, _, _, targets, _)) -> canTarget (targets, System.AttributeTargets.Field))
                     |> GenAttrs cenv eenv // backing field only gets attributes that target fields
                 else
                     GenAttrs cenv eenv vspec.Attribs // literals have no property, so preserve all the attributes on the field itself
@@ -8562,7 +8562,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         else
             let ilAttribs =
                 vspec.Attribs
-                |> List.filter (fun (Attrib(_, _, _, _, _, targets, _)) -> canTarget (targets, System.AttributeTargets.Property))
+                |> List.filter (fun (Attrib(_, _, _, _, _, _, targets, _)) -> canTarget (targets, System.AttributeTargets.Property))
                 |> GenAttrs cenv eenv // property only gets attributes that target properties
 
             let ilPropDef =
@@ -8660,7 +8660,7 @@ and GenMarshal cenv attribs =
             |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_MarshalAsAttribute >> not)
 
     match TryFindFSharpAttributeOpt g g.attrib_MarshalAsAttribute attribs with
-    | Some(Attrib(_, _, [ AttribInt32Arg unmanagedType ], namedArgs, _, _, m)) ->
+    | Some(Attrib(_, _, _, [ AttribInt32Arg unmanagedType ], namedArgs, _, _, m)) ->
         let decoder = AttributeDecoder namedArgs
 
         let rec decodeUnmanagedType unmanagedType =
@@ -8780,7 +8780,7 @@ and GenMarshal cenv attribs =
             | _ -> ILNativeType.Empty
 
         Some(decodeUnmanagedType unmanagedType), otherAttribs
-    | Some(Attrib(_, _, _, _, _, _, m)) ->
+    | Some(Attrib(_, _, _, _, _, _, _, m)) ->
         errorR (Error(FSComp.SR.ilMarshalAsAttributeCannotBeDecoded (), m))
         None, attribs
     | _ ->
@@ -8998,7 +8998,7 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
 
     let implflags =
         match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
-        | Some(Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
+        | Some(Attrib(_, _, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
         | _ -> 0x0
 
     let hasPreserveSigAttr =
@@ -9143,7 +9143,7 @@ and GenMethodForBinding
     // Now generate the code.
     let hasPreserveSigNamedArg, ilMethodBody, hasDllImport =
         match TryFindFSharpAttributeOpt g g.attrib_DllImportAttribute v.Attribs with
-        | Some(Attrib(_, _, [ AttribStringArg dll ], namedArgs, _, _, m)) ->
+        | Some(Attrib(_, _, _, [ AttribStringArg dll ], namedArgs, _, _, m)) ->
             if not (isNil methLambdaTypars) then
                 error (Error(FSComp.SR.ilSignatureForExternalFunctionContainsTypeParameters (), m))
 
@@ -9152,7 +9152,7 @@ and GenMethodForBinding
 
             hasPreserveSigNamedArg, mbody, true
 
-        | Some(Attrib(_, _, _, _, _, _, m)) -> error (Error(FSComp.SR.ilDllImportAttributeCouldNotBeDecoded (), m))
+        | Some(Attrib(_, _, _, _, _, _, _, m)) -> error (Error(FSComp.SR.ilDllImportAttributeCouldNotBeDecoded (), m))
 
         | _ ->
             // Replace the body of ValInline.PseudoVal "must inline" methods with a 'throw'
@@ -9192,14 +9192,14 @@ and GenMethodForBinding
         |> List.filter (IsMatchingFSharpAttribute g g.attrib_CompiledNameAttribute >> not)
 
     let attrsAppliedToGetterOrSetter, attrs =
-        List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
+        List.partition (fun (Attrib(_, _, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
 
     let sourceNameAttribs, compiledName =
         match
             v.Attribs
             |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_CompiledNameAttribute)
         with
-        | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> [ mkCompilationSourceNameAttr g v.LogicalName ], Some b
+        | Some(Attrib(_, _, _, [ AttribStringArg b ], _, _, _, _)) -> [ mkCompilationSourceNameAttr g v.LogicalName ], Some b
         | _ -> [], None
 
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
@@ -9958,7 +9958,7 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
     // Other expressions are not valid custom attribute values
     | _ -> error (InternalError("invalid custom attribute value (not a constant): " + showL (exprL x), x.Range))
 
-and GenAttr cenv g eenv (Attrib(_, k, args, props, _, _, _)) =
+and GenAttr cenv g eenv (Attrib(_, k, _typeParams, args, props, _, _, m)) =
     let props =
         props
         |> List.map (fun (AttribNamedArg(s, ty, fld, AttribExpr(_, expr))) ->
@@ -9966,17 +9966,32 @@ and GenAttr cenv g eenv (Attrib(_, k, args, props, _, _, _)) =
             let ilTy = GenType cenv m eenv.tyenv ty
             let cval = GenAttribArg cenv g eenv expr ilTy
             (s, ilTy, fld, cval))
-
+    let ilTyArgs = GenTypeArgs cenv m eenv.tyenv _typeParams
     let mspec =
         match k with
-        | ILAttrib mref -> mkILMethSpec (mref, AsObject, [], [])
+        | ILAttrib mref -> mkILMethSpec (mref, AsObject, ilTyArgs, [])
         | FSAttrib vref ->
             assert vref.IsMember
 
             let mspec, _, _, _, _, _, _, _, _, _ =
                 GetMethodSpecForMemberVal cenv (Option.get vref.MemberInfo) vref
 
-            mspec
+             //numEnclILTypeArgs will include unit-of-measure args, unfortunately. For now, just cut-and-paste code from GetMemberCallInfo
+             //@REVIEW: refactor this
+            let numEnclILTypeArgs =
+                match vref.MemberInfo with
+                | Some _ when not vref.IsExtensionMember -> List.length (vref.MemberApparentEntity.TyparsNoRange |> DropErasedTypars)
+                | _ -> 0
+                
+            let ilEnclArgTys, ilMethArgTys =
+                if ilTyArgs.Length < numEnclILTypeArgs then
+                    error (InternalError("length mismatch", m))
+
+                List.splitAt numEnclILTypeArgs ilTyArgs
+
+            let boxity = mspec.DeclaringType.Boxity
+
+            mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
 
     let ilArgs =
         List.map2 (fun (AttribExpr(_, vexpr)) ty -> GenAttribArg cenv g eenv vexpr ty) args mspec.FormalArgTypes
@@ -10008,7 +10023,7 @@ and CreatePermissionSets cenv eenv (securityAttributes: Attrib list) =
     let g = cenv.g
 
     [
-        for Attrib(tcref, _, actions, _, _, _, _) as attr in securityAttributes do
+        for Attrib(tcref, _, _, actions, _, _, _, _) as attr in securityAttributes do
             let action =
                 match actions with
                 | [ AttribInt32Arg act ] -> act
@@ -10978,7 +10993,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                         let ilFieldOffset =
                             match TryFindFSharpAttribute g g.attrib_FieldOffsetAttribute fspec.FieldAttribs with
-                            | Some(Attrib(_, _, [ AttribInt32Arg fieldOffset ], _, _, _, _)) -> Some fieldOffset
+                            | Some(Attrib(_, _, _, [ AttribInt32Arg fieldOffset ], _, _, _, _)) -> Some fieldOffset
                             | Some attrib ->
                                 errorR (Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded (), attrib.Range))
                                 None
@@ -11393,7 +11408,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                     let tdLayout, tdEncoding =
                         match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
-                        | Some(Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
+                        | Some(Attrib(_, _, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
                             let decoder = AttributeDecoder namedArgs
                             let ilPack = decoder.FindInt32 "Pack" 0x0
                             let ilSize = decoder.FindInt32 "Size" 0x0
@@ -11422,7 +11437,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 | _ -> ILTypeDefLayout.Auto
 
                             tdLayout, tdEncoding
-                        | Some(Attrib(_, _, _, _, _, _, m)) ->
+                        | Some(Attrib(_, _, _, _, _, _, _, m)) ->
                             errorR (Error(FSComp.SR.ilStructLayoutAttributeCouldNotBeDecoded (), m))
                             ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 

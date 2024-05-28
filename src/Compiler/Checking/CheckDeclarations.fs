@@ -5780,7 +5780,7 @@ let CheckOneImplFile
                 with RecoverableException exn -> 
                     errorRecovery exn m)
 
-        // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
+        // We ALWAYS run the PostTypeCheckSemanticChecks phase, though if we have already encountered some
         // errors we turn off error reporting. This is because it performs various fixups over the TAST, e.g. 
         // assigning nice names for inference variables.
         let hasExplicitEntryPoint, anonRecdTypes = 
@@ -5808,7 +5808,7 @@ let CheckOneImplFile
 
         // Warn on version attributes.
         topAttrs.assemblyAttrs |> List.iter (function
-           | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
+           | Attrib(tref, _, _typeParams, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
                 let attrName = tref.CompiledRepresentationForNamedType.FullName
                 let isValid() =
                     try parseILVersion version |> ignore; true

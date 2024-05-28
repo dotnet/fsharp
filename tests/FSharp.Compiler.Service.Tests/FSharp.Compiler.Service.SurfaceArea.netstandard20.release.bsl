@@ -4865,6 +4865,8 @@ FSharp.Compiler.Symbols.FSharpAttribute: FSharp.Compiler.Symbols.FSharpEntity At
 FSharp.Compiler.Symbols.FSharpAttribute: FSharp.Compiler.Symbols.FSharpEntity get_AttributeType()
 FSharp.Compiler.Symbols.FSharpAttribute: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Symbols.FSharpAttribute: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] TypeParameters
+FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] get_TypeParameters()
 FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpType,System.Object]] ConstructorArguments
 FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpType,System.Object]] get_ConstructorArguments()
 FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`4[FSharp.Compiler.Symbols.FSharpType,System.String,System.Boolean,System.Object]] NamedArguments
