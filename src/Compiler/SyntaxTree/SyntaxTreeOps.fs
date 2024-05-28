@@ -1003,23 +1003,20 @@ let parsedHashDirectiveArguments (input: ParsedHashDirectiveArgument list) (lang
         input
 
 let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list) (_langVersion: LanguageVersion) =
-    let value =
-        List.map
-            (function
-            | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
-            | ParsedHashDirectiveArgument.Int32(n, m) ->
-                errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger (n), m))
-                None
-            | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
-            | ParsedHashDirectiveArgument.Ident(ident, m) ->
-                errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (ident.idText), m))
-                None
-            | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
-                errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (longIdentToString ident), m))
-                None)
-            input
-
-    value |> List.filter Option.isSome |> List.map (Option.defaultValue "")
+    List.choose
+        (function
+        | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
+        | ParsedHashDirectiveArgument.Int32(n, m) ->
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger (n), m))
+            None
+        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
+        | ParsedHashDirectiveArgument.Ident(ident, m) ->
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (ident.idText), m))
+            None
+        | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (longIdentToString ident), m))
+            None)
+        input
 
 let prependIdentInLongIdentWithTrivia (SynIdent(ident, identTrivia)) mDot lid =
     match lid with
