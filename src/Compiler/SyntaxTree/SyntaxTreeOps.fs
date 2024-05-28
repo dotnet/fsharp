@@ -1099,3 +1099,18 @@ let (|Get_OrSet_Ident|_|) (ident: Ident) =
     if ident.idText.StartsWithOrdinal("get_") then ValueSome()
     elif ident.idText.StartsWithOrdinal("set_") then ValueSome()
     else ValueNone
+
+let addEmptyMatchClause (mBar1: range) (mBar2: range) (clauses: SynMatchClause list) =
+    let rec addOrPat (pat: SynPat) =
+        match pat with
+        | SynPat.As(lhsPat, rhsPat, range) -> SynPat.As(addOrPat lhsPat, rhsPat, range)
+        | _ ->
+            let mPat1 = mBar1.EndRange
+            let pat1 = SynPat.Wild(mPat1)
+            SynPat.Or(pat1, pat, unionRanges mPat1 pat.Range, { BarRange = mBar2 })
+
+    match clauses with
+    | [] -> []
+    | SynMatchClause(pat, whenExpr, resultExpr, range, debugPoint, trivia) :: restClauses ->
+        SynMatchClause(addOrPat pat, whenExpr, resultExpr, range, debugPoint, trivia)
+        :: restClauses
