@@ -4673,6 +4673,14 @@ withPatternClauses:
       { let mBar = rhs parseState 1 |> Some
         $2 mBar }
 
+  | BAR BAR patternClauses
+     { let mBar1 = rhs parseState 1
+       let mBar2 = rhs parseState 2
+       reportParseErrorAt mBar2 (FSComp.SR.parsExpectingPattern ())
+       let clauses, mLast = Some mBar1 |> $3
+       let clauses = addEmptyMatchClause mBar1 mBar2 clauses
+       clauses, mLast }
+
   | BAR error
       { // silent recovery
         let mLast = rhs parseState 1
@@ -4705,6 +4713,20 @@ patternClauses:
        let m = unionRanges resultExpr.Range pat.Range
        fun mBar ->
            (SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar }) :: clauses), mLast }
+
+  | patternAndGuard patternResult BAR BAR patternClauses
+     { let pat, guard = $1
+       let mArrow, resultExpr = $2
+       let mBar1 = rhs parseState 3
+       let mBar2 = rhs parseState 4
+       reportParseErrorAt mBar2 (FSComp.SR.parsExpectingPattern ())
+       let clauses, mLast = Some mBar1 |> $5
+       let clauses = addEmptyMatchClause mBar1 mBar2 clauses
+
+       fun mBar ->
+           let m = unionRanges resultExpr.Range pat.Range
+           let trivia = { ArrowRange = Some mArrow; BarRange = mBar }
+           SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, trivia) :: clauses, mLast }
 
   | patternAndGuard error BAR patternClauses
      { let pat, guard = $1
