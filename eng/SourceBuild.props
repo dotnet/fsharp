@@ -27,7 +27,7 @@
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
           BeforeTargets="RunInnerSourceBuildCommand"
           Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'">
-          
+
     <PropertyGroup>
       <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>
     </PropertyGroup>
@@ -42,7 +42,7 @@
     <Exec
       Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg)"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
-      EnvironmentVariables="@(InnerBuildEnv);DotNetBuildFromSource=true" />
+      EnvironmentVariables="@(InnerBuildEnv);DotNetBuildFromSource=true;TargetRid=$(TargetRid)" />
   </Target>
 
 </Project>

@@ -209,6 +209,10 @@ stages:
         enablePublishBuildAssets: true
         enablePublishUsingPipelines: $(_PublishUsingPipelines)
         enableSourceBuild: true
+        sourceBuildParameters:
+          platforms:
+          - name: Linux_x64
+            targetRID: linux-x64
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
