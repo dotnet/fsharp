@@ -80,6 +80,7 @@ type LanguageFeature =
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
     | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | GenericAttributes
 
 /// LanguageVersion management
 type LanguageVersion =

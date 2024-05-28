@@ -4865,8 +4865,8 @@ FSharp.Compiler.Symbols.FSharpAttribute: FSharp.Compiler.Symbols.FSharpEntity At
 FSharp.Compiler.Symbols.FSharpAttribute: FSharp.Compiler.Symbols.FSharpEntity get_AttributeType()
 FSharp.Compiler.Symbols.FSharpAttribute: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Symbols.FSharpAttribute: FSharp.Compiler.Text.Range get_Range()
-FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] TypeParameters
-FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] get_TypeParameters()
+FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] TypeArgs
+FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] get_TypeArgs()
 FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpType,System.Object]] ConstructorArguments
 FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpType,System.Object]] get_ConstructorArguments()
 FSharp.Compiler.Symbols.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`4[FSharp.Compiler.Symbols.FSharpType,System.String,System.Boolean,System.Object]] NamedArguments
@@ -6285,8 +6285,8 @@ FSharp.Compiler.Syntax.SynAttribute: FSharp.Compiler.Syntax.SynLongIdent TypeNam
 FSharp.Compiler.Syntax.SynAttribute: FSharp.Compiler.Syntax.SynLongIdent get_TypeName()
 FSharp.Compiler.Syntax.SynAttribute: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynAttribute: FSharp.Compiler.Text.Range get_Range()
-FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] TypeParams
-FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] get_TypeParams()
+FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] TypeArgs
+FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] get_TypeArgs()
 FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] Target
 FSharp.Compiler.Syntax.SynAttribute: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] get_Target()
 FSharp.Compiler.Syntax.SynAttribute: System.String ToString()

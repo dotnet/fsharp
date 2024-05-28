@@ -352,6 +352,11 @@
         <target state="translated">řez od konce</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureGenericAttributes">
+        <source>Permit Type Arguments in Attributes.</source>
+        <target state="new">Permit Type Arguments in Attributes.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">implicitní yield</target>

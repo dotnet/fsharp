@@ -89,6 +89,7 @@ type LanguageFeature =
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
     | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | GenericAttributes
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -205,6 +206,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
                 LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap, previewVersion
+                LanguageFeature.GenericAttributes, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -353,6 +355,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
         | LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap ->
             FSComp.SR.featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap ()
+        | LanguageFeature.GenericAttributes -> FSComp.SR.featureGenericAttributes ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
