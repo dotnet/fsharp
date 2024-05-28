@@ -24,10 +24,10 @@ module NoWarn =
         |> compile
         |> shouldFail
         |> withDiagnostics[
+            (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
             (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
             (Error 3350, Line 4, Col 9, Line 4, Col 15, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
             (Error 3350, Line 5, Col 9, Line 5, Col 13, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
             ]
 
 
@@ -65,10 +65,10 @@ module NoWarn =
         |> compile
         |> shouldFail
         |> withDiagnostics [
+            (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
             (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
             (Error 3350, Line 3, Col 12, Line 3, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
             (Error 3350, Line 3, Col 19, Line 3, Col 23, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
             ]
 
     [<Fact>]
@@ -183,9 +183,9 @@ module DoBinding =
         |> compile
         |> shouldFail
         |> withDiagnostics [
+            (Warning 1104, Line 5, Col 15, Line 5, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
             (Error 3350, Line 2, Col 9, Line 2, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
             (Error 3350, Line 2, Col 12, Line 2, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Warning 1104, Line 5, Col 15, Line 5, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
             ]
 
 
@@ -234,8 +234,8 @@ printfn "Hello, World"
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 2, Col 7, Line 2, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
             (Error 10, Line 3, Col 7, Line 3, Col 9, "Unexpected integer literal in implementation file")
+            (Error 3350, Line 2, Col 7, Line 2, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
             (Error 235, Line 2, Col 1, Line 2, Col 10, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
             ]
 

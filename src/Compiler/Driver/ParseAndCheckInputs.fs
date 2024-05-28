@@ -218,7 +218,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
 let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
     let supportsNonStringArguments =
-        langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonString)
+        langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)
 
     [
         match hd with
@@ -897,11 +897,14 @@ let ProcessMetaCommandsFromInput
 
         try
             match hash with
-            | ParsedHashDirective("I", ParsedHashDirectiveStringArguments args, m) ->
+            | ParsedHashDirective("I", hashArguments, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashIncludeNotAllowedInNonScript m)
 
-                match args with
+                let arguments =
+                    parsedHashDirectiveStringArguments hashArguments tcConfig.langVersion
+
+                match arguments with
                 | [ path ] ->
                     matchedm <- m
                     tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
@@ -910,34 +913,47 @@ let ProcessMetaCommandsFromInput
                     errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
                     state
 
-            | ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers, m) ->
-                List.fold (fun state d -> nowarnF state (m, d)) state numbers
+            | ParsedHashDirective("nowarn", hashArguments, m) ->
+                let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
+                List.fold (fun state d -> nowarnF state (m, d)) state arguments
 
-            | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveStringArguments args, m) ->
+            | ParsedHashDirective(("reference" | "r"), hashArguments, m) ->
                 matchedm <- m
-                ProcessDependencyManagerDirective Directive.Resolution args m state
 
-            | ParsedHashDirective("i", ParsedHashDirectiveStringArguments args, m) ->
+                let arguments =
+                    parsedHashDirectiveStringArguments hashArguments tcConfig.langVersion
+
+                ProcessDependencyManagerDirective Directive.Resolution arguments m state
+
+            | ParsedHashDirective("i", hashArguments, m) ->
                 matchedm <- m
-                ProcessDependencyManagerDirective Directive.Include args m state
 
-            | ParsedHashDirective("load", ParsedHashDirectiveArguments args, m) ->
+                let arguments =
+                    parsedHashDirectiveStringArguments hashArguments tcConfig.langVersion
+
+                ProcessDependencyManagerDirective Directive.Include arguments m state
+
+            | ParsedHashDirective("load", hashArguments, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
 
-                match args with
+                let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
+
+                match arguments with
                 | _ :: _ ->
                     matchedm <- m
-                    args |> List.iter (fun path -> loadSourceF state (m, path))
+                    arguments |> List.iter (fun path -> loadSourceF state (m, path))
                 | _ -> errorR (Error(FSComp.SR.buildInvalidHashloadDirective (), m))
 
                 state
 
-            | ParsedHashDirective("time", ParsedHashDirectiveArguments args, m) ->
+            | ParsedHashDirective("time", hashArguments, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
 
-                match args with
+                let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
+
+                match arguments with
                 | [] -> ()
                 | [ "on" | "off" ] -> ()
                 | _ -> errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))

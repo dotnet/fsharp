@@ -281,13 +281,9 @@ type DebugPointAtWhile =
 [<RequireQualifiedAccess>]
 type DebugPointAtBinding =
     | Yes of range: range
-
     | NoneAtDo
-
     | NoneAtLet
-
     | NoneAtSticky
-
     | NoneAtInvisible
 
     member x.Combine(y: DebugPointAtBinding) =

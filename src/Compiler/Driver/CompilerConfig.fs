@@ -925,7 +925,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonString)) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -940,7 +940,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonString)) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
