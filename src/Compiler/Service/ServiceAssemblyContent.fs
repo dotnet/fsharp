@@ -108,14 +108,14 @@ type IAssemblyContentCache =
 
 module AssemblyContent =
 
-    let UnresolvedSymbol (topRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) =
+    let UnresolvedSymbol (nearestRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) ns =
         let getNamespace (idents: ShortIdents) = 
             if idents.Length > 1 then Some idents[..idents.Length - 2] else None
 
         let ns = 
-            topRequireQualifiedAccessParent 
+            nearestRequireQualifiedAccessParent 
             |> Option.bind getNamespace 
-            |> Option.orElseWith (fun () -> getNamespace cleanedIdents)
+            |> Option.orElse ns
             |> Option.defaultValue [||]
 
         let displayName = 
@@ -130,10 +130,12 @@ module AssemblyContent =
         parent.FormatEntityFullName entity
         |> Option.map (fun (fullName, cleanIdents) ->
             let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
+            let nearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
+
             { FullName = fullName
               CleanedIdents = cleanIdents
               Namespace = ns
-              NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
+              NearestRequireQualifiedAccessParent = nearestRequireQualifiedAccessParent
               TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
               Symbol = entity
@@ -149,11 +151,12 @@ module AssemblyContent =
                     match entity with
                     | FSharpSymbolPatterns.Attribute -> EntityKind.Attribute 
                     | _ -> EntityKind.Type
-              UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
+              UnresolvedSymbol = UnresolvedSymbol nearestRequireQualifiedAccessParent cleanIdents fullName ns
             })
 
     let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
         let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
+        let nearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
         let autoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
         membersFunctionsAndValues
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
@@ -163,12 +166,12 @@ module AssemblyContent =
                 { FullName = fullName
                   CleanedIdents = cleanedIdents
                   Namespace = ns
-                  NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
+                  NearestRequireQualifiedAccessParent = nearestRequireQualifiedAccessParent
                   TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
                   AutoOpenParent = autoOpenParent
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName }
+                  UnresolvedSymbol = UnresolvedSymbol nearestRequireQualifiedAccessParent cleanedIdents fullName ns }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))
