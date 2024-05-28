@@ -897,12 +897,11 @@ let ProcessMetaCommandsFromInput
 
         try
             match hash with
-            | ParsedHashDirective("I", hashArguments, m) ->
+            | ParsedHashDirective("I", [ path ], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashIncludeNotAllowedInNonScript m)
 
-                let arguments =
-                    parsedHashDirectiveStringArguments hashArguments tcConfig.langVersion
+                let arguments = parsedHashDirectiveStringArguments [ path ] tcConfig.langVersion
 
                 match arguments with
                 | [ path ] ->
@@ -917,27 +916,29 @@ let ProcessMetaCommandsFromInput
                 let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
                 List.fold (fun state d -> nowarnF state (m, d)) state arguments
 
-            | ParsedHashDirective(("reference" | "r"), hashArguments, m) ->
+            | ParsedHashDirective(("reference" | "r"), [ reference ], m) ->
                 matchedm <- m
 
                 let arguments =
-                    parsedHashDirectiveStringArguments hashArguments tcConfig.langVersion
+                    parsedHashDirectiveStringArguments [ reference ] tcConfig.langVersion
 
-                ProcessDependencyManagerDirective Directive.Resolution arguments m state
+                match arguments with
+                | [ reference ] -> ProcessDependencyManagerDirective Directive.Resolution [ reference ] m state
+                | _ -> state
 
-            | ParsedHashDirective("i", hashArguments, m) ->
+            | ParsedHashDirective("i", [ path ], m) ->
                 matchedm <- m
+                let arguments = parsedHashDirectiveStringArguments [ path ] tcConfig.langVersion
 
-                let arguments =
-                    parsedHashDirectiveStringArguments hashArguments tcConfig.langVersion
+                match arguments with
+                | [ path ] -> ProcessDependencyManagerDirective Directive.Include [ path ] m state
+                | _ -> state
 
-                ProcessDependencyManagerDirective Directive.Include arguments m state
-
-            | ParsedHashDirective("load", hashArguments, m) ->
+            | ParsedHashDirective("load", [ path ], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
 
-                let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
+                let arguments = parsedHashDirectiveArguments [ path ] tcConfig.langVersion
 
                 match arguments with
                 | _ :: _ ->
@@ -947,11 +948,11 @@ let ProcessMetaCommandsFromInput
 
                 state
 
-            | ParsedHashDirective("time", hashArguments, m) ->
+            | ParsedHashDirective("time", [ switch ], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
 
-                let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
+                let arguments = parsedHashDirectiveArguments [ switch ] tcConfig.langVersion
 
                 match arguments with
                 | [] -> ()

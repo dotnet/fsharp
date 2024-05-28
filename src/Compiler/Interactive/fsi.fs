@@ -3727,58 +3727,54 @@ type FsiInteractionProcessor
     /// Partially process a hash directive, leaving state in packageManagerLines and required assemblies
     let PartiallyProcessHashDirective (ctok, istate, hash, diagnosticsLogger: DiagnosticsLogger) =
         match hash with
-        | ParsedHashDirective("load", hashArguments, m) ->
-            let sourceFiles = parsedHashDirectiveArguments hashArguments tcConfigB.langVersion
+        | ParsedHashDirective("load", [ path ], m) ->
+            let sourceFiles = parsedHashDirectiveArguments [ path ] tcConfigB.langVersion
 
             let istate =
                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger)
 
             istate, Completed None
 
-        | ParsedHashDirective(("reference" | "r"), hashArguments, m) ->
+        | ParsedHashDirective(("reference" | "r"), [ reference ], m) ->
             let path =
-                (parsedHashDirectiveStringArguments hashArguments tcConfigB.langVersion)
+                (parsedHashDirectiveStringArguments [ reference ] tcConfigB.langVersion)
                 |> List.head
 
             fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Resolution, path, true, m)
 
-        | ParsedHashDirective("i", hashArguments, m) ->
+        | ParsedHashDirective("i", [ path ], m) ->
             let path =
-                (parsedHashDirectiveStringArguments hashArguments tcConfigB.langVersion)
-                |> List.head
+                (parsedHashDirectiveStringArguments [ path ] tcConfigB.langVersion) |> List.head
 
             fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Include, path, true, m)
 
-        | ParsedHashDirective("I", hashArguments, m) ->
+        | ParsedHashDirective("I", [ path ], m) ->
             let path =
-                (parsedHashDirectiveStringArguments hashArguments tcConfigB.langVersion)
-                |> List.head
+                (parsedHashDirectiveStringArguments [ path ] tcConfigB.langVersion) |> List.head
 
             tcConfigB.AddIncludePath(m, path, tcConfigB.implicitIncludeDir)
             let tcConfig = TcConfig.Create(tcConfigB, validate = false)
             fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI (tcConfig.MakePathAbsolute path))
             istate, Completed None
 
-        | ParsedHashDirective("cd", hashArguments, m) ->
+        | ParsedHashDirective("cd", [ path ], m) ->
             let path =
-                (parsedHashDirectiveStringArguments hashArguments tcConfigB.langVersion)
-                |> List.head
+                (parsedHashDirectiveStringArguments [ path ] tcConfigB.langVersion) |> List.head
 
             ChangeDirectory path m
             istate, Completed None
 
-        | ParsedHashDirective("silentCd", hashArguments, m) ->
+        | ParsedHashDirective("silentCd", [ path ], m) ->
             let path =
-                (parsedHashDirectiveStringArguments hashArguments tcConfigB.langVersion)
-                |> List.head
+                (parsedHashDirectiveStringArguments [ path ] tcConfigB.langVersion) |> List.head
 
             ChangeDirectory path m
             fsiConsolePrompt.SkipNext() (* "silent" directive *)
             istate, Completed None
 
-        | ParsedHashDirective("interactiveprompt", hashArguments, m) ->
+        | ParsedHashDirective("interactiveprompt", [ prompt ], m) ->
             let showPrompt =
-                (parsedHashDirectiveStringArguments hashArguments tcConfigB.langVersion)
+                (parsedHashDirectiveStringArguments [ prompt ] tcConfigB.langVersion)
                 |> List.head
 
             match showPrompt with
@@ -3806,9 +3802,8 @@ type FsiInteractionProcessor
 
             istate, Completed None
 
-        | ParsedHashDirective("time", hashArguments, _) ->
-            let v =
-                (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion) |> List.head
+        | ParsedHashDirective("time", [ switch ], _) ->
+            let v = (parsedHashDirectiveArguments [ switch ] tcConfigB.langVersion) |> List.head
 
             if v <> "on" then
                 fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff ())
@@ -3818,8 +3813,8 @@ type FsiInteractionProcessor
             let istate = { istate with timing = (v = "on") }
             istate, Completed None
 
-        | ParsedHashDirective("nowarn", hashArguments, m) ->
-            let numbers = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
+        | ParsedHashDirective("nowarn", nowarnArguments, m) ->
+            let numbers = (parsedHashDirectiveArguments nowarnArguments tcConfigB.langVersion)
             List.iter (fun (d: string) -> tcConfigB.TurnWarningOff(m, d)) numbers
             istate, Completed None
 
