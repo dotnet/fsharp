@@ -88,7 +88,7 @@ ImplFile
                        ([[SynArgInfo
                             ([{ Attributes =
                                  [{ TypeName = SynLongIdent ([Foo], [], [None])
-                                    TypeParams = []
+                                    TypeArgs = []
                                     ArgExpr = Const (Unit, (5,15--5,18))
                                     Target = None
                                     AppliesToGetterAndSetter = false
@@ -97,7 +97,7 @@ ImplFile
                           SynArgInfo
                             ([{ Attributes =
                                  [{ TypeName = SynLongIdent ([Foo], [], [None])
-                                    TypeParams = []
+                                    TypeArgs = []
                                     ArgExpr = Const (Unit, (5,28--5,31))
                                     Target = None
                                     AppliesToGetterAndSetter = false
@@ -113,7 +113,7 @@ ImplFile
                            (Id (bar, None, false, false, false, (5,21--5,24)),
                             [{ Attributes =
                                 [{ TypeName = SynLongIdent ([Foo], [], [None])
-                                   TypeParams = []
+                                   TypeArgs = []
                                    ArgExpr = Const (Unit, (5,15--5,18))
                                    Target = None
                                    AppliesToGetterAndSetter = false
@@ -126,7 +126,7 @@ ImplFile
                                (5,34--5,38)),
                             [{ Attributes =
                                 [{ TypeName = SynLongIdent ([Foo], [], [None])
-                                   TypeParams = []
+                                   TypeArgs = []
                                    ArgExpr = Const (Unit, (5,28--5,31))
                                    Target = None
                                    AppliesToGetterAndSetter = false
@@ -146,7 +146,7 @@ ImplFile
                                    [{ Attributes =
                                        [{ TypeName =
                                            SynLongIdent ([Foo], [], [None])
-                                          TypeParams = []
+                                          TypeArgs = []
                                           ArgExpr = Const (Unit, (5,15--5,18))
                                           Target = None
                                           AppliesToGetterAndSetter = false
@@ -162,7 +162,7 @@ ImplFile
                                    [{ Attributes =
                                        [{ TypeName =
                                            SynLongIdent ([Foo], [], [None])
-                                          TypeParams = []
+                                          TypeArgs = []
                                           ArgExpr = Const (Unit, (5,28--5,31))
                                           Target = None
                                           AppliesToGetterAndSetter = false

@@ -289,7 +289,7 @@ let x = 123
         |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> 
-            let a = symbol.Attributes[0].TypeParameters[0]
+            let a = symbol.Attributes[0].TypeArgs[0]
             Assert.AreEqual(a.AbbreviatedType.TypeDefinition.CompiledName, "Int32")
             )
 

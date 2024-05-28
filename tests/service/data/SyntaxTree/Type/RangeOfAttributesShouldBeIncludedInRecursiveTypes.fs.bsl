@@ -10,13 +10,13 @@ ImplFile
                  (SynComponentInfo
                     ([{ Attributes =
                          [{ TypeName = SynLongIdent ([NoEquality], [], [None])
-                            TypeParams = []
+                            TypeArgs = []
                             ArgExpr = Const (Unit, (2,2--2,12))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range = (2,2--2,12) };
                           { TypeName = SynLongIdent ([NoComparison], [], [None])
-                            TypeParams = []
+                            TypeArgs = []
                             ArgExpr = Const (Unit, (2,15--2,27))
                             Target = None
                             AppliesToGetterAndSetter = false
@@ -66,13 +66,13 @@ ImplFile
                     ([{ Attributes =
                          [{ TypeName =
                              SynLongIdent ([CustomEquality], [], [None])
-                            TypeParams = []
+                            TypeArgs = []
                             ArgExpr = Const (Unit, (6,6--6,20))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range = (6,6--6,20) };
                           { TypeName = SynLongIdent ([NoComparison], [], [None])
-                            TypeParams = []
+                            TypeArgs = []
                             ArgExpr = Const (Unit, (6,23--6,35))
                             Target = None
                             AppliesToGetterAndSetter = false

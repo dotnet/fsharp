@@ -12,7 +12,7 @@ ImplFile
               [SynBinding
                  (None, Normal, false, false,
                   [{ Attributes = [{ TypeName = SynLongIdent ([Foo], [], [None])
-                                     TypeParams = []
+                                     TypeArgs = []
                                      ArgExpr = Const (Unit, (2,2--2,5))
                                      Target = None
                                      AppliesToGetterAndSetter = false

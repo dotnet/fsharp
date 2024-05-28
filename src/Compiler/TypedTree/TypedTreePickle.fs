@@ -259,7 +259,7 @@ let inline  p_tup5 p1 p2 p3 p4 p5 (a, b, c, d, e) (st: WriterState) =
 let inline  p_tup6 p1 p2 p3 p4 p5 p6 (a, b, c, d, e, f) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit)
 
-let inline  p_tup7 p1 p2 p3 p4 p5 p6 p7 (a, b, c, d, e, f, x7) (st: WriterState) =
+let inline  _p_tup7 p1 p2 p3 p4 p5 p6 p7 (a, b, c, d, e, f, x7) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit)
 
 let inline  p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a, b, c, d, e, f, x7, x8, x9) (st: WriterState) =
@@ -1947,8 +1947,8 @@ and p_attribkind x st =
     | ILAttrib x -> p_byte 0 st; p_ILMethodRef x st
     | FSAttrib x -> p_byte 1 st; p_vref "attrib" x st
 
-and p_attrib (Attrib (a, b, _tyArgs, c, d, e, _targets, f)) st = // AttributeTargets are not preserved
-    p_tup7 (p_tcref "attrib") p_attribkind (p_list p_ty) (p_list p_attrib_expr) (p_list p_attrib_arg) p_bool p_dummy_range (a, b, _tyArgs, c, d, e, f) st
+and p_attrib (Attrib (a, b, _tyArgs, c, d, e, _targets, f)) st = // AttributeTargets are not preserved (p_list p_ty)
+    p_tup6 (p_tcref "attrib") p_attribkind  (p_list p_attrib_expr) (p_list p_attrib_arg) p_bool p_dummy_range (a, b, c, d, e, f) st
 
 and p_attrib_expr (AttribExpr(e1, e2)) st =
     p_tup2 p_expr p_expr (e1, e2) st
@@ -2258,7 +2258,7 @@ and u_attribkind st =
 
 and u_attrib st : Attrib =
     let a, b, c, d, e, f = u_tup6 u_tcref u_attribkind (u_list u_attrib_expr) (u_list u_attrib_arg) u_bool u_dummy_range st
-    Attrib(a, b, [], c, d, e, None, f)  // AttributeTargets are not preserved
+    Attrib(a, b, [], c, d, e, None, f)  // AttributeTargets are not preserved (u_list u_ty)
 
 and u_attrib_expr st =
     let a, b = u_tup2 u_expr u_expr st

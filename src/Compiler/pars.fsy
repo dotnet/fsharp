@@ -1510,25 +1510,19 @@ attribute:
   /* A custom attribute with generic type parameters 
     some.good.AttributeName<^SomeTyPar>(and, args)opt_HIGH_PRECEDENCE_APP
     HIGH_PRECEDENCE_PAREN_APP
-  */
-  // | path postfixTyparDecls HIGH_PRECEDENCE_PAREN_APP opt_atomicExprAfterType
-  //    { let arg = match $4 with None -> mkSynUnit $1.Range | Some e -> e
-  //      debugPrint("\nWe managed to get in here....\n")
-  //      let m = unionRanges $1.Range arg.Range
-  //      ({ TypeName = $1; ArgExpr = arg; TypeParams = Some ($2); Target = None; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
-       
+  */   
   | path HIGH_PRECEDENCE_TYAPP typeArgsActual opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType
      { let arg = match $5 with None -> mkSynUnit $1.Range | Some e -> e
        debugPrint("\nWe managed to get in here....\n")
        let m = unionRanges $1.Range arg.Range
        let mLessThan, mGreaterThan, _, args, commas, mAll = $3
-       ({ TypeName = $1; ArgExpr = arg; TypeParams = args; Target = None; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
+       ({ TypeName = $1; ArgExpr = arg; TypeArgs = args; Target = None; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
        
   /* A custom attribute */
   | path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType
      { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e
        let m = unionRanges $1.Range arg.Range
-       ({ TypeName = $1; ArgExpr = arg; TypeParams = []; Target = None; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
+       ({ TypeName = $1; ArgExpr = arg; TypeArgs = []; Target = None; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
        
 
   /* A custom attribute with an attribute target */
@@ -1536,14 +1530,14 @@ attribute:
      { let arg = match $4 with None -> mkSynUnit $2.Range | Some e -> e
        let startRange = match $1 with Some(ident:Ident) -> ident.idRange | None -> $2.Range
        let m = unionRanges startRange arg.Range
-       ({ TypeName = $2; ArgExpr = arg; TypeParams = []; Target = $1; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
+       ({ TypeName = $2; ArgExpr = arg; TypeArgs = []; Target = $1; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
 
   /* A custom attribute with an attribute target */
   | attributeTarget OBLOCKBEGIN path oblockend opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType
      { let arg = match $6 with None -> mkSynUnit $3.Range | Some e -> e
        let startRange = match $1 with Some ident -> ident.idRange | None -> $3.Range
        let m = unionRanges startRange arg.Range
-       ({ TypeName = $3; ArgExpr = arg; TypeParams = []; Target = $1; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
+       ({ TypeName = $3; ArgExpr = arg; TypeArgs = []; Target = $1; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
 
 
 /* The target of a custom attribute */

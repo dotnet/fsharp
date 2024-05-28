@@ -1,3 +1,3 @@
 
-[<MyAttribute<^T, int>(foo = "bar")>]
+[<MyAttribute(foo = "bar")>]
 do ()

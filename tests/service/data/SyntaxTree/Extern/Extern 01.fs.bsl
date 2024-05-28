@@ -9,7 +9,7 @@ ImplFile
                  (None, Normal, false, false,
                   [{ Attributes =
                       [{ TypeName = SynLongIdent ([DllImport], [], [None])
-                         TypeParams = []
+                         TypeArgs = []
                          ArgExpr =
                           Paren
                             (Tuple

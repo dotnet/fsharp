@@ -23,7 +23,7 @@ ImplFile
            Attributes
              ([{ Attributes =
                   [{ TypeName = SynLongIdent ([AGoodAttribute], [], [None])
-                     TypeParams =
+                     TypeArgs =
                       [Var (SynTypar (A, HeadType, false), (3,17--3,19));
                        App
                          (LongIdent (SynLongIdent ([SomeThing], [], [None])),

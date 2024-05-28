@@ -10,7 +10,7 @@ SigFile
                  (SynComponentInfo
                     ([{ Attributes =
                          [{ TypeName = SynLongIdent ([Foo1], [], [None])
-                            TypeParams = []
+                            TypeArgs = []
                             ArgExpr = Const (Unit, (4,2--4,6))
                             Target = None
                             AppliesToGetterAndSetter = false

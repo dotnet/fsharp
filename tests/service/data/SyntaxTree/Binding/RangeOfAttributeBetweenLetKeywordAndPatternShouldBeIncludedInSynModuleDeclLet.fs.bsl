@@ -14,7 +14,7 @@ ImplFile
                  (None, Normal, false, false,
                   [{ Attributes =
                       [{ TypeName = SynLongIdent ([Literal], [], [None])
-                         TypeParams = []
+                         TypeArgs = []
                          ArgExpr = Const (Unit, (2,6--2,13))
                          Target = None
                          AppliesToGetterAndSetter = false

@@ -2731,7 +2731,7 @@ type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
         |> List.map (fun (ty, obj) -> FSharpType(cenv, ty), resolveArgObj obj)
         |> makeReadOnlyCollection
 
-    member _.TypeParameters =
+    member _.TypeArgs =
         attrib.TypeArgs
         |> List.map (fun (ty) -> FSharpType(cenv, ty))
         |> makeReadOnlyCollection

@@ -7,7 +7,7 @@ SigFile
           [Val
              (SynValSig
                 ([{ Attributes = [{ TypeName = SynLongIdent ([Foo], [], [None])
-                                    TypeParams = []
+                                    TypeArgs = []
                                     ArgExpr = Const (Unit, (4,2--4,5))
                                     Target = None
                                     AppliesToGetterAndSetter = false
