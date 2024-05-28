@@ -9966,7 +9966,9 @@ and GenAttr cenv g eenv (Attrib(_, k, _typeParams, args, props, _, _, m)) =
             let ilTy = GenType cenv m eenv.tyenv ty
             let cval = GenAttribArg cenv g eenv expr ilTy
             (s, ilTy, fld, cval))
+
     let ilTyArgs = GenTypeArgs cenv m eenv.tyenv _typeParams
+
     let mspec =
         match k with
         | ILAttrib mref -> mkILMethSpec (mref, AsObject, ilTyArgs, [])
@@ -9976,13 +9978,13 @@ and GenAttr cenv g eenv (Attrib(_, k, _typeParams, args, props, _, _, m)) =
             let mspec, _, _, _, _, _, _, _, _, _ =
                 GetMethodSpecForMemberVal cenv (Option.get vref.MemberInfo) vref
 
-             //numEnclILTypeArgs will include unit-of-measure args, unfortunately. For now, just cut-and-paste code from GetMemberCallInfo
-             //@REVIEW: refactor this
+            //numEnclILTypeArgs will include unit-of-measure args, unfortunately. For now, just cut-and-paste code from GetMemberCallInfo
+            //@REVIEW: refactor this
             let numEnclILTypeArgs =
                 match vref.MemberInfo with
                 | Some _ when not vref.IsExtensionMember -> List.length (vref.MemberApparentEntity.TyparsNoRange |> DropErasedTypars)
                 | _ -> 0
-                
+
             let ilEnclArgTys, ilMethArgTys =
                 if ilTyArgs.Length < numEnclILTypeArgs then
                     error (InternalError("length mismatch", m))

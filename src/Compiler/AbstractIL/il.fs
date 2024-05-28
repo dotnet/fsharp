@@ -3150,7 +3150,7 @@ let mkILMethRef (tref, callconv, nm, numGenericParams, argTys, retTy) =
     }
 
 let mkILMethSpecForMethRefInTy (mref, ty, methInst) =
-    {  
+    {
         mspecMethodRef = mref
         mspecDeclaringType = ty
         mspecMethodInst = methInst

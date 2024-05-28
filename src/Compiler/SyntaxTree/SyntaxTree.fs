@@ -1042,7 +1042,7 @@ type SynMatchClause =
 type SynAttribute =
     {
         TypeName: SynLongIdent
-        
+
         TypeArgs: SynType list
 
         ArgExpr: SynExpr
