@@ -1002,22 +1002,19 @@ let parsedHashDirectiveArguments (input: ParsedHashDirectiveArgument list) (lang
             longIdentToString ident)
         input
 
-let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list) (langVersion: LanguageVersion) =
+let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list) (_langVersion: LanguageVersion) =
     let value =
         List.map
             (function
             | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
             | ParsedHashDirectiveArgument.Int32(n, m) ->
-                checkLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m
                 errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger (n), m))
                 None
             | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
             | ParsedHashDirectiveArgument.Ident(ident, m) ->
-                checkLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m
                 errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (ident.idText), m))
                 None
             | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
-                checkLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m
                 errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (longIdentToString ident), m))
                 None)
             input

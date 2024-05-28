@@ -93,10 +93,6 @@ let ResolveFileUsingPaths (paths, m, fileName) =
 
 let GetWarningNumber (m, warningNumber: string, prefixSupported) =
     try
-        // Okay so ...
-        //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
-        //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
-        //      anything else is ignored None
         let warningNumber =
             if warningNumber.StartsWithOrdinal "FS" then
                 if prefixSupported then
