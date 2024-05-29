@@ -61,7 +61,6 @@ param (
     [switch]$testVs,
     [switch]$testAll,
     [switch]$testAllButIntegration,
-    [switch]$testAllButIntegrationAndAot,
     [switch]$testpack,
     [switch]$testAOT,
     [switch]$testBenchmarks,
@@ -105,7 +104,6 @@ function Print-Usage() {
     Write-Host "Test actions"
     Write-Host "  -testAll                      Run all tests"
     Write-Host "  -testAllButIntegration        Run all but integration tests"
-    Write-Host "  -testAllButIntegrationAndAot  Run all but integration and AOT tests"
     Write-Host "  -testCambridge                Run Cambridge tests"
     Write-Host "  -testCompiler                 Run FSharpCompiler unit tests"
     Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
@@ -172,19 +170,9 @@ function Process-Arguments() {
         $script:testAOT = $True
     }
 
-    if($testAllButIntegrationAndAot) {
-        $script:testDesktop = $True
-        $script:testCoreClr = $True
-        $script:testFSharpQA = $True
-        $script:testIntegration = $False
-        $script:testVs = $True
-        $script:testAOT = $False
-    }
-
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
         $script:testAll = $False
         $script:testAllButIntegration = $False
-        $script:testAllButIntegrationAndAot = $False
         $script:testCambridge = $False
         $script:testCompiler = $False
         $script:testCompilerService = $False

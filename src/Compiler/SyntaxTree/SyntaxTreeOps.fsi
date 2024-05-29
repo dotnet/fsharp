@@ -359,3 +359,6 @@ val (|TypesForTypar|): t: SynType -> SynType list
 /// Generated get_XYZ or set_XYZ ident text
 [<return: Struct>]
 val (|Get_OrSet_Ident|_|): Ident -> unit voption
+
+/// Adds SynPat.Or pattern for unfinished empty clause above
+val addEmptyMatchClause: mBar1: range -> mBar2: range -> clauses: SynMatchClause list -> SynMatchClause list
