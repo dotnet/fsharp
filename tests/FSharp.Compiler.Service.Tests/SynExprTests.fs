@@ -1,9 +1,9 @@
-﻿module FSharp.Compiler.Syntax.Tests.SynExpr
+﻿module FSharp.Compiler.Service.Tests.SynExprTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open NUnit.Framework
+open Xunit
 
 type Parenthesization = Needed | Unneeded
 
@@ -69,7 +69,7 @@ type String with
 #endif
 
 // `expected` represents whether each parenthesized expression, from the inside outward, requires its parentheses.
-[<Theory; TestCaseSource(nameof exprs)>]
+[<Theory; MemberData(nameof exprs)>]
 let shouldBeParenthesizedInContext (expected: Parenthesization list) src =
     let ast = getParseResults src
 
@@ -85,22 +85,22 @@ let shouldBeParenthesizedInContext (expected: Parenthesization list) src =
                 Parenthesization.ofBool (SynExpr.shouldBeParenthesizedInContext getSourceLineStr path expr) :: actual
             | _ -> actual)
 
-    CollectionAssert.AreEqual(expected, actual)
+    Assert.Equal<Parenthesization list>(expected, actual)
 
 [<Theory>]
-[<TestCase("9")>]
-[<TestCase("9 |> ignore")>]
-[<TestCase("
+[<InlineData("9")>]
+[<InlineData("9 |> ignore")>]
+[<InlineData("
 let x =
     do ()
     9
 ")>]
-[<TestCase("
+[<InlineData("
 let x =
     do ()
     9 |> ignore
 ")>]
-[<TestCase("
+[<InlineData("
 for x in 1..10 do
     9 |> ignore
 ")>]
