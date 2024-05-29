@@ -37,5 +37,5 @@ module NativeToRoslynHintConverter =
             let span = rangeToSpan hint.Range sourceText
             let displayParts = hint.Parts |> Seq.map nativeToRoslynText
 
-            return FSharpInlineHint(span, displayParts.ToImmutableArray(), getDescriptionAsync)
+            return FSharpInlayHint(span, displayParts.ToImmutableArray(), getDescriptionAsync)
         }
