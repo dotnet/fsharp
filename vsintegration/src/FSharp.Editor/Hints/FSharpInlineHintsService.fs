@@ -4,24 +4,24 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
 open System.Collections.Immutable
 open System.ComponentModel.Composition
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlayHints
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
 open System.Threading.Tasks
 
-// So the Roslyn interface is called IFSharpInlineHintsService
+// So the Roslyn interface is called IFSharpInlayHintsService
 // but our implementation is called just HintsService.
-// That's because we'll likely use this API for things other than inline hints,
+// That's because we'll likely use this API for things other than inlay hints,
 // e.g. signature hints above the line, pipeline hints on the side and so on.
 
-[<Export(typeof<IFSharpInlineHintsService>)>]
-type internal FSharpInlineHintsService [<ImportingConstructor>] (settings: EditorOptions) =
+[<Export(typeof<IFSharpInlayHintsService>)>]
+type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: EditorOptions) =
 
     static let userOpName = "Hints"
 
-    interface IFSharpInlineHintsService with
-        member _.GetInlineHintsAsync(document, _, cancellationToken) =
+    interface IFSharpInlayHintsService with
+        member _.GetInlayHintsAsync(document, _, cancellationToken) =
             let hintKinds = OptionParser.getHintKinds settings.Advanced
 
             if hintKinds.IsEmpty then

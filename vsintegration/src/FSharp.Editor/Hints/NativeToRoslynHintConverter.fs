@@ -5,7 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 open System.Collections.Immutable
 open System.Threading
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlayHints
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.Text

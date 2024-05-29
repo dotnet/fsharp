@@ -277,11 +277,11 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Inline Hints.
+        ///   Looks up a localized string similar to Inlay Hints.
         /// </summary>
-        public static string Inline_Hints {
+        public static string Inlay_Hints {
             get {
-                return ResourceManager.GetString("Inline_Hints", resourceCulture);
+                return ResourceManager.GetString("Inlay_Hints", resourceCulture);
             }
         }
         
@@ -439,20 +439,20 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display inline parameter name hints (preview).
+        ///   Looks up a localized string similar to Display inlay parameter name hints (preview).
         /// </summary>
-        public static string Show_Inline_Parameter_Name_Hints {
+        public static string Show_Inlay_Parameter_Name_Hints {
             get {
-                return ResourceManager.GetString("Show_Inline_Parameter_Name_Hints", resourceCulture);
+                return ResourceManager.GetString("Show_Inlay_Parameter_Name_Hints", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display inline type hints (preview).
+        ///   Looks up a localized string similar to Display inlay type hints (preview).
         /// </summary>
-        public static string Show_Inline_Type_Hints {
+        public static string Show_Inlay_Type_Hints {
             get {
-                return ResourceManager.GetString("Show_Inline_Type_Hints", resourceCulture);
+                return ResourceManager.GetString("Show_Inlay_Type_Hints", resourceCulture);
             }
         }
         

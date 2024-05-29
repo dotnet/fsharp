@@ -52,8 +52,8 @@
         <target state="translated">Biçimlendirme</target>
         <note />
       </trans-unit>
-      <trans-unit id="Inline_Hints">
-        <source>Inline Hints</source>
+      <trans-unit id="Inlay_Hints">
+        <source>Inlay Hints</source>
         <target state="translated">Satır İçi İpuçları</target>
         <note />
       </trans-unit>
@@ -137,13 +137,13 @@
         <target state="translated">Ek performans telemetrisi gönder</target>
         <note />
       </trans-unit>
-      <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (preview)</source>
+      <trans-unit id="Show_Inlay_Parameter_Name_Hints">
+        <source>Display inlay parameter name hints (preview)</source>
         <target state="translated">Satır içi parametre adı ipuçlarını görüntüle (önizleme)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (preview)</source>
+      <trans-unit id="Show_Inlay_Type_Hints">
+        <source>Display inlay type hints (preview)</source>
         <target state="translated">Satır içi tür ipuçlarını görüntüle (önizleme)</target>
         <note />
       </trans-unit>

@@ -11,7 +11,7 @@ open FSharp.Compiler.Text
 open Hints
 open CancellableTasks
 
-type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
+type InlayParameterNameHints(parseResults: FSharpParseFileResults) =
 
     let getTooltip (symbol: FSharpSymbol) _ =
         cancellableTask {

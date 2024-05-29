@@ -125,13 +125,13 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableFastFindReferences =
                                 editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
-                            let isInlineParameterNameHintsEnabled =
-                                editorOptions.Advanced.IsInlineParameterNameHintsEnabled
+                            let isInlayParameterNameHintsEnabled =
+                                editorOptions.Advanced.IsInlayParameterNameHintsEnabled
 
-                            let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
+                            let isInlayTypeHintsEnabled = editorOptions.Advanced.IsInlayTypeHintsEnabled
 
-                            let isInlineReturnTypeHintsEnabled =
-                                editorOptions.Advanced.IsInlineReturnTypeHintsEnabled
+                            let isInlayReturnTypeHintsEnabled =
+                                editorOptions.Advanced.IsInlayReturnTypeHintsEnabled
 
                             let enablePartialTypeChecking =
                                 editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
@@ -162,9 +162,9 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableParallelReferenceResolution, enableParallelReferenceResolution
                                         nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                                         nameof enableFastFindReferences, enableFastFindReferences
-                                        nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
-                                        nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
-                                        nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
+                                        nameof isInlayParameterNameHintsEnabled, isInlayParameterNameHintsEnabled
+                                        nameof isInlayTypeHintsEnabled, isInlayTypeHintsEnabled
+                                        nameof isInlayReturnTypeHintsEnabled, isInlayReturnTypeHintsEnabled
                                         nameof enablePartialTypeChecking, enablePartialTypeChecking
                                         nameof keepAllBackgroundResolutions, keepAllBackgroundResolutions
                                         nameof keepAllBackgroundSymbolUses, keepAllBackgroundSymbolUses
