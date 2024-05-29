@@ -14,7 +14,7 @@ let withNullnessOptions cu =
 let typeCheckWithStrictNullness cu =
     cu
     |> withNullnessOptions
-    |> compile
+    |> typecheck
     
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =
@@ -28,6 +28,62 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+
+[<Theory>]
+[<InlineData("fileExists(path)")>]
+[<InlineData("fileExists path")>]
+[<InlineData("path |> fileExists")>]
+[<InlineData("System.IO.File.Exists(path)")>]
+[<InlineData("path |> System.IO.File.Exists")>]
+[<InlineData("System.String.IsNullOrEmpty(path)")>]
+[<InlineData("(null) = (path)")>]
+let ``Calling a nullAllowing API can still infer a withoutNull type``(functionCall) =
+    FSharp $"""
+module MyLib
+
+let myStrictFunc(x: string) = x.GetHashCode()
+let fileExists (path:string|null) = true
+
+let myStringReturningFunc (path) = 
+    let ex = {functionCall}
+    myStrictFunc(path)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Type inference SystemIOFileExists`` () =
+    FSharp $"""
+module MyLib
+
+let test() = 
+    let maybeString : string | null = null
+    System.IO.File.Exists(maybeString)
+
+let myFunc path : string =
+    let exists =  path |> System.IO.File.Exists
+    path
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Type inference fsharp func`` () =
+    FSharp $"""
+module MyLib
+
+let myStrictFunc(x: string) = x.GetHashCode()
+let fileExists (path:string|null) = true
+
+let myStringReturningFunc (path) = 
+    let ex = fileExists path
+    myStrictFunc(path)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
 
 
 // P1: inline or not
