@@ -1087,3 +1087,153 @@ type ListModule() =
         let list = [1;2;3;4;5]
 
         Assert.AreEqual(list.[^1], 4)
+
+    [<Fact>]
+    member _.Shuffle() =
+        let list = [1;2;3;4;5;6;7;8]
+
+        // try shuffle three times, if it doesn't shuffle, it must be broken
+        let mutable isShuffled = false
+        let mutable i = 0
+        while not isShuffled && i < 3 do
+            let shuffled = list |> List.shuffle
+            isShuffled <- not (list = shuffled)
+            i <- i + 1
+        Assert.NotEqual(3, i)
+
+    [<Fact>]
+    member _.ShuffleRand() =
+        let list = [1;2;3;4;5;6;7;8]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let shuffle1 = list |> List.shuffleRand rand1
+        let shuffle2 = list |> List.shuffleRand rand2
+        let shuffle3 = list |> List.shuffleRand rand3
+
+        Assert.AreEqual(shuffle1, shuffle2)
+        Assert.AreNotEqual(list, shuffle1)
+        Assert.AreNotEqual(shuffle1, shuffle3)
+
+    [<Fact>]
+    member _.Choice() =
+        let list = [1;2;3;4;5;6;7;8]
+
+        // try choice six times, if all are same, it must be broken
+        let results = [|
+            List.choice list
+            List.choice list
+            List.choice list
+            List.choice list
+            List.choice list
+            List.choice list
+        |]
+        let allSame = results |> Array.forall (fun x -> x = results.[0])
+        Assert.False(allSame)
+
+        // empty list
+        let emptyList = []
+        CheckThrowsArgumentException (fun () -> List.choice emptyList |> ignore)
+
+    [<Fact>]
+    member _.ChoiceRand() =
+        let list = [1;2;3;4;5;6;7;8]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choice1 = list |> List.choiceRand rand1
+        let choice2 = list |> List.choiceRand rand2
+        let choice3 = list |> List.choiceRand rand3
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.Choices() =
+        let list = [1;2;3;4;5;6;7;8]
+
+        // try choices three times, if all are same, it must be broken
+        let choicesLength = 5
+        let results = [|
+            List.choices choicesLength list
+            List.choices choicesLength list
+            List.choices choicesLength list
+        |]
+        let allSame = results |> Array.forall (fun x -> x = results.[0])
+        let allCorrectLength = results |> Array.forall (fun x -> x.Length = choicesLength)
+        Assert.False(allSame)
+        Assert.True(allCorrectLength)
+
+        // empty list
+        let emptyList = []
+        CheckThrowsArgumentException (fun () -> List.choices choicesLength emptyList |> ignore)
+
+        // negative choices length
+        let negativeChoicesLength = -1
+        CheckThrowsArgumentException (fun () -> List.choices negativeChoicesLength list |> ignore)
+
+    [<Fact>]
+    member _.ChoicesRand() =
+        let list = [1;2;3;4;5;6;7;8]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 5
+        let choice1 = list |> List.choicesRand rand1 choicesLength
+        let choice2 = list |> List.choicesRand rand2 choicesLength
+        let choice3 = list |> List.choicesRand rand3 choicesLength
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.Sample() =
+        let list = List.init 50 id
+        let choicesLengthSmall = 1
+        let choicesLengthLarge = 49
+
+        let verify choicesLength tryCount =
+            // try sample tryCount times, if all are same, it must be broken
+            let results = [|
+                for _ in 1..tryCount do
+                    List.sample choicesLength list
+            |]
+            let allSame = results |> Array.forall (fun x -> x = results.[0])
+            let allCorrectLength = results |> Array.forall (fun x -> x.Length = choicesLength)
+            let allDistinct = results |> Array.forall (fun x -> x = (x |> List.distinct))
+            Assert.False(allSame)
+            Assert.True(allCorrectLength)
+            Assert.True(allDistinct)
+
+        verify choicesLengthSmall 10
+        verify choicesLengthLarge 2
+
+        // empty list
+        let emptyList = []
+        CheckThrowsArgumentException (fun () -> List.sample choicesLengthSmall emptyList |> ignore)
+
+        // negative choices length
+        let negativeChoicesLength = -1
+        CheckThrowsArgumentException (fun () -> List.sample negativeChoicesLength list |> ignore)
+
+        // invalid count
+        let invalidCountRange = 100
+        CheckThrowsArgumentException (fun () -> List.sample invalidCountRange list |> ignore)
+
+    [<Fact>]
+    member _.SampleRand() =
+        let list = [1;2;3;4;5;6;7;8]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 5
+        let choice1 = list |> List.sampleRand rand1 choicesLength
+        let choice2 = list |> List.sampleRand rand2 choicesLength
+        let choice3 = list |> List.sampleRand rand3 choicesLength
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)

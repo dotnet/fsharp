@@ -2694,3 +2694,27 @@ module List =
     /// </example>
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: 'T list -> 'T list
+
+    [<CompiledName("Shuffle")>]
+    val shuffle : source: 'T list -> 'T list
+
+    [<CompiledName("ShuffleRand")>]
+    val shuffleRand : random: Random -> source: 'T list -> 'T list
+
+    [<CompiledName("Choice")>]
+    val choice : source: 'T list -> 'T
+
+    [<CompiledName("ChoiceRand")>]
+    val choiceRand : random: Random -> source: 'T list -> 'T
+
+    [<CompiledName("Choices")>]
+    val choices : count: int -> source: 'T list -> 'T list
+
+    [<CompiledName("ChoicesRand")>]
+    val choicesRand : random: Random -> count: int -> source: 'T list -> 'T list
+
+    [<CompiledName("Sample")>]
+    val sample : count: int -> source: 'T list -> 'T list
+
+    [<CompiledName("SampleRand")>]
+    val sampleRand : random: Random -> count: int -> source: 'T list -> 'T list

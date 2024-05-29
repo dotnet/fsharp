@@ -1936,6 +1936,98 @@ module Array =
 
             result
 
+    [<CompiledName("ShuffleRand")>]
+    let shuffleRand (random: Random) (source: 'T[]) : 'T[] =
+        checkNonNull "source" source
+
+        let result = copy source
+
+        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random result
+
+        result
+
+    [<CompiledName("Shuffle")>]
+    let shuffle (source: 'T[]) : 'T[] =
+        shuffleRand ThreadSafeRandom.Shared source
+
+    [<CompiledName("ChoiceRand")>]
+    let choiceRand (random: Random) (source: 'T[]) : 'T =
+        checkNonNull "source" source
+
+        let inputLength = source.Length
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        let i = random.Next(0, inputLength)
+        source.[i]
+
+    [<CompiledName("Choice")>]
+    let choice (source: 'T[]) : 'T =
+        choiceRand ThreadSafeRandom.Shared source
+
+    [<CompiledName("ChoicesRand")>]
+    let choicesRand (random: Random) (count: int) (source: 'T[]) : 'T[] =
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+
+        for i = 0 to count - 1 do
+            let j = random.Next(0, inputLength)
+            result.[i] <- source.[j]
+        result
+
+    [<CompiledName("Choices")>]
+    let choices (count: int) (source: 'T[]) : 'T[] =
+        choicesRand ThreadSafeRandom.Shared count source
+
+    [<CompiledName("SampleRand")>]
+    let sampleRand (random: Random) (count: int) (source: 'T[]) : 'T[] =
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        if count >= inputLength then
+            invalidArgOutOfRange "count" count "source.Length" inputLength
+
+        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+
+        // algorithm taken from https://github.com/python/cpython/blob/main/Lib/random.py
+        let mutable setSize = 21
+        if count > 5 then
+            setSize <- setSize + (4.0 ** Math.Ceiling(Math.Log(count * 3 |> float, 4)) |> int)
+        if inputLength <= setSize then
+            let pool = copy source
+            for i = 0 to count - 1 do
+                let j = random.Next(0, inputLength - i)
+                result[i] <- pool[j]
+                pool[j] <- pool[inputLength - i - 1]
+        else
+            let selected = HashSet()
+            for i = 0 to count - 1 do
+                let mutable j = random.Next(0, inputLength)
+                while selected.Contains(j) do
+                    j <- random.Next(0, inputLength)
+                selected.Add(j) |> ignore
+                result[i] <- source[j]
+
+        result
+
+    [<CompiledName("Sample")>]
+    let sample (count: int) (source: 'T[]) : 'T[] =
+        sampleRand ThreadSafeRandom.Shared count source
+
     module Parallel =
         open System.Threading
         open System.Threading.Tasks

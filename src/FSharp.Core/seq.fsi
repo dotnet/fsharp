@@ -2935,3 +2935,27 @@ module Seq =
     /// </example>
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: seq<'T> -> seq<'T>
+
+    [<CompiledName("Shuffle")>]
+    val shuffle : source: seq<'T> -> seq<'T>
+
+    [<CompiledName("ShuffleRand")>]
+    val shuffleRand : random: Random -> source: seq<'T> -> seq<'T>
+
+    [<CompiledName("Choice")>]
+    val choice : source: seq<'T> -> 'T
+
+    [<CompiledName("ChoiceRand")>]
+    val choiceRand : random: Random -> source: seq<'T> -> 'T
+
+    [<CompiledName("Choices")>]
+    val choices : count: int -> source: seq<'T> -> seq<'T>
+
+    [<CompiledName("ChoicesRand")>]
+    val choicesRand : random: Random -> count: int -> source: seq<'T> -> seq<'T>
+
+    [<CompiledName("Sample")>]
+    val sample : count: int -> source: seq<'T> -> seq<'T>
+
+    [<CompiledName("SampleRand")>]
+    val sampleRand : random: Random -> count: int -> source: seq<'T> -> seq<'T>

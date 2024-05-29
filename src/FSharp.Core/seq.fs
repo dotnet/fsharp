@@ -1938,3 +1938,85 @@ module Seq =
             if i < index then
                 invalidArg "index" "index must be within bounds of the array"
         }
+
+    [<CompiledName("ShuffleRand")>]
+    let shuffleRand (random: Random) (source: seq<'T>) : seq<'T> =
+        let tempArray = toArray source
+        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random tempArray
+        ofArray tempArray
+
+    [<CompiledName("Shuffle")>]
+    let shuffle (source: seq<'T>) : seq<'T> =
+        shuffleRand ThreadSafeRandom.Shared source
+
+    [<CompiledName("ChoiceRand")>]
+    let choiceRand (random: Random) (source: seq<'T>) : 'T =
+        let inputLength = source |> length
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        let i = random.Next(0, inputLength)
+        source |> item i
+
+    [<CompiledName("Choice")>]
+    let choice (source: seq<'T>) : 'T =
+        choiceRand ThreadSafeRandom.Shared source
+
+    [<CompiledName("ChoicesRand")>]
+    let choicesRand (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source |> length
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        seq {
+            for _ = 0 to count - 1 do
+                let j = random.Next(0, inputLength)
+                source |> item j
+        }
+
+    [<CompiledName("Choices")>]
+    let choices (count: int) (source: seq<'T>) : seq<'T> =
+        choicesRand ThreadSafeRandom.Shared count source
+
+    [<CompiledName("SampleRand")>]
+    let sampleRand (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source |> length
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        if count >= inputLength then
+            invalidArgOutOfRange "count" count "source.Length" inputLength
+
+        // algorithm taken from https://github.com/python/cpython/blob/main/Lib/random.py
+        let mutable setSize = 21
+        if count > 5 then
+            setSize <- setSize + (4.0 ** Math.Ceiling(Math.Log(count * 3 |> float, 4)) |> int)
+        if inputLength <= setSize then
+            let pool = source |> toArray
+            seq {
+                for i = 0 to count - 1 do
+                    let j = random.Next(0, inputLength - i)
+                    let nextItem = pool[j]
+                    pool[j] <- pool[inputLength - i - 1]
+                    nextItem
+            }
+        else
+            let selected = HashSet()
+            seq {
+                for _ = 0 to count - 1 do
+                    let mutable j = random.Next(0, inputLength)
+                    while selected.Contains(j) do
+                        j <- random.Next(0, inputLength)
+                    selected.Add(j) |> ignore
+                    source |> item j
+            }
+
+    [<CompiledName("Sample")>]
+    let sample (count: int) (source: seq<'T>) : seq<'T> =
+        sampleRand ThreadSafeRandom.Shared count source

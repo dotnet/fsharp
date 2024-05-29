@@ -1174,6 +1174,16 @@ module internal Array =
                 startIndex <- startIndex + minChunkSize
             res
 
+    let shuffleInPlaceRand (random:Random) (array : array<'T>) =
+        let inputLength = array.Length
+        for i = 0 to inputLength - 2 do
+            let j = random.Next(i, inputLength)
+
+            if j <> i then
+                let temp = array[i]
+                array[i] <- array[j]
+                array[j] <- temp
+
 module internal Seq =
     let tryLastV (source : seq<_>) =
         //checkNonNull "source" source //done in main Seq.tryLast
