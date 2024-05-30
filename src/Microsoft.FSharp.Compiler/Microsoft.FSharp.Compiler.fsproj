@@ -48,9 +48,6 @@
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
-        <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
-    </DependentProjects>
   </ItemGroup>
 
    <ItemGroup>
