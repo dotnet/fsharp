@@ -7,6 +7,7 @@
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <PackageOutputPath>$(ArtifactsPackagesDir)\$(Configuration)</PackageOutputPath>
     <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
+    <MibcPath>$(ArtifactsDir)StandardOptimizationData.mibc</MibcPath>
   </PropertyGroup>
 
 </Project>
