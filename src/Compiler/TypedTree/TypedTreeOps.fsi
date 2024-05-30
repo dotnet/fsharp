@@ -649,9 +649,9 @@ val tryDestForallTy: TcGlobals -> TType -> Typars * TType
 
 val nullnessOfTy: TcGlobals -> TType -> Nullness
 
-val changeWithNullReqTyToVariable: TcGlobals -> reqTy:TType -> TType
+val changeWithNullReqTyToVariable: TcGlobals -> reqTy: TType -> TType
 
-val reqTyForArgumentNullnessInference: TcGlobals -> actualTy:TType -> reqTy:TType -> TType
+val reqTyForArgumentNullnessInference: TcGlobals -> actualTy: TType -> reqTy: TType -> TType
 
 val isFunTy: TcGlobals -> TType -> bool
 
