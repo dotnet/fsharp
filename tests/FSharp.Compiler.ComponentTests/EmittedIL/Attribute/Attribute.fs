@@ -28,3 +28,15 @@ module Attribute =
         compilation
         |> withRealInternalSignatureOff
         |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"RecordTypeAttributesWithTypeParam.fs"|])>]
+    let ``RecordTypeAttributesWithTypeParam_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"RecordTypeAttributesWithTypeParam.fs"|])>]
+    let ``RecordTypeAttributesWithTypeParam_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation

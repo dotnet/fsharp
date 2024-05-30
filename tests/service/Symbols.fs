@@ -271,7 +271,6 @@ let x = 123
 open System
 open System.Diagnostics
 
-[<Conditional("Bar")>]
 type FooAttribute<^T>() =
     inherit Attribute()
 
@@ -279,8 +278,6 @@ type FooAttribute<^T>() =
 let x = 123
 """
         let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
-        let contents = System.IO.File.ReadAllText fileName
-        let parseResults = parseSourceCode(fileName, source)
         let _, checkResults = parseAndCheckFile fileName source options
 
         checkResults.GetAllUsesOfAllSymbolsInFile()
@@ -289,9 +286,39 @@ let x = 123
         |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> 
-            let a = symbol.Attributes[0].TypeArgs[0]
-            Assert.AreEqual(a.AbbreviatedType.TypeDefinition.CompiledName, "Int32")
+            symbol.Attributes[0].TypeArgs[0].AbbreviatedType.TypeDefinition.CompiledName
+            |> should equal "Int32"
             )
+    [<Test>]
+    let ``Digest record attribute type parameters`` () =
+        let source = """
+open System
+open System.Diagnostics
+
+type FooAttribute<^T>(input : string) =
+    inherit Attribute()
+type BarAttribute<^T>(input : int) =
+    inherit Attribute()
+
+[<Foo<int>("bar")>]
+type FooBarRecord =
+    {
+        [<Bar<obj>(2)>]
+        id : string
+    }
+"""
+        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
+        let _, checkResults = parseAndCheckFile fileName source options
+
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Array.ofSeq
+        |> Array.tryFind (fun su -> su.Symbol.DisplayName = "FooBarRecord")
+        |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+        |> Option.map (fun su -> su.Symbol :?> FSharpEntity)
+        |> Option.iter (fun symbol ->
+            symbol.Attributes[0].TypeArgs[0].AbbreviatedType.TypeDefinition.CompiledName
+            |> should equal "Int32"
+            )            
 
 module Types =
     [<Test>]
