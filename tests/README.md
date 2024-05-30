@@ -89,7 +89,7 @@ For all new and migrated tests, any common/helper functionality shall be factore
 
 ## Migrating existing tests
 
-Existing FSharpQA and Cambridge need to be migrated to corresponding test projects: component-style tests to the `FSharp.Compiler.ComponentTests` and unittest-style tests - `FSharp.Compiler.UnitTests`, `FSharp.Compiler.Private.Scripting.UnitTests`, `FSharp.Build.UnitTests`, etc.
+Existing FSharpQA and Cambridge need to be migrated to corresponding test projects: component-style tests to the `FSharp.Compiler.ComponentTests` and unittest-style tests - `FSharp.Compiler.Private.Scripting.UnitTests`, `FSharp.Build.UnitTests`, etc.
 
 ## Next steps
 

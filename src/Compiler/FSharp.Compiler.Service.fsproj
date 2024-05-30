@@ -71,7 +71,6 @@
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
-    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
