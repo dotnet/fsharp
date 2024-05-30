@@ -63,4 +63,15 @@
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
   </ItemGroup>
 
+  <Target Name="Add PGO" DependsOnTargets="Get MIBC data" BeforeTargets="Publish" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <PublishReadyToRun>true</PublishReadyToRun>
+      <PublishReadyToRunCrossgen2ExtraArgs>--embed-pgo-data</PublishReadyToRunCrossgen2ExtraArgs>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PublishReadyToRunPgoFiles Include="@(MibcFiles)"/>
+    </ItemGroup>
+  </Target>
+
 </Project>
