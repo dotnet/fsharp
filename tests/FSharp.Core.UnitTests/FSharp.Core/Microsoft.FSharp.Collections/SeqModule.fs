@@ -1162,7 +1162,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.contains 5 nullSeq |> ignore)
 
     [<Fact>]
-    member _.Shuffle() =
+    member _.RandomShuffle() =
         let seq = seq {1;2;3;4;5;6;7;8}
 
         // try shuffle three times, if it doesn't shuffle, it must be broken
@@ -1175,7 +1175,7 @@ type SeqModule() =
         Assert.NotEqual(3, i)
 
     [<Fact>]
-    member _.ShuffleRand() =
+    member _.RandomShuffleWith() =
         let seq = seq {1;2;3;4;5;6;7;8}
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -1190,7 +1190,7 @@ type SeqModule() =
         Assert.AreNotEqual(shuffle1, shuffle3)
 
     [<Fact>]
-    member _.Choice() =
+    member _.RandomChoice() =
         let seq = seq {1;2;3;4;5;6;7;8}
 
         // try choice six times, if all are same, it must be broken
@@ -1210,7 +1210,7 @@ type SeqModule() =
         CheckThrowsArgumentException (fun () -> Seq.randomChoice emptySeq |> ignore)
 
     [<Fact>]
-    member _.ChoiceRand() =
+    member _.RandomChoiceWith() =
         let seq = seq {1;2;3;4;5;6;7;8}
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -1224,7 +1224,7 @@ type SeqModule() =
         Assert.AreNotEqual(choice1, choice3)
 
     [<Fact>]
-    member _.Choices() =
+    member _.RandomChoices() =
         let seq = seq {1;2;3;4;5;6;7;8}
 
         // try choices three times, if all are same, it must be broken
@@ -1248,7 +1248,7 @@ type SeqModule() =
         CheckThrowsArgumentException (fun () -> Seq.randomChoices negativeChoicesLength seq |> ignore)
 
     [<Fact>]
-    member _.ChoicesRand() =
+    member _.RandomChoicesWith() =
         let seq = seq {1;2;3;4;5;6;7;8}
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -1263,7 +1263,7 @@ type SeqModule() =
         Assert.AreNotEqual(choice1, choice3)
 
     [<Fact>]
-    member _.Sample() =
+    member _.RandomSample() =
         let seq = Seq.init 50 id
         let choicesLengthSmall = 1
         let choicesLengthLarge = 49
@@ -1297,7 +1297,7 @@ type SeqModule() =
         CheckThrowsArgumentException (fun () -> Seq.randomSample invalidCountRange seq |> ignore)
 
     [<Fact>]
-    member _.SampleRand() =
+    member _.RandomSampleWith() =
         let seq = seq {1;2;3;4;5;6;7;8}
         let rand1 = Random(123)
         let rand2 = Random(123)

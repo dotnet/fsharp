@@ -2732,15 +2732,95 @@ module List =
     [<CompiledName("RandomShuffleWith")>]
     val randomShuffleWith : random: Random -> source: 'T list -> 'T list
 
+    /// <summary>
+    /// Returns a random element from the given list.
+    /// </summary>
+    ///
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A randomly selected element from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    ///
+    /// <example id="randomChoice-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomChoice
+    /// </code>
+    /// Can evaluate to <c>3</c>.
+    /// </example>
     [<CompiledName("RandomChoice")>]
     val randomChoice : source: 'T list -> 'T
 
+    /// <summary>
+    /// Returns a random element from the given list with the specified <c>Random</c> instance.
+    /// </summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A randomly selected element from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    ///
+    /// <example id="randomChoiceWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomChoiceWith Random.Shared
+    /// </code>
+    /// Can evaluate to <c>3</c>.
+    /// </example>
     [<CompiledName("RandomChoiceWith")>]
     val randomChoiceWith : random: Random -> source: 'T list -> 'T
 
+    /// <summary>
+    /// Returns a list of random elements from the given list.
+    /// </summary>
+    ///
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A list of randomly selected elements from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    ///
+    /// <example id="randomChoices-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomChoices 3
+    /// </code>
+    /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
+    /// </example>
     [<CompiledName("RandomChoices")>]
     val randomChoices : count: int -> source: 'T list -> 'T list
 
+    /// <summary>
+    /// Returns a list of random elements from the given list with the specified <c>Random</c> instance.
+    /// </summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A list of randomly selected elements from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    ///
+    /// <example id="randomChoicesWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> Array.randomChoicesWith Random.Shared 3
+    /// </code>
+    /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
+    /// </example>
     [<CompiledName("RandomChoicesWith")>]
     val randomChoicesWith : random: Random -> count: int -> source: 'T list -> 'T list
 

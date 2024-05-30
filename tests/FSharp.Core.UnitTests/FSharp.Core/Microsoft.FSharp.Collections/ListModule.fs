@@ -1089,7 +1089,7 @@ type ListModule() =
         Assert.AreEqual(list.[^1], 4)
 
     [<Fact>]
-    member _.Shuffle() =
+    member _.RandomShuffle() =
         let list = [1;2;3;4;5;6;7;8]
 
         // try shuffle three times, if it doesn't shuffle, it must be broken
@@ -1102,7 +1102,7 @@ type ListModule() =
         Assert.NotEqual(3, i)
 
     [<Fact>]
-    member _.ShuffleRand() =
+    member _.RandomShuffleWith() =
         let list = [1;2;3;4;5;6;7;8]
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -1117,7 +1117,7 @@ type ListModule() =
         Assert.AreNotEqual(shuffle1, shuffle3)
 
     [<Fact>]
-    member _.Choice() =
+    member _.RandomChoice() =
         let list = [1;2;3;4;5;6;7;8]
 
         // try choice six times, if all are same, it must be broken
@@ -1137,7 +1137,7 @@ type ListModule() =
         CheckThrowsArgumentException (fun () -> List.randomChoice emptyList |> ignore)
 
     [<Fact>]
-    member _.ChoiceRand() =
+    member _.RandomChoiceWith() =
         let list = [1;2;3;4;5;6;7;8]
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -1151,7 +1151,7 @@ type ListModule() =
         Assert.AreNotEqual(choice1, choice3)
 
     [<Fact>]
-    member _.Choices() =
+    member _.RandomChoices() =
         let list = [1;2;3;4;5;6;7;8]
 
         // try choices three times, if all are same, it must be broken
@@ -1175,7 +1175,7 @@ type ListModule() =
         CheckThrowsArgumentException (fun () -> List.randomChoices negativeChoicesLength list |> ignore)
 
     [<Fact>]
-    member _.ChoicesRand() =
+    member _.RandomChoicesWith() =
         let list = [1;2;3;4;5;6;7;8]
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -1190,7 +1190,7 @@ type ListModule() =
         Assert.AreNotEqual(choice1, choice3)
 
     [<Fact>]
-    member _.Sample() =
+    member _.RandomSample() =
         let list = List.init 50 id
         let choicesLengthSmall = 1
         let choicesLengthLarge = 49
@@ -1224,7 +1224,7 @@ type ListModule() =
         CheckThrowsArgumentException (fun () -> List.randomSample invalidCountRange list |> ignore)
 
     [<Fact>]
-    member _.SampleRand() =
+    member _.RandomSampleWith() =
         let list = [1;2;3;4;5;6;7;8]
         let rand1 = Random(123)
         let rand2 = Random(123)

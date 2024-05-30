@@ -1937,7 +1937,7 @@ module Array =
             result
 
     [<CompiledName("RandomShuffleWith")>]
-    let randomShuffleWith (random: Random) (source: 'T[]) : 'T[] =
+    let randomShuffleWith (random: Random) (source: 'T array) : 'T array =
         checkNonNull "source" source
 
         let result = copy source
@@ -1947,11 +1947,11 @@ module Array =
         result
 
     [<CompiledName("RandomShuffle")>]
-    let randomShuffle (source: 'T[]) : 'T[] =
+    let randomShuffle (source: 'T array) : 'T array =
         randomShuffleWith ThreadSafeRandom.Shared source
 
     [<CompiledName("RandomChoiceWith")>]
-    let randomChoiceWith (random: Random) (source: 'T[]) : 'T =
+    let randomChoiceWith (random: Random) (source: 'T array) : 'T =
         checkNonNull "source" source
 
         let inputLength = source.Length
@@ -1962,11 +1962,11 @@ module Array =
         source.[i]
 
     [<CompiledName("RandomChoice")>]
-    let randomChoice (source: 'T[]) : 'T =
+    let randomChoice (source: 'T array) : 'T =
         randomChoiceWith ThreadSafeRandom.Shared source
 
     [<CompiledName("RandomChoicesWith")>]
-    let randomChoicesWith (random: Random) (count: int) (source: 'T[]) : 'T[] =
+    let randomChoicesWith (random: Random) (count: int) (source: 'T array) : 'T array =
         checkNonNull "source" source
 
         if count < 0 then
@@ -1984,11 +1984,11 @@ module Array =
         result
 
     [<CompiledName("RandomChoices")>]
-    let randomChoices (count: int) (source: 'T[]) : 'T[] =
+    let randomChoices (count: int) (source: 'T array) : 'T array =
         randomChoicesWith ThreadSafeRandom.Shared count source
 
     [<CompiledName("RandomSampleWith")>]
-    let randomSampleWith (random: Random) (count: int) (source: 'T[]) : 'T[] =
+    let randomSampleWith (random: Random) (count: int) (source: 'T array) : 'T array =
         checkNonNull "source" source
 
         if count < 0 then
@@ -2025,7 +2025,7 @@ module Array =
         result
 
     [<CompiledName("RandomSample")>]
-    let randomSample (count: int) (source: 'T[]) : 'T[] =
+    let randomSample (count: int) (source: 'T array) : 'T array =
         randomSampleWith ThreadSafeRandom.Shared count source
 
     module Parallel =

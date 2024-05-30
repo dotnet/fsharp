@@ -1963,7 +1963,7 @@ type ArrayModule() =
 
 
     [<Fact>]
-    member _.Shuffle() =
+    member _.RandomShuffle() =
         let arr = [|1;2;3;4;5;6;7;8|]
 
         // try shuffle three times, if it doesn't shuffle, it must be broken
@@ -1980,7 +1980,7 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.randomShuffle nullArr |> ignore)
 
     [<Fact>]
-    member _.ShuffleRand() =
+    member _.RandomShuffleWith() =
         let arr = [|1;2;3;4;5;6;7;8|]
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -1995,7 +1995,7 @@ type ArrayModule() =
         Assert.AreNotEqual(shuffle1, shuffle3)
 
     [<Fact>]
-    member _.Choice() =
+    member _.RandomChoice() =
         let arr = [|1;2;3;4;5;6;7;8|]
 
         // try choice six times, if all are same, it must be broken
@@ -2019,7 +2019,7 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomChoice emptyArr |> ignore)
 
     [<Fact>]
-    member _.ChoiceRand() =
+    member _.RandomChoiceWith() =
         let arr = [|1;2;3;4;5;6;7;8|]
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -2033,7 +2033,7 @@ type ArrayModule() =
         Assert.AreNotEqual(choice1, choice3)
 
     [<Fact>]
-    member _.Choices() =
+    member _.RandomChoices() =
         let arr = [|1;2;3;4;5;6;7;8|]
 
         // try choices three times, if all are same, it must be broken
@@ -2061,7 +2061,7 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomChoices negativeChoicesLength arr |> ignore)
 
     [<Fact>]
-    member _.ChoicesRand() =
+    member _.RandomChoicesWith() =
         let arr = [|1;2;3;4;5;6;7;8|]
         let rand1 = Random(123)
         let rand2 = Random(123)
@@ -2076,7 +2076,7 @@ type ArrayModule() =
         Assert.AreNotEqual(choice1, choice3)
 
     [<Fact>]
-    member _.Sample() =
+    member _.RandomSample() =
         let arr = Array.init 50 id
         let choicesLengthSmall = 1
         let choicesLengthLarge = 49
@@ -2114,16 +2114,16 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomSample invalidCountRange arr |> ignore)
 
     [<Fact>]
-    member _.SampleRand() =
+    member _.RandomSampleWith() =
         let arr = [|1;2;3;4;5;6;7;8|]
         let rand1 = Random(123)
         let rand2 = Random(123)
         let rand3 = Random(321)
 
         let choicesLength = 5
-        let choice1 = arr |> Array.randomSample rand1 choicesLength
-        let choice2 = arr |> Array.randomSample rand2 choicesLength
-        let choice3 = arr |> Array.randomSample rand3 choicesLength
+        let choice1 = arr |> Array.randomSampleWith rand1 choicesLength
+        let choice2 = arr |> Array.randomSampleWith rand2 choicesLength
+        let choice3 = arr |> Array.randomSampleWith rand3 choicesLength
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
