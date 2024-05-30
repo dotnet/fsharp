@@ -3095,29 +3095,63 @@ module Array =
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: 'T array -> 'T array
 
-    [<CompiledName("Shuffle")>]
-    val shuffle : source: 'T[] -> 'T[]
+    /// <summary>Return a new array shuffled in a random order.</summary>
+    ///
+    /// <param name="source">The input array.</param>
+    ///
+    /// <returns>The result array.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <example id="randomShuffle-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomShuffle
+    /// </code>
+    /// Can evaluate to <c>[| 0; 2; 4; 3; 1 |]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffle")>]
+    val randomShuffle : source: 'T[] -> 'T[]
 
-    [<CompiledName("ShuffleRand")>]
-    val shuffleRand : random: Random -> source: 'T[] -> 'T[]
+    /// <summary>Return a new array shuffled in a random order with the specified <c>Random</c> instance.</summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="source">The input array.</param>
+    ///
+    /// <returns>The result array.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    ///
+    /// <example id="randomShuffleWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomShuffleWith Random.Shared
+    /// </code>
+    /// Can evaluate to <c>[| 0; 2; 4; 3; 1 |]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleWith")>]
+    val randomShuffleWith : random: Random -> source: 'T[] -> 'T[]
 
-    [<CompiledName("Choice")>]
-    val choice : source: 'T[] -> 'T
+    [<CompiledName("RandomChoice")>]
+    val randomChoice : source: 'T[] -> 'T
 
-    [<CompiledName("ChoiceRand")>]
-    val choiceRand : random: Random -> source: 'T[] -> 'T
+    [<CompiledName("RandomChoiceWith")>]
+    val randomChoiceWith : random: Random -> source: 'T[] -> 'T
 
-    [<CompiledName("Choices")>]
-    val choices : count: int -> source: 'T[] -> 'T[]
+    [<CompiledName("RandomChoices")>]
+    val randomChoices : count: int -> source: 'T[] -> 'T[]
 
-    [<CompiledName("ChoicesRand")>]
-    val choicesRand : random: Random -> count: int -> source: 'T[] -> 'T[]
+    [<CompiledName("RandomChoicesWith")>]
+    val randomChoicesWith : random: Random -> count: int -> source: 'T[] -> 'T[]
 
-    [<CompiledName("Sample")>]
-    val sample : count: int -> source: 'T[] -> 'T[]
+    [<CompiledName("RandomSample")>]
+    val randomSample : count: int -> source: 'T[] -> 'T[]
 
-    [<CompiledName("SampleRand")>]
-    val sampleRand : random: Random -> count: int -> source: 'T[] -> 'T[]
+    [<CompiledName("RandomSampleWith")>]
+    val randomSampleWith : random: Random -> count: int -> source: 'T[] -> 'T[]
 
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =

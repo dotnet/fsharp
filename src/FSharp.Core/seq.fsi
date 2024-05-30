@@ -2936,26 +2936,60 @@ module Seq =
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: seq<'T> -> seq<'T>
 
-    [<CompiledName("Shuffle")>]
-    val shuffle : source: seq<'T> -> seq<'T>
+    /// <summary>Return a new sequence shuffled a in random order.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="randomShuffle-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 0; 1; 2; 3; 4 }
+    ///
+    /// inputs |> Seq.randomShuffle
+    /// </code>
+    /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
+    /// </example>
+    [<CompiledName("RandomShuffle")>]
+    val randomShuffle : source: seq<'T> -> seq<'T>
 
-    [<CompiledName("ShuffleRand")>]
-    val shuffleRand : random: Random -> source: seq<'T> -> seq<'T>
+    /// <summary>Return a new sequence shuffled in a random order with the specified <c>Random</c> instance.</summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    ///
+    /// <example id="randomShuffleWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 0; 1; 2; 3; 4 }
+    ///
+    /// inputs |> Seq.randomShuffleWith Random.Shared
+    /// </code>
+    /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleWith")>]
+    val randomShuffleWith : random: Random -> source: seq<'T> -> seq<'T>
 
-    [<CompiledName("Choice")>]
-    val choice : source: seq<'T> -> 'T
+    [<CompiledName("RandomChoice")>]
+    val randomChoice : source: seq<'T> -> 'T
 
-    [<CompiledName("ChoiceRand")>]
-    val choiceRand : random: Random -> source: seq<'T> -> 'T
+    [<CompiledName("RandomChoiceWith")>]
+    val randomChoiceWith : random: Random -> source: seq<'T> -> 'T
 
-    [<CompiledName("Choices")>]
-    val choices : count: int -> source: seq<'T> -> seq<'T>
+    [<CompiledName("RandomChoices")>]
+    val randomChoices : count: int -> source: seq<'T> -> seq<'T>
 
-    [<CompiledName("ChoicesRand")>]
-    val choicesRand : random: Random -> count: int -> source: seq<'T> -> seq<'T>
+    [<CompiledName("RandomChoicesWith")>]
+    val randomChoicesWith : random: Random -> count: int -> source: seq<'T> -> seq<'T>
 
-    [<CompiledName("Sample")>]
-    val sample : count: int -> source: seq<'T> -> seq<'T>
+    [<CompiledName("RandomSample")>]
+    val randomSample : count: int -> source: seq<'T> -> seq<'T>
 
-    [<CompiledName("SampleRand")>]
-    val sampleRand : random: Random -> count: int -> source: seq<'T> -> seq<'T>
+    [<CompiledName("RandomSampleWith")>]
+    val randomSampleWith : random: Random -> count: int -> source: seq<'T> -> seq<'T>

@@ -2695,26 +2695,57 @@ module List =
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: 'T list -> 'T list
 
-    [<CompiledName("Shuffle")>]
-    val shuffle : source: 'T list -> 'T list
+    /// <summary>Return a new list shuffled in a random order.</summary>
+    ///
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>The result list.</returns>
+    ///
+    /// <example id="randomShuffle-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomShuffle
+    /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
+    /// </code>
+    /// </example>
+    [<CompiledName("RandomShuffle")>]
+    val randomShuffle : source: 'T list -> 'T list
 
-    [<CompiledName("ShuffleRand")>]
-    val shuffleRand : random: Random -> source: 'T list -> 'T list
+    /// <summary>Return a new list shuffled in a random order with the specified <c>Random</c> instance.</summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>The result list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    ///
+    /// <example id="randomShuffleWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomShuffleWith Random.Shared
+    /// </code>
+    /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleWith")>]
+    val randomShuffleWith : random: Random -> source: 'T list -> 'T list
 
-    [<CompiledName("Choice")>]
-    val choice : source: 'T list -> 'T
+    [<CompiledName("RandomChoice")>]
+    val randomChoice : source: 'T list -> 'T
 
-    [<CompiledName("ChoiceRand")>]
-    val choiceRand : random: Random -> source: 'T list -> 'T
+    [<CompiledName("RandomChoiceWith")>]
+    val randomChoiceWith : random: Random -> source: 'T list -> 'T
 
-    [<CompiledName("Choices")>]
-    val choices : count: int -> source: 'T list -> 'T list
+    [<CompiledName("RandomChoices")>]
+    val randomChoices : count: int -> source: 'T list -> 'T list
 
-    [<CompiledName("ChoicesRand")>]
-    val choicesRand : random: Random -> count: int -> source: 'T list -> 'T list
+    [<CompiledName("RandomChoicesWith")>]
+    val randomChoicesWith : random: Random -> count: int -> source: 'T list -> 'T list
 
-    [<CompiledName("Sample")>]
-    val sample : count: int -> source: 'T list -> 'T list
+    [<CompiledName("RandomSample")>]
+    val randomSample : count: int -> source: 'T list -> 'T list
 
-    [<CompiledName("SampleRand")>]
-    val sampleRand : random: Random -> count: int -> source: 'T list -> 'T list
+    [<CompiledName("RandomSampleWith")>]
+    val randomSampleWith : random: Random -> count: int -> source: 'T list -> 'T list

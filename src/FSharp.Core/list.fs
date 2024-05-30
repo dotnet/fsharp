@@ -989,18 +989,18 @@ module List =
         coll.AddMany(values) // insert values BEFORE the item at the index
         coll.AddManyAndClose(curr)
 
-    [<CompiledName("ShuffleRand")>]
-    let shuffleRand (random: Random) (source: 'T list) : 'T list =
+    [<CompiledName("RandomShuffleWith")>]
+    let randomShuffleWith (random: Random) (source: 'T list) : 'T list =
         let tempArray = toArray source
         Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random tempArray
         ofArray tempArray
 
-    [<CompiledName("Shuffle")>]
-    let shuffle (source: 'T list) : 'T list =
-        shuffleRand ThreadSafeRandom.Shared source
+    [<CompiledName("RandomShuffle")>]
+    let randomShuffle (source: 'T list) : 'T list =
+        randomShuffleWith ThreadSafeRandom.Shared source
 
-    [<CompiledName("ChoiceRand")>]
-    let choiceRand (random: Random) (source: 'T list) : 'T =
+    [<CompiledName("RandomChoiceWith")>]
+    let randomChoiceWith (random: Random) (source: 'T list) : 'T =
         let inputLength = source.Length
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
@@ -1008,12 +1008,12 @@ module List =
         let i = random.Next(0, inputLength)
         source.[i]
 
-    [<CompiledName("Choice")>]
-    let choice (source: 'T list) : 'T =
-        choiceRand ThreadSafeRandom.Shared source
+    [<CompiledName("RandomChoice")>]
+    let randomChoice (source: 'T list) : 'T =
+        randomChoiceWith ThreadSafeRandom.Shared source
 
-    [<CompiledName("ChoicesRand")>]
-    let choicesRand (random: Random) (count: int) (source: 'T list) : 'T list =
+    [<CompiledName("RandomChoicesWith")>]
+    let randomChoicesWith (random: Random) (count: int) (source: 'T list) : 'T list =
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
@@ -1027,12 +1027,12 @@ module List =
                 source.[j]
         ]
 
-    [<CompiledName("Choices")>]
-    let choices (count: int) (source: 'T list) : 'T list =
-        choicesRand ThreadSafeRandom.Shared count source
+    [<CompiledName("RandomChoices")>]
+    let randomChoices (count: int) (source: 'T list) : 'T list =
+        randomChoicesWith ThreadSafeRandom.Shared count source
 
-    [<CompiledName("SampleRand")>]
-    let sampleRand (random: Random) (count: int) (source: 'T list) : 'T list =
+    [<CompiledName("RandomSampleWith")>]
+    let randomSampleWith (random: Random) (count: int) (source: 'T list) : 'T list =
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
@@ -1067,6 +1067,6 @@ module List =
                     source[j]
             ]
 
-    [<CompiledName("Sample")>]
-    let sample (count: int) (source: 'T list) : 'T list =
-        sampleRand ThreadSafeRandom.Shared count source
+    [<CompiledName("RandomSample")>]
+    let randomSample (count: int) (source: 'T list) : 'T list =
+        randomSampleWith ThreadSafeRandom.Shared count source

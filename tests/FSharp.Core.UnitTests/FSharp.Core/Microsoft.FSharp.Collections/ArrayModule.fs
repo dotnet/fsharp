@@ -1970,14 +1970,14 @@ type ArrayModule() =
         let mutable isShuffled = false
         let mutable i = 0
         while not isShuffled && i < 3 do
-            let shuffled = arr |> Array.shuffle
+            let shuffled = arr |> Array.randomShuffle
             isShuffled <- not (arr = shuffled)
             i <- i + 1
         Assert.NotEqual(3, i)
 
         // null array
         let nullArr = null
-        CheckThrowsArgumentNullException (fun () -> Array.shuffle nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffle nullArr |> ignore)
 
     [<Fact>]
     member _.ShuffleRand() =
@@ -1986,9 +1986,9 @@ type ArrayModule() =
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let shuffle1 = arr |> Array.shuffleRand rand1
-        let shuffle2 = arr |> Array.shuffleRand rand2
-        let shuffle3 = arr |> Array.shuffleRand rand3
+        let shuffle1 = arr |> Array.randomShuffleWith rand1
+        let shuffle2 = arr |> Array.randomShuffleWith rand2
+        let shuffle3 = arr |> Array.randomShuffleWith rand3
 
         Assert.AreEqual(shuffle1, shuffle2)
         Assert.AreNotEqual(arr, shuffle1)
@@ -2000,23 +2000,23 @@ type ArrayModule() =
 
         // try choice six times, if all are same, it must be broken
         let results = [|
-            Array.choice arr
-            Array.choice arr
-            Array.choice arr
-            Array.choice arr
-            Array.choice arr
-            Array.choice arr
+            Array.randomChoice arr
+            Array.randomChoice arr
+            Array.randomChoice arr
+            Array.randomChoice arr
+            Array.randomChoice arr
+            Array.randomChoice arr
         |]
         let allSame = results |> Array.forall (fun x -> x = results.[0])
         Assert.False(allSame)
 
         // null array
         let nullArr = null
-        CheckThrowsArgumentNullException (fun () -> Array.choice nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoice nullArr |> ignore)
 
         // empty array
         let emptyArr = [||]
-        CheckThrowsArgumentException (fun () -> Array.choice emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoice emptyArr |> ignore)
 
     [<Fact>]
     member _.ChoiceRand() =
@@ -2025,9 +2025,9 @@ type ArrayModule() =
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let choice1 = arr |> Array.choiceRand rand1
-        let choice2 = arr |> Array.choiceRand rand2
-        let choice3 = arr |> Array.choiceRand rand3
+        let choice1 = arr |> Array.randomChoiceWith rand1
+        let choice2 = arr |> Array.randomChoiceWith rand2
+        let choice3 = arr |> Array.randomChoiceWith rand3
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
@@ -2039,9 +2039,9 @@ type ArrayModule() =
         // try choices three times, if all are same, it must be broken
         let choicesLength = 5
         let results = [|
-            Array.choices choicesLength arr
-            Array.choices choicesLength arr
-            Array.choices choicesLength arr
+            Array.randomChoices choicesLength arr
+            Array.randomChoices choicesLength arr
+            Array.randomChoices choicesLength arr
         |]
         let allSame = results |> Array.forall (fun x -> x = results.[0])
         let allCorrectLength = results |> Array.forall (fun x -> x.Length = choicesLength)
@@ -2050,15 +2050,15 @@ type ArrayModule() =
 
         // null array
         let nullArr = null
-        CheckThrowsArgumentNullException (fun () -> Array.choices choicesLength nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoices choicesLength nullArr |> ignore)
 
         // empty array
         let emptyArr = [||]
-        CheckThrowsArgumentException (fun () -> Array.choices choicesLength emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoices choicesLength emptyArr |> ignore)
 
         // negative choices length
         let negativeChoicesLength = -1
-        CheckThrowsArgumentException (fun () -> Array.choices negativeChoicesLength arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoices negativeChoicesLength arr |> ignore)
 
     [<Fact>]
     member _.ChoicesRand() =
@@ -2068,9 +2068,9 @@ type ArrayModule() =
         let rand3 = Random(321)
 
         let choicesLength = 5
-        let choice1 = arr |> Array.choicesRand rand1 choicesLength
-        let choice2 = arr |> Array.choicesRand rand2 choicesLength
-        let choice3 = arr |> Array.choicesRand rand3 choicesLength
+        let choice1 = arr |> Array.randomChoicesWith rand1 choicesLength
+        let choice2 = arr |> Array.randomChoicesWith rand2 choicesLength
+        let choice3 = arr |> Array.randomChoicesWith rand3 choicesLength
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
@@ -2085,7 +2085,7 @@ type ArrayModule() =
             // try sample tryCount times, if all are same, it must be broken
             let results = [|
                 for _ in 1..tryCount do
-                    Array.sample choicesLength arr
+                    Array.randomSample choicesLength arr
             |]
             let allSame = results |> Array.forall (fun x -> x = results.[0])
             let allCorrectLength = results |> Array.forall (fun x -> x.Length = choicesLength)
@@ -2099,19 +2099,19 @@ type ArrayModule() =
 
         // null array
         let nullArr = null
-        CheckThrowsArgumentNullException (fun () -> Array.sample choicesLengthSmall nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomSample choicesLengthSmall nullArr |> ignore)
 
         // empty array
         let emptyArr = [||]
-        CheckThrowsArgumentException (fun () -> Array.sample choicesLengthSmall emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSample choicesLengthSmall emptyArr |> ignore)
 
         // negative choices length
         let negativeChoicesLength = -1
-        CheckThrowsArgumentException (fun () -> Array.sample negativeChoicesLength arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSample negativeChoicesLength arr |> ignore)
 
         // invalid count
         let invalidCountRange = 100
-        CheckThrowsArgumentException (fun () -> Array.sample invalidCountRange arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSample invalidCountRange arr |> ignore)
 
     [<Fact>]
     member _.SampleRand() =
@@ -2121,9 +2121,9 @@ type ArrayModule() =
         let rand3 = Random(321)
 
         let choicesLength = 5
-        let choice1 = arr |> Array.sampleRand rand1 choicesLength
-        let choice2 = arr |> Array.sampleRand rand2 choicesLength
-        let choice3 = arr |> Array.sampleRand rand3 choicesLength
+        let choice1 = arr |> Array.randomSample rand1 choicesLength
+        let choice2 = arr |> Array.randomSample rand2 choicesLength
+        let choice3 = arr |> Array.randomSample rand3 choicesLength
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)

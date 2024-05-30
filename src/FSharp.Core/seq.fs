@@ -1939,18 +1939,18 @@ module Seq =
                 invalidArg "index" "index must be within bounds of the array"
         }
 
-    [<CompiledName("ShuffleRand")>]
-    let shuffleRand (random: Random) (source: seq<'T>) : seq<'T> =
+    [<CompiledName("RandomShuffleWith")>]
+    let randomShuffleWith (random: Random) (source: seq<'T>) : seq<'T> =
         let tempArray = toArray source
         Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random tempArray
         ofArray tempArray
 
-    [<CompiledName("Shuffle")>]
-    let shuffle (source: seq<'T>) : seq<'T> =
-        shuffleRand ThreadSafeRandom.Shared source
+    [<CompiledName("RandomShuffle")>]
+    let randomShuffle (source: seq<'T>) : seq<'T> =
+        randomShuffleWith ThreadSafeRandom.Shared source
 
-    [<CompiledName("ChoiceRand")>]
-    let choiceRand (random: Random) (source: seq<'T>) : 'T =
+    [<CompiledName("RandomChoiceWith")>]
+    let randomChoiceWith (random: Random) (source: seq<'T>) : 'T =
         let inputLength = source |> length
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
@@ -1958,12 +1958,12 @@ module Seq =
         let i = random.Next(0, inputLength)
         source |> item i
 
-    [<CompiledName("Choice")>]
-    let choice (source: seq<'T>) : 'T =
-        choiceRand ThreadSafeRandom.Shared source
+    [<CompiledName("RandomChoice")>]
+    let randomChoice (source: seq<'T>) : 'T =
+        randomChoiceWith ThreadSafeRandom.Shared source
 
-    [<CompiledName("ChoicesRand")>]
-    let choicesRand (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
+    [<CompiledName("RandomChoicesWith")>]
+    let randomChoicesWith (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
@@ -1977,12 +1977,12 @@ module Seq =
                 source |> item j
         }
 
-    [<CompiledName("Choices")>]
-    let choices (count: int) (source: seq<'T>) : seq<'T> =
-        choicesRand ThreadSafeRandom.Shared count source
+    [<CompiledName("RandomChoices")>]
+    let randomChoices (count: int) (source: seq<'T>) : seq<'T> =
+        randomChoicesWith ThreadSafeRandom.Shared count source
 
-    [<CompiledName("SampleRand")>]
-    let sampleRand (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
+    [<CompiledName("RandomSampleWith")>]
+    let randomSampleWith (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
@@ -2017,6 +2017,6 @@ module Seq =
                     source |> item j
             }
 
-    [<CompiledName("Sample")>]
-    let sample (count: int) (source: seq<'T>) : seq<'T> =
-        sampleRand ThreadSafeRandom.Shared count source
+    [<CompiledName("RandomSample")>]
+    let randomSample (count: int) (source: seq<'T>) : seq<'T> =
+        randomSampleWith ThreadSafeRandom.Shared count source

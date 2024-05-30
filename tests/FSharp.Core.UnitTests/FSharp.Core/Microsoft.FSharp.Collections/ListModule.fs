@@ -1096,7 +1096,7 @@ type ListModule() =
         let mutable isShuffled = false
         let mutable i = 0
         while not isShuffled && i < 3 do
-            let shuffled = list |> List.shuffle
+            let shuffled = list |> List.randomShuffle
             isShuffled <- not (list = shuffled)
             i <- i + 1
         Assert.NotEqual(3, i)
@@ -1108,9 +1108,9 @@ type ListModule() =
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let shuffle1 = list |> List.shuffleRand rand1
-        let shuffle2 = list |> List.shuffleRand rand2
-        let shuffle3 = list |> List.shuffleRand rand3
+        let shuffle1 = list |> List.randomShuffleWith rand1
+        let shuffle2 = list |> List.randomShuffleWith rand2
+        let shuffle3 = list |> List.randomShuffleWith rand3
 
         Assert.AreEqual(shuffle1, shuffle2)
         Assert.AreNotEqual(list, shuffle1)
@@ -1122,19 +1122,19 @@ type ListModule() =
 
         // try choice six times, if all are same, it must be broken
         let results = [|
-            List.choice list
-            List.choice list
-            List.choice list
-            List.choice list
-            List.choice list
-            List.choice list
+            List.randomChoice list
+            List.randomChoice list
+            List.randomChoice list
+            List.randomChoice list
+            List.randomChoice list
+            List.randomChoice list
         |]
         let allSame = results |> Array.forall (fun x -> x = results.[0])
         Assert.False(allSame)
 
         // empty list
         let emptyList = []
-        CheckThrowsArgumentException (fun () -> List.choice emptyList |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomChoice emptyList |> ignore)
 
     [<Fact>]
     member _.ChoiceRand() =
@@ -1143,9 +1143,9 @@ type ListModule() =
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let choice1 = list |> List.choiceRand rand1
-        let choice2 = list |> List.choiceRand rand2
-        let choice3 = list |> List.choiceRand rand3
+        let choice1 = list |> List.randomChoiceWith rand1
+        let choice2 = list |> List.randomChoiceWith rand2
+        let choice3 = list |> List.randomChoiceWith rand3
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
@@ -1157,9 +1157,9 @@ type ListModule() =
         // try choices three times, if all are same, it must be broken
         let choicesLength = 5
         let results = [|
-            List.choices choicesLength list
-            List.choices choicesLength list
-            List.choices choicesLength list
+            List.randomChoices choicesLength list
+            List.randomChoices choicesLength list
+            List.randomChoices choicesLength list
         |]
         let allSame = results |> Array.forall (fun x -> x = results.[0])
         let allCorrectLength = results |> Array.forall (fun x -> x.Length = choicesLength)
@@ -1168,11 +1168,11 @@ type ListModule() =
 
         // empty list
         let emptyList = []
-        CheckThrowsArgumentException (fun () -> List.choices choicesLength emptyList |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomChoices choicesLength emptyList |> ignore)
 
         // negative choices length
         let negativeChoicesLength = -1
-        CheckThrowsArgumentException (fun () -> List.choices negativeChoicesLength list |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomChoices negativeChoicesLength list |> ignore)
 
     [<Fact>]
     member _.ChoicesRand() =
@@ -1182,9 +1182,9 @@ type ListModule() =
         let rand3 = Random(321)
 
         let choicesLength = 5
-        let choice1 = list |> List.choicesRand rand1 choicesLength
-        let choice2 = list |> List.choicesRand rand2 choicesLength
-        let choice3 = list |> List.choicesRand rand3 choicesLength
+        let choice1 = list |> List.randomChoicesWith rand1 choicesLength
+        let choice2 = list |> List.randomChoicesWith rand2 choicesLength
+        let choice3 = list |> List.randomChoicesWith rand3 choicesLength
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
@@ -1199,7 +1199,7 @@ type ListModule() =
             // try sample tryCount times, if all are same, it must be broken
             let results = [|
                 for _ in 1..tryCount do
-                    List.sample choicesLength list
+                    List.randomSample choicesLength list
             |]
             let allSame = results |> Array.forall (fun x -> x = results.[0])
             let allCorrectLength = results |> Array.forall (fun x -> x.Length = choicesLength)
@@ -1213,15 +1213,15 @@ type ListModule() =
 
         // empty list
         let emptyList = []
-        CheckThrowsArgumentException (fun () -> List.sample choicesLengthSmall emptyList |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomSample choicesLengthSmall emptyList |> ignore)
 
         // negative choices length
         let negativeChoicesLength = -1
-        CheckThrowsArgumentException (fun () -> List.sample negativeChoicesLength list |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomSample negativeChoicesLength list |> ignore)
 
         // invalid count
         let invalidCountRange = 100
-        CheckThrowsArgumentException (fun () -> List.sample invalidCountRange list |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomSample invalidCountRange list |> ignore)
 
     [<Fact>]
     member _.SampleRand() =
@@ -1231,9 +1231,9 @@ type ListModule() =
         let rand3 = Random(321)
 
         let choicesLength = 5
-        let choice1 = list |> List.sampleRand rand1 choicesLength
-        let choice2 = list |> List.sampleRand rand2 choicesLength
-        let choice3 = list |> List.sampleRand rand3 choicesLength
+        let choice1 = list |> List.randomSampleWith rand1 choicesLength
+        let choice2 = list |> List.randomSampleWith rand2 choicesLength
+        let choice3 = list |> List.randomSampleWith rand3 choicesLength
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)

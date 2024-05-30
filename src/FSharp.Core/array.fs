@@ -1936,8 +1936,8 @@ module Array =
 
             result
 
-    [<CompiledName("ShuffleRand")>]
-    let shuffleRand (random: Random) (source: 'T[]) : 'T[] =
+    [<CompiledName("RandomShuffleWith")>]
+    let randomShuffleWith (random: Random) (source: 'T[]) : 'T[] =
         checkNonNull "source" source
 
         let result = copy source
@@ -1946,12 +1946,12 @@ module Array =
 
         result
 
-    [<CompiledName("Shuffle")>]
-    let shuffle (source: 'T[]) : 'T[] =
-        shuffleRand ThreadSafeRandom.Shared source
+    [<CompiledName("RandomShuffle")>]
+    let randomShuffle (source: 'T[]) : 'T[] =
+        randomShuffleWith ThreadSafeRandom.Shared source
 
-    [<CompiledName("ChoiceRand")>]
-    let choiceRand (random: Random) (source: 'T[]) : 'T =
+    [<CompiledName("RandomChoiceWith")>]
+    let randomChoiceWith (random: Random) (source: 'T[]) : 'T =
         checkNonNull "source" source
 
         let inputLength = source.Length
@@ -1961,12 +1961,12 @@ module Array =
         let i = random.Next(0, inputLength)
         source.[i]
 
-    [<CompiledName("Choice")>]
-    let choice (source: 'T[]) : 'T =
-        choiceRand ThreadSafeRandom.Shared source
+    [<CompiledName("RandomChoice")>]
+    let randomChoice (source: 'T[]) : 'T =
+        randomChoiceWith ThreadSafeRandom.Shared source
 
-    [<CompiledName("ChoicesRand")>]
-    let choicesRand (random: Random) (count: int) (source: 'T[]) : 'T[] =
+    [<CompiledName("RandomChoicesWith")>]
+    let randomChoicesWith (random: Random) (count: int) (source: 'T[]) : 'T[] =
         checkNonNull "source" source
 
         if count < 0 then
@@ -1983,12 +1983,12 @@ module Array =
             result.[i] <- source.[j]
         result
 
-    [<CompiledName("Choices")>]
-    let choices (count: int) (source: 'T[]) : 'T[] =
-        choicesRand ThreadSafeRandom.Shared count source
+    [<CompiledName("RandomChoices")>]
+    let randomChoices (count: int) (source: 'T[]) : 'T[] =
+        randomChoicesWith ThreadSafeRandom.Shared count source
 
-    [<CompiledName("SampleRand")>]
-    let sampleRand (random: Random) (count: int) (source: 'T[]) : 'T[] =
+    [<CompiledName("RandomSampleWith")>]
+    let randomSampleWith (random: Random) (count: int) (source: 'T[]) : 'T[] =
         checkNonNull "source" source
 
         if count < 0 then
@@ -2024,9 +2024,9 @@ module Array =
 
         result
 
-    [<CompiledName("Sample")>]
-    let sample (count: int) (source: 'T[]) : 'T[] =
-        sampleRand ThreadSafeRandom.Shared count source
+    [<CompiledName("RandomSample")>]
+    let randomSample (count: int) (source: 'T[]) : 'T[] =
+        randomSampleWith ThreadSafeRandom.Shared count source
 
     module Parallel =
         open System.Threading

@@ -1169,7 +1169,7 @@ type SeqModule() =
         let mutable isShuffled = false
         let mutable i = 0
         while not isShuffled && i < 3 do
-            let shuffled = seq |> Seq.shuffle
+            let shuffled = seq |> Seq.randomShuffle
             isShuffled <- not (seq = shuffled)
             i <- i + 1
         Assert.NotEqual(3, i)
@@ -1181,9 +1181,9 @@ type SeqModule() =
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let shuffle1 = seq |> Seq.shuffleRand rand1 |> Seq.cache
-        let shuffle2 = seq |> Seq.shuffleRand rand2 |> Seq.cache
-        let shuffle3 = seq |> Seq.shuffleRand rand3 |> Seq.cache
+        let shuffle1 = seq |> Seq.randomShuffleWith rand1 |> Seq.cache
+        let shuffle2 = seq |> Seq.randomShuffleWith rand2 |> Seq.cache
+        let shuffle3 = seq |> Seq.randomShuffleWith rand3 |> Seq.cache
 
         Assert.AreEqual(shuffle1, shuffle2)
         Assert.AreNotEqual(seq, shuffle1)
@@ -1195,19 +1195,19 @@ type SeqModule() =
 
         // try choice six times, if all are same, it must be broken
         let results = [|
-            Seq.choice seq
-            Seq.choice seq
-            Seq.choice seq
-            Seq.choice seq
-            Seq.choice seq
-            Seq.choice seq
+            Seq.randomChoice seq
+            Seq.randomChoice seq
+            Seq.randomChoice seq
+            Seq.randomChoice seq
+            Seq.randomChoice seq
+            Seq.randomChoice seq
         |]
         let allSame = results |> Array.forall (fun x -> x = results.[0])
         Assert.False(allSame)
 
         // empty seq
         let emptySeq = Seq.empty
-        CheckThrowsArgumentException (fun () -> Seq.choice emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoice emptySeq |> ignore)
 
     [<Fact>]
     member _.ChoiceRand() =
@@ -1216,9 +1216,9 @@ type SeqModule() =
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let choice1 = seq |> Seq.choiceRand rand1
-        let choice2 = seq |> Seq.choiceRand rand2
-        let choice3 = seq |> Seq.choiceRand rand3
+        let choice1 = seq |> Seq.randomChoiceWith rand1
+        let choice2 = seq |> Seq.randomChoiceWith rand2
+        let choice3 = seq |> Seq.randomChoiceWith rand3
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
@@ -1230,9 +1230,9 @@ type SeqModule() =
         // try choices three times, if all are same, it must be broken
         let choicesLength = 5
         let results = [|
-            Seq.choices choicesLength seq |> Seq.cache
-            Seq.choices choicesLength seq |> Seq.cache
-            Seq.choices choicesLength seq |> Seq.cache
+            Seq.randomChoices choicesLength seq |> Seq.cache
+            Seq.randomChoices choicesLength seq |> Seq.cache
+            Seq.randomChoices choicesLength seq |> Seq.cache
         |]
         let allSame = results |> Array.forall (fun x -> (Seq.compareWith Operators.compare x results.[0]) = 0)
         let allCorrectLength = results |> Array.forall (fun x -> (Seq.length x) = choicesLength)
@@ -1241,11 +1241,11 @@ type SeqModule() =
 
         // empty seq
         let emptySeq = Seq.empty
-        CheckThrowsArgumentException (fun () -> Seq.choices choicesLength emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoices choicesLength emptySeq |> ignore)
 
         // negative choices length
         let negativeChoicesLength = -1
-        CheckThrowsArgumentException (fun () -> Seq.choices negativeChoicesLength seq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoices negativeChoicesLength seq |> ignore)
 
     [<Fact>]
     member _.ChoicesRand() =
@@ -1255,9 +1255,9 @@ type SeqModule() =
         let rand3 = Random(321)
 
         let choicesLength = 5
-        let choice1 = seq |> Seq.choicesRand rand1 choicesLength
-        let choice2 = seq |> Seq.choicesRand rand2 choicesLength
-        let choice3 = seq |> Seq.choicesRand rand3 choicesLength
+        let choice1 = seq |> Seq.randomChoicesWith rand1 choicesLength
+        let choice2 = seq |> Seq.randomChoicesWith rand2 choicesLength
+        let choice3 = seq |> Seq.randomChoicesWith rand3 choicesLength
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
@@ -1272,7 +1272,7 @@ type SeqModule() =
             // try sample tryCount times, if all are same, it must be broken
             let results = [|
                 for _ in 1..tryCount do
-                    Seq.sample choicesLength seq |> Seq.cache
+                    Seq.randomSample choicesLength seq |> Seq.cache
             |]
             let allSame = results |> Array.forall (fun x -> (Seq.compareWith Operators.compare x results.[0]) = 0)
             let allCorrectLength = results |> Array.forall (fun x -> (Seq.length x) = choicesLength)
@@ -1286,15 +1286,15 @@ type SeqModule() =
 
         // empty seq
         let emptySeq = Seq.empty
-        CheckThrowsArgumentException (fun () -> Seq.sample choicesLengthSmall emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSample choicesLengthSmall emptySeq |> ignore)
 
         // negative choices length
         let negativeChoicesLength = -1
-        CheckThrowsArgumentException (fun () -> Seq.sample negativeChoicesLength seq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSample negativeChoicesLength seq |> ignore)
 
         // invalid count
         let invalidCountRange = 100
-        CheckThrowsArgumentException (fun () -> Seq.sample invalidCountRange seq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSample invalidCountRange seq |> ignore)
 
     [<Fact>]
     member _.SampleRand() =
@@ -1304,9 +1304,9 @@ type SeqModule() =
         let rand3 = Random(321)
 
         let choicesLength = 5
-        let choice1 = seq |> Seq.sampleRand rand1 choicesLength
-        let choice2 = seq |> Seq.sampleRand rand2 choicesLength
-        let choice3 = seq |> Seq.sampleRand rand3 choicesLength
+        let choice1 = seq |> Seq.randomSampleWith rand1 choicesLength
+        let choice2 = seq |> Seq.randomSampleWith rand2 choicesLength
+        let choice3 = seq |> Seq.randomSampleWith rand3 choicesLength
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
