@@ -964,4 +964,29 @@ let _ = nameof Task<A.B.C.D>
 """
                     (set [| 0 |])
             ]
+        scenario
+            "exception syntax in namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace Foo
+
+module Program =
+
+    [<EntryPoint>]
+    let main _ =
+        raise Blah
+        0
+"""
+                    (set [| 0 |])
+            ]
     ]

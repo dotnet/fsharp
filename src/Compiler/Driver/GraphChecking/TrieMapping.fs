@@ -230,7 +230,8 @@ let rec mkTrieNodeFor (file: FileInProject) : FileIndex * TrieNode =
                         let hasTypesOrAutoOpenNestedModules =
                             List.exists
                                 (function
-                                | SynModuleDecl.Types _ -> true
+                                | SynModuleDecl.Types _
+                                | SynModuleDecl.Exception _ -> true
                                 | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(attributes = attributes)) ->
                                     isAnyAttributeAutoOpen attributes
                                 | _ -> false)
