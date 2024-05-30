@@ -77,7 +77,6 @@
 
 	    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
 	    <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
-	    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
 	    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
 	    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
 	    <InternalsVisibleTo Include="LanguageServiceProfiling" />
