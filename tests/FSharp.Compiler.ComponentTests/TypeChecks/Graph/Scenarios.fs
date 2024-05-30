@@ -988,5 +988,38 @@ module Program =
         0
 """
                     (set [| 0 |])
-            ]
+        ]
+        scenario
+            "exception syntax in namespace signature"
+            [
+                sourceFile
+                    "A.fsi"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "B.fs"
+                    """
+namespace Foo
+
+module Program =
+
+    [<EntryPoint>]
+    let main _ =
+        raise Blah
+        0
+"""
+                    (set [| 0 |])
+        ]
     ]
