@@ -236,18 +236,22 @@ let rec stripUnitEqnsAux canShortcut unt =
     | _ -> unt
 
 let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
-    match nullnessOrig.Evaluate() with
-    | NullnessInfo.WithoutNull -> nullnessNew
-    | NullnessInfo.AmbivalentToNull ->
-        match nullnessNew.Evaluate() with
-        | NullnessInfo.WithoutNull -> nullnessOrig
-        | NullnessInfo.AmbivalentToNull -> nullnessOrig
-        | NullnessInfo.WithNull -> nullnessNew
-    | NullnessInfo.WithNull -> 
-        match nullnessNew.Evaluate() with
-        | NullnessInfo.WithoutNull -> nullnessOrig
-        | NullnessInfo.AmbivalentToNull -> nullnessNew
-        | NullnessInfo.WithNull -> nullnessOrig
+    match nullnessOrig, nullnessNew with
+    | Nullness.Variable _, Nullness.Known NullnessInfo.WithoutNull -> 
+        nullnessOrig
+    | _ -> 
+        match nullnessOrig.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessNew
+        | NullnessInfo.AmbivalentToNull ->
+            match nullnessNew.Evaluate() with
+            | NullnessInfo.WithoutNull -> nullnessOrig
+            | NullnessInfo.AmbivalentToNull -> nullnessOrig
+            | NullnessInfo.WithNull -> nullnessNew
+        | NullnessInfo.WithNull -> 
+            match nullnessNew.Evaluate() with
+            | NullnessInfo.WithoutNull -> nullnessOrig
+            | NullnessInfo.AmbivalentToNull -> nullnessNew
+            | NullnessInfo.WithNull -> nullnessOrig
 
 let nullnessEquiv (nullnessOrig: Nullness) (nullnessNew: Nullness) = LanguagePrimitives.PhysicalEquality nullnessOrig nullnessNew
 
@@ -278,8 +282,9 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
     | TType_measure _ -> None
 
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
-    match nullness.Evaluate() with
-    | NullnessInfo.WithoutNull -> ty
+    match nullness with
+    | Nullness.Known NullnessInfo.WithoutNull -> ty
+    | Nullness.Variable nv when nv.IsSolved && nv.Evaluate() = NullnessInfo.WithoutNull -> ty
     | _ -> 
     match ty with
     | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)

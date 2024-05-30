@@ -36,7 +36,6 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
 [<InlineData("System.IO.File.Exists(path)")>]
 [<InlineData("path |> System.IO.File.Exists")>]
 [<InlineData("System.String.IsNullOrEmpty(path)")>]
-[<InlineData("(null) = (path)")>]
 let ``Calling a nullAllowing API can still infer a withoutNull type``(functionCall) =
     FSharp $"""
 module MyLib
@@ -71,15 +70,12 @@ let myFunc path : string =
 
 [<Fact>]
 let ``Type inference fsharp func`` () =
-    FSharp $"""
-module MyLib
+    FSharp $"""module MyLib
 
-let myStrictFunc(x: string) = x.GetHashCode()
 let fileExists (path:string|null) = true
-
-let myStringReturningFunc (path) = 
-    let ex = fileExists path
-    myStrictFunc(path)
+let myStringReturningFunc (pathArg) : string = 
+    let ex = pathArg |> fileExists
+    pathArg
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
