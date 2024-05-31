@@ -3727,8 +3727,8 @@ type FsiInteractionProcessor
     /// Partially process a hash directive, leaving state in packageManagerLines and required assemblies
     let PartiallyProcessHashDirective (ctok, istate, hash, diagnosticsLogger: DiagnosticsLogger) =
         match hash with
-        | ParsedHashDirective("load", [ path ], m) ->
-            let sourceFiles = parsedHashDirectiveArguments [ path ] tcConfigB.langVersion
+        | ParsedHashDirective("load", paths, m) ->
+            let sourceFiles = parsedHashDirectiveArguments paths tcConfigB.langVersion
 
             let istate =
                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger)
@@ -3802,15 +3802,21 @@ type FsiInteractionProcessor
 
             istate, Completed None
 
-        | ParsedHashDirective("time", [ switch ], _) ->
-            let v = (parsedHashDirectiveArguments [ switch ] tcConfigB.langVersion) |> List.head
-
-            if v <> "on" then
-                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff ())
-            else
-                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn ())
-
-            let istate = { istate with timing = (v = "on") }
+        | ParsedHashDirective("time", switch, m) ->
+            errorR (Error((1, "Rubbish"), m))
+            let arguments = parsedHashDirectiveArguments switch tcConfigB.langVersion
+            let istate =
+                match arguments with
+                | [] -> istate
+                | ["on"] ->
+                    fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn ())
+                    { istate with timing = true }
+                | ["off"] ->
+                    fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff ())
+                    { istate with timing = false }
+                | _ ->
+                    errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))
+                    istate
             istate, Completed None
 
         | ParsedHashDirective("nowarn", nowarnArguments, m) ->

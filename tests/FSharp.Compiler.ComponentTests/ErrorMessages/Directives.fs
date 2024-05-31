@@ -4,11 +4,12 @@ namespace ErrorMessages
 open Xunit
 open FSharp.Test.Compiler
 
-module NoWarn =
+module HashDirectives =
 
-    // #nowarn is super forgiving the only real error is FS alerts you that you forgot the error ID
-    [<Fact>]
-    let ``NoWarn Errors F# 8`` () =
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``#nowarn - errors`` (languageVersion) =
 
         FSharp """
 #nowarn "988"
@@ -19,145 +20,83 @@ module NoWarn =
 #nowarn "FSBLAH"
 #nowarn "ACME"
         """
-        |> withLangVersion80
+        |> withLangVersion languageVersion
         |> asExe
         |> compile
         |> shouldFail
         |> withDiagnostics[
-            (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
-            (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 4, Col 9, Line 4, Col 15, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 5, Col 9, Line 5, Col 13, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            if languageVersion = "8.0" then
+                (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
+                (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 4, Col 9, Line 4, Col 15, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 5, Col 9, Line 5, Col 13, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            else
+                (Warning 203, Line 3, Col 1, Line 3, Col 11, "Invalid warning number 'FS'")
+                (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
             ]
 
 
-    [<Fact>]
-    let ``NoWarn Errors F# 9`` () =
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``#nowarn - errors - collected`` (languageVersion) =
 
         FSharp """
-#nowarn FS988
-#nowarn FS
-#nowarn FSBLAH
-#nowarn ACME 
-#nowarn "FS"
-#nowarn "FSBLAH"
-#nowarn "ACME"
+#nowarn
+    "988"
+    FS
+    FSBLAH
+    ACME 
+    "FS"
+    "FSBLAH"
+    "ACME"
         """
+        |> withLangVersion languageVersion
         |> asExe
-        |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withDiagnostics [
-            (Warning 203, Line 3, Col 1, Line 3, Col 11, "Invalid warning number 'FS'")
-            (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
+        |> withDiagnostics[
+            if languageVersion = "8.0" then
+                (Warning 203, Line 2, Col 1, Line 9, Col 11, "Invalid warning number 'FS'")
+                (Error 3350, Line 4, Col 5, Line 4, Col 7, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 5, Col 5, Line 5, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 6, Col 5, Line 6, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            else
+                (Warning 203, Line 2, Col 1, Line 9, Col 11, "Invalid warning number 'FS'")
             ]
 
 
-    [<Fact>]
-    let ``NoWarn Errors collection F# 8`` () =
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``#nowarn - errors - inline`` (languageVersion) =
 
         FSharp """
 #nowarn "988"
 #nowarn FS FSBLAH ACME "FS" "FSBLAH" "ACME"
         """
-        |> withLangVersion80
+        |> withLangVersion languageVersion
         |> asExe
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
-            (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 3, Col 12, Line 3, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 3, Col 19, Line 3, Col 23, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            ]
-
-    [<Fact>]
-    let ``NoWarn Errors collection F# 9`` () =
-
-        FSharp """
-#nowarn "988"
-#nowarn FS FSBLAH ACME "FS" "FSBLAH" "ACME"
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
-            ]
-
-    [<Fact>]
-    let ``Mixed Warnings F# 8`` () =
-
-        FSharp """
-module Exception =
-    exception ``Crazy@name.p`` of string
-
-module Decimal =
-    type T1 = { a : decimal }
-    module M0 =
-        type T1 = { a : int;}
-    let x = { a = 10 }              // error - 'expecting decimal' (which means we are not seeing M0.T1)
-
-module MismatchedYields =
-    let collection () = [
-        yield "Hello"
-        "And this"
-        ]
-module DoBinding =
-    let square x = x * x
-    square 32
-        """
-        |> withLangVersion80
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 1104, Line 3, Col 15, Line 3, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
-            (Warning 3391, Line 9, Col 19, Line 9, Col 21, """This expression uses the implicit conversion 'System.Decimal.op_Implicit(value: int) : decimal' to convert type 'int' to type 'decimal'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".""")
-            (Warning 3221, Line 14, Col 9, Line 14, Col 19, "This expression returns a value of type 'string' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.")
-            (Warning 20, Line 18, Col 5, Line 18, Col 14, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            if languageVersion = "8.0" then
+                (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
+                (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 3, Col 12, Line 3, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 3, Col 19, Line 3, Col 23, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            else
+                (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
             ]
 
 
-    [<Fact>]
-    let ``Mixed Warnings F# 9`` () =
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``#nowarn - realcode`` (langVersion) =
 
-        FSharp """
-module Exception =
-    exception ``Crazy@name.p`` of string
-
-module Decimal =
-    type T1 = { a : decimal }
-    module M0 =
-        type T1 = { a : int;}
-    let x = { a = 10 }              // error - 'expecting decimal' (which means we are not seeing M0.T1)
-
-module MismatchedYields =
-    let collection () = [
-        yield "Hello"
-        "And this"
-        ]
-module DoBinding =
-    let square x = x * x
-    square 32
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 1104, Line 3, Col 15, Line 3, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
-            (Warning 3391, Line 9, Col 19, Line 9, Col 21, """This expression uses the implicit conversion 'System.Decimal.op_Implicit(value: int) : decimal' to convert type 'int' to type 'decimal'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".""")
-            (Warning 3221, Line 14, Col 9, Line 14, Col 19, "This expression returns a value of type 'string' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.")
-            (Warning 20, Line 18, Col 5, Line 18, Col 14, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
-            ]
-
-
-    [<Fact>]
-    let ``Mixed Nowarns F# 8`` () =
-
-        FSharp """
+        let compileResult =
+            FSharp """
 #nowarn 20 FS1104 "3391" "FS3221"
 
 module Exception =
@@ -177,129 +116,170 @@ module MismatchedYields =
 module DoBinding =
     let square x = x * x
     square 32
+            """
+            |> withLangVersion langVersion
+            |> asExe
+            |> compile
+
+        if langVersion = "8.0" then
+            compileResult
+            |> shouldFail
+            |> withDiagnostics [
+                (Warning 1104, Line 5, Col 15, Line 5, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
+                (Error 3350, Line 2, Col 9, Line 2, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 2, Col 12, Line 2, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                ]
+        else
+            compileResult
+            |> shouldSucceed
+
+
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``#time - mixed - Fsc`` (langversion) =
+
+        Fsx """
+#time on;;
+#time off;;
+#time blah;;
+#time Ident;;
+#time Long.Ident;;
+#time 123;;
+#time on off;;
+#time;;
+#time "on";;
+#time "off";;
+#time "blah";;
+#time "on" "off";;
+
+printfn "Hello, World"
         """
-        |> withLangVersion80
+        |> withLangVersion langversion
         |> asExe
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 1104, Line 5, Col 15, Line 5, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
-            (Error 3350, Line 2, Col 9, Line 2, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 2, Col 12, Line 2, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+            if langversion = "8.0" then
+                (Error 3350, Line 2, Col 7, Line 2, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 3, Col 7, Line 3, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 4, Col 7, Line 4, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 5, Col 7, Line 5, Col 12, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 6, Col 7, Line 6, Col 17, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 7, Col 7, Line 7, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 8, Col 7, Line 8, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 8, Col 10, Line 8, Col 13, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 235, Line 12, Col 1, Line 12, Col 13, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 13, Col 1, Line 13, Col 17, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+            else
+                (Error 235, Line 4, Col 1, Line 4, Col 11, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 5, Col 1, Line 5, Col 12, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 6, Col 1, Line 6, Col 17, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 7, Col 1, Line 7, Col 10, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 8, Col 1, Line 8, Col 13, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 12, Col 1, Line 12, Col 13, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 13, Col 1, Line 13, Col 17, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
             ]
 
 
-    [<Fact>]
-    let ``Mixed Nowarns F# 9`` () =
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``#time - mixed - Fsx`` (langversion) =
+
+        Fsx """
+#time on;;
+#time off;;
+#time blah;;
+#time Ident;;
+#time Long.Ident;;
+#time 123;;
+#time on off;;
+#time;;
+#time "on";;
+#time "off";;
+#time "blah";;
+#time "on" "off";;
+
+printfn "Hello, World"
+        """
+        |> withLangVersion langversion
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            if langversion = "8.0" then
+                (Error 3350, Line 2, Col 7, Line 2, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 3, Col 7, Line 3, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 4, Col 7, Line 4, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 5, Col 7, Line 5, Col 12, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 6, Col 7, Line 6, Col 17, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 7, Col 7, Line 7, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 8, Col 7, Line 8, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 3350, Line 8, Col 10, Line 8, Col 13, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+                (Error 235, Line 12, Col 1, Line 12, Col 13, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 13, Col 1, Line 13, Col 17, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+            else
+                (Error 235, Line 4, Col 1, Line 4, Col 11, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 5, Col 1, Line 5, Col 12, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 6, Col 1, Line 6, Col 17, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 7, Col 1, Line 7, Col 10, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 8, Col 1, Line 8, Col 13, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 12, Col 1, Line 12, Col 13, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+                (Error 235, Line 13, Col 1, Line 13, Col 17, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+            ]
+
+
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``#r errors - Fsc`` (langVersion) =
 
         FSharp """
-#nowarn 20 FS1104 "3391" "FS3221"
+        #r;;
+        #r "";;
+        #r Ident;;
+        #r Long.Ident;;
+        #r 123;;
 
-module Exception =
-    exception ``Crazy@name.p`` of string
-
-module Decimal =
-    type T1 = { a : decimal }
-    module M0 =
-        type T1 = { a : int;}
-    let x = { a = 10 }              // error - 'expecting decimal' (which means we are not seeing M0.T1)
-
-module MismatchedYields =
-    let collection () = [
-        yield "Hello"
-        "And this"
-        ]
-module DoBinding =
-    let square x = x * x
-    square 32
+        printfn "Hello, World"
         """
-        |> withLangVersionPreview
-        |> asExe
-        |> compile
-        |> shouldSucceed
-
-
-module Time =
-    [<Fact>]
-    let ``Time Errors F# 8`` () =
-
-        Fsx """
-#time ono;;
-#time 0n;;
-#time of;;
-printfn "Hello, World"
-        """
-        |> withLangVersion80
+        |> withLangVersion langVersion
         |> asExe
         |> compile
         |> shouldFail
-        |> withDiagnostics [
-            (Error 10, Line 3, Col 7, Line 3, Col 9, "Unexpected integer literal in implementation file")
-            (Error 3350, Line 2, Col 7, Line 2, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 235, Line 2, Col 1, Line 2, Col 10, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
+        |> withDiagnostics[
+            (Error 76, Line 2, Col 9, Line 2, Col 11, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
+            (Error 76, Line 3, Col 9, Line 3, Col 14, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
+            (Error 76, Line 4, Col 9, Line 4, Col 17, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
+            (Error 76, Line 5, Col 9, Line 5, Col 22, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
+            (Error 76, Line 6, Col 9, Line 6, Col 15, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
             ]
 
 
-    [<Fact>]
-    let ``Time Errors F# 9`` () =
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``#r errors - Fsi`` (langVersion) =
 
         Fsx """
-#time ono;;
-#time 0n;;
-#time of;;
-printfn "Hello, World"
-        """
-        |> asExe
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 10, Line 3, Col 7, Line 3, Col 9, "Unexpected integer literal in implementation file")
-            (Error 235, Line 2, Col 1, Line 2, Col 10, """Invalid directive. Expected '#time', '#time "on"' or '#time "off"'.""")
-            ]
+        #r;;
+        #r "";;
+        #r Ident;;
+        #r Long.Ident;;
+        #r 123;;
 
-    [<Fact>]
-    let ``Mixed time commands F# 8`` () =
-
-        Fsx """
-#time on;;
-#time on;;
-#time off;;
-#time off;;
-#time;;
-#time "on";;
-#time "on";;
-#time "off";;
-#time "off";;
-printfn "Hello, World"
+        printfn "Hello, World"
         """
-        |> withLangVersion80
+        |> withLangVersion langVersion
         |> asExe
         |> compile
         |> shouldFail
-        |> withDiagnostics [
-            (Error 3350, Line 2, Col 7, Line 2, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 3, Col 7, Line 3, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 4, Col 7, Line 4, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 5, Col 7, Line 5, Col 10, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+        |> withDiagnostics[
+            (Warning 3353, Line 2, Col 9, Line 2, Col 11, "Invalid directive '#r '")
+            (Warning 213, Line 3, Col 9, Line 3, Col 14, "'' is not a valid assembly name")
+            (Error 3869, Line 4, Col 12, Line 4, Col 17, "Unexpected identifier 'Ident'.")
+            (Error 3869, Line 5, Col 12, Line 5, Col 22, "Unexpected identifier 'Long.Ident'.")
+            (Error 3869, Line 6, Col 12, Line 6, Col 15, "Unexpected integer literal '123'.")
             ]
 
-    [<Fact>]
-    let ``Mixed time commands F# 9`` () =
-
-        Fsx """
-#time on;;
-#time on;;
-#time off;;
-#time off;;
-#time;;
-#time "on";;
-#time "on";;
-#time "off";;
-#time "off";;
-printfn "Hello, World"
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compile
-        |> shouldSucceed

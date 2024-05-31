@@ -832,24 +832,27 @@ let internal languageFeatureError (langVersion: LanguageVersion) (langFeature: L
     let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
     Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m)
 
-let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+let internal tryLanguageFeatureErrorOption (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
         Some(languageFeatureError langVersion langFeature m)
     else
         None
 
 let internal checkLanguageFeatureError langVersion langFeature m =
-    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    match tryLanguageFeatureErrorOption langVersion langFeature m with
     | Some e -> error e
     | None -> ()
 
-let internal checkLanguageFeatureAndRecover langVersion langFeature m =
-    match tryLanguageFeatureErrorAux langVersion langFeature m with
-    | Some e -> errorR e
-    | None -> ()
+let internal tryCheckLanguageFeatureAndRecover langVersion langFeature m =
+    match tryLanguageFeatureErrorOption langVersion langFeature m with
+    | Some e ->
+        errorR e
+        false
+    | None ->
+        true
 
-let internal tryLanguageFeatureErrorOption langVersion langFeature m =
-    tryLanguageFeatureErrorAux langVersion langFeature m
+let internal checkLanguageFeatureAndRecover langVersion langFeature m =
+    tryCheckLanguageFeatureAndRecover langVersion langFeature m |> ignore
 
 let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFeature) (m: range) =
     let featureStr = LanguageVersion.GetFeatureString langFeature

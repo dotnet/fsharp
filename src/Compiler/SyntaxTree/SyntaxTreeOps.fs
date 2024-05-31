@@ -987,19 +987,22 @@ let longIdentToString (ident: SynLongIdent) =
     System.String.Join(".", ident.LongIdent |> List.map (fun ident -> ident.idText.ToString()))
 
 let parsedHashDirectiveArguments (input: ParsedHashDirectiveArgument list) (langVersion: LanguageVersion) =
-    List.map
+    List.choose
         (function
-        | ParsedHashDirectiveArgument.String(s, _, _) -> s
-        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> v
+        | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
+        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
         | ParsedHashDirectiveArgument.Int32(n, m) ->
-            checkLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m
-            string n
+            match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
+            | true -> Some (string n)
+            | false -> None
         | ParsedHashDirectiveArgument.Ident(ident, m) ->
-            checkLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m
-            ident.idText
+            match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
+            | true -> Some (ident.idText)
+            | false -> None
         | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
-            checkLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m
-            longIdentToString ident)
+            match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
+            | true -> Some (longIdentToString ident)
+            | false -> None)
         input
 
 let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list) (_langVersion: LanguageVersion) =

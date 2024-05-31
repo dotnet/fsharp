@@ -1593,13 +1593,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Las directivas #I pueden existir solo en archivos de script de F# (extensiones .fsx o .fsscript). Mueva este código a un archivo de script, agregue una opción de compilador '-I' para esta referencia o delimite la directiva con '#if INTERACTIVE'/'#endif'.</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="needs-review-translation">Las directivas #I pueden existir solo en archivos de script de F# (extensiones .fsx o .fsscript). Mueva este código a un archivo de script, agregue una opción de compilador '-I' para esta referencia o delimite la directiva con '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Las directivas #r pueden existir solo en archivos de script de F# (extensiones .fsx o .fsscript). Mueva este código a un archivo de script o sustituta esta referencia por la opción de compilador '-r'. Si esta directiva se ejecuta como entrada de usuario, puede delimitarla con '#if INTERACTIVE'/'#endif'.</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="needs-review-translation">Las directivas #r pueden existir solo en archivos de script de F# (extensiones .fsx o .fsscript). Mueva este código a un archivo de script o sustituta esta referencia por la opción de compilador '-r'. Si esta directiva se ejecuta como entrada de usuario, puede delimitarla con '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">

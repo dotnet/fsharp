@@ -1593,13 +1593,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#I ディレクティブを使用できるのは F# スクリプト ファイル (拡張子は .fsx または .fsscript) のみです。このコードをスクリプト ファイルに移動するか、この参照に '-I' コンパイラー オプションを追加するか、ディレクティブを '#if INTERACTIVE'/'#endif' で区切ってください。</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="needs-review-translation">#I ディレクティブを使用できるのは F# スクリプト ファイル (拡張子は .fsx または .fsscript) のみです。このコードをスクリプト ファイルに移動するか、この参照に '-I' コンパイラー オプションを追加するか、ディレクティブを '#if INTERACTIVE'/'#endif' で区切ってください。</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#r ディレクティブは F# スクリプト ファイル (拡張子は .fsx または .fsscript) 内でのみ使用できます。このコードをスクリプト ファイルに移動するか、この参照を '-r' コンパイラ オプションに置き換えてください。このディレクティブがユーザー入力として実行されている場合は、'#if INTERACTIVE'/'#endif' でディレクティブを区切ることができます。</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="needs-review-translation">#r ディレクティブは F# スクリプト ファイル (拡張子は .fsx または .fsscript) 内でのみ使用できます。このコードをスクリプト ファイルに移動するか、この参照を '-r' コンパイラ オプションに置き換えてください。このディレクティブがユーザー入力として実行されている場合は、'#if INTERACTIVE'/'#endif' でディレクティブを区切ることができます。</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">
