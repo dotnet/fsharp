@@ -10894,6 +10894,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HashIf
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HashLight
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HashLine
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HighPrecedenceBracketApp
+FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HighPrecedenceGreaterRightBracketApp
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HighPrecedenceParenthesisApp
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HighPrecedenceTypeApp
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Identifier
@@ -11089,6 +11090,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHashIf
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHashLight
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHashLine
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHighPrecedenceBracketApp
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHighPrecedenceGreaterRightBracketApp
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHighPrecedenceParenthesisApp
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHighPrecedenceTypeApp
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsIdentifier
@@ -11280,6 +11282,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHashIf()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHashLight()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHashLine()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHighPrecedenceBracketApp()
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHighPrecedenceGreaterRightBracketApp()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHighPrecedenceParenthesisApp()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHighPrecedenceTypeApp()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsIdentifier()
@@ -11471,6 +11474,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HashLight
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HashLine
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HighPrecedenceBracketApp
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HighPrecedenceGreaterRightBracketApp
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HighPrecedenceParenthesisApp
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HighPrecedenceTypeApp
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Identifier
@@ -11662,6 +11666,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HashLight()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HashLine()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HighPrecedenceBracketApp()
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HighPrecedenceGreaterRightBracketApp()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HighPrecedenceParenthesisApp()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HighPrecedenceTypeApp()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Identifier()

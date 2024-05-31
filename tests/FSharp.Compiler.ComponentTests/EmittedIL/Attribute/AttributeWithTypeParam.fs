@@ -4,5 +4,5 @@ open System
 type MyAttribute<^T>() =
     inherit Attribute()
     
-[<My<int>()>]
+[<My<int>>]
 let x = 1

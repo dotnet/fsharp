@@ -392,6 +392,7 @@ module internal TokenClassifications =
         | HIGH_PRECEDENCE_PAREN_APP
         | FIXED
         | HIGH_PRECEDENCE_BRACK_APP
+        | HIGH_PRECEDENCE_GRBRACK_APP
         | TYPE_COMING_SOON
         | TYPE_IS_HERE
         | MODULE_COMING_SOON
@@ -1313,6 +1314,7 @@ type FSharpTokenKind =
     | HighPrecedenceTypeApp
     | HighPrecedenceParenthesisApp
     | HighPrecedenceBracketApp
+    | HighPrecedenceGreaterRightBracketApp
     | Extern
     | Void
     | Public
@@ -1524,6 +1526,7 @@ type FSharpToken =
         | HIGH_PRECEDENCE_TYAPP -> FSharpTokenKind.HighPrecedenceTypeApp
         | HIGH_PRECEDENCE_PAREN_APP -> FSharpTokenKind.HighPrecedenceParenthesisApp
         | HIGH_PRECEDENCE_BRACK_APP -> FSharpTokenKind.HighPrecedenceBracketApp
+        | HIGH_PRECEDENCE_GRBRACK_APP -> FSharpTokenKind.HighPrecedenceGreaterRightBracketApp
         | EXTERN -> FSharpTokenKind.Extern
         | VOID -> FSharpTokenKind.Void
         | PUBLIC -> FSharpTokenKind.Public

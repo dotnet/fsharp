@@ -1508,14 +1508,13 @@ attributeListElements:
 /* One custom attribute */
 attribute:
   /* A custom attribute with generic type parameters 
-    some.good.AttributeName<^SomeTyPar>(and, args)opt_HIGH_PRECEDENCE_APP
-    HIGH_PRECEDENCE_PAREN_APP
+    some.good.AttributeName<^SomeTyPar>(and, args)
   */   
-  | path HIGH_PRECEDENCE_TYAPP typeArgsActual opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType
-     { let arg = match $5 with None -> mkSynUnit $1.Range | Some e -> e
-       debugPrint("\nWe managed to get in here....\n")
-       let m = unionRanges $1.Range arg.Range
+  | path opt_HIGH_PRECEDENCE_TYAPP typeArgsActual opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
+     { 
        let mLessThan, mGreaterThan, _, args, commas, mAll = $3
+       let arg = match $5 with None -> mkSynUnit (unionRanges $1.Range mAll) | Some e -> e
+       let m = unionRanges $1.Range arg.Range
        ({ TypeName = $1; ArgExpr = arg; TypeArgs = args; Target = None; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
        
   /* A custom attribute */
@@ -1523,7 +1522,6 @@ attribute:
      { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e
        let m = unionRanges $1.Range arg.Range
        ({ TypeName = $1; ArgExpr = arg; TypeArgs = []; Target = None; AppliesToGetterAndSetter = false; Range = m }: SynAttribute) }
-       
 
   /* A custom attribute with an attribute target */
   | attributeTarget path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType
@@ -6360,6 +6358,8 @@ typeArgsNoHpaDeprecated:
      { let mLessThan, mGreaterThan, _, args, commas, mAll = $2
        mLessThan, mGreaterThan, args, commas, mAll }
 
+
+
 typeArgsActual:
   | LESS typeArgActualOrDummyIfEmpty COMMA typeArgActualOrDummyIfEmpty typeArgListElements GREATER
      { let typeArgs, commas = $5
@@ -6759,7 +6759,7 @@ opt_equals:
       { let mEquals = rhs parseState 1
         Some mEquals }
   | /* EMPTY */ { None }
-
+  
 opt_OBLOCKSEP:
   | OBLOCKSEP { }
   | /* EMPTY */ { }
@@ -6876,6 +6876,7 @@ interpolatedString:
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }
   | HIGH_PRECEDENCE_PAREN_APP { }
+  | HIGH_PRECEDENCE_GRBRACK_APP { }
   | /* EMPTY */   { }
 
 opt_HIGH_PRECEDENCE_TYAPP:

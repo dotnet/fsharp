@@ -950,24 +950,23 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "~"
      { errorR (Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
        RESERVED }
+ | ignored_op_char* '*' '*'                     op_char* { checkExprOp lexbuf; INFIX_STAR_STAR_OP(lexeme lexbuf) }
 
- | ignored_op_char* '*' '*'                    op_char* { checkExprOp lexbuf; INFIX_STAR_STAR_OP(lexeme lexbuf) }
+ | ignored_op_char* ('*' | '/'|'%')             op_char* { checkExprOp lexbuf; INFIX_STAR_DIV_MOD_OP(lexeme lexbuf) }
 
- | ignored_op_char* ('*' | '/'|'%')            op_char* { checkExprOp lexbuf; INFIX_STAR_DIV_MOD_OP(lexeme lexbuf) }
+ | ignored_op_char* ('+'|'-')                   op_char* { checkExprOp lexbuf; PLUS_MINUS_OP(lexeme lexbuf) }
 
- | ignored_op_char* ('+'|'-')                  op_char* { checkExprOp lexbuf; PLUS_MINUS_OP(lexeme lexbuf) }
+ | ignored_op_char* ('@'|'^')                   op_char* { checkExprOp lexbuf; INFIX_AT_HAT_OP(lexeme lexbuf) }
 
- | ignored_op_char* ('@'|'^')                  op_char* { checkExprOp lexbuf; INFIX_AT_HAT_OP(lexeme lexbuf) }
-
- | ignored_op_char* ('=' | "!=" | '<' | '$')  op_char* { checkExprOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
+ | ignored_op_char* ('=' | "!=" | '<' | '$')    op_char* { checkExprOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
  
- | ignored_op_char* ('>')  op_char* { checkExprGreaterColonOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
+ | ignored_op_char* ('>')                       op_char* { checkExprGreaterColonOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
 
- | ignored_op_char* ('&')                      op_char* { checkExprOp lexbuf; INFIX_AMP_OP(lexeme lexbuf) }
+ | ignored_op_char* ('&')                       op_char* { checkExprOp lexbuf; INFIX_AMP_OP(lexeme lexbuf) }
 
- | ignored_op_char* '|'                        op_char* { checkExprOp lexbuf; INFIX_BAR_OP(lexeme lexbuf) }
+ | ignored_op_char* '|'                         op_char* { checkExprOp lexbuf; INFIX_BAR_OP(lexeme lexbuf) }
 
- | ignored_op_char* ('!' | '~' )               op_char* { checkExprOp lexbuf; PREFIX_OP(lexeme lexbuf) }
+ | ignored_op_char* ('!' | '~' )                op_char* { checkExprOp lexbuf; PREFIX_OP(lexeme lexbuf) }
 
  | ".[]"  | ".[]<-" | ".[,]<-" | ".[,,]<-" | ".[,,,]<-" | ".[,,,]" | ".[,,]" | ".[,]" | ".[..]" | ".[..,..]" | ".[..,..,..]" | ".[..,..,..,..]"
 

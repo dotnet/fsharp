@@ -11,11 +11,11 @@ ImplFile
                          [{ TypeName = SynLongIdent ([Foo], [], [None])
                             TypeArgs =
                              [LongIdent (SynLongIdent ([int], [], [None]))]
-                            ArgExpr = Const (Unit, (1,2--1,5))
+                            ArgExpr = Const (Unit, (1,2--1,10))
                             Target = None
                             AppliesToGetterAndSetter = false
-                            Range = (1,2--1,5) }]
-                        Range = (1,0--1,11) }], None, [], [Bar],
+                            Range = (1,2--1,10) }]
+                        Range = (1,0--1,12) }], None, [], [Bar],
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (2,5--2,8)),
                   Simple
@@ -35,5 +35,3 @@ ImplFile
           None, (1,0--5,5), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
-
-(1,10)-(1,11) parse error Unexpected symbol '>' in attribute list

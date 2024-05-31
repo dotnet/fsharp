@@ -258,7 +258,7 @@ let x = 123
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
 
-    [<Test>]
+    [<Fact>]
     let ``Digest attribute type parameters`` () =
         let source = """
 open System
@@ -282,7 +282,7 @@ let x = 123
             symbol.Attributes[0].TypeArgs[0].AbbreviatedType.TypeDefinition.CompiledName
             |> should equal "Int32"
             )
-    [<Test>]
+    [<Fact>]
     let ``Digest record attribute type parameters`` () =
         let source = """
 open System

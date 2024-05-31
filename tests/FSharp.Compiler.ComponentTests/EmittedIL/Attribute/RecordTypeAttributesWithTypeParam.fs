@@ -8,9 +8,9 @@ type RecordLevelAttribute<^T>()=
 type FieldLevelAttribute<^T>()=
     inherit Attribute()
 
-[<RecordLevel<int>()>]
+[<RecordLevel<int>>]
 type Test =
     {
-        [<FieldLevel<string>()>]
+        [<FieldLevel<string>>]
         someField : string
     }
