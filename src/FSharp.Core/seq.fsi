@@ -3084,7 +3084,7 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input sequence.</exception>
     ///
     /// <example id="randomSample-1">
     /// <code lang="fsharp">
@@ -3111,7 +3111,7 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input sequence.</exception>
     ///
     /// <example id="randomSampleWith-1">
     /// <code lang="fsharp">

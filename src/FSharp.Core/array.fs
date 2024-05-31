@@ -1939,6 +1939,7 @@ module Array =
     [<CompiledName("RandomShuffleWith")>]
     let randomShuffleWith (random: Random) (source: 'T array) : 'T array =
         checkNonNull "source" source
+        checkNonNull "random" random
 
         let result = copy source
 
@@ -1950,9 +1951,21 @@ module Array =
     let randomShuffle (source: 'T array) : 'T array =
         randomShuffleWith ThreadSafeRandom.Shared source
 
+    [<CompiledName("RandomShuffleInPlaceWith")>]
+    let randomShuffleInPlaceWith (random: Random) (source: 'T array) =
+        checkNonNull "source" source
+        checkNonNull "random" random
+
+        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random source
+
+    [<CompiledName("RandomShuffleInPlace")>]
+    let randomShuffleInPlace (source: 'T array) =
+        randomShuffleInPlaceWith ThreadSafeRandom.Shared source
+
     [<CompiledName("RandomChoiceWith")>]
     let randomChoiceWith (random: Random) (source: 'T array) : 'T =
         checkNonNull "source" source
+        checkNonNull "random" random
 
         let inputLength = source.Length
         if inputLength = 0 then
@@ -1968,6 +1981,7 @@ module Array =
     [<CompiledName("RandomChoicesWith")>]
     let randomChoicesWith (random: Random) (count: int) (source: 'T array) : 'T array =
         checkNonNull "source" source
+        checkNonNull "random" random
 
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
@@ -1990,6 +2004,7 @@ module Array =
     [<CompiledName("RandomSampleWith")>]
     let randomSampleWith (random: Random) (count: int) (source: 'T array) : 'T array =
         checkNonNull "source" source
+        checkNonNull "random" random
 
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count

@@ -3135,6 +3135,40 @@ module Array =
     [<CompiledName("RandomShuffleWith")>]
     val randomShuffleWith : random: Random -> source: 'T array -> 'T array
 
+    /// <summary>Sorts input array in a random order by mutating the array in-place.</summary>
+    ///
+    /// <param name="source">The input array.</param>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <example id="randomShuffleInPlace-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomShuffleInPlace
+    /// </code>
+    /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleInPlace")>]
+    val randomShuffleInPlace : source: 'T array -> 'T array
+
+    /// <summary>Sorts input array in a random order with the specified <c>Random</c> instance by mutating the array in-place.</summary>
+    ///
+    /// <param name="source">The input array.</param>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <example id="randomShuffleInPlaceWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomShuffleInPlaceWith Random.Shared
+    /// </code>
+    /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleInPlaceWith")>]
+    val randomShuffleInPlaceWith : source: 'T array -> 'T array
+
     /// <summary>
     /// Returns a random element from the given array.
     /// </summary>
@@ -3243,7 +3277,7 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input array.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input array.</exception>
     ///
     /// <example id="randomSample-1">
     /// <code lang="fsharp">
@@ -3270,7 +3304,7 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input array.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input array.</exception>
     ///
     /// <example id="randomSampleWith-1">
     /// <code lang="fsharp">
