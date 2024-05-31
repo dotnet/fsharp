@@ -1942,7 +1942,7 @@ module Seq =
     [<CompiledName("RandomShuffleWith")>]
     let randomShuffleWith (random: Random) (source: seq<'T>) : seq<'T> =
         let tempArray = toArray source
-        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random tempArray
+        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlace random tempArray
         ofArray tempArray
 
     [<CompiledName("RandomShuffle")>]

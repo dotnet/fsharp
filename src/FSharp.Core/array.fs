@@ -1943,7 +1943,7 @@ module Array =
 
         let result = copy source
 
-        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random result
+        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlace random result
 
         result
 
@@ -1956,7 +1956,7 @@ module Array =
         checkNonNull "source" source
         checkNonNull "random" random
 
-        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random source
+        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlace random source
 
     [<CompiledName("RandomShuffleInPlace")>]
     let randomShuffleInPlace (source: 'T array) =

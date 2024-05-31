@@ -1174,7 +1174,7 @@ module internal Array =
                 startIndex <- startIndex + minChunkSize
             res
 
-    let shuffleInPlaceRand (random:Random) (array : array<'T>) =
+    let shuffleInPlace (random:Random) (array : array<'T>) =
         let inputLength = array.Length
         for i = 0 to inputLength - 2 do
             let j = random.Next(i, inputLength)

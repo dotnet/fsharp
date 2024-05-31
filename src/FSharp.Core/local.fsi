@@ -120,7 +120,7 @@ module internal Array =
 
     val stableSortInPlace: array: 'T array -> unit when 'T: comparison
 
-    val shuffleInPlaceRand: random: Random -> array: 'T[] -> unit
+    val shuffleInPlace: random: Random -> array: 'T[] -> unit
 
 module internal Seq =
     val tryLastV: 'T seq -> 'T ValueOption

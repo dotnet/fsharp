@@ -992,7 +992,7 @@ module List =
     [<CompiledName("RandomShuffleWith")>]
     let randomShuffleWith (random: Random) (source: 'T list) : 'T list =
         let tempArray = toArray source
-        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlaceRand random tempArray
+        Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlace random tempArray
         ofArray tempArray
 
     [<CompiledName("RandomShuffle")>]
