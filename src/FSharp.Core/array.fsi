@@ -3182,7 +3182,7 @@ module Array =
     val randomChoiceWith : random: Random -> source: 'T array -> 'T
 
     /// <summary>
-    /// Returns an array of random elements from the given array.
+    /// Returns an array of random elements from the given array, each element can be selected multiple times.
     /// </summary>
     ///
     /// <param name="count">The number of elements to return.</param>
@@ -3206,7 +3206,7 @@ module Array =
     val randomChoices : count: int -> source: 'T array -> 'T array
 
     /// <summary>
-    /// Returns an array of random elements from the given array with the specified <c>Random</c> instance.
+    /// Returns an array of random elements from the given array with the specified <c>Random</c> instance, each element can be selected multiple times.
     /// </summary>
     ///
     /// <param name="random">The <c>Random</c> instance.</param>
@@ -3231,9 +3231,55 @@ module Array =
     [<CompiledName("RandomChoicesWith")>]
     val randomChoicesWith : random: Random -> count: int -> source: 'T array -> 'T array
 
+    /// <summary>
+    /// Returns a random sample of elements from the given array, each element can be selected only once.
+    /// </summary>
+    ///
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input array.</param>
+    ///
+    /// <returns>An array of randomly selected elements from the input array.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input array.</exception>
+    ///
+    /// <example id="randomSample-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomSample 3
+    /// </code>
+    /// Can evaluate to <c>[| 3; 1; 2 |]</c>.
+    /// </example>
     [<CompiledName("RandomSample")>]
     val randomSample : count: int -> source: 'T array -> 'T array
 
+    /// <summary>
+    /// Returns a random sample of elements from the given array with the specified <c>Random</c> instance, each element can be selected only once.
+    /// </summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input array.</param>
+    ///
+    /// <returns>An array of randomly selected elements from the input array.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input array.</exception>
+    ///
+    /// <example id="randomSampleWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomSampleWith Random.Shared 3
+    /// </code>
+    /// Can evaluate to <c>[| 3; 1; 2 |]</c>.
+    /// </example>
     [<CompiledName("RandomSampleWith")>]
     val randomSampleWith : random: Random -> count: int -> source: 'T array -> 'T array
 

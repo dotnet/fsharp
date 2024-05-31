@@ -3023,7 +3023,7 @@ module Seq =
     val randomChoiceWith : random: Random -> source: seq<'T> -> 'T
 
     /// <summary>
-    /// Returns an sequence of random elements from the given sequence.
+    /// Returns an sequence of random elements from the given sequence, each element can be selected multiple times.
     /// </summary>
     ///
     /// <param name="count">The number of elements to return.</param>
@@ -3047,7 +3047,7 @@ module Seq =
     val randomChoices : count: int -> source: seq<'T> -> seq<'T>
 
     /// <summary>
-    /// Returns a sequence of random elements from the given sequence with the specified <c>Random</c> instance.
+    /// Returns a sequence of random elements from the given sequence with the specified <c>Random</c> instance, each element can be selected multiple times.
     /// </summary>
     ///
     /// <param name="random">The <c>Random</c> instance.</param>
@@ -3072,8 +3072,54 @@ module Seq =
     [<CompiledName("RandomChoicesWith")>]
     val randomChoicesWith : random: Random -> count: int -> source: seq<'T> -> seq<'T>
 
+    /// <summary>
+    /// Returns a random sample of elements from the given sequence, each element can be selected only once.
+    /// </summary>
+    ///
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>A sequence of randomly selected elements from the input sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
+    ///
+    /// <example id="randomSample-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 0; 1; 2; 3; 4 }
+    ///
+    /// inputs |> Seq.randomSample 3
+    /// </code>
+    /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
+    /// </example>
     [<CompiledName("RandomSample")>]
     val randomSample : count: int -> source: seq<'T> -> seq<'T>
 
+    /// <summary>
+    /// Returns a random sample of elements from the given sequence with the specified <c>Random</c> instance, each element can be selected only once.
+    /// </summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>A sequence of randomly selected elements from the input sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
+    ///
+    /// <example id="randomSampleWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 0; 1; 2; 3; 4 }
+    ///
+    /// inputs |> Seq.randomSampleWith Random.Shared 3
+    /// </code>
+    /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
+    /// </example>
     [<CompiledName("RandomSampleWith")>]
     val randomSampleWith : random: Random -> count: int -> source: seq<'T> -> seq<'T>
