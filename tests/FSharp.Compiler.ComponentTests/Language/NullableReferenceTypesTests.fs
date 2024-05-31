@@ -32,9 +32,13 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
 [<Theory>]
 [<InlineData("fileExists(path)")>]
 [<InlineData("fileExists path")>]
+[<InlineData("fileExists null")>]
 [<InlineData("path |> fileExists")>]
+[<InlineData("null |> fileExists")>]
 [<InlineData("System.IO.File.Exists(path)")>]
+[<InlineData("System.IO.File.Exists(null)")>]
 [<InlineData("path |> System.IO.File.Exists")>]
+[<InlineData("null |> System.IO.File.Exists")>]
 [<InlineData("System.String.IsNullOrEmpty(path)")>]
 let ``Calling a nullAllowing API can still infer a withoutNull type``(functionCall) =
     FSharp $"""
@@ -46,6 +50,19 @@ let fileExists (path:string|null) = true
 let myStringReturningFunc (path) = 
     let ex = {functionCall}
     myStrictFunc(path)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+//[<Fact>]
+// TODO Tomas - as of now, this does not bring the desired result
+let ``Type inference with underscore or null`` () =
+    FSharp $"""
+module MyLib
+
+let myFunc (path: _ | null) =
+    System.IO.File.Exists(path)
     """
     |> asLibrary
     |> typeCheckWithStrictNullness

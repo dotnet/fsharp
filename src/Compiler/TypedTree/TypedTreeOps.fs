@@ -9180,7 +9180,7 @@ let changeWithNullReqTyToVariable g reqTy =
 let reqTyForArgumentNullnessInference g actualTy reqTy =
     // Only change reqd nullness if actualTy is an inference variable
     match tryDestTyparTy g actualTy with
-    | ValueSome t when t.IsCompilerGenerated ->
+    | ValueSome t when t.IsCompilerGenerated && not(t.Constraints |> List.exists(function | TyparConstraint.SupportsNull _ -> true | _ -> false))->
         changeWithNullReqTyToVariable g reqTy       
     | _ -> reqTy
 
