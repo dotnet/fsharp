@@ -3803,7 +3803,6 @@ type FsiInteractionProcessor
             istate, Completed None
 
         | ParsedHashDirective("time", switch, m) ->
-            errorR (Error((1, "Rubbish"), m))
             let arguments = parsedHashDirectiveArguments switch tcConfigB.langVersion
 
             let istate =
