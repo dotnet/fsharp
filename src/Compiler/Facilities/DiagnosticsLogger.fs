@@ -848,8 +848,7 @@ let internal tryCheckLanguageFeatureAndRecover langVersion langFeature m =
     | Some e ->
         errorR e
         false
-    | None ->
-        true
+    | None -> true
 
 let internal checkLanguageFeatureAndRecover langVersion langFeature m =
     tryCheckLanguageFeatureAndRecover langVersion langFeature m |> ignore

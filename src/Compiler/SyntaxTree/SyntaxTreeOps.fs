@@ -993,15 +993,15 @@ let parsedHashDirectiveArguments (input: ParsedHashDirectiveArgument list) (lang
         | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
         | ParsedHashDirectiveArgument.Int32(n, m) ->
             match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
-            | true -> Some (string n)
+            | true -> Some(string n)
             | false -> None
         | ParsedHashDirectiveArgument.Ident(ident, m) ->
             match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
-            | true -> Some (ident.idText)
+            | true -> Some(ident.idText)
             | false -> None
         | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
             match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
-            | true -> Some (longIdentToString ident)
+            | true -> Some(longIdentToString ident)
             | false -> None)
         input
 

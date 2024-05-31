@@ -897,17 +897,18 @@ let ProcessMetaCommandsFromInput
 
         try
             match hash with
-            | ParsedHashDirective("I", [path], m) ->
+            | ParsedHashDirective("I", [ path ], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashIncludeNotAllowedInNonScript m)
                 else
-                    let arguments = parsedHashDirectiveStringArguments [path] tcConfig.langVersion
+                    let arguments = parsedHashDirectiveStringArguments [ path ] tcConfig.langVersion
+
                     match arguments with
                     | [ path ] ->
                         matchedm <- m
                         tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
-                    | _ ->
-                        errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
+                    | _ -> errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
+
                 state
 
             | ParsedHashDirective("nowarn", hashArguments, m) ->
@@ -920,30 +921,33 @@ let ProcessMetaCommandsFromInput
                 else
                     let arg = (parsedHashDirectiveArguments [] tcConfig.langVersion)
                     warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
+
                 state
 
-            | ParsedHashDirective(("reference" | "r"), [reference], m) ->
+            | ParsedHashDirective(("reference" | "r"), [ reference ], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
                     state
                 else
                     let arguments =
-                        parsedHashDirectiveStringArguments [reference] tcConfig.langVersion
+                        parsedHashDirectiveStringArguments [ reference ] tcConfig.langVersion
+
                     match arguments with
                     | [ reference ] ->
                         matchedm <- m
-                        ProcessDependencyManagerDirective Directive.Resolution [reference] m state
+                        ProcessDependencyManagerDirective Directive.Resolution [ reference ] m state
                     | _ -> state
 
-            | ParsedHashDirective("i", [path], m) ->
+            | ParsedHashDirective("i", [ path ], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
                     state
                 else
                     matchedm <- m
-                    let arguments = parsedHashDirectiveStringArguments [path] tcConfig.langVersion
+                    let arguments = parsedHashDirectiveStringArguments [ path ] tcConfig.langVersion
+
                     match arguments with
-                    | [path] -> ProcessDependencyManagerDirective Directive.Include [path] m state
+                    | [ path ] -> ProcessDependencyManagerDirective Directive.Include [ path ] m state
                     | _ -> state
 
             | ParsedHashDirective("load", paths, m) ->
@@ -951,11 +955,13 @@ let ProcessMetaCommandsFromInput
                     errorR (HashDirectiveNotAllowedInNonScript m)
                 else
                     let arguments = parsedHashDirectiveArguments paths tcConfig.langVersion
+
                     match arguments with
                     | _ :: _ ->
                         matchedm <- m
                         arguments |> List.iter (fun path -> loadSourceF state (m, path))
                     | _ -> errorR (Error(FSComp.SR.buildInvalidHashloadDirective (), m))
+
                 state
 
             | ParsedHashDirective("time", switch, m) ->
@@ -963,10 +969,12 @@ let ProcessMetaCommandsFromInput
                     errorR (HashDirectiveNotAllowedInNonScript m)
                 else
                     let arguments = parsedHashDirectiveArguments switch tcConfig.langVersion
+
                     match arguments with
                     | [] -> matchedm <- m
                     | [ "on" | "off" ] -> matchedm <- m
                     | _ -> errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))
+
                 state
 
             | _ ->

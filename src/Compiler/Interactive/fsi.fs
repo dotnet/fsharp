@@ -3805,18 +3805,20 @@ type FsiInteractionProcessor
         | ParsedHashDirective("time", switch, m) ->
             errorR (Error((1, "Rubbish"), m))
             let arguments = parsedHashDirectiveArguments switch tcConfigB.langVersion
+
             let istate =
                 match arguments with
                 | [] -> istate
-                | ["on"] ->
+                | [ "on" ] ->
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn ())
                     { istate with timing = true }
-                | ["off"] ->
+                | [ "off" ] ->
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff ())
                     { istate with timing = false }
                 | _ ->
                     errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))
                     istate
+
             istate, Completed None
 
         | ParsedHashDirective("nowarn", nowarnArguments, m) ->
