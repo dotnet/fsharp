@@ -4,7 +4,6 @@ open System
 type RecordLevelAttribute<^T>()=
     inherit Attribute()
 
-//[<System.AttributeUsage(System.AttributeTargets.Property)>]
 type FieldLevelAttribute<^T>()=
     inherit Attribute()
 
