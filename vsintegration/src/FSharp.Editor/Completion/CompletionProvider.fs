@@ -432,19 +432,19 @@ type internal FSharpCompletionProvider
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let completionInsertRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, item.Span, sourceText)
 
-                let namespaceInserted =
+                let isNamespaceOrModuleInserted =
                     checkFileResults.OpenDeclarations
-                    |> Array.exists (fun i -> 
+                    |> Array.exists (fun i ->
                         Range.rangeContainsPos i.AppliedScope completionInsertRange.Start
-                        && i.Modules |> List.distinct |> List.exists (fun i -> 
-                            i.IsNamespace && 
-                            match i.Namespace with 
-                            | Some x -> $"{x}.{i.DisplayName}" = ns 
-                            | _ -> i.DisplayName = ns
-                        )
-                    )
+                        && i.Modules
+                           |> List.distinct
+                           |> List.exists (fun i ->
+                               (i.IsNamespace || i.IsFSharpModule)
+                               && match i.Namespace with
+                                  | Some x -> $"{x}.{i.DisplayName}" = ns
+                                  | _ -> i.DisplayName = ns))
 
-                if namespaceInserted then
+                if isNamespaceOrModuleInserted then
                     return CompletionChange.Create(TextChange(item.Span, nameInCode))
                 else
                     let textWithItemCommitted =

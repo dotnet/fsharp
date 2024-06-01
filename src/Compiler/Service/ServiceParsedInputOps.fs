@@ -90,8 +90,8 @@ type CompletionContext =
     | RangeOperator
 
     /// Completing named parameters\setters in parameter list of attributes\constructor\method calls
-    /// end of name ast node * list of properties\parameters that were already set
-    | ParameterList of pos * HashSet<string>
+    /// end of name ast node * index of curr paameter * list of properties\parameters that were already set
+    | ParameterList of pos * (int * string option * HashSet<string>)
 
     /// Completing an attribute name, outside of the constructor
     | AttributeApplication
@@ -1085,18 +1085,40 @@ module ParsedInput =
         | Operator "op_Equality" (SynExpr.Ident id, _) -> Some id
         | _ -> None
 
-    let findSetters argList =
+    let rangeContainsPosOrIsSpacesBetweenRangeAndPos (lineStr: string) m pos =
+        let rec loop max i =
+            if i >= lineStr.Length || i >= max then true
+            elif Char.IsWhiteSpace lineStr[i] then loop max (i + 1)
+            else false
+        rangeContainsPos m pos
+        // pos is before m
+        || posLt pos m.Start
+        || (posGt pos m.End && pos.Line = m.End.Line && loop pos.Column m.End.Column)
+
+    let findSetters (lineStr, pos) argList =
         match argList with
         | SynExpr.Paren(SynExpr.Tuple(false, parameters, _, _), _, _, _) ->
             let setters = HashSet()
 
+            let mutable i = 0
+            let mutable idx = -1
+            let mutable namedParamName = None
             for p in parameters do
+                let isCurrParam = rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr p.Range pos
+                if isCurrParam then idx <- i
                 match p with
-                | Setter id -> ignore (setters.Add id.idText)
+                | Setter id -> 
+                    if isCurrParam then namedParamName <- Some id.idText
+                    ignore (setters.Add id.idText)
                 | _ -> ()
+                i <- i + 1
 
-            setters
-        | _ -> emptyStringSet
+            idx, namedParamName, setters
+        | SynExpr.Paren(expr = Setter id) -> 
+            let setters = HashSet()
+            ignore (setters.Add id.idText)
+            0, Some id.idText, setters
+        | _ -> -1, None, emptyStringSet
 
     let endOfLastIdent (lid: SynLongIdent) =
         let last = List.last lid.LongIdent
@@ -1112,31 +1134,35 @@ module ParsedInput =
         | Some m -> m.End
         | None -> id.idRange.End
 
-    let (|NewObjectOrMethodCall|_|) e =
+    let (|NewObjectOrMethodCall|_|) (lineStr, pos) e =
         match e with
         | SynExpr.New(_, SynType.LongIdent typeName, arg, _) ->
             // new A()
-            Some(endOfLastIdent typeName, findSetters arg)
+            Some(endOfLastIdent typeName, findSetters (lineStr, pos) arg)
 
         | SynExpr.New(_, SynType.App(StripParenTypes(SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _) ->
             // new A<_>()
-            Some(endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
+            Some(endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters (lineStr, pos) arg)
 
         | SynExpr.App(_, false, SynExpr.Ident id, arg, _) ->
             // A()
-            Some(id.idRange.End, findSetters arg)
+            Some(id.idRange.End, findSetters (lineStr, pos) arg)
 
         | SynExpr.App(_, false, SynExpr.TypeApp(SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _) ->
             // A<_>()
-            Some(endOfClosingTokenOrIdent mGreaterThan id, findSetters arg)
+            Some(endOfClosingTokenOrIdent mGreaterThan id, findSetters (lineStr, pos) arg)
 
         | SynExpr.App(_, false, SynExpr.LongIdent(_, lid, _, _), arg, _) ->
             // A.B()
-            Some(endOfLastIdent lid, findSetters arg)
+            Some(endOfLastIdent lid, findSetters (lineStr, pos) arg)
+
+        | SynExpr.App(_, false, SynExpr.DotGet(longDotId = lid), arg, _) ->
+            // A.B()
+            Some(endOfLastIdent lid, findSetters (lineStr, pos) arg)
 
         | SynExpr.App(_, false, SynExpr.TypeApp(SynExpr.LongIdent(_, lid, _, _), _, _, _, mGreaterThan, _, _), arg, _) ->
             // A.B<_>()
-            Some(endOfClosingTokenOrLastIdent mGreaterThan lid, findSetters arg)
+            Some(endOfClosingTokenOrLastIdent mGreaterThan lid, findSetters (lineStr, pos) arg)
         | _ -> None
 
     let isOnTheRightOfComma pos (elements: SynExpr list) (commas: range list) current =
@@ -1154,11 +1180,12 @@ module ParsedInput =
 
         loop elements commas
 
-    let (|PartOfParameterList|_|) pos precedingArgument path =
+    let (|PartOfParameterList|_|) lineStr pos precedingArgument path =
         match path with
-        | SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall args) :: _ ->
-            if Option.isSome precedingArgument then None else Some args
-        | SyntaxNode.SynExpr(SynExpr.Tuple(false, elements, commas, _)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall args) :: _ ->
+        | SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ ->
+            //if Option.isSome precedingArgument then None else Some args
+            Some args
+        | SyntaxNode.SynExpr(SynExpr.Tuple(false, elements, commas, _)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ ->
             match precedingArgument with
             | None -> Some args
             | Some e ->
@@ -1399,7 +1426,7 @@ module ParsedInput =
 
     /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, parsedInput: ParsedInput, lineStr: string) : CompletionContext option =
-
+        
         let visitor =
             { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(path, _, defaultTraverse, expr) =
@@ -1410,29 +1437,31 @@ module ParsedInput =
                         | x -> x // ok, we found something - return it
                     else
                         match expr with
+                        // new A(1, $)
+                        | SynExpr.Paren(expr = SynExpr.Tuple (range = m))
                         // new A($)
-                        | SynExpr.Const(SynConst.Unit, m) when rangeContainsPos m pos ->
+                        | SynExpr.Const(SynConst.Unit, m) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
                             match path with
-                            | SyntaxNode.SynExpr(NewObjectOrMethodCall args) :: _ -> Some(CompletionContext.ParameterList args)
+                            | SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ -> Some(CompletionContext.ParameterList args)
                             | _ -> defaultTraverse expr
 
                         // new (... A$)
                         | SynExpr.Ident id
                         | SynExpr.LongIdent(longDotId = SynLongIdent([ id ], [], [ Some _ ])) when id.idRange.End = pos ->
                             match path with
-                            | PartOfParameterList pos None args -> Some(CompletionContext.ParameterList args)
+                            | PartOfParameterList lineStr pos None args -> Some(CompletionContext.ParameterList args)
                             | _ -> defaultTraverse expr
 
                         // new (A$ = 1)
                         // new (A = 1, $)
-                        | Setter id when id.idRange.End = pos || rangeBeforePos expr.Range pos ->
+                        | Setter id when id.idRange.End = pos || rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr expr.Range pos ->
                             let precedingArgument = if id.idRange.End = pos then None else Some expr
 
                             match path with
-                            | PartOfParameterList pos precedingArgument args -> Some(CompletionContext.ParameterList args)
+                            | PartOfParameterList lineStr pos precedingArgument args -> Some(CompletionContext.ParameterList args)
                             | _ ->
                                 match expr with
-                                | Operator "op_Equality" (l, r) when SyntaxTraversal.rangeContainsPosLeftEdgeInclusive r.Range pos ->
+                                | Operator "op_Equality" (l, r) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos ->
                                     Some(CompletionContext.CaretAfterOperator l.Range)
                                 | _ -> defaultTraverse expr
 
@@ -1448,9 +1477,25 @@ module ParsedInput =
                             |> Option.orElseWith (fun () -> defaultTraverse expr)
 
                         | Operator "op_Equality" (l, r)
-                        | Operator "op_Inequality" (l, r) when SyntaxTraversal.rangeContainsPosLeftEdgeInclusive r.Range pos ->
+                        | Operator "op_Inequality" (l, r)
+                        | SynExpr.IfThenElse(ifExpr = Operator "op_Equality" (l, r) | Operator "op_Inequality" (l, r)) 
+                        | SynExpr.Set (l, r, _)
+                            when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos  ->
                             Some(CompletionContext.CaretAfterOperator l.Range)
 
+                        | SynExpr.LongIdentSet (l, r, _)
+                            when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos  ->
+                            Some(CompletionContext.CaretAfterOperator l.Range)
+
+                        // let a = 1: |
+                        | SynExpr.Typed(targetType = SynType.FromParseError(range = m))
+                        // let f() = let a: |
+                        | SynExpr.FromParseError(expr = SynExpr.LetOrUse(bindings = SynBinding(expr = SynExpr.Typed(expr = SynExpr.ArbitraryAfterError(range = m))) :: _))
+                            when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
+                            Some CompletionContext.Type
+
+                        // { new | }
+                        | SynExpr.ComputationExpr(expr = SynExpr.ArbitraryAfterError _) when lineStr.Trim().Split(' ') |> Array.contains "new" -> Some(CompletionContext.Inherit(InheritanceContext.Unknown, ([], None)))
                         | _ -> defaultTraverse expr
 
                 member _.VisitRecordField(path, copyOpt, field) =
@@ -1508,19 +1553,25 @@ module ParsedInput =
                         (SynBinding(headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding)
                     ) =
 
-                    let isOverride leadingKeyword =
+                    let isOverrideOrMember leadingKeyword =
                         match leadingKeyword with
-                        | SynLeadingKeyword.Override _ -> true
+                        | SynLeadingKeyword.Override _
+                        | SynLeadingKeyword.Member _ -> true
                         | _ -> false
 
                     let isStaticMember leadingKeyword =
                         match leadingKeyword with
                         | SynLeadingKeyword.StaticMember _ -> true
                         | _ -> false
+                    
+                    let isMember leadingKeyword =
+                        match leadingKeyword with
+                        | SynLeadingKeyword.Member _ -> true
+                        | _ -> false
 
-                    let overrideContext path (mOverride: range) hasThis isStatic =
+                    let overrideContext path (mOverride: range) hasThis isStatic isMember =
                         match path with
-                        | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
+                        | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ when not isMember ->
                             Some(CompletionContext.MethodOverride(MethodOverrideCompletionContext.Class, enclosingType.idRange, mOverride.StartColumn, hasThis, isStatic))
                         | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: _
                         | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: _ ->
@@ -1538,33 +1589,33 @@ module ParsedInput =
                         | _ -> Some CompletionContext.Invalid
 
                     match returnInfo with
-                    | Some(SynBindingReturnInfo(range = m)) when rangeContainsPos m pos -> Some CompletionContext.Type
+                    | Some(SynBindingReturnInfo(range = m)) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos -> Some CompletionContext.Type
                     | _ ->
                         match headPat with
 
-                        // override |
-                        | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword && lineStr.[pos.Column - 1] = ' ' ->
-                            overrideContext path trivia.LeadingKeyword.Range false false
+                        // static member |
+                        | SynPat.FromParseError _ when isStaticMember trivia.LeadingKeyword ->
+                            overrideContext path trivia.LeadingKeyword.Range false true false
 
                         // override |
-                        | SynPat.FromParseError _ when isStaticMember trivia.LeadingKeyword ->
-                            overrideContext path trivia.LeadingKeyword.Range false true
+                        | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword && lineStr.[pos.Column - 1] = ' ' ->
+                            overrideContext path trivia.LeadingKeyword.Range false false (isMember trivia.LeadingKeyword)
 
                         // override _.|
-                        | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword ->
-                            overrideContext path trivia.LeadingKeyword.Range true false
+                        | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword ->
+                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
                         // override this.|
                         | SynPat.Named(ident = SynIdent(ident = selfId)) when
-                            isOverride trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
+                            isOverrideOrMember trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
                             ->
-                            overrideContext path trivia.LeadingKeyword.Range true false
+                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
                         // override this.ToStr|
                         | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
-                            isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
+                            isOverrideOrMember trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
                             ->
-                            overrideContext path trivia.LeadingKeyword.Range true false
+                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
                         | SynPat.LongIdent(longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
                             if rangeContainsPos lidwd.Range pos then
@@ -1749,9 +1800,15 @@ module ParsedInput =
                             Some CompletionContext.AttributeApplication
                         // [<Att(M| = )>]
                         elif rangeContainsPos att.ArgExpr.Range pos then
-                            Some(CompletionContext.ParameterList(att.TypeName.Range.End, findSetters att.ArgExpr))
+                            Some(CompletionContext.ParameterList(att.TypeName.Range.End, findSetters (lineStr, pos) att.ArgExpr))
                         else
                             None)
+
+                override _.VisitInterfaceSynMemberDefnType (_, synType: SynType) = 
+                    match synType with
+                    | SynType.FromParseError(range = m) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
+                        Some(CompletionContext.Inherit(InheritanceContext.Interface, ([], None)))
+                    | _ -> None
             }
 
         let ctxt = SyntaxTraversal.Traverse(pos, parsedInput, visitor)

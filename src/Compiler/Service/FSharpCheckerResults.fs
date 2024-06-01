@@ -669,6 +669,24 @@ type internal TypeCheckInfo
                 Some(StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
         | _, _ -> None
 
+    let getStaticFieldsOfSameTypeInTheType nenv ad m ty =
+        let targets =
+            ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox ncenv.g ncenv.amap m)
+
+        let items = ResolveCompletionsInType ncenv nenv targets m ad true ty
+
+        let items =
+            items
+            |> List.filter (function
+                | Item.Value(valRef) -> typeEquiv g ty valRef.Type
+                | Item.ILField(iLFieldInfo) -> typeEquiv g ty (iLFieldInfo.FieldType(amap, m))
+                | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m))
+                | _ -> false)
+
+        let items = items |> List.map ItemWithNoInst
+        let items = items |> RemoveDuplicateItems g
+        items |> RemoveExplicitlySuppressed g
+
     let CollectParameters (methods: MethInfo list) amap m : Item list =
         methods
         |> List.collect (fun meth ->
@@ -681,11 +699,38 @@ type internal TypeCheckInfo
                     | None -> None)
             | _ -> [])
 
-    let GetNamedParametersAndSettableFields endOfExprPos =
+    let GetNamedParametersAndSettableFields endOfExprPos paramIdx paramName =
         let cnrs =
             GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
             |> ResizeArray.toList
             |> List.rev
+
+        let getStaticFieldsOfSameTypeOfTheParameter nenv ad m (methods: MethInfo list) (items: Item list) =
+            match paramName with
+            | Some name -> 
+                match items |> List.tryFind (fun i -> i.DisplayName = name) with
+                | Some(Item.OtherName(argType = ty)) -> getStaticFieldsOfSameTypeInTheType nenv ad m ty
+                | Some(Item.Value(valRef)) -> getStaticFieldsOfSameTypeInTheType nenv ad m valRef.Type
+                | Some(Item.ILField(iLFieldInfo)) -> getStaticFieldsOfSameTypeInTheType nenv ad m (iLFieldInfo.FieldType(amap, m))
+                | Some(Item.Property(info = pinfo :: _)) -> getStaticFieldsOfSameTypeInTheType nenv ad m (pinfo.GetPropertyType(amap, m))
+                | _ -> []
+            | _ -> 
+                let rec loop i ls =
+                    match ls with
+                    | [] -> None
+                    | x :: t ->
+                        if i = paramIdx then
+                            let (ParamData(ttype = ty)) = x
+                            Some ty
+                        else loop (i + 1) t
+                methods
+                |> List.choose (fun meth ->
+                    match meth.GetParamDatas(amap, m, meth.FormalMethodInst) with
+                    | x :: _ ->
+                        loop 0 x
+                    | _ -> None)
+                |> List.collect (getStaticFieldsOfSameTypeInTheType nenv ad m)
+
 
         let result =
             match cnrs with
@@ -702,7 +747,10 @@ type internal TypeCheckInfo
 
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
-                Some(denv, m, items)
+                let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m ctors items
+                let items = List.map ItemWithNoInst items
+
+                Some(denv, m, items, p)
             | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
                 let props =
                     methods
@@ -712,14 +760,21 @@ type internal TypeCheckInfo
 
                 let parameters = CollectParameters methods amap m
                 let items = props @ parameters
-                Some(denv, m, items)
+                let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m methods items
+                let items = List.map ItemWithNoInst items
+
+                Some(denv, m, items, p)
             | _ -> None
 
         match result with
-        | None -> NameResResult.Empty
-        | Some(denv, m, items) ->
-            let items = List.map ItemWithNoInst items
-            ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs
+        | None -> NameResResult.Empty, []
+        | Some(denv, m, items, p) ->
+            let p =
+                p
+                |> RemoveDuplicateItems g
+                |> RemoveExplicitlySuppressed g
+
+            ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs, p
 
     /// finds captured typing for the given position
     let GetExprTypingForPosition endOfExprPos =
@@ -1731,13 +1786,13 @@ type internal TypeCheckInfo
             | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
 
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
-            | Some(CompletionContext.ParameterList(endPos, fields)) ->
-                let results = GetNamedParametersAndSettableFields endPos
+            | Some(CompletionContext.ParameterList(endPos, (idx, name, fields))) ->
+                let results = GetNamedParametersAndSettableFields endPos idx name
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
                 match results with
-                | NameResResult.Members(items, denv, m) ->
+                | NameResResult.Members(items, denv, m), p ->
                     let items =
                         items
                         |> List.map fst
@@ -1757,9 +1812,20 @@ type internal TypeCheckInfo
                                 InsertType = CompletionInsertType.Default
                             })
 
+                    let p =
+                        p
+                        |> List.map (fun i -> 
+                            let ty =
+                                match i.Item with
+                                | Item.Value(valRef) -> valRef.Type
+                                | Item.ILField(iLFieldInfo) -> (iLFieldInfo.FieldType(amap, m))
+                                | Item.Property(info = pinfo :: _) -> (pinfo.GetPropertyType(amap, m))
+                                | _ -> failwith "not possible"
+                            CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.FullName i)
+
                     match declaredItems with
-                    | None -> Some(toCompletionItems (items, denv, m))
-                    | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(filtered @ declItems, declaredDisplayEnv, declaredRange)
+                    | None -> Some(p @ (items |> List.map DefaultCompletionItem), denv, m)
+                    | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(p @ filtered @ declItems, declaredDisplayEnv, declaredRange)
                 | _ -> declaredItems
 
             | Some(CompletionContext.AttributeApplication) ->
@@ -1828,23 +1894,7 @@ type internal TypeCheckInfo
                 match bestQual with
                 | Some bestQual ->
                     let ty, nenv, ad, m = bestQual
-
-                    let targets =
-                        ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
-
-                    let items = ResolveCompletionsInType ncenv nenv targets m ad true ty
-
-                    let items =
-                        items
-                        |> List.filter (function
-                            | Item.Value(valRef) -> typeEquiv g ty valRef.Type
-                            | Item.ILField(iLFieldInfo) -> typeEquiv g ty (iLFieldInfo.FieldType(amap, m))
-                            | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m))
-                            | _ -> false)
-
-                    let items = items |> List.map ItemWithNoInst
-                    let items = items |> RemoveDuplicateItems g
-                    let items = items |> RemoveExplicitlySuppressed g
+                    let items = getStaticFieldsOfSameTypeInTheType nenv ad m ty
 
                     match declaredItems with
                     | Some(declaredItems, _, _) ->
