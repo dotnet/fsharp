@@ -1941,6 +1941,9 @@ module Seq =
 
     [<CompiledName("RandomShuffleWith")>]
     let randomShuffleWith (random: Random) (source: seq<'T>) : seq<'T> =
+        checkNonNull "source" source
+        checkNonNull "random" random
+
         let tempArray = toArray source
         Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlace random tempArray
         ofArray tempArray
@@ -1951,6 +1954,9 @@ module Seq =
 
     [<CompiledName("RandomChoiceWith")>]
     let randomChoiceWith (random: Random) (source: seq<'T>) : 'T =
+        checkNonNull "source" source
+        checkNonNull "random" random
+
         let inputLength = source |> length
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
@@ -1964,6 +1970,9 @@ module Seq =
 
     [<CompiledName("RandomChoicesWith")>]
     let randomChoicesWith (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
+        checkNonNull "source" source
+        checkNonNull "random" random
+
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
@@ -1983,6 +1992,9 @@ module Seq =
 
     [<CompiledName("RandomSampleWith")>]
     let randomSampleWith (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
+        checkNonNull "source" source
+        checkNonNull "random" random
+
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
@@ -2002,9 +2014,8 @@ module Seq =
             seq {
                 for i = 0 to count - 1 do
                     let j = random.Next(0, inputLength - i)
-                    let nextItem = pool[j]
+                    yield pool[j]
                     pool[j] <- pool[inputLength - i - 1]
-                    nextItem
             }
         else
             let selected = HashSet()

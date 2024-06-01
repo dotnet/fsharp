@@ -991,6 +991,8 @@ module List =
 
     [<CompiledName("RandomShuffleWith")>]
     let randomShuffleWith (random: Random) (source: 'T list) : 'T list =
+        checkNonNull "random" random
+
         let tempArray = toArray source
         Microsoft.FSharp.Primitives.Basics.Array.shuffleInPlace random tempArray
         ofArray tempArray
@@ -1001,6 +1003,8 @@ module List =
 
     [<CompiledName("RandomChoiceWith")>]
     let randomChoiceWith (random: Random) (source: 'T list) : 'T =
+        checkNonNull "random" random
+
         let inputLength = source.Length
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
@@ -1014,6 +1018,8 @@ module List =
 
     [<CompiledName("RandomChoicesWith")>]
     let randomChoicesWith (random: Random) (count: int) (source: 'T list) : 'T list =
+        checkNonNull "random" random
+
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
@@ -1033,6 +1039,8 @@ module List =
 
     [<CompiledName("RandomSampleWith")>]
     let randomSampleWith (random: Random) (count: int) (source: 'T list) : 'T list =
+        checkNonNull "random" random
+
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
@@ -1052,9 +1060,8 @@ module List =
             [
                 for i = 0 to count - 1 do
                     let j = random.Next(0, inputLength - i)
-                    let nextItem = pool[j]
+                    yield pool[j]
                     pool[j] <- pool[inputLength - i - 1]
-                    nextItem
             ]
         else
             let selected = HashSet()
