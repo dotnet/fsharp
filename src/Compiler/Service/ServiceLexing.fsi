@@ -399,7 +399,6 @@ type public FSharpTokenKind =
     | HighPrecedenceTypeApp
     | HighPrecedenceParenthesisApp
     | HighPrecedenceBracketApp
-    | HighPrecedenceGreaterRightBracketApp
     | Extern
     | Void
     | Public
