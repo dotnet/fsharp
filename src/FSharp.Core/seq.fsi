@@ -2976,6 +2976,26 @@ module Seq =
     [<CompiledName("RandomShuffleWith")>]
     val randomShuffleWith : random: Random -> source: seq<'T> -> seq<'T>
 
+    /// <summary>Return a new sequence shuffled in a random order with the specified <c>randomizer</c> function.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a number outside the range [0.0..1.0).</exception>
+    ///
+    /// <example id="randomShuffleBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 0; 1; 2; 3; 4 }
+    ///
+    /// inputs |> Seq.randomShuffleBy Random.Shared.NextDouble
+    /// </code>
+    /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleBy")>]
+    val randomShuffleBy : randomizer: (unit -> float) -> source: seq<'T> -> seq<'T>
+
     /// <summary>
     /// Returns a random element from the given sequence.
     /// </summary>
@@ -3021,6 +3041,31 @@ module Seq =
     /// </example>
     [<CompiledName("RandomChoiceWith")>]
     val randomChoiceWith : random: Random -> source: seq<'T> -> 'T
+
+    /// <summary>
+    /// Returns a random element from the given sequence with the specified <c>randomizer</c> function.
+    /// </summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>A randomly selected element from the input sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a number outside the range [0.0..1.0).</exception>
+    ///
+    /// <example id="randomChoiceBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 0; 1; 2; 3; 4 }
+    /// let randomizer = Random.Shared.NextDouble
+    ///
+    /// inputs |> Seq.randomChoiceBy randomizer
+    /// </code>
+    /// Can evaluate to <c>3</c>.
+    /// </example>
+    [<CompiledName("RandomChoiceBy")>]
+    val randomChoiceBy : randomizer: (unit -> float) -> source: seq<'T> -> 'T
 
     /// <summary>
     /// Returns an sequence of random elements from the given sequence, each element can be selected multiple times.
@@ -3073,6 +3118,32 @@ module Seq =
     val randomChoicesWith : random: Random -> count: int -> source: seq<'T> -> seq<'T>
 
     /// <summary>
+    /// Returns a sequence of random elements from the given sequence with the specified <c>randomizer</c> function, each element can be selected multiple times.
+    /// </summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>A sequence of randomly selected elements from the input sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a number outside the range [0.0..1.0).</exception>
+    ///
+    /// <example id="randomChoicesBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 0; 1; 2; 3; 4 }
+    ///
+    /// inputs |> Seq.randomChoicesBy Random.Shared.NextDouble 3
+    /// </code>
+    /// Can evaluate to <c>seq { 3; 1; 3 }</c>.
+    /// </example>
+    [<CompiledName("RandomChoicesBy")>]
+    val randomChoicesBy : randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>
+
+    /// <summary>
     /// Returns a random sample of elements from the given sequence, each element can be selected only once.
     /// </summary>
     ///
@@ -3123,3 +3194,30 @@ module Seq =
     /// </example>
     [<CompiledName("RandomSampleWith")>]
     val randomSampleWith : random: Random -> count: int -> source: seq<'T> -> seq<'T>
+
+    /// <summary>
+    /// Returns a random sample of elements from the given sequence with the specified <c>randomizer</c> function, each element can be selected only once.
+    /// </summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>A sequence of randomly selected elements from the input sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input sequence.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a number outside the range [0.0..1.0).</exception>
+    ///
+    /// <example id="randomSampleBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 0; 1; 2; 3; 4 }
+    ///
+    /// inputs |> Seq.randomSampleBy Random.Shared.NextDouble 3
+    /// </code>
+    /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
+    /// </example>
+    [<CompiledName("RandomSampleBy")>]
+    val randomSampleBy : randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>

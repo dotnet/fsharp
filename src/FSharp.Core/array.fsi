@@ -3135,6 +3135,27 @@ module Array =
     [<CompiledName("RandomShuffleWith")>]
     val randomShuffleWith : random: Random -> source: 'T array -> 'T array
 
+    /// <summary>Return a new array shuffled in a random order using the specified <c>randomizer</c> function.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="source">The input array.</param>
+    ///
+    /// <returns>The result array.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomShuffleBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomShuffleBy Random.Shared.NextDouble
+    /// </code>
+    /// Can evaluate to <c>[| 0; 2; 4; 3; 1 |]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleBy")>]
+    val randomShuffleBy : randomizer: (unit -> float) -> source: 'T array -> 'T array
+
     /// <summary>Sorts input array in a random order by mutating the array in-place.</summary>
     ///
     /// <param name="source">The input array.</param>
@@ -3169,9 +3190,26 @@ module Array =
     [<CompiledName("RandomShuffleInPlaceWith")>]
     val randomShuffleInPlaceWith : source: 'T array -> 'T array
 
-    /// <summary>
-    /// Returns a random element from the given array.
-    /// </summary>
+    /// <summary>Sorts input array in a random order using the specified <c>randomizer</c> function by mutating the array in-place.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="source">The input array.</param>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomShuffleInPlaceBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomShuffleInPlaceBy Random.Shared.NextDouble
+    /// </code>
+    /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleInPlaceBy")>]
+    val randomShuffleInPlaceBy : randomizer: (unit -> float) -> source: 'T array -> 'T array
+
+    /// <summary>Returns a random element from the given array.</summary>
     ///
     /// <param name="source">The input array.</param>
     ///
@@ -3191,9 +3229,7 @@ module Array =
     [<CompiledName("RandomChoice")>]
     val randomChoice : source: 'T array -> 'T
 
-    /// <summary>
-    /// Returns a random element from the given array with the specified <c>Random</c> instance.
-    /// </summary>
+    /// <summary>Returns a random element from the given array with the specified <c>Random</c> instance.</summary>
     ///
     /// <param name="random">The <c>Random</c> instance.</param>
     /// <param name="source">The input array.</param>
@@ -3215,9 +3251,29 @@ module Array =
     [<CompiledName("RandomChoiceWith")>]
     val randomChoiceWith : random: Random -> source: 'T array -> 'T
 
-    /// <summary>
-    /// Returns an array of random elements from the given array, each element can be selected multiple times.
-    /// </summary>
+    /// <summary>Returns a random element from the given array using the specified <c>randomizer</c> function.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="source">The input array.</param>
+    ///
+    /// <returns>A randomly selected element from the input array.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomChoiceBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomChoiceBy Random.Shared.NextDouble
+    /// </code>
+    /// Can evaluate to <c>3</c>.
+    /// </example>
+    [<CompiledName("RandomChoiceBy")>]
+    val randomChoiceBy : randomizer: (unit -> float) -> source: 'T array -> 'T
+
+    /// <summary>Returns an array of random elements from the given array, each element can be selected multiple times.</summary>
     ///
     /// <param name="count">The number of elements to return.</param>
     /// <param name="source">The input array.</param>
@@ -3239,9 +3295,7 @@ module Array =
     [<CompiledName("RandomChoices")>]
     val randomChoices : count: int -> source: 'T array -> 'T array
 
-    /// <summary>
-    /// Returns an array of random elements from the given array with the specified <c>Random</c> instance, each element can be selected multiple times.
-    /// </summary>
+    /// <summary>Returns an array of random elements from the given array with the specified <c>Random</c> instance, each element can be selected multiple times.</summary>
     ///
     /// <param name="random">The <c>Random</c> instance.</param>
     /// <param name="count">The number of elements to return.</param>
@@ -3265,9 +3319,31 @@ module Array =
     [<CompiledName("RandomChoicesWith")>]
     val randomChoicesWith : random: Random -> count: int -> source: 'T array -> 'T array
 
-    /// <summary>
-    /// Returns a random sample of elements from the given array, each element can be selected only once.
-    /// </summary>
+    /// <summary>Returns an array of random elements from the given array using the specified <c>randomizer</c> function, each element can be selected multiple times.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input array.</param>
+    ///
+    /// <returns>An array of randomly selected elements from the input array.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomChoicesBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomChoicesBy Random.Shared.NextDouble 3
+    /// </code>
+    /// Can evaluate to <c>[| 3; 1; 3 |]</c>.
+    /// </example>
+    [<CompiledName("RandomChoicesBy")>]
+    val randomChoicesBy : randomizer: (unit -> float) -> count: int -> source: 'T array -> 'T array
+
+    /// <summary>Returns a random sample of elements from the given array, each element can be selected only once.</summary>
     ///
     /// <param name="count">The number of elements to return.</param>
     /// <param name="source">The input array.</param>
@@ -3290,9 +3366,7 @@ module Array =
     [<CompiledName("RandomSample")>]
     val randomSample : count: int -> source: 'T array -> 'T array
 
-    /// <summary>
-    /// Returns a random sample of elements from the given array with the specified <c>Random</c> instance, each element can be selected only once.
-    /// </summary>
+    /// <summary>Returns a random sample of elements from the given array with the specified <c>Random</c> instance, each element can be selected only once.</summary>
     ///
     /// <param name="random">The <c>Random</c> instance.</param>
     /// <param name="count">The number of elements to return.</param>
@@ -3316,6 +3390,31 @@ module Array =
     /// </example>
     [<CompiledName("RandomSampleWith")>]
     val randomSampleWith : random: Random -> count: int -> source: 'T array -> 'T array
+
+    /// <summary>Returns a random sample of elements from the given array using the specified <c>randomizer</c> function, each element can be selected only once.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input array.</param>
+    ///
+    /// <returns>An array of randomly selected elements from the input array.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input array.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomSampleBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 0; 1; 2; 3; 4 |]
+    ///
+    /// inputs |> Array.randomSampleBy Random.Shared.NextDouble 3
+    /// </code>
+    /// Can evaluate to <c>[| 3; 1; 2 |]</c>.
+    /// </example>
+    [<CompiledName("RandomSampleBy")>]
+    val randomSampleBy : randomizer: (unit -> float) -> count: int -> source: 'T array -> 'T array
 
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =
