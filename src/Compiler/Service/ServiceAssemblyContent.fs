@@ -120,15 +120,17 @@ type IAssemblyContentCache =
 
 module AssemblyContent =
 
-    let UnresolvedSymbol (nearestRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) ns =
+    let UnresolvedSymbol (topRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) ns =
         let getNamespace (idents: ShortIdents) = 
             if idents.Length > 1 then Some idents[..idents.Length - 2] else None
 
+        // 1. get namespace/module to open from topRequireQualifiedAccessParent 
+        // 2. if the topRequireQualifiedAccessParent is None, use the namespace, as we don't know whether an ident is namespace/module or not
         let ns = 
-            nearestRequireQualifiedAccessParent 
-            |> Option.bind getNamespace 
+            topRequireQualifiedAccessParent 
+            |> Option.bind getNamespace
             |> Option.orElse ns
-            |> Option.defaultValue [||]
+            |> Option.defaultWith (fun _ -> Array.empty)
             |> Array.map PrettyNaming.NormalizeIdentifierBackticks
             
         let displayName = 
@@ -143,12 +145,11 @@ module AssemblyContent =
         parent.FormatEntityFullName entity
         |> Option.map (fun (fullName, cleanIdents) ->
             let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
-            let nearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
 
             { FullName = fullName
               CleanedIdents = cleanIdents
               Namespace = ns
-              NearestRequireQualifiedAccessParent = nearestRequireQualifiedAccessParent
+              NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
               TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
               Symbol = entity
@@ -164,12 +165,11 @@ module AssemblyContent =
                     match entity with
                     | FSharpSymbolPatterns.Attribute -> EntityKind.Attribute 
                     | _ -> EntityKind.Type
-              UnresolvedSymbol = UnresolvedSymbol nearestRequireQualifiedAccessParent cleanIdents fullName ns
+              UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName ns
             })
 
     let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
         let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
-        let nearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
         let autoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
         membersFunctionsAndValues
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
@@ -179,12 +179,12 @@ module AssemblyContent =
                 { FullName = fullName
                   CleanedIdents = cleanedIdents
                   Namespace = ns
-                  NearestRequireQualifiedAccessParent = nearestRequireQualifiedAccessParent
+                  NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
                   TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
                   AutoOpenParent = autoOpenParent
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = UnresolvedSymbol nearestRequireQualifiedAccessParent cleanedIdents fullName ns }
+                  UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName ns }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> 
