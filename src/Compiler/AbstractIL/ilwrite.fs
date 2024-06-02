@@ -1475,7 +1475,7 @@ and GetMethodRefAsCustomAttribType cenv _env fenv (mspec: ILMethodSpec) =
         (cat_MemberRef, GetMethodRefAsMemberRefIdx cenv fenv fenv mspec.MethodRef)
     else
         (cat_MemberRef, GetMethodRefAsMemberRefIdx cenv fenv fenv mspec.MethodRef)
-        //tenv
+        
 // --------------------------------------------------------------------
 // ILAttributes --> CustomAttribute rows
 // --------------------------------------------------------------------
@@ -1941,7 +1941,6 @@ module Codebuf =
         | Unaligned4 -> emitInstrCode codebuf i_unaligned; codebuf.EmitByte 0x4
 
     let rec emitInstr cenv codebuf env instr =
-        //printfn "%A" instr
         match instr with
         | si when isNoArgInstr si ->
              emitInstrCode codebuf (encodingsOfNoArgInstr si)

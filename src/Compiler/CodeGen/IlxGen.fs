@@ -9958,7 +9958,7 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
     // Other expressions are not valid custom attribute values
     | _ -> error (InternalError("invalid custom attribute value (not a constant): " + showL (exprL x), x.Range))
 
-and GenAttr cenv g eenv (Attrib(_, k, _typeParams, args, props, _, _, m)) =
+and GenAttr cenv g eenv (Attrib(_, k, typeArgs, args, props, _, _, m)) =
     let props =
         props
         |> List.map (fun (AttribNamedArg(s, ty, fld, AttribExpr(_, expr))) ->
@@ -9967,7 +9967,7 @@ and GenAttr cenv g eenv (Attrib(_, k, _typeParams, args, props, _, _, m)) =
             let cval = GenAttribArg cenv g eenv expr ilTy
             (s, ilTy, fld, cval))
 
-    let ilTyArgs = GenTypeArgs cenv m eenv.tyenv _typeParams
+    let ilTyArgs = GenTypeArgs cenv m eenv.tyenv typeArgs
 
     let mspec =
         match k with

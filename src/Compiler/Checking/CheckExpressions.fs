@@ -11095,29 +11095,12 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
     let (SynLongIdent(tycon, _, _)) = synAttr.TypeName
     let arg = synAttr.ArgExpr
     let paramSynTypes = synAttr.TypeArgs
-    //check type parameters. tpenv remains empty if synAttr.TypeParams = []
-    // let paramTTypes, tpenv = 
-    //     List.mapFold (
-    //         fun typeParameterEnv ->
-    //         TcTypeOrMeasure 
-    //             (Some TyparKind.Type) 
-    //             cenv 
-    //             ImplicitlyBoundTyparsAllowed.NewTyparsOKButWarnIfNotRigid 
-    //             CheckConstraints.CheckCxs 
-    //             ItemOccurence.Open 
-    //             WarnOnIWSAM.Yes 
-    //             env 
-    //             typeParameterEnv ) 
-    //         emptyUnscopedTyparEnv
-    //         synAttr.TypeParams
-    let tyParEnv = emptyUnscopedTyparEnv
     let targetIndicator = synAttr.Target
     let isAppliedToGetterOrSetter = synAttr.AppliesToGetterAndSetter
     let mAttr = synAttr.Range
     let typath, tyid = List.frontAndBack tycon
+    let tpenv = emptyUnscopedTyparEnv
     let ad = env.eAccessRights
-    // let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
-    // let tpenv = TcTyparConstraints cenv ImplicitlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.CheckCxs ItemOccurence.UseInAttribute envinner emptyUnscopedTyparEnv synTyparConstraints
     // if we're checking an attribute that was applied directly to a getter or a setter, then
     // what we're really checking against is a method, not a property
     let attrTgt = if isAppliedToGetterOrSetter then ((attrTgt ^^^ AttributeTargets.Property) ||| AttributeTargets.Method) else attrTgt
@@ -11129,7 +11112,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
             
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon (TypeNameResolutionStaticArgsInfo.FromTyArgs paramSynTypes.Length) PermitDirectReferenceToGeneratedType.No with
             | Exception err -> raze err
-            | Result(tinstEnclosing, tcref, inst) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute env tyParEnv mAttr tcref tinstEnclosing paramSynTypes inst)
+            | Result(tinstEnclosing, tcref, inst) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute env tpenv mAttr tcref tinstEnclosing paramSynTypes inst)
 
         ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
 
@@ -11261,9 +11244,9 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                     let args = args |> List.map mkAttribExpr
                     Attrib(tcref, ILAttrib ilMethRef, [], args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, m)
 
-                | Expr.App (InnerExprPat(ExprValWithPossibleTypeInst(vref, _, _, _)), _formalType, _typeArgs, args, _range) ->
+                | Expr.App (InnerExprPat(ExprValWithPossibleTypeInst(vref, _, _, _)), _, typeArgs, args, _) ->
                     let args = args |> List.collect (function Expr.Const (Const.Unit, _, _) -> [] | expr -> tryDestRefTupleExpr expr) |> List.map mkAttribExpr
-                    Attrib(tcref, FSAttrib vref, _typeArgs, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, mAttr)
+                    Attrib(tcref, FSAttrib vref, typeArgs, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, mAttr)
 
                 | _ ->
                     error (Error(FSComp.SR.tcCustomAttributeMustInvokeConstructor(), mAttr))

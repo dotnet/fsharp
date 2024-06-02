@@ -5808,7 +5808,7 @@ let CheckOneImplFile
 
         // Warn on version attributes.
         topAttrs.assemblyAttrs |> List.iter (function
-           | Attrib(tref, _, _typeParams, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
+           | Attrib(tref, _, _, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
                 let attrName = tref.CompiledRepresentationForNamedType.FullName
                 let isValid() =
                     try parseILVersion version |> ignore; true

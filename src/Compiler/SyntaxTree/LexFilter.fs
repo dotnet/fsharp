@@ -1131,7 +1131,6 @@ type LexFilterImpl (
                                 let dotTokenTop = popNextTokenTup()
                                 //this might be a good candidate for a lex rule, but FSLex doesn't appear to support negative look ahead
                                 stack <- (pool.UseShiftedLocation(lookaheadTokenTup, INFIX_COMPARE_OP (opString.Remove(opString.Length - 1)), 0, -1), true) :: stack.Tail
-                                //stack <- (pool.UseShiftedLocation(dotTokenTop, HIGH_PRECEDENCE_GRBRACK_APP, -1, 0), false) :: stack
                                 stack <- (pool.UseShiftedLocation(dotTokenTop, GREATER_RBRACK, -1, 0), false) :: stack
                                 false
                             else 
@@ -1227,8 +1226,6 @@ type LexFilterImpl (
                         | INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp) as opstr) ->
                             match afterOp with
                             | ValueNone -> ()
-                                //delayToken(pool.UseShiftedLocation(tokenTup,GREATER false, 1, 0))
-                                //delayToken(pool.UseShiftedLocation(tokenTup,))
                             | ValueSome tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
                             for i = greaters.Length - 1 downto 0 do
                                 delayToken (pool.UseShiftedLocation(tokenTup, greaters[i] res, i, -opstr.Length + i + 1))
