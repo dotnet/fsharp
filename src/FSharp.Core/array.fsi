@@ -3171,11 +3171,12 @@ module Array =
     /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffleInPlace")>]
-    val randomShuffleInPlace : source: 'T array -> 'T array
+    val randomShuffleInPlace : source: 'T array -> unit
 
     /// <summary>Sorts input array in a random order with the specified <c>Random</c> instance by mutating the array in-place.</summary>
     ///
     /// <param name="source">The input array.</param>
+    /// <param name="random">The <c>Random</c> instance.</param>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
@@ -3188,7 +3189,7 @@ module Array =
     /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffleInPlaceWith")>]
-    val randomShuffleInPlaceWith : source: 'T array -> 'T array
+    val randomShuffleInPlaceWith : random: Random -> source: 'T array -> unit
 
     /// <summary>Sorts input array in a random order using the specified <c>randomizer</c> function by mutating the array in-place.</summary>
     ///
@@ -3207,7 +3208,7 @@ module Array =
     /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffleInPlaceBy")>]
-    val randomShuffleInPlaceBy : randomizer: (unit -> float) -> source: 'T array -> 'T array
+    val randomShuffleInPlaceBy : randomizer: (unit -> float) -> source: 'T array -> unit
 
     /// <summary>Returns a random element from the given array.</summary>
     ///

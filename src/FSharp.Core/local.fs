@@ -1215,12 +1215,12 @@ module internal Random =
                 [|SR.GetString SR.outOfRange; argName; value|]
         value
 
-    let next (randomizer: unit -> float) (minVal: int) (maxVal: int) =
-        maxVal - minVal
+    let next (randomizer: unit -> float) (minValue: int) (maxValue: int) =
+        maxValue - minValue
         |> float
         |> (*) (executeRandomizer randomizer)
         |> int
-        |> (+) minVal
+        |> (+) minValue
 
     let shuffleArrayInPlaceWith (random: Random) (array: array<'T>) =
         let inputLength = array.Length

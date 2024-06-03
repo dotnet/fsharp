@@ -126,7 +126,7 @@ module internal Random =
     val getMaxSetSizeForSampling: count: int -> int
 
     val shuffleArrayInPlaceWith: random: Random -> array: 'T[] -> unit
-    val shuffleArrayInPlaceBy: random: (unit -> float) -> array: 'T[] -> unit
+    val shuffleArrayInPlaceBy: randomizer: (unit -> float) -> array: 'T[] -> unit
 
 module internal Seq =
     val tryLastV: 'T seq -> 'T ValueOption
