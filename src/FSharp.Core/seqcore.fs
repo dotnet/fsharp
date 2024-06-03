@@ -451,7 +451,7 @@ module RuntimeHelpers =
                         // Enumeration has finished. In this case, we do NOT invoke the exception handlers for the .Dispose() call
                         | None -> disposeOriginal()}))
 
-    let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
+    let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (objnull -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
         { new obj() with
               member x.ToString() = "<published event>"
           interface IEvent<'Delegate,'Args> with
