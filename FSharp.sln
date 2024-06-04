@@ -148,6 +148,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".FSharp.Core", ".FSharp.Cor
 	ProjectSection(SolutionItems) = preProject
 		docs\release-notes\.FSharp.Core\8.0.200.md = docs\release-notes\.FSharp.Core\8.0.200.md
 		docs\release-notes\.FSharp.Core\8.0.300.md = docs\release-notes\.FSharp.Core\8.0.300.md
+		docs\release-notes\.FSharp.Core\8.0.400.md = docs\release-notes\.FSharp.Core\8.0.400.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Language", ".Language", "{1478B841-73BD-4E68-8F23-413ABB0B991F}"

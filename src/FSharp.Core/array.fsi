@@ -3112,7 +3112,7 @@ module Array =
     /// Can evaluate to <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffle")>]
-    val randomShuffle : source: 'T array -> 'T array
+    val randomShuffle: source: 'T array -> 'T array
 
     /// <summary>Return a new array shuffled in a random order with the specified <c>Random</c> instance.</summary>
     ///
@@ -3133,7 +3133,7 @@ module Array =
     /// Can evaluate to <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffleWith")>]
-    val randomShuffleWith : random: Random -> source: 'T array -> 'T array
+    val randomShuffleWith: random: Random -> source: 'T array -> 'T array
 
     /// <summary>Return a new array shuffled in a random order using the specified <c>randomizer</c> function.</summary>
     ///
@@ -3154,7 +3154,7 @@ module Array =
     /// Can evaluate to <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffleBy")>]
-    val randomShuffleBy : randomizer: (unit -> float) -> source: 'T array -> 'T array
+    val randomShuffleBy: randomizer: (unit -> float) -> source: 'T array -> 'T array
 
     /// <summary>Sorts input array in a random order by mutating the array in-place.</summary>
     ///
@@ -3171,7 +3171,7 @@ module Array =
     /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffleInPlace")>]
-    val randomShuffleInPlace : source: 'T array -> unit
+    val randomShuffleInPlace: source: 'T array -> unit
 
     /// <summary>Sorts input array in a random order with the specified <c>Random</c> instance by mutating the array in-place.</summary>
     ///
@@ -3189,7 +3189,7 @@ module Array =
     /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffleInPlaceWith")>]
-    val randomShuffleInPlaceWith : random: Random -> source: 'T array -> unit
+    val randomShuffleInPlaceWith: random: Random -> source: 'T array -> unit
 
     /// <summary>Sorts input array in a random order using the specified <c>randomizer</c> function by mutating the array in-place.</summary>
     ///
@@ -3208,7 +3208,7 @@ module Array =
     /// After evaluation <c>array</c> can contain <c>[| 0; 2; 4; 3; 1 |]</c>.
     /// </example>
     [<CompiledName("RandomShuffleInPlaceBy")>]
-    val randomShuffleInPlaceBy : randomizer: (unit -> float) -> source: 'T array -> unit
+    val randomShuffleInPlaceBy: randomizer: (unit -> float) -> source: 'T array -> unit
 
     /// <summary>Returns a random element from the given array.</summary>
     ///
@@ -3228,7 +3228,7 @@ module Array =
     /// Can evaluate to <c>3</c>.
     /// </example>
     [<CompiledName("RandomChoice")>]
-    val randomChoice : source: 'T array -> 'T
+    val randomChoice: source: 'T array -> 'T
 
     /// <summary>Returns a random element from the given array with the specified <c>Random</c> instance.</summary>
     ///
@@ -3250,7 +3250,7 @@ module Array =
     /// Can evaluate to <c>3</c>.
     /// </example>
     [<CompiledName("RandomChoiceWith")>]
-    val randomChoiceWith : random: Random -> source: 'T array -> 'T
+    val randomChoiceWith: random: Random -> source: 'T array -> 'T
 
     /// <summary>Returns a random element from the given array using the specified <c>randomizer</c> function.</summary>
     ///
@@ -3272,7 +3272,7 @@ module Array =
     /// Can evaluate to <c>3</c>.
     /// </example>
     [<CompiledName("RandomChoiceBy")>]
-    val randomChoiceBy : randomizer: (unit -> float) -> source: 'T array -> 'T
+    val randomChoiceBy: randomizer: (unit -> float) -> source: 'T array -> 'T
 
     /// <summary>Returns an array of random elements from the given array, each element can be selected multiple times.</summary>
     ///
@@ -3294,7 +3294,7 @@ module Array =
     /// Can evaluate to <c>[| 3; 1; 3 |]</c>.
     /// </example>
     [<CompiledName("RandomChoices")>]
-    val randomChoices : count: int -> source: 'T array -> 'T array
+    val randomChoices: count: int -> source: 'T array -> 'T array
 
     /// <summary>Returns an array of random elements from the given array with the specified <c>Random</c> instance, each element can be selected multiple times.</summary>
     ///
@@ -3318,7 +3318,7 @@ module Array =
     /// Can evaluate to <c>[| 3; 1; 3 |]</c>.
     /// </example>
     [<CompiledName("RandomChoicesWith")>]
-    val randomChoicesWith : random: Random -> count: int -> source: 'T array -> 'T array
+    val randomChoicesWith: random: Random -> count: int -> source: 'T array -> 'T array
 
     /// <summary>Returns an array of random elements from the given array using the specified <c>randomizer</c> function, each element can be selected multiple times.</summary>
     ///
@@ -3342,7 +3342,7 @@ module Array =
     /// Can evaluate to <c>[| 3; 1; 3 |]</c>.
     /// </example>
     [<CompiledName("RandomChoicesBy")>]
-    val randomChoicesBy : randomizer: (unit -> float) -> count: int -> source: 'T array -> 'T array
+    val randomChoicesBy: randomizer: (unit -> float) -> count: int -> source: 'T array -> 'T array
 
     /// <summary>Returns a random sample of elements from the given array, each element can be selected only once.</summary>
     ///
@@ -3365,7 +3365,7 @@ module Array =
     /// Can evaluate to <c>[| 3; 1; 2 |]</c>.
     /// </example>
     [<CompiledName("RandomSample")>]
-    val randomSample : count: int -> source: 'T array -> 'T array
+    val randomSample: count: int -> source: 'T array -> 'T array
 
     /// <summary>Returns a random sample of elements from the given array with the specified <c>Random</c> instance, each element can be selected only once.</summary>
     ///
@@ -3390,7 +3390,7 @@ module Array =
     /// Can evaluate to <c>[| 3; 1; 2 |]</c>.
     /// </example>
     [<CompiledName("RandomSampleWith")>]
-    val randomSampleWith : random: Random -> count: int -> source: 'T array -> 'T array
+    val randomSampleWith: random: Random -> count: int -> source: 'T array -> 'T array
 
     /// <summary>Returns a random sample of elements from the given array using the specified <c>randomizer</c> function, each element can be selected only once.</summary>
     ///
@@ -3415,7 +3415,7 @@ module Array =
     /// Can evaluate to <c>[| 3; 1; 2 |]</c>.
     /// </example>
     [<CompiledName("RandomSampleBy")>]
-    val randomSampleBy : randomizer: (unit -> float) -> count: int -> source: 'T array -> 'T array
+    val randomSampleBy: randomizer: (unit -> float) -> count: int -> source: 'T array -> 'T array
 
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =

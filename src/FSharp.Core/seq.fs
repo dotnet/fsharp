@@ -1966,6 +1966,7 @@ module Seq =
         checkNonNull "random" random
 
         let inputLength = source |> length
+
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
@@ -1977,6 +1978,7 @@ module Seq =
         checkNonNull "source" source
 
         let inputLength = source |> length
+
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
@@ -1996,6 +1998,7 @@ module Seq =
             invalidArgInputMustBeNonNegative "count" count
 
         let inputLength = source |> length
+
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
@@ -2013,6 +2016,7 @@ module Seq =
             invalidArgInputMustBeNonNegative "count" count
 
         let inputLength = source |> length
+
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
@@ -2035,6 +2039,7 @@ module Seq =
             invalidArgInputMustBeNonNegative "count" count
 
         let inputLength = source |> length
+
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
@@ -2042,9 +2047,12 @@ module Seq =
             invalidArgOutOfRange "count" count "source.Length" inputLength
 
         // algorithm taken from https://github.com/python/cpython/blob/main/Lib/random.py
-        let setSize = Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+        let setSize =
+            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+
         if inputLength <= setSize then
             let pool = source |> toArray
+
             seq {
                 for i = 0 to count - 1 do
                     let j = random.Next(0, inputLength - i)
@@ -2053,11 +2061,14 @@ module Seq =
             }
         else
             let selected = HashSet()
+
             seq {
                 for _ = 0 to count - 1 do
                     let mutable j = random.Next(0, inputLength)
+
                     while selected.Contains(j) do
                         j <- random.Next(0, inputLength)
+
                     selected.Add(j) |> ignore
                     source |> item j
             }
@@ -2070,6 +2081,7 @@ module Seq =
             invalidArgInputMustBeNonNegative "count" count
 
         let inputLength = source |> length
+
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
@@ -2077,22 +2089,31 @@ module Seq =
             invalidArgOutOfRange "count" count "source.Length" inputLength
 
         // algorithm taken from https://github.com/python/cpython/blob/main/Lib/random.py
-        let setSize = Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+        let setSize =
+            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+
         if inputLength <= setSize then
             let pool = source |> toArray
+
             seq {
                 for i = 0 to count - 1 do
-                    let j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
+                    let j =
+                        Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
+
                     yield pool[j]
                     pool[j] <- pool[inputLength - i - 1]
             }
         else
             let selected = HashSet()
+
             seq {
                 for _ = 0 to count - 1 do
-                    let mutable j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+                    let mutable j =
+                        Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
                     while selected.Contains(j) do
                         j <- Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
                     selected.Add(j) |> ignore
                     source |> item j
             }

@@ -2953,7 +2953,7 @@ module Seq =
     /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
     /// </example>
     [<CompiledName("RandomShuffle")>]
-    val randomShuffle : source: seq<'T> -> seq<'T>
+    val randomShuffle: source: seq<'T> -> seq<'T>
 
     /// <summary>Return a new sequence shuffled in a random order with the specified <c>Random</c> instance.</summary>
     ///
@@ -2974,7 +2974,7 @@ module Seq =
     /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
     /// </example>
     [<CompiledName("RandomShuffleWith")>]
-    val randomShuffleWith : random: Random -> source: seq<'T> -> seq<'T>
+    val randomShuffleWith: random: Random -> source: seq<'T> -> seq<'T>
 
     /// <summary>Return a new sequence shuffled in a random order with the specified <c>randomizer</c> function.</summary>
     ///
@@ -2994,7 +2994,7 @@ module Seq =
     /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
     /// </example>
     [<CompiledName("RandomShuffleBy")>]
-    val randomShuffleBy : randomizer: (unit -> float) -> source: seq<'T> -> seq<'T>
+    val randomShuffleBy: randomizer: (unit -> float) -> source: seq<'T> -> seq<'T>
 
     /// <summary>
     /// Returns a random element from the given sequence.
@@ -3016,7 +3016,7 @@ module Seq =
     /// Can evaluate to <c>3</c>.
     /// </example>
     [<CompiledName("RandomChoice")>]
-    val randomChoice : source: seq<'T> -> 'T
+    val randomChoice: source: seq<'T> -> 'T
 
     /// <summary>
     /// Returns a random element from the given sequence with the specified <c>Random</c> instance.
@@ -3040,7 +3040,7 @@ module Seq =
     /// Can evaluate to <c>3</c>.
     /// </example>
     [<CompiledName("RandomChoiceWith")>]
-    val randomChoiceWith : random: Random -> source: seq<'T> -> 'T
+    val randomChoiceWith: random: Random -> source: seq<'T> -> 'T
 
     /// <summary>
     /// Returns a random element from the given sequence with the specified <c>randomizer</c> function.
@@ -3065,7 +3065,7 @@ module Seq =
     /// Can evaluate to <c>3</c>.
     /// </example>
     [<CompiledName("RandomChoiceBy")>]
-    val randomChoiceBy : randomizer: (unit -> float) -> source: seq<'T> -> 'T
+    val randomChoiceBy: randomizer: (unit -> float) -> source: seq<'T> -> 'T
 
     /// <summary>
     /// Returns an sequence of random elements from the given sequence, each element can be selected multiple times.
@@ -3089,7 +3089,7 @@ module Seq =
     /// Can evaluate to <c>seq { 3; 1; 3 }</c>.
     /// </example>
     [<CompiledName("RandomChoices")>]
-    val randomChoices : count: int -> source: seq<'T> -> seq<'T>
+    val randomChoices: count: int -> source: seq<'T> -> seq<'T>
 
     /// <summary>
     /// Returns a sequence of random elements from the given sequence with the specified <c>Random</c> instance, each element can be selected multiple times.
@@ -3115,7 +3115,7 @@ module Seq =
     /// Can evaluate to <c>seq { 3; 1; 3 }</c>.
     /// </example>
     [<CompiledName("RandomChoicesWith")>]
-    val randomChoicesWith : random: Random -> count: int -> source: seq<'T> -> seq<'T>
+    val randomChoicesWith: random: Random -> count: int -> source: seq<'T> -> seq<'T>
 
     /// <summary>
     /// Returns a sequence of random elements from the given sequence with the specified <c>randomizer</c> function, each element can be selected multiple times.
@@ -3141,7 +3141,7 @@ module Seq =
     /// Can evaluate to <c>seq { 3; 1; 3 }</c>.
     /// </example>
     [<CompiledName("RandomChoicesBy")>]
-    val randomChoicesBy : randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>
+    val randomChoicesBy: randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>
 
     /// <summary>
     /// Returns a random sample of elements from the given sequence, each element can be selected only once.
@@ -3166,7 +3166,7 @@ module Seq =
     /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
     /// </example>
     [<CompiledName("RandomSample")>]
-    val randomSample : count: int -> source: seq<'T> -> seq<'T>
+    val randomSample: count: int -> source: seq<'T> -> seq<'T>
 
     /// <summary>
     /// Returns a random sample of elements from the given sequence with the specified <c>Random</c> instance, each element can be selected only once.
@@ -3193,7 +3193,7 @@ module Seq =
     /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
     /// </example>
     [<CompiledName("RandomSampleWith")>]
-    val randomSampleWith : random: Random -> count: int -> source: seq<'T> -> seq<'T>
+    val randomSampleWith: random: Random -> count: int -> source: seq<'T> -> seq<'T>
 
     /// <summary>
     /// Returns a random sample of elements from the given sequence with the specified <c>randomizer</c> function, each element can be selected only once.
@@ -3220,4 +3220,4 @@ module Seq =
     /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
     /// </example>
     [<CompiledName("RandomSampleBy")>]
-    val randomSampleBy : randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>
+    val randomSampleBy: randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>
