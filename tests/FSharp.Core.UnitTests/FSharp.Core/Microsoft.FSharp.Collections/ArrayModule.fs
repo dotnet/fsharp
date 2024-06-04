@@ -2066,7 +2066,6 @@ type ArrayModule() =
         let allSame = results |> Array.forall (fun x -> x = results.[0])
         Assert.False(allSame)
 
-
     [<Fact>]
     member _.RandomChoiceWrongArg() =
         let nullArr = null
@@ -2116,10 +2115,10 @@ type ArrayModule() =
         let arr = [| 1; 2 |]
         let choices = arr |> Array.randomChoices choicesLength
         Assert.AreEqual(choicesLength, choices.Length)
-        Assert.AreEqual(arr, choices |> Array.distinct)
+        Assert.AreEqual(arr, choices |> Array.distinct |> Array.sort)
 
     [<Fact>]
-    member _.RandomChoicesNegative() =
+    member _.RandomChoicesWrongArg() =
         let nullArr = null
         let emptyArr = [||]
         let arr = [| 1..50 |]
@@ -2175,7 +2174,7 @@ type ArrayModule() =
         Assert.AreEqual(choice2, choice2 |> Array.distinct)
 
     [<Fact>]
-    member _.RandomSampleNegative() =
+    member _.RandomSampleWrongArg() =
         let nullArr = null
         let emptyArr = [||]
         let arr = [| 1..50 |]
@@ -2208,7 +2207,7 @@ type ArrayModule() =
         Assert.AreEqual(choice3, choice3 |> Array.distinct)
 
     [<Fact>]
-    member _.RandomSampleWithNegative() =
+    member _.RandomSampleWithWrongArg() =
         let nullArr = null
         let emptyArr = [||]
         let arr = [| 1..50 |]

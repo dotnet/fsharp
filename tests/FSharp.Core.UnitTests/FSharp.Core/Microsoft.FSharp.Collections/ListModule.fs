@@ -1090,55 +1090,61 @@ type ListModule() =
 
     [<Fact>]
     member _.RandomShuffle() =
-        let list = [1;2;3;4;5;6;7;8]
+        let list = [ 1..20 ]
 
-        // try shuffle three times, if it doesn't shuffle, it must be broken
-        let mutable isShuffled = false
-        let mutable i = 0
-        while not isShuffled && i < 3 do
-            let shuffled = list |> List.randomShuffle
-            isShuffled <- not (list = shuffled)
-            i <- i + 1
-        Assert.NotEqual(3, i)
+        let shuffled1 = list |> List.randomShuffle
+        let shuffled2 = list |> List.randomShuffle
+
+        Assert.AreNotEqual(shuffled1, list)
+        Assert.AreNotEqual(shuffled1, shuffled2)
 
     [<Fact>]
     member _.RandomShuffleWith() =
-        let list = [1;2;3;4;5;6;7;8]
+        let arr = [ 1..20 ]
+
         let rand1 = Random(123)
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let shuffle1 = list |> List.randomShuffleWith rand1
-        let shuffle2 = list |> List.randomShuffleWith rand2
-        let shuffle3 = list |> List.randomShuffleWith rand3
+        let shuffle1 = arr |> List.randomShuffleWith rand1
+        let shuffle2 = arr |> List.randomShuffleWith rand2
+        let shuffle3 = arr |> List.randomShuffleWith rand3
 
         Assert.AreEqual(shuffle1, shuffle2)
-        Assert.AreNotEqual(list, shuffle1)
+        Assert.AreNotEqual(arr, shuffle1)
         Assert.AreNotEqual(shuffle1, shuffle3)
 
     [<Fact>]
-    member _.RandomChoice() =
-        let list = [1;2;3;4;5;6;7;8]
+    member _.RandomShuffleWithWrongArg() =
+        let list = [ 1..20 ]
+        let nullRand = null
 
-        // try choice six times, if all are same, it must be broken
-        let results = [|
+        CheckThrowsArgumentNullException (fun () -> List.randomShuffleWith nullRand list |> ignore)
+
+    [<Fact>]
+    member _.RandomChoice() =
+        let list = [ 1..5000 ]
+
+        // try choice five times, if all are same, it must be broken
+        let results = [
             List.randomChoice list
             List.randomChoice list
             List.randomChoice list
             List.randomChoice list
             List.randomChoice list
-            List.randomChoice list
-        |]
-        let allSame = results |> Array.forall (fun x -> x = results.[0])
+        ]
+        let allSame = results |> List.forall (fun x -> x = results.Head)
         Assert.False(allSame)
 
-        // empty list
+    [<Fact>]
+    member _.RandomChoiceWrongArg() =
         let emptyList = []
+
         CheckThrowsArgumentException (fun () -> List.randomChoice emptyList |> ignore)
 
     [<Fact>]
     member _.RandomChoiceWith() =
-        let list = [1;2;3;4;5;6;7;8]
+        let list = [ 1..5000 ]
         let rand1 = Random(123)
         let rand2 = Random(123)
         let rand3 = Random(321)
@@ -1151,37 +1157,50 @@ type ListModule() =
         Assert.AreNotEqual(choice1, choice3)
 
     [<Fact>]
-    member _.RandomChoices() =
-        let list = [1;2;3;4;5;6;7;8]
-
-        // try choices three times, if all are same, it must be broken
-        let choicesLength = 5
-        let results = [|
-            List.randomChoices choicesLength list
-            List.randomChoices choicesLength list
-            List.randomChoices choicesLength list
-        |]
-        let allSame = results |> Array.forall (fun x -> x = results.[0])
-        let allCorrectLength = results |> Array.forall (fun x -> x.Length = choicesLength)
-        Assert.False(allSame)
-        Assert.True(allCorrectLength)
-
-        // empty list
+    member _.RandomChoiceWithWrongArg() =
         let emptyList = []
-        CheckThrowsArgumentException (fun () -> List.randomChoices choicesLength emptyList |> ignore)
+        let list = [ 1..20 ]
+        let nullRand = null
+        let rand = Random(123)
 
-        // negative choices length
+        CheckThrowsArgumentNullException (fun () -> List.randomChoiceWith nullRand list |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomChoiceWith rand emptyList |> ignore)
+
+    [<Fact>]
+    member _.RandomChoices() =
+        let list = [ 1..50 ]
+
+        let choicesLength = 20
+        let choice1 = list |> List.randomChoices choicesLength
+        let choice2 = list |> List.randomChoices choicesLength
+
+        Assert.AreNotEqual(choice1, choice2)
+        Assert.AreEqual(choicesLength, choice1.Length)
+        Assert.AreEqual(choicesLength, choice2.Length)
+
+        let list = [ 1; 2 ]
+        let choices = list |> List.randomChoices choicesLength
+        Assert.AreEqual(choicesLength, choices.Length)
+        Assert.AreEqual(list, choices |> List.distinct |> List.sort)
+
+    [<Fact>]
+    member _.RandomChoicesWrongArg() =
+        let emptyList = []
+        let list = [ 1..50 ]
+        let choicesLength = 20
         let negativeChoicesLength = -1
+
+        CheckThrowsArgumentException (fun () -> List.randomChoices choicesLength emptyList |> ignore)
         CheckThrowsArgumentException (fun () -> List.randomChoices negativeChoicesLength list |> ignore)
 
     [<Fact>]
     member _.RandomChoicesWith() =
-        let list = [1;2;3;4;5;6;7;8]
+        let list = [ 1..50 ]
         let rand1 = Random(123)
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let choicesLength = 5
+        let choicesLength = 20
         let choice1 = list |> List.randomChoicesWith rand1 choicesLength
         let choice2 = list |> List.randomChoicesWith rand2 choicesLength
         let choice3 = list |> List.randomChoicesWith rand3 choicesLength
@@ -1190,50 +1209,75 @@ type ListModule() =
         Assert.AreNotEqual(choice1, choice3)
 
     [<Fact>]
-    member _.RandomSample() =
-        let list = List.init 50 id
-        let choicesLengthSmall = 1
-        let choicesLengthLarge = 49
-
-        let verify choicesLength tryCount =
-            // try sample tryCount times, if all are same, it must be broken
-            let results = [|
-                for _ in 1..tryCount do
-                    List.randomSample choicesLength list
-            |]
-            let allSame = results |> Array.forall (fun x -> x = results.[0])
-            let allCorrectLength = results |> Array.forall (fun x -> x.Length = choicesLength)
-            let allDistinct = results |> Array.forall (fun x -> x = (x |> List.distinct))
-            Assert.False(allSame)
-            Assert.True(allCorrectLength)
-            Assert.True(allDistinct)
-
-        verify choicesLengthSmall 10
-        verify choicesLengthLarge 2
-
-        // empty list
+    member _.RandomChoicesWithWrongArg() =
         let emptyList = []
-        CheckThrowsArgumentException (fun () -> List.randomSample choicesLengthSmall emptyList |> ignore)
-
-        // negative choices length
+        let list = [ 1..50 ]
+        let nullRand = null
+        let rand = Random(123)
+        let choicesLength = 20
         let negativeChoicesLength = -1
-        CheckThrowsArgumentException (fun () -> List.randomSample negativeChoicesLength list |> ignore)
 
-        // invalid count
-        let invalidCountRange = 100
-        CheckThrowsArgumentException (fun () -> List.randomSample invalidCountRange list |> ignore)
+        CheckThrowsArgumentNullException (fun () -> List.randomChoicesWith nullRand choicesLength list |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomChoicesWith rand choicesLength emptyList |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomChoicesWith rand negativeChoicesLength list |> ignore)
+
 
     [<Fact>]
+    member _.RandomSample() =
+        let arr = [ 1..50 ]
+
+        let choicesLength = 20
+        let choice1 = arr |> List.randomSample choicesLength
+        let choice2 = arr |> List.randomSample choicesLength
+
+        Assert.AreNotEqual(choice1, choice2)
+        Assert.AreEqual(choicesLength, choice1.Length)
+        Assert.AreEqual(choicesLength, choice2.Length)
+        Assert.AreEqual(choice1, choice1 |> List.distinct)
+        Assert.AreEqual(choice2, choice2 |> List.distinct)
+
+    [<Fact>]
+    member _.RandomSampleWrongArg() =
+        let emptyList = []
+        let list = [ 1..50 ]
+        let tooBigSampleLength = 100
+        let negativeSampleLength = -1
+        let sampleLength = 20
+
+        CheckThrowsArgumentException (fun () -> List.randomSample sampleLength emptyList |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomSample negativeSampleLength list |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomSample tooBigSampleLength list |> ignore)
+    
+    [<Fact>]
     member _.RandomSampleWith() =
-        let list = [1;2;3;4;5;6;7;8]
+        let list = [ 1..50 ]
         let rand1 = Random(123)
         let rand2 = Random(123)
         let rand3 = Random(321)
 
-        let choicesLength = 5
+        let choicesLength = 20
         let choice1 = list |> List.randomSampleWith rand1 choicesLength
         let choice2 = list |> List.randomSampleWith rand2 choicesLength
         let choice3 = list |> List.randomSampleWith rand3 choicesLength
 
         Assert.AreEqual(choice1, choice2)
         Assert.AreNotEqual(choice1, choice3)
+        Assert.AreEqual(choicesLength, choice1.Length)
+        Assert.AreEqual(choicesLength, choice3.Length)
+        Assert.AreEqual(choice1, choice1 |> List.distinct)
+        Assert.AreEqual(choice3, choice3 |> List.distinct)
+
+    [<Fact>]
+    member _.RandomSampleWithWrongArg() =
+        let emptyArr = []
+        let list = [ 1..50 ]
+        let nullRand = null
+        let rand = Random(123)
+        let tooBigSampleLength = 100
+        let negativeSampleLength = -1
+        let sampleLength = 20
+
+        CheckThrowsArgumentNullException (fun () -> List.randomSampleWith nullRand sampleLength list |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomSampleWith rand sampleLength emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomSampleWith rand negativeSampleLength list |> ignore)
+        CheckThrowsArgumentException (fun () -> List.randomSampleWith rand tooBigSampleLength list |> ignore)
