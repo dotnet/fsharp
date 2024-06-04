@@ -13,6 +13,19 @@ open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
+
+module Utils =
+    let replaceLastIdentToDisplayName idents (displayName: string) =
+        match idents |> Array.tryFindIndexBack (fun i -> displayName.StartsWith(i, System.StringComparison.Ordinal)) with
+        | Some x when x = idents.Length - 1 -> idents |> Array.replace (idents.Length - 1) displayName
+        | Some x -> 
+            let newIdents = Array.zeroCreate (x + 1)
+            Array.Copy(idents, newIdents, x)
+            newIdents[x] <- displayName
+            newIdents
+        | _ -> idents
+
 
 type IsAutoOpen = bool
 
@@ -80,10 +93,9 @@ type Parent =
                 else ident)
 
         let removeModuleSuffix (idents: ShortIdents) =
-            if entity.IsFSharpModule && idents.Length > 0 then
+            if (entity.IsFSharpModule || PrettyNaming.DoesIdentifierNeedBackticks entity.DisplayName) && idents.Length > 0 then
                 let lastIdent = idents[idents.Length - 1]
-                if lastIdent <> entity.DisplayName then
-                    idents |> Array.replace (idents.Length - 1) entity.DisplayName
+                if lastIdent <> entity.DisplayName then Utils.replaceLastIdentToDisplayName idents entity.DisplayName
                 else idents
             else idents
 
@@ -108,19 +120,22 @@ type IAssemblyContentCache =
 
 module AssemblyContent =
 
-    let UnresolvedSymbol (nearestRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) ns =
+    let UnresolvedSymbol (topRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) ns =
         let getNamespace (idents: ShortIdents) = 
             if idents.Length > 1 then Some idents[..idents.Length - 2] else None
 
+        // 1. get namespace/module to open from topRequireQualifiedAccessParent 
+        // 2. if the topRequireQualifiedAccessParent is None, use the namespace, as we don't know whether an ident is namespace/module or not
         let ns = 
-            nearestRequireQualifiedAccessParent 
-            |> Option.bind getNamespace 
+            topRequireQualifiedAccessParent 
+            |> Option.bind getNamespace
             |> Option.orElse ns
-            |> Option.defaultValue [||]
-
+            |> Option.defaultWith (fun _ -> Array.empty)
+            |> Array.map PrettyNaming.NormalizeIdentifierBackticks
+            
         let displayName = 
             let nameIdents = if cleanedIdents.Length > ns.Length then cleanedIdents |> Array.skip ns.Length else cleanedIdents
-            nameIdents |> String.concat "."
+            nameIdents |> Array.map PrettyNaming.NormalizeIdentifierBackticks |> String.concat "."
                 
         { FullName = fullName
           DisplayName = displayName
@@ -130,7 +145,6 @@ module AssemblyContent =
         parent.FormatEntityFullName entity
         |> Option.map (fun (fullName, cleanIdents) ->
             let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
-            let nearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
 
             { FullName = fullName
               CleanedIdents = cleanIdents
@@ -151,7 +165,7 @@ module AssemblyContent =
                     match entity with
                     | FSharpSymbolPatterns.Attribute -> EntityKind.Attribute 
                     | _ -> EntityKind.Type
-              UnresolvedSymbol = UnresolvedSymbol nearestRequireQualifiedAccessParent cleanIdents fullName ns
+              UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName ns
             })
 
     let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
@@ -171,10 +185,18 @@ module AssemblyContent =
                   AutoOpenParent = autoOpenParent
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = UnresolvedSymbol nearestRequireQualifiedAccessParent cleanedIdents fullName ns }
+                  UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName ns }
 
             [ yield! func.TryGetFullDisplayName() 
-                     |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))
+                     |> Option.map (fun fullDisplayName -> 
+                        let idents = (fullDisplayName.Split '.')
+                        let lastIdent = idents[idents.Length - 1]
+                        let idents =
+                            match Option.attempt (fun _ -> func.DisplayName) with
+                            | Some shortDisplayName when PrettyNaming.DoesIdentifierNeedBackticks shortDisplayName && lastIdent <> shortDisplayName ->
+                                Utils.replaceLastIdentToDisplayName idents shortDisplayName
+                            | _ -> idents
+                        processIdents func.FullName idents)
                      |> Option.toList
               (* for 
                  [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]

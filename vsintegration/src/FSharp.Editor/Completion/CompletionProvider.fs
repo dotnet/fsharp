@@ -450,6 +450,29 @@ type internal FSharpCompletionProvider
                     let textWithItemCommitted =
                         sourceText.WithChanges(TextChange(item.Span, nameInCode))
 
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
+
+                let completionInsertRange =
+                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, item.Span, sourceText)
+
+                let isNamespaceOrModuleInserted =
+                    checkFileResults.OpenDeclarations
+                    |> Array.exists (fun i ->
+                        Range.rangeContainsPos i.AppliedScope completionInsertRange.Start
+                        && i.Modules
+                           |> List.distinct
+                           |> List.exists (fun i ->
+                               (i.IsNamespace || i.IsFSharpModule)
+                               && match i.Namespace with
+                                  | Some x -> $"{x}.{i.DisplayName}" = ns
+                                  | _ -> i.DisplayName = ns))
+
+                if isNamespaceOrModuleInserted then
+                    return CompletionChange.Create(TextChange(item.Span, nameInCode))
+                else
+                    let textWithItemCommitted =
+                        sourceText.WithChanges(TextChange(item.Span, nameInCode))
+
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
 
                     let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
@@ -466,7 +489,11 @@ type internal FSharpCompletionProvider
                             OpenStatementInsertionPoint.Nearest
 
                     let ctx =
-                        ParsedInput.FindNearestPointToInsertOpenDeclaration line.LineNumber parseResults.ParseTree fullNameIdents insertionPoint
+                        ParsedInput.FindNearestPointToInsertOpenDeclaration
+                            line.LineNumber
+                            parseResults.ParseTree
+                            fullNameIdents
+                            insertionPoint
 
                     let finalSourceText, changedSpanStartPos =
                         OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
