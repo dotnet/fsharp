@@ -887,12 +887,10 @@ type StackGuard(maxDepth: int, name: string) =
 
         try
             if depth % maxDepth = 0 then
-                let ct = Cancellable.Token
 
                 async {
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
-                    use _token = Cancellable.UsingToken ct
                     return f ()
                 }
                 |> Async.RunImmediate
