@@ -2103,7 +2103,7 @@ module Array =
         if inputLength <= setSize then
             let pool = copy source
             for i = 0 to count - 1 do
-                let j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength - i
+                let j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
                 result[i] <- pool[j]
                 pool[j] <- pool[inputLength - i - 1]
         else
