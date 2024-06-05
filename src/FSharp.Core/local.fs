@@ -9,14 +9,13 @@ module internal DetailedExceptions =
     open System
     open Microsoft.FSharp.Core
 
-
     /// takes an argument, a formatting string, a param array to splice into the formatting string
     let inline invalidArgFmt (arg:string) (format:string) paramArray =
         let msg = String.Format (format, paramArray)
         raise (new ArgumentException (msg, arg))
 
     /// takes an argument, a formatting string, a param array to splice into the formatting string
-    let inline invalidArgOufOfRangeFmt (arg:string) (format:string) paramArray =
+    let inline invalidArgOutOfRangeFmt (arg:string) (format:string) paramArray =
         let msg = String.Format (format, paramArray)
         raise (new ArgumentOutOfRangeException (arg, msg))
 
@@ -1210,7 +1209,7 @@ module internal Random =
         let value = randomizer()
         if value < 0.0 || value >= 1.0 then
             let argName = nameof randomizer
-            invalidArgOufOfRangeFmt argName
+            invalidArgOutOfRangeFmt argName
                 "{0}\n{1} returned {2}, should be in range [0.0, 1.0)."
                 [|SR.GetString SR.outOfRange; argName; value|]
         value
@@ -1243,5 +1242,5 @@ module internal Random =
     let getMaxSetSizeForSampling count =
         let mutable setSize = 21
         if count > 5 then
-            setSize <- setSize + (4.0 ** Math.Ceiling(Math.Log(count * 3 |> float, 4)) |> int)
+            setSize <- setSize + (4.0 ** ceil (Math.Log(count * 3 |> float, 4)) |> int)
         setSize

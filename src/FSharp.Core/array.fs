@@ -1938,8 +1938,8 @@ module Array =
 
     [<CompiledName("RandomShuffleWith")>]
     let randomShuffleWith (random: Random) (source: 'T array) : 'T array =
-        checkNonNull "source" source
         checkNonNull "random" random
+        checkNonNull "source" source
 
         let result = copy source
 
@@ -1963,8 +1963,8 @@ module Array =
 
     [<CompiledName("RandomShuffleInPlaceWith")>]
     let randomShuffleInPlaceWith (random: Random) (source: 'T array) =
-        checkNonNull "source" source
         checkNonNull "random" random
+        checkNonNull "source" source
 
         Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceWith random source
 
@@ -1980,8 +1980,8 @@ module Array =
 
     [<CompiledName("RandomChoiceWith")>]
     let randomChoiceWith (random: Random) (source: 'T array) : 'T =
-        checkNonNull "source" source
         checkNonNull "random" random
+        checkNonNull "source" source
 
         let inputLength = source.Length
 
@@ -2009,8 +2009,8 @@ module Array =
 
     [<CompiledName("RandomChoicesWith")>]
     let randomChoicesWith (random: Random) (count: int) (source: 'T array) : 'T array =
-        checkNonNull "source" source
         checkNonNull "random" random
+        checkNonNull "source" source
 
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
@@ -2054,8 +2054,8 @@ module Array =
 
     [<CompiledName("RandomSampleWith")>]
     let randomSampleWith (random: Random) (count: int) (source: 'T array) : 'T array =
-        checkNonNull "source" source
         checkNonNull "random" random
+        checkNonNull "source" source
 
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
@@ -2070,7 +2070,7 @@ module Array =
 
         let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-        // algorithm taken from https://github.com/python/cpython/blob/main/Lib/random.py
+        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
         let setSize =
             Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
 
@@ -2087,10 +2087,9 @@ module Array =
             for i = 0 to count - 1 do
                 let mutable j = random.Next(0, inputLength)
 
-                while selected.Contains(j) do
+                while not (selected.Add j) do
                     j <- random.Next(0, inputLength)
 
-                selected.Add(j) |> ignore
                 result[i] <- source[j]
 
         result
@@ -2112,7 +2111,7 @@ module Array =
 
         let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-        // algorithm taken from https://github.com/python/cpython/blob/main/Lib/random.py
+        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
         let setSize =
             Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
 
@@ -2132,10 +2131,9 @@ module Array =
                 let mutable j =
                     Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
 
-                while selected.Contains(j) do
+                while not (selected.Add j) do
                     j <- Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
 
-                selected.Add(j) |> ignore
                 result[i] <- source[j]
 
         result

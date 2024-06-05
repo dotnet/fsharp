@@ -1086,7 +1086,7 @@ module List =
         if count >= inputLength then
             invalidArgOutOfRange "count" count "source.Length" inputLength
 
-        // algorithm taken from https://github.com/python/cpython/blob/main/Lib/random.py
+        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
         let setSize =
             Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
 
@@ -1096,8 +1096,9 @@ module List =
             [
                 for i = 0 to count - 1 do
                     let j = random.Next(0, inputLength - i)
-                    yield pool[j]
+                    let item = pool[j]
                     pool[j] <- pool[inputLength - i - 1]
+                    item
             ]
         else
             let selected = HashSet()
@@ -1106,10 +1107,9 @@ module List =
                 for _ = 0 to count - 1 do
                     let mutable j = random.Next(0, inputLength)
 
-                    while selected.Contains(j) do
+                    while not (selected.Add j) do
                         j <- random.Next(0, inputLength)
 
-                    selected.Add(j) |> ignore
                     source[j]
             ]
 
@@ -1126,7 +1126,7 @@ module List =
         if count >= inputLength then
             invalidArgOutOfRange "count" count "source.Length" inputLength
 
-        // algorithm taken from https://github.com/python/cpython/blob/main/Lib/random.py
+        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
         let setSize =
             Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
 
@@ -1138,8 +1138,9 @@ module List =
                     let j =
                         Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
 
-                    yield pool[j]
+                    let item = pool[j]
                     pool[j] <- pool[inputLength - i - 1]
+                    item
             ]
         else
             let selected = HashSet()
@@ -1149,10 +1150,9 @@ module List =
                     let mutable j =
                         Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
 
-                    while selected.Contains(j) do
+                    while not (selected.Add j) do
                         j <- Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
 
-                    selected.Add(j) |> ignore
                     source[j]
             ]
 
