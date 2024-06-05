@@ -235,14 +235,10 @@ type internal FSharpCompletionProvider
                 let glyph =
                     Tokenizer.FSharpGlyphToRoslynGlyph(declarationItem.Glyph, declarationItem.Accessibility)
 
-                let namespaceName, filterText =
-                    match declarationItem.NamespaceToOpen, declarationItem.NameInList.Split '.' with
-                    // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
-                    | None, [| _ |] -> null, null
-                    | Some namespaceToOpen, idents -> namespaceToOpen, Array.last idents
-                    // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
-                    // We are passing last part of long ident as FilterText.
-                    | None, idents -> null, Array.last idents
+                let namespaceName =
+                    match declarationItem.NamespaceToOpen with
+                    | None -> null
+                    | Some namespaceToOpen -> namespaceToOpen
 
                 let completionItem =
                     FSharpCommonCompletionItem
@@ -251,7 +247,7 @@ type internal FSharpCompletionProvider
                             null,
                             rules = noCommitOnSpaceRules,
                             glyph = Nullable glyph,
-                            filterText = filterText,
+                            filterText = declarationItem.NameInList,
                             inlineDescription = namespaceName
                         )
                         .AddProperty(FullNamePropName, declarationItem.FullName)
@@ -434,40 +430,64 @@ type internal FSharpCompletionProvider
             | true, ns ->
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
-                let textWithItemCommitted =
-                    sourceText.WithChanges(TextChange(item.Span, nameInCode))
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
-                let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
+                let completionInsertRange =
+                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, item.Span, sourceText)
 
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
+                let isNamespaceOrModuleInserted =
+                    checkFileResults.OpenDeclarations
+                    |> Array.exists (fun i ->
+                        Range.rangeContainsPos i.AppliedScope completionInsertRange.Start
+                        && i.Modules
+                           |> List.distinct
+                           |> List.exists (fun i ->
+                               (i.IsNamespace || i.IsFSharpModule)
+                               && match i.Namespace with
+                                  | Some x -> $"{x}.{i.DisplayName}" = ns
+                                  | _ -> i.DisplayName = ns))
 
-                let fullNameIdents =
-                    fullName
-                    |> ValueOption.map (fun x -> x.Split '.')
-                    |> ValueOption.defaultValue [||]
+                if isNamespaceOrModuleInserted then
+                    return CompletionChange.Create(TextChange(item.Span, nameInCode))
+                else
+                    let textWithItemCommitted =
+                        sourceText.WithChanges(TextChange(item.Span, nameInCode))
 
-                let insertionPoint =
-                    if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then
-                        OpenStatementInsertionPoint.TopLevel
-                    else
-                        OpenStatementInsertionPoint.Nearest
+                    let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
 
-                let ctx =
-                    ParsedInput.FindNearestPointToInsertOpenDeclaration line.LineNumber parseResults.ParseTree fullNameIdents insertionPoint
+                    let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
 
-                let finalSourceText, changedSpanStartPos =
-                    OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
+                    let fullNameIdents =
+                        fullName
+                        |> ValueOption.map (fun x -> x.Split '.')
+                        |> ValueOption.defaultValue [||]
 
-                let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
+                    let insertionPoint =
+                        if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then
+                            OpenStatementInsertionPoint.TopLevel
+                        else
+                            OpenStatementInsertionPoint.Nearest
 
-                let changedSpan =
-                    TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
+                    let ctx =
+                        ParsedInput.FindNearestPointToInsertOpenDeclaration
+                            line.LineNumber
+                            parseResults.ParseTree
+                            fullNameIdents
+                            insertionPoint
 
-                let changedText = finalSourceText.ToString(changedSpan)
+                    let finalSourceText, changedSpanStartPos =
+                        OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
 
-                return
-                    CompletionChange
-                        .Create(TextChange(fullChangingSpan, changedText))
-                        .WithNewPosition(Nullable(changedSpan.End))
+                    let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
+
+                    let changedSpan =
+                        TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
+
+                    let changedText = finalSourceText.ToString(changedSpan)
+
+                    return
+                        CompletionChange
+                            .Create(TextChange(fullChangingSpan, changedText))
+                            .WithNewPosition(Nullable(changedSpan.End))
         }
         |> CancellableTask.start cancellationToken
