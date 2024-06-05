@@ -270,7 +270,7 @@ val GetIntrinsicPropInfoWithOverridenPropOfType:
     findFlag: FindMemberFlag ->
     m: range ->
     ty: TType ->
-        struct(PropInfo * PropInfo voption) list
+        struct (PropInfo * PropInfo voption) list
 
 /// Perform type-directed name resolution of a particular named member in an F# type
 val TryFindIntrinsicNamedItemOfType:

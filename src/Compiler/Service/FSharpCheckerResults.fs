@@ -447,64 +447,88 @@ type internal TypeCheckInfo
         /// Checks if the type is used for C# style extension members.
         let IsTyconRefUsedForCSharpStyleExtensionMembers g m (tcref: TyconRef) =
             // Type must be non-generic and have 'Extension' attribute
-            isNil(tcref.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcref
+            isNil (tcref.Typars m)
+            && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcref
             || g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired)
-        
+
         /// A 'plain' method is an extension method not interpreted as an extension method.
         let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy (minfo: MethInfo) =
             // Method must be static, have 'Extension' attribute, must not be curried, must have at least one argument
-            isEnclExtTy &&
-            not minfo.IsInstance &&
-            not minfo.IsExtensionMember &&
-            (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) &&
-            AttributeChecking.MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
-        let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =                
+            isEnclExtTy
+            && not minfo.IsInstance
+            && not minfo.IsExtensionMember
+            && (match minfo.NumArgs with
+                | [ x ] when x >= 1 -> true
+                | _ -> false)
+            && AttributeChecking.MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
+
+        let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
             try
                 let rs =
                     match metadataOfTycon deref, minfo with
-                    | ILTypeMetadata (TILObjectReprData(scope=scoref)), ILMeth(ilMethInfo=ILMethInfo(ilMethodDef=ilMethod)) ->
+                    | ILTypeMetadata(TILObjectReprData(scope = scoref)), ILMeth(ilMethInfo = ILMethInfo(ilMethodDef = ilMethod)) ->
                         match ilMethod.ParameterTypes with
                         | firstTy :: _ ->
                             match firstTy with
-                            | ILType.Boxed  tspec | ILType.Value tspec ->
+                            | ILType.Boxed tspec
+                            | ILType.Value tspec ->
                                 let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
+
                                 if Import.CanImportILTypeRef amap m tref then
                                     let tcref = tref |> Import.ImportILTypeRef amap m
-                                    if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
-                                    else Some tcref
-                                else None
+
+                                    if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then
+                                        None
+                                    else
+                                        Some tcref
+                                else
+                                    None
                             | _ -> None
                         | _ -> None
                     | _ ->
                         // The results are indexed by the TyconRef of the first 'this' argument, if any.
                         // So we need to go and crack the type of the 'this' argument.
-                        let thisTy = minfo.GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars).Head.Head
+                        let thisTy =
+                            minfo
+                                .GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars)
+                                .Head.Head
+
                         match thisTy with
                         | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
                         | _ -> None
+
                 Some rs
             with RecoverableException e -> // Import of the ILType may fail, if so report the error and skip on
                 errorRecovery e m
                 None
-            
-        let baseTys = 
-            ty :: infoReader.GetEntireTypeHierarchy(TypeHierarchy.AllowMultiIntfInstantiations.Yes, m, ty)
-            |> List.choose (fun ty -> match tryTcrefOfAppTy g ty with ValueSome ty' -> Some (ty, ty') | _-> None)
-        let checkTy ty2 =
-            baseTys |> List.tryPick (fun (ty, ty') -> if tyconRefEq g ty' ty2 then Some ty else None)
 
-        getAllSymbols()
+        let baseTys =
+            ty
+            :: infoReader.GetEntireTypeHierarchy(TypeHierarchy.AllowMultiIntfInstantiations.Yes, m, ty)
+            |> List.choose (fun ty ->
+                match tryTcrefOfAppTy g ty with
+                | ValueSome ty' -> Some(ty, ty')
+                | _ -> None)
+
+        let checkTy ty2 =
+            baseTys
+            |> List.tryPick (fun (ty, ty') -> if tyconRefEq g ty' ty2 then Some ty else None)
+
+        getAllSymbols ()
         |> List.collect (fun x ->
             match x.Symbol.Item with
             | Item.MethodGroup(name, meths, un) when not x.Symbol.IsExplicitlySuppressed ->
                 let meths =
                     meths
-                    |> List.choose(fun i -> 
-                        let isEnclExtTy = IsTyconRefUsedForCSharpStyleExtensionMembers g m i.DeclaringTyconRef
+                    |> List.choose (fun i ->
+                        let isEnclExtTy =
+                            IsTyconRefUsedForCSharpStyleExtensionMembers g m i.DeclaringTyconRef
+
                         if IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy i then
                             let ty2 = GetTyconRefForExtensionMembers i i.DeclaringTyconRef.Deref amap m g
-                            match ty2 with 
-                            | Some(Some ty2) -> 
+
+                            match ty2 with
+                            | Some(Some ty2) ->
                                 match checkTy ty2 with
                                 | Some ty ->
                                     match i with
@@ -513,13 +537,26 @@ type internal TypeCheckInfo
                                     | _ -> Some i
                                 | _ -> None
                             | _ -> None
-                        else None
-                    )
-                if meths.IsEmpty then []
-                else (ItemWithNoInst(Item.MethodGroup(name, meths, un)), ValueSome({ x with UnresolvedSymbol = { x.UnresolvedSymbol with DisplayName = name } })) :: []
-            | _ -> []
-        )
-    let ItemWithNoInstWithNoSymbol (item: ItemWithInst) = item, (ValueNone: AssemblySymbol voption)
+                        else
+                            None)
+
+                if meths.IsEmpty then
+                    []
+                else
+                    (ItemWithNoInst(Item.MethodGroup(name, meths, un)),
+                     ValueSome(
+                         { x with
+                             UnresolvedSymbol =
+                                 { x.UnresolvedSymbol with
+                                     DisplayName = name
+                                 }
+                         }
+                     ))
+                    :: []
+            | _ -> [])
+
+    let ItemWithNoInstWithNoSymbol (item: ItemWithInst) =
+        item, (ValueNone: AssemblySymbol voption)
 
     // Filter items to show only valid & return Some if there are any
     let ReturnItemsOfType (items: ItemWithInst list) g denv (m: range) filterCtors =
@@ -624,12 +661,14 @@ type internal TypeCheckInfo
                 let globalItems = getExtMethsOfType m ty getAllSymbols
                 let items = ResolveCompletionsInType ncenv nenv targets m ad false ty
                 let items = List.map ItemWithNoInst items
+
                 let items =
                     items
                     |> RemoveDuplicateItems g
                     |> RemoveExplicitlySuppressed g
                     |> FilterItemsForCtors filterCtors
                     |> List.map ItemWithNoInstWithNoSymbol
+
                 let items = items @ globalItems
 
                 if not (isNil items) then
@@ -707,14 +746,14 @@ type internal TypeCheckInfo
 
         let getStaticFieldsOfSameTypeOfTheParameter nenv ad m (methods: MethInfo list) (items: Item list) =
             match paramName with
-            | Some name -> 
+            | Some name ->
                 match items |> List.tryFind (fun i -> i.DisplayName = name) with
                 | Some(Item.OtherName(argType = ty)) -> getStaticFieldsOfSameTypeInTheType nenv ad m ty
                 | Some(Item.Value(valRef)) -> getStaticFieldsOfSameTypeInTheType nenv ad m valRef.Type
                 | Some(Item.ILField(iLFieldInfo)) -> getStaticFieldsOfSameTypeInTheType nenv ad m (iLFieldInfo.FieldType(amap, m))
                 | Some(Item.Property(info = pinfo :: _)) -> getStaticFieldsOfSameTypeInTheType nenv ad m (pinfo.GetPropertyType(amap, m))
                 | _ -> []
-            | _ -> 
+            | _ ->
                 let rec loop i ls =
                     match ls with
                     | [] -> None
@@ -722,15 +761,15 @@ type internal TypeCheckInfo
                         if i = paramIdx then
                             let (ParamData(ttype = ty)) = x
                             Some ty
-                        else loop (i + 1) t
+                        else
+                            loop (i + 1) t
+
                 methods
                 |> List.choose (fun meth ->
                     match meth.GetParamDatas(amap, m, meth.FormalMethodInst) with
-                    | x :: _ ->
-                        loop 0 x
+                    | x :: _ -> loop 0 x
                     | _ -> None)
                 |> List.collect (getStaticFieldsOfSameTypeInTheType nenv ad m)
-
 
         let result =
             match cnrs with
@@ -769,10 +808,7 @@ type internal TypeCheckInfo
         match result with
         | None -> NameResResult.Empty, []
         | Some(denv, m, items, p) ->
-            let p =
-                p
-                |> RemoveDuplicateItems g
-                |> RemoveExplicitlySuppressed g
+            let p = p |> RemoveDuplicateItems g |> RemoveExplicitlySuppressed g
 
             ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs, p
 
@@ -893,16 +929,20 @@ type internal TypeCheckInfo
 
                 let targets =
                     ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
-                
+
                 let items = ResolveCompletionsInType ncenv nenv targets m ad false ty
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
                 let items = items |> FilterItemsForCtors filterCtors
                 let globalItems = getExtMethsOfType m ty getAllSymbols
-                let items = 
+
+                let items =
                     (items |> List.map (fun i -> i, ValueNone)) @ globalItems
-                    |> IPartialEqualityComparer.partialDistinctBy (IPartialEqualityComparer.On (fun (item, _) -> item.Item) (ItemDisplayPartialEquality g))
+                    |> IPartialEqualityComparer.partialDistinctBy (
+                        IPartialEqualityComparer.On (fun (item, _) -> item.Item) (ItemDisplayPartialEquality g)
+                    )
+
                 ExprTypingsResult.Some((items, nenv.DisplayEnv, m), ty)
             | None ->
                 if textChanged then
@@ -1215,17 +1255,22 @@ type internal TypeCheckInfo
 
         let (nenv, ad), m = GetBestEnvForPos pos
         let denv = nenv.DisplayEnv
-        
+
         let checkMethAbstractAndGetImplementBody (meth: MethInfo) implementBody =
-            if meth.IsAbstract then 
-                if nenv.DisplayEnv.openTopPathsSorted.Force() |> List.contains ["System"] then "raise (NotImplementedException())"
-                else "raise (System.NotImplementedException())"
-            else implementBody
-        let newlineIndent = Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' '
+            if meth.IsAbstract then
+                if nenv.DisplayEnv.openTopPathsSorted.Force() |> List.contains [ "System" ] then
+                    "raise (NotImplementedException())"
+                else
+                    "raise (System.NotImplementedException())"
+            else
+                implementBody
+
+        let newlineIndent =
+            Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' '
 
         let getOverridableMethods superTy (overriddenMethods: MethInfo list) overriddenProperties =
             // Do not check a method with same name twice
-            //type AA() = 
+            //type AA() =
             //    abstract a: unit -> unit
             //    default _.a() = printfn "A"
             //type BB() =
@@ -1236,12 +1281,8 @@ type internal TypeCheckInfo
             //    override | (* Here should not suggest to override `AA.a` *)
             let checkedMethods = ResizeArray(overriddenMethods)
 
-            let getBase (meth: MethInfo) =
-                let ty = generalizedTyconRef g meth.DeclaringTyconRef
-                if typeEquiv g ty superTy then "base"
-                else $"(this :> {stringOfTy denv ty})"
-
             let isInterface = isInterfaceTy g superTy
+
             let overridableProps =
                 GetIntrinsicPropInfoWithOverridenPropOfType
                     infoReader
@@ -1251,72 +1292,104 @@ type internal TypeCheckInfo
                     FindMemberFlag.PreferOverrides
                     range0
                     superTy
-                |> List.choose (fun struct(prop, baseProp) -> 
+                |> List.choose (fun struct (prop, baseProp) ->
                     let canPick =
-                        isPropertyOverridable overriddenProperties prop && 
-                        prop.IsStatic = isStatic
+                        isPropertyOverridable overriddenProperties prop && prop.IsStatic = isStatic
 
-                    let getterMeth = 
-                        if prop.HasGetter then ValueSome prop.GetterMethod 
-                        else baseProp |> ValueOption.map _.GetterMethod
-                    let setterMeth = 
-                        if prop.HasSetter then ValueSome prop.SetterMethod
-                        else baseProp |> ValueOption.map _.SetterMethod
+                    let getterMeth =
+                        if prop.HasGetter then
+                            ValueSome prop.GetterMethod
+                        else
+                            baseProp |> ValueOption.map _.GetterMethod
+
+                    let setterMeth =
+                        if prop.HasSetter then
+                            ValueSome prop.SetterMethod
+                        else
+                            baseProp |> ValueOption.map _.SetterMethod
 
                     getterMeth |> ValueOption.iter checkedMethods.Add
                     setterMeth |> ValueOption.iter checkedMethods.Add
 
-                    if not canPick then None else
-                    let getNameForNoNameArg =
-                        let mutable count = 1
+                    if not canPick then
+                        None
+                    else
+                        let getNameForNoNameArg =
+                            let mutable count = 1
 
-                        fun () ->
-                            let name = $"arg{count}"
-                            count <- count + 1
-                            name
-
-                    let parameters =
-                        prop.GetParamNamesAndTypes(amap, m)
-                        |> List.map (fun (ParamNameAndType(name, ty)) ->
-                            let name = 
+                            fun () ->
+                                let name = $"arg{count}"
+                                count <- count + 1
                                 name
-                                |> Option.map _.idText
-                                |> Option.defaultWith getNameForNoNameArg
 
-                            $"{name}: {stringOfTy denv ty}")
-                        |> String.concat ", "
-                    
-                    let retTy = prop.GetPropertyType(amap, m)
-                    let retTy = stringOfTy denv retTy
+                        let parameters =
+                            prop.GetParamNamesAndTypes(amap, m)
+                            |> List.map (fun (ParamNameAndType(name, ty)) ->
+                                let name = name |> Option.map _.idText |> Option.defaultWith getNameForNoNameArg
 
-                    let getter, getterWithBody =
-                        match getterMeth with
-                        | ValueSome meth ->
-                            let implementBody = checkMethAbstractAndGetImplementBody meth ($"{getBase meth}.{prop.DisplayName}" + (if prop.IsIndexer then $"[({parameters})]" else ""))
-                            let getter = $"get ({parameters}): {retTy}" 
-                            getter, $"{getter} = {implementBody}" 
-                        | _ -> String.Empty, String.Empty
-                    let setter, setterWithBody =
-                        match setterMeth with
-                        | ValueSome meth ->
-                            let implementBody = checkMethAbstractAndGetImplementBody meth ($"{getBase meth}.{prop.DisplayName}" + (if prop.IsIndexer then $"[({parameters})]" else String.Empty) + " <- value")
-                            let parameters = if prop.IsIndexer then $"({parameters}) " else String.Empty
-                            let setter = $"set {parameters}(value: {retTy})" 
-                            setter, $"{setter} = {implementBody}" 
-                        | _ -> String.Empty, String.Empty
+                                $"{name}: {stringOfTy denv ty}")
+                            |> String.concat ", "
 
-                    let keywordAnd = if getterMeth.IsNone || setterMeth.IsNone then String.Empty else " and " 
-                    let name = $"{prop.DisplayName} with {getter}{keywordAnd}{setter}"
+                        let retTy = prop.GetPropertyType(amap, m)
+                        let retTy = stringOfTy denv retTy
 
-                    let textInCode =
-                        let this = if hasThis || prop.IsStatic then String.Empty else "this."
-                        let getterWithBody = if String.IsNullOrWhiteSpace getterWithBody then String.Empty else getterWithBody + newlineIndent
-                        this + prop.DisplayName + newlineIndent + "with " + getterWithBody + keywordAnd + setterWithBody
+                        let getter, getterWithBody =
+                            match getterMeth with
+                            | ValueSome meth ->
+                                let implementBody =
+                                    checkMethAbstractAndGetImplementBody
+                                        meth
+                                        ($"base.{prop.DisplayName}"
+                                         + (if prop.IsIndexer then $"[({parameters})]" else ""))
 
-                    Item.Property(name, [ prop ], None)
-                    |> ItemWithNoInst
-                    |> CompletionItem ValueNone ValueNone (CompletionInsertType.CustomText textInCode)
-                    |> Some)
+                                let getter = $"get ({parameters}): {retTy}"
+                                getter, $"{getter} = {implementBody}"
+                            | _ -> String.Empty, String.Empty
+
+                        let setter, setterWithBody =
+                            match setterMeth with
+                            | ValueSome meth ->
+                                let implementBody =
+                                    checkMethAbstractAndGetImplementBody
+                                        meth
+                                        ($"base.{prop.DisplayName}"
+                                         + (if prop.IsIndexer then $"[({parameters})]" else String.Empty)
+                                         + " <- value")
+
+                                let parameters = if prop.IsIndexer then $"({parameters}) " else String.Empty
+                                let setter = $"set {parameters}(value: {retTy})"
+                                setter, $"{setter} = {implementBody}"
+                            | _ -> String.Empty, String.Empty
+
+                        let keywordAnd =
+                            if getterMeth.IsNone || setterMeth.IsNone then
+                                String.Empty
+                            else
+                                " and "
+
+                        let name = $"{prop.DisplayName} with {getter}{keywordAnd}{setter}"
+
+                        let textInCode =
+                            let this = if hasThis || prop.IsStatic then String.Empty else "this."
+
+                            let getterWithBody =
+                                if String.IsNullOrWhiteSpace getterWithBody then
+                                    String.Empty
+                                else
+                                    getterWithBody + newlineIndent
+
+                            this
+                            + prop.DisplayName
+                            + newlineIndent
+                            + "with "
+                            + getterWithBody
+                            + keywordAnd
+                            + setterWithBody
+
+                        Item.Property(name, [ prop ], None)
+                        |> ItemWithNoInst
+                        |> CompletionItem ValueNone ValueNone (CompletionInsertType.CustomText textInCode)
+                        |> Some)
 
             let overridableMeths =
                 GetIntrinsicMethInfosOfType
@@ -1327,52 +1400,63 @@ type internal TypeCheckInfo
                     FindMemberFlag.PreferOverrides
                     range0
                     superTy
-                |> List.choose (fun meth -> 
+                |> List.choose (fun meth ->
                     let canPick =
-                        isMethodOverridable checkedMethods meth && 
-                        meth.IsInstance <> isStatic &&
-                        (not isInterface || not(tyconRefEq g meth.DeclaringTyconRef g.system_Object_tcref))
+                        isMethodOverridable checkedMethods meth
+                        && meth.IsInstance <> isStatic
+                        && (not isInterface
+                            || not (tyconRefEq g meth.DeclaringTyconRef g.system_Object_tcref))
 
                     checkedMethods.Add meth
 
-                    if not canPick then None else
+                    if not canPick then
+                        None
+                    else
 
-                    let getNameForNoNameArg =
-                        let mutable count = 1
+                        let getNameForNoNameArg =
+                            let mutable count = 1
 
-                        fun () ->
-                            let name = $"arg{count}"
-                            count <- count + 1
-                            name
+                            fun () ->
+                                let name = $"arg{count}"
+                                count <- count + 1
+                                name
 
-                    let parameters =
-                        meth.GetParamNames()
-                        |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
-                        |> List.map (fun (types, names) ->
-                            let names =
-                                names
-                                |> List.zip types
-                                |> List.map (fun (ty, name) ->
-                                    let name = Option.defaultWith getNameForNoNameArg name
+                        let parameters =
+                            meth.GetParamNames()
+                            |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
+                            |> List.map (fun (types, names) ->
+                                let names =
+                                    names
+                                    |> List.zip types
+                                    |> List.map (fun (ty, name) ->
+                                        let name = Option.defaultWith getNameForNoNameArg name
 
-                                    $"{name}: {stringOfTy denv ty}")
-                                |> String.concat ", "
+                                        $"{name}: {stringOfTy denv ty}")
+                                    |> String.concat ", "
 
-                            $"({names})")
-                        |> String.concat " "
-                    
-                    let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
+                                $"({names})")
+                            |> String.concat " "
 
-                    let name = $"{meth.DisplayName} {parameters}: {stringOfTy denv retTy}"
-                    let textInCode =
-                        let nameWithThis = if hasThis || not meth.IsInstance then $"{name} = " else $"this.{name} = "
-                        let implementBody = checkMethAbstractAndGetImplementBody meth $"{getBase meth}.{meth.DisplayName}{parameters}"
-                        nameWithThis + newlineIndent + implementBody
+                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
 
-                    Item.MethodGroup(name, [ meth ], None)
-                    |> ItemWithNoInst
-                    |> CompletionItem ValueNone ValueNone (CompletionInsertType.CustomText textInCode)
-                    |> Some)
+                        let name = $"{meth.DisplayName} {parameters}: {stringOfTy denv retTy}"
+
+                        let textInCode =
+                            let nameWithThis =
+                                if hasThis || not meth.IsInstance then
+                                    $"{name} = "
+                                else
+                                    $"this.{name} = "
+
+                            let implementBody =
+                                checkMethAbstractAndGetImplementBody meth $"base.{meth.DisplayName}{parameters}"
+
+                            nameWithThis + newlineIndent + implementBody
+
+                        Item.MethodGroup(name, [ meth ], None)
+                        |> ItemWithNoInst
+                        |> CompletionItem ValueNone ValueNone (CompletionInsertType.CustomText textInCode)
+                        |> Some)
 
             overridableProps @ overridableMeths
 
@@ -1392,16 +1476,28 @@ type internal TypeCheckInfo
                         GetImmediateIntrinsicPropInfosOfType (None, ad) g amap typeNameRange ty
                         |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
 
-                    let overridableMethods = getOverridableMethods superTy overriddenMethods overriddenProperties
+                    let overridableMethods =
+                        getOverridableMethods superTy overriddenMethods overriddenProperties
+
                     Some(overridableMethods, denv, m)
                 | _ -> None)
         else
             let nameResItems =
-                GetPreciseItemsFromNameResolution(typeNameRange.End.Line, typeNameRange.End.Column, None, ResolveTypeNamesToTypeRefs, ResolveOverloads.Yes, fun () -> [])
+                GetPreciseItemsFromNameResolution(
+                    typeNameRange.End.Line,
+                    typeNameRange.End.Column,
+                    None,
+                    ResolveTypeNamesToTypeRefs,
+                    ResolveOverloads.Yes,
+                    fun () -> []
+                )
+
             match nameResItems with
-            | NameResResult.Members (ls, _, _) ->
-                ls 
-                |> List.tryPick (function ({Item = Item.Types(_, ty::_)}, _) -> Some ty | _ -> None)
+            | NameResResult.Members(ls, _, _) ->
+                ls
+                |> List.tryPick (function
+                    | ({ Item = Item.Types(_, ty :: _) }, _) -> Some ty
+                    | _ -> None)
                 |> Option.map (fun ty -> getOverridableMethods ty [] [], denv, m)
             | _ -> None
 
@@ -1522,7 +1618,8 @@ type internal TypeCheckInfo
             // This is based on position (i.e. colAtEndOfNamesAndResidue). This is not used if a residueOpt is given.
             let nameResItems =
                 match residueOpt with
-                | None -> GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors, resolveOverloads, allSymbols)
+                | None ->
+                    GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors, resolveOverloads, allSymbols)
                 | Some residue ->
                     // Deals with cases when we have spaces between dot and\or identifier, like A  . $
                     // if this is our case - then we need to locate end position of the name skipping whitespaces
@@ -1536,7 +1633,15 @@ type internal TypeCheckInfo
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
-                            GetPreciseItemsFromNameResolution(line, colAtEndOfNames, Some(residue), filterCtors, resolveOverloads, allSymbols)
+
+                            GetPreciseItemsFromNameResolution(
+                                line,
+                                colAtEndOfNames,
+                                Some(residue),
+                                filterCtors,
+                                resolveOverloads,
+                                allSymbols
+                            )
                         | None -> NameResResult.Empty
                     | _ -> NameResResult.Empty
 
@@ -1626,8 +1731,7 @@ type internal TypeCheckInfo
                         // lookup based on expression typings successful
                         Some(
                             items
-                            |> List.map (
-                                fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm CompletionInsertType.Default item),
+                            |> List.map (fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm CompletionInsertType.Default item),
                             denv,
                             m
                         )
@@ -1676,8 +1780,8 @@ type internal TypeCheckInfo
                             | _, _, ExprTypingsResult.Some(FilterRelevantItems getItemTuple2 exactMatchResidueOpt (items, denv, m), ty) ->
                                 ValueSome(
                                     items
-                                    |> List.map (
-                                        fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm CompletionInsertType.Default item),
+                                    |> List.map (fun (item, asm) ->
+                                        CompletionItem (tryTcrefOfAppTy g ty) asm CompletionInsertType.Default item),
                                     denv,
                                     m
                                 )
@@ -1917,9 +2021,8 @@ type internal TypeCheckInfo
 
                 match results with
                 | NameResResult.Members(items, denv, m), p ->
-                    let items =
-                        items
-                        |> List.map fst
+                    let items = items |> List.map fst
+
                     let filtered =
                         items
                         |> RemoveDuplicateItems g
@@ -1938,18 +2041,20 @@ type internal TypeCheckInfo
 
                     let p =
                         p
-                        |> List.map (fun i -> 
+                        |> List.map (fun i ->
                             let ty =
                                 match i.Item with
                                 | Item.Value(valRef) -> valRef.Type
                                 | Item.ILField(iLFieldInfo) -> (iLFieldInfo.FieldType(amap, m))
                                 | Item.Property(info = pinfo :: _) -> (pinfo.GetPropertyType(amap, m))
                                 | _ -> failwith "not possible"
+
                             CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.FullName i)
 
                     match declaredItems with
                     | None -> Some(p @ (items |> List.map DefaultCompletionItem), denv, m)
-                    | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(p @ filtered @ declItems, declaredDisplayEnv, declaredRange)
+                    | Some(declItems, declaredDisplayEnv, declaredRange) ->
+                        Some(p @ filtered @ declItems, declaredDisplayEnv, declaredRange)
                 | _ -> declaredItems
 
             | Some(CompletionContext.AttributeApplication) ->

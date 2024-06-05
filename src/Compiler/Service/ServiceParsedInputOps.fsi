@@ -85,7 +85,12 @@ type public CompletionContext =
     | Pattern of context: PatternContext
 
     /// Completing a method override (e.g. override this.ToStr|)
-    | MethodOverride of ctx: MethodOverrideCompletionContext * enclosingTypeNameRange: range * spacesBeforeOverrideKeyword: int * hasThis: bool * isStatic: bool
+    | MethodOverride of
+        ctx: MethodOverrideCompletionContext *
+        enclosingTypeNameRange: range *
+        spacesBeforeOverrideKeyword: int *
+        hasThis: bool *
+        isStatic: bool
 
     /// (s = | ) or (s <> | )
     | CaretAfterOperator of mExprBeforeOperator: range

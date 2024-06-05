@@ -111,9 +111,14 @@ type CompletionContext =
 
     /// Completing a pattern in a match clause, member/let binding or lambda
     | Pattern of context: PatternContext
-    
+
     /// Completing a method override (e.g. override this.ToStr|)
-    | MethodOverride of ctx: MethodOverrideCompletionContext * enclosingTypeNameRange: range * spacesBeforeOverrideKeyword: int * hasThis: bool * isStatic: bool
+    | MethodOverride of
+        ctx: MethodOverrideCompletionContext *
+        enclosingTypeNameRange: range *
+        spacesBeforeOverrideKeyword: int *
+        hasThis: bool *
+        isStatic: bool
 
     /// (s =| ) or (s <>| )
     | CaretAfterOperator of mExprBeforeOperator: range
@@ -1090,6 +1095,7 @@ module ParsedInput =
             if i >= lineStr.Length || i >= max then true
             elif Char.IsWhiteSpace lineStr[i] then loop max (i + 1)
             else false
+
         rangeContainsPos m pos
         // pos is before m
         || posLt pos m.Start
@@ -1103,18 +1109,25 @@ module ParsedInput =
             let mutable i = 0
             let mutable idx = -1
             let mutable namedParamName = None
+
             for p in parameters do
                 let isCurrParam = rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr p.Range pos
-                if isCurrParam then idx <- i
+
+                if isCurrParam then
+                    idx <- i
+
                 match p with
-                | Setter id -> 
-                    if isCurrParam then namedParamName <- Some id.idText
+                | Setter id ->
+                    if isCurrParam then
+                        namedParamName <- Some id.idText
+
                     ignore (setters.Add id.idText)
                 | _ -> ()
+
                 i <- i + 1
 
             idx, namedParamName, setters
-        | SynExpr.Paren(expr = Setter id) -> 
+        | SynExpr.Paren(expr = Setter id) ->
             let setters = HashSet()
             ignore (setters.Add id.idText)
             0, Some id.idText, setters
@@ -1185,7 +1198,8 @@ module ParsedInput =
         | SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ ->
             //if Option.isSome precedingArgument then None else Some args
             Some args
-        | SyntaxNode.SynExpr(SynExpr.Tuple(false, elements, commas, _)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ ->
+        | SyntaxNode.SynExpr(SynExpr.Tuple(false, elements, commas, _)) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr,
+                                                                                                                                                            pos) args) :: _ ->
             match precedingArgument with
             | None -> Some args
             | Some e ->
@@ -1426,7 +1440,7 @@ module ParsedInput =
 
     /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, parsedInput: ParsedInput, lineStr: string) : CompletionContext option =
-        
+
         let visitor =
             { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(path, _, defaultTraverse, expr) =
@@ -1438,11 +1452,12 @@ module ParsedInput =
                     else
                         match expr with
                         // new A(1, $)
-                        | SynExpr.Paren(expr = SynExpr.Tuple (range = m))
+                        | SynExpr.Paren(expr = SynExpr.Tuple(range = m))
                         // new A($)
                         | SynExpr.Const(SynConst.Unit, m) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
                             match path with
-                            | SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ -> Some(CompletionContext.ParameterList args)
+                            | SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ ->
+                                Some(CompletionContext.ParameterList args)
                             | _ -> defaultTraverse expr
 
                         // new (... A$)
@@ -1454,7 +1469,10 @@ module ParsedInput =
 
                         // new (A$ = 1)
                         // new (A = 1, $)
-                        | Setter id when id.idRange.End = pos || rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr expr.Range pos ->
+                        | Setter id when
+                            id.idRange.End = pos
+                            || rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr expr.Range pos
+                            ->
                             let precedingArgument = if id.idRange.End = pos then None else Some expr
 
                             match path with
@@ -1478,24 +1496,28 @@ module ParsedInput =
 
                         | Operator "op_Equality" (l, r)
                         | Operator "op_Inequality" (l, r)
-                        | SynExpr.IfThenElse(ifExpr = Operator "op_Equality" (l, r) | Operator "op_Inequality" (l, r)) 
-                        | SynExpr.Set (l, r, _)
-                            when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos  ->
+                        | SynExpr.IfThenElse(ifExpr = Operator "op_Equality" (l, r) | Operator "op_Inequality" (l, r))
+                        | SynExpr.Set(l, r, _) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos ->
                             Some(CompletionContext.CaretAfterOperator l.Range)
 
-                        | SynExpr.LongIdentSet (l, r, _)
-                            when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos  ->
+                        | SynExpr.LongIdentSet(l, r, _) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos ->
                             Some(CompletionContext.CaretAfterOperator l.Range)
 
                         // let a = 1: |
                         | SynExpr.Typed(targetType = SynType.FromParseError(range = m))
                         // let f() = let a: |
-                        | SynExpr.FromParseError(expr = SynExpr.LetOrUse(bindings = SynBinding(expr = SynExpr.Typed(expr = SynExpr.ArbitraryAfterError(range = m))) :: _))
-                            when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
+                        | SynExpr.FromParseError(
+                            expr = SynExpr.LetOrUse(
+                                bindings = SynBinding(expr = SynExpr.Typed(expr = SynExpr.ArbitraryAfterError(range = m))) :: _)) when
+                            rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos
+                            ->
                             Some CompletionContext.Type
 
                         // { new | }
-                        | SynExpr.ComputationExpr(expr = SynExpr.ArbitraryAfterError _) when lineStr.Trim().Split(' ') |> Array.contains "new" -> Some(CompletionContext.Inherit(InheritanceContext.Unknown, ([], None)))
+                        | SynExpr.ComputationExpr(expr = SynExpr.ArbitraryAfterError _) when
+                            lineStr.Trim().Split(' ') |> Array.contains "new"
+                            ->
+                            Some(CompletionContext.Inherit(InheritanceContext.Unknown, ([], None)))
                         | _ -> defaultTraverse expr
 
                 member _.VisitRecordField(path, copyOpt, field) =
@@ -1563,7 +1585,7 @@ module ParsedInput =
                         match leadingKeyword with
                         | SynLeadingKeyword.StaticMember _ -> true
                         | _ -> false
-                    
+
                     let isMember leadingKeyword =
                         match leadingKeyword with
                         | SynLeadingKeyword.Member _ -> true
@@ -1571,25 +1593,54 @@ module ParsedInput =
 
                     let overrideContext path (mOverride: range) hasThis isStatic isMember =
                         match path with
-                        | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ when not isMember ->
-                            Some(CompletionContext.MethodOverride(MethodOverrideCompletionContext.Class, enclosingType.idRange, mOverride.StartColumn, hasThis, isStatic))
+                        | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ when
+                            not isMember
+                            ->
+                            Some(
+                                CompletionContext.MethodOverride(
+                                    MethodOverrideCompletionContext.Class,
+                                    enclosingType.idRange,
+                                    mOverride.StartColumn,
+                                    hasThis,
+                                    isStatic
+                                )
+                            )
                         | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: _
                         | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: _ ->
-                            let ty = 
+                            let ty =
                                 match ty with
-                                | SynType.App (typeName = ty) -> ty
+                                | SynType.App(typeName = ty) -> ty
                                 | _ -> ty
-                            Some(CompletionContext.MethodOverride(MethodOverrideCompletionContext.Interface, ty.Range, mOverride.StartColumn, hasThis, isStatic))
+
+                            Some(
+                                CompletionContext.MethodOverride(
+                                    MethodOverrideCompletionContext.Interface,
+                                    ty.Range,
+                                    mOverride.StartColumn,
+                                    hasThis,
+                                    isStatic
+                                )
+                            )
                         | SyntaxNode.SynExpr(SynExpr.ObjExpr(objType = ty)) :: _ ->
-                            let ty = 
+                            let ty =
                                 match ty with
-                                | SynType.App (typeName = ty) -> ty
+                                | SynType.App(typeName = ty) -> ty
                                 | _ -> ty
-                            Some(CompletionContext.MethodOverride(MethodOverrideCompletionContext.ObjExpr, ty.Range, mOverride.StartColumn, hasThis, isStatic))
+
+                            Some(
+                                CompletionContext.MethodOverride(
+                                    MethodOverrideCompletionContext.ObjExpr,
+                                    ty.Range,
+                                    mOverride.StartColumn,
+                                    hasThis,
+                                    isStatic
+                                )
+                            )
                         | _ -> Some CompletionContext.Invalid
 
                     match returnInfo with
-                    | Some(SynBindingReturnInfo(range = m)) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos -> Some CompletionContext.Type
+                    | Some(SynBindingReturnInfo(range = m)) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
+                        Some CompletionContext.Type
                     | _ ->
                         match headPat with
 
@@ -1613,7 +1664,8 @@ module ParsedInput =
 
                         // override this.ToStr|
                         | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
-                            isOverrideOrMember trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
+                            isOverrideOrMember trivia.LeadingKeyword
+                            && rangeContainsPos methodId.idRange pos
                             ->
                             overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
@@ -1804,7 +1856,7 @@ module ParsedInput =
                         else
                             None)
 
-                override _.VisitInterfaceSynMemberDefnType (_, synType: SynType) = 
+                override _.VisitInterfaceSynMemberDefnType(_, synType: SynType) =
                     match synType with
                     | SynType.FromParseError(range = m) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
                         Some(CompletionContext.Inherit(InheritanceContext.Interface, ([], None)))
