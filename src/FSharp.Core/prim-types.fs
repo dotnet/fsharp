@@ -25,11 +25,11 @@ namespace Microsoft.FSharp.Core
     type Unit() =
         override _.GetHashCode() = 0
 
-        override _.Equals(obj:obj) = 
+        override _.Equals(obj:objnull) = 
             match obj with null -> true | :? Unit -> true | _ -> false
 
         interface System.IComparable with 
-            member _.CompareTo(_obj:obj) = 0
+            member _.CompareTo(_obj:objnull) = 0
         
     and unit = Unit
 
@@ -505,8 +505,8 @@ namespace Microsoft.FSharp.Core
     type outref<'T> = byref<'T, ByRefKinds.Out>
 
     module internal BasicInlinedOperations =  
-        let inline unboxPrim<'T>(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
-        let inline box     (x:'T) = (# "box !0" type ('T) x : obj #)
+        let inline unboxPrim<'T>(x:objnull) = (# "unbox.any !0" type ('T) x : 'T #)
+        let inline box     (x:'T) = (# "box !0" type ('T) x : objnull #)
         let inline convPrim<'T1, 'T2>(x: 'T1) : 'T2 = unboxPrim<'T2> (box x) 
         let inline not     (b:bool) = (# "ceq" b false : bool #)
         let inline (=)     (x:int)   (y:int)    = (# "ceq" x y : bool #) 
@@ -541,7 +541,7 @@ namespace Microsoft.FSharp.Core
         let set (arr: 'T array) (n:int) (x:'T) =  (# "stelem.any !0" type ('T) arr n x #)
 
 
-        let inline objEq (xobj:obj) (yobj:obj) = (# "ceq" xobj yobj : bool #)
+        let inline objEq (xobj:objnull) (yobj:objnull) = (# "ceq" xobj yobj : bool #)
         let inline int64Eq (x:int64) (y:int64) = (# "ceq" x y : bool #) 
         let inline int32Eq (x:int32) (y:int32) = (# "ceq" x y : bool #) 
         let inline floatEq (x:float) (y:float) = (# "ceq" x y : bool #) 
@@ -566,11 +566,11 @@ namespace Microsoft.FSharp.Core
             (# "sizeof !0" type('T) : int #) 
 
         let inline unsafeDefault<'T> : 'T = (# "ilzero !0" type ('T) : 'T #)
-        let inline isinstPrim<'T>(x:obj) = (# "isinst !0" type ('T) x : obj #)
+        let inline isinstPrim<'T>(x:objnull) = (# "isinst !0" type ('T) x : objnull #)
         let inline castclassPrim<'T>(x:obj) = (# "castclass !0" type ('T) x : 'T #)
         let inline notnullPrim<'T when 'T : not struct>(x:'T) = (# "ldnull cgt.un" x : bool #)
 
-        let inline iscastPrim<'T when 'T : not struct>(x:obj) = (# "isinst !0" type ('T) x : 'T #)
+        let inline iscastPrim<'T when 'T : not struct>(x:objnull) = (# "isinst !0" type ('T) x : 'T #)
 
         let inline mask (n:int) (m:int) = (# "and" n m : int #)
 
@@ -713,7 +713,7 @@ namespace Microsoft.FSharp.Core
             //  IL_0006:  brtrue.s   IL_000e
 
             // worst case: nothing known about source or destination
-            let UnboxGeneric<'T>(source: obj) = 
+            let UnboxGeneric<'T>(source: objnull) = 
                 if notnullPrim(source) or TypeInfo<'T>.TypeInfo <> TypeNullnessSemantics_NullNotLiked then 
                     unboxPrim<'T>(source)
                 else
@@ -721,19 +721,19 @@ namespace Microsoft.FSharp.Core
                     raise (System.NullReferenceException()) 
 
             // better: source is NOT TypeNullnessSemantics_NullNotLiked 
-            let inline UnboxFast<'T>(source: obj) = 
+            let inline UnboxFast<'T>(source: objnull) = 
                 // assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullNotLiked)
                 unboxPrim<'T>(source)
 
 
             // worst case: nothing known about source or destination
-            let TypeTestGeneric<'T>(source: obj) = 
+            let TypeTestGeneric<'T>(source: objnull) = 
                 if notnullPrim(isinstPrim<'T>(source)) then true
                 elif notnullPrim(source) then false
                 else (TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
 
             // quick entry: source is NOT TypeNullnessSemantics_NullTrueValue 
-            let inline TypeTestFast<'T>(source: obj) = 
+            let inline TypeTestFast<'T>(source: objnull) = 
                 //assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
                 notnullPrim(isinstPrim<'T>(source)) 
 
@@ -933,7 +933,7 @@ namespace Microsoft.FSharp.Core
              
             let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
 
-            let GenericHashObjArray (iec : IEqualityComparer) (x: obj array) : int =
+            let GenericHashObjArray (iec : IEqualityComparer) (x: objnull array) : int =
                   let len = x.Length 
                   let mutable i = len - 1 
                   if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
@@ -999,7 +999,7 @@ namespace Microsoft.FSharp.Core
             // Arrays are structurally hashed through a separate technique.
             //
             // "iec" is either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or a CountLimitedHasherPER.
-            let rec GenericHashParamObj (iec : IEqualityComparer) (x: obj) : int =
+            let rec GenericHashParamObj (iec : IEqualityComparer) (x: objnull) : int =
                   match x with 
                   | null -> 0 
                   | (:? System.Array as a) -> 
@@ -1063,7 +1063,7 @@ namespace Microsoft.FSharp.Core
                     
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
-            let rec GenericCompare (comp:GenericComparer) (xobj:obj, yobj:obj) = 
+            let rec GenericCompare (comp:GenericComparer) (xobj:objnull, yobj:objnull) = 
                   match xobj,yobj with 
                    | null,null -> 0
                    | null,_ -> -1
