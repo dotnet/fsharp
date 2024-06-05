@@ -581,7 +581,6 @@ try {
 
     if ($pack) {
         $properties_storage = $properties
-        $properties += "/p:GenerateSbom=false"
         BuildSolution "Microsoft.FSharp.Compiler.sln" $True
         $properties = $properties_storage
     }
