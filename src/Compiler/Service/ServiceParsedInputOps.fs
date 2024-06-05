@@ -73,8 +73,8 @@ type PatternContext =
 [<RequireQualifiedAccess; NoComparison; Struct>]
 type MethodOverrideCompletionContext =
     | Class
-    | Interface
-    | ObjExpr
+    | Interface of mInterfaceName: range
+    | ObjExpr of mExpr: range
 
 [<RequireQualifiedAccess>]
 type CompletionContext =
@@ -1605,8 +1605,10 @@ module ParsedInput =
                                     isStatic
                                 )
                             )
-                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: _
-                        | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: _ ->
+                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
+                            typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _
+                        | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
+                            typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
                             let ty =
                                 match ty with
                                 | SynType.App(typeName = ty) -> ty
@@ -1614,14 +1616,30 @@ module ParsedInput =
 
                             Some(
                                 CompletionContext.MethodOverride(
-                                    MethodOverrideCompletionContext.Interface,
+                                    MethodOverrideCompletionContext.Interface ty.Range,
+                                    enclosingType.idRange,
+                                    mOverride.StartColumn,
+                                    hasThis,
+                                    isStatic
+                                )
+                            )
+                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: (SyntaxNode.SynExpr(SynExpr.ObjExpr _) as expr) :: _
+                        | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: (SyntaxNode.SynExpr(SynExpr.ObjExpr _) as expr) :: _ ->
+                            let ty =
+                                match ty with
+                                | SynType.App(typeName = ty) -> ty
+                                | _ -> ty
+
+                            Some(
+                                CompletionContext.MethodOverride(
+                                    MethodOverrideCompletionContext.ObjExpr expr.Range,
                                     ty.Range,
                                     mOverride.StartColumn,
                                     hasThis,
                                     isStatic
                                 )
                             )
-                        | SyntaxNode.SynExpr(SynExpr.ObjExpr(objType = ty)) :: _ ->
+                        | SyntaxNode.SynExpr(SynExpr.ObjExpr(objType = ty)) as expr :: _ ->
                             let ty =
                                 match ty with
                                 | SynType.App(typeName = ty) -> ty
@@ -1629,7 +1647,7 @@ module ParsedInput =
 
                             Some(
                                 CompletionContext.MethodOverride(
-                                    MethodOverrideCompletionContext.ObjExpr,
+                                    MethodOverrideCompletionContext.ObjExpr expr.Range,
                                     ty.Range,
                                     mOverride.StartColumn,
                                     hasThis,

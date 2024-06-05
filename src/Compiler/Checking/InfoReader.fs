@@ -26,7 +26,7 @@ open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 /// Use the given function to select some of the member values from the members of an F# type
-let SelectImmediateMemberVals g optFilter f (tcref: TyconRef) = 
+let SelectImmediateMemberVals g optFilter f withExplicitImpl (tcref: TyconRef) = 
     let chooser (vref: ValRef) = 
         match vref.MemberInfo with 
         // The 'when' condition is a workaround for the fact that values providing 
@@ -34,7 +34,7 @@ let SelectImmediateMemberVals g optFilter f (tcref: TyconRef) =
         // These cannot be selected directly via the "." notation. 
         // However, it certainly is useful to be able to publish these values, as we can in theory 
         // optimize code to make direct calls to these methods. 
-        | Some membInfo when not (ValRefIsExplicitImpl g vref) -> 
+        | Some membInfo when withExplicitImpl || not (ValRefIsExplicitImpl g vref) -> 
             f membInfo vref
         | _ ->  
             None
@@ -53,7 +53,7 @@ let TrySelectMemberVal g optFilter ty pri _membInfo (vref: ValRef) =
     else 
         None
 
-let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy metadataTy =
+let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m withExplicitImpl origTy metadataTy =
 
     let minfos =
         match metadataOfTy g metadataTy with 
@@ -77,25 +77,28 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
             // In this case convert to the .NET Tuple type that carries metadata and try again
             if isAnyTupleTy g metadataTy then 
                 let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
-                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy betterMetadataTy
+                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m withExplicitImpl origTy betterMetadataTy
             // Function types support methods FSharpFunc<_, _>.FromConverter and friends from .NET metadata,
             // but not instance methods (you can't write "f.Invoke(x)", you have to write "f x")
             elif isFunTy g metadataTy then 
                 let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
-                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy betterMetadataTy
+                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m withExplicitImpl origTy betterMetadataTy
                   |> List.filter (fun minfo -> not minfo.IsInstance)
             else
                 match tryTcrefOfAppTy g metadataTy with
                 | ValueNone -> []
                 | ValueSome tcref ->
-                    SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter origTy None) tcref
+                    SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter origTy None) withExplicitImpl tcref
     let minfos = minfos |> List.filter (IsMethInfoAccessible amap m ad)
     minfos
 
 /// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
 /// parameter is an optional name to restrict the set of properties returned.
 let GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty = 
-    GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m ty ty
+    GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m false ty ty
+
+let GetImmediateIntrinsicMethInfosWithExplicitImplOfType (optFilter, ad) g amap m ty = 
+    GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m true ty ty
 
 /// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
 /// parameter is an optional name to restrict the set of properties returned.
@@ -185,7 +188,7 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
 
     member _.Close() = [ for KeyValue(_, pinfo) in props -> pinfo ]
 
-let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy metadataTy =
+let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m withExplicitImpl origTy metadataTy =
 
     let pinfos =
         match metadataOfTy g metadataTy with 
@@ -216,13 +219,13 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
             // In this case convert to the .NET Tuple type that carries metadata and try again
             if isAnyTupleTy g metadataTy || isFunTy g metadataTy then 
                 let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
-                GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy betterMetadataTy
+                GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m withExplicitImpl origTy betterMetadataTy
             else
                 match tryTcrefOfAppTy g metadataTy with
                 | ValueNone -> []
                 | ValueSome tcref ->
                     let propCollector = PropertyCollector(g, amap, m, origTy, optFilter, ad)
-                    SelectImmediateMemberVals g None (fun membInfo vref -> propCollector.Collect(membInfo, vref); None) tcref |> ignore
+                    SelectImmediateMemberVals g None (fun membInfo vref -> propCollector.Collect(membInfo, vref); None) withExplicitImpl tcref |> ignore
                     propCollector.Close()
 
     let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
@@ -230,8 +233,11 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
 
 /// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
 /// parameter is an optional name to restrict the set of properties returned.
-let rec GetImmediateIntrinsicPropInfosOfType (optFilter, ad) g amap m ty =
-    GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m ty ty
+let GetImmediateIntrinsicPropInfosOfType (optFilter, ad) g amap m ty =
+    GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m false ty ty
+
+let GetImmediateIntrinsicPropInfosWithExplicitImplOfType (optFilter, ad) g amap m ty =
+    GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m true ty ty
 
 // Checks whether the given type has an indexer property.
 let IsIndexerType g amap ty = 

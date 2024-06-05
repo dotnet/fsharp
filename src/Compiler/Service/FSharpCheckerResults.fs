@@ -1460,32 +1460,11 @@ type internal TypeCheckInfo
 
             overridableProps @ overridableMeths
 
-        if ctx = MethodOverrideCompletionContext.Class then
-            sResolutions.CapturedNameResolutions
-            |> ResizeArray.tryPick (fun r ->
-                match r.Item with
-                | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
-                    let superTy =
-                        (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
-
-                    let overriddenMethods =
-                        GetImmediateIntrinsicMethInfosOfType (None, ad) g amap typeNameRange ty
-                        |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
-
-                    let overriddenProperties =
-                        GetImmediateIntrinsicPropInfosOfType (None, ad) g amap typeNameRange ty
-                        |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
-
-                    let overridableMethods =
-                        getOverridableMethods superTy overriddenMethods overriddenProperties
-
-                    Some(overridableMethods, denv, m)
-                | _ -> None)
-        else
+        let getTyFromTypeNamePos (endPos: pos) =
             let nameResItems =
                 GetPreciseItemsFromNameResolution(
-                    typeNameRange.End.Line,
-                    typeNameRange.End.Column,
+                    endPos.Line,
+                    endPos.Column,
                     None,
                     ResolveTypeNamesToTypeRefs,
                     ResolveOverloads.Yes,
@@ -1498,8 +1477,51 @@ type internal TypeCheckInfo
                 |> List.tryPick (function
                     | ({ Item = Item.Types(_, ty :: _) }, _) -> Some ty
                     | _ -> None)
-                |> Option.map (fun ty -> getOverridableMethods ty [] [], denv, m)
             | _ -> None
+
+        let ctx =
+            match ctx with
+            | MethodOverrideCompletionContext.Class ->
+                sResolutions.CapturedNameResolutions
+                |> ResizeArray.tryPick (fun r ->
+                    match r.Item with
+                    | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
+                        let superTy =
+                            (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
+
+                        Some(ty, superTy)
+                    | _ -> None)
+
+            | MethodOverrideCompletionContext.Interface mTy ->
+                sResolutions.CapturedNameResolutions
+                |> ResizeArray.tryPick (fun r ->
+                    match r.Item with
+                    | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
+                        let superTy = getTyFromTypeNamePos mTy.End |> Option.defaultValue g.obj_ty
+                        Some(ty, superTy)
+                    | _ -> None)
+            | MethodOverrideCompletionContext.ObjExpr m ->
+                let _, quals = GetExprTypingForPosition(m.End)
+
+                quals
+                |> Array.tryFind (fun (_, _, _, r) -> posEq m.Start r.Start)
+                |> Option.map (fun (ty, _, _, _) -> ty, getTyFromTypeNamePos typeNameRange.End |> Option.defaultValue g.obj_ty)
+
+        match ctx with
+        | Some(ty, superTy) ->
+            let overriddenMethods =
+                GetImmediateIntrinsicMethInfosWithExplicitImplOfType (None, ad) g amap typeNameRange ty
+                |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
+
+            let overriddenProperties =
+                GetImmediateIntrinsicPropInfosWithExplicitImplOfType (None, ad) g amap typeNameRange ty
+                |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
+
+            let overridableMethods =
+                getOverridableMethods superTy overriddenMethods overriddenProperties
+
+            Some(overridableMethods, denv, m)
+        | _ -> None
 
     /// Gets all field identifiers of a union case that can be referred to in a pattern.
     let GetUnionCaseFields caseIdRange alreadyReferencedFields =

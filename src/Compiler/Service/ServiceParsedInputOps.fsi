@@ -45,8 +45,8 @@ type public PatternContext =
 [<RequireQualifiedAccess; NoComparison; Struct>]
 type MethodOverrideCompletionContext =
     | Class
-    | Interface
-    | ObjExpr
+    | Interface of mInterfaceName: range
+    | ObjExpr of mExpr: range
 
 [<RequireQualifiedAccess>]
 type public CompletionContext =
