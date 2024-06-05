@@ -1104,9 +1104,6 @@ type internal TypeCheckInfo
     let DefaultCompletionItem item =
         CompletionItem ValueNone ValueNone CompletionInsertType.Default item
 
-    let MethodOverrideCompletionItem spacesBeforeOverrideKeyword hasThis isInterface item =
-        CompletionItem ValueNone ValueNone (CompletionInsertType.MethodOverride(spacesBeforeOverrideKeyword, hasThis, isInterface)) item
-
     let CompletionItemSuggestedName displayName =
         {
             ItemWithInst = ItemWithNoInst(Item.NewDef(Ident(displayName, range0)))
@@ -1206,55 +1203,178 @@ type internal TypeCheckInfo
             not candidate.IsFinal
             && not (
                 alreadyOverridden
-                |> List.exists (MethInfosEquivByNameAndSig EraseNone true g amap range0 candidate)
+                |> ResizeArray.exists (MethInfosEquivByNameAndSig EraseNone true g amap range0 candidate)
+            )
+
+        let isPropertyOverridable alreadyOverridden (candidate: PropInfo) =
+            candidate.IsVirtualProperty
+            && not (
+                alreadyOverridden
+                |> List.exists (PropInfosEquivByNameAndSig EraseNone g amap range0 candidate)
             )
 
         let (nenv, ad), m = GetBestEnvForPos pos
+        let denv = nenv.DisplayEnv
+        
+        let checkMethAbstractAndGetImplementBody (meth: MethInfo) implementBody =
+            if meth.IsAbstract then 
+                if nenv.DisplayEnv.openTopPathsSorted.Force() |> List.contains ["System"] then "raise (NotImplementedException())"
+                else "raise (System.NotImplementedException())"
+            else implementBody
+        let newlineIndent = Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' '
 
-        let getOverridableMethods superTy overriddenMethods =
+        let getOverridableMethods superTy (overriddenMethods: MethInfo list) overriddenProperties =
+            // Do not check a method with same name twice
+            //type AA() = 
+            //    abstract a: unit -> unit
+            //    default _.a() = printfn "A"
+            //type BB() =
+            //    inherit AA()
+            //    member _.a() = printfn "B" (* This method covered the `AA.a` *)
+            //type CC() =
+            //    inherit BB()
+            //    override | (* Here should not suggest to override `AA.a` *)
+            let checkedMethods = ResizeArray(overriddenMethods)
+
+            let getBase (meth: MethInfo) =
+                let ty = generalizedTyconRef g meth.DeclaringTyconRef
+                if typeEquiv g ty superTy then "base"
+                else $"(this :> {stringOfTy denv ty})"
+
             let isInterface = isInterfaceTy g superTy
-            GetIntrinsicMethInfosOfType
-                infoReader
-                None
-                ad
-                TypeHierarchy.AllowMultiIntfInstantiations.No
-                FindMemberFlag.PreferOverrides
-                range0
-                superTy
-            |> List.filter (isMethodOverridable overriddenMethods)
-            |> List.filter (fun i -> i.IsInstance <> isStatic)
-            |> List.map (fun meth ->
-                let getNameForNoNameArg =
-                    let mutable count = 1
+            let overridableProps =
+                GetIntrinsicPropInfoWithOverridenPropOfType
+                    infoReader
+                    None
+                    ad
+                    TypeHierarchy.AllowMultiIntfInstantiations.No
+                    FindMemberFlag.PreferOverrides
+                    range0
+                    superTy
+                |> List.choose (fun struct(prop, baseProp) -> 
+                    let canPick =
+                        isPropertyOverridable overriddenProperties prop && 
+                        prop.IsStatic = isStatic
 
-                    fun () ->
-                        let name = $"arg{count}"
-                        count <- count + 1
-                        name
+                    let getterMeth = 
+                        if prop.HasGetter then ValueSome prop.GetterMethod 
+                        else baseProp |> ValueOption.map _.GetterMethod
+                    let setterMeth = 
+                        if prop.HasSetter then ValueSome prop.SetterMethod
+                        else baseProp |> ValueOption.map _.SetterMethod
 
-                let name = meth.DisplayName
+                    getterMeth |> ValueOption.iter checkedMethods.Add
+                    setterMeth |> ValueOption.iter checkedMethods.Add
 
-                let parameters =
-                    meth.GetParamNames()
-                    |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
-                    |> List.map (fun (types, names) ->
-                        let names =
-                            names
-                            |> List.zip types
-                            |> List.map (fun (ty, name) ->
-                                let name = Option.defaultWith getNameForNoNameArg name
+                    if not canPick then None else
+                    let getNameForNoNameArg =
+                        let mutable count = 1
 
-                                match tryTcrefOfAppTy g ty with
-                                | ValueSome ty -> $"{name}: {ty}"
-                                | ValueNone -> $"{name}")
-                            |> String.concat ", "
+                        fun () ->
+                            let name = $"arg{count}"
+                            count <- count + 1
+                            name
 
-                        $"({names})")
-                    |> String.concat " "
+                    let parameters =
+                        prop.GetParamNamesAndTypes(amap, m)
+                        |> List.map (fun (ParamNameAndType(name, ty)) ->
+                            let name = 
+                                name
+                                |> Option.map _.idText
+                                |> Option.defaultWith getNameForNoNameArg
 
-                Item.MethodGroup($"{name} {parameters}", [ meth ], None)
-                |> ItemWithNoInst
-                |> MethodOverrideCompletionItem spacesBeforeOverrideKeyword hasThis isInterface)
+                            $"{name}: {stringOfTy denv ty}")
+                        |> String.concat ", "
+                    
+                    let retTy = prop.GetPropertyType(amap, m)
+                    let retTy = stringOfTy denv retTy
+
+                    let getter, getterWithBody =
+                        match getterMeth with
+                        | ValueSome meth ->
+                            let implementBody = checkMethAbstractAndGetImplementBody meth ($"{getBase meth}.{prop.DisplayName}" + (if prop.IsIndexer then $"[({parameters})]" else ""))
+                            let getter = $"get ({parameters}): {retTy}" 
+                            getter, $"{getter} = {implementBody}" 
+                        | _ -> String.Empty, String.Empty
+                    let setter, setterWithBody =
+                        match setterMeth with
+                        | ValueSome meth ->
+                            let implementBody = checkMethAbstractAndGetImplementBody meth ($"{getBase meth}.{prop.DisplayName}" + (if prop.IsIndexer then $"[({parameters})]" else String.Empty) + " <- value")
+                            let parameters = if prop.IsIndexer then $"({parameters}) " else String.Empty
+                            let setter = $"set {parameters}(value: {retTy})" 
+                            setter, $"{setter} = {implementBody}" 
+                        | _ -> String.Empty, String.Empty
+
+                    let keywordAnd = if getterMeth.IsNone || setterMeth.IsNone then String.Empty else " and " 
+                    let name = $"{prop.DisplayName} with {getter}{keywordAnd}{setter}"
+
+                    let textInCode =
+                        let this = if hasThis || prop.IsStatic then String.Empty else "this."
+                        let getterWithBody = if String.IsNullOrWhiteSpace getterWithBody then String.Empty else getterWithBody + newlineIndent
+                        this + prop.DisplayName + newlineIndent + "with " + getterWithBody + keywordAnd + setterWithBody
+
+                    Item.Property(name, [ prop ], None)
+                    |> ItemWithNoInst
+                    |> CompletionItem ValueNone ValueNone (CompletionInsertType.CustomText textInCode)
+                    |> Some)
+
+            let overridableMeths =
+                GetIntrinsicMethInfosOfType
+                    infoReader
+                    None
+                    ad
+                    TypeHierarchy.AllowMultiIntfInstantiations.No
+                    FindMemberFlag.PreferOverrides
+                    range0
+                    superTy
+                |> List.choose (fun meth -> 
+                    let canPick =
+                        isMethodOverridable checkedMethods meth && 
+                        meth.IsInstance <> isStatic &&
+                        (not isInterface || not(tyconRefEq g meth.DeclaringTyconRef g.system_Object_tcref))
+
+                    checkedMethods.Add meth
+
+                    if not canPick then None else
+
+                    let getNameForNoNameArg =
+                        let mutable count = 1
+
+                        fun () ->
+                            let name = $"arg{count}"
+                            count <- count + 1
+                            name
+
+                    let parameters =
+                        meth.GetParamNames()
+                        |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
+                        |> List.map (fun (types, names) ->
+                            let names =
+                                names
+                                |> List.zip types
+                                |> List.map (fun (ty, name) ->
+                                    let name = Option.defaultWith getNameForNoNameArg name
+
+                                    $"{name}: {stringOfTy denv ty}")
+                                |> String.concat ", "
+
+                            $"({names})")
+                        |> String.concat " "
+                    
+                    let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
+
+                    let name = $"{meth.DisplayName} {parameters}: {stringOfTy denv retTy}"
+                    let textInCode =
+                        let nameWithThis = if hasThis || not meth.IsInstance then $"{name} = " else $"this.{name} = "
+                        let implementBody = checkMethAbstractAndGetImplementBody meth $"{getBase meth}.{meth.DisplayName}{parameters}"
+                        nameWithThis + newlineIndent + implementBody
+
+                    Item.MethodGroup(name, [ meth ], None)
+                    |> ItemWithNoInst
+                    |> CompletionItem ValueNone ValueNone (CompletionInsertType.CustomText textInCode)
+                    |> Some)
+
+            overridableProps @ overridableMeths
 
         if ctx = MethodOverrideCompletionContext.Class then
             sResolutions.CapturedNameResolutions
@@ -1268,8 +1388,12 @@ type internal TypeCheckInfo
                         GetImmediateIntrinsicMethInfosOfType (None, ad) g amap typeNameRange ty
                         |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
 
-                    let overridableMethods = getOverridableMethods superTy overriddenMethods
-                    Some(overridableMethods, nenv.DisplayEnv, m)
+                    let overriddenProperties =
+                        GetImmediateIntrinsicPropInfosOfType (None, ad) g amap typeNameRange ty
+                        |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
+
+                    let overridableMethods = getOverridableMethods superTy overriddenMethods overriddenProperties
+                    Some(overridableMethods, denv, m)
                 | _ -> None)
         else
             let nameResItems =
@@ -1278,7 +1402,7 @@ type internal TypeCheckInfo
             | NameResResult.Members (ls, _, _) ->
                 ls 
                 |> List.tryPick (function ({Item = Item.Types(_, ty::_)}, _) -> Some ty | _ -> None)
-                |> Option.map (fun ty -> getOverridableMethods ty [], nenv.DisplayEnv, m)
+                |> Option.map (fun ty -> getOverridableMethods ty [] [], denv, m)
             | _ -> None
 
     /// Gets all field identifiers of a union case that can be referred to in a pattern.

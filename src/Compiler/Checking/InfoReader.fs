@@ -655,6 +655,44 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                PropInfosEquivByNameAndSig EraseNone g amap m,
                (fun pinfo -> pinfo.PropertyName)) 
 
+    //type A() =
+    //    abstract E: int with get, set
+    //    default val E = 0 with get
+    // Will get (A::E with get, A::E with get, set)
+    // -----
+    //type A() =
+    //    member val A = 0 with get, set
+    //type B() =
+    //    inherit A()
+    //    static member val A = 0
+    // Will get (static B::A, None)
+    static let FilterOverridesOfPropInfosWithOverridenProp findFlag g amap m props = 
+        let checkProp prop prop2 =
+            not(obj.ReferenceEquals(prop, prop2)) && 
+            PropInfosEquivByNameAndSig EraseNone g amap m prop prop2 &&
+            if prop.HasGetter && prop.HasSetter then false
+            elif prop.HasGetter then prop2.HasSetter
+            elif prop.HasSetter then prop2.HasGetter
+            else false
+
+        let rec findPropBefore prop hasMetTheProp =
+            function
+            | props :: t when hasMetTheProp -> 
+                match props |> List.tryFind (checkProp prop) with
+                | Some p -> ValueSome p
+                | None -> findPropBefore prop true t
+            | props :: t ->
+                if props |> List.exists (fun i -> obj.ReferenceEquals(prop, i)) then
+                    match props |> List.tryFind (checkProp prop) with
+                    | Some p -> ValueSome p
+                    | None -> findPropBefore prop true t
+                else findPropBefore prop false t
+            | _ -> ValueNone
+
+        props
+        |> FilterOverridesOfPropInfos findFlag g amap m
+        |> List.map (List.map (fun prop -> struct(prop, if findFlag = FindMemberFlag.IgnoreOverrides || prop.IsNewSlot then ValueNone else findPropBefore prop false props)))
+
     /// Exclude methods from super types which have the same signature as a method in a more specific type.
     static let ExcludeHiddenOfMethInfosImpl g amap m (minfos: MethInfo list list) = 
         minfos
@@ -905,6 +943,12 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member infoReader.GetIntrinsicPropInfosOfType optFilter ad allowMultiIntfInst findFlag m ty = 
         infoReader.GetIntrinsicPropInfoSetsOfType optFilter ad allowMultiIntfInst findFlag m ty  |> List.concat
 
+    /// Get the flattened list of intrinsic properties in the hierarchy
+    member infoReader.GetIntrinsicPropInfoWithOverridenPropOfType optFilter ad allowMultiIntfInst findFlag m ty = 
+        infoReader.GetRawIntrinsicPropertySetsOfType(optFilter, ad, allowMultiIntfInst, m, ty) 
+        |> FilterOverridesOfPropInfosWithOverridenProp findFlag infoReader.g infoReader.amap m
+        |> List.concat
+
     member _.GetTraitInfosInType optFilter ty = 
         GetImmediateTraitsInfosOfType optFilter g ty
 
@@ -957,6 +1001,9 @@ let GetIntrinsicMethInfosOfType (infoReader: InfoReader) optFilter ad allowMulti
   
 let GetIntrinsicPropInfosOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
     infoReader.GetIntrinsicPropInfosOfType optFilter ad allowMultiIntfInst findFlag m ty
+
+let GetIntrinsicPropInfoWithOverridenPropOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
+    infoReader.GetIntrinsicPropInfoWithOverridenPropOfType optFilter ad allowMultiIntfInst findFlag m ty
 
 let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad, includeConstraints) findFlag m ty = 
     infoReader.TryFindIntrinsicNamedItemOfType (nm, ad, includeConstraints) findFlag m ty

@@ -261,6 +261,17 @@ val GetIntrinsicPropInfosOfType:
     ty: TType ->
         PropInfo list
 
+/// Get the flattened list of intrinsic properties in the hierarchy
+val GetIntrinsicPropInfoWithOverridenPropOfType:
+    infoReader: InfoReader ->
+    optFilter: string option ->
+    ad: AccessorDomain ->
+    allowMultiIntfInst: AllowMultiIntfInstantiations ->
+    findFlag: FindMemberFlag ->
+    m: range ->
+    ty: TType ->
+        struct(PropInfo * PropInfo voption) list
+
 /// Perform type-directed name resolution of a particular named member in an F# type
 val TryFindIntrinsicNamedItemOfType:
     infoReader: InfoReader ->

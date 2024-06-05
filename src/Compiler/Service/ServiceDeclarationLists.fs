@@ -84,7 +84,7 @@ type UnresolvedSymbol =
 type CompletionInsertType =
     | Default
     | FullName
-    | MethodOverride of spacesBeforeOverrideKeyword: int * hasThis: bool * isInterface: bool
+    | CustomText of textInCode: string
 
 type CompletionItem =
     { ItemWithInst: ItemWithInst
@@ -1072,6 +1072,12 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             | _ -> false
         | _ -> false
 
+    static let getTextInListOfCustomTextItem item =
+        match item with
+        | Item.MethodGroup (displayName = name)
+        | Item.Property (name = name) -> name
+        | _ -> item.DisplayName
+
     member _.Items = declarations
 
     member _.IsForType = isForType
@@ -1134,10 +1140,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
                 | None -> 
                     match x.InsertType with
-                    | CompletionInsertType.MethodOverride _ ->
-                        match x.Item with
-                        | Item.MethodGroup (name, _, _) -> name
-                        | _ -> x.Item.DisplayNameCore
+                    | CompletionInsertType.CustomText _ -> getTextInListOfCustomTextItem x.Item
                     | _ -> x.Item.DisplayName
             )
             |> List.map (
@@ -1145,10 +1148,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     match item.Unresolved, item.InsertType with
                     | Some u, _ -> u.DisplayName
                     | None, CompletionInsertType.FullName when item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
-                    | None, CompletionInsertType.MethodOverride _ ->
-                        match item.Item with
-                        | Item.MethodGroup (name, _, _) -> name
-                        | _ -> item.Item.DisplayNameCore
+                    | None, CompletionInsertType.CustomText _ -> getTextInListOfCustomTextItem item.Item
                     | None, _ -> item.Item.DisplayNameCore
                 let textInCode (item: CompletionItem) =
                     match item.Item with
@@ -1157,17 +1157,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                         match item.Unresolved, item.InsertType with
                         | Some u, _ -> u.DisplayName
                         | None, CompletionInsertType.FullName when item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
-                        | None, CompletionInsertType.MethodOverride (spacesBeforeOverrideKeyword, hasThis, isInterface) ->
-                            match item.Item with
-                            | Item.MethodGroup (name, meth :: _, _) -> 
-                                let nameWithThis = if not meth.IsInstance || hasThis then $"{name} = " else $"this.{name} = "
-                                let nameWithBase = 
-                                    if meth.IsInstance then 
-                                        if isInterface then "raise (System.NotImplementedException())"
-                                        else $"base.{name}" 
-                                    else $"{meth.ApparentEnclosingTyconRef}.{name}"
-                                nameWithThis + System.Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' ' + nameWithBase
-                            | _ -> item.Item.DisplayNameCore
+                        | None, CompletionInsertType.CustomText textInCode -> textInCode
                         | None, _ -> item.Item.DisplayName
                 if not supportsPreferExtsMethodsOverProperty then
                     // we don't pay the cost of filtering specific to RFC-1137
