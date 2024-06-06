@@ -77,12 +77,6 @@ type public UnresolvedSymbol =
 
       Namespace: string[]
     }
-    
-[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
-type internal CompletionInsertType =
-    | Default
-    | FullName
-    | CustomText of textInCode: string
 
 type internal CompletionItem =
     {
@@ -97,8 +91,9 @@ type internal CompletionItem =
       Type: TyconRef option 
 
       Unresolved: UnresolvedSymbol option
-
-      InsertType: CompletionInsertType
+      
+      CustomInsertText: string voption
+      CustomDisplayText: string voption
     }
     member Item: Item
 

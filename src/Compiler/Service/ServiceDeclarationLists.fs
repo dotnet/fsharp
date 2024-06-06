@@ -80,12 +80,6 @@ type UnresolvedSymbol =
       DisplayName: string
       Namespace: string[] }
 
-[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
-type CompletionInsertType =
-    | Default
-    | FullName
-    | CustomText of textInCode: string
-
 type CompletionItem =
     { ItemWithInst: ItemWithInst
       Kind: CompletionItemKind
@@ -93,7 +87,8 @@ type CompletionItem =
       MinorPriority: int
       Type: TyconRef option
       Unresolved: UnresolvedSymbol option
-      InsertType: CompletionInsertType }
+      CustomInsertText: string voption
+      CustomDisplayText: string voption }
     member x.Item = x.ItemWithInst.Item
 
 [<AutoOpen>]
@@ -1072,12 +1067,6 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             | _ -> false
         | _ -> false
 
-    static let getTextInListOfCustomTextItem item =
-        match item with
-        | Item.MethodGroup (displayName = name)
-        | Item.Property (name = name) -> name
-        | _ -> item.DisplayName
-
     member _.Items = declarations
 
     member _.IsForType = isForType
@@ -1138,26 +1127,22 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     match u.Namespace with
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
-                | None -> 
-                    match x.InsertType with
-                    | CompletionInsertType.CustomText _ -> getTextInListOfCustomTextItem x.Item
-                    | _ -> x.Item.DisplayName
+                | None when x.CustomDisplayText.IsSome -> x.CustomDisplayText.Value
+                | None -> x.Item.DisplayName
             )
             |> List.map (
                 let textInDeclList item =
-                    match item.Unresolved, item.InsertType with
-                    | Some u, _ -> u.DisplayName
-                    | None, CompletionInsertType.FullName when item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
-                    | None, CompletionInsertType.CustomText _ -> getTextInListOfCustomTextItem item.Item
-                    | None, _ -> item.Item.DisplayNameCore
+                    match item.Unresolved with
+                    | Some u -> u.DisplayName
+                    | None when item.CustomDisplayText.IsSome -> item.CustomDisplayText.Value
+                    | None -> item.Item.DisplayNameCore
                 let textInCode (item: CompletionItem) =
                     match item.Item with
                     | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
                     | _ ->
-                        match item.Unresolved, item.InsertType with
+                        match item.Unresolved, item.CustomInsertText with
                         | Some u, _ -> u.DisplayName
-                        | None, CompletionInsertType.FullName when item.Type.IsSome -> $"{item.Type.Value}.{item.Item.DisplayName}"
-                        | None, CompletionInsertType.CustomText textInCode -> textInCode
+                        | None, ValueSome textInCode -> textInCode
                         | None, _ -> item.Item.DisplayName
                 if not supportsPreferExtsMethodsOverProperty then
                     // we don't pay the cost of filtering specific to RFC-1137

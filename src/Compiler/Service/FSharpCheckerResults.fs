@@ -1088,7 +1088,7 @@ type internal TypeCheckInfo
             if p >= 0 then Some p else None
 
     /// Build a CompetionItem
-    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) insertType (item: ItemWithInst) =
+    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) insertText displayText (item: ItemWithInst) =
         let kind =
             match item.Item with
             | Item.DelegateCtor _
@@ -1138,11 +1138,12 @@ type internal TypeCheckInfo
             IsOwnMember = false
             Type = ty
             Unresolved = isUnresolved
-            InsertType = insertType
+            CustomInsertText = insertText
+            CustomDisplayText = displayText
         }
 
     let DefaultCompletionItem item =
-        CompletionItem ValueNone ValueNone CompletionInsertType.Default item
+        CompletionItem ValueNone ValueNone ValueNone ValueNone item
 
     let CompletionItemSuggestedName displayName =
         {
@@ -1152,7 +1153,8 @@ type internal TypeCheckInfo
             Kind = CompletionItemKind.SuggestedName
             IsOwnMember = false
             Unresolved = None
-            InsertType = CompletionInsertType.Default
+            CustomInsertText = ValueNone
+            CustomDisplayText = ValueNone
         }
 
     let getItem (x: ItemWithInst) = x.Item
@@ -1388,7 +1390,7 @@ type internal TypeCheckInfo
 
                         Item.Property(name, [ prop ], None)
                         |> ItemWithNoInst
-                        |> CompletionItem ValueNone ValueNone (CompletionInsertType.CustomText textInCode)
+                        |> CompletionItem ValueNone ValueNone (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             let overridableMeths =
@@ -1455,7 +1457,7 @@ type internal TypeCheckInfo
 
                         Item.MethodGroup(name, [ meth ], None)
                         |> ItemWithNoInst
-                        |> CompletionItem ValueNone ValueNone (CompletionInsertType.CustomText textInCode)
+                        |> CompletionItem ValueNone ValueNone (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             overridableProps @ overridableMeths
@@ -1707,7 +1709,7 @@ type internal TypeCheckInfo
                 // lookup based on name resolution results successful
                 Some(
                     items
-                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm CompletionInsertType.Default item),
+                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm ValueNone ValueNone item),
                     denv,
                     m
                 )
@@ -1753,7 +1755,7 @@ type internal TypeCheckInfo
                         // lookup based on expression typings successful
                         Some(
                             items
-                            |> List.map (fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm CompletionInsertType.Default item),
+                            |> List.map (fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm ValueNone ValueNone item),
                             denv,
                             m
                         )
@@ -1782,7 +1784,7 @@ type internal TypeCheckInfo
                                 // lookup based on name resolution results successful
                                 ValueSome(
                                     items
-                                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm CompletionInsertType.Default item),
+                                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm ValueNone ValueNone item),
                                     denv,
                                     m
                                 )
@@ -1793,7 +1795,7 @@ type internal TypeCheckInfo
                                 // lookup based on name and environment successful
                                 ValueSome(
                                     items
-                                    |> List.map (CompletionItem (getType ()) ValueNone CompletionInsertType.Default),
+                                    |> List.map (CompletionItem (getType ()) ValueNone ValueNone ValueNone),
                                     denv,
                                     m
                                 )
@@ -1803,7 +1805,7 @@ type internal TypeCheckInfo
                                 ValueSome(
                                     items
                                     |> List.map (fun (item, asm) ->
-                                        CompletionItem (tryTcrefOfAppTy g ty) asm CompletionInsertType.Default item),
+                                        CompletionItem (tryTcrefOfAppTy g ty) asm ValueNone ValueNone item),
                                     denv,
                                     m
                                 )
@@ -1838,7 +1840,8 @@ type internal TypeCheckInfo
                                         CompletionItem
                                             (getType ())
                                             (ValueSome globalItem)
-                                            CompletionInsertType.Default
+                                            ValueNone
+                                            ValueNone
                                             (ItemWithNoInst globalItem.Symbol.Item))
                                     |> fun r -> ValueSome(r, denv, m)
                                 | _ -> ValueNone
@@ -2058,7 +2061,8 @@ type internal TypeCheckInfo
                                 IsOwnMember = false
                                 Type = None
                                 Unresolved = None
-                                InsertType = CompletionInsertType.Default
+                                CustomInsertText = ValueNone
+                                CustomDisplayText = ValueNone
                             })
 
                     let p =
@@ -2071,7 +2075,10 @@ type internal TypeCheckInfo
                                 | Item.Property(info = pinfo :: _) -> (pinfo.GetPropertyType(amap, m))
                                 | _ -> failwith "not possible"
 
-                            CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.FullName i)
+                            let tyName = stringOfTy denv ty
+                            let code = ValueSome $"{tyName}.{i.Item.DisplayName}"
+
+                            CompletionItem ValueNone ValueNone code code i)
 
                     match declaredItems with
                     | None -> Some(p @ (items |> List.map DefaultCompletionItem), denv, m)
@@ -2145,22 +2152,27 @@ type internal TypeCheckInfo
                 match bestQual with
                 | Some bestQual ->
                     let ty, nenv, ad, m = bestQual
-                    let items = getStaticFieldsOfSameTypeInTheType nenv ad m ty
+                    let denv = nenv.DisplayEnv
+                    let tyName = stringOfTy denv ty
+
+                    let items = 
+                        getStaticFieldsOfSameTypeInTheType nenv ad m ty
+                        |> List.map (fun i -> 
+                            let code = ValueSome $"{tyName}.{i.Item.DisplayName}"
+                            CompletionItem ValueNone ValueNone code code i)
 
                     match declaredItems with
                     | Some(declaredItems, _, _) ->
                         Some(
-                            (items
-                             |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.FullName))
+                            items
                             @ declaredItems,
-                            nenv.DisplayEnv,
+                            denv,
                             m
                         )
                     | None ->
                         Some(
-                            items
-                            |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone CompletionInsertType.FullName),
-                            nenv.DisplayEnv,
+                            items,
+                            denv,
                             m
                         )
                 | None -> declaredItems
