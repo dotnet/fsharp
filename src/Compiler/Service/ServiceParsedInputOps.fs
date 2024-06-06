@@ -90,7 +90,13 @@ type CompletionContext =
     | RangeOperator
 
     /// Completing named parameters\setters in parameter list of attributes\constructor\method calls
-    | ParameterList of identEndPos: pos * paramGroupIdx: int * paramIdxInGroup: int * paramName: string option * settedParam: HashSet<string> * isCurrying: bool
+    | ParameterList of
+        identEndPos: pos *
+        paramGroupIdx: int *
+        paramIdxInGroup: int *
+        paramName: string option *
+        settedParam: HashSet<string> *
+        isCurrying: bool
 
     /// Completing an attribute name, outside of the constructor
     | AttributeApplication
@@ -1094,6 +1100,7 @@ module ParsedInput =
             if i >= lineStr.Length || i >= max then true
             elif Char.IsWhiteSpace lineStr[i] then loop max (i + 1)
             else false
+
         posGt pos m.End && pos.Line = m.End.Line && loop pos.Column m.End.Column
 
     let rangeContainsPosOrIsSpacesBetweenRangeAndPos (lineStr: string) m pos =
@@ -1103,44 +1110,49 @@ module ParsedInput =
         || posAfterRangeAndBetweenSpaces lineStr m pos
 
     let findSetters identPos (lineStr, pos) isCurrying currentParamGroup currentParamIdxInGroup argList =
-        if currentParamIdxInGroup > -1 then CompletionContext.ParameterList(identPos, currentParamGroup, currentParamIdxInGroup, None, emptyStringSet, isCurrying) else
-        match argList with
-        | SynExpr.Paren(SynExpr.Tuple(false, parameters, _, _), _, _, _) ->
-            let setters = HashSet()
+        if currentParamIdxInGroup > -1 then
+            CompletionContext.ParameterList(identPos, currentParamGroup, currentParamIdxInGroup, None, emptyStringSet, isCurrying)
+        else
+            match argList with
+            | SynExpr.Paren(SynExpr.Tuple(false, parameters, _, _), _, _, _) ->
+                let setters = HashSet()
 
-            let mutable i = 0
-            let mutable idx = -1
-            let mutable namedParamName = None
+                let mutable i = 0
+                let mutable idx = -1
+                let mutable namedParamName = None
 
-            for p in parameters do
-                let isCurrentParam = rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr p.Range pos
+                for p in parameters do
+                    let isCurrentParam =
+                        rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr p.Range pos
+
+                    if isCurrentParam then
+                        idx <- i
+
+                    match p with
+                    | Setter id when not isCurrying ->
+                        if isCurrentParam then
+                            namedParamName <- Some id.idText
+
+                        ignore (setters.Add id.idText)
+                    | _ -> ()
+
+                    i <- i + 1
+
+                CompletionContext.ParameterList(identPos, currentParamGroup, idx, namedParamName, setters, isCurrying)
+            | SynExpr.Paren(expr = Setter id) when not isCurrying ->
+                let setters = HashSet()
+                ignore (setters.Add id.idText)
+                CompletionContext.ParameterList(identPos, currentParamGroup, 0, Some id.idText, setters, isCurrying)
+
+            | SynExpr.Const(SynConst.Unit, range) ->
+                let isCurrentParam = rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr range pos
 
                 if isCurrentParam then
-                    idx <- i
+                    CompletionContext.ParameterList(identPos, currentParamGroup, 0, None, emptyStringSet, isCurrying)
+                else
+                    CompletionContext.ParameterList(identPos, currentParamGroup, -1, None, emptyStringSet, isCurrying)
 
-                match p with
-                | Setter id when not isCurrying ->
-                    if isCurrentParam then
-                        namedParamName <- Some id.idText
-
-                    ignore (setters.Add id.idText)
-                | _ -> ()
-
-                i <- i + 1
-
-            CompletionContext.ParameterList(identPos, currentParamGroup, idx, namedParamName, setters, isCurrying)
-        | SynExpr.Paren(expr = Setter id) when not isCurrying ->
-            let setters = HashSet()
-            ignore (setters.Add id.idText)
-            CompletionContext.ParameterList(identPos, currentParamGroup, 0, Some id.idText, setters, isCurrying)
-
-        | SynExpr.Const (SynConst.Unit, range) ->
-            let isCurrentParam = rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr range pos
-            if isCurrentParam then
-                CompletionContext.ParameterList(identPos, currentParamGroup, 0, None, emptyStringSet, isCurrying)
-            else CompletionContext.ParameterList(identPos, currentParamGroup, -1, None, emptyStringSet, isCurrying)
-
-        | _ -> CompletionContext.ParameterList(identPos, currentParamGroup, -1, None, emptyStringSet, isCurrying)
+            | _ -> CompletionContext.ParameterList(identPos, currentParamGroup, -1, None, emptyStringSet, isCurrying)
 
     let endOfLastIdent (lid: SynLongIdent) =
         let last = List.last lid.LongIdent
@@ -1158,9 +1170,8 @@ module ParsedInput =
 
     let checkNewObjectOrMethodCall (lineStr, pos) found e =
         let rec loop isCurrying found currentParamGroup currentParamIdxInGroup e =
-            let currentParamGroup =
-                if found then currentParamGroup + 1
-                else currentParamGroup
+            let currentParamGroup = if found then currentParamGroup + 1 else currentParamGroup
+
             match e with
             | SynExpr.New(_, SynType.LongIdent typeName, arg, _) ->
                 // new A()
@@ -1168,10 +1179,18 @@ module ParsedInput =
 
             | SynExpr.New(_, SynType.App(StripParenTypes(SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _) ->
                 // new A<_>()
-                Some(findSetters (endOfClosingTokenOrLastIdent mGreaterThan typeName) (lineStr, pos) isCurrying currentParamGroup currentParamIdxInGroup arg)
+                Some(
+                    findSetters
+                        (endOfClosingTokenOrLastIdent mGreaterThan typeName)
+                        (lineStr, pos)
+                        isCurrying
+                        currentParamGroup
+                        currentParamIdxInGroup
+                        arg
+                )
 
-            | SynExpr.App(_, false, SynExpr.Ident id, arg, _) 
-                // A()
+            | SynExpr.App(_, false, SynExpr.Ident id, arg, _)
+            // A()
 
             | SynExpr.App(_, false, SynExpr.TypeApp(SynExpr.Ident id, _, _, _, _, _, _), arg, _) ->
                 // A<_>()
@@ -1179,7 +1198,7 @@ module ParsedInput =
 
             | SynExpr.App(_, false, SynExpr.LongIdent(_, lid, _, _), arg, _)
             | SynExpr.App(_, false, SynExpr.DotGet(longDotId = lid), arg, _)
-                // A.B()
+            // A.B()
 
             | SynExpr.App(_, false, SynExpr.TypeApp(SynExpr.LongIdent(_, lid, _, _), _, _, _, _, _, _), arg, _) ->
                 // A.B<_>()
@@ -1187,20 +1206,26 @@ module ParsedInput =
 
             // f 1 2
             | SynExpr.App(_, false, (SynExpr.App _ as expr), arg, _) ->
-                let currentParamIdxInGroup, currentParamGroup = 
+                let currentParamIdxInGroup, currentParamGroup =
                     if currentParamGroup = -1 then
                         match findSetters pos0 (lineStr, pos) true currentParamGroup currentParamIdxInGroup arg with
-                        | CompletionContext.ParameterList (paramIdxInGroup = idx) -> idx, 0
+                        | CompletionContext.ParameterList(paramIdxInGroup = idx) -> idx, 0
                         | _ -> -1, -1
-                    else currentParamIdxInGroup, currentParamGroup
+                    else
+                        currentParamIdxInGroup, currentParamGroup
+
                 let found = found || currentParamIdxInGroup > -1
                 loop true found currentParamGroup currentParamIdxInGroup expr
 
             | _ -> None
+
         loop false found -1 -1 e
 
-    let (|NewObjectOrMethodCall|_|) (lineStr, pos) e = checkNewObjectOrMethodCall (lineStr, pos) false e
-    let (|NewObjectOrMethodCallFound|_|) (lineStr, pos) e = checkNewObjectOrMethodCall (lineStr, pos) true e
+    let (|NewObjectOrMethodCall|_|) (lineStr, pos) e =
+        checkNewObjectOrMethodCall (lineStr, pos) false e
+
+    let (|NewObjectOrMethodCallFound|_|) (lineStr, pos) e =
+        checkNewObjectOrMethodCall (lineStr, pos) true e
 
     let isOnTheRightOfComma pos (elements: SynExpr list) (commas: range list) current =
         let rec loop elements (commas: range list) =
@@ -1480,8 +1505,7 @@ module ParsedInput =
                         // new A($)
                         | SynExpr.Const(SynConst.Unit, m) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
                             match path with
-                            | SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ ->
-                                Some(args)
+                            | SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ -> Some(args)
                             | _ -> defaultTraverse expr
 
                         // new (... A$)
@@ -1546,22 +1570,21 @@ module ParsedInput =
                         | _ when posAfterRangeAndBetweenSpaces lineStr expr.Range pos ->
                             match expr with
                             // Some |
-                            | SynExpr.Ident id 
+                            | SynExpr.Ident id
                             | SynExpr.TypeApp(SynExpr.Ident id, _, _, _, _, _, _) ->
                                 Some(CompletionContext.ParameterList(id.idRange.End, 0, 0, None, emptyStringSet, true))
 
-                            | SynExpr.LongIdent(_, lid, _, _) 
-                            | SynExpr.DotGet(longDotId = lid) 
-                            | SynExpr.TypeApp(SynExpr.LongIdent (longDotId = lid), _, _, _, _, _, _) ->
+                            | SynExpr.LongIdent(_, lid, _, _)
+                            | SynExpr.DotGet(longDotId = lid)
+                            | SynExpr.TypeApp(SynExpr.LongIdent(longDotId = lid), _, _, _, _, _, _) ->
                                 Some(CompletionContext.ParameterList(endOfLastIdent lid, 0, 0, None, emptyStringSet, true))
 
-                            | NewObjectOrMethodCallFound (lineStr, pos) (CompletionContext.ParameterList(a,b,c,d,e,f)) -> 
-                                Some(CompletionContext.ParameterList(a,b + 1,c,d,e,f))
+                            | NewObjectOrMethodCallFound (lineStr, pos) (CompletionContext.ParameterList(a, b, c, d, e, f)) ->
+                                Some(CompletionContext.ParameterList(a, b + 1, c, d, e, f))
 
                             | _ -> defaultTraverse expr
-                                 
-                        | _ -> defaultTraverse expr
 
+                        | _ -> defaultTraverse expr
 
                 member _.VisitRecordField(path, copyOpt, field) =
                     let contextFromTreePath completionPath =
