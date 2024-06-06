@@ -261,12 +261,12 @@ module Logic =
     open Parser
 
     module Quoted =
-        let tryGetDocumentation (expr: Quotations.Expr) =
+        let tryGetHelp (expr: Quotations.Expr) =
             match exprNames expr with
             | Some(xmlDocument, assembly, modName, implName, sourceName) -> tryMkHelp xmlDocument assembly modName implName sourceName
             | _ -> ValueNone
 
         let h (expr: Quotations.Expr) =
-            match tryGetDocumentation expr with
+            match tryGetHelp expr with
             | ValueNone -> "unable to get documentation"
             | ValueSome d -> d.ToDisplayString()

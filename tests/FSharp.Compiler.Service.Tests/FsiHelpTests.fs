@@ -8,7 +8,7 @@ module FsiHelpTests =
 
     [<Fact>]
     let ``Can get help for FSharp.Compiler.Xml.PreXmlDoc.Create`` () =
-        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetDocumentation <@ FSharp.Compiler.Xml.PreXmlDoc.Create @> with
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ FSharp.Compiler.Xml.PreXmlDoc.Create @> with
         | ValueSome h ->
             h.Assembly |> shouldBe "FSharp.Compiler.Service.dll"
             h.FullName |> shouldBe "FSharp.Compiler.Xml.PreXmlDoc.Create"
@@ -19,7 +19,7 @@ module FsiHelpTests =
 
     [<Fact>]
     let ``Can get help for FSharp.Compiler.Syntax.SyntaxNodes.tryPickLast`` () =
-        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetDocumentation <@ FSharp.Compiler.Syntax.SyntaxNodes.tryPickLast @> with
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ FSharp.Compiler.Syntax.SyntaxNodes.tryPickLast @> with
         | ValueSome h ->
             h.Assembly |> shouldBe "FSharp.Compiler.Service.dll"
             h.FullName |> shouldBe "FSharp.Compiler.Syntax.SyntaxNodesModule.tryPickLast"
@@ -31,7 +31,7 @@ module FsiHelpTests =
 
     [<Fact>]
     let ``Can get help for FSComp.SR.considerUpcast`` () =
-        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetDocumentation <@ FSComp.SR.considerUpcast @> with
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ FSComp.SR.considerUpcast @> with
         | ValueSome h ->
             h.Assembly |> shouldBe "FSharp.Compiler.Service.dll"
             h.FullName |> shouldBe "FSComp.SR.considerUpcast"
@@ -40,7 +40,7 @@ module FsiHelpTests =
 
     [<Fact>]
     let ``Can get help for FSharp.Test.ReflectionHelper.shouldn't`` () =
-        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetDocumentation <@ FSharp.Test.ReflectionHelper.shouldn't @> with
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ FSharp.Test.ReflectionHelper.shouldn't @> with
         | ValueSome h ->
             h.Assembly |> shouldBe "FSharp.Test.Utilities.dll"
             h.FullName |> shouldBe "FSharp.Test.ReflectionHelper.shouldn't"
