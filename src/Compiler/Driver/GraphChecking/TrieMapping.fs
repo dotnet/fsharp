@@ -215,7 +215,8 @@ let rec mkTrieNodeFor (file: FileInProject) : FileIndex * TrieNode =
                         let hasTypesOrAutoOpenNestedModules =
                             decls
                             |> List.exists (function
-                                | SynModuleSigDecl.Types _ -> true
+                                | SynModuleSigDecl.Types _
+                                | SynModuleSigDecl.Exception _ -> true
                                 | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(attributes = attributes)) ->
                                     isAnyAttributeAutoOpen attributes
                                 | _ -> false)
@@ -230,7 +231,8 @@ let rec mkTrieNodeFor (file: FileInProject) : FileIndex * TrieNode =
                         let hasTypesOrAutoOpenNestedModules =
                             List.exists
                                 (function
-                                | SynModuleDecl.Types _ -> true
+                                | SynModuleDecl.Types _
+                                | SynModuleDecl.Exception _ -> true
                                 | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(attributes = attributes)) ->
                                     isAnyAttributeAutoOpen attributes
                                 | _ -> false)
