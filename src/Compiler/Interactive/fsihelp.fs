@@ -268,5 +268,5 @@ module Logic =
 
         let h (expr: Quotations.Expr) =
             match tryGetHelp expr with
-            | ValueNone -> "unable to get documentation"
+            | ValueNone -> "unable to get documentation\n"
             | ValueSome d -> d.ToDisplayString()
