@@ -1384,9 +1384,6 @@ type internal TypeCheckInfo
                     range0
                     superTy
                 |> List.choose (fun struct (prop, baseProp) ->
-                    let canPick =
-                        isPropertyOverridable overriddenProperties prop && prop.IsStatic = isStatic
-
                     let getterMeth =
                         if prop.HasGetter then
                             ValueSome prop.GetterMethod
@@ -1398,6 +1395,21 @@ type internal TypeCheckInfo
                             ValueSome prop.SetterMethod
                         else
                             baseProp |> ValueOption.map _.SetterMethod
+
+                    let getterOverridable =
+                        getterMeth
+                        |> ValueOption.map (isMethodOverridable checkedMethods)
+                        |> ValueOption.defaultValue false
+
+                    let setterOverridable =
+                        setterMeth
+                        |> ValueOption.map (isMethodOverridable checkedMethods)
+                        |> ValueOption.defaultValue false
+
+                    let canPick =
+                        isPropertyOverridable overriddenProperties prop
+                        && prop.IsStatic = isStatic
+                        && (getterOverridable || setterOverridable)
 
                     getterMeth |> ValueOption.iter checkedMethods.Add
                     setterMeth |> ValueOption.iter checkedMethods.Add
@@ -1426,7 +1438,7 @@ type internal TypeCheckInfo
 
                         let getter, getterWithBody =
                             match getterMeth with
-                            | ValueSome meth ->
+                            | ValueSome meth when getterOverridable ->
                                 let implementBody =
                                     checkMethAbstractAndGetImplementBody
                                         meth
@@ -1439,7 +1451,7 @@ type internal TypeCheckInfo
 
                         let setter, setterWithBody =
                             match setterMeth with
-                            | ValueSome meth ->
+                            | ValueSome meth when setterOverridable ->
                                 let implementBody =
                                     checkMethAbstractAndGetImplementBody
                                         meth
