@@ -42,6 +42,12 @@
         "fantomas"
       ],
       "version": "6.2.3"
+    },
+    "dotnet-pgo": {
+      "commands": [
+        "dotnet-pgo"
+      ],
+      "version": "8.0.7-servicing.24270.19"
     }
   },
   "version": 1

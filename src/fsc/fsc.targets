@@ -54,19 +54,4 @@
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
   </ItemGroup>
 
-  <Target Name="GetMIBCData" AfterTargets="Restore">
-    <PropertyGroup>
-      <_MergeMibcFilesCacheFile>$(MibcOptimizationDataDir)/$(TargetOS)/$(TargetArchitecture)/merge_mibc_files.cache</_MergeMibcFilesCacheFile>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <MIBCPackage>
-        <PackagePath>$(NuGetPackageRoot)%(MIBCPackage.Identity)/%(MIBCPackage.Version)</PackagePath>
-      </MIBCPackage>
-      <_optimizationMibcFile Include="%(MIBCPackage.PackagePath)/**/*.mibc" SubdirectoryName="$(TargetOS)/$(TargetArchitecture)" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(_optimizationMibcFile)" DestinationFiles="$(MibcPath)" />
-  </Target>
-
 </Project>

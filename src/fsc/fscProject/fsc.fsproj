@@ -12,14 +12,11 @@
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <PublishReadyToRun>true</PublishReadyToRun>
     <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
-    <PublishReadyToRunCrossgen2ExtraArgs>--embed-pgo-data</PublishReadyToRunCrossgen2ExtraArgs>
-    <UseCurrentRuntimeIdentifier>true</UseCurrentRuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Proto'">
     <PublishReadyToRunExclude Include="FSharp.Build.dll" />
     <PublishReadyToRunExclude Include="FSharp.Core.dll" />
-    <PublishReadyToRunPgoFiles Include="$(MibcPath)" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
