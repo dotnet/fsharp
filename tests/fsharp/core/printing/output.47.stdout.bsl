@@ -4060,9 +4060,9 @@ type 'a T4063 = | AT4063 of 'a
     #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
+    #help "expr";;                                // Display documentation for an expression, e.g. #help "List.map";;
     #clear;;                                      // Clear screen
     #quit;;                                       // Exit
-    fsi.h expr;;                                  // Display documentation for an expression, e.g. fsi.h List.map;;
 
   F# Interactive command line options:
 

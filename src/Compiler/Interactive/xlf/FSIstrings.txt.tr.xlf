@@ -17,9 +17,9 @@
         <target state="translated">Ekranı temizle</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiIntroTextHashhInfo">
-        <source>Display documentation for an expression, e.g. #h \"List.map\";;</source>
-        <target state="new">Display documentation for an expression, e.g. #h \"List.map\";;</target>
+      <trans-unit id="fsiIntroTextHashhelpdocInfo">
+        <source>Display documentation for an expression, e.g. #help \"List.map\";;</source>
+        <target state="new">Display documentation for an expression, e.g. #help \"List.map\";;</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">

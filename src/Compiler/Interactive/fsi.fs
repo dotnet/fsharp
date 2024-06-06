@@ -1239,7 +1239,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn """    #load "file.fs" ...;;                         // %s""" (FSIstrings.SR.fsiIntroTextHashloadInfo ())
         fsiConsoleOutput.uprintfn """    #time ["on"|"off"];;                          // %s""" (FSIstrings.SR.fsiIntroTextHashtimeInfo ())
         fsiConsoleOutput.uprintfn """    #help;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo ())
-        fsiConsoleOutput.uprintfn """    #h expr;;                                     // %s""" (FSIstrings.SR.fsiIntroTextHashhInfo ())
+        fsiConsoleOutput.uprintfn """    #help "expr";;                                // %s""" (FSIstrings.SR.fsiIntroTextHashhelpdocInfo ())
 
         if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
             for msg in
@@ -3846,7 +3846,7 @@ type FsiInteractionProcessor
             fsiOptions.ShowHelp(m)
             istate, Completed None
 
-        | ParsedHashDirective("h", ParsedHashDirectiveArguments [ source ], _m) ->
+        | ParsedHashDirective("help", ParsedHashDirectiveArguments [ source ], _m) ->
             runhDirective diagnosticsLogger ctok istate source
             istate, Completed None
 
