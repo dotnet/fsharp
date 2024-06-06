@@ -1763,19 +1763,19 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A compiler intrinsic that implements the ':?>' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val UnboxGeneric<'T> : source: obj -> 'T
+            val UnboxGeneric<'T> : source: objnull -> 'T
 
             /// <summary>A compiler intrinsic that implements the ':?>' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline UnboxFast<'T> : source: obj -> 'T
+            val inline UnboxFast<'T> : source: objnull -> 'T
 
             /// <summary>A compiler intrinsic that implements the ':?' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val TypeTestGeneric<'T> : source: obj -> bool
+            val TypeTestGeneric<'T> : source: objnull -> bool
 
             /// <summary>A compiler intrinsic that implements the ':?' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline TypeTestFast<'T> : source: obj -> bool 
+            val inline TypeTestFast<'T> : source: objnull -> bool 
 
             /// <summary>Primitive used by pattern match compilation</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -3407,7 +3407,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Unbox")>]
-        val inline unbox: value: obj -> 'T
+        val inline unbox: value: objnull -> 'T
 
         /// <summary>Boxes a strongly typed value.</summary>
         ///
@@ -3425,7 +3425,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Box")>]
-        val inline box: value: 'T -> obj
+        val inline box: value: 'T -> objnull
 
         /// <summary>Try to unbox a strongly typed value.</summary>
         ///
@@ -3443,7 +3443,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("TryUnbox")>]
-        val inline tryUnbox: value: obj -> 'T option
+        val inline tryUnbox: value: objnull -> 'T option
 
         /// <summary>Determines whether the given value is null.</summary>
         ///
@@ -5723,7 +5723,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Unbox")>]
-            val inline unbox<'T> : value: obj -> 'T
+            val inline unbox<'T> : value: objnull -> 'T
 
             /// <summary>Generate a default value for any type. This is null for reference types, 
             /// For structs, this is struct value where all fields have the default value. 
@@ -6203,7 +6203,7 @@ namespace Microsoft.FSharp.Control
     ///
     /// <category index="3">Events and Observables</category>
     [<CompiledName("FSharpHandler`1")>]
-    type Handler<'T> =  delegate of sender:obj * args:'T -> unit 
+    type Handler<'T> =  delegate of sender:objnull * args:'T -> unit 
 
     /// <summary>First-class listening points (i.e. objects that permit you to register a callback
     /// activated when the event is triggered). </summary>

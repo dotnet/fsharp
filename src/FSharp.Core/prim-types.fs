@@ -1195,7 +1195,7 @@ namespace Microsoft.FSharp.Core
                     check 0
 
             /// optimized case: Core implementation of structural comparison on object arrays.
-            and GenericComparisonObjArrayWithComparer (comp:GenericComparer) (x:obj array) (y:obj array) : int =
+            and GenericComparisonObjArrayWithComparer (comp:GenericComparer) (x:objnull array) (y:objnull array) : int =
                 let lenx = x.Length 
                 let leny = y.Length 
                 let c = intOrder lenx leny 
@@ -1226,7 +1226,7 @@ namespace Microsoft.FSharp.Core
 
             type GenericComparer with
                 interface IComparer with
-                    override c.Compare(x:obj,y:obj) = GenericCompare c (x,y)
+                    override c.Compare(x:objnull,y:objnull) = GenericCompare c (x,y)
 
             /// The unique object for comparing values in PER mode (where local exceptions are thrown when NaNs are compared)
             let fsComparerPER = GenericComparer(true)  
@@ -1562,7 +1562,7 @@ namespace Microsoft.FSharp.Core
             //
             // If "er" is true the "iec" is fsEqualityComparerUnlimitedHashingER
             // If "er" is false the "iec" is fsEqualityComparerUnlimitedHashingPER
-            let rec GenericEqualityObj (er:bool) (iec:IEqualityComparer) ((xobj:obj),(yobj:obj)) : bool = 
+            let rec GenericEqualityObj (er:bool) (iec:IEqualityComparer) ((xobj:objnull),(yobj:objnull)) : bool = 
                 (*if objEq xobj yobj then true else  *)
                 match xobj,yobj with 
                  | null,null -> true
@@ -1651,7 +1651,7 @@ namespace Microsoft.FSharp.Core
                     check 0
 
             /// optimized case: Core implementation of structural equality on object arrays.
-            and GenericEqualityObjArray er iec (x:obj array) (y:obj array) : bool =
+            and GenericEqualityObjArray er iec (x:objnull array) (y:objnull array) : bool =
                 let lenx = x.Length 
                 let leny = y.Length 
                 let c = (lenx = leny )
@@ -1754,12 +1754,12 @@ namespace Microsoft.FSharp.Core
                 checkType 0 [| rootType |]
 
             let arrayEqualityComparer<'T> er comparer =
-                let arrayEquals (er: bool) (iec: IEqualityComparer) (xobj: obj) (yobj: obj) : bool = 
+                let arrayEquals (er: bool) (iec: IEqualityComparer) (xobj: objnull) (yobj: objnull) : bool = 
                     match xobj, yobj with 
                     | null, null -> true
                     | null, _ -> false
                     | _, null -> false
-                    | (:? (obj array)      as arr1), (:? (obj array)      as arr2) -> GenericEqualityObjArray    er iec arr1 arr2
+                    | (:? (objnull array)      as arr1), (:? (obj array)      as arr2) -> GenericEqualityObjArray    er iec arr1 arr2
                     | (:? (byte array)     as arr1), (:? (byte array)     as arr2) -> GenericEqualityByteArray          arr1 arr2
                     | (:? (int32 array)    as arr1), (:? (int32 array)    as arr2) -> GenericEqualityInt32Array         arr1 arr2
                     | (:? (int64 array)    as arr1), (:? (int64 array)    as arr2) -> GenericEqualityInt64Array         arr1 arr2
@@ -1769,10 +1769,10 @@ namespace Microsoft.FSharp.Core
                     | (:? Array            as arr1), (:? Array            as arr2) -> GenericEqualityArbArray    er iec arr1 arr2
                     | _ -> raise (Exception "invalid logic - expected array")
 
-                let getHashCode (iec, xobj: obj) =
+                let getHashCode (iec, xobj: objnull) =
                     match xobj with 
                     | null -> 0 
-                    | :? (obj array)      as oa -> GenericHashObjArray iec oa 
+                    | :? (objnull array)      as oa -> GenericHashObjArray iec oa 
                     | :? (byte array)     as ba -> GenericHashByteArray ba 
                     | :? (int array)      as ia -> GenericHashInt32Array ia 
                     | :? (int64 array)    as ia -> GenericHashInt64Array ia 
@@ -1958,9 +1958,9 @@ namespace Microsoft.FSharp.Core
             type CountLimitedHasherPER with
                 
                 interface IEqualityComparer with
-                    override iec.Equals(x:obj,y:obj) =
+                    override iec.Equals(x:objnull,y:objnull) =
                         GenericEqualityObj false iec (x,y)
-                    override iec.GetHashCode(x:obj) =
+                    override iec.GetHashCode(x:objnull) =
                         iec.nodeCount <- iec.nodeCount - 1
                         if iec.nodeCount > 0 then
                             GenericHashParamObj iec  x
@@ -1971,14 +1971,14 @@ namespace Microsoft.FSharp.Core
             type UnlimitedHasherER with
                 
                 interface IEqualityComparer with
-                    override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)
-                    override iec.GetHashCode(x:obj) = GenericHashParamObj iec  x
+                    override iec.Equals(x:objnull,y:objnull) = GenericEqualityObj true iec (x,y)
+                    override iec.GetHashCode(x:objnull) = GenericHashParamObj iec  x
                    
             /// Fill in the implementation of UnlimitedHasherPER
             type UnlimitedHasherPER with
                 interface IEqualityComparer with
-                    override iec.Equals(x:obj,y:obj) = GenericEqualityObj false iec (x,y)
-                    override iec.GetHashCode(x:obj) = GenericHashParamObj iec x
+                    override iec.Equals(x:objnull,y:objnull) = GenericEqualityObj false iec (x,y)
+                    override iec.GetHashCode(x:objnull) = GenericHashParamObj iec x
 
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
             //
@@ -4352,13 +4352,13 @@ namespace Microsoft.FSharp.Core
         let seq (sequence: seq<'T>) = sequence 
 
         [<CompiledName("Unbox")>]
-        let inline unbox (value: obj) = UnboxGeneric(value)
+        let inline unbox (value: objnull) = UnboxGeneric(value)
 
         [<CompiledName("Box")>]
-        let inline box (value: 'T) = (# "box !0" type ('T) value : obj #)
+        let inline box (value: 'T) = (# "box !0" type ('T) value : objnull #)
 
         [<CompiledName("TryUnbox")>]
-        let inline tryUnbox (value:obj) = 
+        let inline tryUnbox (value:objnull) = 
             match value with 
             | :? 'T as v -> Some v
             | _ -> None
@@ -5469,7 +5469,7 @@ namespace Microsoft.FSharp.Core
         module Unchecked =
 
             [<CompiledName("Unbox")>]
-            let inline unbox<'T> (v:obj) = unboxPrim<'T> v
+            let inline unbox<'T> (v:objnull) = unboxPrim<'T> v
 
             [<CompiledName("DefaultOf")>]
             let inline defaultof<'T> = unsafeDefault<'T>
@@ -7296,7 +7296,7 @@ namespace Microsoft.FSharp.Control
         inherit IObservable<'Args>
 
     [<CompiledName("FSharpHandler`1")>]
-    type Handler<'Args> =  delegate of sender:obj * args:'Args -> unit 
+    type Handler<'Args> =  delegate of sender:objnull * args:'Args -> unit 
 
     type IEvent<'Args> = IEvent<Handler<'Args>, 'Args>
 
