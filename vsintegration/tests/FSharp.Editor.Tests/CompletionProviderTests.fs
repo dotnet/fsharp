@@ -1853,34 +1853,49 @@ type B () =
     inherit System.Dynamic.DynamicMetaObjectBinder ()
 
     override x.
+
+let _ =
+    { new System.Dynamic.SetIndexBinder (null) with
+        member x.
+    }
+
+let _ =
+    { new System.Dynamic.DynamicMetaObjectBinder () with
+        member this.
+    }
 """
 
         // SetIndexBinder inherits from DynamicMetaObjectBinder, but overrides and seals Bind and the ReturnType property
-        VerifyCompletionListExactly(
-            fileContents,
-            "override _.a",
-            [
-                "BindDelegate"
-                "Equals"
-                "FallbackSetIndex"
-                "Finalize"
-                "GetHashCode"
-                "ToString"
-            ]
+        ["override _.a"; "member x."]
+        |> List.iter (fun i ->
+            VerifyCompletionListExactly(
+                fileContents,
+                i,
+                [
+                    "BindDelegate (site: System.Runtime.CompilerServices.CallSite<'T>, args: obj array): 'T"
+                    "Equals (obj: obj): bool"
+                    "FallbackSetIndex (target: System.Dynamic.DynamicMetaObject, indexes: System.Dynamic.DynamicMetaObject array, value: System.Dynamic.DynamicMetaObject, errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject"
+                    "Finalize (): unit"
+                    "GetHashCode (): int"
+                    "ToString (): string"
+                ]
+            )
         )
 
-        VerifyCompletionListExactly(
-            fileContents,
-            "override x.",
-            [
-                "Bind"
-                "BindDelegate"
-                "Equals"
-                "Finalize"
-                "GetHashCode"
-                "get_ReturnType"
-                "ToString"
-            ]
+        ["override x."; "member this."]
+        |> List.iter (fun i ->
+            VerifyCompletionListExactly(
+                fileContents,
+                i,
+                [
+                    "BindDelegate (site: System.Runtime.CompilerServices.CallSite<'T>, args: obj array): 'T"
+                    "Equals (obj: obj): bool"
+                    "FallbackSetIndex (target: System.Dynamic.DynamicMetaObject, indexes: System.Dynamic.DynamicMetaObject array, value: System.Dynamic.DynamicMetaObject, errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject"
+                    "Finalize (): unit"
+                    "GetHashCode (): int"
+                    "ToString (): string"
+                ]
+            )
         )
 
     [<Fact>]
@@ -1912,11 +1927,49 @@ type C () =
     override A1 () = ()
     override x.c
     override A1 s = ()
+
+type IA =
+    abstract member A1: unit -> unit
+    abstract member A1: string -> unit
+    abstract member A2: unit -> unit
+    static abstract member A3: unit -> unit
+    static abstract member A4: unit -> unit
+    
+type TA() =
+    interface IA with
+        static member A3 (): unit = ()
+        static member 
+        member this.A1 (arg1: string): unit = ()
+        member a.
 """
 
-        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals"; "Finalize"; "GetHashCode" ])
-        VerifyCompletionListExactly(fileContents, "override x.b", [ "A1"; "A2"; "Equals"; "Finalize"; "GetHashCode"; "ToString" ])
-        VerifyCompletionListExactly(fileContents, "override x.c", [ "A2"; "Equals"; "Finalize"; "GetHashCode"; "ToString" ])
+        VerifyCompletionListExactly(fileContents, "override _.", [ 
+            "Equals (obj: obj): bool"
+            "Finalize (): unit"
+            "GetHashCode (): int"
+        ])
+        VerifyCompletionListExactly(fileContents, "override x.b", [ 
+            "A1 (arg1: string): unit"
+            "A2 (): unit"
+            "Equals (obj: obj): bool"
+            "Finalize (): unit"
+            "GetHashCode (): int"
+            "ToString (): string"
+        ])
+        VerifyCompletionListExactly(fileContents, "override x.c", [ 
+            "A2 (): unit"
+            "Equals (obj: obj): bool"
+            "Finalize (): unit"
+            "GetHashCode (): int"
+            "ToString (): string"
+        ])
+        VerifyCompletionListExactly(fileContents, "member thisTA.", [ 
+            "A1 (): unit"
+            "A2 (): unit"
+        ])
+        VerifyCompletionListExactly(fileContents, "static member ", [ 
+            "A4 (): unit"
+        ])
 
     [<Fact>]
     let ``Completion list for override is empty when the caret is on the self identifier`` () =
