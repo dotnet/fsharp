@@ -1239,7 +1239,10 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn """    #load "file.fs" ...;;                         // %s""" (FSIstrings.SR.fsiIntroTextHashloadInfo ())
         fsiConsoleOutput.uprintfn """    #time ["on"|"off"];;                          // %s""" (FSIstrings.SR.fsiIntroTextHashtimeInfo ())
         fsiConsoleOutput.uprintfn """    #help;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo ())
-        fsiConsoleOutput.uprintfn """    #help "expr";;                                // %s""" (FSIstrings.SR.fsiIntroTextHashhelpdocInfo ())
+
+        fsiConsoleOutput.uprintfn
+            """    #help "expr";;                                // %s"""
+            (FSIstrings.SR.fsiIntroTextHashhelpdocInfo ())
 
         if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
             for msg in
