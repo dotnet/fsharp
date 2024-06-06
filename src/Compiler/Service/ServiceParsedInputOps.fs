@@ -90,8 +90,7 @@ type CompletionContext =
     | RangeOperator
 
     /// Completing named parameters\setters in parameter list of attributes\constructor\method calls
-    /// end of name ast node * index of curr paameter * list of properties\parameters that were already set
-    | ParameterList of pos * (int * string option * HashSet<string>)
+    | ParameterList of identEndPos: pos * paramGroupIdx: int * paramIdxInGroup: int * paramName: string option * settedParam: HashSet<string> * isCurrying: bool
 
     /// Completing an attribute name, outside of the constructor
     | AttributeApplication
@@ -1090,18 +1089,21 @@ module ParsedInput =
         | Operator "op_Equality" (SynExpr.Ident id, _) -> Some id
         | _ -> None
 
-    let rangeContainsPosOrIsSpacesBetweenRangeAndPos (lineStr: string) m pos =
+    let posAfterRangeAndBetweenSpaces (lineStr: string) (m: range) pos =
         let rec loop max i =
             if i >= lineStr.Length || i >= max then true
             elif Char.IsWhiteSpace lineStr[i] then loop max (i + 1)
             else false
+        posGt pos m.End && pos.Line = m.End.Line && loop pos.Column m.End.Column
 
+    let rangeContainsPosOrIsSpacesBetweenRangeAndPos (lineStr: string) m pos =
         rangeContainsPos m pos
         // pos is before m
         || posLt pos m.Start
-        || (posGt pos m.End && pos.Line = m.End.Line && loop pos.Column m.End.Column)
+        || posAfterRangeAndBetweenSpaces lineStr m pos
 
-    let findSetters (lineStr, pos) argList =
+    let findSetters identPos (lineStr, pos) isCurrying currentParamGroup currentParamIdxInGroup argList =
+        if currentParamIdxInGroup > -1 then CompletionContext.ParameterList(identPos, currentParamGroup, currentParamIdxInGroup, None, emptyStringSet, isCurrying) else
         match argList with
         | SynExpr.Paren(SynExpr.Tuple(false, parameters, _, _), _, _, _) ->
             let setters = HashSet()
@@ -1111,14 +1113,14 @@ module ParsedInput =
             let mutable namedParamName = None
 
             for p in parameters do
-                let isCurrParam = rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr p.Range pos
+                let isCurrentParam = rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr p.Range pos
 
-                if isCurrParam then
+                if isCurrentParam then
                     idx <- i
 
                 match p with
-                | Setter id ->
-                    if isCurrParam then
+                | Setter id when not isCurrying ->
+                    if isCurrentParam then
                         namedParamName <- Some id.idText
 
                     ignore (setters.Add id.idText)
@@ -1126,12 +1128,19 @@ module ParsedInput =
 
                 i <- i + 1
 
-            idx, namedParamName, setters
-        | SynExpr.Paren(expr = Setter id) ->
+            CompletionContext.ParameterList(identPos, currentParamGroup, idx, namedParamName, setters, isCurrying)
+        | SynExpr.Paren(expr = Setter id) when not isCurrying ->
             let setters = HashSet()
             ignore (setters.Add id.idText)
-            0, Some id.idText, setters
-        | _ -> -1, None, emptyStringSet
+            CompletionContext.ParameterList(identPos, currentParamGroup, 0, Some id.idText, setters, isCurrying)
+
+        | SynExpr.Const (SynConst.Unit, range) ->
+            let isCurrentParam = rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr range pos
+            if isCurrentParam then
+                CompletionContext.ParameterList(identPos, currentParamGroup, 0, None, emptyStringSet, isCurrying)
+            else CompletionContext.ParameterList(identPos, currentParamGroup, -1, None, emptyStringSet, isCurrying)
+
+        | _ -> CompletionContext.ParameterList(identPos, currentParamGroup, -1, None, emptyStringSet, isCurrying)
 
     let endOfLastIdent (lid: SynLongIdent) =
         let last = List.last lid.LongIdent
@@ -1142,41 +1151,56 @@ module ParsedInput =
         | Some m -> m.End
         | None -> endOfLastIdent lid
 
-    let endOfClosingTokenOrIdent (mClosing: range option) (id: Ident) =
-        match mClosing with
-        | Some m -> m.End
-        | None -> id.idRange.End
+    //let endOfClosingTokenOrIdent (mClosing: range option) (id: Ident) =
+    //    match mClosing with
+    //    | Some m -> m.End
+    //    | None -> id.idRange.End
 
-    let (|NewObjectOrMethodCall|_|) (lineStr, pos) e =
-        match e with
-        | SynExpr.New(_, SynType.LongIdent typeName, arg, _) ->
-            // new A()
-            Some(endOfLastIdent typeName, findSetters (lineStr, pos) arg)
+    let checkNewObjectOrMethodCall (lineStr, pos) found e =
+        let rec loop isCurrying found currentParamGroup currentParamIdxInGroup e =
+            let currentParamGroup =
+                if found then currentParamGroup + 1
+                else currentParamGroup
+            match e with
+            | SynExpr.New(_, SynType.LongIdent typeName, arg, _) ->
+                // new A()
+                Some(findSetters (endOfLastIdent typeName) (lineStr, pos) isCurrying currentParamGroup currentParamIdxInGroup arg)
 
-        | SynExpr.New(_, SynType.App(StripParenTypes(SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _) ->
-            // new A<_>()
-            Some(endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters (lineStr, pos) arg)
+            | SynExpr.New(_, SynType.App(StripParenTypes(SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _) ->
+                // new A<_>()
+                Some(findSetters (endOfClosingTokenOrLastIdent mGreaterThan typeName) (lineStr, pos) isCurrying currentParamGroup currentParamIdxInGroup arg)
 
-        | SynExpr.App(_, false, SynExpr.Ident id, arg, _) ->
-            // A()
-            Some(id.idRange.End, findSetters (lineStr, pos) arg)
+            | SynExpr.App(_, false, SynExpr.Ident id, arg, _) 
+                // A()
 
-        | SynExpr.App(_, false, SynExpr.TypeApp(SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _) ->
-            // A<_>()
-            Some(endOfClosingTokenOrIdent mGreaterThan id, findSetters (lineStr, pos) arg)
+            | SynExpr.App(_, false, SynExpr.TypeApp(SynExpr.Ident id, _, _, _, _, _, _), arg, _) ->
+                // A<_>()
+                Some(findSetters (id.idRange.End) (lineStr, pos) isCurrying currentParamGroup currentParamIdxInGroup arg)
 
-        | SynExpr.App(_, false, SynExpr.LongIdent(_, lid, _, _), arg, _) ->
-            // A.B()
-            Some(endOfLastIdent lid, findSetters (lineStr, pos) arg)
+            | SynExpr.App(_, false, SynExpr.LongIdent(_, lid, _, _), arg, _)
+            | SynExpr.App(_, false, SynExpr.DotGet(longDotId = lid), arg, _)
+                // A.B()
 
-        | SynExpr.App(_, false, SynExpr.DotGet(longDotId = lid), arg, _) ->
-            // A.B()
-            Some(endOfLastIdent lid, findSetters (lineStr, pos) arg)
+            | SynExpr.App(_, false, SynExpr.TypeApp(SynExpr.LongIdent(_, lid, _, _), _, _, _, _, _, _), arg, _) ->
+                // A.B<_>()
+                Some(findSetters (endOfLastIdent lid) (lineStr, pos) isCurrying currentParamGroup currentParamIdxInGroup arg)
 
-        | SynExpr.App(_, false, SynExpr.TypeApp(SynExpr.LongIdent(_, lid, _, _), _, _, _, mGreaterThan, _, _), arg, _) ->
-            // A.B<_>()
-            Some(endOfClosingTokenOrLastIdent mGreaterThan lid, findSetters (lineStr, pos) arg)
-        | _ -> None
+            // f 1 2
+            | SynExpr.App(_, false, (SynExpr.App _ as expr), arg, _) ->
+                let currentParamIdxInGroup, currentParamGroup = 
+                    if currentParamGroup = -1 then
+                        match findSetters pos0 (lineStr, pos) true currentParamGroup currentParamIdxInGroup arg with
+                        | CompletionContext.ParameterList (paramIdxInGroup = idx) -> idx, 0
+                        | _ -> -1, -1
+                    else currentParamIdxInGroup, currentParamGroup
+                let found = found || currentParamIdxInGroup > -1
+                loop true found currentParamGroup currentParamIdxInGroup expr
+
+            | _ -> None
+        loop false found -1 -1 e
+
+    let (|NewObjectOrMethodCall|_|) (lineStr, pos) e = checkNewObjectOrMethodCall (lineStr, pos) false e
+    let (|NewObjectOrMethodCallFound|_|) (lineStr, pos) e = checkNewObjectOrMethodCall (lineStr, pos) true e
 
     let isOnTheRightOfComma pos (elements: SynExpr list) (commas: range list) current =
         let rec loop elements (commas: range list) =
@@ -1457,14 +1481,14 @@ module ParsedInput =
                         | SynExpr.Const(SynConst.Unit, m) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
                             match path with
                             | SyntaxNode.SynExpr(NewObjectOrMethodCall (lineStr, pos) args) :: _ ->
-                                Some(CompletionContext.ParameterList args)
+                                Some(args)
                             | _ -> defaultTraverse expr
 
                         // new (... A$)
                         | SynExpr.Ident id
                         | SynExpr.LongIdent(longDotId = SynLongIdent([ id ], [], [ Some _ ])) when id.idRange.End = pos ->
                             match path with
-                            | PartOfParameterList lineStr pos None args -> Some(CompletionContext.ParameterList args)
+                            | PartOfParameterList lineStr pos None args -> Some(args)
                             | _ -> defaultTraverse expr
 
                         // new (A$ = 1)
@@ -1476,7 +1500,7 @@ module ParsedInput =
                             let precedingArgument = if id.idRange.End = pos then None else Some expr
 
                             match path with
-                            | PartOfParameterList lineStr pos precedingArgument args -> Some(CompletionContext.ParameterList args)
+                            | PartOfParameterList lineStr pos precedingArgument args -> Some(args)
                             | _ ->
                                 match expr with
                                 | Operator "op_Equality" (l, r) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos ->
@@ -1518,7 +1542,26 @@ module ParsedInput =
                             lineStr.Trim().Split(' ') |> Array.contains "new"
                             ->
                             Some(CompletionContext.Inherit(InheritanceContext.Unknown, ([], None)))
+
+                        | _ when posAfterRangeAndBetweenSpaces lineStr expr.Range pos ->
+                            match expr with
+                            // Some |
+                            | SynExpr.Ident id 
+                            | SynExpr.TypeApp(SynExpr.Ident id, _, _, _, _, _, _) ->
+                                Some(CompletionContext.ParameterList(id.idRange.End, 0, 0, None, emptyStringSet, true))
+
+                            | SynExpr.LongIdent(_, lid, _, _) 
+                            | SynExpr.DotGet(longDotId = lid) 
+                            | SynExpr.TypeApp(SynExpr.LongIdent (longDotId = lid), _, _, _, _, _, _) ->
+                                Some(CompletionContext.ParameterList(endOfLastIdent lid, 0, 0, None, emptyStringSet, true))
+
+                            | NewObjectOrMethodCallFound (lineStr, pos) (CompletionContext.ParameterList(a,b,c,d,e,f)) -> 
+                                Some(CompletionContext.ParameterList(a,b + 1,c,d,e,f))
+
+                            | _ -> defaultTraverse expr
+                                 
                         | _ -> defaultTraverse expr
+
 
                 member _.VisitRecordField(path, copyOpt, field) =
                     let contextFromTreePath completionPath =
@@ -1870,7 +1913,7 @@ module ParsedInput =
                             Some CompletionContext.AttributeApplication
                         // [<Att(M| = )>]
                         elif rangeContainsPos att.ArgExpr.Range pos then
-                            Some(CompletionContext.ParameterList(att.TypeName.Range.End, findSetters (lineStr, pos) att.ArgExpr))
+                            Some(findSetters att.TypeName.Range.End (lineStr, pos) false 0 -1 att.ArgExpr)
                         else
                             None)
 

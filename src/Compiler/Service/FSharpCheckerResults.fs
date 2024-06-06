@@ -707,6 +707,64 @@ type internal TypeCheckInfo
             else
                 Some(StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
         | _, _ -> None
+    
+    /// Build a CompetionItem
+    let CompletionItemWithMoreSetting (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) minorPriority insertText displayText (item: ItemWithInst) =
+        let kind =
+            match item.Item with
+            | Item.DelegateCtor _
+            | Item.CtorGroup _ -> CompletionItemKind.Method false
+            | Item.MethodGroup(_, minfos, _) ->
+                match minfos with
+                | [] -> CompletionItemKind.Method false
+                | minfo :: _ -> CompletionItemKind.Method minfo.IsExtensionMember
+            | Item.AnonRecdField _
+            | Item.RecdField _
+            | Item.UnionCaseField _
+            | Item.Property _ -> CompletionItemKind.Property
+            | Item.Event _ -> CompletionItemKind.Event
+            | Item.ILField _
+            | Item.Value _ -> CompletionItemKind.Field
+            | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
+            // These items are not given a completion kind. This could be reviewed
+            | Item.ActivePatternResult _
+            | Item.ExnCase _
+            | Item.ImplicitOp _
+            | Item.ModuleOrNamespaces _
+            | Item.Trait _
+            | Item.TypeVar _
+            | Item.Types _
+            | Item.UnionCase _
+            | Item.UnqualifiedType _
+            | Item.NewDef _
+            | Item.SetterArg _
+            | Item.CustomBuilder _
+            | Item.OtherName _
+            | Item.ActivePatternCase _ -> CompletionItemKind.Other
+
+        let isUnresolved =
+            match assemblySymbol with
+            | ValueSome x -> Some x.UnresolvedSymbol
+            | _ -> None
+
+        let ty =
+            match ty with
+            | ValueSome x -> Some x
+            | _ -> None
+
+        {
+            ItemWithInst = item
+            MinorPriority = minorPriority
+            Kind = kind
+            IsOwnMember = false
+            Type = ty
+            Unresolved = isUnresolved
+            CustomInsertText = insertText
+            CustomDisplayText = displayText
+        }
+    
+    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
+        CompletionItemWithMoreSetting ty assemblySymbol 0 ValueNone ValueNone item
 
     let getStaticFieldsOfSameTypeInTheType nenv ad m ty =
         let targets =
@@ -717,6 +775,7 @@ type internal TypeCheckInfo
         let items =
             items
             |> List.filter (function
+                | Item.UnionCase _ -> true
                 | Item.Value(valRef) -> typeEquiv g ty valRef.Type
                 | Item.ILField(iLFieldInfo) -> typeEquiv g ty (iLFieldInfo.FieldType(amap, m))
                 | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m))
@@ -725,6 +784,15 @@ type internal TypeCheckInfo
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
         items |> RemoveExplicitlySuppressed g
+
+    let getStaticFieldsOfSameTypeInTheTypeCompletionItem (nenv: NameResolutionEnv) ad m ty =
+        let tyName = stringOfTy (nenv.DisplayEnv.UseGenericParameterStyle(GenericParameterStyle.Prefix)) ty
+        getStaticFieldsOfSameTypeInTheType nenv ad m ty
+        |> List.map (fun i ->
+            let code = ValueSome $"{tyName}.{i.Item.DisplayName}"
+
+            CompletionItemWithMoreSetting ValueNone ValueNone -2 code code i
+        )
 
     let CollectParameters (methods: MethInfo list) amap m : Item list =
         methods
@@ -738,43 +806,52 @@ type internal TypeCheckInfo
                     | None -> None)
             | _ -> [])
 
-    let GetNamedParametersAndSettableFields endOfExprPos paramIdx paramName =
-        let cnrs =
-            GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
-            |> ResizeArray.toList
-            |> List.rev
+    let GetNamedParametersAndSettableFields endOfExprPos paramGroupIdx paramIdx paramName isCurrying =
+        let paramGroupIdx = if paramGroupIdx = -1 then 0 else paramGroupIdx
+        let paramIdx = if paramIdx = -1 then 0 else paramIdx
 
-        let getStaticFieldsOfSameTypeOfTheParameter nenv ad m (methods: MethInfo list) (items: Item list) =
+        let getByIdxInParamListList nenv ad m getTy ls =
+            let rec loopParamList i ls =
+                match ls with
+                | [] -> []
+                | x :: _ when i = paramIdx -> getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m (getTy x)
+                | _ :: t -> loopParamList (i + 1) t
+
+            let rec loopParamListList i ls =
+                match ls with
+                | [] -> []
+                | x :: _ when i = paramGroupIdx -> loopParamList 0 x
+                | _ :: t -> loopParamListList (i + 1) t
+
+            loopParamListList 0 ls
+
+        let getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst (methods: MethInfo list) (items: Item list) =
             match paramName with
             | Some name ->
                 match items |> List.tryFind (fun i -> i.DisplayName = name) with
-                | Some(Item.OtherName(argType = ty)) -> getStaticFieldsOfSameTypeInTheType nenv ad m ty
-                | Some(Item.Value(valRef)) -> getStaticFieldsOfSameTypeInTheType nenv ad m valRef.Type
-                | Some(Item.ILField(iLFieldInfo)) -> getStaticFieldsOfSameTypeInTheType nenv ad m (iLFieldInfo.FieldType(amap, m))
-                | Some(Item.Property(info = pinfo :: _)) -> getStaticFieldsOfSameTypeInTheType nenv ad m (pinfo.GetPropertyType(amap, m))
+                | Some(Item.OtherName(argType = ty)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m ty
+                | Some(Item.Value(valRef)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m valRef.Type
+                | Some(Item.ILField(iLFieldInfo)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m (iLFieldInfo.FieldType(amap, m))
+                | Some(Item.Property(info = pinfo :: _)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m (pinfo.GetPropertyType(amap, m))
                 | _ -> []
             | _ ->
-                let rec loop i ls =
-                    match ls with
-                    | [] -> None
-                    | x :: t ->
-                        if i = paramIdx then
-                            let (ParamData(ttype = ty)) = x
-                            Some ty
-                        else
-                            loop (i + 1) t
-
                 methods
-                |> List.choose (fun meth ->
-                    match meth.GetParamDatas(amap, m, meth.FormalMethodInst) with
-                    | x :: _ -> loop 0 x
-                    | _ -> None)
-                |> List.collect (getStaticFieldsOfSameTypeInTheType nenv ad m)
+                |> List.map (fun meth -> meth.GetParamDatas(amap, m, meth.FormalMethodInst))
+                |> List.collect (getByIdxInParamListList nenv ad m (fun (ParamData(ttype = ty)) -> instType tinst ty))
+
+        let (|CNR|) (cnr: CapturedNameResolution) =
+            (cnr.ItemWithInst, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
+
+        let cnrs =
+            GetCapturedNameResolutions endOfExprPos ResolveOverloads.Yes
+            |> ResizeArray.toList
+            |> List.rev
 
         let result =
             match cnrs with
-            | CNR(Item.CtorGroup(_, (ctor :: _ as ctors)), _, denv, nenv, ad, m) :: _ ->
+            | CNR({Item = Item.CtorGroup(_, (ctor :: _ as ctors)); TyparInstantiation = tinst}, denv, nenv, ad, m) :: _ ->
                 let props =
+                    if isCurrying then [] else
                     ResolveCompletionsInType
                         ncenv
                         nenv
@@ -786,12 +863,13 @@ type internal TypeCheckInfo
 
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
-                let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m ctors items
+                let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst ctors items
                 let items = List.map ItemWithNoInst items
 
                 Some(denv, m, items, p)
-            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
+            | CNR({Item = Item.MethodGroup(_, methods, _); TyparInstantiation = tinst}, denv, nenv, ad, m) :: _ ->
                 let props =
+                    if isCurrying then [] else
                     methods
                     |> List.collect (fun meth ->
                         let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
@@ -799,17 +877,38 @@ type internal TypeCheckInfo
 
                 let parameters = CollectParameters methods amap m
                 let items = props @ parameters
-                let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m methods items
+                let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst methods items
                 let items = List.map ItemWithNoInst items
 
                 Some(denv, m, items, p)
+
+            | CNR({Item = Item.Value vref; TyparInstantiation = tinst}, denv, nenv, ad, m) :: _ when isForallFunctionTy g vref.Type ->
+                let ty = 
+                    match vref.Type with
+                    | TType.TType_forall(bodyTy = ty)
+                    | ty -> instType tinst ty
+                let p =
+                    stripFunTyN g (paramGroupIdx + 1) ty
+                    |> fst
+                    |> List.map (function ty when isAnyTupleTy g ty -> destAnyTupleTy g ty |> snd | ty -> [ty])
+                    |> getByIdxInParamListList nenv ad m id
+                if p.IsEmpty then None else Some(denv, m, [], p)
+
+            | CNR({Item = Item.UnionCase (uci, _); TyparInstantiation = tinst}, denv, nenv, ad, m) :: _ when not uci.UnionCase.IsNullary -> 
+                let p =
+                    uci.UnionCase.RecdFields
+                    |> List.map (fun field -> 
+                        match instType tinst field.FormalType with 
+                        | ty when isAnyTupleTy g ty -> destAnyTupleTy g ty |> snd 
+                        | ty -> [ty])
+                    |> getByIdxInParamListList nenv ad m id
+                if p.IsEmpty then None else Some(denv, m, [], p)
+
             | _ -> None
 
         match result with
         | None -> NameResResult.Empty, []
         | Some(denv, m, items, p) ->
-            let p = p |> RemoveDuplicateItems g |> RemoveExplicitlySuppressed g
-
             ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs, p
 
     /// finds captured typing for the given position
@@ -1087,68 +1186,13 @@ type internal TypeCheckInfo
 
             if p >= 0 then Some p else None
 
-    /// Build a CompetionItem
-    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) insertText displayText (item: ItemWithInst) =
-        let kind =
-            match item.Item with
-            | Item.DelegateCtor _
-            | Item.CtorGroup _ -> CompletionItemKind.Method false
-            | Item.MethodGroup(_, minfos, _) ->
-                match minfos with
-                | [] -> CompletionItemKind.Method false
-                | minfo :: _ -> CompletionItemKind.Method minfo.IsExtensionMember
-            | Item.AnonRecdField _
-            | Item.RecdField _
-            | Item.UnionCaseField _
-            | Item.Property _ -> CompletionItemKind.Property
-            | Item.Event _ -> CompletionItemKind.Event
-            | Item.ILField _
-            | Item.Value _ -> CompletionItemKind.Field
-            | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
-            // These items are not given a completion kind. This could be reviewed
-            | Item.ActivePatternResult _
-            | Item.ExnCase _
-            | Item.ImplicitOp _
-            | Item.ModuleOrNamespaces _
-            | Item.Trait _
-            | Item.TypeVar _
-            | Item.Types _
-            | Item.UnionCase _
-            | Item.UnqualifiedType _
-            | Item.NewDef _
-            | Item.SetterArg _
-            | Item.CustomBuilder _
-            | Item.OtherName _
-            | Item.ActivePatternCase _ -> CompletionItemKind.Other
-
-        let isUnresolved =
-            match assemblySymbol with
-            | ValueSome x -> Some x.UnresolvedSymbol
-            | _ -> None
-
-        let ty =
-            match ty with
-            | ValueSome x -> Some x
-            | _ -> None
-
-        {
-            ItemWithInst = item
-            MinorPriority = 0
-            Kind = kind
-            IsOwnMember = false
-            Type = ty
-            Unresolved = isUnresolved
-            CustomInsertText = insertText
-            CustomDisplayText = displayText
-        }
-
     let DefaultCompletionItem item =
-        CompletionItem ValueNone ValueNone ValueNone ValueNone item
+        CompletionItem ValueNone ValueNone item
 
     let CompletionItemSuggestedName displayName =
         {
             ItemWithInst = ItemWithNoInst(Item.NewDef(Ident(displayName, range0)))
-            MinorPriority = 0
+            MinorPriority = -3
             Type = None
             Kind = CompletionItemKind.SuggestedName
             IsOwnMember = false
@@ -1390,7 +1434,7 @@ type internal TypeCheckInfo
 
                         Item.Property(name, [ prop ], None)
                         |> ItemWithNoInst
-                        |> CompletionItem ValueNone ValueNone (ValueSome textInCode) (ValueSome name)
+                        |> CompletionItemWithMoreSetting ValueNone ValueNone -1 (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             let overridableMeths =
@@ -1457,7 +1501,7 @@ type internal TypeCheckInfo
 
                         Item.MethodGroup(name, [ meth ], None)
                         |> ItemWithNoInst
-                        |> CompletionItem ValueNone ValueNone (ValueSome textInCode) (ValueSome name)
+                        |> CompletionItemWithMoreSetting ValueNone ValueNone -1 (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             overridableProps @ overridableMeths
@@ -1709,7 +1753,7 @@ type internal TypeCheckInfo
                 // lookup based on name resolution results successful
                 Some(
                     items
-                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm ValueNone ValueNone item),
+                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm item),
                     denv,
                     m
                 )
@@ -1755,7 +1799,7 @@ type internal TypeCheckInfo
                         // lookup based on expression typings successful
                         Some(
                             items
-                            |> List.map (fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm ValueNone ValueNone item),
+                            |> List.map (fun (item, asm) -> CompletionItem (tryTcrefOfAppTy g ty) asm item),
                             denv,
                             m
                         )
@@ -1784,7 +1828,7 @@ type internal TypeCheckInfo
                                 // lookup based on name resolution results successful
                                 ValueSome(
                                     items
-                                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm ValueNone ValueNone item),
+                                    |> List.map (fun (item, asm) -> CompletionItem (getType ()) asm item),
                                     denv,
                                     m
                                 )
@@ -1795,7 +1839,7 @@ type internal TypeCheckInfo
                                 // lookup based on name and environment successful
                                 ValueSome(
                                     items
-                                    |> List.map (CompletionItem (getType ()) ValueNone ValueNone ValueNone),
+                                    |> List.map (CompletionItem (getType ()) ValueNone),
                                     denv,
                                     m
                                 )
@@ -1805,7 +1849,7 @@ type internal TypeCheckInfo
                                 ValueSome(
                                     items
                                     |> List.map (fun (item, asm) ->
-                                        CompletionItem (tryTcrefOfAppTy g ty) asm ValueNone ValueNone item),
+                                        CompletionItem (tryTcrefOfAppTy g ty) asm item),
                                     denv,
                                     m
                                 )
@@ -1840,8 +1884,6 @@ type internal TypeCheckInfo
                                         CompletionItem
                                             (getType ())
                                             (ValueSome globalItem)
-                                            ValueNone
-                                            ValueNone
                                             (ItemWithNoInst globalItem.Symbol.Item))
                                     |> fun r -> ValueSome(r, denv, m)
                                 | _ -> ValueNone
@@ -2039,8 +2081,8 @@ type internal TypeCheckInfo
             | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
 
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
-            | Some(CompletionContext.ParameterList(endPos, (idx, name, fields))) ->
-                let results = GetNamedParametersAndSettableFields endPos idx name
+            | Some(CompletionContext.ParameterList(endPos, paramGroupIdx, idx, name, fields, isCurrying)) ->
+                let results = GetNamedParametersAndSettableFields endPos paramGroupIdx idx name isCurrying
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
@@ -2057,7 +2099,7 @@ type internal TypeCheckInfo
                             {
                                 ItemWithInst = item
                                 Kind = CompletionItemKind.Argument
-                                MinorPriority = 0
+                                MinorPriority = -1
                                 IsOwnMember = false
                                 Type = None
                                 Unresolved = None
@@ -2065,26 +2107,15 @@ type internal TypeCheckInfo
                                 CustomDisplayText = ValueNone
                             })
 
-                    let p =
-                        p
-                        |> List.map (fun i ->
-                            let ty =
-                                match i.Item with
-                                | Item.Value(valRef) -> valRef.Type
-                                | Item.ILField(iLFieldInfo) -> (iLFieldInfo.FieldType(amap, m))
-                                | Item.Property(info = pinfo :: _) -> (pinfo.GetPropertyType(amap, m))
-                                | _ -> failwith "not possible"
-
-                            let tyName = stringOfTy denv ty
-                            let code = ValueSome $"{tyName}.{i.Item.DisplayName}"
-
-                            CompletionItem ValueNone ValueNone code code i)
-
                     match declaredItems with
                     | None -> Some(p @ (items |> List.map DefaultCompletionItem), denv, m)
                     | Some(declItems, declaredDisplayEnv, declaredRange) ->
                         Some(p @ filtered @ declItems, declaredDisplayEnv, declaredRange)
-                | _ -> declaredItems
+                | _, p -> 
+                    match declaredItems with
+                    | None -> None
+                    | Some(declItems, declaredDisplayEnv, declaredRange) ->
+                        Some(p @ declItems, declaredDisplayEnv, declaredRange)
 
             | Some(CompletionContext.AttributeApplication) ->
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
@@ -2153,13 +2184,7 @@ type internal TypeCheckInfo
                 | Some bestQual ->
                     let ty, nenv, ad, m = bestQual
                     let denv = nenv.DisplayEnv
-                    let tyName = stringOfTy denv ty
-
-                    let items = 
-                        getStaticFieldsOfSameTypeInTheType nenv ad m ty
-                        |> List.map (fun i -> 
-                            let code = ValueSome $"{tyName}.{i.Item.DisplayName}"
-                            CompletionItem ValueNone ValueNone code code i)
+                    let items = getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m ty
 
                     match declaredItems with
                     | Some(declaredItems, _, _) ->
