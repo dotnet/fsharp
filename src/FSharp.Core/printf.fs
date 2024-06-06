@@ -19,7 +19,7 @@ open LanguagePrimitives.IntrinsicOperators
 
 type PrintfFormat<'Printer, 'State, 'Residue, 'Result>
         [<DebuggerStepThrough>]
-        (value:string, captures: obj array, captureTys: Type array) =
+        (value:string, captures: objnull array, captureTys: Type array) =
         
     [<DebuggerStepThrough>]
     new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, null, null) 
@@ -263,14 +263,14 @@ module internal PrintfImpl =
     /// Represents one step in the execution of a format string
     [<NoComparison; NoEquality>]
     type Step =
-        | StepWithArg of prefix: string * conv: (obj -> string) 
-        | StepWithTypedArg of prefix: string * conv: (obj -> Type -> string) 
+        | StepWithArg of prefix: string * conv: (objnull -> string) 
+        | StepWithTypedArg of prefix: string * conv: (objnull -> Type -> string) 
         | StepString of prefix: string 
         | StepLittleT of prefix: string 
         | StepLittleA of prefix: string
-        | StepStar1 of prefix: string * conv: (obj -> int -> string) 
+        | StepStar1 of prefix: string * conv: (objnull -> int -> string) 
         | StepPercentStar1 of prefix: string
-        | StepStar2 of prefix: string * conv: (obj -> int -> int -> string)
+        | StepStar2 of prefix: string * conv: (objnull -> int -> int -> string)
         | StepPercentStar2 of prefix: string
 
         // Count the number of string fragments in a sequence of steps
@@ -323,7 +323,7 @@ module internal PrintfImpl =
             if not (String.IsNullOrEmpty s) then 
                 env.Write s
     
-        member env.RunSteps (args: obj array, argTys: Type array, steps: Step array) =
+        member env.RunSteps (args: objnull array, argTys: Type array, steps: Step array) =
             let mutable argIndex = 0
             let mutable tyIndex = 0
 
@@ -359,7 +359,7 @@ module internal PrintfImpl =
                     argIndex <- argIndex + 1
                     let arg = args.[argIndex]
                     argIndex <- argIndex + 1
-                    let f = farg :?> ('State -> obj -> 'Residue)
+                    let f = farg :?> ('State -> objnull -> 'Residue)
                     env.WriteT(f env.State arg)
 
                 | StepStar1(prefix, conv) -> 
@@ -410,7 +410,7 @@ module internal PrintfImpl =
     /// If we captured into an mutable array then these would interfere 
     type PrintfInitial<'State, 'Residue, 'Result> = (unit -> PrintfEnv<'State, 'Residue, 'Result>)
     type PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result> = 
-        delegate of obj list * PrintfInitial<'State, 'Residue, 'Result> -> 'Printer
+        delegate of objnull list * PrintfInitial<'State, 'Residue, 'Result> -> 'Printer
 
     [<Literal>]
     let MaxArgumentsInSpecialization = 3
@@ -477,7 +477,7 @@ module internal PrintfImpl =
         static member CaptureLittleA<'A, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
             PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (f: 'State -> 'A -> 'Residue) (arg1: 'A) ->
-                    let args = box arg1 :: box (fun s (arg:obj) -> f s (unbox arg)) :: args
+                    let args = box arg1 :: box (fun s (arg:objnull) -> f s (unbox arg)) :: args
                     next.Invoke(args, initial) : 'Tail
                 )
             )
@@ -546,12 +546,12 @@ module internal PrintfImpl =
     /// A wrapper struct used to slightly strengthen the types of "ValueConverter" objects produced during composition of
     /// the dynamic implementation.  These are always functions but sometimes they take one argument, sometimes two.
     [<Struct; NoEquality; NoComparison>]
-    type ValueConverter internal (f: obj) =
+    type ValueConverter internal (f: objnull) =
         member x.FuncObj = f
 
-        static member inline Make (f: obj -> string) = ValueConverter(box f)
-        static member inline Make (f: obj -> int -> string) = ValueConverter(box f)
-        static member inline Make (f: obj -> int-> int -> string) = ValueConverter(box f)
+        static member inline Make (f: objnull -> string) = ValueConverter(box f)
+        static member inline Make (f: objnull -> int -> string) = ValueConverter(box f)
+        static member inline Make (f: objnull -> int-> int -> string) = ValueConverter(box f)
 
     let getFormatForFloat (ch: char) (prec: int) = ch.ToString() +  prec.ToString()
 
@@ -569,7 +569,7 @@ module internal PrintfImpl =
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
         /// adaptPaddedFormatted returns boxed function that has various number of arguments depending on if width\precision flags has '*' value 
-        let adaptPaddedFormatted (spec: FormatSpecifier) getFormat (basic: string -> obj -> string) (pad: string -> int -> obj -> string) : ValueConverter =
+        let adaptPaddedFormatted (spec: FormatSpecifier) getFormat (basic: string -> objnull -> string) (pad: string -> int -> objnull -> string) : ValueConverter =
             if spec.IsStarWidth then
                 if spec.IsStarPrecision then
                     // width=*, prec=*
@@ -609,7 +609,7 @@ module internal PrintfImpl =
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
         /// adaptPadded returns boxed function that has various number of arguments depending on if width flags has '*' value 
-        let adaptPadded (spec: FormatSpecifier) (basic: obj -> string) (pad: int -> obj -> string) : ValueConverter = 
+        let adaptPadded (spec: FormatSpecifier) (basic: objnull -> string) (pad: int -> objnull -> string) : ValueConverter = 
             if spec.IsStarWidth then
                 // width=*, prec=?
                 ValueConverter.Make (fun v width -> 
@@ -624,7 +624,7 @@ module internal PrintfImpl =
                     ValueConverter.Make ( 
                         basic)
 
-        let withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  obj -> string) left right : ValueConverter =
+        let withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  objnull -> string) left right : ValueConverter =
             if not (spec.IsWidthSpecified || spec.IsPrecisionSpecified) then
                 ValueConverter.Make (f defaultFormat)
             else
@@ -633,7 +633,7 @@ module internal PrintfImpl =
                 else
                     adaptPaddedFormatted spec getFormat f right
 
-        let withPadding (spec: FormatSpecifier) (f: obj -> string) left right : ValueConverter =
+        let withPadding (spec: FormatSpecifier) (f: objnull -> string) left right : ValueConverter =
             if not spec.IsWidthSpecified then
                 ValueConverter.Make f
             else
@@ -644,11 +644,11 @@ module internal PrintfImpl =
 
     /// Contains functions to handle left/right justifications for non-numeric types (strings/bools)
     module Basic =
-        let leftJustify (f: obj -> string) padChar = 
+        let leftJustify (f: objnull -> string) padChar = 
             fun (w: int) v -> 
                 (f v).PadRight(w, padChar)
     
-        let rightJustify (f: obj -> string) padChar = 
+        let rightJustify (f: objnull -> string) padChar = 
             fun (w: int) v -> 
                 (f v).PadLeft(w, padChar)
     
@@ -725,11 +725,11 @@ module internal PrintfImpl =
             else str
         
         /// noJustification handler for f: 'T -> string - basic integer types
-        let noJustification (f: obj -> string) (prefix: string) isUnsigned =
+        let noJustification (f: objnull -> string) (prefix: string) isUnsigned =
             if isUnsigned then
-                fun (v: obj) -> noJustificationCore (f v) true true prefix
+                fun (v: objnull) -> noJustificationCore (f v) true true prefix
             else 
-                fun (v: obj) -> noJustificationCore (f v) true (isPositive v) prefix
+                fun (v: objnull) -> noJustificationCore (f v) true (isPositive v) prefix
 
     /// contains functions to handle left/right and no justification case for numbers
     module Integer =
