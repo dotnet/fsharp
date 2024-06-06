@@ -9,6 +9,10 @@ open System
 open System.Diagnostics
 open System.Threading
 
+[<assembly: System.Runtime.InteropServices.ComVisible(false)>]
+[<assembly: System.CLSCompliant(true)>]
+do ()
+
 type IEventLoop =
     abstract Run: unit -> bool
     abstract Invoke: (unit -> 'T) -> 'T
@@ -158,9 +162,6 @@ type InteractiveSession() =
     member _.AddPrintTransformer(printer: 'T -> obj) =
         addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
 
-    member _.h([<ReflectedDefinition>] expr: Quotations.Expr<_>) =
-        FsiHelp.Logic.Quoted.tryGetDocumentation expr
-
     member internal self.SetEventLoop(run: (unit -> bool), invoke: ((unit -> obj) -> obj), restart: (unit -> unit)) =
         evLoop.ScheduleRestart()
 
@@ -176,11 +177,6 @@ type InteractiveSession() =
 
 module Settings =
     let fsi = new InteractiveSession()
-
-    fsi.AddPrinter<FsiHelp.Parser.Help voption>(fun help ->
-        match help with
-        | ValueNone -> "No help available"
-        | ValueSome help -> help.ToDisplayString())
 
     [<assembly: AutoOpen("FSharp.Compiler.Interactive.Settings")>]
     do ()

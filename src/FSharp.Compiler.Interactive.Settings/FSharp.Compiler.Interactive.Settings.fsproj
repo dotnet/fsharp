@@ -32,8 +32,6 @@
 
   <ItemGroup>
     <EmbeddedText Include="FSInteractiveSettings.txt" />
-    <Compile Include="fsihelp.fsi" />
-    <Compile Include="fsihelp.fs" />
     <Compile Include="fsiattrs.fs" />
     <Compile Include="fsiaux.fsi" />
     <Compile Include="fsiaux.fs" />

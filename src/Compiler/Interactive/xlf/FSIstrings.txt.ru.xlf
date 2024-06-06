@@ -17,9 +17,9 @@
         <target state="translated">Очистить экран</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiIntroTextfsihelpInfo">
-        <source>Display documentation for an expression, e.g. fsi.h List.map;;</source>
-        <target state="new">Display documentation for an expression, e.g. fsi.h List.map;;</target>
+      <trans-unit id="fsiIntroTextHashhInfo">
+        <source>Display documentation for an expression, e.g. #h \"List.map\";;</source>
+        <target state="new">Display documentation for an expression, e.g. #h \"List.map\";;</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">

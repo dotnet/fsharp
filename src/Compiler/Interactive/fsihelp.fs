@@ -9,6 +9,7 @@ open System.Collections.Generic
 open System.IO
 open System.Text
 open System.Reflection
+open FSharp.Compiler.IO
 
 module Parser =
 
@@ -88,7 +89,8 @@ module Parser =
                 xmlDocument.LoadXml(value)
                 Some xmlDocument
             | _ ->
-                let rawXml = System.IO.File.ReadAllText(xmlPath)
+                use stream = FileSystem.OpenFileForReadShim(xmlPath)
+                let rawXml = stream.ReadAllText()
                 let xmlDocument = XmlDocument()
                 xmlDocument.LoadXml(rawXml)
                 xmlDocCache.Add(xmlPath, rawXml)
@@ -263,3 +265,8 @@ module Logic =
             match exprNames expr with
             | Some(xmlDocument, assembly, modName, implName, sourceName) -> tryMkHelp xmlDocument assembly modName implName sourceName
             | _ -> ValueNone
+
+        let h (expr: Quotations.Expr) =
+            match tryGetDocumentation expr with
+            | ValueNone -> "unable to get documentation"
+            | ValueSome d -> d.ToDisplayString()

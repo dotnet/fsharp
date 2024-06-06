@@ -19,3 +19,5 @@ module Logic =
     module Quoted =
 
         val tryGetDocumentation: expr: Quotations.Expr -> Parser.Help voption
+
+        val h: expr: Quotations.Expr -> string

@@ -81,7 +81,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
-    <ProjectReference Include="..\..\src\\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
 

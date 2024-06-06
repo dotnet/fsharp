@@ -68,9 +68,6 @@ type InteractiveSession =
     /// <summary>Gets or sets a the current event loop being used to process interactions.</summary>
     member EventLoop: IEventLoop with get, set
 
-    /// <summary>Get the documentation for an expression.</summary>
-    member h: [<ReflectedDefinition>] expr: Quotations.Expr<_> -> FsiHelp.Parser.Help voption
-
     /// <summary>Sets the current event loop being used to process interactions.</summary>
     member internal SetEventLoop: (unit -> bool) * ((unit -> obj) -> obj) * (unit -> unit) -> unit
 
