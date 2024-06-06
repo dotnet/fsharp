@@ -23,6 +23,8 @@ using Microsoft.VisualStudio.LanguageServer.Protocol;
 using Microsoft.VisualStudio.ProjectSystem.Query;
 using Microsoft.VisualStudio.RpcContracts.LanguageServerProvider;
 using Nerdbank.Streams;
+using Newtonsoft.Json.Linq;
+using StreamJsonRpc;
 using static FSharp.Compiler.CodeAnalysis.ProjectSnapshot;
 
 /// <inheritdoc/>
@@ -53,7 +55,7 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         // Support a specialized requests dedicated to task-list items.  This way the client can ask just
                         // for these, independently of other diagnostics.  They can also throttle themselves to not ask if
                         // the task list would not be visible.
-                        VSInternalDiagnosticKind.Task,
+                        //VSInternalDiagnosticKind.Task,
                         // Dedicated request for workspace-diagnostics only.  We will only respond to these if FSA is on.
                         VSInternalDiagnosticKind.Syntax,
                         // Fine-grained diagnostics requests.  Importantly, this separates out syntactic vs semantic
@@ -61,10 +63,23 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         // similar vein, compiler diagnostics are explicitly distinct from analyzer-diagnostics, allowing
                         // the former to appear as soon as possible as they are much more critical for the user and should
                         // not be delayed by a slow analyzer.
-                        new("Semantic"),
+                        //new("Semantic"),
                         //new(PullDiagnosticCategories.DocumentAnalyzerSyntax),
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
+            },
+            SemanticTokensOptions = new()
+            {
+                Legend = new()
+                {
+                    TokenTypes = [ ..SemanticTokenTypes.AllTypes], // XXX should be extended
+                    TokenModifiers = [ ..SemanticTokenModifiers.AllModifiers]
+                },
+                Full = new SemanticTokensFullOptions()
+                {
+                    Delta = false
+                },
+                Range = false
             },
             HoverProvider = new HoverOptions()
             { 
@@ -72,6 +87,23 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
             }
         };
         return capabilities;
+    }
+}
+
+internal class SemanticTokensHandler
+    : IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext>
+{
+    public bool MutatesSolutionState => false;
+
+    [LanguageServerEndpoint("textDocument/semanticTokens/full")]
+    public async Task<SemanticTokens> HandleRequestAsync(
+        SemanticTokensParams request,
+        FSharpRequestContext context,
+        CancellationToken cancellationToken)
+    {
+        var tokens = await context.GetSemanticTokensForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+
+        return new SemanticTokens { Data = tokens };
     }
 }
 
@@ -121,17 +153,17 @@ internal class VsDiagnosticsHandler
         {
             DefaultIndex = 0,
             ProjectContexts = [
-                new() {
-                    Id = "potato",
-                    Label = "Potato",
-                    // PR for F# project kind: https://devdiv.visualstudio.com/DevDiv/_git/VSLanguageServerClient/pullrequest/529882
-                    Kind = VSProjectKind.VisualBasic
-                },
-                new () {
-                    Id = "potato2",
-                    Label = "Potato2",
-                    Kind = VSProjectKind.VisualBasic
-                }
+                //new() {
+                //    Id = "potato",
+                //    Label = "Potato",
+                //    // PR for F# project kind: https://devdiv.visualstudio.com/DevDiv/_git/VSLanguageServerClient/pullrequest/529882
+                //    Kind = VSProjectKind.FSharp
+                //},
+                //new () {
+                //    Id = "potato2",
+                //    Label = "Potato2",
+                //    Kind = VSProjectKind.FSharp
+                //}
 
             ]
         });
@@ -236,6 +268,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
+            serviceCollection.AddSingleton<IMethodHandler, SemanticTokensHandler>();
         });
 
         return new DuplexPipe(
