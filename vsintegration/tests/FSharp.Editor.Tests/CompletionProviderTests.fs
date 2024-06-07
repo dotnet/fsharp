@@ -1866,7 +1866,7 @@ let _ =
 """
 
         // SetIndexBinder inherits from DynamicMetaObjectBinder, but overrides and seals Bind and the ReturnType property
-        ["override _.a"; "member x."]
+        [ "override _.a"; "member x." ]
         |> List.iter (fun i ->
             VerifyCompletionListExactly(
                 fileContents,
@@ -1879,10 +1879,9 @@ let _ =
                     "GetHashCode (): int"
                     "ToString (): string"
                 ]
-            )
-        )
+            ))
 
-        ["override x."; "member this."]
+        [ "override x."; "member this." ]
         |> List.iter (fun i ->
             VerifyCompletionListExactly(
                 fileContents,
@@ -1895,8 +1894,7 @@ let _ =
                     "GetHashCode (): int"
                     "ToString (): string"
                 ]
-            )
-        )
+            ))
 
     [<Fact>]
     let ``Completion list for override does not contain virtual method if it is already overridden in the same type`` () =
@@ -1943,33 +1941,35 @@ type TA() =
         member a.
 """
 
-        VerifyCompletionListExactly(fileContents, "override _.", [ 
-            "Equals (obj: obj): bool"
-            "Finalize (): unit"
-            "GetHashCode (): int"
-        ])
-        VerifyCompletionListExactly(fileContents, "override x.b", [ 
-            "A1 (arg1: string): unit"
-            "A2 (): unit"
-            "Equals (obj: obj): bool"
-            "Finalize (): unit"
-            "GetHashCode (): int"
-            "ToString (): string"
-        ])
-        VerifyCompletionListExactly(fileContents, "override x.c", [ 
-            "A2 (): unit"
-            "Equals (obj: obj): bool"
-            "Finalize (): unit"
-            "GetHashCode (): int"
-            "ToString (): string"
-        ])
-        VerifyCompletionListExactly(fileContents, "member thisTA.", [ 
-            "A1 (): unit"
-            "A2 (): unit"
-        ])
-        VerifyCompletionListExactly(fileContents, "static member ", [ 
-            "A4 (): unit"
-        ])
+        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "override x.b",
+            [
+                "A1 (arg1: string): unit"
+                "A2 (): unit"
+                "Equals (obj: obj): bool"
+                "Finalize (): unit"
+                "GetHashCode (): int"
+                "ToString (): string"
+            ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "override x.c",
+            [
+                "A2 (): unit"
+                "Equals (obj: obj): bool"
+                "Finalize (): unit"
+                "GetHashCode (): int"
+                "ToString (): string"
+            ]
+        )
+
+        VerifyCompletionListExactly(fileContents, "member thisTA.", [ "A1 (): unit"; "A2 (): unit" ])
+        VerifyCompletionListExactly(fileContents, "static member ", [ "A4 (): unit" ])
 
     [<Fact>]
     let ``Completion list for override is empty when the caret is on the self identifier`` () =
