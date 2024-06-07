@@ -1887,6 +1887,8 @@ let _ =
                 fileContents,
                 i,
                 [
+                    "ReturnType with get (): System.Type"
+                    "Bind (target: System.Dynamic.DynamicMetaObject, args: System.Dynamic.DynamicMetaObject array): System.Dynamic.DynamicMetaObject"
                     "BindDelegate (site: System.Runtime.CompilerServices.CallSite<'T>, args: obj array): 'T"
                     "Equals (obj: obj): bool"
                     "FallbackSetIndex (target: System.Dynamic.DynamicMetaObject, indexes: System.Dynamic.DynamicMetaObject array, value: System.Dynamic.DynamicMetaObject, errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject"
@@ -1938,7 +1940,7 @@ type TA() =
         static member A3 (): unit = ()
         static member 
         member this.A1 (arg1: string): unit = ()
-        member a.
+        member thisTA.
 """
 
         VerifyCompletionListExactly(fileContents, "override _.", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
