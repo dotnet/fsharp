@@ -1172,8 +1172,7 @@ type internal TypeCheckInfo
                                 let implementBody =
                                     checkMethAbstractAndGetImplementBody
                                         meth
-                                        ($"base.{prop.DisplayName}"
-                                         + (if prop.IsIndexer then $"[({parameters})]" else ""))
+                                        ($"base.{prop.DisplayName}" + (if prop.IsIndexer then $"({parameters})" else ""))
 
                                 let getter = $"get ({parameters}): {retTy}"
                                 getter, $"{getter} = {implementBody}"
@@ -1186,7 +1185,7 @@ type internal TypeCheckInfo
                                     checkMethAbstractAndGetImplementBody
                                         meth
                                         ($"base.{prop.DisplayName}"
-                                         + (if prop.IsIndexer then $"[({parameters})]" else String.Empty)
+                                         + (if prop.IsIndexer then $"({parameters})" else String.Empty)
                                          + " <- value")
 
                                 let parameters = if prop.IsIndexer then $"({parameters}) " else String.Empty
@@ -1295,13 +1294,7 @@ type internal TypeCheckInfo
 
         let getTyFromTypeNamePos (endPos: pos) =
             let nameResItems =
-                GetPreciseItemsFromNameResolution(
-                    endPos.Line,
-                    endPos.Column,
-                    None,
-                    ResolveTypeNamesToTypeRefs,
-                    ResolveOverloads.Yes
-                )
+                GetPreciseItemsFromNameResolution(endPos.Line, endPos.Column, None, ResolveTypeNamesToTypeRefs, ResolveOverloads.Yes)
 
             match nameResItems with
             | NameResResult.Members(ls, _, _) ->

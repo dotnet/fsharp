@@ -92,7 +92,6 @@ type public CompletionContext =
         hasThis: bool *
         isStatic: bool
 
-
 type public ModuleKind =
     { IsAutoOpen: bool
       HasModuleSuffix: bool }
