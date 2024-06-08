@@ -1143,7 +1143,7 @@ module List =
                     item
             ]
         else
-            let selected = HashSet()
+            let selected = HashSet(count)
 
             [
                 for _ = 0 to count - 1 do
