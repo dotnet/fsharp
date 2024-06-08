@@ -3,21 +3,23 @@
 namespace Microsoft.FSharp.Core
 
 open System
+open System.Runtime.CompilerServices
 open System.Threading
 
 [<AbstractClass; Sealed>]
 type internal ThreadSafeRandom() =
-    [<DefaultValue>]
-    static val mutable private globalRandom: Random
 
     [<DefaultValue>]
-    static val mutable private localRandom: ThreadLocal<Random>
+    [<ThreadStatic>]
+    static val mutable private random: Random
 
-    static do ThreadSafeRandom.globalRandom <- Random()
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member private Create() =
+        ThreadSafeRandom.random <- Random()
+        ThreadSafeRandom.random
 
-    static do
-        ThreadSafeRandom.localRandom <-
-            new ThreadLocal<Random>(fun () ->
-                lock ThreadSafeRandom.globalRandom (fun () -> Random(ThreadSafeRandom.globalRandom.Next())))
     // Don't pass the returned Random object between threads
-    static member Shared = ThreadSafeRandom.localRandom.Value
+    static member Shared =
+        match ThreadSafeRandom.random with
+        | null -> ThreadSafeRandom.Create()
+        | random -> random
