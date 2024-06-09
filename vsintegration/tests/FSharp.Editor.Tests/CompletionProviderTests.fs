@@ -1891,7 +1891,6 @@ let _ =
                     "Bind (target: System.Dynamic.DynamicMetaObject, args: System.Dynamic.DynamicMetaObject array): System.Dynamic.DynamicMetaObject"
                     "BindDelegate (site: System.Runtime.CompilerServices.CallSite<'T>, args: obj array): 'T"
                     "Equals (obj: obj): bool"
-                    "FallbackSetIndex (target: System.Dynamic.DynamicMetaObject, indexes: System.Dynamic.DynamicMetaObject array, value: System.Dynamic.DynamicMetaObject, errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject"
                     "Finalize (): unit"
                     "GetHashCode (): int"
                     "ToString (): string"
@@ -1929,16 +1928,19 @@ type C () =
     override A1 s = ()
 
 type IA =
+    static abstract member A3: unit -> unit
+    static abstract member B4: unit -> unit
+    
+type IB =
     abstract member A1: unit -> unit
     abstract member A1: string -> unit
     abstract member A2: unit -> unit
-    static abstract member A3: unit -> unit
-    static abstract member A4: unit -> unit
-    
+
 type TA() =
     interface IA with
-        static member A3 (): unit = ()
         static member 
+        static member A3 (): unit = ()
+    interface IB with
         member this.A1 (arg1: string): unit = ()
         member thisTA.
 """
