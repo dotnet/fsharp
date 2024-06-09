@@ -1929,7 +1929,7 @@ type C () =
 
 type IA =
     static abstract member A3: unit -> unit
-    static abstract member B4: unit -> unit
+    static abstract member A4: unit -> unit
     
 type IB =
     abstract member A1: unit -> unit

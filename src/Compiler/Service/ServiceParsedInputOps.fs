@@ -1633,6 +1633,13 @@ module ParsedInput =
                             && rangeContainsPos methodId.idRange pos
                             ->
                             overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
+                        
+                        // static member A|
+                        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ methodId ])) when
+                            isStaticMember trivia.LeadingKeyword
+                            && rangeContainsPos methodId.idRange pos
+                            ->
+                            overrideContext path trivia.LeadingKeyword.Range false true false
 
                         | SynPat.LongIdent(longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
                             if rangeContainsPos lidwd.Range pos then
