@@ -147,7 +147,7 @@ neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructo
 
 neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'.
 
-Known types of arguments: string * obj
+Known types of arguments: string * objnull
 
 Available overloads:
  - static member C2.M: fmt: string * [<System.ParamArray>] args: int array -> string // Argument 'args' doesn't match
@@ -156,12 +156,12 @@ Available overloads:
 neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(183,14,183,41): typecheck error FS0193: Type constraint mismatch. The type 
     'string'    
@@ -172,16 +172,16 @@ is not compatible with type
 neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'.
 
-Known types of arguments: string * obj
+Known types of arguments: string * objnull
 
 Available overloads:
  - static member C3.M: fmt: string * [<System.ParamArray>] args: string array -> string // Argument 'args' doesn't match
@@ -190,12 +190,12 @@ Available overloads:
 neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(189,14,189,41): typecheck error FS0193: Type constraint mismatch. The type 
     'string'    
@@ -206,12 +206,12 @@ is not compatible with type
 neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(190,34,190,39): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(195,5,195,10): typecheck error FS0842: This attribute is not valid for use on this language element
 
