@@ -496,4 +496,5 @@ type ITypeProvider2 =
     abstract GetStaticParametersForMethod: methodWithoutArguments: MethodBase -> ParameterInfo array
 
     abstract ApplyStaticArgumentsForMethod:
-        methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: objnull array -> MethodBase
+        methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: objnull array ->
+            MethodBase

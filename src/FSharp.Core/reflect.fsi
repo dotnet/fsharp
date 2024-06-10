@@ -387,7 +387,8 @@ type FSharpValue =
     /// <returns>A function to for reading the fields of the given union case.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeUnionReader: unionCase: UnionCaseInfo * ?bindingFlags: BindingFlags -> (objnull -> objnull array)
+    static member PreComputeUnionReader:
+        unionCase: UnionCaseInfo * ?bindingFlags: BindingFlags -> (objnull -> objnull array)
 
     /// <summary>Precompute a function for constructing a discriminated union value for a particular union case. </summary>
     ///

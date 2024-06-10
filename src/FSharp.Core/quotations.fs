@@ -231,7 +231,7 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
     member x.Tree = term
     member x.CustomAttributes = attribs
 
-    override x.Equals (obj:objnull) =
+    override x.Equals(obj: objnull) =
         match obj with
         | :? Expr as y ->
             let rec eq t1 t2 =

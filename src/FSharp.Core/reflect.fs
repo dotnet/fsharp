@@ -1482,7 +1482,11 @@ module FSharpReflectionExtensions =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.GetUnionFields(value, unionType, bindingFlags)
 
-        static member PreComputeUnionTagReader(unionType: Type, ?allowAccessToPrivateRepresentation) : (objnull -> int) =
+        static member PreComputeUnionTagReader
+            (
+                unionType: Type,
+                ?allowAccessToPrivateRepresentation
+            ) : (objnull -> int) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionTagReader(unionType, bindingFlags)
 
