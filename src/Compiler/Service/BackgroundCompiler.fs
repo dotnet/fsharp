@@ -1332,9 +1332,6 @@ type internal BackgroundCompiler
             // Do we assume .NET Framework references for scripts?
             let assumeDotNetFramework = defaultArg assumeDotNetFramework true
 
-            let! ct = Cancellable.token ()
-            use _ = Cancellable.UsingToken(ct)
-
             let extraFlags =
                 if previewEnabled then
                     [| "--langversion:preview" |]
