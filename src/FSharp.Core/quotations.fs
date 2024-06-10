@@ -140,13 +140,13 @@ type Var(name: string, typ: Type, ?isMutable: bool) =
     override _.GetHashCode() =
         base.GetHashCode()
 
-    override v.Equals(obj: obj) =
+    override v.Equals(obj: objnull) =
         match obj with
         | :? Var as v2 -> System.Object.ReferenceEquals(v, v2)
         | _ -> false
 
     interface System.IComparable with
-        member v.CompareTo(obj: obj) =
+        member v.CompareTo(obj: objnull) =
             match obj with
             | :? Var as v2 ->
                 if System.Object.ReferenceEquals(v, v2) then
@@ -223,15 +223,15 @@ and [<StructuralEquality; NoComparison>] ExprConstInfo =
     | ForIntegerRangeLoopOp
     | WhileLoopOp
     // Arbitrary spliced values - not serialized
-    | ValueOp of obj * Type * string option
-    | WithValueOp of obj * Type
+    | ValueOp of objnull * Type * string option
+    | WithValueOp of objnull * Type
     | DefaultValueOp of Type
 
 and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(term: Tree, attribs: Expr list) =
     member x.Tree = term
     member x.CustomAttributes = attribs
 
-    override x.Equals obj =
+    override x.Equals (obj:objnull) =
         match obj with
         | :? Expr as y ->
             let rec eq t1 t2 =
@@ -2655,7 +2655,7 @@ type Expr with
     static member Value(value: 'T) =
         mkValue (box value, typeof<'T>)
 
-    static member Value(value: obj, expressionType: Type) =
+    static member Value(value: objnull, expressionType: Type) =
         checkNonNull "expressionType" expressionType
         mkValue (value, expressionType)
 
@@ -2663,7 +2663,7 @@ type Expr with
         checkNonNull "name" name
         mkValueWithName (box value, typeof<'T>, name)
 
-    static member ValueWithName(value: obj, expressionType: Type, name: string) =
+    static member ValueWithName(value: objnull, expressionType: Type, name: string) =
         checkNonNull "expressionType" expressionType
         checkNonNull "name" name
         mkValueWithName (value, expressionType, name)
@@ -2672,7 +2672,7 @@ type Expr with
         let raw = mkValueWithDefn (box value, typeof<'T>, definition)
         new Expr<'T>(raw.Tree, raw.CustomAttributes)
 
-    static member WithValue(value: obj, expressionType: Type, definition: Expr) =
+    static member WithValue(value: objnull, expressionType: Type, definition: Expr) =
         checkNonNull "expressionType" expressionType
         mkValueWithDefn (value, expressionType, definition)
 
@@ -2917,7 +2917,7 @@ module DerivedPatterns =
 module ExprShape =
     open Patterns
 
-    let RebuildShapeCombination (shape: obj, arguments) =
+    let RebuildShapeCombination (shape: objnull, arguments) =
         // preserve the attributes
         let op, attrs = unbox<ExprConstInfo * Expr list> (shape)
 
