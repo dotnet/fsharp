@@ -1759,7 +1759,7 @@ namespace Microsoft.FSharp.Core
                     | null, null -> true
                     | null, _ -> false
                     | _, null -> false
-                    | (:? (objnull array)      as arr1), (:? (obj array)      as arr2) -> GenericEqualityObjArray    er iec arr1 arr2
+                    | (:? (objnull array)      as arr1), (:? (objnull array)      as arr2) -> GenericEqualityObjArray    er iec arr1 arr2
                     | (:? (byte array)     as arr1), (:? (byte array)     as arr2) -> GenericEqualityByteArray          arr1 arr2
                     | (:? (int32 array)    as arr1), (:? (int32 array)    as arr2) -> GenericEqualityInt32Array         arr1 arr2
                     | (:? (int64 array)    as arr1), (:? (int64 array)    as arr2) -> GenericEqualityInt64Array         arr1 arr2

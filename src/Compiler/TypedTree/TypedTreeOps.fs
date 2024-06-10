@@ -1156,30 +1156,30 @@ let isErasedType g ty =
   | _ -> false
 
 // Return all components of this type expression that cannot be tested at runtime
-let rec getErasedTypes g ty = 
+let rec getErasedTypes g ty checkForNullness = 
     let ty = stripTyEqns g ty
     if isErasedType g ty then [ty] else 
     match ty with
     | TType_forall(_, bodyTy) -> 
-        getErasedTypes g bodyTy
+        getErasedTypes g bodyTy checkForNullness
 
     | TType_var (tp, nullness) -> 
-        match nullness.Evaluate() with
-        | NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime (TODO NULLNESS: for value types Nullable<_> they can be)
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime (TODO NULLNESS: for value types Nullable<_> they can be)
         | _ -> if tp.IsErased then [ty] else []
 
     | TType_app (_, b, nullness) ->
-        match nullness.Evaluate() with
-        | NullnessInfo.WithNull -> [ty]
-        | _ -> List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty]
+        | _ -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
 
     | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
-        List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
+        List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
 
     | TType_fun (domainTy, rangeTy, nullness) -> 
-        match nullness.Evaluate() with
-        | NullnessInfo.WithNull -> [ty]
-        | _ -> getErasedTypes g domainTy @ getErasedTypes g rangeTy
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty]
+        | _ -> getErasedTypes g domainTy false @ getErasedTypes g rangeTy false
     | TType_measure _ -> 
         [ty]
 

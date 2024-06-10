@@ -927,7 +927,7 @@ val anonInfoEquiv: AnonRecdTypeInfo -> AnonRecdTypeInfo -> bool
 val isErasedType: TcGlobals -> TType -> bool
 
 // Return all components (units-of-measure, and types) of this type that would be erased
-val getErasedTypes: TcGlobals -> TType -> TType list
+val getErasedTypes: TcGlobals -> TType -> checkForNullness:bool -> TType list
 
 //-------------------------------------------------------------------------
 // Unit operations

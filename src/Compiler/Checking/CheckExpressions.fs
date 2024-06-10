@@ -2997,7 +2997,7 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
         else
             error(Error(FSComp.SR.tcTypeTestErased(NicePrint.minimalStringOfType denv tgtTy, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g tgtTy)), m))
     else
-        for ety in getErasedTypes g tgtTy do
+        for ety in getErasedTypes g tgtTy true do
             if isMeasureTy g ety then
                 warning(Error(FSComp.SR.tcTypeTestLosesMeasures(NicePrint.minimalStringOfType denv ety), m))
             else
