@@ -1241,7 +1241,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn """    #help;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo ())
 
         fsiConsoleOutput.uprintfn
-            """    #help "expr";;                                // %s"""
+            """    #help "idn";;                                 // %s"""
             (FSIstrings.SR.fsiIntroTextHashhelpdocInfo ())
 
         if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then

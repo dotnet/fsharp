@@ -421,7 +421,7 @@ type 'a T4063 = | AT4063 of 'a
     #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
-    #help "expr";;                                // Display documentation for an expression, e.g. #help "List.map";;
+    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
     #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
     #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #clear;;                                      // Clear screen
