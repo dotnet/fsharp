@@ -46,3 +46,9 @@ module FsiHelpTests =
             h.FullName |> shouldBe "FSharp.Test.ReflectionHelper.shouldn't"
             Assert.StartsWith("Assert that function f ", h.Summary)
         | ValueNone -> Assert.True(false, "No xml documentation found")
+
+    [<Fact>]
+    let ``Can't get help for non-identifier`` () =
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ 23 @> with
+        | ValueSome h -> Assert.True(false, "No xml documentation expected")
+        | ValueNone -> ()
