@@ -54,4 +54,41 @@
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
   </ItemGroup>
 
+  <Target Name="Add PGO" BeforeTargets="Publish">
+
+    <!-- Special conditions for collecting a static profile -->
+    <ItemGroup>
+      <Env Include="DOTNET_ReadyToRun=0" />
+      <Env Include="DOTNET_TieredPGO=1" />
+      <Env Include="DOTNET_TC_QuickJitForLoops=1" /> 
+      <Env Include="DOTNET_TC_CallCountThreshold=10000" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <DummyScript>test.fsx</DummyScript>
+      <Runtime>Microsoft-Windows-DotNETRuntime:0x4000080018:5</Runtime>
+      <NetTraceFile>trace.nettrace</NetTraceFile>
+      <MibcFile>trace.mibc</MibcFile>
+      <Fsc>$([System.IO.Path]::Combine($(OutputPath), $(TargetName).exe))</Fsc>
+      <InvokeFsc>$(Fsc) $(DummyScript)</InvokeFsc>
+    </PropertyGroup>
+
+    <!-- Create a dummy fsx file -->
+    <WriteLinesToFile File="$(DummyScript)" />
+
+    <!-- Launch the instrumented fsc and collect traces -->
+    <Exec 
+      Command="dotnet trace collect -o $(NetTraceFile) --providers $(Runtime) -- $(InvokeFsc)"
+      EnvironmentVariables="@(Env)" />
+
+    <!-- Convert .nettrace to .mibc -->
+    <Exec Command="dotnet-pgo create-mibc -t $(NetTraceFile) -o $(MibcFile)" />
+
+  </Target>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <ReadyToRunOptimizationData>$(MibcFile)</ReadyToRunOptimizationData>
+  </PropertyGroup>
+
 </Project>
