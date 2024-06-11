@@ -1081,6 +1081,8 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nv1.Solution nullness2
     | _, Nullness.Variable nv2 when nv2.IsSolved -> 
         SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 nv2.Solution
+    | Nullness.Variable _nv1, Nullness.Known NullnessInfo.WithoutNull  -> 
+        CompleteD
     | Nullness.Variable nv1, _ -> 
         trace.Exec (fun () ->   nv1.Set nullness2) (fun () -> nv1.Unset())
         CompleteD
@@ -1414,6 +1416,8 @@ and SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rang
     trackErrors {
         // TODO NULLNESS: consider whether flipping the actual and expected in argument position
         // causes other problems, e.g. better/worse diagnostics
+        let g = csenv.g
+        let domainTy2 = reqTyForArgumentNullnessInference g domainTy1 domainTy2
         do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln domainTy2 domainTy1
         return! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln rangeTy1 rangeTy2
     }

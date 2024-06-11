@@ -92,10 +92,10 @@ module KonsoleWithNullsModule =
     let WriteLineC2(fmt: C | null, arg1: C | null) = Console.WriteLine(fmt.Value, arg1.Value)
 
 module KonsoleWithNullsModule2 = 
-    let WriteLine x = KonsoleWithNullsModule.WriteLine x
-    let WriteLine2 (fmt, arg1) = KonsoleWithNullsModule.WriteLine2(fmt, arg1)
-    let WriteLineC(s) = KonsoleWithNullsModule.WriteLineC(s)
-    let WriteLineC2(fmt, arg1) = KonsoleWithNullsModule.WriteLineC2(fmt, arg1)
+    let WriteLine (x : string | null) = KonsoleWithNullsModule.WriteLine x
+    let WriteLine2 (fmt: string | null, arg1: string | null) = KonsoleWithNullsModule.WriteLine2(fmt, arg1)
+    let WriteLineC(s: _ | null) = KonsoleWithNullsModule.WriteLineC(s)
+    let WriteLineC2(fmt: _ | null, arg1: _ | null) = KonsoleWithNullsModule.WriteLineC2(fmt, arg1)
 
 type KonsoleNoNulls = 
     static member WriteLine(s: String) = Console.WriteLine(s)

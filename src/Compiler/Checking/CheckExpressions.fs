@@ -483,8 +483,9 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
     match overallTy with
     | MustConvertTo(isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
         let actualTy = tryNormalizeMeasureInType g actualTy
-        let reqdTy = tryNormalizeMeasureInType g reqdTy
-        if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy actualTy then
+        let reqdTy = tryNormalizeMeasureInType g reqdTy       
+        let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy           
+        if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqTyForUnification actualTy then
             ()
         else
             // try adhoc type-directed conversions

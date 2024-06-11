@@ -29,6 +29,75 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
     |> withDiagnostics [
         Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
 
+[<Theory>]
+[<InlineData("fileExists(path)")>]
+[<InlineData("fileExists path")>]
+[<InlineData("fileExists null")>]
+[<InlineData("path |> fileExists")>]
+[<InlineData("null |> fileExists")>]
+[<InlineData("System.IO.File.Exists(path)")>]
+[<InlineData("System.IO.File.Exists(null)")>]
+[<InlineData("path |> System.IO.File.Exists")>]
+[<InlineData("null |> System.IO.File.Exists")>]
+[<InlineData("System.String.IsNullOrEmpty(path)")>]
+let ``Calling a nullAllowing API can still infer a withoutNull type``(functionCall) =
+    FSharp $"""
+module MyLib
+
+let myStrictFunc(x: string) = x.GetHashCode()
+let fileExists (path:string|null) = true
+
+let myStringReturningFunc (path) = 
+    let ex = {functionCall}
+    myStrictFunc(path)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+//[<Fact>]
+// TODO Tomas - as of now, this does not bring the desired result
+let ``Type inference with underscore or null`` () =
+    FSharp $"""
+module MyLib
+
+let myFunc (path: _ | null) =
+    System.IO.File.Exists(path)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Type inference SystemIOFileExists`` () =
+    FSharp $"""
+module MyLib
+
+let test() = 
+    let maybeString : string | null = null
+    System.IO.File.Exists(maybeString)
+
+let myFunc path : string =
+    let exists =  path |> System.IO.File.Exists
+    path
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Type inference fsharp func`` () =
+    FSharp $"""module MyLib
+
+let fileExists (path:string|null) = true
+let myStringReturningFunc (pathArg) : string = 
+    let ex = pathArg |> fileExists
+    pathArg
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 
 // P1: inline or not
 // P2: type annotation for function argument

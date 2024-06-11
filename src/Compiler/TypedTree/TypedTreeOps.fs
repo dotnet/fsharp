@@ -9157,10 +9157,32 @@ let nullnessOfTy g ty =
     |> function
         | TType_app(tcref, _, nullness) ->
             let nullness2 = intrinsicNullnessOfTyconRef g tcref
-            combineNullness nullness nullness2
+            if nullness2 === g.knownWithoutNull then
+                nullness
+            else
+                combineNullness nullness nullness2
         | TType_fun (_, _, nullness) | TType_var (_, nullness) ->
             nullness
         | _ -> g.knownWithoutNull
+
+let changeWithNullReqTyToVariable g reqTy =
+    let sty = stripTyEqns g reqTy
+    match isTyparTy g sty with
+    | false ->
+        match nullnessOfTy g sty with
+        | Nullness.Known NullnessInfo.WithNull -> 
+            reqTy |> replaceNullnessOfTy (NewNullnessVar())
+        | _ -> reqTy
+    | true -> reqTy
+
+/// When calling a null-allowing API, we prefer to infer a without null argument for idiomatic F# code.
+/// That is, unless caller explicitely marks a value (e.g. coming from a function parameter) as WithNull, it should not be infered as such.
+let reqTyForArgumentNullnessInference g actualTy reqTy =
+    // Only change reqd nullness if actualTy is an inference variable
+    match tryDestTyparTy g actualTy with
+    | ValueSome t when t.IsCompilerGenerated && not(t.Constraints |> List.exists(function | TyparConstraint.SupportsNull _ -> true | _ -> false))->
+        changeWithNullReqTyToVariable g reqTy       
+    | _ -> reqTy
 
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
