@@ -31,14 +31,14 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result> =
     /// <param name="captureTys">The types of expressions for %A expression gaps in interpolated string.</param>
     /// <returns>The PrintfFormat containing the formatted result.</returns>
     new:
-        value: string * captures: obj array * captureTys: Type array ->
+        value: string * captures: objnull array * captureTys: Type array ->
             PrintfFormat<'Printer, 'State, 'Residue, 'Result>
 
     /// <summary>The raw text of the format string.</summary>
     member Value: string
 
     /// <summary>The captures associated with an interpolated string.</summary>
-    member Captures: obj array
+    member Captures: objnull array
 
     /// <summary>The capture types associated with an interpolated string.</summary>
     member CaptureTypes: System.Type array
@@ -71,7 +71,7 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple> =
     ///
     /// <returns>The created format string.</returns>
     new:
-        value: string * captures: obj array * captureTys: Type array ->
+        value: string * captures: objnull array * captureTys: Type array ->
             PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>
 
 /// <summary>Type of a formatting expression.</summary>

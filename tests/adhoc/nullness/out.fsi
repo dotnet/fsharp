@@ -236,14 +236,18 @@ module KonsoleWithNullsModule =
 
 module KonsoleWithNullsModule2 =
     
-    val WriteLine: x: System.String | null -> unit
+    val WriteLine: x: string | null -> unit
     
-    val WriteLine2:
-      fmt: System.String | null * arg1: System.String | null -> unit
+    val WriteLine2: fmt: string | null * arg1: string | null -> unit
     
-    val WriteLineC: s: C | null -> unit
+    val WriteLineC:
+      s: 'a | null -> unit
+        when 'a: not null and 'a: not struct and 'a :> C | null
     
-    val WriteLineC2: fmt: C | null * arg1: C | null -> unit
+    val WriteLineC2:
+      fmt: 'a | null * arg1: 'b | null -> unit
+        when 'a: not null and 'a: not struct and 'a :> C | null and 'b: not null and
+             'b: not struct and 'b :> C | null
 
 [<Class>]
 type KonsoleNoNulls =
