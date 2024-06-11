@@ -19,5 +19,6 @@ type Record = { Prop: string }
 
 [<ClassTarget>]
 [<InterfaceTarget>]
+[<StructTarget>]
 [<Struct>]
 type StructRecord = { Prop: string }
