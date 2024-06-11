@@ -548,7 +548,7 @@ module Test4343e =
     val dB: D<int>
     val dAB: D<int> * D<int> * D<int> list
     val dC: D<bool>
-    val boxed_dABC: obj list
+    val boxed_dABC: objnull list
 type F1 =
   inherit System.Windows.Forms.Form
   interface System.IDisposable
