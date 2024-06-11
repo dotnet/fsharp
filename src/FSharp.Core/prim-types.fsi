@@ -264,7 +264,7 @@ namespace Microsoft.FSharp.Core
     /// interface types.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface, AllowMultiple=false)>]  
     [<Sealed>]
     type AllowNullLiteralAttribute =
         inherit Attribute
