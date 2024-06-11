@@ -1215,11 +1215,7 @@ module internal Random =
         value
 
     let next (randomizer: unit -> float) (minValue: int) (maxValue: int) =
-        maxValue - minValue
-        |> float
-        |> (*) (executeRandomizer randomizer)
-        |> int
-        |> (+) minValue
+        int ((executeRandomizer randomizer) * float (maxValue - minValue)) + minValue
 
     let shuffleArrayInPlaceWith (random: Random) (array: array<'T>) =
         let inputLength = array.Length
