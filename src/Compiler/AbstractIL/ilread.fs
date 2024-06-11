@@ -931,7 +931,7 @@ let mkCacheGeneric lowMem _inbase _nm (sz: int) =
         (fun f x -> f x)
     else
         let mutable cache: ConcurrentDictionary<_, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
-#if STATISTICS       
+#if STATISTICS
 
         addReport (fun oc ->
             if !_count <> 0 then
