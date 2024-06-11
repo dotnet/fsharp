@@ -238,6 +238,7 @@ type CallerInfo =
     | CallerLineNumber
     | CallerMemberName
     | CallerFilePath
+    | CallerArgumentExpression of paramName: string
 
     override x.ToString() = sprintf "%+A" x
 
@@ -315,20 +316,23 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
     let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
     let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
     let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
+    let callerArgumentExpressionArg = TryFindFSharpAttributeOpt g g.attrib_CallerArgumentExpressionAttribute argInfo.Attribs
 
     let callerInfo =
-        match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-        | false, false, false -> NoCallerInfo
-        | true, false, false -> CallerLineNumber
-        | false, true, false -> CallerFilePath
-        | false, false, true -> CallerMemberName
-        | false, true, true -> 
+        match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, callerArgumentExpressionArg with
+        | false, false, false, None -> NoCallerInfo
+        | true, false, false, None -> CallerLineNumber
+        | false, true, false, None -> CallerFilePath
+        | false, false, true, None -> CallerMemberName
+        | false, false, false, Some(Attrib(_, _, (AttribStringArg x :: _), _, _, _, _)) ->
+            CallerArgumentExpression(x)
+        | false, true, true, _ -> 
             match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
             | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
-        | _, _, _ ->
+        | _, _, _, _ ->
             // if multiple caller info attributes are specified, pick the "wrong" one here
             // so that we get an error later
             match tryDestOptionTy g ty with
@@ -1191,14 +1195,22 @@ type MethInfo =
                  let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute attrs
                  let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute attrs
                  let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute attrs
+                 let isCallerArgumentExpressionArg = TryFindILAttributeOpt g.attrib_CallerArgumentExpressionAttribute attrs
 
                  let callerInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-                    | false, false, false -> NoCallerInfo
-                    | true, false, false -> CallerLineNumber
-                    | false, true, false -> CallerFilePath
-                    | false, false, true -> CallerMemberName
-                    | _, _, _ ->
+                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, isCallerArgumentExpressionArg with
+                    | false, false, false, false -> NoCallerInfo
+                    | true, false, false, false -> CallerLineNumber
+                    | false, true, false, false -> CallerFilePath
+                    | false, false, true, false -> CallerMemberName            
+                    | false, false, false, true ->
+                        match g.attrib_CallerArgumentExpressionAttribute with
+                        | Some (AttribInfo(tref,_)) ->
+                            match TryDecodeILAttribute tref attrs with
+                            | Some ([ILAttribElem.String (Some name) ], _) -> CallerArgumentExpression(name)
+                            | _ -> NoCallerInfo
+                        | None -> NoCallerInfo
+                    | _, _, _, _ ->
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath

@@ -122,6 +122,8 @@ type Range =
 
     /// The range where all values are zero
     static member Zero: range
+
+    member internal DebugCode: string
   
 /// Represents a range within a file
 and range = Range

@@ -839,22 +839,40 @@ module Structure =
             elif line.StartsWithOrdinal("//") then Some SingleLine
             else None
 
+        /// Determine if a line is //#region or //#endregion or else some thing
+        let (|BeginRegion|EndRegion|NotRegion|) =
+            let regex = System.Text.RegularExpressions.Regex("^\\s*//\\s*#(end)?region", System.Text.RegularExpressions.RegexOptions.Compiled)
+            fun (line: string) ->
+                let result = regex.Match(line)
+                match result.Success, result.Groups[1].Success with
+                | false, _ -> NotRegion
+                | true, false -> BeginRegion
+                | true, true -> EndRegion
+
         let getCommentRanges trivia (lines: string[]) =
             let rec loop (lastLineNum, currentComment, result as state) (lines: string list) lineNum =
                 match lines with
                 | [] -> state
                 | lineStr :: rest ->
                     match lineStr.TrimStart(), currentComment with
+                    | (Comment SingleLine & (BeginRegion | EndRegion)), _ -> 
+                        let result' = 
+                            match currentComment with
+                            | Some comment -> comment :: result
+                            | None -> result
+                        let comments = CommentList.New SingleLine (lineNum, lineStr)
+                        loop (lineNum, Some comments, result') rest (lineNum + 1)
                     | Comment commentType, Some comment ->
-                        loop
-                            (if comment.Type = commentType && lineNum = lastLineNum + 1 then
-                                 comment.Lines.Add(lineNum, lineStr)
-                                 lineNum, currentComment, result
-                             else
-                                 let comments = CommentList.New commentType (lineNum, lineStr)
-                                 lineNum, Some comments, comment :: result)
-                            rest
-                            (lineNum + 1)
+                        let comments, result' = 
+                            match commentType, comment.Lines[comment.Lines.Count - 1] with
+                            | SingleLine, (_, NotRegion)
+                            | XmlDoc, _ when comment.Type = commentType && lineNum = lastLineNum + 1 ->
+                                comment.Lines.Add(lineNum, lineStr)
+                                currentComment, result
+                            | _ ->
+                                let comments = CommentList.New commentType (lineNum, lineStr)
+                                Some comments, comment :: result
+                        loop (lineNum, comments, result') rest (lineNum + 1)
                     | Comment commentType, None ->
                         let comments = CommentList.New commentType (lineNum, lineStr)
                         loop (lineNum, Some comments, result) rest (lineNum + 1)
@@ -892,6 +910,29 @@ module Structure =
                     CollapseRange = range
                 })
             |> acc.AddRange
+
+            let _, scopes =
+                comments
+                |> List.filter (fun comment -> comment.Type = SingleLine && comment.Lines.Count = 1)
+                |> List.fold (fun (stack, state) comment -> 
+                    match stack, comment.Lines[0] with
+                    | _, (_, BeginRegion as startLine) -> startLine :: stack, state
+                    | (startLine, startStr) :: rest, (endLine, (EndRegion as endStr)) -> 
+                        let startCol = startStr.IndexOf '/'
+                        let endCol = endStr.TrimEnd().Length
+
+                        let range = mkRange "" (mkPos (startLine + 1) startCol) (mkPos (endLine + 1) endCol)
+                        let scope = 
+                            {
+                                Scope = Scope.Comment
+                                Collapse = Collapse.Same
+                                Range = range
+                                CollapseRange = range
+                            }
+                        rest, scope :: state
+                    | _, (_, EndRegion as endLine) -> endLine :: stack, state
+                    | _ -> stack, state) ([], [])
+            acc.AddRange scopes
 
             for trivia in trivia do
                 match trivia with
