@@ -1060,19 +1060,47 @@ type internal TypeCheckInfo
 
     /// Gets all methods that a type can override, but has not yet done so.
     let GetOverridableMethods pos ctx (typeNameRange: range) spacesBeforeOverrideKeyword hasThis isStatic =
-        let isMethodOverridable alreadyOverridden (candidate: MethInfo) =
+        let checkImplementedSlotDeclareType ty (slots: SlotSig list) =
+            slots |> List.exists (fun (TSlotSig(declaringType = ty2)) -> typeEquiv g ty ty2)
+
+        let isMethodOverridable superTy alreadyOverridden (candidate: MethInfo) =
             not candidate.IsFinal
             && not (
                 alreadyOverridden
-                |> ResizeArray.exists (MethInfosEquivByNameAndSig EraseNone true g amap range0 candidate)
+                |> ResizeArray.exists (fun i ->
+                    MethInfosEquivByNameAndSig EraseNone true g amap range0 candidate i
+                    && (checkImplementedSlotDeclareType superTy i.ImplementedSlotSignatures
+                        || tyconRefEq g candidate.DeclaringTyconRef i.DeclaringTyconRef))
             )
 
-        let isPropertyOverridable alreadyOverridden (candidate: PropInfo) =
-            candidate.IsVirtualProperty
-            && not (
-                alreadyOverridden
-                |> List.exists (PropInfosEquivByNameAndSig EraseNone g amap range0 candidate)
-            )
+        let isMethodOptionOverridable superTy alreadyOverridden candidate =
+            candidate
+            |> ValueOption.map (fun i -> isMethodOverridable superTy alreadyOverridden i)
+            |> ValueOption.defaultValue false
+
+        let isPropertyOverridable superTy alreadyOverridden (candidate: PropInfo) =
+            if candidate.IsVirtualProperty then
+                let getterOverridden, setterOverridden =
+                    alreadyOverridden
+                    |> List.filter (fun i ->
+                        PropInfosEquivByNameAndSig EraseNone g amap range0 candidate i
+                        && (checkImplementedSlotDeclareType superTy i.ImplementedSlotSignatures
+                            || tyconRefEq g candidate.DeclaringTyconRef i.DeclaringTyconRef))
+                    |> List.fold
+                        (fun (getterOverridden, setterOverridden) i -> getterOverridden || i.HasGetter, setterOverridden || i.HasSetter)
+                        (false, false)
+
+                not getterOverridden, not setterOverridden
+            else
+                false, false
+
+        let rec checkOrGenerateArgName (nameSet: HashSet<_>) name =
+            let name = if String.IsNullOrEmpty name then "arg" else name
+
+            if nameSet.Add(name) then
+                name
+            else
+                checkOrGenerateArgName nameSet $"{name}_{nameSet.Count}"
 
         let (nenv, ad), m = GetBestEnvForPos pos
         let denv = nenv.DisplayEnv
@@ -1104,8 +1132,85 @@ type internal TypeCheckInfo
 
             let isInterface = isInterfaceTy g superTy
 
+            // reuse between props and methods
+            let argNames = HashSet()
+
             let overridableProps =
-                GetIntrinsicPropInfoWithOverridenPropOfType
+                let generatePropertyOverrideBody (prop: PropInfo) getterMeth setterMeth =
+                    argNames.Clear()
+
+                    let parameters =
+                        prop.GetParamNamesAndTypes(amap, m)
+                        |> List.map (fun (ParamNameAndType(name, ty)) ->
+                            let name =
+                                name
+                                |> Option.map _.idText
+                                |> Option.defaultValue String.Empty
+                                |> checkOrGenerateArgName argNames
+
+                            $"{name}: {stringOfTy denv ty}")
+                        |> String.concat ", "
+
+                    let retTy = prop.GetPropertyType(amap, m)
+                    let retTy = stringOfTy denv retTy
+
+                    let getter, getterWithBody =
+                        match getterMeth with
+                        | ValueSome meth ->
+                            let implementBody =
+                                checkMethAbstractAndGetImplementBody
+                                    meth
+                                    ($"base.{prop.DisplayName}" + (if prop.IsIndexer then $"({parameters})" else ""))
+
+                            let getter = $"get ({parameters}): {retTy}"
+                            getter, $"{getter} = {implementBody}"
+                        | _ -> String.Empty, String.Empty
+
+                    let setter, setterWithBody =
+                        match setterMeth with
+                        | ValueSome meth ->
+                            let argValue = checkOrGenerateArgName argNames "value"
+
+                            let implementBody =
+                                checkMethAbstractAndGetImplementBody
+                                    meth
+                                    ($"base.{prop.DisplayName}"
+                                     + (if prop.IsIndexer then $"({parameters})" else String.Empty)
+                                     + $" <- {argValue}")
+
+                            let parameters = if prop.IsIndexer then $"({parameters}) " else String.Empty
+                            let setter = $"set {parameters}({argValue}: {retTy})"
+                            setter, $"{setter} = {implementBody}"
+                        | _ -> String.Empty, String.Empty
+
+                    let keywordAnd =
+                        if getterMeth.IsNone || setterMeth.IsNone then
+                            String.Empty
+                        else
+                            " and "
+
+                    let this = if hasThis || prop.IsStatic then String.Empty else "this."
+
+                    let getterWithBody =
+                        if String.IsNullOrWhiteSpace getterWithBody then
+                            String.Empty
+                        else
+                            getterWithBody + newlineIndent
+
+                    let name = $"{prop.DisplayName} with {getter}{keywordAnd}{setter}"
+
+                    let textInCode =
+                        this
+                        + prop.DisplayName
+                        + newlineIndent
+                        + "with "
+                        + getterWithBody
+                        + keywordAnd
+                        + setterWithBody
+
+                    name, textInCode
+
+                GetIntrinsicPropInfoWithOverriddenPropOfType
                     infoReader
                     None
                     ad
@@ -1126,20 +1231,19 @@ type internal TypeCheckInfo
                         else
                             baseProp |> ValueOption.map _.SetterMethod
 
+                    let isGetterOverridable, isSetterOverridable =
+                        isPropertyOverridable superTy overriddenProperties prop
+
                     let isGetterOverridable =
-                        getterMeth
-                        |> ValueOption.map (isMethodOverridable checkedMethods)
-                        |> ValueOption.defaultValue false
+                        isGetterOverridable
+                        && isMethodOptionOverridable superTy checkedMethods getterMeth
 
                     let isSetterOverridable =
-                        setterMeth
-                        |> ValueOption.map (isMethodOverridable checkedMethods)
-                        |> ValueOption.defaultValue false
+                        isSetterOverridable
+                        && isMethodOptionOverridable superTy checkedMethods setterMeth
 
                     let canPick =
-                        isPropertyOverridable overriddenProperties prop
-                        && prop.IsStatic = isStatic
-                        && (isGetterOverridable || isSetterOverridable)
+                        prop.IsStatic = isStatic && (isGetterOverridable || isSetterOverridable)
 
                     getterMeth |> ValueOption.iter checkedMethods.Add
                     setterMeth |> ValueOption.iter checkedMethods.Add
@@ -1147,83 +1251,62 @@ type internal TypeCheckInfo
                     if not canPick then
                         None
                     else
-                        let getNameForNoNameArg =
-                            let mutable count = 1
+                        let getterMeth = if isGetterOverridable then getterMeth else ValueNone
+                        let setterMeth = if isSetterOverridable then setterMeth else ValueNone
+                        let name, textInCode = generatePropertyOverrideBody prop getterMeth setterMeth
 
-                            fun () ->
-                                let name = $"arg{count}"
-                                count <- count + 1
-                                name
-
-                        let parameters =
-                            prop.GetParamNamesAndTypes(amap, m)
-                            |> List.map (fun (ParamNameAndType(name, ty)) ->
-                                let name = name |> Option.map _.idText |> Option.defaultWith getNameForNoNameArg
-
-                                $"{name}: {stringOfTy denv ty}")
-                            |> String.concat ", "
-
-                        let retTy = prop.GetPropertyType(amap, m)
-                        let retTy = stringOfTy denv retTy
-
-                        let getter, getterWithBody =
-                            match getterMeth with
-                            | ValueSome meth when isGetterOverridable ->
-                                let implementBody =
-                                    checkMethAbstractAndGetImplementBody
-                                        meth
-                                        ($"base.{prop.DisplayName}" + (if prop.IsIndexer then $"({parameters})" else ""))
-
-                                let getter = $"get ({parameters}): {retTy}"
-                                getter, $"{getter} = {implementBody}"
-                            | _ -> String.Empty, String.Empty
-
-                        let setter, setterWithBody =
-                            match setterMeth with
-                            | ValueSome meth when isSetterOverridable ->
-                                let implementBody =
-                                    checkMethAbstractAndGetImplementBody
-                                        meth
-                                        ($"base.{prop.DisplayName}"
-                                         + (if prop.IsIndexer then $"({parameters})" else String.Empty)
-                                         + " <- value")
-
-                                let parameters = if prop.IsIndexer then $"({parameters}) " else String.Empty
-                                let setter = $"set {parameters}(value: {retTy})"
-                                setter, $"{setter} = {implementBody}"
-                            | _ -> String.Empty, String.Empty
-
-                        let keywordAnd =
-                            if getterMeth.IsNone || setterMeth.IsNone then
-                                String.Empty
-                            else
-                                " and "
-
-                        let name = $"{prop.DisplayName} with {getter}{keywordAnd}{setter}"
-
-                        let textInCode =
-                            let this = if hasThis || prop.IsStatic then String.Empty else "this."
-
-                            let getterWithBody =
-                                if String.IsNullOrWhiteSpace getterWithBody then
-                                    String.Empty
-                                else
-                                    getterWithBody + newlineIndent
-
-                            this
-                            + prop.DisplayName
-                            + newlineIndent
-                            + "with "
-                            + getterWithBody
-                            + keywordAnd
-                            + setterWithBody
-
-                        Item.Property(name, [ prop ], None)
+                        Item.Property(
+                            name,
+                            [
+                                prop
+                                if baseProp.IsSome then
+                                    baseProp.Value
+                            ],
+                            None
+                        )
                         |> ItemWithNoInst
                         |> CompletionItemWithMoreSetting ValueNone ValueNone -1 (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             let overridableMeths =
+                let generateMethodOverrideBody (meth: MethInfo) =
+                    argNames.Clear()
+
+                    let parameters =
+                        meth.GetParamNames()
+                        |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
+                        |> List.map (fun (types, names) ->
+                            let names =
+                                names
+                                |> List.zip types
+                                |> List.map (fun (ty, name) ->
+                                    let name =
+                                        name |> Option.defaultValue String.Empty |> checkOrGenerateArgName argNames
+
+                                    $"{name}: {stringOfTy denv ty}")
+                                |> String.concat ", "
+
+                            $"({names})")
+                        |> String.concat " "
+
+                    let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
+
+                    let name = $"{meth.DisplayName} {parameters}: {stringOfTy denv retTy}"
+
+                    let textInCode =
+                        let nameWithThis =
+                            if hasThis || not meth.IsInstance then
+                                $"{name} = "
+                            else
+                                $"this.{name} = "
+
+                        let implementBody =
+                            checkMethAbstractAndGetImplementBody meth $"base.{meth.DisplayName}{parameters}"
+
+                        nameWithThis + newlineIndent + implementBody
+
+                    name, textInCode
+
                 GetIntrinsicMethInfosOfType
                     infoReader
                     None
@@ -1234,8 +1317,8 @@ type internal TypeCheckInfo
                     superTy
                 |> List.choose (fun meth ->
                     let canPick =
-                        isMethodOverridable checkedMethods meth
-                        && meth.IsInstance <> isStatic
+                        meth.IsInstance <> isStatic
+                        && isMethodOverridable superTy checkedMethods meth
                         && (not isInterface
                             || not (tyconRefEq g meth.DeclaringTyconRef g.system_Object_tcref))
 
@@ -1244,46 +1327,7 @@ type internal TypeCheckInfo
                     if not canPick then
                         None
                     else
-
-                        let getNameForNoNameArg =
-                            let mutable count = 1
-
-                            fun () ->
-                                let name = $"arg{count}"
-                                count <- count + 1
-                                name
-
-                        let parameters =
-                            meth.GetParamNames()
-                            |> List.zip (meth.GetParamTypes(amap, m, meth.FormalMethodInst))
-                            |> List.map (fun (types, names) ->
-                                let names =
-                                    names
-                                    |> List.zip types
-                                    |> List.map (fun (ty, name) ->
-                                        let name = Option.defaultWith getNameForNoNameArg name
-
-                                        $"{name}: {stringOfTy denv ty}")
-                                    |> String.concat ", "
-
-                                $"({names})")
-                            |> String.concat " "
-
-                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
-
-                        let name = $"{meth.DisplayName} {parameters}: {stringOfTy denv retTy}"
-
-                        let textInCode =
-                            let nameWithThis =
-                                if hasThis || not meth.IsInstance then
-                                    $"{name} = "
-                                else
-                                    $"this.{name} = "
-
-                            let implementBody =
-                                checkMethAbstractAndGetImplementBody meth $"base.{meth.DisplayName}{parameters}"
-
-                            nameWithThis + newlineIndent + implementBody
+                        let name, textInCode = generateMethodOverrideBody meth
 
                         Item.MethodGroup(name, [ meth ], None)
                         |> ItemWithNoInst

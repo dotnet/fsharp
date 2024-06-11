@@ -1926,23 +1926,6 @@ type C () =
     override A1 () = ()
     override x.c
     override A1 s = ()
-
-type IA =
-    static abstract member A3: unit -> unit
-    static abstract member A4: unit -> unit
-    
-type IB =
-    abstract member A1: unit -> unit
-    abstract member A1: string -> unit
-    abstract member A2: unit -> unit
-
-type TA() =
-    interface IA with
-        static member 
-        static member A3 (): unit = ()
-    interface IB with
-        member this.A1 (arg1: string): unit = ()
-        member thisTA.
 """
 
         VerifyCompletionListExactly(fileContents, "override _.", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
@@ -1951,7 +1934,7 @@ type TA() =
             fileContents,
             "override x.b",
             [
-                "A1 (arg1: string): unit"
+                "A1 (arg: string): unit"
                 "A2 (): unit"
                 "Equals (obj: obj): bool"
                 "Finalize (): unit"
@@ -1972,8 +1955,56 @@ type TA() =
             ]
         )
 
-        VerifyCompletionListExactly(fileContents, "member thisTA.", [ "A1 (): unit"; "A2 (): unit" ])
-        VerifyCompletionListExactly(fileContents, "static member ", [ "A4 (): unit" ])
+    [<Fact>]
+    let ``Completion list for override in interface implements does not contain method which is already overridden in the same type`` () =
+        let fileContents =
+            """
+type IA =
+    static abstract member A3: unit -> unit
+    static abstract member A4: unit -> unit
+    static abstract member P1: value: int -> int with get, set
+    static abstract member P2: int with get, set
+    
+type IB =
+    abstract member A1: unit -> unit
+    abstract member A1: string -> unit
+    abstract member A2: unit -> unit
+    abstract member P1: int * bool -> int with get, set
+    abstract member P2: int with get, set
+
+type TA() =
+    interface IA with
+        static member 
+        static member A3 (): unit = ()
+        static member P2
+            with get (): int = raise (System.NotImplementedException())
+    interface IB with
+        member this.A1 (arg1: string): unit = ()
+        member this.P2
+            with get (): int = raise (System.NotImplementedException())
+        member thisTA.
+"""
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "static member ",
+            [
+                "P1 with get (value: int): int and set (value: int) (value_1: int)"
+                "P2 with set (value: int)"
+                "A4 (): unit"
+            ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "member thisTA.",
+            [
+                "P1 with get (arg: int, arg_1: bool): int and set (arg: int, arg_1: bool) (value: int)"
+                "P2 with set (value: int)"
+                "A1 (): unit"
+                "A2 (): unit"
+            ]
+        )
 
     [<Fact>]
     let ``Completion list for override is empty when the caret is on the self identifier`` () =

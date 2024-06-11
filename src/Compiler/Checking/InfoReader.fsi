@@ -281,8 +281,8 @@ val GetIntrinsicPropInfosOfType:
     ty: TType ->
         PropInfo list
 
-/// Get the flattened list of intrinsic properties in the hierarchy
-val GetIntrinsicPropInfoWithOverridenPropOfType:
+/// Get the flattened list of intrinsic properties in the hierarchy. If the PropInfo is get-only or set-only, try to find its setter or getter from the hierarchy.
+val GetIntrinsicPropInfoWithOverriddenPropOfType:
     infoReader: InfoReader ->
     optFilter: string option ->
     ad: AccessorDomain ->
