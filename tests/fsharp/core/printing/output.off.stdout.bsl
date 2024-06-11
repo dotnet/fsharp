@@ -258,6 +258,27 @@ type 'a T4063 = | AT4063 of 'a
 
 
 
+> val it: string = "Check #help for an identifier"
+
+
+Description:
+Builds a new collection whose elements are the results of applying the given function
+to each of the elements of the collection.
+
+Parameters:
+- mapping: The function to transform elements from the input list.
+- list: The input list.
+Returns:
+The list of transformed elements.
+
+Examples:
+let inputs = [ "a"; "bbb"; "cc" ]
+
+inputs |> List.map (fun x -> x.Length)
+// Evaluates to [ 1; 3; 2 ]
+
+Full name: Microsoft.FSharp.Collections.ListModule.map
+Assembly: FSharp.Core.dll
 > val it: string = "Check #time on and then off"
 
 > 
