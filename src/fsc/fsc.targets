@@ -76,6 +76,9 @@
     <!-- Create a dummy fsx file -->
     <WriteLinesToFile File="$(DummyScript)" />
 
+    <!-- Make dotnet trace available -->
+    <Exec Command="dotnet tool restore" />
+
     <!-- Launch the instrumented fsc and collect traces -->
     <Exec 
       Command="dotnet trace collect -o $(NetTraceFile) --providers $(Runtime) -- $(InvokeFsc)"

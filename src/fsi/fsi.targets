@@ -85,6 +85,9 @@
     <!-- Create a dummy fsx file -->
     <WriteLinesToFile File="$(DummyScript)" />
 
+    <!-- Make dotnet trace available -->
+    <Exec Command="dotnet tool restore" />
+
     <!-- Launch the instrumented fsi and collect traces -->
     <Exec 
       Command="dotnet trace collect -o $(NetTraceFile) --providers $(Runtime) -- $(InvokeFsi)"
