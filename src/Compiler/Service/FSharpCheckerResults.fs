@@ -1060,8 +1060,10 @@ type internal TypeCheckInfo
 
     /// Gets all methods that a type can override, but has not yet done so.
     let GetOverridableMethods pos ctx (typeNameRange: range) spacesBeforeOverrideKeyword hasThis isStatic =
-        let checkImplementedSlotDeclareType ty (slots: SlotSig list) =
-            slots |> List.exists (fun (TSlotSig(declaringType = ty2)) -> typeEquiv g ty ty2)
+        let checkImplementedSlotDeclareType ty slots =
+            slots
+            |> Option.map (List.exists (fun (TSlotSig(declaringType = ty2)) -> typeEquiv g ty ty2))
+            |> Option.defaultValue false
 
         let isMethodOverridable superTy alreadyOverridden (candidate: MethInfo) =
             not candidate.IsFinal
@@ -1069,8 +1071,8 @@ type internal TypeCheckInfo
                 alreadyOverridden
                 |> ResizeArray.exists (fun i ->
                     MethInfosEquivByNameAndSig EraseNone true g amap range0 candidate i
-                    && (checkImplementedSlotDeclareType superTy i.ImplementedSlotSignatures
-                        || tyconRefEq g candidate.DeclaringTyconRef i.DeclaringTyconRef))
+                    && (tyconRefEq g candidate.DeclaringTyconRef i.DeclaringTyconRef
+                        || checkImplementedSlotDeclareType superTy (Option.attempt (fun () -> i.ImplementedSlotSignatures))))
             )
 
         let isMethodOptionOverridable superTy alreadyOverridden candidate =
@@ -1084,8 +1086,8 @@ type internal TypeCheckInfo
                     alreadyOverridden
                     |> List.filter (fun i ->
                         PropInfosEquivByNameAndSig EraseNone g amap range0 candidate i
-                        && (checkImplementedSlotDeclareType superTy i.ImplementedSlotSignatures
-                            || tyconRefEq g candidate.DeclaringTyconRef i.DeclaringTyconRef))
+                        && (tyconRefEq g candidate.DeclaringTyconRef i.DeclaringTyconRef
+                            || checkImplementedSlotDeclareType superTy (Option.attempt (fun () -> i.ImplementedSlotSignatures))))
                     |> List.fold
                         (fun (getterOverridden, setterOverridden) i -> getterOverridden || i.HasGetter, setterOverridden || i.HasSetter)
                         (false, false)
