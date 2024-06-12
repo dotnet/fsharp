@@ -5061,8 +5061,8 @@ module Test4343e =
   val cA: C
   val cB: C
   val cAB: C * C * C list =
-    (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
-     [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
+    (FSI_0092+Test4343e+C, FSI_0092+Test4343e+C,
+     [FSI_0092+Test4343e+C; FSI_0092+Test4343e+C])
   type D =
     new: x: int -> D
     override ToString: unit -> string
@@ -5075,8 +5075,8 @@ module Test4343e =
     val cA: C
     val cB: C
     val cAB: C * C * C list =
-      (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
-       [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
+      (FSI_0092+Test4343e+C, FSI_0092+Test4343e+C,
+       [FSI_0092+Test4343e+C; FSI_0092+Test4343e+C])
     type D<'a> =
       new: x: 'a -> D<'a>
       override ToString: unit -> string
@@ -5251,7 +5251,7 @@ module Regression5218 =
 type Regression4469 =
   new: unit -> Regression4469
   member ToString: unit -> string
-val r4469: Regression4469 = FSI_0106+Regression4469
+val r4469: Regression4469 = FSI_0108+Regression4469
 val it: unit = ()
 
 > Expect ABC = ABC

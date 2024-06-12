@@ -1800,7 +1800,7 @@ val ShortName: string = "hi"
 
 > val list2: int list
 
-module FSI_0317.
+module FSI_0319.
        A8a951db8294f99e95ae1d276a7ddaefd93d1548e6bf749bdeae55d2649682b3
 
 {"ImmutableField0":6}
@@ -1822,7 +1822,7 @@ val it: unit = ()
 
 > val it: {| AnonRecordField2: int |} = { AnonRecordField2 = 11 }
 
-module FSI_0324.Project.fsproj
+module FSI_0326.Project.fsproj
 
 type R3 =
   { ImmutableField3: int }

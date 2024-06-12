@@ -5063,8 +5063,8 @@ module Test4343e =
   val cA: C
   val cB: C
   val cAB: C * C * C list =
-    (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
-     [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
+    (FSI_0092+Test4343e+C, FSI_0092+Test4343e+C,
+     [FSI_0092+Test4343e+C; FSI_0092+Test4343e+C])
   type D =
     new: x: int -> D
     override ToString: unit -> string
@@ -5077,8 +5077,8 @@ module Test4343e =
     val cA: C
     val cB: C
     val cAB: C * C * C list =
-      (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
-       [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
+      (FSI_0092+Test4343e+C, FSI_0092+Test4343e+C,
+       [FSI_0092+Test4343e+C; FSI_0092+Test4343e+C])
     type D<'a> =
       new: x: 'a -> D<'a>
       override ToString: unit -> string
@@ -5253,7 +5253,7 @@ module Regression5218 =
 type Regression4469 =
   new: unit -> Regression4469
   member ToString: unit -> string
-val r4469: Regression4469 = FSI_0106+Regression4469
+val r4469: Regression4469 = FSI_0108+Regression4469
 val it: unit = ()
 
 > Expect ABC = ABC
@@ -6333,7 +6333,7 @@ val ShortName: string = "hi"
 
 > val list2: int list = [1]
 
-module FSI_0316.
+module FSI_0318.
        A8a951db8294f99e95ae1d276a7ddaefd93d1548e6bf749bdeae55d2649682b3
 
 {"ImmutableField0":6}
@@ -6355,7 +6355,7 @@ val it: unit = ()
 
 > val it: {| AnonRecordField2: int |} = { AnonRecordField2 = 11 }
 
-module FSI_0323.Project.fsproj
+module FSI_0325.Project.fsproj
 
 type R3 =
   { ImmutableField3: int }
