@@ -1062,8 +1062,7 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
             WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))    
-        // Allow expected of WithNull and actual of WithoutNull
-        // TODO NULLNESS:  this is not sound in contravariant cases etc. It is assuming covariance.
+        // Allow expected of WithNull and actual of WithoutNull except for specially marked APIs (handled above)        
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
             if csenv.g.checkNullness then 
@@ -1414,8 +1413,6 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
 
 and SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rangeTy2 =
     trackErrors {
-        // TODO NULLNESS: consider whether flipping the actual and expected in argument position
-        // causes other problems, e.g. better/worse diagnostics
         let g = csenv.g
         let domainTy2 = reqTyForArgumentNullnessInference g domainTy1 domainTy2
         do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln domainTy2 domainTy1

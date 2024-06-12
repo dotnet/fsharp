@@ -5205,6 +5205,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                         | TyparConstraint.IsDelegate _
                         | TyparConstraint.IsEnum _
                         | TyparConstraint.IsNonNullableStruct _
+                        | TyparConstraint.NotSupportsNull _
                         | TyparConstraint.IsUnmanaged _
                         | TyparConstraint.RequiresDefaultConstructor _
                         | TyparConstraint.SimpleChoice _
