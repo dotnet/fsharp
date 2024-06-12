@@ -54,7 +54,7 @@
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
   </ItemGroup>
 
-  <Target Name="Add PGO" BeforeTargets="Publish">
+  <Target Name="Add PGO" BeforeTargets="Publish" Condition="'$(Configuration)' == 'Release'">
 
     <!-- Special conditions for collecting a static profile -->
     <ItemGroup>
