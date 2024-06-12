@@ -2082,7 +2082,7 @@ module Array =
                 result[i] <- pool[j]
                 pool[j] <- pool[inputLength - i - 1]
         else
-            let selected = HashSet(count)
+            let selected = HashSet()
 
             for i = 0 to count - 1 do
                 let mutable j = random.Next(0, inputLength)
