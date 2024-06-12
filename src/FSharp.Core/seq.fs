@@ -2108,6 +2108,7 @@ module Seq =
             }
         else
             let selected = HashSet()
+
             seq {
                 for _ = 0 to count - 1 do
                     let mutable j =
