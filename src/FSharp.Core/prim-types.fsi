@@ -3665,8 +3665,8 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="id-example">
         /// <code lang="fsharp">
-        /// id 12     //  Evaulates to 12
-        /// id "abc"  //  Evaulates to "abc"
+        /// id 12     //  Evaluates to 12
+        /// id "abc"  //  Evaluates to "abc"
         /// </code>
         /// </example>
         /// 

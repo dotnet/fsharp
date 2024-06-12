@@ -3465,6 +3465,17 @@ headBindingPattern:
       { let mColonColon = rhs parseState 2
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
+  | headBindingPattern COLON_COLON recover
+      { let mColonColon = rhs parseState 2
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
+  | headBindingPattern COLON_COLON
+      { let mColonColon = rhs parseState 2
+        reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
   | tuplePatternElements %prec pat_tuple
       { let pats, commas = $1
         let pats, commas = normalizeTuplePat pats commas
@@ -3770,6 +3781,17 @@ parenPattern:
   | parenPattern COLON_COLON parenPattern
       { let mColonColon = rhs parseState 2
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
+
+  | parenPattern COLON_COLON recover
+      { let mColonColon = rhs parseState 2
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
+  | parenPattern COLON_COLON
+      { let mColonColon = rhs parseState 2
+        reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
 
   | constrPattern { $1 }
 
@@ -4644,6 +4666,14 @@ withPatternClauses:
       { let mBar = rhs parseState 1 |> Some
         $2 mBar }
 
+  | barCanBeRightBeforeNull barCanBeRightBeforeNull patternClauses
+     { let mBar1 = rhs parseState 1
+       let mBar2 = rhs parseState 2
+       reportParseErrorAt mBar2 (FSComp.SR.parsExpectingPattern ())
+       let clauses, mLast = Some mBar1 |> $3
+       let clauses = addEmptyMatchClause mBar1 mBar2 clauses
+       clauses, mLast }
+
   | barCanBeRightBeforeNull error
       { // silent recovery
         let mLast = rhs parseState 1
@@ -4676,6 +4706,20 @@ patternClauses:
        let m = unionRanges resultExpr.Range pat.Range
        fun mBar ->
            (SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar }) :: clauses), mLast }
+
+  | patternAndGuard patternResult barCanBeRightBeforeNull barCanBeRightBeforeNull patternClauses
+     { let pat, guard = $1
+       let mArrow, resultExpr = $2
+       let mBar1 = rhs parseState 3
+       let mBar2 = rhs parseState 4
+       reportParseErrorAt mBar2 (FSComp.SR.parsExpectingPattern ())
+       let clauses, mLast = Some mBar1 |> $5
+       let clauses = addEmptyMatchClause mBar1 mBar2 clauses
+
+       fun mBar ->
+           let m = unionRanges resultExpr.Range pat.Range
+           let trivia = { ArrowRange = Some mArrow; BarRange = mBar }
+           SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, trivia) :: clauses, mLast }
 
   | patternAndGuard error barCanBeRightBeforeNull patternClauses
      { let pat, guard = $1
