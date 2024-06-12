@@ -94,7 +94,7 @@
       EnvironmentVariables="@(Env)" />
 
     <!-- Convert .nettrace to .mibc -->
-    <Exec Command="dotnet-pgo create-mibc -t $(NetTraceFile) -o $(MibcFile)" />
+    <Exec Command="dotnet pgo create-mibc -t $(NetTraceFile) -o $(MibcFile)" />
 
   </Target>
 
