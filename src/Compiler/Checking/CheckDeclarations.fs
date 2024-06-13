@@ -2902,6 +2902,7 @@ module EstablishTypeDefinitionCores =
                 
                 if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
                     if hasStructAttr then
+                        // To ensure that we can still use the RequiredQualifiedAccessAttribute on classes and structs we need to allow both AttributeTargets.Class ||| AttributeTargets.Struct.
                         if hasRQAAttr then
                             TcAttributesWithPossibleTargets false cenv envinner (AttributeTargets.Class ||| AttributeTargets.Struct) synAttrs |> ignore
                         else
