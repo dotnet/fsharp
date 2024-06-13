@@ -1240,6 +1240,10 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn """    #time ["on"|"off"];;                          // %s""" (FSIstrings.SR.fsiIntroTextHashtimeInfo ())
         fsiConsoleOutput.uprintfn """    #help;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo ())
 
+        fsiConsoleOutput.uprintfn
+            """    #help "idn";;                                 // %s"""
+            (FSIstrings.SR.fsiIntroTextHashhelpdocInfo ())
+
         if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
             for msg in
                 dependencyProvider.GetRegisteredDependencyManagerHelpText(
@@ -2499,7 +2503,7 @@ type internal FsiDynamicCompiler
         processContents newState declaredImpls
 
     /// Evaluate the given expression and produce a new interactive state.
-    member fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr) =
+    member fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr, suppressItPrint) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
         let itName = "it"
 
@@ -2513,7 +2517,7 @@ type internal FsiDynamicCompiler
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with
         | Item.Value vref ->
-            if not tcConfig.noFeedback then
+            if not tcConfig.noFeedback && not suppressItPrint then
                 let infoReader = InfoReader(istate.tcGlobals, istate.tcImports.GetImportMap())
 
                 valuePrinter.InvokeExprPrinter(
@@ -3724,6 +3728,31 @@ type FsiInteractionProcessor
             stopProcessingRecovery e range0
             None
 
+    let runhDirective diagnosticsLogger ctok istate source =
+        let lexbuf =
+            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, $"<@@ {source} @@>")
+
+        let tokenizer =
+            fsiStdinLexerProvider.CreateBufferLexer("hdummy.fsx", lexbuf, diagnosticsLogger)
+
+        let parsedInteraction = ParseInteraction tokenizer
+
+        match parsedInteraction with
+        | Some(ParsedScriptInteraction.Definitions([ SynModuleDecl.Expr(e, _) ], _)) ->
+
+            let _state, status =
+                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, e, true)
+
+            match status with
+            | Completed(Some compStatus) ->
+                match compStatus.ReflectionValue with
+                | :? FSharp.Quotations.Expr as qex ->
+                    let s = FsiHelp.Logic.Quoted.h qex
+                    fsiConsoleOutput.uprintf "%s" s
+                | _ -> ()
+            | _ -> ()
+        | _ -> ()
+
     /// Partially process a hash directive, leaving state in packageManagerLines and required assemblies
     let PartiallyProcessHashDirective (ctok, istate, hash, diagnosticsLogger: DiagnosticsLogger) =
         match hash with
@@ -3852,6 +3881,11 @@ type FsiInteractionProcessor
             fsiOptions.ShowHelp(m)
             istate, Completed None
 
+        | ParsedHashDirective("help", hashArguments, _m) ->
+            let arg = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
+            runhDirective diagnosticsLogger ctok istate source
+            istate, Completed None
+
         | ParsedHashDirective(c, hashArguments, m) ->
             let arg = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
             warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
@@ -3899,7 +3933,7 @@ type FsiInteractionProcessor
                         | InteractionGroup.HashDirectives [] -> istate, Completed None
 
                         | InteractionGroup.Definitions([ SynModuleDecl.Expr(expr, _) ], _) ->
-                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)
+                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false)
 
                         | InteractionGroup.Definitions(defs, _) ->
                             fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, true, false, defs)
@@ -4093,7 +4127,7 @@ type FsiInteractionProcessor
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             istate
             |> mainThreadProcessAction ctok (fun ctok istate ->
-                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)))
+                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false)))
 
     let commitResult (istate, result) =
         match result with
