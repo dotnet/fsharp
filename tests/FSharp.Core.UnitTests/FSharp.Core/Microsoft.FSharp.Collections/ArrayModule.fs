@@ -2023,11 +2023,16 @@ type ArrayModule() =
     member _.RandomShuffleByWrongArg() =
         let nullArr = null
         let arr = [| 1..20 |]
-        let wrongRandomizer = fun () -> 1.0
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
         let randomizer = Random(123).NextDouble
 
         CheckThrowsArgumentNullException (fun () -> Array.randomShuffleBy randomizer nullArr |> ignore)
-        CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomShuffleBy wrongRandomizer arr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomShuffleBy wrongRandomizer arr |> ignore))
 
     [<Fact>]
     member _.RandomShuffleInPlace() =
@@ -2101,11 +2106,16 @@ type ArrayModule() =
     member _.RandomShuffleInPlaceByWrongArg() =
         let nullArr = null
         let arr = [| 1..20 |]
-        let wrongRandomizer = fun () -> 1.0
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
         let randomizer = Random(123).NextDouble
 
         CheckThrowsArgumentNullException (fun () -> Array.randomShuffleInPlaceBy randomizer nullArr |> ignore)
-        CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomShuffleInPlaceBy wrongRandomizer arr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomShuffleInPlaceBy wrongRandomizer arr |> ignore))
 
     [<Fact>]
     member _.RandomChoice() =
@@ -2175,11 +2185,16 @@ type ArrayModule() =
         let nullArr = null
         let emptyArr = [||]
         let arr = [| 1..20 |]
-        let wrongRandomizer = fun () -> 1.0
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
         let randomizer = Random(123).NextDouble
 
         CheckThrowsArgumentNullException (fun () -> Array.randomChoiceBy randomizer nullArr |> ignore)
-        CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomChoiceBy wrongRandomizer arr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomChoiceBy wrongRandomizer arr |> ignore))
         CheckThrowsArgumentException (fun () -> Array.randomChoiceBy randomizer emptyArr |> ignore)
 
     [<Fact>]
@@ -2261,13 +2276,18 @@ type ArrayModule() =
         let nullArr = null
         let emptyArr = [||]
         let arr = [| 1..50 |]
-        let wrongRandomizer = fun () -> 1.0
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
         let randomizer = Random(123).NextDouble
         let choicesLength = 20
         let negativeChoicesLength = -1
 
         CheckThrowsArgumentNullException (fun () -> Array.randomChoicesBy randomizer choicesLength nullArr |> ignore)
-        CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomChoicesBy wrongRandomizer choicesLength arr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomChoicesBy wrongRandomizer choicesLength arr |> ignore))
         CheckThrowsArgumentException (fun () -> Array.randomChoicesBy randomizer choicesLength emptyArr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomChoicesBy randomizer negativeChoicesLength arr |> ignore)
 
@@ -2359,14 +2379,19 @@ type ArrayModule() =
         let nullArr = null
         let emptyArr = [||]
         let arr = [| 1..50 |]
-        let wrongRandomizer = fun () -> 1.0
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
         let randomizer = Random(123).NextDouble
         let tooBigSampleLength = 100
         let negativeSampleLength = -1
         let sampleLength = 20
 
         CheckThrowsArgumentNullException (fun () -> Array.randomSampleBy randomizer sampleLength nullArr |> ignore)
-        CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomSampleBy wrongRandomizer sampleLength arr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomSampleBy wrongRandomizer sampleLength arr |> ignore))
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer sampleLength emptyArr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer negativeSampleLength arr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer tooBigSampleLength arr |> ignore)

@@ -1207,12 +1207,13 @@ module internal Random =
 
     let private executeRandomizer (randomizer: unit -> float) =
         let value = randomizer()
-        if value < 0.0 || value >= 1.0 then
+        if value >= 0.0 && value < 1.0 then
+            value
+        else
             let argName = nameof randomizer
             invalidArgOutOfRangeFmt argName
                 "{0}\n{1} returned {2}, should be in range [0.0, 1.0)."
                 [|SR.GetString SR.outOfRange; argName; value|]
-        value
 
     let next (randomizer: unit -> float) (minValue: int) (maxValue: int) =
         int ((executeRandomizer randomizer) * float (maxValue - minValue)) + minValue
