@@ -173,7 +173,7 @@ module internal Implementation =
 
             // First check the sparse lookaside table
             // Performance note: without this lookaside table the binary chop in ReadAssoc
-            // takes up around 10% of parsing time
+            // takes up around 10% of of parsing time
             // for parsing intensive samples such as the bootstrapped F# compiler.
             //
             // NOTE: using a .NET Dictionary for this int -> int table looks like it could be sub-optimal.
