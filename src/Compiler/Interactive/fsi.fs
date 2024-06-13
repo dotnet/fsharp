@@ -3818,25 +3818,20 @@ type FsiInteractionProcessor
             let istate = { istate with debugBreak = true }
             istate, Completed None
 
-        | ParsedHashDirective("time", [], _) ->
-            if istate.timing then
-                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff ())
-            else
-                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn ())
-
-            let istate =
-                { istate with
-                    timing = not istate.timing
-                }
-
-            istate, Completed None
-
         | ParsedHashDirective("time", switch, m) ->
             let arguments = parsedHashDirectiveArguments switch tcConfigB.langVersion
 
             let istate =
                 match arguments with
-                | [] -> istate
+                | [] ->
+                    if istate.timing then
+                        fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff ())
+                    else
+                        fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn ())
+
+                    { istate with
+                        timing = not istate.timing
+                    }
                 | [ "on" ] ->
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn ())
                     { istate with timing = true }
@@ -3877,13 +3872,14 @@ type FsiInteractionProcessor
 
         | ParsedHashDirective(("q" | "quit"), [], _) -> fsiInterruptController.Exit()
 
-        | ParsedHashDirective("help", [], m) ->
-            fsiOptions.ShowHelp(m)
-            istate, Completed None
+        | ParsedHashDirective("help", hashArguments, m) ->
+            let args = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
 
-        | ParsedHashDirective("help", hashArguments, _m) ->
-            let arg = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
-            runhDirective diagnosticsLogger ctok istate source
+            match args with
+            | [] -> fsiOptions.ShowHelp(m)
+            | [ arg ] -> runhDirective diagnosticsLogger ctok istate arg
+            | _ -> warning (Error((FSComp.SR.fsiInvalidDirective ("help", String.concat " " args)), m))
+
             istate, Completed None
 
         | ParsedHashDirective(c, hashArguments, m) ->
