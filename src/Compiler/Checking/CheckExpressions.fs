@@ -7593,18 +7593,38 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) ->
+
+                let mkFunctionCall (name, constExpr) =
+                    SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] name, SynExpr.Const (constExpr, m), m)
+
                 let expr =
                     try
                         match int32 s with
-                        | 0 -> SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromZero", SynExpr.Const (SynConst.Unit, m), m)
-                        | 1 -> SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromOne", SynExpr.Const (SynConst.Unit, m), m)
-                        | i32 -> SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt32", SynExpr.Const (SynConst.Int32 i32, m), m)
+                        | 0 -> mkFunctionCall ("FromZero", SynConst.Unit)
+                        | 1 -> mkFunctionCall ("FromOne", SynConst.Unit)
+                        | i32 -> mkFunctionCall ("FromInt32", SynConst.Int32 i32)
                     with _ ->
                         try
                             let i64 = int64 s
-                            SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt64", SynExpr.Const (SynConst.Int64 i64, m), m)
+                            mkFunctionCall ("FromInt64", SynConst.Int64 i64)
                         with _ ->
-                            SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromString", SynExpr.Const (SynConst.String (s, SynStringKind.Regular, m), m), m)
+                            try
+                                let res = Regex.Match(s, @"^-?0*(?<number>\d+\.?\d*?)0*(?:$|[eE][+-]?(?<exp>\d+))")
+                                let exp = res.Groups.["exp"]
+                                let number = res.Groups.["number"]
+                                let isNumberContainsDot = -1 <> number.Value.IndexOf '.'
+                                let maxLen = if isNumberContainsDot then 16 else 15
+
+                                if not res.Success || (not isNumberContainsDot && not exp.Success) then 
+                                    mkFunctionCall ("FromString", SynConst.String (s, SynStringKind.Regular, m))
+                                elif (not exp.Success || int exp.Value <= 300) && number.Length <= maxLen then
+                                    let f64 = float s
+                                    mkFunctionCall ("FromFloat", SynConst.Double f64)
+                                else
+                                    mkFunctionCall ("FromFloatString", SynConst.String (s, SynStringKind.Regular, m))
+
+                            with _ ->
+                                mkFunctionCall ("FromString", SynConst.String (s, SynStringKind.Regular, m))
 
                 if suffix <> "I" then
                     expr
