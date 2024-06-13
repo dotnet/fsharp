@@ -60,8 +60,13 @@
     <ItemGroup>
       <Env Include="DOTNET_ReadyToRun=0" />
       <Env Include="DOTNET_TieredPGO=1" />
+      <Env Include="DOTNET_TieredPGO_InstrumentOnlyHotCode=0" />
       <Env Include="DOTNET_TC_QuickJitForLoops=1" /> 
       <Env Include="DOTNET_TC_CallCountThreshold=10000" />
+      <Env Include="DOTNET_JitMinimalJitProfiling=1" />
+      <Env Include="DOTNET_JitProfileCasts=1" />
+      <Env Include="DOTNET_JitDelegateProfiling=0" />
+      <Env Include="DOTNET_MULTILEVEL_LOOKUP=0" />
     </ItemGroup>
 
     <PropertyGroup>
