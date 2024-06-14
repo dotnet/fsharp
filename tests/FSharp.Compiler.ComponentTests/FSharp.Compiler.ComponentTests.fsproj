@@ -235,9 +235,10 @@
     <Compile Include="Language\CopyAndUpdateTests.fs" />
     <Compile Include="Language\ConstraintIntersectionTests.fs" />
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
-    <Compile Include="Language\NullableLibraryConstructsTests.fs" />
-    <Compile Include="Language\NullableCsharpImportTests.fs" />
-    <Compile Include="Language\NullableReferenceTypesTests.fs" />
+    <Compile Include="Language\Nullness\NullableLibraryConstructsTests.fs" />
+    <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
+    <Compile Include="Language\Nullness\NullableRegressionTests.fs" />
+    <Compile Include="Language\Nullness\NullableReferenceTypesTests.fs" />
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />

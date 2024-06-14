@@ -6,4 +6,8 @@ let isNotNull (value: 'T) =
     | null -> false
     | _ -> true
 
+#if CHECKNULLS
+let s: System.String | null = null
+#else
 let s: System.String = null 
+#endif

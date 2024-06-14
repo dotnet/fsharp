@@ -14,7 +14,7 @@ let withNullnessOptions cu =
 let typeCheckWithStrictNullness cu =
     cu
     |> withNullnessOptions
-    |> compile
+    |> typecheck
     
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =
