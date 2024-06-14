@@ -1,9 +1,5 @@
 module FSharp.Compiler.Interactive.FsiHelp
 
-[<assembly: System.Runtime.InteropServices.ComVisible(false)>]
-[<assembly: System.CLSCompliant(true)>]
-do ()
-
 open System
 open System.Collections.Generic
 open System.IO
