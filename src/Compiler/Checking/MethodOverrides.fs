@@ -893,7 +893,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 #endif
        Option.isNone tycon.GeneratedCompareToValues &&
        tycon.HasInterface g g.mk_IComparable_ty && 
-       not (tycon.HasOverride g "Equals" [g.obj_ty]) && 
+       not (tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]) && 
        not tycon.IsFSharpInterfaceTycon
      then
         (* Warn when we're doing this for class types *)
@@ -912,7 +912,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
         let tcaug = tycon.TypeContents
         let m = tycon.Range
         let hasExplicitObjectGetHashCode = tycon.HasOverride g "GetHashCode" []
-        let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
+        let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]
 
         if (Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
            (hasExplicitObjectGetHashCode || hasExplicitObjectEqualsOverride) then 

@@ -427,6 +427,7 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.SupportsComparison _
      | TyparConstraint.SupportsEquality _
      | TyparConstraint.SupportsNull _
+     | TyparConstraint.NotSupportsNull _
      | TyparConstraint.IsNonNullableStruct _
      | TyparConstraint.IsUnmanaged _
      | TyparConstraint.IsReferenceType _
@@ -2532,13 +2533,30 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
         // Check fields. We check these late because we have to have first checked that the structs are
         // free of cycles
-        if tycon.IsStructOrEnumTycon then
+        if g.langFeatureNullness && g.checkNullness then
             for f in tycon.AllInstanceFieldsAsList do
+                let m = f.Range
                 // Check if it's marked unsafe
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some true then
-                   if not (TypeHasDefaultValue g m ty) then
-                       errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                    let ty = f.FormalType
+                    // If the condition is detected because of a variation in logic introduced because
+                    // of nullness checking, then only a warning is emitted.
+                    if not (TypeHasDefaultValueNew g m ty) then
+                        if not (TypeHasDefaultValue g m ty) then
+                            errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                        else
+                            warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+
+        // These are the old rules (not g.langFeatureNullness or not g.checkNullness), mistakenly only applied to structs
+        elif tycon.IsStructOrEnumTycon then
+            for f in tycon.AllInstanceFieldsAsList do
+                let m = f.Range
+                // Check if it's marked unsafe
+                let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
+                if zeroInitUnsafe = Some true then
+                    if not (TypeHasDefaultValue g m ty) then
+                        errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // Check type abbreviations
         match tycon.TypeAbbrev with

@@ -30,9 +30,15 @@ neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
     ''a seq -> 'n'    
 but given a
     ''o list -> 'p'    
-The type ''a seq' does not match the type ''n list'
+The type ''a list' does not match the type ''b seq'
 
 neg04.fs(47,49,47,51): typecheck error FS0784: This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope
+
+neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
+    ''a seq -> 'n'    
+but given a
+    ''o list -> 'p'    
+The type ''a list' does not match the type ''c seq'
 
 neg04.fs(61,25,61,40): typecheck error FS0001: This expression was expected to have type
     'ClassType1'    
