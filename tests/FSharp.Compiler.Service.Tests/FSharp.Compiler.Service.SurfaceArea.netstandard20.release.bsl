@@ -4654,6 +4654,40 @@ FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void Interrupt()
 FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void Run()
 FSharp.Compiler.Interactive.CtrlBreakHandlers: FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient
 FSharp.Compiler.Interactive.CtrlBreakHandlers: FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService
+FSharp.Compiler.Interactive.FsiHelp+Logic+Quoted: Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Interactive.FsiHelp+Parser+Help] tryGetHelp(Microsoft.FSharp.Quotations.FSharpExpr)
+FSharp.Compiler.Interactive.FsiHelp+Logic+Quoted: System.String h(Microsoft.FSharp.Quotations.FSharpExpr)
+FSharp.Compiler.Interactive.FsiHelp+Logic: FSharp.Compiler.Interactive.FsiHelp+Logic+Quoted
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Boolean Equals(Help)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Boolean Equals(Help, System.Collections.IEqualityComparer)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Boolean Equals(System.Object)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 CompareTo(Help)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 CompareTo(System.Object)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 GetHashCode()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] Examples
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] Exceptions
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] Parameters
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_Examples()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_Exceptions()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_Parameters()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Core.FSharpOption`1[System.String] Remarks
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Core.FSharpOption`1[System.String] Returns
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_Remarks()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_Returns()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String Assembly
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String FullName
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String Summary
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String ToDisplayString()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String ToString()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String get_Assembly()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String get_FullName()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String get_Summary()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]], System.String, System.String)
+FSharp.Compiler.Interactive.FsiHelp+Parser: FSharp.Compiler.Interactive.FsiHelp+Parser+Help
+FSharp.Compiler.Interactive.FsiHelp: FSharp.Compiler.Interactive.FsiHelp+Logic
+FSharp.Compiler.Interactive.FsiHelp: FSharp.Compiler.Interactive.FsiHelp+Parser
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanRead
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanSeek
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanWrite
