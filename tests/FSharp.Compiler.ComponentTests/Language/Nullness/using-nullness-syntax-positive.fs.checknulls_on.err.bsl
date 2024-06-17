@@ -33,5 +33,3 @@ using-nullness-syntax-positive.fs (162,41)-(162,45) typecheck error Nullness war
 using-nullness-syntax-positive.fs (164,37)-(164,41) typecheck error Nullness warning: The type 'String' does not support 'null'.
 using-nullness-syntax-positive.fs (183,14)-(183,16) typecheck error Nullness warning: The type 'string' does not support 'null'.
 using-nullness-syntax-positive.fs (189,17)-(189,26) typecheck error Nullness warning: The type 'String' does not support 'null'.
-using-nullness-syntax-positive.fs (217,14)-(217,16) typecheck error The struct, record or union type 'C7' is not structurally comparable because the type '(int -> int) | null' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type 'C7' to clarify that the type is not comparable
-using-nullness-syntax-positive.fs (217,14)-(217,16) typecheck error The struct, record or union type 'C7' does not support structural equality because the type '(int -> int) | null' does not satisfy the 'equality' constraint. Consider adding the 'NoEquality' attribute to the type 'C7' to clarify that the type does not support structural equality

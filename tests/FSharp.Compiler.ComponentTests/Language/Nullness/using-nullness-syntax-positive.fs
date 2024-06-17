@@ -213,7 +213,7 @@ module DefaultValueTests =
             [<DefaultValue>]
             val mutable Whoops : FSharp.Collections.List<int> | null // expect no warning
 
-        [<Struct>]
+        [<Struct;NoComparison;NoEquality>]
         type C7 =
             [<DefaultValue>]
             val mutable Whoops : (int -> int) | null // expect no warning

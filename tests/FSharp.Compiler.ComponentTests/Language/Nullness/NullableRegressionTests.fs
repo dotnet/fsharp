@@ -87,3 +87,31 @@ let ``With new nullness syntax nullness enabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",true)   
     |> verifyBaseline
+
+[<Theory>]
+[<InlineData("preview",true,true)>]
+[<InlineData("preview",true,false)>]
+[<InlineData("preview",false,true)>]
+[<InlineData("preview",false,false)>]
+[<InlineData("8.0",false,false)>]
+[<InlineData("8.0",false,true)>]
+let ``DefaultValue regression`` (version,checknulls,fullCompile) = 
+    FSharp $"""
+module MyLib
+
+[<Struct;NoComparison;NoEquality>]
+type C7 =
+    [<DefaultValue>]
+    val mutable Whoops : (int -> int) {if version="preview" then " | null" else ""} // no warnings in checknulls+
+    """
+    |> asLibrary
+    |> withVersionAndCheckNulls (version,checknulls)
+    |> (if fullCompile then compile else typecheck)
+    |> fun x -> 
+        if checknulls then 
+            x |> shouldSucceed
+        else 
+            x
+            |> shouldFail
+            |> withDiagnostics 
+                [(Error 444, Line 7, Col 17, Line 7, Col 23, "The type of a field using the 'DefaultValue' attribute must admit default initialization, i.e. have 'null' as a proper value or be a struct type whose fields all admit default initialization. You can use 'DefaultValue(false)' to disable this check")]
