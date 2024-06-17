@@ -60,6 +60,7 @@
     <Compile Include="BlockTests.fs" />
     <Compile Include="BuildGraphTests.fs" />
     <Compile Include="FsiTests.fs" />
+    <Compile Include="FsiHelpTests.fs" />
     <Compile Include="AssemblySigningAttributes.fs" />
     <Compile Include="PostInferenceChecksTests.fs" />
     <Compile Include="PrettyNaming.fs" />
