@@ -583,7 +583,7 @@ module PrintTypes =
         sepListL RightL.comma (argsL @ propsL)
 
     /// Layout an attribute 'Type(arg1, ..., argN)' 
-    and layoutAttrib denv (Attrib(tcref, _, args, props, _, _, _)) = 
+    and layoutAttrib denv (Attrib(tcref, _, _, args, props, _, _, _)) = 
         let tcrefL = layoutTyconRefImpl true denv tcref None
         let argsL = bracketL (layoutAttribArgs denv args props)
         if List.isEmpty args && List.isEmpty props then

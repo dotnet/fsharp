@@ -16,6 +16,7 @@ SigFile
                                       EqualsRange = None }), (5,0--5,14))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
           [{ Attributes = [{ TypeName = SynLongIdent ([Foo], [], [None])
+                             TypeArgs = []
                              ArgExpr = Const (Unit, (2,4--2,7))
                              Target = None
                              AppliesToGetterAndSetter = false

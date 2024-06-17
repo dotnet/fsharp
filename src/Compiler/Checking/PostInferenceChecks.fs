@@ -1871,7 +1871,7 @@ and CheckDecisionTreeTest cenv env m discrim =
     | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> CheckExprNoByrefs cenv env exp
     | DecisionTreeTest.Error _ -> ()
 
-and CheckAttrib cenv env (Attrib(tcref, _, args, props, _, _, m)) =
+and CheckAttrib cenv env (Attrib(tcref, _, _, args, props, _, _, m)) =
     if List.exists (tyconRefEq cenv.g tcref) cenv.g.attribs_Unsupported then
         warning(Error(FSComp.SR.unsupportedAttribute(), m))
     props |> List.iter (fun (AttribNamedArg(_, _, _, expr)) -> CheckAttribExpr cenv env expr)
@@ -1928,7 +1928,7 @@ and CheckAttribArgExpr cenv env expr =
 
 and CheckAttribs cenv env (attribs: Attribs) =
     if isNil attribs then () else
-    let tcrefs = [ for Attrib(tcref, _, _, _, gs, _, m) in attribs -> (tcref, gs, m) ]
+    let tcrefs = [ for Attrib(tcref, _, _, _, _, gs, _, m) in attribs -> (tcref, gs, m) ]
 
     // Check for violations of allowMultiple = false
     let duplicates =
@@ -2112,7 +2112,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
        IsSimpleSyntacticConstantExpr g e &&
        // Check the thing is actually compiled as a property
        IsCompiledAsStaticProperty g v ||
-       (g.compilingFSharpCore && v.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute"))
+       (g.compilingFSharpCore && v.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute"))
      then
         v.SetIsCompiledAsStaticPropertyWithoutField()
 
@@ -2132,7 +2132,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             let hasDefaultAugmentation =
                 tcref.IsUnionTycon &&
                 match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-                | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
+                | Some(Attrib(_, _, _, [ AttribBoolArg b ], _, _, _, _)) -> b
                 | _ -> true (* not hiddenRepr *)
 
             let kind = (if v.IsMember then "member" else "value")

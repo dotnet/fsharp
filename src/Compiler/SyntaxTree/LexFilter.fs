@@ -1063,6 +1063,12 @@ type LexFilterImpl (
         | LPAREN -> isAdjacent tokenTup lookaheadTokenTup
         | _ -> false
 
+    let nextTokenIsAdjacentRBrack (tokenTup: TokenTup) =
+        let lookaheadTokenTup = peekNextTokenTup()
+        match lookaheadTokenTup.Token with
+        | RBRACK -> isAdjacent tokenTup lookaheadTokenTup
+        | _ -> false
+
     let nextTokenIsAdjacent firstTokenTup =
         let lookaheadTokenTup = peekNextTokenTup()
         isAdjacent firstTokenTup lookaheadTokenTup
@@ -1107,7 +1113,7 @@ type LexFilterImpl (
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
-                    | INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp)) ->
+                    | INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp) as opString)  ->
                         let nParen = nParen - greaters.Length
                         if nParen > 0 then
                             // Don't smash the token if there is an after op and we're in a nested paren
@@ -1120,7 +1126,15 @@ type LexFilterImpl (
                             if afterOp.IsNone && nextTokenIsAdjacentLParen lookaheadTokenTup then
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
-                            true
+                                true
+                            else if afterOp.IsNone && nextTokenIsAdjacentRBrack lookaheadTokenTup then
+                                let dotTokenTop = popNextTokenTup()
+                                //this might be a good candidate for a lex rule, but FSLex doesn't appear to support negative look ahead
+                                stack <- (pool.UseShiftedLocation(lookaheadTokenTup, INFIX_COMPARE_OP (opString.Remove(opString.Length - 1)), 0, -1), true) :: stack.Tail
+                                stack <- (pool.UseShiftedLocation(dotTokenTop, GREATER_RBRACK, -1, 0), false) :: stack
+                                false
+                            else 
+                                true
                     | LPAREN
                     | LESS _
                     | LBRACK

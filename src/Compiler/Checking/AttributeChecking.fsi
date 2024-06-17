@@ -22,6 +22,7 @@ type AttribInfo =
     | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
 
     member ConstructorArguments: (TType * obj) list
+    member TypeArgs: TypeInst
     member NamedArguments: (TType * string * bool * obj) list
     member Range: range
     member TyconRef: TyconRef

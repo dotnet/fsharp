@@ -9,11 +9,13 @@ SigFile
                 (SynExceptionDefnRepr
                    ([{ Attributes =
                         [{ TypeName = SynLongIdent ([NoEquality], [], [None])
+                           TypeArgs = []
                            ArgExpr = Const (Unit, (5,2--5,12))
                            Target = None
                            AppliesToGetterAndSetter = false
                            Range = (5,2--5,12) };
                          { TypeName = SynLongIdent ([NoComparison], [], [None])
+                           TypeArgs = []
                            ArgExpr = Const (Unit, (5,14--5,26))
                            Target = None
                            AppliesToGetterAndSetter = false

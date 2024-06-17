@@ -7,6 +7,7 @@ ImplFile
           [Attributes
              ([{ Attributes =
                   [{ TypeName = SynLongIdent ([MyAttribute], [], [None])
+                     TypeArgs = []
                      ArgExpr =
                       Paren
                         (App

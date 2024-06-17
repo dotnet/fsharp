@@ -10,6 +10,7 @@ ImplFile
                     ([{ Attributes =
                          [{ TypeName =
                              SynLongIdent ([AbstractClass], [], [None])
+                            TypeArgs = []
                             ArgExpr = Const (Unit, (2,2--2,15))
                             Target = None
                             AppliesToGetterAndSetter = false

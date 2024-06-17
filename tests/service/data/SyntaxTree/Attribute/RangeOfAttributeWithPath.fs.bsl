@@ -9,6 +9,7 @@ ImplFile
                   [{ TypeName =
                       SynLongIdent
                         ([Prefix; MyAttribute], [(2,8--2,9)], [None; None])
+                     TypeArgs = []
                      ArgExpr =
                       Paren
                         (App

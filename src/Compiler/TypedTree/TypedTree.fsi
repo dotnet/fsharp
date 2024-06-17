@@ -3178,6 +3178,7 @@ type Attrib =
     | Attrib of
         tyconRef: TyconRef *
         kind: AttribKind *
+        typeArgs: TypeInst *
         unnamedArgs: AttribExpr list *
         propVal: AttribNamedArg list *
         appliedToAGetterOrSetter: bool *

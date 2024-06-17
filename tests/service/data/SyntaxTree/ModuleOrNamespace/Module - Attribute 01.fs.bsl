@@ -25,6 +25,7 @@ ImplFile
                     EqualsRange = Some (5,15--5,16) })], (5,0--5,20))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
           [{ Attributes = [{ TypeName = SynLongIdent ([Foo], [], [None])
+                             TypeArgs = []
                              ArgExpr = Const (Unit, (2,4--2,7))
                              Target = None
                              AppliesToGetterAndSetter = false

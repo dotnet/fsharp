@@ -226,7 +226,7 @@ and accDiscrim cenv env d mFallback =
     | DecisionTreeTest.Error _ -> ()
 
 /// Walk an attribute, collecting type variables
-and accAttrib cenv env (Attrib(_, _k, args, props, _, _, m)) =
+and accAttrib cenv env (Attrib(_, _k, _, args, props, _, _, m)) =
     args |> List.iter (fun (AttribExpr(expr1, expr2)) ->
         accExpr cenv env expr1
         accExpr cenv env expr2)

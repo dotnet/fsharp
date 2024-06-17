@@ -353,7 +353,7 @@ type UnsharedRow(elems: RowElement[]) =
 type ILTypeWriterEnv = { EnclosingTyparCount: int }
 let envForTypeDef (tdef: ILTypeDef) = { EnclosingTyparCount=tdef.GenericParams.Length }
 let envForMethodRef env (ty: ILType) = { EnclosingTyparCount=(match ty with ILType.Array _ -> env.EnclosingTyparCount | _ -> ty.GenericArgs.Length) }
-let envForNonGenericMethodRef _mref = { EnclosingTyparCount=Int32.MaxValue }
+//let envForNonGenericMethodRef _mref = { EnclosingTyparCount=Int32.MaxValue } do we need this for attributes? It doesn't appear so
 let envForFieldSpec (fspec: ILFieldSpec) = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
 let envForOverrideSpec (ospec: ILOverridesSpec) = { EnclosingTyparCount=ospec.DeclaringType.GenericArgs.Length }
 
@@ -1454,15 +1454,28 @@ let rec GetMethodRefAsMemberRefIdx cenv env fenv (mref: ILMethodRef) =
     let row = MethodRefInfoAsMemberRefRow cenv env fenv (mref.Name, mkILNonGenericBoxedTy mref.DeclaringTypeRef, mref.CallingConv, mref.ArgTypes, mref.ReturnType, None, mref.GenericArity)
     FindOrAddSharedRow cenv TableNames.MemberRef row
 
-and GetMethodRefAsCustomAttribType cenv (mref: ILMethodRef) =
-    let fenv = envForNonGenericMethodRef mref
-    let tref = mref.DeclaringTypeRef
-    if isTypeRefLocal tref then
-        try (cat_MethodDef, GetMethodRefAsMethodDefIdx cenv mref)
-        with MethodDefNotFound -> (cat_MemberRef, GetMethodRefAsMemberRefIdx cenv fenv fenv mref)
-    else
-        (cat_MemberRef, GetMethodRefAsMemberRefIdx cenv fenv fenv mref)
+/// <summary>MethodRef Index for an Attribute *with* type arguments</summary>
+and GetMemberRefAsCustomGenericAttribType cenv env fenv (mspec: ILMethodSpec) =
+    let typeSpec = (tdor_TypeSpec, GetTypeAsTypeSpecIdx cenv env mspec.DeclaringType) 
+    let memberRef = MemberRefParent (mrp_TypeSpec, snd typeSpec)
+    let memberRow = MemberRefRow( memberRef,
+                             GetStringHeapIdx cenv mspec.Name,
+                             GetMethodRefInfoAsBlobIdx cenv fenv (mspec.CallingConv, mspec.MethodRef.ArgTypes, mspec.MethodRef.ReturnType, None, mspec.MethodRef.GenericArity)
+                             )
+    (cat_MemberRef, FindOrAddSharedRow cenv TableNames.MemberRef memberRow)
 
+/// <summary>MethodRef Index for an Attribute without type arguments</summary>
+and GetMethodRefAsCustomAttribType cenv _env fenv (mspec: ILMethodSpec) =
+    
+    let tref = mspec.MethodRef.DeclaringTypeRef
+    
+    if isTypeRefLocal tref && mspec.DeclaringType.GenericArgs.Length = 0 then
+        try (cat_MethodDef, GetMethodRefAsMethodDefIdx cenv mspec.MethodRef)
+        with MethodDefNotFound -> 
+        (cat_MemberRef, GetMethodRefAsMemberRefIdx cenv fenv fenv mspec.MethodRef)
+    else
+        (cat_MemberRef, GetMethodRefAsMemberRefIdx cenv fenv fenv mspec.MethodRef)
+        
 // --------------------------------------------------------------------
 // ILAttributes --> CustomAttribute rows
 // --------------------------------------------------------------------
@@ -1470,26 +1483,32 @@ and GetMethodRefAsCustomAttribType cenv (mref: ILMethodRef) =
 let rec GetCustomAttrDataAsBlobIdx cenv (data: byte[]) =
     if data.Length = 0 then 0 else GetBytesAsBlobIdx cenv data
 
-and GetCustomAttrRow cenv hca (attr: ILAttribute) =
-    let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
+and GetCustomAttrRow cenv env hca (attr: ILAttribute) =
+    let cat = 
+        let fenv = envForMethodRef env attr.Method.DeclaringType
+        if attr.Method.DeclaringType.GenericArgs.Length = 0 
+        then GetMethodRefAsCustomAttribType cenv env fenv attr.Method
+        else GetMemberRefAsCustomGenericAttribType cenv env fenv attr.Method
     let data = getCustomAttrData attr
+    
     for element in attr.Elements do
         match element with
         | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
         | ILAttribElem.TypeRef (Some tref) -> GetTypeRefAsTypeRefIdx cenv tref |> ignore
         | _ -> ()
-
+    
     UnsharedRow
-            [| HasCustomAttribute (fst hca, snd hca)
-               CustomAttributeType (fst cat, snd cat)
-               Blob (GetCustomAttrDataAsBlobIdx cenv data)
+            [|  
+                HasCustomAttribute (fst hca, snd hca)
+                CustomAttributeType (fst cat, snd cat)
+                Blob (GetCustomAttrDataAsBlobIdx cenv data)
             |]
 
-and GenCustomAttrPass3Or4 cenv hca attr =
-    AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
+and GenCustomAttrPass3Or4 cenv env hca attr =
+    AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv env hca attr) |> ignore
 
-and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) =
-    attrs.AsArray() |> Array.iter (GenCustomAttrPass3Or4 cenv hca)
+and GenCustomAttrsPass3Or4 cenv env hca (attrs: ILAttributes) =
+    attrs.AsArray() |> Array.iter (GenCustomAttrPass3Or4 cenv env hca)
 
 // --------------------------------------------------------------------
 // ILSecurityDecl --> DeclSecurity rows
@@ -2347,14 +2366,14 @@ let rec GenPdbImports (cenv: cenv) (input: ILDebugImports option) =
 
 let GenILMethodBody mname cenv env (il: ILMethodBody) =
     let localSigs =
-      if cenv.generatePdb then
-        il.Locals |> List.toArray |> Array.map (fun l ->
-            // Write a fake entry for the local signature headed by e_IMAGE_CEE_CS_CALLCONV_FIELD. This is referenced by the PDB file
-            ignore (FindOrAddSharedRow cenv TableNames.StandAloneSig (SharedRow [| Blob (GetFieldDefTypeAsBlobIdx cenv env l.Type) |]))
-            // Now write the type
-            GetTypeOfLocalAsBytes cenv env l)
-      else
-        [| |]
+        if cenv.generatePdb then
+            il.Locals |> List.toArray |> Array.map (fun l ->
+                // Write a fake entry for the local signature headed by e_IMAGE_CEE_CS_CALLCONV_FIELD. This is referenced by the PDB file
+                ignore (FindOrAddSharedRow cenv TableNames.StandAloneSig (SharedRow [| Blob (GetFieldDefTypeAsBlobIdx cenv env l.Type) |]))
+                // Now write the type
+                GetTypeOfLocalAsBytes cenv env l)
+        else
+            [| |]
 
     let imports = GenPdbImports cenv il.DebugImports
     let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitMethodCode cenv imports localSigs env mname il.Code
@@ -2461,7 +2480,7 @@ and GetFieldDefSigAsBlobIdx cenv env fd = GetFieldDefTypeAsBlobIdx cenv env fd.F
 and GenFieldDefPass3 tdef cenv env fd =
     if canGenFieldDef tdef cenv fd then
         let fidx = AddUnsharedRow cenv TableNames.Field (GetFieldDefAsFieldDefRow cenv env fd)
-        GenCustomAttrsPass3Or4 cenv (hca_FieldDef, fidx) fd.CustomAttrs
+        GenCustomAttrsPass3Or4 cenv env (hca_FieldDef, fidx) fd.CustomAttrs
         // Write FieldRVA table - fixups into data section done later
         match fd.Data with
         | None -> ()
@@ -2542,7 +2561,7 @@ and GenGenericParamPass3 cenv env idx owner gp =
 
 and GenGenericParamPass4 cenv env idx owner gp =
     let gpidx = FindOrAddSharedRow cenv TableNames.GenericParam (GetGenericParamAsGenericParamRow cenv env idx owner gp)
-    GenCustomAttrsPass3Or4 cenv (hca_GenericParam, gpidx) gp.CustomAttrs
+    GenCustomAttrsPass3Or4 cenv env (hca_GenericParam, gpidx) gp.CustomAttrs
     gp.Constraints |> List.iter (GenGenericParamConstraintPass4 cenv env gpidx)
 
 // --------------------------------------------------------------------
@@ -2567,7 +2586,7 @@ and GenParamPass3 cenv env seq (param: ILParameter) =
     then ()
     else
       let pidx = AddUnsharedRow cenv TableNames.Param (GetParamAsParamRow cenv env seq param)
-      GenCustomAttrsPass3Or4 cenv (hca_ParamDef, pidx) param.CustomAttrs
+      GenCustomAttrsPass3Or4 cenv env (hca_ParamDef, pidx) param.CustomAttrs
       // Write FieldRVA table - fixups into data section done later
       match param.Marshal with
       | None -> ()
@@ -2594,7 +2613,7 @@ let GenReturnAsParamRow (returnv : ILReturn) =
 let GenReturnPass3 cenv (returnv: ILReturn) =
     if Option.isSome returnv.Marshal || not (Array.isEmpty (returnv.CustomAttrs.AsArray())) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
-        GenCustomAttrsPass3Or4 cenv (hca_ParamDef, pidx) returnv.CustomAttrs
+        GenCustomAttrsPass3Or4 cenv {EnclosingTyparCount = 0} (hca_ParamDef, pidx) returnv.CustomAttrs
         match returnv.Marshal with
         | None -> ()
         | Some ntyp ->
@@ -2706,7 +2725,7 @@ let GenMethodDefPass3 tdef cenv env (mdef: ILMethodDef) =
         if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
         GenReturnPass3 cenv mdef.Return
         mdef.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param)
-        mdef.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef, midx)
+        mdef.CustomAttrs |> GenCustomAttrsPass3Or4 cenv env (hca_MethodDef, midx)
         mdef.SecurityDecls.AsList() |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
         mdef.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp)
         match mdef.Body with
@@ -2796,7 +2815,7 @@ and GenPropertyPass3 cenv env (prop: ILPropertyDef) =
                     [| GetFieldInitFlags i
                        HasConstant (hc_Property, pidx)
                        Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
-        GenCustomAttrsPass3Or4 cenv (hca_Property, pidx) prop.CustomAttrs
+        GenCustomAttrsPass3Or4 cenv env (hca_Property, pidx) prop.CustomAttrs
 
 let rec GenEventMethodSemanticsPass3 cenv eidx kind mref =
     let addIdx = try GetMethodRefAsMethodDefIdx cenv mref with MethodDefNotFound -> 1
@@ -2822,7 +2841,7 @@ and GenEventPass3 cenv env (edef: ILEventDef) =
         edef.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010
         Option.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0020) edef.FireMethod
         List.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) edef.OtherMethods
-        GenCustomAttrsPass3Or4 cenv (hca_Event, eidx) edef.CustomAttrs
+        GenCustomAttrsPass3Or4 cenv env (hca_Event, eidx) edef.CustomAttrs
 
 
 // --------------------------------------------------------------------
@@ -2856,7 +2875,7 @@ let rec GetResourceAsManifestResourceRow cenv rdef =
 
 and GenResourcePass3 cenv rdef =
   let idx = AddUnsharedRow cenv TableNames.ManifestResource (GetResourceAsManifestResourceRow cenv rdef)
-  GenCustomAttrsPass3Or4 cenv (hca_ManifestResource, idx) rdef.CustomAttrs
+  GenCustomAttrsPass3Or4 cenv {EnclosingTyparCount = 0} (hca_ManifestResource, idx) rdef.CustomAttrs
 
 // --------------------------------------------------------------------
 // ILTypeDef --> generate ILFieldDef, ILMethodDef, ILPropertyDef etc. rows
@@ -2883,7 +2902,7 @@ let rec GenTypeDefPass3 enc cenv (tdef: ILTypeDef) =
                            SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
 
         tdef.SecurityDecls.AsList() |> GenSecurityDeclsPass3 cenv (hds_TypeDef, tidx)
-        tdef.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef, tidx)
+        tdef.CustomAttrs |> GenCustomAttrsPass3Or4 cenv env (hca_TypeDef, tidx)
         tdef.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef, tidx) gp)
         tdef.NestedTypes.AsList() |> GenTypeDefsPass3 (enc@[tdef.Name]) cenv
    with exn ->
@@ -2928,7 +2947,7 @@ let rec GenNestedExportedTypePass3 cenv cidx (ce: ILNestedExportedType) =
                StringE (GetStringHeapIdx cenv ce.Name)
                StringE 0
                Implementation (i_ExportedType, cidx) |])
-    GenCustomAttrsPass3Or4 cenv (hca_ExportedType, nidx) ce.CustomAttrs
+    GenCustomAttrsPass3Or4 cenv {EnclosingTyparCount = 0} (hca_ExportedType, nidx) ce.CustomAttrs
     GenNestedExportedTypesPass3 cenv nidx ce.Nested
 
 and GenNestedExportedTypesPass3 cenv nidx (nce: ILNestedExportedTypes) =
@@ -2946,7 +2965,7 @@ and GenExportedTypePass3 cenv (ce: ILExportedTypeOrForwarder) =
                nelem
                nselem
                Implementation (fst impl, snd impl) |])
-    GenCustomAttrsPass3Or4 cenv (hca_ExportedType, cidx) ce.CustomAttrs
+    GenCustomAttrsPass3Or4 cenv {EnclosingTyparCount = 0} (hca_ExportedType, cidx) ce.CustomAttrs
     GenNestedExportedTypesPass3 cenv cidx ce.Nested
 
 and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) =
@@ -2983,7 +3002,7 @@ and GetManifestAsAssemblyRow cenv m =
 and GenManifestPass3 cenv m =
     let aidx = AddUnsharedRow cenv TableNames.Assembly (GetManifestAsAssemblyRow cenv m)
     GenSecurityDeclsPass3 cenv (hds_Assembly, aidx) (m.SecurityDecls.AsList())
-    GenCustomAttrsPass3Or4 cenv (hca_Assembly, aidx) m.CustomAttrs
+    GenCustomAttrsPass3Or4 cenv {EnclosingTyparCount = 0} (hca_Assembly, aidx) m.CustomAttrs
     GenExportedTypesPass3 cenv m.ExportedTypes
     // Record the entrypoint decl if needed.
     match m.EntrypointElsewhere with
@@ -3045,7 +3064,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     (match modul.Manifest with None -> () | Some m -> GenManifestPass3 cenv m)
     GenTypeDefsPass3 [] cenv tdefs
     reportTime "Module Generation Pass 3"
-    GenCustomAttrsPass3Or4 cenv (hca_Module, midx) modul.CustomAttrs
+    GenCustomAttrsPass3Or4 cenv {EnclosingTyparCount = 0} (hca_Module, midx) modul.CustomAttrs
     // GenericParam is the only sorted table indexed by Columns in other tables (GenericParamConstraint\CustomAttributes).
     // Hence we need to sort it before we emit any entries in GenericParamConstraint\CustomAttributes that are attached to generic params.
     // Note this mutates the rows in a table. 'SetRowsOfTable' clears

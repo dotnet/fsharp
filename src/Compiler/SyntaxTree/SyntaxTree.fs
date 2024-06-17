@@ -1043,6 +1043,8 @@ type SynAttribute =
     {
         TypeName: SynLongIdent
 
+        TypeArgs: SynType list
+
         ArgExpr: SynExpr
 
         Target: Ident option

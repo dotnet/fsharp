@@ -21,12 +21,14 @@ ImplFile
                                  ([{ Attributes =
                                       [{ TypeName =
                                           SynLongIdent ([Foo], [], [None])
+                                         TypeArgs = []
                                          ArgExpr = Const (Unit, (3,25--3,28))
                                          Target = None
                                          AppliesToGetterAndSetter = false
                                          Range = (3,25--3,28) };
                                        { TypeName =
                                           SynLongIdent ([Bar], [], [None])
+                                         TypeArgs = []
                                          ArgExpr = Const (Unit, (3,30--3,33))
                                          Target = None
                                          AppliesToGetterAndSetter = false
@@ -41,12 +43,14 @@ ImplFile
                                    ([{ Attributes =
                                         [{ TypeName =
                                             SynLongIdent ([Foo], [], [None])
+                                           TypeArgs = []
                                            ArgExpr = Const (Unit, (3,25--3,28))
                                            Target = None
                                            AppliesToGetterAndSetter = false
                                            Range = (3,25--3,28) };
                                          { TypeName =
                                             SynLongIdent ([Bar], [], [None])
+                                           TypeArgs = []
                                            ArgExpr = Const (Unit, (3,30--3,33))
                                            Target = None
                                            AppliesToGetterAndSetter = false

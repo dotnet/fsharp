@@ -8,6 +8,7 @@ ImplFile
              (SynExceptionDefn
                 (SynExceptionDefnRepr
                    ([{ Attributes = [{ TypeName = SynLongIdent ([A], [], [None])
+                                       TypeArgs = []
                                        ArgExpr = Const (Unit, (3,12--3,13))
                                        Target = None
                                        AppliesToGetterAndSetter = false

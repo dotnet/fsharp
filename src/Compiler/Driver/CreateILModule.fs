@@ -35,7 +35,7 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> Some s
+            | Some(Attrib(_, _, _, [ AttribStringArg s ], _, _, _, _)) -> Some s
             | _ -> None
 
     let TryFindIntAttribute (g: TcGlobals) attrib attribs =
@@ -43,7 +43,7 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some(Attrib(_, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some i
+            | Some(Attrib(_, _, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some i
             | _ -> None
 
     let TryFindBoolAttribute (g: TcGlobals) attrib attribs =
@@ -51,7 +51,7 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some(Attrib(_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some p
+            | Some(Attrib(_, _, _, [ AttribBoolArg p ], _, _, _, _)) -> Some p
             | _ -> None
 
     [<return: Struct>]

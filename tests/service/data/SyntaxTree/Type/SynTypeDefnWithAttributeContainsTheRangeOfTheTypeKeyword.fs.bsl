@@ -12,6 +12,7 @@ ImplFile
                  (SynComponentInfo
                     ([{ Attributes =
                          [{ TypeName = SynLongIdent ([MyAttribute], [], [None])
+                            TypeArgs = []
                             ArgExpr = Const (Unit, (2,2--2,13))
                             Target = None
                             AppliesToGetterAndSetter = false

@@ -962,6 +962,7 @@ let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attribu
     let optAttrs =
         if isOpt then
             [ ( { TypeName=SynLongIdent(pathToSynLid m ["Microsoft";"FSharp";"Core";"OptionalArgument"], [], [None;None;None;None])
+                  TypeArgs = []
                   ArgExpr=mkSynUnit m
                   Target=None
                   AppliesToGetterAndSetter=false
@@ -1277,7 +1278,7 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
 let private HasMethodImplNoInliningAttribute g attrs = 
             match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
             // NO_INLINING = 8
-            | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
+            | Some (Attrib(_, _, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
             | _ -> false
 
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
@@ -10784,7 +10785,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 if attribs.Length <> attrs.Length then [], [], attribs
                 else attribs
                      |> List.zip attrs
-                     |> List.partition(function | _, Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
+                     |> List.partition(function | _, Attrib(_, _, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
                      |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
             let retAttribs =
                 match rtyOpt with
@@ -11093,13 +11094,13 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
 
     let (SynLongIdent(tycon, _, _)) = synAttr.TypeName
     let arg = synAttr.ArgExpr
+    let paramSynTypes = synAttr.TypeArgs
     let targetIndicator = synAttr.Target
     let isAppliedToGetterOrSetter = synAttr.AppliesToGetterAndSetter
     let mAttr = synAttr.Range
     let typath, tyid = List.frontAndBack tycon
     let tpenv = emptyUnscopedTyparEnv
     let ad = env.eAccessRights
-
     // if we're checking an attribute that was applied directly to a getter or a setter, then
     // what we're really checking against is a method, not a property
     let attrTgt = if isAppliedToGetterOrSetter then ((attrTgt ^^^ AttributeTargets.Property) ||| AttributeTargets.Method) else attrTgt
@@ -11108,9 +11109,10 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
             let tyid = mkSynId tyid.idRange n
             let tycon = (typath @ [tyid])
             
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No with
+            
+            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon (TypeNameResolutionStaticArgsInfo.FromTyArgs paramSynTypes.Length) PermitDirectReferenceToGeneratedType.No with
             | Exception err -> raze err
-            | Result(tinstEnclosing, tcref, inst) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute env tpenv mAttr tcref tinstEnclosing [] inst)
+            | Result(tinstEnclosing, tcref, inst) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute env tpenv mAttr tcref tinstEnclosing paramSynTypes inst)
 
         ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
 
@@ -11145,11 +11147,11 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                     (validOnDefault, inheritedDefault)
             else
                 match (TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs) with
-                | Some(Attrib(_, _, [ AttribInt32Arg validOn ], _, _, _, _)) ->
+                | Some(Attrib(_, _, _, [ AttribInt32Arg validOn ], _, _, _, _)) ->
                     (validOn, inheritedDefault)
-                | Some(Attrib(_, _, [ AttribInt32Arg validOn
-                                      AttribBoolArg(_allowMultiple)
-                                      AttribBoolArg inherited], _, _, _, _)) ->
+                | Some(Attrib(_, _, _, [ AttribInt32Arg validOn
+                                         AttribBoolArg(_allowMultiple)
+                                         AttribBoolArg inherited], _, _, _, _)) ->
                     (validOn, inherited)
                 | Some _ ->
                     warning(Error(FSComp.SR.tcUnexpectedConditionInImportedAssembly(), mAttr))
@@ -11240,11 +11242,11 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                     if isStruct then error (Error(FSComp.SR.tcCustomAttributeMustBeReferenceType(), m))
                     if args.Length <> ilMethRef.ArgTypes.Length then error (Error(FSComp.SR.tcCustomAttributeArgumentMismatch(), m))
                     let args = args |> List.map mkAttribExpr
-                    Attrib(tcref, ILAttrib ilMethRef, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, m)
+                    Attrib(tcref, ILAttrib ilMethRef, [], args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, m)
 
-                | Expr.App (InnerExprPat(ExprValWithPossibleTypeInst(vref, _, _, _)), _, _, args, _) ->
+                | Expr.App (InnerExprPat(ExprValWithPossibleTypeInst(vref, _, _, _)), _, typeArgs, args, _) ->
                     let args = args |> List.collect (function Expr.Const (Const.Unit, _, _) -> [] | expr -> tryDestRefTupleExpr expr) |> List.map mkAttribExpr
-                    Attrib(tcref, FSAttrib vref, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, mAttr)
+                    Attrib(tcref, FSAttrib vref, typeArgs, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, mAttr)
 
                 | _ ->
                     error (Error(FSComp.SR.tcCustomAttributeMustInvokeConstructor(), mAttr))
@@ -11323,7 +11325,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         let (ExplicitTyparInfo(_, declaredTypars, canInferTypars)) = explicitTyparInfo
         let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
         let generalizedTypars, prelimValSchemes2 =
-            let canInferTypars = GeneralizationHelpers. ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, canInferTypars, None)
+            let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, canInferTypars, None)
 
             let maxInferredTypars = freeInTypeLeftToRight g false tauTy
 

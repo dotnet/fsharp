@@ -258,6 +258,61 @@ let x = 123
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
 
+    [<Fact>]
+    let ``Digest attribute type parameters`` () =
+        let source = """
+open System
+open System.Diagnostics
+
+type FooAttribute<^T>() =
+    inherit Attribute()
+
+[<Foo<int>()>]
+let x = 123
+"""
+        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
+        let _, checkResults = parseAndCheckFile fileName source options
+
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Array.ofSeq
+        |> Array.tryFind (fun su -> su.Symbol.DisplayName = "x")
+        |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+        |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
+        |> Option.iter (fun symbol -> 
+            symbol.Attributes[0].TypeArgs[0].AbbreviatedType.TypeDefinition.CompiledName
+            |> should equal "Int32"
+            )
+    [<Fact>]
+    let ``Digest record attribute type parameters`` () =
+        let source = """
+open System
+open System.Diagnostics
+
+type FooAttribute<^T>(input : string) =
+    inherit Attribute()
+type BarAttribute<^T>(input : int) =
+    inherit Attribute()
+
+[<Foo<int>("bar")>]
+type FooBarRecord =
+    {
+        [<Bar<obj>(2)>]
+        id : string
+    }
+"""
+        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
+        let _, checkResults = parseAndCheckFile fileName source options
+
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Array.ofSeq
+        |> Array.tryFind (fun su -> su.Symbol.DisplayName = "FooBarRecord")
+        |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+        |> Option.map (fun su -> su.Symbol :?> FSharpEntity)
+        |> Option.iter (fun symbol ->
+            symbol.Attributes[0].TypeArgs[0].AbbreviatedType.TypeDefinition.CompiledName
+            |> should equal "Int32"
+            )            
+
 module Types =
     [<Fact>]
     let ``FSharpType.Print parent namespace qualifiers`` () =

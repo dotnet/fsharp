@@ -234,6 +234,7 @@ SigFile
                         ([{ Attributes =
                              [{ TypeName =
                                  SynLongIdent ([StructuralEquality], [], [None])
+                                TypeArgs = []
                                 ArgExpr = Const (Unit, (27,6--27,24))
                                 Target = None
                                 AppliesToGetterAndSetter = false
@@ -241,6 +242,7 @@ SigFile
                               { TypeName =
                                  SynLongIdent
                                    ([StructuralComparison], [], [None])
+                                TypeArgs = []
                                 ArgExpr = Const (Unit, (27,26--27,46))
                                 Target = None
                                 AppliesToGetterAndSetter = false
@@ -249,6 +251,7 @@ SigFile
                           { Attributes =
                              [{ TypeName =
                                  SynLongIdent ([CompiledName], [], [None])
+                                TypeArgs = []
                                 ArgExpr =
                                  Paren
                                    (Const
@@ -387,6 +390,7 @@ SigFile
              (SynComponentInfo
                 ([{ Attributes =
                      [{ TypeName = SynLongIdent ([AutoOpen], [], [None])
+                        TypeArgs = []
                         ArgExpr = Const (Unit, (46,2--46,10))
                         Target = None
                         AppliesToGetterAndSetter = false
@@ -412,6 +416,7 @@ SigFile
                             ([{ Attributes =
                                  [{ TypeName =
                                      SynLongIdent ([CompiledName], [], [None])
+                                    TypeArgs = []
                                     ArgExpr =
                                      Paren
                                        (Const
@@ -446,6 +451,7 @@ SigFile
                             ([{ Attributes =
                                  [{ TypeName =
                                      SynLongIdent ([CompiledName], [], [None])
+                                    TypeArgs = []
                                     ArgExpr =
                                      Paren
                                        (Const
@@ -480,6 +486,7 @@ SigFile
                             ([{ Attributes =
                                  [{ TypeName =
                                      SynLongIdent ([CompiledName], [], [None])
+                                    TypeArgs = []
                                     ArgExpr =
                                      Paren
                                        (Const
@@ -513,6 +520,7 @@ SigFile
                             ([{ Attributes =
                                  [{ TypeName =
                                      SynLongIdent ([CompiledName], [], [None])
+                                    TypeArgs = []
                                     ArgExpr =
                                      Paren
                                        (Const

@@ -84,15 +84,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 attribExprEq e1 e2
 
             let attribsEq  attrib1 attrib2 = 
-                let (Attrib(implTcref, _, implArgs, implNamedArgs, _, _, _implRange)) = attrib1
-                let (Attrib(signTcref, _, signArgs, signNamedArgs, _, _, _signRange)) = attrib2
+                let (Attrib(implTcref, _, _, implArgs, implNamedArgs, _, _, _implRange)) = attrib1
+                let (Attrib(signTcref, _, _,signArgs, signNamedArgs, _, _, _signRange)) = attrib2
                 tyconRefEq g signTcref implTcref &&
                 (implArgs, signArgs) ||> List.lengthsEqAndForall2 attribExprEq &&
                 (implNamedArgs, signNamedArgs) ||> List.lengthsEqAndForall2 attribNamedArgEq
 
             let attribsHaveSameTycon attrib1 attrib2 = 
-                let (Attrib(implTcref, _, _, _, _, _, _)) = attrib1
-                let (Attrib(signTcref, _, _, _, _, _, _)) = attrib2
+                let (Attrib(implTcref, _, _, _, _, _, _, _)) = attrib1
+                let (Attrib(signTcref, _, _, _, _, _, _, _)) = attrib2
                 tyconRefEq g signTcref implTcref 
 
             // For each implementation attribute, only keep if it is not mentioned in the signature.
@@ -113,7 +113,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     let existsSimilarAttrib = sigAttribs |> List.exists (attribsHaveSameTycon implAttrib)
 
                     if existsSimilarAttrib then 
-                        let (Attrib(implTcref, _, _, _, _, _, implRange)) = implAttrib
+                        let (Attrib(implTcref, _, _, _, _, _, _, implRange)) = implAttrib
                         warning(Error(FSComp.SR.tcAttribArgsDiffer(implTcref.DisplayName), implRange))
                         check keptImplAttribsRev remainingImplAttribs sigAttribs    
                     else

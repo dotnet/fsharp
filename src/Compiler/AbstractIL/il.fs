@@ -4851,6 +4851,16 @@ let encodeCustomAttrNamedArg (nm, ty, prop, elem) =
         yield! encodeCustomAttrValue ty elem
     |]
 
+/// <summary>
+/// Generate the syntax of a custom attribute per ECMA-335 II.23.3
+///  <para>Prolog (always 01 00)</para>
+///  <para>FixedArgs - the implicit arguments, i.e. the ctor arguments</para>
+///  <para>NumNamed - the number of named arguments used in this instance of an attribute</para>
+///  <para>NamedArgs - the actual named arguments used in this instance of an attribute</para>
+/// </summary>
+/// <param name="mspec"></param>
+/// <param name="fixedArgs"></param>
+/// <param name="namedArgs"></param>
 let encodeCustomAttrArgs (mspec: ILMethodSpec) (fixedArgs: _ list) (namedArgs: _ list) =
     let argTys = mspec.MethodRef.ArgTypes
 

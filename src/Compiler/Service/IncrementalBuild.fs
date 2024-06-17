@@ -594,7 +594,7 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime, projectTi
 module Utilities =
     let TryFindFSharpStringAttribute tcGlobals attribSpec attribs =
         match TryFindFSharpAttribute tcGlobals attribSpec attribs with
-        | Some (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some s
+        | Some (Attrib(_, _, _, [ AttribStringArg s ], _, _, _, _))  -> Some s
         | _ -> None
 
 /// The implementation of the information needed by TcImports in CompileOps.fs for an F# assembly reference.
@@ -804,7 +804,7 @@ module IncrementalBuilderHelpers =
                         // Assemblies containing type provider components can not successfully be used via cross-assembly references.
                         // We return 'None' for the assembly portion of the cross-assembly reference
                         let hasTypeProviderAssemblyAttrib =
-                            topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
+                            topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _, _)) ->
                                 let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
                                 nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
 

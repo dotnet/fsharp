@@ -88,14 +88,21 @@ type AttribInfo =
 
     member x.TyconRef = 
          match x with 
-         | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _)) -> tcref
+         | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _, _)) -> tcref
          | ILAttribInfo (g, amap, scoref, a, m) -> 
              let ty = RescopeAndImportILType scoref amap m [] a.Method.DeclaringType
              tcrefOfAppTy g ty
+    
+    member x.TypeArgs : TypeInst =
+         match x with 
+         | FSAttribInfo(_g, Attrib(_, _, typeArgs, _, _, _, _, _)) -> typeArgs
+         | ILAttribInfo (g, amap, scoref, a, m) -> 
+             let ty = RescopeAndImportILType scoref amap m [] a.Method.DeclaringType
+             argsOfAppTy g ty
 
     member x.ConstructorArguments = 
          match x with 
-         | FSAttribInfo(g, Attrib(_, _, unnamedArgs, _, _, _, _)) -> 
+         | FSAttribInfo(g, Attrib(_, _, _, unnamedArgs, _, _, _, _)) -> 
              unnamedArgs
              |> List.map (fun (AttribExpr(origExpr, evaluatedExpr)) -> 
                     let ty = tyOfExpr g origExpr
@@ -110,7 +117,7 @@ type AttribInfo =
 
     member x.NamedArguments = 
          match x with 
-         | FSAttribInfo(g, Attrib(_, _, _, namedArgs, _, _, _)) -> 
+         | FSAttribInfo(g, Attrib(_, _, _, _, namedArgs, _, _, _)) -> 
              namedArgs
              |> List.map (fun (AttribNamedArg(nm, _, isField, AttribExpr(origExpr, evaluatedExpr))) -> 
                     let ty = tyOfExpr g origExpr
@@ -218,7 +225,7 @@ let TryBindMethInfoAttribute g (m: range) (AttribInfo(atref, _) as attribSpec) m
 let TryFindMethInfoStringAttribute g (m: range) attribSpec minfo  =
     TryBindMethInfoAttribute g m attribSpec minfo 
                     (function [ILAttribElem.String (Some msg) ], _ -> Some msg | _ -> None) 
-                    (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
+                    (function Attrib(_, _, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
                     (function [ Some (:? string as msg : obj) ], _ -> Some msg | _ -> None)
 
 /// Check if a method has a specific attribute.
@@ -271,9 +278,9 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
     else
         trackErrors {
             match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
-            | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) ->
+            | Some(Attrib(_, _, _, [ AttribStringArg s ], _, _, _, _)) ->
                 do! WarnD(ObsoleteWarning(s, m))
-            | Some(Attrib(_, _, [ AttribStringArg s; AttribBoolArg(isError) ], _, _, _, _)) -> 
+            | Some(Attrib(_, _, _, [ AttribStringArg s; AttribBoolArg(isError) ], _, _, _, _)) -> 
                 if isError then 
                     do! ErrorD (ObsoleteError(s, m))
                 else 
@@ -284,7 +291,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
                 ()
             
             match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-            | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
+            | Some(Attrib(_, _, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
                 let msg = UserCompilerMessage(s, n, m)
                 let isError = 
                     match namedArgs with 
@@ -302,7 +309,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
                 ()
 
             match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
-            | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
+            | Some(Attrib(_, _, _, [ AttribStringArg(s) ], _, _, _, _)) ->
                 let isExperimentalAttributeDisabled (s:string) =
                     if g.compilingFSharpCore then
                         true
@@ -351,7 +358,7 @@ let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m =
 let CheckFSharpAttributesForHidden g attribs = 
     not (isNil attribs) &&         
     (match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, [AttribStringArg _; AttribInt32Arg messageNumber],
+        | Some(Attrib(_, _, _, [AttribStringArg _; AttribInt32Arg messageNumber],
                     ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> 
             // Message number 62 is for "ML Compatibility". Items labelled with this are visible in intellisense
             // when mlCompatibility is set.
@@ -359,7 +366,7 @@ let CheckFSharpAttributesForHidden g attribs =
         | _ -> false)
     || 
     (match TryFindFSharpAttribute g g.attrib_ComponentModelEditorBrowsableAttribute attribs with
-     | Some(Attrib(_, _, [AttribInt32Arg state], _, _, _, _)) -> state = int System.ComponentModel.EditorBrowsableState.Never
+     | Some(Attrib(_, _, _, [AttribInt32Arg state], _, _, _, _)) -> state = int System.ComponentModel.EditorBrowsableState.Never
      | _ -> false)
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
@@ -526,7 +533,7 @@ let CheckRecdFieldInfoAttributes g (x:RecdFieldInfo) m =
     CheckRecdFieldAttributes g x.RecdFieldRef m
 
 // Identify any security attributes
-let IsSecurityAttribute (g: TcGlobals) amap (casmap : IDictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
+let IsSecurityAttribute (g: TcGlobals) amap (casmap : IDictionary<Stamp, bool>) (Attrib(tcref, _, typeArgs, _, _, _, _, _)) m =
     // There's no CAS on Silverlight, so we have to be careful here
     match g.attrib_SecurityAttribute with
     | None -> false
@@ -537,16 +544,16 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : IDictionary<Stamp, bool>) 
             match casmap.TryGetValue tcs with
             | true, c -> c
             | _ ->
-                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])          
+                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref typeArgs)          
                 casmap[tcs] <- exists
                 exists
         | ValueNone -> false  
 
-let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
+let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _, _)) =
     (tyconRefEq g tcref g.attrib_SecurityCriticalAttribute.TyconRef || tyconRefEq g tcref g.attrib_SecuritySafeCriticalAttribute.TyconRef)
 
 // Identify any AssemblyVersion attributes
-let IsAssemblyVersionAttribute (g: TcGlobals) (Attrib(tcref, _, _, _, _, _, _)) =
+let IsAssemblyVersionAttribute (g: TcGlobals) (Attrib(tcref, _, _, _, _, _, _, _)) =
 
     match g.TryFindSysAttrib("System.Reflection.AssemblyVersionAttribute") with
     | None -> false
