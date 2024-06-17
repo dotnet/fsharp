@@ -507,7 +507,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macos-11
+            vmImage: macos-12
           variables:
           - name: _SignType
             value: Test
@@ -642,7 +642,7 @@ stages:
         # Plain FCS build Mac
         - job: Plain_Build_MacOS
           pool:
-            vmImage: macos-11
+            vmImage: macos-12
           variables:
           - name: _BuildConfig
             value: Debug
