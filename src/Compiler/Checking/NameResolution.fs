@@ -1105,7 +1105,7 @@ let GetNestedTyconRefsOfType (infoReader: InfoReader) (amap: Import.ImportMap) (
 /// Handle the .NET/C# business where nested generic types implicitly accumulate the type parameters
 /// from their enclosing types.
 let MakeNestedType (ncenv: NameResolver) (tinst: TType list) m (tcrefNested: TyconRef) =
-    let tps = match tcrefNested.Typars m with [] -> [] | l -> List.skip tinst.Length l
+    let tps = match tcrefNested.Typars m with [] -> [] | l -> l[tinst.Length..]
     let tinstNested = ncenv.InstantiationGenerator m tps
     mkWoNullAppTy tcrefNested (tinst @ tinstNested)
 

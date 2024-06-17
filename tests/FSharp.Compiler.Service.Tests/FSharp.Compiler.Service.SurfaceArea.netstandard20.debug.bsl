@@ -14,6 +14,7 @@
 <>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <TypeIdx>j__TPar TypeIdx
 <>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <TypeIdx>j__TPar get_TypeIdx()
 <>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar])
+<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar], System.Collections.IEqualityComparer)
 <>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(System.Object)
 <>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 <>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 CompareTo(<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar])
@@ -30,6 +31,7 @@ FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 StdCall
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 ThisCall
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 VarArg
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean Equals(ILArgConvention)
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean Equals(ILArgConvention, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsCDecl
@@ -66,6 +68,7 @@ FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: Boolean Equals(ILArrayShape)
+FSharp.Compiler.AbstractIL.IL+ILArrayShape: Boolean Equals(ILArrayShape, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: ILArrayShape FromRank(Int32)
@@ -80,6 +83,7 @@ FSharp.Compiler.AbstractIL.IL+ILArrayShape: Int32 Rank
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: Int32 get_Rank()
 FSharp.Compiler.AbstractIL.IL+ILArrayShape: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILAssemblyLongevity: Boolean Equals(ILAssemblyLongevity)
+FSharp.Compiler.AbstractIL.IL+ILAssemblyLongevity: Boolean Equals(ILAssemblyLongevity, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILAssemblyLongevity: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILAssemblyLongevity: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILAssemblyLongevity: ILAssemblyLongevity Default
@@ -197,6 +201,7 @@ FSharp.Compiler.AbstractIL.IL+ILAttribElem+UInt32: UInt32 get_Item()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+UInt64: UInt64 Item
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+UInt64: UInt64 get_Item()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean Equals(ILAttribElem)
+FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean Equals(ILAttribElem, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsArray
@@ -291,6 +296,7 @@ FSharp.Compiler.AbstractIL.IL+ILAttribute+Encoded: Microsoft.FSharp.Collections.
 FSharp.Compiler.AbstractIL.IL+ILAttribute+Tags: Int32 Decoded
 FSharp.Compiler.AbstractIL.IL+ILAttribute+Tags: Int32 Encoded
 FSharp.Compiler.AbstractIL.IL+ILAttribute: Boolean Equals(ILAttribute)
+FSharp.Compiler.AbstractIL.IL+ILAttribute: Boolean Equals(ILAttribute, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILAttribute: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILAttribute: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILAttribute: Boolean IsDecoded
@@ -332,6 +338,7 @@ FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILAttributesStored: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv)
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention Item2
@@ -352,6 +359,7 @@ FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Boolean Equals(ILCallingSignature)
+FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Boolean Equals(ILCallingSignature, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: ILCallingConv CallingConv
@@ -395,6 +403,7 @@ FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Ansi
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Auto
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Unicode
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding: Boolean Equals(ILDefaultPInvokeEncoding)
+FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding: Boolean Equals(ILDefaultPInvokeEncoding, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding: Boolean IsAnsi
@@ -552,6 +561,7 @@ FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt64: UInt64 get_Item()
 FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt8: Byte Item
 FSharp.Compiler.AbstractIL.IL+ILFieldInit+UInt8: Byte get_Item()
 FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean Equals(ILFieldInit)
+FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean Equals(ILFieldInit, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILFieldInit: Boolean IsBool
@@ -621,6 +631,7 @@ FSharp.Compiler.AbstractIL.IL+ILFieldInit: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILFieldInit: System.Object AsObject()
 FSharp.Compiler.AbstractIL.IL+ILFieldInit: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: Boolean Equals(ILFieldRef)
+FSharp.Compiler.AbstractIL.IL+ILFieldRef: Boolean Equals(ILFieldRef, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: ILType Type
@@ -637,6 +648,7 @@ FSharp.Compiler.AbstractIL.IL+ILFieldRef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILFieldRef: Void .ctor(ILTypeRef, System.String, ILType)
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: Boolean Equals(ILFieldSpec)
+FSharp.Compiler.AbstractIL.IL+ILFieldSpec: Boolean Equals(ILFieldSpec, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: ILFieldRef FieldRef
@@ -682,6 +694,7 @@ FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 CoVariant
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 ContraVariant
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 NonVariant
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance: Boolean Equals(ILGenericVariance)
+FSharp.Compiler.AbstractIL.IL+ILGenericVariance: Boolean Equals(ILGenericVariance, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance: Boolean IsCoVariant
@@ -713,6 +726,7 @@ FSharp.Compiler.AbstractIL.IL+ILMemberAccess+Tags: Int32 FamilyOrAssembly
 FSharp.Compiler.AbstractIL.IL+ILMemberAccess+Tags: Int32 Private
 FSharp.Compiler.AbstractIL.IL+ILMemberAccess+Tags: Int32 Public
 FSharp.Compiler.AbstractIL.IL+ILMemberAccess: Boolean Equals(ILMemberAccess)
+FSharp.Compiler.AbstractIL.IL+ILMemberAccess: Boolean Equals(ILMemberAccess, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILMemberAccess: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILMemberAccess: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILMemberAccess: Boolean IsAssembly
@@ -847,6 +861,7 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpL
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] TryFindInstanceByNameAndCallingSignature(System.String, ILCallingSignature)
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: System.Collections.Generic.IDictionary`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef]] CreateDictionary(ILMethodDef[])
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(ILMethodImplDef)
+FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(ILMethodImplDef, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: ILMethodSpec OverrideBy
@@ -984,6 +999,7 @@ FSharp.Compiler.AbstractIL.IL+ILModuleRef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILModuleRef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILModuleRef: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILNativeResource: Boolean Equals(ILNativeResource)
+FSharp.Compiler.AbstractIL.IL+ILNativeResource: Boolean Equals(ILNativeResource, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeResource: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeResource: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeResource: Int32 CompareTo(ILNativeResource)
@@ -1051,6 +1067,7 @@ FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 UInt64
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 VariantBool
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Tags: Int32 Void
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean Equals(ILNativeType)
+FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean Equals(ILNativeType, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeType: Boolean IsANSIBSTR
@@ -1257,6 +1274,7 @@ FSharp.Compiler.AbstractIL.IL+ILParameter: Microsoft.FSharp.Core.FSharpOption`1[
 FSharp.Compiler.AbstractIL.IL+ILParameter: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILParameter: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[System.String], ILType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldInit], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILNativeType], Boolean, Boolean, Boolean, ILAttributesStored, Int32)
 FSharp.Compiler.AbstractIL.IL+ILPlatform: Boolean Equals(ILPlatform)
+FSharp.Compiler.AbstractIL.IL+ILPlatform: Boolean Equals(ILPlatform, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILPlatform: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILPlatform: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILPlatform: Int32 CompareTo(ILPlatform)
@@ -1300,6 +1318,7 @@ FSharp.Compiler.AbstractIL.IL+ILPropertyDef: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Void .ctor(System.String, System.Reflection.PropertyAttributes, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodRef], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodRef], ILThisConvention, ILType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldInit], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILAttributes)
 FSharp.Compiler.AbstractIL.IL+ILPropertyDefs: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILReferences: Boolean Equals(ILReferences)
+FSharp.Compiler.AbstractIL.IL+ILReferences: Boolean Equals(ILReferences, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILReferences: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILReferences: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILReferences: ILAssemblyRef[] AssemblyReferences
@@ -1342,6 +1361,7 @@ FSharp.Compiler.AbstractIL.IL+ILScopeRef+Tags: Int32 Local
 FSharp.Compiler.AbstractIL.IL+ILScopeRef+Tags: Int32 Module
 FSharp.Compiler.AbstractIL.IL+ILScopeRef+Tags: Int32 PrimaryAssembly
 FSharp.Compiler.AbstractIL.IL+ILScopeRef: Boolean Equals(ILScopeRef)
+FSharp.Compiler.AbstractIL.IL+ILScopeRef: Boolean Equals(ILScopeRef, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILScopeRef: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILScopeRef: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILScopeRef: Boolean IsAssembly
@@ -1396,6 +1416,7 @@ FSharp.Compiler.AbstractIL.IL+ILThisConvention+Tags: Int32 Instance
 FSharp.Compiler.AbstractIL.IL+ILThisConvention+Tags: Int32 InstanceExplicit
 FSharp.Compiler.AbstractIL.IL+ILThisConvention+Tags: Int32 Static
 FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean Equals(ILThisConvention)
+FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean Equals(ILThisConvention, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILThisConvention: Boolean IsInstance
@@ -1451,6 +1472,7 @@ FSharp.Compiler.AbstractIL.IL+ILType+TypeVar: UInt16 get_Item()
 FSharp.Compiler.AbstractIL.IL+ILType+Value: ILTypeSpec Item
 FSharp.Compiler.AbstractIL.IL+ILType+Value: ILTypeSpec get_Item()
 FSharp.Compiler.AbstractIL.IL+ILType: Boolean Equals(ILType)
+FSharp.Compiler.AbstractIL.IL+ILType: Boolean Equals(ILType, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILType: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILType: Boolean IsArray
@@ -1585,6 +1607,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Tags: Int32 Nested
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Tags: Int32 Private
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Tags: Int32 Public
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Boolean Equals(ILTypeDefAccess)
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Boolean Equals(ILTypeDefAccess, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Boolean IsNested
@@ -1614,6 +1637,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Enum
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Interface
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 ValueType
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean Equals(ILTypeDefKind)
+FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean Equals(ILTypeDefKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean IsClass
@@ -1653,6 +1677,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Auto
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Explicit
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Sequential
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(ILTypeDefLayout)
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(ILTypeDefLayout, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsAuto
@@ -1680,6 +1705,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefs: System.Collections.Generic.IDictionary
 FSharp.Compiler.AbstractIL.IL+ILTypeInit+Tags: Int32 BeforeField
 FSharp.Compiler.AbstractIL.IL+ILTypeInit+Tags: Int32 OnAny
 FSharp.Compiler.AbstractIL.IL+ILTypeInit: Boolean Equals(ILTypeInit)
+FSharp.Compiler.AbstractIL.IL+ILTypeInit: Boolean Equals(ILTypeInit, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeInit: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeInit: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeInit: Boolean IsBeforeField
@@ -1738,6 +1764,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeSpec: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILTypeSpec: System.String get_FullName()
 FSharp.Compiler.AbstractIL.IL+ILTypeSpec: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: Boolean Equals(ILVersionInfo)
+FSharp.Compiler.AbstractIL.IL+ILVersionInfo: Boolean Equals(ILVersionInfo, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: Int32 CompareTo(ILVersionInfo)
@@ -1765,6 +1792,7 @@ FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 Native
 FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 NotAvailable
 FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 PInvoke
 FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean Equals(MethodBody)
+FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean Equals(MethodBody, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+MethodBody: Boolean IsAbstract
@@ -1800,6 +1828,7 @@ FSharp.Compiler.AbstractIL.IL+PublicKey+PublicKeyToken: Byte[] get_Item()
 FSharp.Compiler.AbstractIL.IL+PublicKey+Tags: Int32 PublicKey
 FSharp.Compiler.AbstractIL.IL+PublicKey+Tags: Int32 PublicKeyToken
 FSharp.Compiler.AbstractIL.IL+PublicKey: Boolean Equals(PublicKey)
+FSharp.Compiler.AbstractIL.IL+PublicKey: Boolean Equals(PublicKey, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+PublicKey: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+PublicKey: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+PublicKey: Boolean IsKey
@@ -1950,6 +1979,7 @@ FSharp.Compiler.AbstractIL.ILBinaryReader+ILReaderOptions: Void .ctor(Microsoft.
 FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag+Tags: Int32 No
 FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag+Tags: Int32 Yes
 FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean Equals(MetadataOnlyFlag)
+FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean Equals(MetadataOnlyFlag, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: Boolean IsNo
@@ -1972,6 +2002,7 @@ FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag: System.String ToStri
 FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag+Tags: Int32 No
 FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag+Tags: Int32 Yes
 FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean Equals(ReduceMemoryFlag)
+FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean Equals(ReduceMemoryFlag, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag: Boolean IsNo
@@ -2028,6 +2059,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.Co
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Tags: Int32 Aborted
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Tags: Int32 Succeeded
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer)
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Boolean IsAborted
@@ -2181,6 +2213,7 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] get_Depende
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean ApplyLineDirectives
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean CompilingFSharpCore
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsExe
@@ -2216,6 +2249,7 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.Symbols.FShar
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.Symbols.FSharpAccessibilityRights get_AccessibilityRights()
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpAssembly] GetReferencedAssemblies()
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
+FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Boolean IsIncompleteTypeCheckEnvironment
@@ -2313,6 +2347,7 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String FileName
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String get_FileName()
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet)
+FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Int32 GetHashCode()
@@ -2328,6 +2363,7 @@ FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+EditingOrCompilation: B
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+Tags: Int32 CompilationAndEvaluation
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+Tags: Int32 EditingOrCompilation
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean Equals(FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean Equals(FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean IsCompilationAndEvaluation
@@ -2347,6 +2383,7 @@ FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 GetHashCode(Syst
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 Tag
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: System.String ToString()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Int32 GetHashCode()
@@ -2376,6 +2413,7 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String g
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.Threading.Tasks.Task`1[FSharp.Compiler.Text.ISourceTextNew] GetSource()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Void .ctor(System.String, System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Threading.Tasks.Task`1[FSharp.Compiler.Text.ISourceTextNew]])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Boolean Equals(FSharpProjectIdentifier)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Boolean Equals(FSharpProjectIdentifier, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: FSharpProjectIdentifier NewFSharpProjectIdentifier(System.String, System.String)
@@ -2463,6 +2501,7 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Sy
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: System.String ToString()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: System.String get_OutputFile()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(ReferenceOnDisk)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(ReferenceOnDisk, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Int32 CompareTo(ReferenceOnDisk)
@@ -2508,6 +2547,7 @@ FSharp.Compiler.DependencyManager.DependencyProvider: Void ClearResultsCache(Sys
 FSharp.Compiler.DependencyManager.ErrorReportType+Tags: Int32 Error
 FSharp.Compiler.DependencyManager.ErrorReportType+Tags: Int32 Warning
 FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(FSharp.Compiler.DependencyManager.ErrorReportType)
+FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(FSharp.Compiler.DependencyManager.ErrorReportType, System.Collections.IEqualityComparer)
 FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(System.Object)
 FSharp.Compiler.DependencyManager.ErrorReportType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.DependencyManager.ErrorReportType: Boolean IsError
@@ -2589,6 +2629,7 @@ FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo+Tags: Int32 Seque
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo+Tags: Int32 TupleInRecordFields
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo+Tags: Int32 YieldInComputationExpression
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo: Boolean Equals(DiagnosticContextInfo)
+FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo: Boolean Equals(DiagnosticContextInfo, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo: Boolean Equals(System.Object)
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.ExtendedData+DiagnosticContextInfo: Boolean IsCollectionElement
@@ -2722,6 +2763,7 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+Tags: Int32 AddIndexerDot
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+Tags: Int32 RemoveIndexerDot
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+Tags: Int32 ReplaceWithSuggestion
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticKind)
+FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean Equals(System.Object)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean IsAddIndexerDot
@@ -2747,6 +2789,7 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Int32 get_Tag()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: System.String ToString()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean CheckXmlDocs
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions)
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(System.Object)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean GlobalWarnAsError
@@ -2776,6 +2819,7 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Hidden
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Info
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Warning
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity)
+FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Boolean Equals(System.Object)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Boolean IsError
@@ -2808,6 +2852,7 @@ FSharp.Compiler.EditorServices.AssemblyContent: Microsoft.FSharp.Collections.FSh
 FSharp.Compiler.EditorServices.AssemblyContentType+Tags: Int32 Full
 FSharp.Compiler.EditorServices.AssemblyContentType+Tags: Int32 Public
 FSharp.Compiler.EditorServices.AssemblyContentType: Boolean Equals(FSharp.Compiler.EditorServices.AssemblyContentType)
+FSharp.Compiler.EditorServices.AssemblyContentType: Boolean Equals(FSharp.Compiler.EditorServices.AssemblyContentType, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.AssemblyContentType: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.AssemblyContentType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.AssemblyContentType: Boolean IsFull
@@ -2876,6 +2921,7 @@ FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 Type
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 TypeAbbreviationOrSingleCaseUnion
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 UnionCaseFieldsDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(FSharp.Compiler.EditorServices.CompletionContext)
+FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(FSharp.Compiler.EditorServices.CompletionContext, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsAttributeApplication
@@ -2943,6 +2989,7 @@ FSharp.Compiler.EditorServices.CompletionItemKind+Tags: Int32 Other
 FSharp.Compiler.EditorServices.CompletionItemKind+Tags: Int32 Property
 FSharp.Compiler.EditorServices.CompletionItemKind+Tags: Int32 SuggestedName
 FSharp.Compiler.EditorServices.CompletionItemKind: Boolean Equals(FSharp.Compiler.EditorServices.CompletionItemKind)
+FSharp.Compiler.EditorServices.CompletionItemKind: Boolean Equals(FSharp.Compiler.EditorServices.CompletionItemKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.CompletionItemKind: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.CompletionItemKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.CompletionItemKind: Boolean IsArgument
@@ -3030,6 +3077,7 @@ FSharp.Compiler.EditorServices.EntityKind+Tags: Int32 FunctionOrValue
 FSharp.Compiler.EditorServices.EntityKind+Tags: Int32 Module
 FSharp.Compiler.EditorServices.EntityKind+Tags: Int32 Type
 FSharp.Compiler.EditorServices.EntityKind: Boolean Equals(FSharp.Compiler.EditorServices.EntityKind)
+FSharp.Compiler.EditorServices.EntityKind: Boolean Equals(FSharp.Compiler.EditorServices.EntityKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.EntityKind: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.EntityKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.EntityKind: Boolean IsAttribute
@@ -3080,6 +3128,7 @@ FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Typedef
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Union
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Variable
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean Equals(FSharp.Compiler.EditorServices.FSharpGlyph)
+FSharp.Compiler.EditorServices.FSharpGlyph: Boolean Equals(FSharp.Compiler.EditorServices.FSharpGlyph, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsClass
@@ -3226,6 +3275,7 @@ FSharp.Compiler.EditorServices.FindDeclExternalSymbol+Tags: Int32 Type
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol+Type: System.String fullName
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol+Type: System.String get_fullName()
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Boolean Equals(FSharp.Compiler.EditorServices.FindDeclExternalSymbol)
+FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Boolean Equals(FSharp.Compiler.EditorServices.FindDeclExternalSymbol, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Boolean IsConstructor
@@ -3276,6 +3326,7 @@ FSharp.Compiler.EditorServices.FindDeclExternalType+Type: System.String get_full
 FSharp.Compiler.EditorServices.FindDeclExternalType+TypeVar: System.String get_typeName()
 FSharp.Compiler.EditorServices.FindDeclExternalType+TypeVar: System.String typeName
 FSharp.Compiler.EditorServices.FindDeclExternalType: Boolean Equals(FSharp.Compiler.EditorServices.FindDeclExternalType)
+FSharp.Compiler.EditorServices.FindDeclExternalType: Boolean Equals(FSharp.Compiler.EditorServices.FindDeclExternalType, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclExternalType: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.FindDeclExternalType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclExternalType: Boolean IsArray
@@ -3314,6 +3365,7 @@ FSharp.Compiler.EditorServices.FindDeclFailureReason+Tags: Int32 Unknown
 FSharp.Compiler.EditorServices.FindDeclFailureReason+Unknown: System.String get_message()
 FSharp.Compiler.EditorServices.FindDeclFailureReason+Unknown: System.String message
 FSharp.Compiler.EditorServices.FindDeclFailureReason: Boolean Equals(FSharp.Compiler.EditorServices.FindDeclFailureReason)
+FSharp.Compiler.EditorServices.FindDeclFailureReason: Boolean Equals(FSharp.Compiler.EditorServices.FindDeclFailureReason, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclFailureReason: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.FindDeclFailureReason: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclFailureReason: Boolean IsNoSourceCode
@@ -3353,6 +3405,7 @@ FSharp.Compiler.EditorServices.FindDeclResult+Tags: Int32 DeclFound
 FSharp.Compiler.EditorServices.FindDeclResult+Tags: Int32 DeclNotFound
 FSharp.Compiler.EditorServices.FindDeclResult+Tags: Int32 ExternalDecl
 FSharp.Compiler.EditorServices.FindDeclResult: Boolean Equals(FSharp.Compiler.EditorServices.FindDeclResult)
+FSharp.Compiler.EditorServices.FindDeclResult: Boolean Equals(FSharp.Compiler.EditorServices.FindDeclResult, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclResult: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.FindDeclResult: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclResult: Boolean IsDeclFound
@@ -3379,6 +3432,7 @@ FSharp.Compiler.EditorServices.InheritanceContext+Tags: Int32 Class
 FSharp.Compiler.EditorServices.InheritanceContext+Tags: Int32 Interface
 FSharp.Compiler.EditorServices.InheritanceContext+Tags: Int32 Unknown
 FSharp.Compiler.EditorServices.InheritanceContext: Boolean Equals(FSharp.Compiler.EditorServices.InheritanceContext)
+FSharp.Compiler.EditorServices.InheritanceContext: Boolean Equals(FSharp.Compiler.EditorServices.InheritanceContext, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.InheritanceContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.InheritanceContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.InheritanceContext: Boolean IsClass
@@ -3403,6 +3457,7 @@ FSharp.Compiler.EditorServices.InheritanceContext: Int32 Tag
 FSharp.Compiler.EditorServices.InheritanceContext: Int32 get_Tag()
 FSharp.Compiler.EditorServices.InheritanceContext: System.String ToString()
 FSharp.Compiler.EditorServices.InsertionContext: Boolean Equals(FSharp.Compiler.EditorServices.InsertionContext)
+FSharp.Compiler.EditorServices.InsertionContext: Boolean Equals(FSharp.Compiler.EditorServices.InsertionContext, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.InsertionContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.InsertionContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.InsertionContext: FSharp.Compiler.EditorServices.ScopeKind ScopeKind
@@ -3414,6 +3469,7 @@ FSharp.Compiler.EditorServices.InsertionContext: Int32 GetHashCode(System.Collec
 FSharp.Compiler.EditorServices.InsertionContext: System.String ToString()
 FSharp.Compiler.EditorServices.InsertionContext: Void .ctor(FSharp.Compiler.EditorServices.ScopeKind, FSharp.Compiler.Text.Position)
 FSharp.Compiler.EditorServices.InsertionContextEntity: Boolean Equals(FSharp.Compiler.EditorServices.InsertionContextEntity)
+FSharp.Compiler.EditorServices.InsertionContextEntity: Boolean Equals(FSharp.Compiler.EditorServices.InsertionContextEntity, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.InsertionContextEntity: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.InsertionContextEntity: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.InsertionContextEntity: Int32 CompareTo(FSharp.Compiler.EditorServices.InsertionContextEntity)
@@ -3469,6 +3525,7 @@ FSharp.Compiler.EditorServices.InterfaceStubGenerator: System.String FormatInter
 FSharp.Compiler.EditorServices.LookupType+Tags: Int32 Fuzzy
 FSharp.Compiler.EditorServices.LookupType+Tags: Int32 Precise
 FSharp.Compiler.EditorServices.LookupType: Boolean Equals(FSharp.Compiler.EditorServices.LookupType)
+FSharp.Compiler.EditorServices.LookupType: Boolean Equals(FSharp.Compiler.EditorServices.LookupType, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.LookupType: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.LookupType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.LookupType: Boolean IsFuzzy
@@ -3489,6 +3546,7 @@ FSharp.Compiler.EditorServices.LookupType: Int32 Tag
 FSharp.Compiler.EditorServices.LookupType: Int32 get_Tag()
 FSharp.Compiler.EditorServices.LookupType: System.String ToString()
 FSharp.Compiler.EditorServices.MaybeUnresolvedIdent: Boolean Equals(FSharp.Compiler.EditorServices.MaybeUnresolvedIdent)
+FSharp.Compiler.EditorServices.MaybeUnresolvedIdent: Boolean Equals(FSharp.Compiler.EditorServices.MaybeUnresolvedIdent, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.MaybeUnresolvedIdent: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.MaybeUnresolvedIdent: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.MaybeUnresolvedIdent: Boolean Resolved
@@ -3529,6 +3587,7 @@ FSharp.Compiler.EditorServices.MethodGroupItemParameter: System.String Parameter
 FSharp.Compiler.EditorServices.MethodGroupItemParameter: System.String get_CanonicalTypeTextForSorting()
 FSharp.Compiler.EditorServices.MethodGroupItemParameter: System.String get_ParameterName()
 FSharp.Compiler.EditorServices.ModuleKind: Boolean Equals(FSharp.Compiler.EditorServices.ModuleKind)
+FSharp.Compiler.EditorServices.ModuleKind: Boolean Equals(FSharp.Compiler.EditorServices.ModuleKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ModuleKind: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.ModuleKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ModuleKind: Boolean HasModuleSuffix
@@ -3563,6 +3622,7 @@ FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 Module
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 Namespace
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 Type
 FSharp.Compiler.EditorServices.NavigableContainerType: Boolean Equals(FSharp.Compiler.EditorServices.NavigableContainerType)
+FSharp.Compiler.EditorServices.NavigableContainerType: Boolean Equals(FSharp.Compiler.EditorServices.NavigableContainerType, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigableContainerType: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.NavigableContainerType: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigableContainerType: Boolean IsException
@@ -3595,6 +3655,7 @@ FSharp.Compiler.EditorServices.NavigableContainerType: Int32 Tag
 FSharp.Compiler.EditorServices.NavigableContainerType: Int32 get_Tag()
 FSharp.Compiler.EditorServices.NavigableContainerType: System.String ToString()
 FSharp.Compiler.EditorServices.NavigableItem: Boolean Equals(FSharp.Compiler.EditorServices.NavigableItem)
+FSharp.Compiler.EditorServices.NavigableItem: Boolean Equals(FSharp.Compiler.EditorServices.NavigableItem, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigableItem: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.NavigableItem: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigableItem: Boolean IsSignature
@@ -3625,6 +3686,7 @@ FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 Property
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 Type
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 UnionCase
 FSharp.Compiler.EditorServices.NavigableItemKind: Boolean Equals(FSharp.Compiler.EditorServices.NavigableItemKind)
+FSharp.Compiler.EditorServices.NavigableItemKind: Boolean Equals(FSharp.Compiler.EditorServices.NavigableItemKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigableItemKind: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.NavigableItemKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigableItemKind: Boolean IsConstructor
@@ -3691,6 +3753,7 @@ FSharp.Compiler.EditorServices.NavigationEntityKind+Tags: Int32 Namespace
 FSharp.Compiler.EditorServices.NavigationEntityKind+Tags: Int32 Record
 FSharp.Compiler.EditorServices.NavigationEntityKind+Tags: Int32 Union
 FSharp.Compiler.EditorServices.NavigationEntityKind: Boolean Equals(FSharp.Compiler.EditorServices.NavigationEntityKind)
+FSharp.Compiler.EditorServices.NavigationEntityKind: Boolean Equals(FSharp.Compiler.EditorServices.NavigationEntityKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigationEntityKind: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.NavigationEntityKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigationEntityKind: Boolean IsClass
@@ -3764,6 +3827,7 @@ FSharp.Compiler.EditorServices.NavigationItemKind+Tags: Int32 Other
 FSharp.Compiler.EditorServices.NavigationItemKind+Tags: Int32 Property
 FSharp.Compiler.EditorServices.NavigationItemKind+Tags: Int32 Type
 FSharp.Compiler.EditorServices.NavigationItemKind: Boolean Equals(FSharp.Compiler.EditorServices.NavigationItemKind)
+FSharp.Compiler.EditorServices.NavigationItemKind: Boolean Equals(FSharp.Compiler.EditorServices.NavigationItemKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigationItemKind: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.NavigationItemKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigationItemKind: Boolean IsException
@@ -3822,6 +3886,7 @@ FSharp.Compiler.EditorServices.NavigationTopLevelDeclaration: Void .ctor(FSharp.
 FSharp.Compiler.EditorServices.OpenStatementInsertionPoint+Tags: Int32 Nearest
 FSharp.Compiler.EditorServices.OpenStatementInsertionPoint+Tags: Int32 TopLevel
 FSharp.Compiler.EditorServices.OpenStatementInsertionPoint: Boolean Equals(FSharp.Compiler.EditorServices.OpenStatementInsertionPoint)
+FSharp.Compiler.EditorServices.OpenStatementInsertionPoint: Boolean Equals(FSharp.Compiler.EditorServices.OpenStatementInsertionPoint, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.OpenStatementInsertionPoint: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.OpenStatementInsertionPoint: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.OpenStatementInsertionPoint: Boolean IsNearest
@@ -3869,6 +3934,7 @@ FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1
 FSharp.Compiler.EditorServices.ParsedInput: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Position,System.Boolean]] TryFindExpressionASTLeftOfDotLeftOfCursor(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.ParsedInput: System.String[] GetFullNameOfSmallestModuleOrNamespaceAtPoint(FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.PartialLongName: Boolean Equals(FSharp.Compiler.EditorServices.PartialLongName)
+FSharp.Compiler.EditorServices.PartialLongName: Boolean Equals(FSharp.Compiler.EditorServices.PartialLongName, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.PartialLongName: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.PartialLongName: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.PartialLongName: FSharp.Compiler.EditorServices.PartialLongName Empty(Int32)
@@ -3909,6 +3975,7 @@ FSharp.Compiler.EditorServices.PatternContext+UnionCaseFieldIdentifier: FSharp.C
 FSharp.Compiler.EditorServices.PatternContext+UnionCaseFieldIdentifier: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_referencedFields()
 FSharp.Compiler.EditorServices.PatternContext+UnionCaseFieldIdentifier: Microsoft.FSharp.Collections.FSharpList`1[System.String] referencedFields
 FSharp.Compiler.EditorServices.PatternContext: Boolean Equals(FSharp.Compiler.EditorServices.PatternContext)
+FSharp.Compiler.EditorServices.PatternContext: Boolean Equals(FSharp.Compiler.EditorServices.PatternContext, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.PatternContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.PatternContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.PatternContext: Boolean IsNamedUnionCaseField
@@ -3962,6 +4029,7 @@ FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 Declaration
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 Empty
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 New
 FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(FSharp.Compiler.EditorServices.RecordContext)
+FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(FSharp.Compiler.EditorServices.RecordContext, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.RecordContext: Boolean IsConstructor
@@ -3996,6 +4064,7 @@ FSharp.Compiler.EditorServices.ScopeKind+Tags: Int32 NestedModule
 FSharp.Compiler.EditorServices.ScopeKind+Tags: Int32 OpenDeclaration
 FSharp.Compiler.EditorServices.ScopeKind+Tags: Int32 TopModule
 FSharp.Compiler.EditorServices.ScopeKind: Boolean Equals(FSharp.Compiler.EditorServices.ScopeKind)
+FSharp.Compiler.EditorServices.ScopeKind: Boolean Equals(FSharp.Compiler.EditorServices.ScopeKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ScopeKind: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.ScopeKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ScopeKind: Boolean IsHashDirective
@@ -4028,6 +4097,7 @@ FSharp.Compiler.EditorServices.ScopeKind: Int32 Tag
 FSharp.Compiler.EditorServices.ScopeKind: Int32 get_Tag()
 FSharp.Compiler.EditorServices.ScopeKind: System.String ToString()
 FSharp.Compiler.EditorServices.SemanticClassificationItem: Boolean Equals(FSharp.Compiler.EditorServices.SemanticClassificationItem)
+FSharp.Compiler.EditorServices.SemanticClassificationItem: Boolean Equals(FSharp.Compiler.EditorServices.SemanticClassificationItem, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.SemanticClassificationItem: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.SemanticClassificationItem: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.SemanticClassificationItem: FSharp.Compiler.EditorServices.SemanticClassificationType Type
@@ -4077,6 +4147,7 @@ FSharp.Compiler.EditorServices.SemanticClassificationType: FSharp.Compiler.Edito
 FSharp.Compiler.EditorServices.SemanticClassificationType: Int32 value__
 FSharp.Compiler.EditorServices.SemanticClassificationView: Void ForEach(Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.EditorServices.SemanticClassificationItem,Microsoft.FSharp.Core.Unit])
 FSharp.Compiler.EditorServices.SimplifyNames+SimplifiableRange: Boolean Equals(SimplifiableRange)
+FSharp.Compiler.EditorServices.SimplifyNames+SimplifiableRange: Boolean Equals(SimplifiableRange, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.SimplifyNames+SimplifiableRange: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.SimplifyNames+SimplifiableRange: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.SimplifyNames+SimplifiableRange: FSharp.Compiler.Text.Range Range
@@ -4092,6 +4163,7 @@ FSharp.Compiler.EditorServices.SimplifyNames: Microsoft.FSharp.Control.FSharpAsy
 FSharp.Compiler.EditorServices.Structure+Collapse+Tags: Int32 Below
 FSharp.Compiler.EditorServices.Structure+Collapse+Tags: Int32 Same
 FSharp.Compiler.EditorServices.Structure+Collapse: Boolean Equals(Collapse)
+FSharp.Compiler.EditorServices.Structure+Collapse: Boolean Equals(Collapse, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.Structure+Collapse: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.Structure+Collapse: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.Structure+Collapse: Boolean IsBelow
@@ -4158,6 +4230,7 @@ FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 XmlDocComment
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 YieldOrReturn
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 YieldOrReturnBang
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean Equals(Scope)
+FSharp.Compiler.EditorServices.Structure+Scope: Boolean Equals(Scope, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsArrayOrList
@@ -4354,6 +4427,7 @@ FSharp.Compiler.EditorServices.Structure+Scope: Scope get_YieldOrReturn()
 FSharp.Compiler.EditorServices.Structure+Scope: Scope get_YieldOrReturnBang()
 FSharp.Compiler.EditorServices.Structure+Scope: System.String ToString()
 FSharp.Compiler.EditorServices.Structure+ScopeRange: Boolean Equals(ScopeRange)
+FSharp.Compiler.EditorServices.Structure+ScopeRange: Boolean Equals(ScopeRange, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.Structure+ScopeRange: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.Structure+ScopeRange: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.Structure+ScopeRange: Collapse Collapse
@@ -4380,6 +4454,7 @@ FSharp.Compiler.EditorServices.ToolTipElement+Tags: Int32 CompositionError
 FSharp.Compiler.EditorServices.ToolTipElement+Tags: Int32 Group
 FSharp.Compiler.EditorServices.ToolTipElement+Tags: Int32 None
 FSharp.Compiler.EditorServices.ToolTipElement: Boolean Equals(FSharp.Compiler.EditorServices.ToolTipElement)
+FSharp.Compiler.EditorServices.ToolTipElement: Boolean Equals(FSharp.Compiler.EditorServices.ToolTipElement, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ToolTipElement: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.ToolTipElement: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ToolTipElement: Boolean IsCompositionError
@@ -4402,6 +4477,7 @@ FSharp.Compiler.EditorServices.ToolTipElement: Int32 Tag
 FSharp.Compiler.EditorServices.ToolTipElement: Int32 get_Tag()
 FSharp.Compiler.EditorServices.ToolTipElement: System.String ToString()
 FSharp.Compiler.EditorServices.ToolTipElementData: Boolean Equals(FSharp.Compiler.EditorServices.ToolTipElementData)
+FSharp.Compiler.EditorServices.ToolTipElementData: Boolean Equals(FSharp.Compiler.EditorServices.ToolTipElementData, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ToolTipElementData: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.ToolTipElementData: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ToolTipElementData: FSharp.Compiler.Symbols.FSharpXmlDoc XmlDoc
@@ -4421,6 +4497,7 @@ FSharp.Compiler.EditorServices.ToolTipElementData: Microsoft.FSharp.Core.FSharpO
 FSharp.Compiler.EditorServices.ToolTipElementData: System.String ToString()
 FSharp.Compiler.EditorServices.ToolTipElementData: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpSymbol], FSharp.Compiler.Text.TaggedText[], FSharp.Compiler.Symbols.FSharpXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.TaggedText[]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(FSharp.Compiler.EditorServices.ToolTipText)
+FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(FSharp.Compiler.EditorServices.ToolTipText, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ToolTipText: FSharp.Compiler.EditorServices.ToolTipText NewToolTipText(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.ToolTipElement])
@@ -4432,6 +4509,7 @@ FSharp.Compiler.EditorServices.ToolTipText: Microsoft.FSharp.Collections.FSharpL
 FSharp.Compiler.EditorServices.ToolTipText: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.ToolTipElement] get_Item()
 FSharp.Compiler.EditorServices.ToolTipText: System.String ToString()
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean Equals(FSharp.Compiler.EditorServices.TupledArgumentLocation)
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean Equals(FSharp.Compiler.EditorServices.TupledArgumentLocation, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean IsNamedArgument
@@ -4443,6 +4521,7 @@ FSharp.Compiler.EditorServices.TupledArgumentLocation: Int32 GetHashCode(System.
 FSharp.Compiler.EditorServices.TupledArgumentLocation: System.String ToString()
 FSharp.Compiler.EditorServices.TupledArgumentLocation: Void .ctor(Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(FSharp.Compiler.EditorServices.UnresolvedSymbol)
+FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(FSharp.Compiler.EditorServices.UnresolvedSymbol, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Int32 CompareTo(FSharp.Compiler.EditorServices.UnresolvedSymbol)
@@ -4463,6 +4542,7 @@ FSharp.Compiler.EditorServices.UnusedOpens: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.EditorServices.XmlDocComment: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] IsBlank(System.String)
 FSharp.Compiler.EditorServices.XmlDocParser: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.XmlDocable] GetXmlDocables(FSharp.Compiler.Text.ISourceText, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(FSharp.Compiler.EditorServices.XmlDocable)
+FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(FSharp.Compiler.EditorServices.XmlDocable, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.XmlDocable: FSharp.Compiler.EditorServices.XmlDocable NewXmlDocable(Int32, Int32, Microsoft.FSharp.Collections.FSharpList`1[System.String])
@@ -4574,6 +4654,40 @@ FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void Interrupt()
 FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void Run()
 FSharp.Compiler.Interactive.CtrlBreakHandlers: FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient
 FSharp.Compiler.Interactive.CtrlBreakHandlers: FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService
+FSharp.Compiler.Interactive.FsiHelp+Logic+Quoted: Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Interactive.FsiHelp+Parser+Help] tryGetHelp(Microsoft.FSharp.Quotations.FSharpExpr)
+FSharp.Compiler.Interactive.FsiHelp+Logic+Quoted: System.String h(Microsoft.FSharp.Quotations.FSharpExpr)
+FSharp.Compiler.Interactive.FsiHelp+Logic: FSharp.Compiler.Interactive.FsiHelp+Logic+Quoted
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Boolean Equals(Help)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Boolean Equals(Help, System.Collections.IEqualityComparer)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Boolean Equals(System.Object)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 CompareTo(Help)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 CompareTo(System.Object)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 GetHashCode()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] Examples
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] Exceptions
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] Parameters
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_Examples()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_Exceptions()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_Parameters()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Core.FSharpOption`1[System.String] Remarks
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Core.FSharpOption`1[System.String] Returns
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_Remarks()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_Returns()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String Assembly
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String FullName
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String Summary
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String ToDisplayString()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String ToString()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String get_Assembly()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String get_FullName()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: System.String get_Summary()
+FSharp.Compiler.Interactive.FsiHelp+Parser+Help: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]], System.String, System.String)
+FSharp.Compiler.Interactive.FsiHelp+Parser: FSharp.Compiler.Interactive.FsiHelp+Parser+Help
+FSharp.Compiler.Interactive.FsiHelp: FSharp.Compiler.Interactive.FsiHelp+Logic
+FSharp.Compiler.Interactive.FsiHelp: FSharp.Compiler.Interactive.FsiHelp+Parser
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanRead
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanSeek
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanWrite
@@ -5189,6 +5303,7 @@ FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration+Tags: Int32 Entity
 FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration+Tags: Int32 InitAction
 FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration+Tags: Int32 MemberOrFunctionOrValue
 FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration: Boolean Equals(FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration)
+FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration: Boolean Equals(FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration, System.Collections.IEqualityComparer)
 FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Symbols.FSharpImplementationFileDeclaration: Boolean IsEntity
@@ -5214,6 +5329,7 @@ FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags: Int32 AlwaysInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags: Int32 NeverInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation+Tags: Int32 OptionalInline
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean Equals(FSharp.Compiler.Symbols.FSharpInlineAnnotation)
+FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean Equals(FSharp.Compiler.Symbols.FSharpInlineAnnotation, System.Collections.IEqualityComparer)
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Symbols.FSharpInlineAnnotation: Boolean IsAggressiveInline
@@ -5582,6 +5698,7 @@ FSharp.Compiler.Symbols.FSharpXmlDoc+Tags: Int32 FromXmlFile
 FSharp.Compiler.Symbols.FSharpXmlDoc+Tags: Int32 FromXmlText
 FSharp.Compiler.Symbols.FSharpXmlDoc+Tags: Int32 None
 FSharp.Compiler.Symbols.FSharpXmlDoc: Boolean Equals(FSharp.Compiler.Symbols.FSharpXmlDoc)
+FSharp.Compiler.Symbols.FSharpXmlDoc: Boolean Equals(FSharp.Compiler.Symbols.FSharpXmlDoc, System.Collections.IEqualityComparer)
 FSharp.Compiler.Symbols.FSharpXmlDoc: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpXmlDoc: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Symbols.FSharpXmlDoc: Boolean IsFromXmlFile
@@ -5610,6 +5727,7 @@ FSharp.Compiler.Syntax.DebugPointAtBinding+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtBinding+Yes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.DebugPointAtBinding+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtBinding: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtBinding)
+FSharp.Compiler.Syntax.DebugPointAtBinding: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtBinding, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtBinding: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtBinding: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtBinding: Boolean IsNoneAtDo
@@ -5644,6 +5762,7 @@ FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtFinally+Yes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.DebugPointAtFinally+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtFinally)
+FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtFinally, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsNo
@@ -5665,6 +5784,7 @@ FSharp.Compiler.Syntax.DebugPointAtFor+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtFor+Yes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.DebugPointAtFor+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtFor: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtFor)
+FSharp.Compiler.Syntax.DebugPointAtFor: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtFor, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtFor: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtFor: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtFor: Boolean IsNo
@@ -5686,6 +5806,7 @@ FSharp.Compiler.Syntax.DebugPointAtInOrTo+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtInOrTo+Yes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.DebugPointAtInOrTo+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtInOrTo)
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtInOrTo, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean IsNo
@@ -5703,6 +5824,7 @@ FSharp.Compiler.Syntax.DebugPointAtInOrTo: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtInOrTo: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtInOrTo: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtLeafExpr)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtLeafExpr, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(FSharp.Compiler.Text.Range)
@@ -5718,6 +5840,7 @@ FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 SuppressExpr
 FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 SuppressNeither
 FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 SuppressStmt
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtSequential)
+FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtSequential, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean IsSuppressBoth
@@ -5748,6 +5871,7 @@ FSharp.Compiler.Syntax.DebugPointAtSequential: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtTarget+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtTarget+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtTarget)
+FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtTarget, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean IsNo
@@ -5772,6 +5896,7 @@ FSharp.Compiler.Syntax.DebugPointAtTry+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtTry+Yes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.DebugPointAtTry+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtTry)
+FSharp.Compiler.Syntax.DebugPointAtTry: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtTry, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean IsNo
@@ -5793,6 +5918,7 @@ FSharp.Compiler.Syntax.DebugPointAtWhile+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtWhile+Yes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.DebugPointAtWhile+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtWhile: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtWhile)
+FSharp.Compiler.Syntax.DebugPointAtWhile: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtWhile, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtWhile: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtWhile: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtWhile: Boolean IsNo
@@ -5814,6 +5940,7 @@ FSharp.Compiler.Syntax.DebugPointAtWith+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtWith+Yes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.DebugPointAtWith+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtWith: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtWith)
+FSharp.Compiler.Syntax.DebugPointAtWith: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtWith, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtWith: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtWith: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtWith: Boolean IsNo
@@ -6090,6 +6217,7 @@ FSharp.Compiler.Syntax.ParsedSigFileInput: System.String get_fileName()
 FSharp.Compiler.Syntax.ParserDetail+Tags: Int32 ErrorRecovery
 FSharp.Compiler.Syntax.ParserDetail+Tags: Int32 Ok
 FSharp.Compiler.Syntax.ParserDetail: Boolean Equals(FSharp.Compiler.Syntax.ParserDetail)
+FSharp.Compiler.Syntax.ParserDetail: Boolean Equals(FSharp.Compiler.Syntax.ParserDetail, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.ParserDetail: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.ParserDetail: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.ParserDetail: Boolean IsErrorRecovery
@@ -6143,6 +6271,7 @@ FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String Text
 FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String ToString()
 FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String get_Text()
 FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(FSharp.Compiler.Syntax.ScopedPragma)
+FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(FSharp.Compiler.Syntax.ScopedPragma, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.ScopedPragma: FSharp.Compiler.Syntax.ScopedPragma NewWarningOff(FSharp.Compiler.Text.Range, Int32)
@@ -6156,6 +6285,7 @@ FSharp.Compiler.Syntax.ScopedPragma: Int32 get_warningNumber()
 FSharp.Compiler.Syntax.ScopedPragma: Int32 warningNumber
 FSharp.Compiler.Syntax.ScopedPragma: System.String ToString()
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(FSharp.Compiler.Syntax.SeqExprOnly)
+FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(FSharp.Compiler.Syntax.SeqExprOnly, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Item
@@ -6179,6 +6309,7 @@ FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Internal
 FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Private
 FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Public
 FSharp.Compiler.Syntax.SynAccess: Boolean Equals(FSharp.Compiler.Syntax.SynAccess)
+FSharp.Compiler.Syntax.SynAccess: Boolean Equals(FSharp.Compiler.Syntax.SynAccess, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynAccess: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SynAccess: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynAccess: Boolean IsInternal
@@ -6297,6 +6428,7 @@ FSharp.Compiler.Syntax.SynBindingKind+Tags: Int32 Do
 FSharp.Compiler.Syntax.SynBindingKind+Tags: Int32 Normal
 FSharp.Compiler.Syntax.SynBindingKind+Tags: Int32 StandaloneExpression
 FSharp.Compiler.Syntax.SynBindingKind: Boolean Equals(FSharp.Compiler.Syntax.SynBindingKind)
+FSharp.Compiler.Syntax.SynBindingKind: Boolean Equals(FSharp.Compiler.Syntax.SynBindingKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynBindingKind: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SynBindingKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynBindingKind: Boolean IsDo
@@ -6335,6 +6467,7 @@ FSharp.Compiler.Syntax.SynBindingReturnInfo: System.String ToString()
 FSharp.Compiler.Syntax.SynByteStringKind+Tags: Int32 Regular
 FSharp.Compiler.Syntax.SynByteStringKind+Tags: Int32 Verbatim
 FSharp.Compiler.Syntax.SynByteStringKind: Boolean Equals(FSharp.Compiler.Syntax.SynByteStringKind)
+FSharp.Compiler.Syntax.SynByteStringKind: Boolean Equals(FSharp.Compiler.Syntax.SynByteStringKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynByteStringKind: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SynByteStringKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynByteStringKind: Boolean IsRegular
@@ -7970,6 +8103,7 @@ FSharp.Compiler.Syntax.SynMemberKind+Tags: Int32 PropertyGet
 FSharp.Compiler.Syntax.SynMemberKind+Tags: Int32 PropertyGetSet
 FSharp.Compiler.Syntax.SynMemberKind+Tags: Int32 PropertySet
 FSharp.Compiler.Syntax.SynMemberKind: Boolean Equals(FSharp.Compiler.Syntax.SynMemberKind)
+FSharp.Compiler.Syntax.SynMemberKind: Boolean Equals(FSharp.Compiler.Syntax.SynMemberKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynMemberKind: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SynMemberKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynMemberKind: Boolean IsClassConstructor
@@ -8192,6 +8326,7 @@ FSharp.Compiler.Syntax.SynModuleOrNamespaceKind+Tags: Int32 DeclaredNamespace
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind+Tags: Int32 GlobalNamespace
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind+Tags: Int32 NamedModule
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: Boolean Equals(FSharp.Compiler.Syntax.SynModuleOrNamespaceKind)
+FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: Boolean Equals(FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynModuleOrNamespaceKind: Boolean IsAnonModule
@@ -8735,6 +8870,7 @@ FSharp.Compiler.Syntax.SynStringKind+Tags: Int32 Regular
 FSharp.Compiler.Syntax.SynStringKind+Tags: Int32 TripleQuote
 FSharp.Compiler.Syntax.SynStringKind+Tags: Int32 Verbatim
 FSharp.Compiler.Syntax.SynStringKind: Boolean Equals(FSharp.Compiler.Syntax.SynStringKind)
+FSharp.Compiler.Syntax.SynStringKind: Boolean Equals(FSharp.Compiler.Syntax.SynStringKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynStringKind: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SynStringKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynStringKind: Boolean IsRegular
@@ -9725,6 +9861,7 @@ FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Void .ctor()
 FSharp.Compiler.Syntax.TyparStaticReq+Tags: Int32 HeadType
 FSharp.Compiler.Syntax.TyparStaticReq+Tags: Int32 None
 FSharp.Compiler.Syntax.TyparStaticReq: Boolean Equals(FSharp.Compiler.Syntax.TyparStaticReq)
+FSharp.Compiler.Syntax.TyparStaticReq: Boolean Equals(FSharp.Compiler.Syntax.TyparStaticReq, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.TyparStaticReq: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.TyparStaticReq: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.TyparStaticReq: Boolean IsHeadType
@@ -10579,6 +10716,7 @@ FSharp.Compiler.Text.TextTag+Tags: Int32 UnionCase
 FSharp.Compiler.Text.TextTag+Tags: Int32 UnknownEntity
 FSharp.Compiler.Text.TextTag+Tags: Int32 UnknownType
 FSharp.Compiler.Text.TextTag: Boolean Equals(FSharp.Compiler.Text.TextTag)
+FSharp.Compiler.Text.TextTag: Boolean Equals(FSharp.Compiler.Text.TextTag, System.Collections.IEqualityComparer)
 FSharp.Compiler.Text.TextTag: Boolean Equals(System.Object)
 FSharp.Compiler.Text.TextTag: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Text.TextTag: Boolean IsActivePatternCase
@@ -10782,6 +10920,7 @@ FSharp.Compiler.Tokenization.FSharpTokenColorKind: FSharp.Compiler.Tokenization.
 FSharp.Compiler.Tokenization.FSharpTokenColorKind: FSharp.Compiler.Tokenization.FSharpTokenColorKind UpperIdentifier
 FSharp.Compiler.Tokenization.FSharpTokenColorKind: Int32 value__
 FSharp.Compiler.Tokenization.FSharpTokenInfo: Boolean Equals(FSharp.Compiler.Tokenization.FSharpTokenInfo)
+FSharp.Compiler.Tokenization.FSharpTokenInfo: Boolean Equals(FSharp.Compiler.Tokenization.FSharpTokenInfo, System.Collections.IEqualityComparer)
 FSharp.Compiler.Tokenization.FSharpTokenInfo: Boolean Equals(System.Object)
 FSharp.Compiler.Tokenization.FSharpTokenInfo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Tokenization.FSharpTokenInfo: FSharp.Compiler.Tokenization.FSharpTokenCharKind CharClass
@@ -10999,6 +11138,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 With
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Yield
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 YieldBang
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean Equals(FSharp.Compiler.Tokenization.FSharpTokenKind)
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean Equals(FSharp.Compiler.Tokenization.FSharpTokenKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean Equals(System.Object)
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsAbstract

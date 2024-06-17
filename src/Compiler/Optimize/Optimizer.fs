@@ -2367,15 +2367,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         OptimizeConst cenv env expr (c, m, ty)
 
     | Expr.Val (v, _vFlags, m) ->
-        if not (v.Accessibility.IsPrivate) then
-            OptimizeVal cenv env expr (v, m)
-        else
-            expr,
-            { TotalSize = 10
-              FunctionSize = 1
-              HasEffect = false  
-              MightMakeCriticalTailcall=false
-              Info=UnknownValue }
+        OptimizeVal cenv env expr (v, m)
 
 
     | Expr.Quote (ast, splices, isFromQueryExpression, m, ty) -> 
@@ -2520,13 +2512,6 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
         | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args, _), _ 
           when IsILMethodRefSystemStringConcat ilMethRef ->
             optimizeArgs args accArgs
-
-// String constant folding requires a bit more work as we cannot quadratically concat strings at compile time.
-#if STRING_CONSTANT_FOLDING
-        // Optimize string constants, e.g. "1" + "2" will turn into "12"
-        | Expr.Const (Const.String str1, _, _), Expr.Const (Const.String str2, _, _) :: accArgs ->
-            mkString g m (str1 + str2) :: accArgs
-#endif
 
         | arg, _ -> arg :: accArgs
 
@@ -3093,9 +3078,6 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         let fvs = freeInExpr CollectLocals expr
         if fvs.UsesMethodLocalConstructs then
             // Discarding lambda for binding because uses protected members --- TBD: Should we warn or error here
-            None 
-        elif fvs.FreeLocals |> Seq.exists(fun v -> v.Accessibility.IsPrivate ) then
-            // Discarding lambda for binding because uses private members --- TBD: Should we warn or error here
             None
         else
             let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
@@ -3254,30 +3236,47 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         | Some (_, vref) -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)
         | _ -> None
         
-    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerFast
+    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_withc_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, _, withcEqualsVal), [comp; x; y] -> 
+        | Some (_, _, _, Some withcEqualsExactVal), [comp; x; y] -> 
+            // push the comparer to the end
+            let args2 = [x; mkRefTupledNoTypes g m [y; comp]]
+            Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
+        | Some (_, _, withcEqualsVal, _ ), [comp; x; y] -> 
             // push the comparer to the end and box the argument
             let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
-    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparer
+    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_per_inner_vref ty args && not(isRefTupleTy g ty) ->
        let tcref, tyargs = StripToNominalTyconRef cenv ty
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-       | Some (_, _, withcEqualsVal), [x; y] -> 
-           let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
-           Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+       | Some (_, _, _, Some withcEqualsExactVal), [x; y] ->
+           let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
+           Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
+       | Some (_, _, withcEqualsVal, _), [x; y] -> 
+           let equalsExactOpt = 
+               tcref.MembersOfFSharpTyconByName.TryFind("Equals")
+               |> Option.map (List.where (fun x -> x.IsCompilerGenerated))
+               |> Option.bind List.tryExactlyOne
+
+           match equalsExactOpt with
+           | Some equalsExact ->
+               let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
+               Some (DevirtualizeApplication cenv env equalsExact ty tyargs args2 m)
+           | None ->
+               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
+               Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_hash_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, withcGetHashCodeVal, _), [x] -> 
+        | Some (_, withcGetHashCodeVal, _, _), [x] -> 
             let args2 = [x; mkCallGetGenericEREqualityComparer g m]
             Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
         | _ -> None 
@@ -3286,7 +3285,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_hash_withc_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, withcGetHashCodeVal, _), [comp; x] -> 
+        | Some (_, withcGetHashCodeVal, _, _), [comp; x] -> 
             let args2 = [x; comp]
             Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
         | _ -> None 
@@ -4134,10 +4133,10 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     let fvs = freeInExpr CollectLocals body
                     if fvs.UsesMethodLocalConstructs then
                         // Discarding lambda for binding because uses protected members
-                        UnknownValue 
+                        UnknownValue
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
                         // Discarding lambda for binding because uses private members
-                        UnknownValue 
+                        UnknownValue
                     else
                         ivalue
 

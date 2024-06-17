@@ -14,29 +14,32 @@ open System.Runtime.CompilerServices
 [<Class>]
 type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
     let syncObj = obj ()
-    let mutable valueFactory = valueFactory
+
+    [<VolatileField>]
+    // TODO nullness - this is boxed to obj because of an attribute targets bug fixed in main, but not yet shipped (needs shipped 8.0.400)
+    let mutable valueFactory : obj = valueFactory
+
     let mutable value = value
 
     new(valueFactory: unit -> 'T) = InterruptibleLazy(Unchecked.defaultof<_>, valueFactory)
 
     member this.IsValueCreated =
-        match box valueFactory with
+        match valueFactory with
         | null -> true
         | _ -> false
 
     member this.Value =
-        match box valueFactory with
+        match valueFactory with
         | null -> value
         | _ ->
-
             Monitor.Enter(syncObj)
 
             try
-                match box valueFactory with
+                match valueFactory with
                 | null -> ()
                 | _ ->
 
-                    value <- valueFactory ()
+                    value <- (valueFactory |> unbox<unit -> 'T>) ()
                     valueFactory <- Unchecked.defaultof<_>
             finally
                 Monitor.Exit(syncObj)
@@ -185,12 +188,17 @@ module internal PervasiveAutoOpens =
 
         static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+
             let ts = TaskCompletionSource<'T>()
+
             let task = ts.Task
 
             Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
 
-            task.Result
+            try
+                task.Result
+            with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+                raise (ex.InnerExceptions[0])
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =

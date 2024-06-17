@@ -62,8 +62,7 @@
     .field assembly !Z GenericNotNullField@
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .method public hidebysig specialname 
-            instance int32  get_JustInt() cil managed
+    .method public hidebysig specialname instance int32  get_JustInt() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -87,8 +86,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance string  get_JustString() cil managed
+    .method public hidebysig specialname instance string  get_JustString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -99,8 +97,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance string  get_NullableString() cil managed
+    .method public hidebysig specialname instance string  get_NullableString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -111,8 +108,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance !X  get_GenericNormalField() cil managed
+    .method public hidebysig specialname instance !X  get_GenericNormalField() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -123,8 +119,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance !Y  get_GenericNullableField() cil managed
+    .method public hidebysig specialname instance !Y  get_GenericNullableField() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -135,8 +130,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance !Z  get_GenericNotNullField() cil managed
+    .method public hidebysig specialname instance !Z  get_GenericNotNullField() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -187,8 +181,7 @@
       IL_003b:  ret
     } 
 
-    .method public strict virtual instance string 
-            ToString() cil managed
+    .method public strict virtual instance string ToString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -246,8 +239,7 @@
     } 
   } 
 
-  .method public specialname static string 
-          get_maybeString() cil managed
+  .method public specialname static string get_maybeString() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -257,8 +249,7 @@
     IL_0001:  ret
   } 
 
-  .method public static class MyTestModule/MyRecord`3<int32,string,string> 
-          createAnInstance() cil managed
+  .method public static class MyTestModule/MyRecord`3<int32,string,string> createAnInstance() cil managed
   {
     .param [0]
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 02 01 00 00 ) 
@@ -348,8 +339,7 @@
     IL_0014:  ret
   } 
 
-  .method public hidebysig specialname instance class [runtime]System.Type 
-          get_Type() cil managed
+  .method public hidebysig specialname instance class [runtime]System.Type get_Type() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -360,8 +350,7 @@
     IL_0006:  ret
   } 
 
-  .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes 
-          get_MemberType() cil managed
+  .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes get_MemberType() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -395,8 +384,7 @@
   .field public uint8[] NullableFlags
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 scalarByteValue) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8 scalarByteValue) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -415,8 +403,7 @@
     IL_0016:  ret
   } 
 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8[] NullableFlags) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8[] NullableFlags) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -439,8 +426,7 @@
   .field public uint8 Flag
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 Flag) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8 Flag) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 

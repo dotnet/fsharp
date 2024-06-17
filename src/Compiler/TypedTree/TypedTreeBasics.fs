@@ -236,18 +236,22 @@ let rec stripUnitEqnsAux canShortcut unt =
     | _ -> unt
 
 let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
-    match nullnessOrig.Evaluate() with
-    | NullnessInfo.WithoutNull -> nullnessNew
-    | NullnessInfo.AmbivalentToNull ->
-        match nullnessNew.Evaluate() with
-        | NullnessInfo.WithoutNull -> nullnessOrig
-        | NullnessInfo.AmbivalentToNull -> nullnessOrig
-        | NullnessInfo.WithNull -> nullnessNew
-    | NullnessInfo.WithNull -> 
-        match nullnessNew.Evaluate() with
-        | NullnessInfo.WithoutNull -> nullnessOrig
-        | NullnessInfo.AmbivalentToNull -> nullnessNew
-        | NullnessInfo.WithNull -> nullnessOrig
+    match nullnessOrig, nullnessNew with
+    | Nullness.Variable _, Nullness.Known NullnessInfo.WithoutNull -> 
+        nullnessOrig
+    | _ -> 
+        match nullnessOrig.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessNew
+        | NullnessInfo.AmbivalentToNull ->
+            match nullnessNew.Evaluate() with
+            | NullnessInfo.WithoutNull -> nullnessOrig
+            | NullnessInfo.AmbivalentToNull -> nullnessOrig
+            | NullnessInfo.WithNull -> nullnessNew
+        | NullnessInfo.WithNull -> 
+            match nullnessNew.Evaluate() with
+            | NullnessInfo.WithoutNull -> nullnessOrig
+            | NullnessInfo.AmbivalentToNull -> nullnessNew
+            | NullnessInfo.WithNull -> nullnessOrig
 
 let nullnessEquiv (nullnessOrig: Nullness) (nullnessNew: Nullness) = LanguagePrimitives.PhysicalEquality nullnessOrig nullnessNew
 
@@ -278,12 +282,18 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
     | TType_measure _ -> None
 
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
-    match nullness.Evaluate() with
-    | NullnessInfo.WithoutNull -> ty
+    match nullness with
+    | Nullness.Known NullnessInfo.WithoutNull -> ty
+    | Nullness.Variable nv when nv.IsSolved && nv.Evaluate() = NullnessInfo.WithoutNull -> ty
     | _ -> 
     match ty with
     | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
-    | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        let tycon = tcr.Deref
+        if tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon then
+            ty
+        else 
+            TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
     | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
     //| TType_ucase _ -> None // TODO NULLNESS
     //| TType_tuple _ -> None // TODO NULLNESS
@@ -332,10 +342,11 @@ let replaceNullnessOfTy nullness (ty:TType) =
     | sty -> sty
 
 /// Detect a use of a nominal type, including type abbreviations.
+[<return: Struct>]
 let (|AbbrevOrAppTy|_|) (ty: TType) =
     match stripTyparEqns ty with
-    | TType_app (tcref, tinst, _) -> Some(tcref, tinst)
-    | _ -> None
+    | TType_app (tcref, tinst, _) -> ValueSome(tcref, tinst)
+    | _ -> ValueNone
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether

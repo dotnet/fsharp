@@ -3405,7 +3405,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                 }
 
             if enableImplicitYield then
-                let hasTypeUnit, expr, tpenv = TryTcStmt cenv env tpenv comp
+                let hasTypeUnit, _ty, expr, tpenv = TryTcStmt cenv env tpenv comp
 
                 if hasTypeUnit then
                     Choice2Of2 expr, tpenv

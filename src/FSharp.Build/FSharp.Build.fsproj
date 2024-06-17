@@ -14,13 +14,14 @@
     <NoWarn>$(NoWarn);NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LangVersion>7.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
-    <Configurations>Debug;Release;Proto;ReleaseCompressed</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+    <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
   <!--  The FSharp.Build dll does not provide a referencable public interface although it's used for testing -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
-      <NoOptimizationData>true</NoOptimizationData>
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -51,13 +52,13 @@
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSharpCoreShippedPackageVersionValue)</Replacement1>
     </NoneSubstituteText>
-    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest" Condition="'$(Configuration)' != 'Proto'">
       <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
       <SubDir>Release\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSCorePackageVersionValue)</Replacement1>
     </NoneSubstituteText>
-    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest" Condition="'$(Configuration)' != 'Proto'">
       <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
       <SubDir>Shipping\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>

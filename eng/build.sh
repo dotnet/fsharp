@@ -34,7 +34,7 @@ usage()
   echo "  --skipBuild                    Do not run the build"
   echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
   echo "  --sourceBuild                  Simulate building for source-build"
-  echo "  --norealsig                    Build product with realsig- (default use realsig+)"
+  echo "  --buildnorealsig               Build product with realsig- (default use realsig+ where necessary)"
   echo "  --tfm                          Override the default target framework"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
@@ -69,7 +69,7 @@ skip_analyzers=false
 skip_build=false
 prepare_machine=false
 source_build=false
-realsig=true
+buildnorealsig=false
 properties=""
 
 docker=false
@@ -154,8 +154,8 @@ while [[ $# > 0 ]]; do
     --sourcebuild)
       source_build=true
       ;;
-    --norealsig)
-      realsig=false
+    --buildnorealsig)
+      buildnorealsig=true
       ;;
     --tfm)
       tfm=$2
@@ -227,8 +227,6 @@ function BuildSolution {
   BUILDING_USING_DOTNET=false
   BuildCategory="Build"
   BuildMessage="Error preparing build"
-  local solution="FSharp.sln"
-  echo "$solution:"
 
   InitializeToolset
   local toolset_build_proj=$_InitializeToolset
@@ -238,7 +236,9 @@ function BuildSolution {
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
 
-  local projects="$repo_root/$solution"
+  local projects="$repo_root/FSharp.sln"
+
+  echo "$projects:"
 
   # https://github.com/dotnet/roslyn/issues/23736
   local enable_analyzers=!$skip_analyzers
@@ -262,37 +262,26 @@ function BuildSolution {
   node_reuse=false
 
   # build bootstrap tools
-  # source_build=true means we are currently in the outer/wrapper source-build,
-  # and building bootstrap needs to wait. The source-build targets will run this
-  # script again without setting source_build=true when it is done setting up
-  # the build environment. See 'eng/SourceBuild.props'.
-  if [[ "$source_build" != true ]]; then
-    bootstrap_config=Proto
-    bootstrap_dir=$artifacts_dir/Bootstrap
-    if [[ "$force_bootstrap" == true ]]; then
-      rm -fr $bootstrap_dir
+  # source_build=In source build proto does no work, except cause sourcebuild in wrapper to build
+  bootstrap_dir=$artifacts_dir/Bootstrap
+  if [[ "$force_bootstrap" == true ]]; then
+    rm -fr $bootstrap_dir
+  fi
+  if [ ! -f "$bootstrap_dir/fslex/fslex.dll" ]; then
+    local bltools=""
+    if [[ "$bl" != "" ]]; then
+      bltools=$bl+".proto.binlog"
     fi
-    if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
-      local bltools=""
-      if [[ "$bl" != "" ]]; then
-        bltools=$bl+".lex.binlog"
-      fi
-      BuildMessage="Error building tools"
-      MSBuild "$repo_root/buildtools/buildtools.proj" /restore "$bltools" /p:Configuration=$bootstrap_config
 
-      mkdir -p "$bootstrap_dir"
-      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/$tfm $bootstrap_dir/fslex
-      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/$tfm $bootstrap_dir/fsyacc
+    local blrestore=""
+    if [[ "$source_build" != "true" ]]; then
+      blrestore="/restore"
     fi
-    if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
-      local bltools=""
-      if [[ "$bl" != "" ]]; then
-        bltools=$bl+".bootstrap.binlog"
-      fi
-      BuildMessage="Error building bootstrap"
-      MSBuild "$repo_root/Proto.sln" /restore "$bltools" /p:Configuration=$bootstrap_config
-      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/$tfm $bootstrap_dir/fsc
-    fi
+
+    BuildMessage="Error building tools"
+    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto /p:ArcadeBuildFromSource=$source_build $properties"
+    echo $args
+    "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
 
   if [[ "$skip_build" != true ]]; then
@@ -313,7 +302,7 @@ function BuildSolution {
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
       /p:ArcadeBuildFromSource=$source_build \
-      /p:TestingLegacyInternalSignature=$realsig \
+      /p:BuildNoRealsig=$buildnorealsig \
       $properties
   fi
 }
@@ -336,8 +325,7 @@ BuildSolution
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=$tfm
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
+  TestUsingXUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingXUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework

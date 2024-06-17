@@ -48,19 +48,19 @@ type C(s: String) =
 
 
 // This give a warning since 'T is not known to be reference type non-null
-let f<'T when 'T: not null > (x: 'T | null, y: 'T | null) = ()
+let f<'T when 'T: not null and 'T: not struct > (x: 'T | null, y: 'T | null) = ()
 
 module Extractions0c =
 
     let x = null
-    let f<'T when 'T : not null> (x: 'T | null, y: 'T | null) = ()
+    let f<'T when 'T : not null and 'T: not struct> (x: 'T | null, y: 'T | null) = ()
     let s : String = ""
     let result = f (x, s)   // expect no warning in any configuration
 
 module Extractions0e =
 
     let x = null
-    let f<'T when 'T : not null> (x: 'T | null, y: 'T | null) = ()
+    let f<'T when 'T : not null and 'T: not struct> (x: 'T | null, y: 'T | null) = ()
     let result = f (x, "") // expect no warning in any configuration
 
 module Extractions1 =
@@ -92,10 +92,10 @@ module KonsoleWithNullsModule =
     let WriteLineC2(fmt: C | null, arg1: C | null) = Console.WriteLine(fmt.Value, arg1.Value)
 
 module KonsoleWithNullsModule2 = 
-    let WriteLine x = KonsoleWithNullsModule.WriteLine x
-    let WriteLine2 (fmt, arg1) = KonsoleWithNullsModule.WriteLine2(fmt, arg1)
-    let WriteLineC(s) = KonsoleWithNullsModule.WriteLineC(s)
-    let WriteLineC2(fmt, arg1) = KonsoleWithNullsModule.WriteLineC2(fmt, arg1)
+    let WriteLine (x : string | null) = KonsoleWithNullsModule.WriteLine x
+    let WriteLine2 (fmt: string | null, arg1: string | null) = KonsoleWithNullsModule.WriteLine2(fmt, arg1)
+    let WriteLineC(s: _ | null) = KonsoleWithNullsModule.WriteLineC(s)
+    let WriteLineC2(fmt: _ | null, arg1: _ | null) = KonsoleWithNullsModule.WriteLineC2(fmt, arg1)
 
 type KonsoleNoNulls = 
     static member WriteLine(s: String) = Console.WriteLine(s)

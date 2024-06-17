@@ -1,0 +1,1 @@
+let ((_ : exn) & (Failure _) | (_)) = exn ()

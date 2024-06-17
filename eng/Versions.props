@@ -39,7 +39,7 @@
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>8.0.200</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>8.0.300</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
@@ -152,7 +152,7 @@
     <MicrosoftVisualStudioProjectSystemVersion>$(VisualStudioProjectSystemPackagesVersion)</MicrosoftVisualStudioProjectSystemVersion>
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
     <!-- Misc. Visual Studio packages -->
-    <MicrosoftVSSDKBuildToolsVersion>17.1.4054</MicrosoftVSSDKBuildToolsVersion>
+    <MicrosoftVSSDKBuildToolsVersion>17.10.2179</MicrosoftVSSDKBuildToolsVersion>
     <MicrosoftVisualStudioRpcContractsVersion>17.7.3-preview</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
     <MicrosoftVisualStudioValidationVersion>17.6.11</MicrosoftVisualStudioValidationVersion>

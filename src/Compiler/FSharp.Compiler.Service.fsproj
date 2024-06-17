@@ -28,12 +28,14 @@
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-    <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+    <NoOptimizationData>false</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>false</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -45,6 +47,11 @@
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
     <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
     <PackageIconFullPath>$(MSBuildThisFileDirectory)logo.png</PackageIconFullPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -72,7 +79,6 @@
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
-    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
@@ -523,6 +529,8 @@
     <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
     <Compile Include="Interactive\FSharpInteractiveServer.fs" />
     <Compile Include="Interactive\ControlledExecution.fs" />
+    <Compile Include="Interactive\fsihelp.fsi" />
+    <Compile Include="Interactive\fsihelp.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
@@ -535,11 +543,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
-    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
-    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
-  </PropertyGroup>
 
   <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->

@@ -300,7 +300,7 @@ type TyparRigidity =
 [<Struct>]
 type TyparFlags(flags: int32) =
 
-    new (kind: TyparKind, rigidity: TyparRigidity, isFromError: bool, isCompGen: bool, staticReq: TyparStaticReq, dynamicReq: TyparDynamicReq, equalityDependsOn: bool, comparisonDependsOn: bool) = 
+    new (kind: TyparKind, rigidity: TyparRigidity, isFromError: bool, isCompGen: bool, staticReq: TyparStaticReq, dynamicReq: TyparDynamicReq, equalityDependsOn: bool, comparisonDependsOn: bool, supportsNullFlex: bool) = 
         TyparFlags((if isFromError then                0b00000000000000010 else 0) |||
                    (if isCompGen   then                0b00000000000000100 else 0) |||
                    (match staticReq with
@@ -321,7 +321,11 @@ type TyparFlags(flags: int32) =
                      | TyparDynamicReq.No           -> 0b00000000000000000
                      | TyparDynamicReq.Yes          -> 0b00000010000000000) |||
                    (if equalityDependsOn then 
-                                                       0b00000100000000000 else 0))
+                                                       0b00000100000000000 else 0) |||
+                                                  //   0b00001000100000000 is being checked by x.Kind, but never set in this version of the code
+                                                  //   0b00010000000000000 is taken by compat flex
+                   (if supportsNullFlex then
+                                                       0b00100000000000000 else 0))
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
     member x.IsFromError         = (flags &&& 0b00000000000000010) <> 0x0
@@ -380,8 +384,20 @@ type TyparFlags(flags: int32) =
                   else
                       TyparFlags(flags &&& ~~~0b00010000000000000)
 
+    /// Indicates that whether this type parameter is flexible for 'supports null' constraint, e.g. in the case of assignment to a mutable value
+    member x.IsSupportsNullFlex = 
+                                   (flags &&& 0b00100000000000000) <> 0x0
+
+    member x.WithSupportsNullFlex b = 
+                  if b then 
+                      TyparFlags(flags |||    0b00100000000000000)
+                  else
+                      TyparFlags(flags &&& ~~~0b00100000000000000)
+
+
+
     member x.WithStaticReq staticReq =  
-        TyparFlags(x.Kind, x.Rigidity, x.IsFromError, x.IsCompilerGenerated, staticReq, x.DynamicReq, x.EqualityConditionalOn, x.ComparisonConditionalOn) 
+        TyparFlags(x.Kind, x.Rigidity, x.IsFromError, x.IsCompilerGenerated, staticReq, x.DynamicReq, x.EqualityConditionalOn, x.ComparisonConditionalOn, x.IsSupportsNullFlex) 
 
     /// Get the flags as included in the F# binary metadata. We pickle this as int64 to allow for future expansion
     member x.PickledBits = flags       
@@ -1246,7 +1262,7 @@ type Entity =
     member x.GeneratedHashAndEqualsValues = x.TypeContents.tcaug_equals
 
     /// Gets all implicit hash/equals/compare methods added to an F# record, union or struct type definition.
-    member x.AllGeneratedValues = 
+    member x.AllGeneratedInterfaceImplsAndOverrides = 
         [ match x.GeneratedCompareToValues with 
           | None -> ()
           | Some (vref1, vref2) -> yield vref1; yield vref2
@@ -1258,7 +1274,8 @@ type Entity =
           | Some (vref1, vref2) -> yield vref1; yield vref2
           match x.GeneratedHashAndEqualsWithComparerValues with
           | None -> ()
-          | Some (vref1, vref2, vref3) -> yield vref1; yield vref2; yield vref3 ]
+          // vref4 is compiled as a sealed instance member, not an interface impl or an override.
+          | Some (vref1, vref2, vref3, _) -> yield vref1; yield vref2; yield vref3 ]
     
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
@@ -1398,10 +1415,10 @@ type TyconAugmentation =
       /// of Object.Equals or if the type doesn't override Object.Equals implicitly. 
       mutable tcaug_equals: (ValRef * ValRef) option
 
-      /// This is the value implementing the auto-generated comparison
+      /// This is the value implementing the auto-generated equality
       /// semantics if any. It is not present if the type defines its own implementation
-      /// of IStructuralEquatable or if the type doesn't implement IComparable implicitly.
-      mutable tcaug_hash_and_equals_withc: (ValRef * ValRef * ValRef) option                                    
+      /// of IStructuralEquatable or if the type doesn't override Object.Equals implicitly.
+      mutable tcaug_hash_and_equals_withc: (ValRef * ValRef * ValRef * ValRef option) option                                    
 
       /// True if the type defined an Object.GetHashCode method. In this 
       /// case we give a warning if we auto-generate a hash method since the semantics may not match up
@@ -2320,6 +2337,8 @@ type Typar =
     /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
     member x.SetIsCompatFlex b = x.typar_flags <- x.typar_flags.WithCompatFlex b
 
+     member x.SetSupportsNullFlex b = x.typar_flags <- x.typar_flags.WithSupportsNullFlex b
+
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member x.Kind = x.typar_flags.Kind
 
@@ -2424,12 +2443,12 @@ type Typar =
     /// Sets the rigidity of a type variable
     member x.SetRigidity b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex) 
 
     /// Sets whether a type variable is compiler generated
     member x.SetCompilerGenerated b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex) 
 
     /// Sets whether a type variable has a static requirement
     member x.SetStaticReq b =
@@ -2438,17 +2457,17 @@ type Typar =
     /// Sets whether a type variable is required at runtime
     member x.SetDynamicReq b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex) 
 
     /// Sets whether the equality constraint of a type definition depends on this type variable 
     member x.SetEqualityDependsOn b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex) 
 
     /// Sets whether the comparison constraint of a type definition depends on this type variable 
     member x.SetComparisonDependsOn b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b, flags.IsSupportsNullFlex) 
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -6117,7 +6136,7 @@ type Construct() =
         Typar.New
           { typar_id = id 
             typar_stamp = newStamp() 
-            typar_flags= TyparFlags(kind, rigid, isFromError, isCompGen, staticReq, dynamicReq, eqDep, compDep) 
+            typar_flags= TyparFlags(kind, rigid, isFromError, isCompGen, staticReq, dynamicReq, eqDep, compDep, false) 
             typar_solution = None
             typar_astype = Unchecked.defaultof<_>
             typar_opt_data =

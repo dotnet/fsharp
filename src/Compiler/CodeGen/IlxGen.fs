@@ -2203,7 +2203,7 @@ type AnonTypeGenerationTable() =
 
             let vspec1, vspec2 = AugmentTypeDefinitions.MakeValsForEqualsAugmentation g tcref
 
-            let evspec1, evspec2, evspec3 =
+            let augmentation =
                 AugmentTypeDefinitions.MakeValsForEqualityWithComparerAugmentation g tcref
 
             let cvspec1, cvspec2 = AugmentTypeDefinitions.MakeValsForCompareAugmentation g tcref
@@ -2214,7 +2214,13 @@ type AnonTypeGenerationTable() =
             tcaug.SetCompare(mkLocalValRef cvspec1, mkLocalValRef cvspec2)
             tcaug.SetCompareWith(mkLocalValRef cvspec3)
             tcaug.SetEquals(mkLocalValRef vspec1, mkLocalValRef vspec2)
-            tcaug.SetHashAndEqualsWith(mkLocalValRef evspec1, mkLocalValRef evspec2, mkLocalValRef evspec3)
+
+            tcaug.SetHashAndEqualsWith(
+                mkLocalValRef augmentation.GetHashCode,
+                mkLocalValRef augmentation.GetHashCodeWithComparer,
+                mkLocalValRef augmentation.EqualsWithComparer,
+                Some(mkLocalValRef augmentation.EqualsExactWithComparer)
+            )
 
             // Build the ILTypeDef. We don't rely on the normal record generation process because we want very specific field names
 
@@ -5642,7 +5648,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | TyparConstraint.IsNonNullableStruct _ -> true
             | _ -> false)
 
-    let notNullReferenceTypeConstraint =
+    let nullnessOfTypar =
         if g.langFeatureNullness && g.checkNullness then
             let hasNotSupportsNull =
                 tp.Constraints
@@ -5650,9 +5656,15 @@ and GenGenericParam cenv eenv (tp: Typar) =
                     | TyparConstraint.NotSupportsNull _ -> true
                     | _ -> false)
 
+            let hasSupportsNull () =
+                tp.Constraints
+                |> List.exists (function
+                    | TyparConstraint.SupportsNull _ -> true
+                    | _ -> false)
+
             if hasNotSupportsNull || notNullableValueTypeConstraint then
                 NullnessInfo.WithoutNull
-            elif hasNotSupportsNull || refTypeConstraint then
+            elif refTypeConstraint || hasSupportsNull () then
                 NullnessInfo.WithNull
             else
                 NullnessInfo.AmbivalentToNull
@@ -5705,7 +5717,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             yield! GenAttrs cenv eenv tp.Attribs
             if emitUnmanagedInIlOutput then
                 yield (GetIsUnmanagedAttribute g)
-            match notNullReferenceTypeConstraint with
+            match nullnessOfTypar with
             | Some nullInfo -> yield GetNullableAttribute g [ nullInfo ]
             | _ -> ()
         ]

@@ -56,6 +56,7 @@ type public Fsc() as this =
     let mutable preferredUILang: string MaybeNull = null
     let mutable publicSign: bool = false
     let mutable provideCommandLineArgs: bool = false
+    let mutable realsig: bool = false
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string MaybeNull = null
     let mutable refOnly: bool = false
@@ -193,6 +194,12 @@ type public Fsc() as this =
             builder.AppendSwitch("--optimize+")
         else
             builder.AppendSwitch("--optimize-")
+
+        // realsig
+        if realsig then
+            builder.AppendSwitch("--realsig+")
+        else
+            builder.AppendSwitch("--realsig-")
 
         // Tailcalls
         if not tailcalls then
@@ -526,6 +533,11 @@ type public Fsc() as this =
     member _.PublicSign
         with get () = publicSign
         and set (s) = publicSign <- s
+
+    // --realsig[+-]
+    member _.RealSig
+        with get () = realsig
+        and set (b) = realsig <- b
 
     // -r <string>: Reference an F# or .NET assembly.
     member _.References

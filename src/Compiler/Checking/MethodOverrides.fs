@@ -324,7 +324,6 @@ module DispatchSlotChecking =
     let CheckDispatchSlotsAreImplemented (denv, infoReader: InfoReader, m,
                                           nenv, sink: TcResultsSink,
                                           isOverallTyAbstract,
-                                          isObjExpr: bool,
                                           reqdTy,
                                           dispatchSlots: RequiredSlot list,
                                           availPriorOverrides: OverrideInfo list,
@@ -380,8 +379,7 @@ module DispatchSlotChecking =
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     
                     let noimpl() =
-                        if dispatchSlot.IsInstance then
-                            missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo infoReader m denv dispatchSlot))
+                        missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo infoReader m denv dispatchSlot))
                     
                     match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
@@ -404,10 +402,8 @@ module DispatchSlotChecking =
                             
                             let (CompiledSig (vargTys, _, fvmethTypars, _)) = compiledSig
                             
-                            // Object expressions can only implement instance members
-                            let isObjExprWithInstanceMembers = (isObjExpr && isInstance)
-                            if isObjExprWithInstanceMembers || isInstance then
-                                if moreThanOnePossibleDispatchSlot then
+                            if isInstance then
+                                if moreThanOnePossibleDispatchSlot  then
                                     noimpl()
 
                                 elif (argTys.Length <> vargTys.Length) then
@@ -776,7 +772,7 @@ module DispatchSlotChecking =
 
         // Get all the members that are immediately part of this type
         // Include the auto-generated members
-        let allImmediateMembers = tycon.MembersOfFSharpTyconSorted @ tycon.AllGeneratedValues
+        let allImmediateMembers = tycon.MembersOfFSharpTyconSorted @ tycon.AllGeneratedInterfaceImplsAndOverrides
 
         // Get all the members we have to implement, organized by each type we explicitly implement
         let slotImplSets = GetSlotImplSets infoReader denv AccessibleFromSomewhere false allReqdTys
@@ -828,7 +824,7 @@ module DispatchSlotChecking =
                 
                 if isImplementation && not (isInterfaceTy g overallTy) then 
                     let overrides = allImmediateMembersThatMightImplementDispatchSlots |> List.map snd
-                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, overrides)
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
                     if not allCorrect && not tcaug.tcaug_abstract && (isClassTy g reqdTy) then

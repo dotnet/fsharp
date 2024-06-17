@@ -3,15 +3,18 @@ module Language.NullableReferenceTypes
 open Xunit
 open FSharp.Test.Compiler
 
-let typeCheckWithStrictNullness cu =
+let withNullnessOptions cu =
     cu
     |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
     |> withWarnOn 3262
     |> withOptions ["--warnaserror+"]
-    |> compile
 
+let typeCheckWithStrictNullness cu =
+    cu
+    |> withNullnessOptions
+    |> compile
     
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =
@@ -25,6 +28,236 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+
+[<Theory>]
+[<InlineData("fileExists(path)")>]
+[<InlineData("fileExists path")>]
+[<InlineData("fileExists null")>]
+[<InlineData("path |> fileExists")>]
+[<InlineData("null |> fileExists")>]
+[<InlineData("System.IO.File.Exists(path)")>]
+[<InlineData("System.IO.File.Exists(null)")>]
+[<InlineData("path |> System.IO.File.Exists")>]
+[<InlineData("null |> System.IO.File.Exists")>]
+[<InlineData("System.String.IsNullOrEmpty(path)")>]
+let ``Calling a nullAllowing API can still infer a withoutNull type``(functionCall) =
+    FSharp $"""
+module MyLib
+
+let myStrictFunc(x: string) = x.GetHashCode()
+let fileExists (path:string|null) = true
+
+let myStringReturningFunc (path) = 
+    let ex = {functionCall}
+    myStrictFunc(path)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+//[<Fact>]
+// TODO Tomas - as of now, this does not bring the desired result
+let ``Type inference with underscore or null`` () =
+    FSharp $"""
+module MyLib
+
+let myFunc (path: _ | null) =
+    System.IO.File.Exists(path)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Type inference SystemIOFileExists`` () =
+    FSharp $"""
+module MyLib
+
+let test() = 
+    let maybeString : string | null = null
+    System.IO.File.Exists(maybeString)
+
+let myFunc path : string =
+    let exists =  path |> System.IO.File.Exists
+    path
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Type inference fsharp func`` () =
+    FSharp $"""module MyLib
+
+let fileExists (path:string|null) = true
+let myStringReturningFunc (pathArg) : string = 
+    let ex = pathArg |> fileExists
+    pathArg
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+
+// P1: inline or not
+// P2: type annotation for function argument
+// P3: type annotation for cache
+let MutableBindingAnnotationCombinations =
+    [|
+        for functionInlineFlag in [""
+                                   "inline"] do
+            for xArg in [""
+                         ":'T"
+                         ":'T|null"
+                         ": _"
+                         ": _|null"
+                         ": string|null"
+                         ": string"] do
+                // No annotation or _ must work all the time
+                for cacheArg in [""
+                                 ": _"] do
+                    yield [|functionInlineFlag :> obj; xArg :> obj; cacheArg :> obj|]
+
+                // If we have a named type, the same one must work for cache binding as well
+                if xArg.Contains("'T") || xArg.Contains("string|null") then
+                    yield [|functionInlineFlag :> obj; xArg :> obj; xArg :> obj|]
+
+                // If we have a type WithNull, using _|null should infer the exact same type
+                if xArg.Contains("|null") || xArg.Contains("string") then
+                    yield [|functionInlineFlag :> obj; xArg :> obj; ":_|null" :> obj|]
+
+                if xArg = ":'T" then
+                    for guard in [" when 'T:null"
+                                  " when 'T:null and 'T:not struct"] do
+                        yield [|functionInlineFlag :> obj; (xArg + guard) :> obj; "" :> obj|]
+
+                if xArg = ":'T|null" then
+                    for guard in [" when 'T:not struct"
+                                  " when 'T:not null"
+                                  " when 'T:not struct and 'T:not null"] do
+                        yield [|functionInlineFlag :> obj; (xArg + guard) :> obj; "" :> obj|]
+    |]
+
+[<MemberData(nameof MutableBindingAnnotationCombinations)>]
+[<Theory>]
+let ``Mutable binding with a null literal`` inln xArg cache =
+    FSharp $"""module MyLib
+
+let %s{inln} f (x %s{xArg}) = 
+    let mutable cache %s{cache} = null
+    cache <- x
+    
+    match cache with
+    | null -> failwith "It was null"
+    | c -> c
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Mutable string binding initially assigned to null should not need type annotation``() = 
+    FSharp """
+module MyLib
+
+
+let name = "abc"
+let mutable cache  = null 
+cache <- name 
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Mutable string binding assigned to null and matched againts null``() = 
+    FSharp """
+module MyLib
+
+let whatEver() =
+    let mutable x = null
+    x <- "abc"
+    x
+
+
+(* This is a comment 
+let name = "abc"
+let mutable cache  = null 
+cache <- name 
+
+match cache with
+| null -> ()
+| c -> ()*)
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Mutable cache binding initially assigned to null should not need type annotation``() = 
+    FSharp """
+module MyLib
+open System.Collections.Concurrent
+open System
+
+let mkCacheInt32 ()   =
+        let mutable topLevelCache  = null 
+
+        fun f (idx: int32) ->
+            let cache =
+                match topLevelCache with
+                | null ->
+                    let v = ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
+                    topLevelCache <- v
+                    v
+                | v -> v
+
+            match cache.TryGetValue idx with
+            | true, res -> res
+            | _ ->
+                let res = f idx
+                cache[idx] <- res
+                res
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can  infer underscore or null``() = 
+    FSharp """
+module MyLib
+let iAcceptNullPartiallyInfered(arg: _ | null) = 42
+let iHaveMissingContraint(arg: 'a | null) = 42
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Invalid usages of WithNull syntax``() = 
+    FSharp """
+module MyLib
+let f1(x: option<string> | null) = ()
+let f2(x: int | null) = ()
+let f3(x: ('a*'b) | null) = ()
+let f4(x: option<'a> | null) = ()
+let f5(x: ('a | null) when 'a:struct) = ()
+let f6(x: 'a | null when 'a:null) = ()
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+        [ Error 3261, Line 3, Col 11, Line 3, Col 32, "Nullness warning: The type 'string option' uses 'null' as a representation value but a non-null type is expected."
+          Error 3260, Line 4, Col 11, Line 4, Col 21, "The type 'int' does not support a nullness qualitification."
+          Error 43, Line 4, Col 11, Line 4, Col 21, "A generic construct requires that the type 'int' have reference semantics, but it does not, i.e. it is a struct"
+          Error 3260, Line 5, Col 11, Line 5, Col 25, "The type '('a * 'b)' does not support a nullness qualitification."
+          Error 3261, Line 6, Col 11, Line 6, Col 28, "Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected."
+          Error 43, Line 7, Col 28, Line 7, Col 37, "The constraints 'struct' and 'not struct' are inconsistent"
+          Error 43, Line 8, Col 26, Line 8, Col 33, "The constraints 'null' and 'not null' are inconsistent"]
 
 [<Fact>]
 let ``Boolean literal to string is not nullable`` () = 
@@ -130,6 +363,18 @@ let doStuff() =
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
+[<Fact>]
+let ``Match null on two strings`` () = 
+    FSharp """module MyLibrary
+let len2r (str1: string | null) (str2: string | null) =
+    match str1, str2 with
+    | null, _ -> -1
+    | _, null -> -1
+    | s1, s2 -> s1.Length + s2.Length
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
 
 [<InlineData("null")>]
 [<InlineData(""" null | "" """)>]
@@ -190,7 +435,7 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
 let ``Eliminate aliased nullness after matching`` () = 
     FSharp $"""module MyLibrary
 
-type Maybe<'T> = 'T | null
+type Maybe<'T when 'T:not struct> = 'T | null
 
 let myFunction (input : string Maybe) : string = 
     match input with
@@ -280,7 +525,7 @@ strictFunc(null) |> ignore    """
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+            [ Error 43, Line 4, Col 12, Line 4, Col 16, "The constraints 'null' and 'not null' are inconsistent"]
     
 [<Fact>]
 let ``Strict func null literal2`` () = 
@@ -294,9 +539,74 @@ strictFunc("hi") |> ignore   """
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3261, Line 4, Col 12, Line 4, Col 16, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
-         
-    
+            [ Error 43, Line 4, Col 12, Line 4, Col 16, "The constraints 'null' and 'not null' are inconsistent"]
+      
+[<Fact>]
+let ``Supports null in generic code`` () =
+    FSharp """module MyLibrary
+let myGenericFunction p = 
+    match p with
+    | null -> ()
+    | p -> printfn "%s" (p.ToString()) 
+
+[<AllowNullLiteral>]
+type X(p:int) =
+    member _.P = p
+
+let myValOfX : X = null
+
+myGenericFunction "HiThere"
+myGenericFunction ("HiThere":string | null)
+myGenericFunction (System.DateTime.Now)
+myGenericFunction 123
+myGenericFunction myValOfX
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [Error 3261, Line 13, Col 19, Line 13, Col 28, "Nullness warning: The type 'string' does not support 'null'."
+             Error 3261, Line 15, Col 20, Line 15, Col 39, "Nullness warning: The type 'System.DateTime' does not support 'null'."
+             Error 3261, Line 16, Col 19, Line 16, Col 22, "Nullness warning: The type 'int' does not support 'null'."]
+
+[<Fact>]
+let ``Null assignment in generic code`` () =
+    FSharp """module MyLibrary
+let myNullReturningFunction p  = 
+    let mutable x = p
+    x <- null
+    x
+
+[<AllowNullLiteral>]
+type X(p:int) =
+    member _.P = p
+
+type Y (p:int) =
+    member _.P = p
+
+let myValOfX : X = null
+let myValOfY : Y = Unchecked.defaultof<Y>
+
+myNullReturningFunction "HiThere"                    |> ignore
+myNullReturningFunction ("HiThere":string | null)    |> ignore
+myNullReturningFunction (System.DateTime.Now)        |> ignore
+myNullReturningFunction {|Anon=42|}                  |> ignore
+myNullReturningFunction (1,2,3)                      |> ignore
+myNullReturningFunction myValOfX                     |> ignore
+myNullReturningFunction myValOfY                     |> ignore
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+                [Error 3261, Line 17, Col 25, Line 17, Col 34, "Nullness warning: The type 'string' does not support 'null'."
+                 Error 3261, Line 19, Col 26, Line 19, Col 45, "Nullness warning: The type 'System.DateTime' does not support 'null'."
+                 Error 3261, Line 20, Col 25, Line 20, Col 36, "Nullness warning: The type '{| Anon: 'a |}' does not support 'null'."
+                 Error 3261, Line 21, Col 26, Line 21, Col 31, "Nullness warning: The type '('a * 'b * 'c)' does not support 'null'."
+                 Error 3261, Line 23, Col 25, Line 23, Col 33, "Nullness warning: The type 'Y' does not support 'null'."]
+                 
 [<Fact>]
 let ``Nullnesss support for F# types`` () = 
     FSharp """module MyLibrary
@@ -346,7 +656,8 @@ looseFunc(maybeTuple2) |> ignore
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-            [ Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualitification."
+            [ Error 43, Line 21, Col 12, Line 21, Col 16, "The constraints 'null' and 'not null' are inconsistent"
+              Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualitification."
               Error 3261, Line 27, Col 37, Line 27, Col 41, "Nullness warning: The type '(int * int)' does not support 'null'."
               Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
@@ -537,3 +848,30 @@ let mappableFunc =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+[<Fact>]
+let ``Notnull constraint and inline annotated value`` () = 
+    FSharp """module MyLibrary
+open System
+
+let f3 (x: 'T when 'T : not null) = 1
+
+let v3 = f3 (null: obj) 
+let v4 = f3 (null: String | null) 
+let v5 = f3 (Some 1) 
+
+let w3 = (null: obj) |> f3
+let w4 = (null: String | null) |> f3
+
+let v3WithNull = f3 (null: obj | null) 
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+            [ Error 3261, Line 6, Col 14, Line 6, Col 18, "Nullness warning: The type 'obj' does not support 'null'."
+              Error 3261, Line 7, Col 14, Line 7, Col 33, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 8, Col 14, Line 8, Col 20, "Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected."
+              Error 3261, Line 10, Col 11, Line 10, Col 15, "Nullness warning: The type 'obj' does not support 'null'."
+              Error 3261, Line 11, Col 35, Line 11, Col 37, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 13, Col 22, Line 13, Col 38, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]

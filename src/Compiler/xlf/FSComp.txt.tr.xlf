@@ -1152,6 +1152,26 @@
         <target state="translated">(Önerilen ad)</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
+        <source>This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</source>
+        <target state="new">This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchArgsAndPat">
+        <source>This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</source>
+        <target state="new">This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchNoArgsNoPat">
+        <source>This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</source>
+        <target state="new">This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternArgsCountNotMatchOnlyPat">
+        <source>This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</source>
+        <target state="new">This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="translated">_ öğesinin anlamı burada belirsiz. Aynı kapsamda, atılan bir değişken ve işlev kısaltması için kullanılamaz.</target>

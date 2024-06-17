@@ -3,7 +3,9 @@ See License.txt in the project root for license information.
 
 ## About the release notes
 
-This document contains current and historical release notes information. They are preserved in their original form.
+For the most recent release notes see: [/docs/release-notes](./docs/release-notes)
+
+This document contains historical release notes information. They are preserved in their original form.
 
 * [Current Release notes](#Current-release-notes)
 * [Visual Studio 2017-2019 release notes](#visual-studio-2017-2019-update-167-release-notes)

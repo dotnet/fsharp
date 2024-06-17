@@ -154,9 +154,9 @@
     <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="EmittedIL\ComputedCollections\ComputedCollections.fs" />
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
-    <Compile Include="EmittedIL\ForLoop\RealInternalSignatureOff\ForLoop.fs" />
-    <Compile Include="EmittedIL\ForLoop\RealInternalSignatureOn\ForLoop.fs" />
+    <Compile Include="EmittedIL\ForLoop\ForLoop.fs" />
     <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
+    <Compile Include="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <Compile Include="EmittedIL\GenericComparison\GenericComparison.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
@@ -208,6 +208,7 @@
     <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
     <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />
     <Compile Include="ErrorMessages\ExtendedDiagnosticDataTests.fs" />
+    <Compile Include="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
@@ -333,6 +334,8 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
+    <None Remove="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

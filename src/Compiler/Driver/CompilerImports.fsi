@@ -206,14 +206,14 @@ type TcImports =
     member internal Base: TcImports option
 
     static member BuildFrameworkTcImports:
-        TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> NodeCode<TcGlobals * TcImports>
+        TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> Async<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
         TcConfigProvider * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list * DependencyProvider ->
-            NodeCode<TcImports>
+            Async<TcImports>
 
     static member BuildTcImports:
-        tcConfigP: TcConfigProvider * dependencyProvider: DependencyProvider -> NodeCode<TcGlobals * TcImports>
+        tcConfigP: TcConfigProvider * dependencyProvider: DependencyProvider -> Async<TcGlobals * TcImports>
 
 /// Process a group of #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
