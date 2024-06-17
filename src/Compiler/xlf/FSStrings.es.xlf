@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="needs-review-translation">Este tipo es "abstract" ya que a algunos miembros abstractos no se les ha dado una implementación. Si esto es intencional, agregue el atributo "[&lt;AbstractClass&gt;]"</target>
+        <target state="new">Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
