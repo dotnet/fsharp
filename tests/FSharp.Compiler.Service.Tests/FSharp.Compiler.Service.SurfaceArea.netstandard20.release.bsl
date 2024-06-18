@@ -5915,6 +5915,18 @@ FSharp.Compiler.Syntax.ParsedHashDirective: Microsoft.FSharp.Collections.FSharpL
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String ToString()
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String get_ident()
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String ident
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident: FSharp.Compiler.Syntax.Ident get_value()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident: FSharp.Compiler.Syntax.Ident value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32: Int32 get_value()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32: Int32 value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent: FSharp.Compiler.Syntax.SynLongIdent get_value()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent: FSharp.Compiler.Syntax.SynLongIdent value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: System.String constant
@@ -5927,14 +5939,29 @@ FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: FSharp.Compiler.Text.
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: System.String get_value()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: System.String value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 Ident
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 Int32
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 LongIdent
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 SourceIdentifier
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 String
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsIdent
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsInt32
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsLongIdent
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsSourceIdentifier
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsString
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsIdent()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsInt32()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsLongIdent()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsSourceIdentifier()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsString()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewIdent(FSharp.Compiler.Syntax.Ident, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewInt32(Int32, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewLongIdent(FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewSourceIdentifier(System.String, System.String, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewString(System.String, FSharp.Compiler.Syntax.SynStringKind, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags
