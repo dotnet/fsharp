@@ -14,7 +14,7 @@
       </MIBCPackage>
 
       <MibcOriginalFiles
-        Include="%(MIBCPackage.PackagePath)/**/*.mibc"
+        Include="%(MIBCPackage.PackagePath)/**/DotNet_FSharp.mibc"
         SubdirectoryName="$([System.IO.Path]::Combine($(TargetOS), $(TargetArchitecture)))" />
 
       <MibcFiles 
