@@ -15,7 +15,6 @@ open System.Runtime.CompilerServices
 type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
     let syncObj = obj ()
 
-    [<VolatileField>]
     let mutable valueFactory = valueFactory
 
     let mutable value = value
