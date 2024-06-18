@@ -82,11 +82,19 @@ let ``With new nullness syntax nullness disabled`` compilation =
     |> withVersionAndCheckNulls ("preview",false)   
     |> verifyBaseline
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".nullness_disabled", Includes=[|"positive-defaultValue-bug.fs"|])>]
+let ``DefaultValueBug when checknulls is disabled`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("preview",false)   
+    |> verifyBaseline
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".checknulls_on", Includes=[|"using-nullness-syntax-positive.fs"|])>]
 let ``With new nullness syntax nullness enabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",true)   
     |> verifyBaseline
+
+
 
 [<Theory>]
 [<InlineData("preview",true,true)>]

@@ -491,10 +491,10 @@ type FrameworkImportsCacheKey =
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
-            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
 
         member this.GetLabel() = 
-            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
 
         member this.GetVersion() = this
         

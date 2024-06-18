@@ -1320,7 +1320,7 @@ type internal TransparentCompiler
                     let! finisher =
                         CheckOneInputWithCallback
                             nodeToCheck
-                            ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
+                            ((fun () -> hadParseErrors || diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
                              tcConfig,
                              tcImports,
                              tcGlobals,
