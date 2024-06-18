@@ -1770,3 +1770,6 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3868,tcActivePatternArgsCountNotMatchOnlyPat,"This active pattern expects exactly one pattern argument, e.g., '%s pat'."
 3868,tcActivePatternArgsCountNotMatchArgs,"This active pattern expects %d expression argument(s), e.g., '%s%s'."
 3868,tcActivePatternArgsCountNotMatchArgsAndPat,"This active pattern expects %d expression argument(s) and a pattern argument, e.g., '%s%s pat'."
+featureParsedHashDirectiveArgumentNonString,"# directives with non-quoted string arguments"
+3869,featureParsedHashDirectiveUnexpectedInteger,"Unexpected integer literal '%d'."
+3869,featureParsedHashDirectiveUnexpectedIdentifier,"Unexpected identifier '%s'."
