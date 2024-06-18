@@ -115,10 +115,10 @@ type PreTypeDefData =
                 mkILMethods []
 
         let typeAttributes = TypeAttributes.Public
-        let customAttrs = mkILCustomAttrs []
+
         ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, [], [],
-            None, methodsDefs, mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [], mkILProperties [], false,
-            emptyILSecurityDecls, customAttrs)
+            None, methodsDefs, mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [], mkILProperties [],
+            ILTypeDefAdditionalFlags.None, emptyILSecurityDecls, emptyILCustomAttrsStored)
 
 type PreTypeDef(data: PreTypeDefData) =
     let typeDef = data.TypeDef
