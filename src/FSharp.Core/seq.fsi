@@ -2936,7 +2936,7 @@ module Seq =
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: seq<'T> -> seq<'T>
 
-    /// <summary>Return a new sequence shuffled a in random order.</summary>
+    /// <summary>Return a new sequence shuffled in a random order.</summary>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -3155,7 +3155,7 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
-    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input sequence.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
     ///
     /// <example id="randomSample-1">
     /// <code lang="fsharp">
@@ -3182,7 +3182,7 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
-    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input sequence.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
     ///
     /// <example id="randomSampleWith-1">
     /// <code lang="fsharp">
@@ -3208,7 +3208,7 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
-    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when count is greater than the length of the input sequence.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
     /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a number outside the range [0.0..1.0).</exception>
     ///
     /// <example id="randomSampleBy-1">

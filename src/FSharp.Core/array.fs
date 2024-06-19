@@ -2070,7 +2070,6 @@ module Array =
 
         let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
         let setSize =
             Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
 

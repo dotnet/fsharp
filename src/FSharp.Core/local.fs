@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-
+// Copyright © 2001-2023 Python Software Foundation.  All Rights Reserved. License: https://docs.python.org/3/license.html#psf-license. Code for getMaxSetSizeForSampling is taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
 
 namespace Microsoft.FSharp.Core
 
