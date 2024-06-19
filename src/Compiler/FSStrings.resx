@@ -1066,7 +1066,7 @@
     <value>Override implementations should be given as part of the initial declaration of a type.</value>
   </data>
   <data name="IntfImplInIntrinsicAugmentation" xml:space="preserve">
-    <value>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</value>
+    <value>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</value>
   </data>
   <data name="IntfImplInExtrinsicAugmentation" xml:space="preserve">
     <value>Interface implementations should be given on the initial declaration of a type.</value>
@@ -1078,10 +1078,10 @@
     <value>The type referenced through '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.</value>
   </data>
   <data name="HashIncludeNotAllowedInNonScript" xml:space="preserve">
-    <value>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</value>
+    <value>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</value>
   </data>
   <data name="HashReferenceNotAllowedInNonScript" xml:space="preserve">
-    <value>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</value>
+    <value>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</value>
   </data>
   <data name="HashDirectiveNotAllowedInNonScript" xml:space="preserve">
     <value>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</value>

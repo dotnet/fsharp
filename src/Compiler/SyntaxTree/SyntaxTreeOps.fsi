@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.SyntaxTreeOps
 
+open FSharp.Compiler.Features
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.Syntax
@@ -319,7 +320,9 @@ val unionBindingAndMembers: bindings: SynBinding list -> members: SynMemberDefn 
 
 val synExprContainsError: inpExpr: SynExpr -> bool
 
-val (|ParsedHashDirectiveArguments|): ParsedHashDirectiveArgument list -> string list
+val parsedHashDirectiveArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
+
+val parsedHashDirectiveStringArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
 
 /// 'e1 && e2'
 [<return: Struct>]

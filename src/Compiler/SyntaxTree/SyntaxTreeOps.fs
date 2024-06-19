@@ -4,6 +4,7 @@ module FSharp.Compiler.SyntaxTreeOps
 
 open Internal.Utilities.Library
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -982,11 +983,42 @@ let rec synExprContainsError inpExpr =
 
     walkExpr inpExpr
 
-let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
-    List.map
+let longIdentToString (ident: SynLongIdent) =
+    System.String.Join(".", ident.LongIdent |> List.map (fun ident -> ident.idText.ToString()))
+
+let parsedHashDirectiveArguments (input: ParsedHashDirectiveArgument list) (langVersion: LanguageVersion) =
+    List.choose
         (function
-        | ParsedHashDirectiveArgument.String(s, _, _) -> s
-        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> v)
+        | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
+        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
+        | ParsedHashDirectiveArgument.Int32(n, m) ->
+            match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
+            | true -> Some(string n)
+            | false -> None
+        | ParsedHashDirectiveArgument.Ident(ident, m) ->
+            match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
+            | true -> Some(ident.idText)
+            | false -> None
+        | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
+            match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
+            | true -> Some(longIdentToString ident)
+            | false -> None)
+        input
+
+let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list) (_langVersion: LanguageVersion) =
+    List.choose
+        (function
+        | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
+        | ParsedHashDirectiveArgument.Int32(n, m) ->
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger (n), m))
+            None
+        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
+        | ParsedHashDirectiveArgument.Ident(ident, m) ->
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (ident.idText), m))
+            None
+        | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (longIdentToString ident), m))
+            None)
         input
 
 let prependIdentInLongIdentWithTrivia (SynIdent(ident, identTrivia)) mDot lid =

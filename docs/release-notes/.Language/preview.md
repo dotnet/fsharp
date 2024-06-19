@@ -7,6 +7,8 @@
 * Bidirectional F#/C# interop for 'unmanaged' constraint. ([PR #12154](https://github.com/dotnet/fsharp/pull/12154))
 * Make `.Is*` discriminated union properties visible. ([Language suggestion #222](https://github.com/fsharp/fslang-suggestions/issues/222), [PR #16341](https://github.com/dotnet/fsharp/pull/16341))
 * Allow returning bool instead of unit option for partial active patterns. ([Language suggestion #1041](https://github.com/fsharp/fslang-suggestions/issues/1041), [PR #16473](https://github.com/dotnet/fsharp/pull/16473))
+* Allow #nowarn to support the FS prefix on error codes to disable warnings ([Issue #17206](https://github.com/dotnet/fsharp/issues/16447), [PR #17209](https://github.com/dotnet/fsharp/pull/17209))
+* Allow ParsedHashDirectives to have argument types other than strings ([Issue #17240](https://github.com/dotnet/fsharp/issues/16447), [PR #17209](https://github.com/dotnet/fsharp/pull/17209))
 
 ### Fixed
 
