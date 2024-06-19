@@ -163,7 +163,12 @@ type TypeBuilder with
         if logRefEmitCalls then
             printfn "typeBuilder%d.CreateType()" (abs <| hash typB)
 
+//Buggy annotation in ns20, will not be fixed.
+#if NETSTANDARD && !NO_CHECKNULLS
+        !! (typB.CreateTypeInfo()) :> Type
+#else
         typB.CreateTypeInfo() :> Type
+#endif
 
     member typB.DefineNestedTypeAndLog(name, attrs) =
         let res = typB.DefineNestedType(name, attrs)

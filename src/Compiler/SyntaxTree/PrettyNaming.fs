@@ -363,6 +363,8 @@ let IsOperatorDisplayName (name: string) =
 
 let IsPossibleOpName (name: string) = name.StartsWithOrdinal(opNamePrefix)
 
+let ordinalStringComparer : IEqualityComparer<string> = StringComparer.Ordinal |> box |> unbox
+
 /// Compiles a custom operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
 /// This function should only be used for custom operators
@@ -387,7 +389,7 @@ let compileCustomOpName =
 
     /// Memoize compilation of custom operators.
     /// They're typically used more than once so this avoids some CPU and GC overhead.
-    let compiledOperators = ConcurrentDictionary<_, string> StringComparer.Ordinal
+    let compiledOperators = ConcurrentDictionary<string, string> ordinalStringComparer
 
     // Cache this as a delegate.
     let compiledOperatorsAddDelegate =
@@ -416,7 +418,7 @@ let compileCustomOpName =
 
 /// Maps the built-in F# operators to their mangled operator names.
 let standardOpNames =
-    let opNames = Dictionary<_, _>(opNameTable.Length, StringComparer.Ordinal)
+    let opNames = Dictionary<_, _>(opNameTable.Length, ordinalStringComparer)
 
     for x, y in opNameTable do
         opNames.Add(x, y)
@@ -440,7 +442,7 @@ let CompileOpName op =
 let decompileCustomOpName =
     // Memoize this operation. Custom operators are typically used more than once
     // so this avoids repeating decompilation.
-    let decompiledOperators = ConcurrentDictionary<_, _> StringComparer.Ordinal
+    let decompiledOperators = ConcurrentDictionary<_, _> ordinalStringComparer
 
     /// The minimum length of the name for a custom operator character.
     /// This value is used when initializing StringBuilders to avoid resizing.
@@ -507,7 +509,7 @@ let decompileCustomOpName =
 
 /// Maps the mangled operator names of built-in F# operators back to the operators.
 let standardOpsDecompile =
-    let ops = Dictionary<string, string>(opNameTable.Length, StringComparer.Ordinal)
+    let ops = Dictionary<string, string>(opNameTable.Length, ordinalStringComparer)
 
     for x, y in opNameTable do
         ops.Add(y, x)

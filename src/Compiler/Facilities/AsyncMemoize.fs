@@ -293,7 +293,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             key.Version,
                             key.Label,
                             (Running(
-                                TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously),
+                                TaskCompletionSource<'TValue>(TaskCreationOptions.RunContinuationsAsynchronously),
                                 cts,
                                 computation,
                                 DateTime.Now,

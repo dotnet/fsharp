@@ -64,9 +64,9 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
     let checkSumOffset = peHeaderOffset + 0x40 // offsetof(IMAGE_OPTIONAL_HEADER, CheckSum)
 
     let securityDirectoryEntryOffset, peHeaderSize =
-        let header = peHeaders.PEHeader
+        let header = peHeaders.PEHeader |> nullArgCheck (nameof peHeaders.PEHeader)
 
-        match header ^ _.Magic with
+        match header.Magic with
         | PEMagic.PE32 -> peHeaderOffset + 0x80, 0xE0 // offsetof(IMAGE_OPTIONAL_HEADER32, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER32)
         | PEMagic.PE32Plus -> peHeaderOffset + 0x90, 0xF0 // offsetof(IMAGE_OPTIONAL_HEADER64, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER64)
         | _ -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignInvalidMagicValue ())))
@@ -90,10 +90,8 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
 
     // Hash content of all sections
     let signatureDirectory =
-        let corHeader = peHeaders.CorHeader
-        corHeader ^ _.StrongNameSignatureDirectory
-
-    let signatureDirectory = match signatureDirectory with | null -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignNoSignatureDirectory ()))) | sd -> sd
+        let corHeader = peHeaders.CorHeader |>  nullArgCheck (nameof peHeaders.CorHeader)
+        corHeader.StrongNameSignatureDirectory
 
     let signatureStart =
         match peHeaders.TryGetDirectoryOffset signatureDirectory with
@@ -273,14 +271,12 @@ let createSignature (hash:byte array) keyBlob keyType =
 
 let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array) =
     let peHeaders = peReader.PEHeaders
-    let corHeader = peHeaders.CorHeader
-    let signatureDirectory = corHeader ^ _.StrongNameSignatureDirectory
+    let corHeader = peHeaders.CorHeader |>  nullArgCheck (nameof peHeaders.CorHeader)
+    let signatureDirectory = corHeader.StrongNameSignatureDirectory
 
     let signatureOffset =
         if signatureDirectory.Size > signature.Length then
             raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignInvalidSignatureSize ())))
-
-        let signatureDirectory = match signatureDirectory with | null -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignNoSignatureDirectory ()))) | sd -> sd
 
         match peHeaders.TryGetDirectoryOffset signatureDirectory with
         | false, _ -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignNoSignatureDirectory ())))
@@ -291,7 +287,7 @@ let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array)
 
     let corHeaderFlagsOffset = int64 (peHeaders.CorHeaderStartOffset + 16) // offsetof(IMAGE_COR20_HEADER, Flags)
     stream.Seek(corHeaderFlagsOffset, SeekOrigin.Begin) |> ignore
-    stream.WriteByte(byte (corHeader ^ _.Flags ||| CorFlags.StrongNameSigned))
+    stream.WriteByte(byte (corHeader.Flags ||| CorFlags.StrongNameSigned))
     ()
 
 let signStream stream keyBlob =

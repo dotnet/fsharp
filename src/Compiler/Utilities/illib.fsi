@@ -119,7 +119,12 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
 
 module internal Order =
 
-    val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison
+    val orderBy: p: ('T -> 'U) -> IComparer<'T> 
+        when 'U: comparison
+#if !NO_CHECKNULLS
+        and 'T:not null
+        and 'T:not struct
+#endif
 
     val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T>
 
@@ -473,7 +478,11 @@ type internal LazyWithContext<'T, 'ctxt> =
 
 /// Intern tables to save space.
 module internal Tables =
-    val memoize: f: ('a -> 'b) -> ('a -> 'b) when 'a: equality
+    val memoize: f: ('a -> 'b) -> ('a -> 'b) 
+        when 'a: equality
+#if !NO_CHECKNULLS && NET8_0_OR_GREATER
+        and 'a:not null
+#endif
 
 /// Interface that defines methods for comparing objects using partial equality relation
 type internal IPartialEqualityComparer<'T> =
@@ -483,6 +492,10 @@ type internal IPartialEqualityComparer<'T> =
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
     val On: f: ('a -> 'b) -> c: IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
+#if !NO_CHECKNULLS
+        when 'a:not null
+        and 'a:not struct
+#endif
 
     /// Like Seq.distinctBy but only filters out duplicates for some of the elements
     val partialDistinctBy: per: IPartialEqualityComparer<'T> -> seq: 'T list -> 'T list

@@ -141,24 +141,21 @@ module internal Activity =
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> match a with | null -> false | a -> a.Name = ActivityNames.ProfiledSourceName),
+                    ShouldListenTo = (fun a -> a.Name = ActivityNames.ProfiledSourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStarted = (fun a -> ()),
                     //ActivityStarted = (fun a -> a.AddTag(gcStatsInnerTag, collectGCStats ()) |> ignore),
                     ActivityStopped =
                         (fun a ->
-                            match a with
-                            | null -> ()
-                            | a ->
-                                let statsBefore = a.GetTagItem(gcStatsInnerTag) :?> GCStats
-                                let statsAfter = collectGCStats ()
-                                let p = Process.GetCurrentProcess()
-                                a.AddTag(Tags.workingSetMB, p.WorkingSet64 / 1_000_000L) |> ignore
-                                a.AddTag(Tags.handles, p.HandleCount) |> ignore
-                                a.AddTag(Tags.threads, p.Threads.Count) |> ignore
+                            let statsBefore = a.GetTagItem(gcStatsInnerTag) :?> GCStats
+                            let statsAfter = collectGCStats ()
+                            let p = Process.GetCurrentProcess()
+                            a.AddTag(Tags.workingSetMB, p.WorkingSet64 / 1_000_000L) |> ignore
+                            a.AddTag(Tags.handles, p.HandleCount) |> ignore
+                            a.AddTag(Tags.threads, p.Threads.Count) |> ignore
 
-                                for i = 0 to statsAfter.Length - 1 do
-                                    a.AddTag($"gc{i}", statsAfter[i] - statsBefore[i]) |> ignore)
+                            for i = 0 to statsAfter.Length - 1 do
+                                a.AddTag($"gc{i}", statsAfter[i] - statsBefore[i]) |> ignore)
 
                 )
 
@@ -178,24 +175,21 @@ module internal Activity =
 
             let consoleWriterListener =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> match a with | null -> false | a -> a.Name = ActivityNames.ProfiledSourceName),
+                    ShouldListenTo = (fun a -> a.Name = ActivityNames.ProfiledSourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped =
                         (fun a ->
-                            match a with
-                            | null -> ()
-                            | a ->
-                                Console.Write('|')
-                                let indentedName = new String('>', a.Depth) + a.DisplayName
-                                Console.Write(indentedName.PadRight(nameColumnWidth))
+                            Console.Write('|')
+                            let indentedName = new String('>', a.Depth) + a.DisplayName
+                            Console.Write(indentedName.PadRight(nameColumnWidth))
 
-                                let elapsed = (a.StartTimeUtc + a.Duration - reportingStart).TotalSeconds
-                                Console.Write("|{0,8:N4}|{1,8:N4}|", elapsed, a.Duration.TotalSeconds)
+                            let elapsed = (a.StartTimeUtc + a.Duration - reportingStart).TotalSeconds
+                            Console.Write("|{0,8:N4}|{1,8:N4}|", elapsed, a.Duration.TotalSeconds)
 
-                                for t in Tags.profilingTags do
-                                    Console.Write("{0,7}|", a.GetTagItem(t))
+                            for t in Tags.profilingTags do
+                                Console.Write("{0,7}|", a.GetTagItem(t))
 
-                                Console.WriteLine())
+                            Console.WriteLine())
                 )
 
             Console.WriteLine(new String('-', header.Length))
@@ -213,10 +207,10 @@ module internal Activity =
 
     module CsvExport =
 
-        let private escapeStringForCsv (o: obj) =
-            if isNull o then
-                ""
-            else
+        let private escapeStringForCsv (o: obj HelpersUntilNullnessIsAvailable.MaybeNull) =
+            match o with
+            | null -> ""
+            | o ->
                 let mutable txtVal = match o.ToString() with | null -> "" | s -> s
                 let hasComma = txtVal.IndexOf(',') > -1
                 let hasQuote = txtVal.IndexOf('"') > -1
@@ -272,9 +266,9 @@ module internal Activity =
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> match a with | null -> false | a -> ActivityNames.AllRelevantNames |> Array.contains a.Name),
+                    ShouldListenTo = (fun a ->ActivityNames.AllRelevantNames |> Array.contains a.Name),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
-                    ActivityStopped = (fun a -> match a with | null -> () | a -> msgQueue.Post(createCsvRow a))
+                    ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
                 )
 
             ActivitySource.AddActivityListener(l)

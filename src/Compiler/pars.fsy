@@ -3,6 +3,7 @@
 %{
 
 #nowarn "1182"  // generated code has lots of unused "parseState"
+#nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
 open System
 

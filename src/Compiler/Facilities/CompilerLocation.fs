@@ -16,8 +16,10 @@ module internal FSharpEnvironment =
 
 #if NO_CHECKNULLS
     let inline (!!) x = x
+    type MaybeNull<'T when 'T : null> = 'T
 #else
     let inline (!!) (x:'T | null) = Unchecked.nonNull x
+    type MaybeNull<'T when 'T:not null and 'T:not struct> = 'T | null
 #endif
 
     type private TypeInThisAssembly =
@@ -30,7 +32,7 @@ module internal FSharpEnvironment =
 
     let FSharpProductName = UtilsStrings.SR.buildProductName (FSharpBannerVersion)
 
-    let versionOf<'t> : string | null = 
+    let versionOf<'t> : MaybeNull<string> = 
         match typeof<'t>.Assembly.GetName().Version with
         | null -> null
         | v -> v.ToString()
