@@ -1404,7 +1404,7 @@
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
         <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
-        <target state="translated">この再帰的な用法は、実行時に初期化の正常性がチェックされます。通常、この警告は害がないため、'#nowarn "21"' または '--nowarn:21' を使用して抑制することができます。</target>
+        <target state="needs-review-translation">この再帰的な用法は、実行時に初期化の正常性がチェックされます。通常、この警告は害がないため、'#nowarn "21"' または '--nowarn:21' を使用して抑制することができます。</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecUnsound1">
@@ -1429,7 +1429,7 @@
       </trans-unit>
       <trans-unit id="LetRecCheckedAtRuntime">
         <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
-        <target state="translated">定義されるオブジェクトに対するこの再帰参照および他の再帰参照は、遅延参照を使用して、実行時に初期化の正常性がチェックされます。これは、再帰関数ではなく、1 つまたは複数の再帰オブジェクトを定義しているためです。この警告を抑制するには、'#nowarn "40"' または '--nowarn:40' を使用してください。</target>
+        <target state="needs-review-translation">定義されるオブジェクトに対するこの再帰参照および他の再帰参照は、遅延参照を使用して、実行時に初期化の正常性がチェックされます。これは、再帰関数ではなく、1 つまたは複数の再帰オブジェクトを定義しているためです。この警告を抑制するには、'#nowarn "40"' または '--nowarn:40' を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
@@ -1549,12 +1549,12 @@
       </trans-unit>
       <trans-unit id="Experimental">
         <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="translated">{0}。この警告を無効にするには、'--nowarn:57' または '#nowarn "57"' を使用します。</target>
+        <target state="needs-review-translation">{0}。この警告を無効にするには、'--nowarn:57' または '#nowarn "57"' を使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">
         <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
-        <target state="translated">このコンストラクトを使用すると、検証できない .NET IL コードが生成される可能性があります。この警告を無効にするには、'--nowarn:9' または '#nowarn "9"' を使用してください。</target>
+        <target state="needs-review-translation">このコンストラクトを使用すると、検証できない .NET IL コードが生成される可能性があります。この警告を無効にするには、'--nowarn:9' または '#nowarn "9"' を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="Deprecated">
@@ -1598,8 +1598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">インターフェイスの実装には、通常、最初に型を指定する必要があります。拡張のインターフェイス実装は、初期化前に静的バインディングにアクセスする可能性があります。ただし、静的データの初期化中にインターフェイスの実装が呼び出され、静的データにアクセスする場合のみです。この警告は、#nowarn "69" を使用して削除できます。この点をすでにチェックしている場合は該当しません。</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
+        <target state="needs-review-translation">インターフェイスの実装には、通常、最初に型を指定する必要があります。拡張のインターフェイス実装は、初期化前に静的バインディングにアクセスする可能性があります。ただし、静的データの初期化中にインターフェイスの実装が呼び出され、静的データにアクセスする場合のみです。この警告は、#nowarn "69" を使用して削除できます。この点をすでにチェックしている場合は該当しません。</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1618,13 +1618,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#I ディレクティブを使用できるのは F# スクリプト ファイル (拡張子は .fsx または .fsscript) のみです。このコードをスクリプト ファイルに移動するか、この参照に '-I' コンパイラー オプションを追加するか、ディレクティブを '#if INTERACTIVE'/'#endif' で区切ってください。</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="needs-review-translation">#I ディレクティブを使用できるのは F# スクリプト ファイル (拡張子は .fsx または .fsscript) のみです。このコードをスクリプト ファイルに移動するか、この参照に '-I' コンパイラー オプションを追加するか、ディレクティブを '#if INTERACTIVE'/'#endif' で区切ってください。</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#r ディレクティブは F# スクリプト ファイル (拡張子は .fsx または .fsscript) 内でのみ使用できます。このコードをスクリプト ファイルに移動するか、この参照を '-r' コンパイラ オプションに置き換えてください。このディレクティブがユーザー入力として実行されている場合は、'#if INTERACTIVE'/'#endif' でディレクティブを区切ることができます。</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="needs-review-translation">#r ディレクティブは F# スクリプト ファイル (拡張子は .fsx または .fsscript) 内でのみ使用できます。このコードをスクリプト ファイルに移動するか、この参照を '-r' コンパイラ オプションに置き換えてください。このディレクティブがユーザー入力として実行されている場合は、'#if INTERACTIVE'/'#endif' でディレクティブを区切ることができます。</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">

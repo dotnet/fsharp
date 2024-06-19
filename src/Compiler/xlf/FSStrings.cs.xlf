@@ -1404,7 +1404,7 @@
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
         <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
-        <target state="translated">U tohoto rekurzivního použití se bude kontrolovat stabilita inicializace za běhu. Toto upozornění je obvykle neškodné a pomocí #nowarn "21" nebo --nowarn:21 se dá potlačit.</target>
+        <target state="needs-review-translation">U tohoto rekurzivního použití se bude kontrolovat stabilita inicializace za běhu. Toto upozornění je obvykle neškodné a pomocí #nowarn "21" nebo --nowarn:21 se dá potlačit.</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecUnsound1">
@@ -1429,7 +1429,7 @@
       </trans-unit>
       <trans-unit id="LetRecCheckedAtRuntime">
         <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
-        <target state="translated">U tohoto a dalších rekurzivních odkazů na definované objekty se bude kontrolovat stabilita inicializace za běhu pomocí zpožděného odkazování. Je to kvůli tomu, že definujete rekurzivní objekty místo rekurzivních funkcí. Toto upozornění se dá pomocí #nowarn "40" nebo --nowarn:40 potlačit.</target>
+        <target state="needs-review-translation">U tohoto a dalších rekurzivních odkazů na definované objekty se bude kontrolovat stabilita inicializace za běhu pomocí zpožděného odkazování. Je to kvůli tomu, že definujete rekurzivní objekty místo rekurzivních funkcí. Toto upozornění se dá pomocí #nowarn "40" nebo --nowarn:40 potlačit.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
@@ -1549,12 +1549,12 @@
       </trans-unit>
       <trans-unit id="Experimental">
         <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="translated">{0}. Toto upozornění se dá pomocí --nowarn:57 nebo #nowarn "57" vypnout.</target>
+        <target state="needs-review-translation">{0}. Toto upozornění se dá pomocí --nowarn:57 nebo #nowarn "57" vypnout.</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">
         <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
-        <target state="translated">Použití tohoto konstruktoru může způsobit vygenerování neověřitelného kódu .NET IL. Toto upozornění se dá pomocí --nowarn:9 nebo #nowarn "9" vypnout.</target>
+        <target state="needs-review-translation">Použití tohoto konstruktoru může způsobit vygenerování neověřitelného kódu .NET IL. Toto upozornění se dá pomocí --nowarn:9 nebo #nowarn "9" vypnout.</target>
         <note />
       </trans-unit>
       <trans-unit id="Deprecated">
@@ -1598,8 +1598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">Implementace rozhraní by obvykle měly být zadány pro počáteční deklaraci typu. Implementace rozhraní v rozšířeních mohou vést k přístupu ke statickým vazbám před jejich inicializací, ale pouze v případě, že je implementace rozhraní vyvolána během inicializace statických dat a následně umožní přístup ke statickým datům. Toto upozornění můžete odebrat pomocí #nowarn „69“, pokud jste ověřili, že tomu tak není.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
+        <target state="needs-review-translation">Implementace rozhraní by obvykle měly být zadány pro počáteční deklaraci typu. Implementace rozhraní v rozšířeních mohou vést k přístupu ke statickým vazbám před jejich inicializací, ale pouze v případě, že je implementace rozhraní vyvolána během inicializace statických dat a následně umožní přístup ke statickým datům. Toto upozornění můžete odebrat pomocí #nowarn „69“, pokud jste ověřili, že tomu tak není.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1618,13 +1618,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Direktivy #I se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Přesuňte tento kód do souboru skriptu nebo přidejte pro tento odkaz možnost kompilátoru -I anebo direktivu ohraničte pomocí notace #if INTERACTIVE/#endif.</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="needs-review-translation">Direktivy #I se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Přesuňte tento kód do souboru skriptu nebo přidejte pro tento odkaz možnost kompilátoru -I anebo direktivu ohraničte pomocí notace #if INTERACTIVE/#endif.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Direktivy #r se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Buď přesuňte tento kód do souboru skriptu, nebo nahraďte tento odkaz možností kompilátoru -r. Pokud se tato direktiva provádí jako uživatelský vstup, můžete ji ohraničit pomocí notace #if INTERACTIVE'/'#endif.</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="needs-review-translation">Direktivy #r se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Buď přesuňte tento kód do souboru skriptu, nebo nahraďte tento odkaz možností kompilátoru -r. Pokud se tato direktiva provádí jako uživatelský vstup, můžete ji ohraničit pomocí notace #if INTERACTIVE'/'#endif.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">
