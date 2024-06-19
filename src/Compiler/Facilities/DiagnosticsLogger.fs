@@ -351,6 +351,9 @@ type DiagnosticsLogger(nameForDebugging: string) =
 
     member x.CheckForErrors() = (x.ErrorCount > 0)
 
+    abstract CheckForRealErrorsIgnoringWarnings: bool
+    default x.CheckForRealErrorsIgnoringWarnings = x.CheckForErrors()
+
     member _.DebugDisplay() =
         sprintf "DiagnosticsLogger(%s)" nameForDebugging
 

@@ -1173,7 +1173,7 @@ let rec getErasedTypes g ty checkForNullness =
 
     | TType_var (tp, nullness) -> 
         match checkForNullness, nullness.Evaluate() with
-        | true, NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime (TODO NULLNESS: for value types Nullable<_> they can be)
+        | true, NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime, Nullabe<> is not part of Nullness feature as of now.
         | _ -> if tp.IsErased then [ty] else []
 
     | TType_app (_, b, nullness) ->

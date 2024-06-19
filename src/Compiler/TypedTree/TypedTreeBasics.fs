@@ -192,7 +192,7 @@ let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
-    | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO NULLNESS: check various callers
+    | TyparKind.Type -> tp.AsType KnownWithoutNull
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 // For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
@@ -269,9 +269,9 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
             Some ty
         else 
             Some (TType_app (tcr, tinst, nullnessAfter))
-    | TType_ucase _ -> None // TODO NULLNESS
-    | TType_tuple _ -> None // TODO NULLNESS
-    | TType_anon _ -> None // TODO NULLNESS
+    | TType_ucase _ -> None
+    | TType_tuple _ -> None
+    | TType_anon _ -> None
     | TType_fun (d, r, nullnessOrig) ->
         let nullnessAfter = combineNullness nullnessOrig nullnessNew
         if nullnessEquiv nullnessAfter nullnessOrig then
@@ -295,9 +295,6 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
         else 
             TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
     | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
-    //| TType_ucase _ -> None // TODO NULLNESS
-    //| TType_tuple _ -> None // TODO NULLNESS
-    //| TType_anon _ -> None // TODO NULLNESS
     | _ -> ty
 
 let rec stripTyparEqnsAux nullness0 canShortcut ty = 
@@ -336,9 +333,6 @@ let replaceNullnessOfTy nullness (ty:TType) =
     | TType_var (tp, _) -> TType_var (tp, nullness)
     | TType_app (tcr, tinst, _) -> TType_app (tcr, tinst, nullness)
     | TType_fun (d, r, _) -> TType_fun (d, r, nullness)
-    //| TType_ucase _ -> None // TODO NULLNESS
-    //| TType_tuple _ -> None // TODO NULLNESS
-    //| TType_anon _ -> None // TODO NULLNESS
     | sty -> sty
 
 /// Detect a use of a nominal type, including type abbreviations.

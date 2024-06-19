@@ -2236,8 +2236,11 @@ type DiagnosticsLoggerFilteringByScopedPragmas
     (checkFile, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
     inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
 
+    let mutable realErrorPresent = false
+
     override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
+            realErrorPresent <- true
             diagnosticsLogger.DiagnosticSink(diagnostic, severity)
         else
             let report =
@@ -2264,6 +2267,8 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                     diagnosticsLogger.DiagnosticSink(diagnostic, severity)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
+
+    override _.CheckForRealErrorsIgnoringWarnings = realErrorPresent
 
 let GetDiagnosticsLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) =
     DiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger
