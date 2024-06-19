@@ -4,13 +4,17 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-let typeCheckWithStrictNullness cu =
+let withStrictNullness cu =
     cu
     |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
     |> withOptions ["--warnaserror+"]
-    |> compile
+
+let typeCheckWithStrictNullness cu =
+    cu
+    |> withStrictNullness
+    |> typecheck
 
 
 [<FactForNETCOREAPP>]
@@ -211,7 +215,8 @@ let ``Consumption of nullable C# - no generics, just strings in methods and fiel
     """
     |> asLibrary
     |> withReferences [csharpLib]
-    |> typeCheckWithStrictNullness
+    |> withStrictNullness
+    |> compile
     |> shouldFail
     |> withDiagnostics [
             Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."

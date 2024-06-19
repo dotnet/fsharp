@@ -266,7 +266,9 @@ For value types, a value is passed even though it is always 0
                 | n when n > this.Idx -> this.Data[this.Idx] |> mapping
                 // This is an errornous case, we need more nullnessinfo then the metadata contains
                 | _ -> 
-                    failwithf "Length of Nullable metadata and needs of its processing do not match:  %A" this // TODO nullness - once being confident that our bugs are solved and what remains are incoming metadata bugs, remove failwith and replace with dprintfn
+                    // TODO nullness - once being confident that our bugs are solved and what remains are incoming metadata bugs, remove failwith and replace with dprintfn
+                    // Testing with .NET compilers other then Roslyn producing nullness metadata?
+                    failwithf "Length of Nullable metadata and needs of its processing do not match:  %A" this
                     knownAmbivalent
 
             member this.Advance() = {Data = this.Data; Idx = this.Idx + 1}
@@ -274,7 +276,8 @@ For value types, a value is passed even though it is always 0
     let inline evaluateFirstOrderNullnessAndAdvance (ilt:ILType) (flags:NullableFlags) = 
         match ilt with
         | ILType.Value tspec when tspec.GenericArgs.IsEmpty -> KnownWithoutNull, flags
-        // TODO nullness - System.Nullable might be tricky, since you CAN assign 'null' to it, and when boxed, it CAN be boxed to 'null'.
+        // System.Nullable is special-cased in C# spec for nullnes metadata.
+        // You CAN assign 'null' to it, and when boxed, it CAN be boxed to 'null'.
         | ILType.Value tspec when tspec.Name = "Nullable`1" && tspec.Enclosing = ["System"] -> KnownWithoutNull, flags
         | ILType.Value _  -> KnownWithoutNull, flags.Advance()
         | _ -> flags.GetNullness(), flags.Advance()
@@ -436,7 +439,8 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray), m) then 
         let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
-        let nullness = Nullness.knownAmbivalent // TODO nullness import :: type providers  Nullness.ImportNullness env.g
+        // TODO Nullness - integration into type providers as a separate feature for later.
+        let nullness = Nullness.knownAmbivalent
         mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()), m)) nullness elemTy m
     elif st.PUntaint((fun st -> st.IsByRef), m) then 
         let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
@@ -509,7 +513,8 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 else
                     genericArg)
 
-        let nullness = Nullness.knownAmbivalent // TODO nullness import ::  type providers Nullness.ImportNullnessForTyconRef env.g m tcref
+        // TODO Nullness - integration into type providers as a separate feature for later.
+        let nullness = Nullness.knownAmbivalent
 
         ImportTyconRefApp env tcref genericArgs nullness
 
@@ -562,7 +567,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                        let formalParamTysAfterInst = 
                            [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
                                 let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m))
-                                // TODO nullness import ::  of Nullness in type providers
+                                // TODO Nullness - integration into type providers as a separate feature for later.
                                 yield ImportILType env m actualGenericArgs ilFormalTy ]
 
                        (formalParamTysAfterInst, actualParamTys) ||>  List.lengthsEqAndForall2 (typeEquiv env.g))
