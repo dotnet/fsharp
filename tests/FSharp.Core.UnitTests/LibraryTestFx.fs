@@ -18,7 +18,7 @@ let CheckThrowsExn<'a when 'a :> exn> (f : unit -> unit) =
         let _ = f ()
         sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail 
     with
-    | :? 'a -> ()
+    | :? 'a as e when e.GetType() = typeof<'a> -> ()
     | e -> sprintf "Expected %O exception, got: %O" typeof<'a> e |> Assert.Fail
 
 let private CheckThrowsExn2<'a when 'a :> exn> s (f : unit -> unit) =
