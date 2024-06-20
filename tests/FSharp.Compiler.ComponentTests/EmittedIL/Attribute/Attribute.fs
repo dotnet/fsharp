@@ -16,7 +16,8 @@ module Attribute =
         |> ignoreWarnings
         |> verifyBaseline
         |> verifyILBaseline
-
+    
+    //AttributeWithTypeParam
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AttributeWithTypeParam.fs"|])>]
     let ``AttributeWithTypeParam_RealInternalSignatureOn_fs`` compilation =
         compilation
@@ -28,7 +29,8 @@ module Attribute =
         compilation
         |> withRealInternalSignatureOff
         |> verifyCompilation
-
+    
+    //RecordTypeAttributesWithTypeParam
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"RecordTypeAttributesWithTypeParam.fs"|])>]
     let ``RecordTypeAttributesWithTypeParam_RealInternalSignatureOn_fs`` compilation =
         compilation
@@ -37,6 +39,58 @@ module Attribute =
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"RecordTypeAttributesWithTypeParam.fs"|])>]
     let ``RecordTypeAttributesWithTypeParam_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+    
+    //AttributeWithAliasedGenerics
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AttributeWithAliasedGenerics.fs"|])>]
+    let ``AttributeWithAliasedGenerics_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AttributeWithAliasedGenerics.fs"|])>]
+    let ``AttributeWithAliasedGenerics_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+    
+    //AttributeInRecursiveModule
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AttributeInRecursiveModule.fs"|])>]
+    let ``AttributeInRecursiveModule_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AttributeInRecursiveModule.fs"|])>]
+    let ``AttributeInRecursiveModule_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+        
+    //AttributeRecursionViaAnd
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AttributeRecursionViaAnd.fs"|])>]
+    let ``AttributeRecursionViaAnd_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AttributeRecursionViaAnd.fs"|])>]
+    let ``AttributeRecursionViaAnd_RealInternalSignatureOff_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+        
+    //AliasedGenericAttribute
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AliasedGenericAttribute.fs"|])>]
+    let ``AliasedGenericAttribute_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AliasedGenericAttribute.fs"|])>]
+    let ``AliasedGenericAttribute_RealInternalSignatureOff_fs`` compilation =
         compilation
         |> withRealInternalSignatureOff
         |> verifyCompilation

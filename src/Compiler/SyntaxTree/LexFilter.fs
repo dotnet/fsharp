@@ -1127,7 +1127,10 @@ type LexFilterImpl (
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                                 true
-                            else if afterOp.IsNone && nextTokenIsAdjacentRBrack lookaheadTokenTup then
+                            // On succesful parse of a set of type parameters, and when nParen < 0 look for an adjavent ], e.g.
+                            //  Attr<int>>]
+                            // nParen = -1 here will indicate that the lexer has captured an extra '<' that isn't apart of the typar.
+                            else if afterOp.IsNone && nextTokenIsAdjacentRBrack lookaheadTokenTup && nParen = -1 then
                                 let dotTokenTop = popNextTokenTup()
                                 //this might be a good candidate for a lex rule, but FSLex doesn't appear to support negative look ahead
                                 stack <- (pool.UseShiftedLocation(lookaheadTokenTup, INFIX_COMPARE_OP (opString.Remove(opString.Length - 1)), 0, -1), true) :: stack.Tail
