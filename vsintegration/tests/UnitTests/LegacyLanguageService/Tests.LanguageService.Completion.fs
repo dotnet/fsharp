@@ -427,6 +427,7 @@ type UsingMSBuild() as this  =
     [<Test>] member public this.``AdjacentToDot_21_Negative``() = testAutoCompleteAdjacentToDotNegative ".+."
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LambdaOverloads.Completion``() = 
         let prologue = "open System.Linq"
         let cases = 
@@ -4462,6 +4463,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``AfterAssemblyReferenceAdded``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4484,6 +4486,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after adding a reference.") 
 
     /// FEATURE: Updating the active project configuration influences the language service
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``AfterUpdateProjectConfiguration``() = 
         use _guard = this.UsingNewVS()
@@ -4512,6 +4515,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     /// FEATURE: Updating the active project platform influences the language service
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``AfterUpdateProjectPlatform``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4589,6 +4593,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     /// In this bug there was an exception if the user pressed dot after a long identifier
     /// that was unknown.
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``OfSystemWindows``() = 
         let code = ["let y=new System.Windows."]
         let (_, _, file) = this.CreateSingleFileProject(code, references = ["System.Windows.Forms"])
