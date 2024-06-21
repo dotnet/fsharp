@@ -172,6 +172,7 @@ type UsingMSBuild()  =
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute")>]
     // This test case check the GotoDefinition (i.e. the TypeProviderDefinitionLocation Attribute)
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // We expect the correct FilePath, Line and Column on provided: Type, Event, Method, and Property
     // TODO: add a case for a provided Field
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute``() =
@@ -337,6 +338,7 @@ type UsingMSBuild()  =
             )
         
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``GotoDefinition.ProvidedMemberNoDefinitionLocationAttribute``() = 
         let useCases = 
             [
