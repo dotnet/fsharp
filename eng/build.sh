@@ -182,7 +182,6 @@ function Test() {
   BuildMessage="Error running tests"
   testproject=""
   targetframework=""
-  notestfilter=0
   while [[ $# > 0 ]]; do
     opt="$(echo "$1" | awk '{print tolower($0)}')"
     case "$opt" in
@@ -192,10 +191,6 @@ function Test() {
         ;;
       --targetframework)
         targetframework=$2
-        shift
-        ;;
-      --notestfilter)
-        notestfilter=1
         shift
         ;;
       *)
@@ -211,15 +206,10 @@ function Test() {
     exit 1
   fi
 
-  filterArgs=""
-  if [[ "${RunningAsPullRequest:-}" != "true" && $notestfilter == 0 ]]; then
-    filterArgs=" --filter TestCategory!=PullRequest"
-  fi
-
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\"$filterArgs --blame --results-directory $artifacts_dir/TestResults/$configuration"
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame --results-directory $artifacts_dir/TestResults/$configuration"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
@@ -324,8 +314,8 @@ BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=$tfm
-  Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
-  Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
+  Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
+  Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
@@ -333,7 +323,7 @@ fi
 
 if [[ "$test_compilercomponent_tests" == true ]]; then
   coreclrtestframework=$tfm
-  Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
+  Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
 fi
 
 if [[ "$test_benchmarks" == true ]]; then
