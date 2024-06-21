@@ -197,6 +197,7 @@ type UsingMSBuild() =
             )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``QuickInfo.HideBaseClassMembersTP``() =
         let fileContents = "type foo = HiddenMembersInBaseClass.HiddenBaseMembersTP(*Marker*)"
         
@@ -277,6 +278,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         this.CheckTooltip(source, "Asyn", false, checkTooltip expectedTooltip)
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     member public this.``TypeProviders.NestedTypesOrder``() = 
         let code = "type t = N1.TypeWithNestedTypes(*M*)"
@@ -328,6 +330,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider Type message is shown or not in the TypeProviderXmlDocAttribute
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``TypeProvider.XmlDocAttribute.Type.Comment``() = 
         
         let fileContents = """
@@ -339,6 +342,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Type
     member public this.``TypeProvider.XmlDocAttribute.Type.WithLongComment``() = 
         
@@ -381,6 +385,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Type
     member public this.``TypeProvider.XmlDocAttribute.Type.LocalizedComment``() = 
         
@@ -395,6 +400,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider Constructor message is shown or not in the TypeProviderXmlDocAttribute
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``TypeProvider.XmlDocAttribute.Constructor.Comment``() = 
         
         let fileContents = """
@@ -406,6 +412,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Constructor
     member public this.``TypeProvider.XmlDocAttribute.Constructor.WithLongComment``() = 
         
@@ -419,6 +426,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test when the message is null in the TypeProviderXmlDocAttribute for TypeProvider Constructor
     member public this.``TypeProvider.XmlDocAttribute.Constructor.WithNullComment``() = 
         
@@ -432,6 +440,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]    
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test when there is empty message from the TypeProviderXmlDocAttribute for TypeProvider Constructor
     member public this.``TypeProvider.XmlDocAttribute.Constructor.WithEmptyComment``() =
 
@@ -445,6 +454,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Constructor
     member public this.``TypeProvider.XmlDocAttribute.Constructor.LocalizedComment``() = 
         
@@ -457,6 +467,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider event message is shown or not in the TypeProviderXmlDocAttribute
@@ -471,6 +482,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Event
@@ -495,6 +507,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         this.AssertQuickInfoContainsAtEndOfMarker (fileContents, "Spl", "[<System.ParamArray>] separator")
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Event
@@ -540,6 +553,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider Method message is shown or not in the TypeProviderXmlDocAttribute
@@ -553,6 +567,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Method
@@ -567,6 +582,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
    
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Method
     member public this.``TypeProvider.XmlDocAttribute.Method.WithLongComment``() = 
@@ -580,6 +596,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when the message is null in the TypeProviderXmlDocAttribute for TypeProvider Method
     member public this.``TypeProvider.XmlDocAttribute.Method.WithNullComment``() = 
@@ -592,6 +609,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]    
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when there is empty message from the TypeProviderXmlDocAttribute for TypeProvider Method
@@ -607,6 +625,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider Property message is shown or not in the TypeProviderXmlDocAttribute
     member public this.``TypeProvider.XmlDocAttribute.Property.Comment``() = 
@@ -621,6 +640,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Property
     member public this.``TypeProvider.XmlDocAttribute.Property.LocalizedComment``() = 
         
@@ -634,6 +654,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Property
     member public this.``TypeProvider.XmlDocAttribute.Property.WithLongComment``() = 
         
@@ -646,6 +667,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when the message is null in the TypeProviderXmlDocAttribute for TypeProvider Property
     member public this.``TypeProvider.XmlDocAttribute.Property.WithNullComment``() = 
@@ -660,6 +682,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]    
     [<Category("TypeProvider.XmlDocAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This is to test when there is empty message from the TypeProviderXmlDocAttribute for TypeProvider Property
     member public this.``TypeProvider.XmlDocAttribute.Property.WithEmptyComment``() =
 
@@ -674,6 +697,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test case Verify that when Hover over foo the correct quickinfo is displayed for TypeProvider static parameter
     //Dummy Type Provider exposes a parametric type (N1.T) that takes 2 static params (string * int)
     member public this.``TypeProvider.StaticParameters.Correct``() =
@@ -722,6 +746,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     member public this.``TypeProvider.StaticParameters.QuickInfo.OnTheErasedType``() =
@@ -733,6 +758,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     member public this.``TypeProvider.StaticParameters.QuickInfo.OnNestedErasedTypeProperty``() =
@@ -1135,6 +1161,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"'x","")   // no tooltips for char literals
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``QueryExpression.QuickInfoSmokeTest1``() = 
         let fileContent = """let q = query { for x in ["1"] do select x }"""
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"selec","custom operation: select", addtlRefAssy=standard40AssemblyRefs)
@@ -1142,6 +1169,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"selec","Calls"   , addtlRefAssy=standard40AssemblyRefs)
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"selec","Linq.QueryBuilder.Select"  , addtlRefAssy=standard40AssemblyRefs )
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``QueryExpression.QuickInfoSmokeTest2``() = 
         let fileContent = """let q = query { for x in ["1"] do join y in ["2"] on (x = y); select (x,y) }"""
@@ -1150,6 +1178,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"joi","Calls"  , addtlRefAssy=standard40AssemblyRefs )
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"joi","Linq.QueryBuilder.Join"  , addtlRefAssy=standard40AssemblyRefs )
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``QueryExpression.QuickInfoSmokeTest3``() = 
         let fileContent = """let q = query { for x in ["1"] do groupJoin y in ["2"] on (x = y) into g; select (x,g) }"""
@@ -2834,6 +2863,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3*)", "XmlComment M3")
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.XmlDocCommentsForArguments() =
         let fileContent = """
                              type bar() =
@@ -3228,6 +3258,7 @@ query."
     [<Test>]
     [<Category("Query")>]
     // QuickInfo still works on valid operators in a query with errors elsewhere in it
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.WithError2``() =
         let fileContent ="""
             open DataSource
@@ -3273,6 +3304,7 @@ query."
         this.AssertQuickInfoInQuery (fileContent, "(*Mark4*)", "custom operation: distinct")
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("Query")>]
     // Arguments to query operators have correct QuickInfo
     // quickinfo should be corroct including when the operator is causing an error
@@ -3288,6 +3320,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "Type()", "System.Object.GetType() : System.Type",queryAssemblyRefs)
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("Query")>]
     // Arguments to query operators have correct QuickInfo
     // quickinfo should be corroct In a nested query
@@ -3312,6 +3345,7 @@ query."
     [<Test>]
     [<Category("Query")>]
     // A computation expression with its own custom operators has correct QuickInfo displayed
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.ComputationExpression.Method``() =
         let fileContent ="""
             open System.Collections.Generic
