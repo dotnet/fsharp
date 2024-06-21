@@ -91,7 +91,7 @@ module internal Salsa =
                                   | _ -> failwith "multiple projects found"
                     match project with
                     | null ->
-                        let project = GlobalEngine().LoadProject(projectFileName)
+                        let project = GlobalEngine().LoadProject(projectFileName, "4.0")
                         // Set global properties.
                         SetGlobalProperty(project, "AssemblySearchPaths", "{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}")
                         SetGlobalProperty(project, "BuildingInsideVisualStudio", "true")
