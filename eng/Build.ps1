@@ -360,7 +360,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {
