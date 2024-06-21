@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="chkStaticAbstractInterfaceMembers">
         <source>A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</source>
-        <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
+        <target state="translated">Statyczna abstrakcyjna składowa interfejsu niewirtualnego powinna być wywoływana tylko za pomocą parametru typu (na przykład: „T”).{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticAbstractMembersOnClasses">
         <source>Classes cannot contain static abstract members.</source>
-        <target state="new">Classes cannot contain static abstract members.</target>
+        <target state="translated">Klasy nie mogą zawierać statycznych abstrakcyjnych składowych.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
@@ -1139,22 +1139,22 @@
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
         <source>This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</source>
-        <target state="new">This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</target>
+        <target state="translated">Ten aktywny wzorzec oczekuje argumentów wyrażenia ({0}), np. „{1}{2}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgsAndPat">
         <source>This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</source>
-        <target state="new">This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</target>
+        <target state="translated">Ten aktywny wzorzec oczekuje argumentów wyrażenia ({0}) i argumentu wzorca, np. „{1}{2} pat”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchNoArgsNoPat">
         <source>This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</source>
-        <target state="new">This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</target>
+        <target state="translated">Ten aktywny wzorzec nie oczekuje żadnych argumentów, tj. powinien być używany jak „{0}” zamiast „{1} x”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchOnlyPat">
         <source>This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</source>
-        <target state="new">This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</target>
+        <target state="translated">Ten aktywny wzorzec oczekuje dokładnie jednego argumentu wzorca, np. „{0} pat”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
