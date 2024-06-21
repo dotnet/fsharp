@@ -2121,13 +2121,16 @@ and typeDefReader ctxtH : ILTypeDefStored =
             let searchedKey = TaggedIndex(hca_TypeDef, idx)
 
             let attributesSearcher =
-                { new ISeekReadIndexedRowReader<CustomAttributeRow, CustomAttributeRow, CustomAttributeRow> with
-                    member _.GetRow(i, row) =
-                        seekReadCustomAttributeRow ctxt mdv i &row
+                { new ISeekReadIndexedRowReader<int, int, int> with
+                    member _.GetRow(i, rowIndex) = rowIndex <- i
+                    member _.GetKey(rowIndex) = rowIndex
 
-                    member _.GetKey(row) = row
-                    member _.CompareKey(key) = hcaCompare searchedKey key.parentIndex
-                    member _.ConvertRow(row) = row
+                    member _.CompareKey(rowIndex) =
+                        let mutable addr = ctxt.rowAddr TableNames.CustomAttribute rowIndex
+                        let key = seekReadHasCustomAttributeIdx ctxt mdv &addr
+                        hcaCompare searchedKey key
+
+                    member _.ConvertRow(i) = i
                 }
 
             let attrsStartIdx, attrsEndIdx =
@@ -2139,21 +2142,21 @@ and typeDefReader ctxtH : ILTypeDefStored =
             if attrsStartIdx <= 0 || attrsEndIdx < attrsStartIdx then
                 false
             else
-
                 let mutable attrIdx = attrsStartIdx
 
                 while attrIdx <= attrsEndIdx && not containsExtensionMethods do
-                    let mutable attr = Unchecked.defaultof<_>
-                    attributesSearcher.GetRow(attrIdx, &attr)
-                    let attrCtorIdx = attr.typeIndex.index
+                    let mutable addr = ctxt.rowAddr TableNames.CustomAttribute attrIdx
+                    seekReadHasCustomAttributeIdx ctxt mdv &addr |> ignore
+                    let attrTypeIndex = seekReadCustomAttributeTypeIdx ctxt mdv &addr
+                    let attrCtorIdx = attrTypeIndex.index
 
                     let name =
-                        if attr.typeIndex.tag = cat_MethodDef then
-                            let idx = seekMethodDefParent ctxt attrCtorIdx
-                            let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
+                        if attrTypeIndex.tag = cat_MethodDef then
+                            let _, (_, nameIdx, namespaceIdx, _, _, _) = seekMethodDefParent ctxt attrCtorIdx
                             readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
                         else
-                            let mrpTag, _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
+                            let mutable addr = ctxt.rowAddr TableNames.MemberRef attrCtorIdx
+                            let mrpTag = seekReadMemberRefParentIdx ctxt mdv &addr
 
                             if mrpTag.tag <> mrp_TypeRef then
                                 ""
@@ -2858,24 +2861,23 @@ and seekReadMethodDefAsMethodData ctxt idx = ctxt.seekReadMethodDefAsMethodData 
 and seekMethodDefParent (ctxt: ILMetadataReader) methodIdx =
     seekReadIndexedRow (
         ctxt.getNumRows TableNames.TypeDef,
-        (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
+        (fun i -> i, seekReadTypeDefRow ctxt i),
         id,
-        (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
-            if endMethodsIdx <= methodIdx then
-                1
-            elif methodsIdx <= methodIdx && methodIdx < endMethodsIdx then
-                0
+        (fun (i, (_, _, _, _, _, methodsIdx as info)) ->
+            if methodsIdx > methodIdx then
+                -1
             else
-                -1),
+                let struct (_, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info i
+                if endMethodsIdx <= methodIdx then 1 else 0),
         true,
-        fst
+        id
     )
 
 and seekReadMethodDefAsMethodDataUncached ctxtH idx =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     // Look for the method def parent.
-    let tidx = seekMethodDefParent ctxt idx
+    let tidx, _ = seekMethodDefParent ctxt idx
     // Create a formal instantiation if needed
     let typeGenericArgs = seekReadGenericParams ctxt 0 (tomd_TypeDef, tidx)
     let typeGenericArgsCount = typeGenericArgs.Length
