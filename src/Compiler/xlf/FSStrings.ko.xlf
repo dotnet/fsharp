@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="new">Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</target>
+        <target state="translated">비 추상 클래스는 추상 구성원을 포함할 수 없습니다. 기본 구성원 구현을 제공하거나 형식에 '[&lt;AbstractClass&gt;]' 특성을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">

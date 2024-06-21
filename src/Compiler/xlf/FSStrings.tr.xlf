@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="new">Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</target>
+        <target state="translated">Soyut olmayan sınıflar soyut üyeler içeremez. Varsayılan bir üye uygulaması belirtin veya türünüze '[&lt;AbstractClass&gt;]' özniteliğini ekleyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
