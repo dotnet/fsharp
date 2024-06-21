@@ -1329,6 +1329,7 @@ type UsingMSBuild() as this =
         
     // Must be explicitly referenced by compile.
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_Bug5416_2``() =
@@ -1544,6 +1545,7 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``TypeProvider.UnitsOfMeasure.SmokeTest1``() =
         let code =
                                     ["open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames"
