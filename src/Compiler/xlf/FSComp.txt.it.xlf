@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="chkStaticAbstractInterfaceMembers">
         <source>A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</source>
-        <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
+        <target state="translated">Un membro di interfaccia non virtuale astratto statico deve essere chiamato solo tramite un parametro di tipo, ad esempio 'T.{0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticAbstractMembersOnClasses">
         <source>Classes cannot contain static abstract members.</source>
-        <target state="new">Classes cannot contain static abstract members.</target>
+        <target state="translated">Le classi non possono contenere membri astratti statici.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
@@ -1139,22 +1139,22 @@
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
         <source>This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</source>
-        <target state="new">This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</target>
+        <target state="translated">Questo criterio attivo prevede {0} argomenti di espressione, ad esempio '{1}{2}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgsAndPat">
         <source>This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</source>
-        <target state="new">This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</target>
+        <target state="translated">Questo criterio attivo prevede {0} argomento/i dell'espressione e un argomento del criterio, ad esempio '{1}{2} pat'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchNoArgsNoPat">
         <source>This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</source>
-        <target state="new">This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</target>
+        <target state="translated">Questo criterio attivo non prevede argomenti, ad esempio deve essere usato come '{0}' anziché '{1} x'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchOnlyPat">
         <source>This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</source>
-        <target state="new">This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</target>
+        <target state="translated">Questo criterio attivo prevede esattamente un argomento del criterio, ad esempio '{0} pat'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
