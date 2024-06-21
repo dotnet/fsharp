@@ -391,7 +391,6 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     }
 }
 
-# TODO: These two has 0 differences, shold be merged, as it just causes confusion, we don't care much about the underlying runner
 function TestUsingXUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $asBackgroundJob = $false) {
     TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $true -asBackgroundJob $asBackgroundJob
 }
