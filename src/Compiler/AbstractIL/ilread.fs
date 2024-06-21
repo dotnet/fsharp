@@ -2136,34 +2136,37 @@ and typeDefReader ctxtH : ILTypeDefStored =
                     (isSorted ctxt TableNames.CustomAttribute)
                     attributesSearcher
 
-            let hasAttributes = attrsStartIdx > 0 && attrsEndIdx >= attrsStartIdx
-            let mutable attrIdx = attrsStartIdx
+            if attrsStartIdx <= 0 || attrsEndIdx < attrsStartIdx then
+                false
+            else
 
-            while hasAttributes && attrIdx <= attrsEndIdx && not containsExtensionMethods do
-                let mutable attr = Unchecked.defaultof<_>
-                attributesSearcher.GetRow(attrIdx, &attr)
-                let attrCtorIdx = attr.typeIndex.index
+                let mutable attrIdx = attrsStartIdx
 
-                let name =
-                    if attr.typeIndex.tag = cat_MethodDef then
-                        let idx = seekMethodDefParent ctxt attrCtorIdx
-                        let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
-                        readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
-                    else
-                        let mrpTag, _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
+                while attrIdx <= attrsEndIdx && not containsExtensionMethods do
+                    let mutable attr = Unchecked.defaultof<_>
+                    attributesSearcher.GetRow(attrIdx, &attr)
+                    let attrCtorIdx = attr.typeIndex.index
 
-                        if mrpTag.tag <> mrp_TypeRef then
-                            ""
-                        else
-                            let _, nameIdx, namespaceIdx = seekReadTypeRefRow ctxt mdv mrpTag.index
+                    let name =
+                        if attr.typeIndex.tag = cat_MethodDef then
+                            let idx = seekMethodDefParent ctxt attrCtorIdx
+                            let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
                             readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+                        else
+                            let mrpTag, _, _ = seekReadMemberRefRow ctxt mdv attrCtorIdx
 
-                if name = "System.Runtime.CompilerServices.ExtensionAttribute" then
-                    containsExtensionMethods <- true
+                            if mrpTag.tag <> mrp_TypeRef then
+                                ""
+                            else
+                                let _, nameIdx, namespaceIdx = seekReadTypeRefRow ctxt mdv mrpTag.index
+                                readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
 
-                attrIdx <- attrIdx + 1
+                    if name = "System.Runtime.CompilerServices.ExtensionAttribute" then
+                        containsExtensionMethods <- true
 
-            containsExtensionMethods
+                    attrIdx <- attrIdx + 1
+
+                containsExtensionMethods
 
         let additionalFlags =
             if containsExtensionMethods then
