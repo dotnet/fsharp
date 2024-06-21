@@ -91,16 +91,19 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let GetWarningNumber (m, warningNumber: string) =
+let GetWarningNumber (m, warningNumber: string, prefixSupported) =
     try
-        // Okay so ...
-        //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
-        //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
-        //      anything else is ignored None
+        let warningNumber =
+            if warningNumber.StartsWithOrdinal "FS" then
+                if prefixSupported then
+                    warningNumber.Substring 2
+                else
+                    raise (new ArgumentException())
+            else
+                warningNumber
+
         if Char.IsDigit(warningNumber[0]) then
             Some(int32 warningNumber)
-        elif warningNumber.StartsWithOrdinal "FS" then
-            raise (ArgumentException())
         else
             None
     with _ ->
@@ -918,7 +921,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -933,7 +936,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
