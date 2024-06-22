@@ -8,19 +8,12 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Microsoft.FSharp.Core
+open Internal.Utilities.Library
 
 
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
 module internal FSharpEnvironment =
-
-#if NO_CHECKNULLS
-    let inline (!!) x = x
-    type MaybeNull<'T when 'T : null> = 'T
-#else
-    let inline (!!) (x:'T | null) = Unchecked.nonNull x
-    type MaybeNull<'T when 'T:not null and 'T:not struct> = 'T | null
-#endif
 
     type private TypeInThisAssembly =
         class
@@ -333,7 +326,7 @@ module internal FSharpEnvironment =
 
         match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
         // Value set externally
-        | value when not (String.IsNullOrEmpty(value)) && fileExists value -> Some value
+        | NonEmptyString value when fileExists value -> Some value
         | _ ->
             // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
             let candidate =

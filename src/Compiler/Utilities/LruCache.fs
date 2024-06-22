@@ -72,9 +72,10 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
             let mutable node = weakList.Last
 
             while weakList.Count > keepWeakly && node <> null do
-                let previous = node.Previous
-                let key, version, label, _ = node.Value
-                weakList.Remove node
+                let notNullNode = !! node
+                let previous = notNullNode.Previous
+                let key, version, label, _ = notNullNode.Value
+                weakList.Remove notNullNode
                 dictionary[key].Remove version |> ignore
 
                 if dictionary[key].Count = 0 then
@@ -89,14 +90,15 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
         let mutable anythingWeakened = false
 
         while strongList.Count > keepStrongly && node <> null do
-            let previous = node.Previous
+            let notNullNode = !! node
+            let previous = notNullNode.Previous
 
-            match node.Value with
+            match notNullNode.Value with
             | _, _, _, Strong v when requiredToKeep v -> ()
             | key, version, label, Strong v ->
-                strongList.Remove node
-                node.Value <- key, version, label, Weak(WeakReference<_> v)
-                weakList.AddFirst node
+                strongList.Remove notNullNode
+                notNullNode.Value <- key, version, label, Weak(WeakReference<_> v)
+                weakList.AddFirst notNullNode
                 event CacheEvent.Weakened (label, key, version)
                 anythingWeakened <- true
             | _key, _version, _label, _ -> failwith "Invalid state, weak reference in strong list"

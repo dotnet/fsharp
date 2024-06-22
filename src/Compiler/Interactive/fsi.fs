@@ -510,7 +510,7 @@ type FsiEvaluationSessionHostConfig() =
     abstract FloatingPointFormat: string
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)> list
+    abstract AddedPrinters: Choice<Type * (objnull -> string), Type * (objnull -> objnull)> list
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract ShowDeclarationValues: bool
@@ -587,7 +587,7 @@ type FsiEvaluationSessionHostConfig() =
 type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: TextWriter) =
 
     /// This printer is used by F# Interactive if no other printers apply.
-    let DefaultPrintingIntercept (ienv: IEnvironment) (obj: obj) =
+    let DefaultPrintingIntercept (ienv: IEnvironment) (obj: objnull) =
         match obj with
         | null -> None
         | :? System.Collections.IDictionary as ie ->
@@ -629,10 +629,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
                         match x with
                         | Choice1Of2(aty: Type, printer) ->
                             yield
-                                (fun _ienv (obj: obj) ->
+                                (fun _ienv (obj: objnull) ->
                                     match obj with
                                     | null -> None
-                                    | _ when aty.IsAssignableFrom(obj.GetType()) ->
+                                    | obj when aty.IsAssignableFrom(obj.GetType()) ->
                                         let text = printer obj
 
                                         match box text with
@@ -642,10 +642,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
 
                         | Choice2Of2(aty: Type, converter) ->
                             yield
-                                (fun ienv (obj: obj) ->
+                                (fun ienv (obj: objnull) ->
                                     match obj with
                                     | null -> None
-                                    | _ when aty.IsAssignableFrom(obj.GetType()) ->
+                                    | obj when aty.IsAssignableFrom(obj.GetType()) ->
                                         match converter obj with
                                         | null -> None
                                         | res -> Some(ienv.GetLayout res)
@@ -2938,11 +2938,9 @@ type internal FsiDynamicCompiler
             | _ -> None
         | _ -> None
 
-    member _.AddBoundValue(ctok, diagnosticsLogger: DiagnosticsLogger, istate, name: string, value: obj) =
+    member _.AddBoundValue(ctok, diagnosticsLogger: DiagnosticsLogger, istate, name: string, value: objnull) =
         try
-            match value with
-            | null -> nullArg "value"
-            | _ -> ()
+            let value = value |> nullArgCheck (nameof value)
 
             if String.IsNullOrWhiteSpace name then
                 invalidArg "name" "Name cannot be null or white-space."
@@ -5059,8 +5057,8 @@ module Settings =
         let runSignal = new AutoResetEvent(false)
         let exitSignal = new AutoResetEvent(false)
         let doneSignal = new AutoResetEvent(false)
-        let mutable queue = ([]: (unit -> obj) list)
-        let mutable result = (None: obj option)
+        let mutable queue = ([]: (unit -> objnull) list)
+        let mutable result = (None: objnull option)
 
         let setSignal (signal: AutoResetEvent) =
             while not (signal.Set()) do

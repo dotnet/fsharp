@@ -499,7 +499,7 @@ type DependencyProvider
                 let assemblyLocation =
                     typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
 
-                yield Path.GetDirectoryName assemblyLocation
+                yield !! (Path.GetDirectoryName assemblyLocation)
                 yield AppDomain.CurrentDomain.BaseDirectory
             ])
 

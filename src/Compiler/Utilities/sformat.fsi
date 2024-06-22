@@ -365,7 +365,7 @@ type internal FormatOptions =
     { FloatingPointFormat: string
       AttributeProcessor: string -> (string * string) list -> bool -> unit
 #if COMPILER  // FSharp.Core.dll: PrintIntercepts aren't used there
-      PrintIntercepts: (IEnvironment -> obj -> Layout option) list
+      PrintIntercepts: (IEnvironment -> objnull -> Layout option) list
       StringLimit: int
 #endif
       FormatProvider: IFormatProvider

@@ -1574,7 +1574,7 @@ type ILFieldInit =
         | ILFieldInit.UInt64 u64 -> box u64
         | ILFieldInit.Single ieee32 -> box ieee32
         | ILFieldInit.Double ieee64 -> box ieee64
-        | ILFieldInit.Null -> (null :> Object)
+        | ILFieldInit.Null -> (null :> objnull)
 
 // --------------------------------------------------------------------
 // Native Types, for marshalling to the native C interface.

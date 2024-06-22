@@ -6239,7 +6239,7 @@ and remapTyconRepr ctxt tmenv repr =
                  // This is actually done on-demand (see the implementation of ProvidedTypeContext)
                  ProvidedType = 
                      info.ProvidedType.PApplyNoFailure (fun st -> 
-                         let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box) 
+                         let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box >> (!!)) 
                          ProvidedType.ApplyContext (st, ctxt)) }
 #endif
     | TNoRepr -> repr
@@ -9017,7 +9017,7 @@ let XmlDocSigOfVal g full path (v: Val) =
                 | SynMemberKind.PropertySet
                 | SynMemberKind.PropertyGet -> "P:", v.PropertyName
 
-            let path : string MaybeNull = if v.HasDeclaringEntity then prependPath path v.DeclaringEntity.CompiledName else path
+            let path = if v.HasDeclaringEntity then prependPath path v.DeclaringEntity.CompiledName else path
 
             let parentTypars, methTypars = 
                 match PartitionValTypars g v with

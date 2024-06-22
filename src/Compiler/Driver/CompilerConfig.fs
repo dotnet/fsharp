@@ -635,7 +635,7 @@ type TcConfigBuilder =
         seq {
             yield! tcConfigB.includes
             yield! tcConfigB.compilerToolPaths
-            yield! (tcConfigB.referencedDLLs |> Seq.map (fun ref -> Path.GetDirectoryName(ref.Text)))
+            yield! (tcConfigB.referencedDLLs |> Seq.map (fun ref -> !! Path.GetDirectoryName(ref.Text)))
             tcConfigB.implicitIncludeDir
         }
         |> Seq.distinct

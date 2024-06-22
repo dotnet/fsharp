@@ -5685,13 +5685,13 @@ module CcuTypeForwarderTable =
             if remainingPath.Count = 0 then
                 finalKey
             else
-                remainingPath.Array.[remainingPath.Offset]
+                (!!remainingPath.Array).[remainingPath.Offset]
         match nodes.TryGetValue searchTerm with
         | true, innerTree ->
             if remainingPath.Count = 0 then
                 innerTree.Value
             else
-                 findInTree (ArraySegment<string>(remainingPath.Array, remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
+                 findInTree (ArraySegment<string>((!!remainingPath.Array), remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
         | false, _ -> None
 
 /// Represents a table of .NET CLI type forwarders for an assembly
@@ -6001,7 +6001,7 @@ type Construct() =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (nonNull ty)), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),

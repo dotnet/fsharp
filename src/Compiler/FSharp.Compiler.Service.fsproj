@@ -90,6 +90,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Utilities\NullnessShims.fs" />
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
@@ -99,7 +100,7 @@
     <EmbeddedResource Include="FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
-    </EmbeddedResource>
+    </EmbeddedResource>    
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
     <Compile Include="Utilities\illib.fsi" />

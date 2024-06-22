@@ -30,12 +30,6 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Collections
 
-#if COMPILER && !NO_CHECKNULLS
-type ObjOrNull = obj | null
-#else
-type ObjOrNull = obj
-#endif
-
 [<StructuralEquality; NoComparison>]
 type TextTag =
     | ActivePatternCase
@@ -422,7 +416,7 @@ type FormatOptions =
         FloatingPointFormat: string
         AttributeProcessor: string -> (string * string) list -> bool -> unit
 #if COMPILER // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
-        PrintIntercepts: (IEnvironment -> obj -> Layout option) list
+        PrintIntercepts: (IEnvironment -> objnull -> Layout option) list
         StringLimit: int
 #endif
         FormatProvider: IFormatProvider

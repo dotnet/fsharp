@@ -1346,7 +1346,7 @@ let ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams: Tai
     PrettyNaming.ComputeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
 /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
-let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: obj[], m: range) =
+let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: objnull[], m: range) =
     if staticArgs.Length = 0 then 
         Some methBeforeArgs
     else
@@ -1365,7 +1365,7 @@ let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticAr
 
 
 /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
-let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: obj[], m: range) =
+let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: objnull[], m: range) =
     if staticArgs.Length = 0 then 
         Some (typeBeforeArguments, (fun () -> ()))
     else 

@@ -41,39 +41,6 @@ module internal PervasiveAutoOpens =
     /// Returns true if the list contains exactly 1 element. Otherwise false.
     val inline isSingleton: l: 'a list -> bool
 
-    /// Returns true if the argument is non-null.
-    val inline isNotNull: x: 'T -> bool when 'T: null
-
-#if NO_CHECKNULLS
-    /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as
-    /// replacement for 'string?' to align with FS-1060.
-    type 'T MaybeNull when 'T: not struct = 'T
-    val inline (^): a: 'a  ->[<InlineIfLambda>] b: ('a -> 'b) -> 'b when 'a : null
-    val inline (!!): 'a -> 'a
-    val inline nullSafeEquality: x: MaybeNull<'T> -> y: MaybeNull<'T> -> [<InlineIfLambda>]nonNullEqualityFunc:('T->'T->bool) -> bool when 'T:null
-
-    /// Asserts the argument is non-null and raises an exception if it is
-    val inline (|NonNullQuick|): 'T MaybeNull -> 'T
-
-    /// Match on the nullness of an argument.
-    val inline (|Null|NonNull|): 'T MaybeNull -> Choice<unit, 'T>
-
-    /// Asserts the argument is non-null and raises an exception if it is
-    val inline nonNull: x: 'T MaybeNull -> 'T
-
-    /// Checks the argument is non-null
-    val inline nullArgCheck: paramName: string -> x: 'T MaybeNull -> 'T
-
-    val inline defaultIfNull : defaultValue:'T -> arg:'T  -> 'T when 'T : null and 'T : not struct 
-#else
-    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
-    /// replacement for 'string?'
-    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null    
-    val inline (^): a: 'a | null -> [<InlineIfLambda>]b:('a -> 'b) -> ('b | null) when 'a : not struct
-    val inline (!!): x:'a | null -> 'a when 'a: not null and 'a: not struct
-    val inline nullSafeEquality: x: MaybeNull<'T> -> y: MaybeNull<'T> -> [<InlineIfLambda>]nonNullEqualityFunc:('T->'T->bool) -> bool when 'T:not null and 'T:not struct
-#endif
-
     val inline (===): x: 'a -> y: 'a -> bool when 'a: not struct
 
     /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them

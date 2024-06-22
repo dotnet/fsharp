@@ -1727,7 +1727,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
 // This file is not a great place for this functionality to sit, it's here because of BuildMethodCall
 module ProvidedMethodCalls =
 
-    let private convertConstExpr g amap m (constant : Tainted<obj * ProvidedType>) =
+    let private convertConstExpr g amap m (constant : Tainted<objnull * ProvidedType>) =
         let obj, objTy = constant.PApply2(id, m)
         let ty = Import.ImportProvidedType amap m objTy
         let normTy = normalizeEnumTy g ty

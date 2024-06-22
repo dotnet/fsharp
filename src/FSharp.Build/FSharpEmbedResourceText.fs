@@ -267,6 +267,7 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Text
 open Microsoft.FSharp.Collections
+open Internal.Utilities.Library
 open Printf
 "
 
@@ -288,7 +289,8 @@ open Printf
         if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
     #endif
-        s
+        !! s
+
 
     static let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) =
         FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
@@ -335,7 +337,7 @@ open Printf
             if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then
                 let b = new System.Text.StringBuilder()
                 b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
-                box(b.ToString())
+                !! box(b.ToString())
             // REVIEW: For these purposes, this should be a nop, but I'm leaving it
             // in incase we ever decide to support labels for the error format string
             // E.g., ""<name>%s<foo>%d""

@@ -543,7 +543,7 @@ type TcConfig with
                         yield! tcConfig.GetSearchPathsForLibraryFiles()
 
                         if isHashRReference m then
-                            Path.GetDirectoryName(m.FileName)
+                            !! Path.GetDirectoryName(m.FileName)
                     }
 
                 let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
