@@ -1,0 +1,18 @@
+name: .NET Publish
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        global-json-file: global.json
+
+    - name: Build & Publish
+      run: dotnet fsi ./publish.fsx
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
