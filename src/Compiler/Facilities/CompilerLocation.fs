@@ -64,32 +64,8 @@ module internal FSharpEnvironment =
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
     let BinFolderOfDefaultFSharpCompiler (probePoint: string option) =
-        // Check for an app.config setting to redirect the default compiler location
-        // Like fsharp-compiler-location
-        try
-            // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-            match Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN") with
-            | result when not (String.IsNullOrWhiteSpace result) -> Some result
-            | _ ->
-                let safeExists f =
-                    (try
-                        File.Exists(f)
-                     with _ ->
-                         false)
-
-                // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
-                match probePoint with
-                | Some p when safeExists (Path.Combine(p, "FSharp.Core.dll")) -> Some p
-                | _ ->
-                    let fallback () =
-                        let d = Assembly.GetExecutingAssembly()
-                        Some(Path.GetDirectoryName d.Location)
-
-                    match tryCurrentDomain () with
-                    | None -> fallback ()
-                    | Some path -> Some path
-        with e ->
-            None
+        ignore probePoint
+        Some "/tmp"
 
     // Specify the tooling-compatible fragments of a path such as:
     //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
@@ -233,35 +209,13 @@ module internal FSharpEnvironment =
     let getFSharpCoreLibraryName = "FSharp.Core"
     let fsiLibraryName = "FSharp.Compiler.Interactive.Settings"
 
-    let getFSharpCompilerLocationWithDefaultFromType (defaultLocation: Type) =
-        let location =
-            try
-                Some(Path.GetDirectoryName(defaultLocation.Assembly.Location))
-            with _ ->
-                None
-
-        match BinFolderOfDefaultFSharpCompiler(location) with
-        | Some path -> path
-        | None ->
-            let path = location |> Option.defaultValue "<null>"
-#if DEBUG
-            Debug.Print(
-                sprintf
-                    """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
-                customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
-                    path
-            )
-#endif
-            // Use the location of this dll
-            path
-
     // Fallback to ambient FSharp.CompilerService.dll
     let getFSharpCompilerLocation () =
-        Path.Combine(getFSharpCompilerLocationWithDefaultFromType (typeof<TypeInThisAssembly>))
+        "/tmp"
 
     // Fallback to ambient FSharp.Core.dll
     let getDefaultFSharpCoreLocation () =
-        Path.Combine(getFSharpCompilerLocationWithDefaultFromType (typeof<Unit>), getFSharpCoreLibraryName + ".dll")
+        "/tmp/FSharp.Core.dll"
 
     // Must be alongside the location of FSharp.CompilerService.dll
     let getDefaultFsiLibraryLocation () =
