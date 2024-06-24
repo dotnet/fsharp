@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Proto'">
-    <PublishReadyToRunExclude Include="FSharp.Build.dll" />
+  <ItemGroup Condition="'$(Configuration)' == 'Proto'">  
     <PublishReadyToRunExclude Include="FSharp.Core.dll" />
   </ItemGroup>
 

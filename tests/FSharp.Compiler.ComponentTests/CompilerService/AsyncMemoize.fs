@@ -37,7 +37,7 @@ let rec internal spinFor (duration: TimeSpan) =
     }
 
 
-type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality>(memoize: AsyncMemoize<'a,'b,'c>) as self =
+type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality and 'a:not null and 'b:not null>(memoize: AsyncMemoize<'a,'b,'c>) as self =
 
     let events = ConcurrentQueue()
 
