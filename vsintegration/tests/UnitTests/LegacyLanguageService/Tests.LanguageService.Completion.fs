@@ -349,6 +349,7 @@ type UsingMSBuild() as this  =
             AssertAutoCompleteCompletionListIsEmptyNoCoffeeBreak c "this."
                     
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     member this.``TypeProvider.VisibilityChecksForGeneratedTypes``() = 
         let extraRefs = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
@@ -426,6 +427,7 @@ type UsingMSBuild() as this  =
     [<Test>] member public this.``AdjacentToDot_21_Negative``() = testAutoCompleteAdjacentToDotNegative ".+."
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LambdaOverloads.Completion``() = 
         let prologue = "open System.Linq"
         let cases = 
@@ -451,6 +453,7 @@ type UsingMSBuild() as this  =
             AssertCtrlSpaceCompleteContains code "(*$*)x.Len" ["Length"] []
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.CompletionInJoinOn``() = 
         let code = 
             [
@@ -1186,6 +1189,7 @@ for i in 0..a."]
             []
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.GroupJoin.CompletionInIncorrectJoinRelations``() = 
         let code = 
             [
@@ -1198,6 +1202,7 @@ for i in 0..a."]
         AssertCtrlSpaceCompleteContains code "(x." ["CompareTo"] ["abs"]
         AssertCtrlSpaceCompleteContains code "? y." ["Chars"; "Length"] ["abs"]
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``Query.Join.CompletionInIncorrectJoinRelations``() = 
         let code = 
@@ -2119,6 +2124,7 @@ let x = new MyClass2(0)
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.EditorHideMethodsAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks Pressing ctrl+space on the provided Type instance method shows list of valid completions
     member this.``TypeProvider.EditorHideMethodsAttribute.InstanceMethod.CtrlSpaceCompletionContains``() =
         this.AssertCtrlSpaceCompletionContains(
@@ -2131,6 +2137,7 @@ let x = new MyClass2(0)
     
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider.EditorHideMethodsAttribute")>]
     // This test case checks Pressing ctrl+space on the provided Type Event shows list of valid completions
     member this.``TypeProvider.EditorHideMethodsAttribute.Event.CtrlSpaceCompletionContains``() =
@@ -2193,6 +2200,7 @@ let x = new MyClass2(0)
             "s."        
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("QueryExpressions")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest0``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
@@ -2204,6 +2212,7 @@ let x = new MyClass2(0)
               addtlRefAssy=standard40AssemblyRefs )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("QueryExpressions")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest0b``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
@@ -2214,6 +2223,7 @@ let x = new MyClass2(0)
               list = ["query"],
               addtlRefAssy=standard40AssemblyRefs   )
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     [<Category("QueryExpressions")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest1``() = 
@@ -2225,6 +2235,7 @@ let x = new MyClass2(0)
               list = ["select"],
               addtlRefAssy=standard40AssemblyRefs  )
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     [<Category("QueryExpressions")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest1b``() = 
@@ -2240,6 +2251,7 @@ let x = new MyClass2(0)
 
     [<Test>]
     [<Category("QueryExpressions")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest2``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2251,6 +2263,7 @@ let x = new MyClass2(0)
 
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("QueryExpressions")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest3``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
@@ -2340,6 +2353,7 @@ let x = new MyClass2(0)
     /// This is the case where at (*TYPING*) we first type 1...N-1 characters of the target custom operation and then invoke the completion list, and we check that the completion list contains the custom operation
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSystematic1``() = 
        let rec strictPrefixes (s:string) = seq { if s.Length > 1 then let s = s.[0..s.Length-2] in yield s; yield! strictPrefixes s}
        for customOperation in ["select";"skip";"contains";"groupJoin"] do
@@ -2725,6 +2739,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, [""], knownFailures) 
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     /// This is the case where (*TYPING*) nothing has been typed yet and we invoke the completion list
     /// This is a known failure right now for some of the example files above.
@@ -4448,6 +4463,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``AfterAssemblyReferenceAdded``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4470,6 +4486,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after adding a reference.") 
 
     /// FEATURE: Updating the active project configuration influences the language service
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``AfterUpdateProjectConfiguration``() = 
         use _guard = this.UsingNewVS()
@@ -4498,6 +4515,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     /// FEATURE: Updating the active project platform influences the language service
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``AfterUpdateProjectPlatform``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4575,6 +4593,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     /// In this bug there was an exception if the user pressed dot after a long identifier
     /// that was unknown.
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``OfSystemWindows``() = 
         let code = ["let y=new System.Windows."]
         let (_, _, file) = this.CreateSingleFileProject(code, references = ["System.Windows.Forms"])
@@ -5353,6 +5372,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(0,0)
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("Query")>]
     // Custom operators appear in Intellisense list after entering a valid query operator
     // on the previous line and invoking Intellisense manually
@@ -5371,6 +5391,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           marker = "do ma",
           contained = [ "maxBy"; "maxByNullable"; ])
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     [<Category("Query")>]
     // Custom operators appear in Intellisense list after entering a valid query operator
@@ -5577,6 +5598,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.EditorHideMethodsAttribute")>]
     // This test case checks that autocomplete on the provided Type DOES NOT show System.Object members
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``TypeProvider.EditorHideMethodsAttribute.Type.DoesnotContain``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """ 
@@ -5589,6 +5611,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.EditorHideMethodsAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks if autocomplete on the provided Type shows only the Event1 elements
     member this.``TypeProvider.EditorHideMethodsAttribute.Type.Contains``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -5602,6 +5625,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.EditorHideMethodsAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks if autocomplete on the provided Type shows the instance method IM1
     member this.``TypeProvider.EditorHideMethodsAttribute.InstanceMethod.Contains``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -5612,6 +5636,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["IM1"],            
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     [<Category("TypeProvider")>]
     // This test case checks that nested types show up only statically and not on instances
@@ -5635,6 +5660,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.EditorHideMethodsAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks if autocomplete on the provided Event shows only the AddHandler/RemoveHandler elements
     member this.``TypeProvider.EditorHideMethodsAttribute.Event.Contain``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -5660,6 +5686,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.EditorHideMethodsAttribute")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks if autocomplete on the provided Property (the type of which is not synthetic) shows the usual elements... like GetType()
     // 1. I think it does not make sense to use this attribute on a synthetic property unless it's type is also synthetic (already covered)
     // 2. You can see this as a "negative case" (to check that the usage of the attribute is harmless)
@@ -7602,6 +7629,7 @@ let rec f l =
             list = ["<Note>"])
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``NonApplicableExtensionMembersDoNotAppear.Bug40379``() =
         let code =
                                     [ "open System.Xml.Linq"
@@ -7649,6 +7677,7 @@ let rec f l =
             marker = "(*MarkerSameAssemb*)",
             list = ["fieldInternal";"MethodInternal"])
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member this.``QueryExpression.DotCompletionSmokeTest1``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -7660,6 +7689,8 @@ let rec f l =
             list = ["Chars";"Length"],
             addtlRefAssy=standard40AssemblyRefs)
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Test>]
     member this.``QueryExpression.DotCompletionSmokeTest2``() = 
            this.VerifyDotCompListContainAllAtStartOfMarker(
               fileContents = """
@@ -7669,6 +7700,7 @@ let rec f l =
               list = ["Chars"; "Length"],
               addtlRefAssy=standard40AssemblyRefs )
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member this.``QueryExpression.DotCompletionSmokeTest0``() = 
            this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -7680,6 +7712,7 @@ let rec f l =
               addtlRefAssy=standard40AssemblyRefs )
 
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member this.``QueryExpression.DotCompletionSmokeTest3``() = 
            this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -7691,6 +7724,7 @@ let rec f l =
               addtlRefAssy=standard40AssemblyRefs )
 
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member this.``QueryExpression.DotCompletionSystematic1``() = 
       for customOperation in ["select";"sortBy";"where"] do
@@ -7750,6 +7784,7 @@ let rec f l =
                 addtlRefAssy=standard40AssemblyRefs)
 
     [<Test>] 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``QueryExpression.InsideJoin.Bug204147``() =        
            this.VerifyDotCompListContainAllAtStartOfMarker(
               fileContents = """
@@ -7830,6 +7865,7 @@ let rec f l =
     [<Test>]
     [<Category("Query")>]
     // Intellisense still appears on arguments when the operator is used in error 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.HasErrors2``() =
         this.AssertDotCompletionListInQuery(
               fileContents = """
@@ -7844,6 +7880,7 @@ let rec f l =
               list = ["ProductID";"ProductName"] )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("Query")>]
     // Shadowed variables have correct Intellisense
     member public this.``Query.ShadowedVariables``() =
@@ -7861,6 +7898,7 @@ let rec f l =
               list = ["Category";"ProductName"] )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("Query")>]
     // Intellisense works correctly in a nested query
     member public this.``Query.InNestedQuery``() =
@@ -7879,6 +7917,7 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(fileContents, "(*Marker2*)", 
             ["Equals";"CompareTo"], queryAssemblyRefs )
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     [<Category("Query")>]
     // Intellisense works correctly in a nested expression within a lamda
