@@ -133,6 +133,7 @@ type UsingMSBuild() as this =
                 failwithf "The error list number is not the expected %d" num
     
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``OverloadsAndExtensionMethodsForGenericTypes``() = 
         let fileContent = 
             """
@@ -212,6 +213,7 @@ let g (t : T) = t.Count()
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
             
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``Query.InvalidJoinRelation.GroupJoin``() = 
         let content = """
@@ -228,6 +230,7 @@ let x = query {
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``Query.NonOpenedNullableModule.Join``() = 
         let content = """
@@ -245,6 +248,7 @@ let t =
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``Query.NonOpenedNullableModule.GroupJoin``() = 
         let content = """
@@ -263,6 +267,7 @@ let t =
                     Assert.Fail("Unexpected content of error list")
 
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``Query.InvalidJoinRelation.Join``() = 
         let content = """
@@ -383,6 +388,7 @@ type staticInInterface =
     
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider.MultipleErrors")>]
     member public this.``TypeProvider.MultipleErrors`` () =
         let tpRef = PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
@@ -444,6 +450,7 @@ type staticInInterface =
 
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify the Error List shows the correct error message when the static parameter type is invalid
@@ -473,6 +480,7 @@ type staticInInterface =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test case Verify that Error List shows the correct error message when Type Provider that takes two static parameter is given only one static parameter.
     member public this.``TypeProvider.StaticParameters.IncorrectNumberOfParameter  `` () =
         
@@ -484,6 +492,7 @@ type staticInInterface =
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.ProhibitedMethods`` () =
         let cases = 
@@ -512,6 +521,7 @@ type staticInInterface =
             num = 1) 
     
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that there is No Error list count in the Error list item when the file content is correct.

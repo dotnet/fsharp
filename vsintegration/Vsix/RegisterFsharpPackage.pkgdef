@@ -27,6 +27,7 @@
 "Name"="F#"
 "PreloadModules"="1" 
 "CacheFile"="attribcache90.bin" 
+"ClrCustomVisualizerVSHost"="{E82F32A8-074E-465A-86E5-D68A87284F61}"
 "GlobalVisualizersDirectory"="$(reg.MODULE_DIR)" 
 "HelperObject"="{5749A995-CBC2-4de4-86AF-C934D5E57BB9}" 
 "HostAssemblyName"="$(reg.VisualizerAssemblyName)" 

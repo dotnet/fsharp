@@ -1014,22 +1014,22 @@ type UsingMSBuild() as this =
         let ans = GetSquiggleAtCursor(file)
         match ans with
         | Some(sev,msg) -> 
-            AssertEqual(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,sev)
-            AssertContains(msg,expectedStr)
+            AssertEqual(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, sev)
+            AssertContains(msg, expectedStr)
         | _ -> Assert.Fail() 
 
     /// FEATURE: #r, #I, #load are all errors when running under the language service
     [<Test>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case1``() =  
-        this.TestFsxHashDirectivesAreErrors("#r \"Joe","#r")
+        this.TestFsxHashDirectivesAreErrors("#r \"Joe", "may only be used in F# script files")
      
     [<Test>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case2``() =  
-        this.TestFsxHashDirectivesAreErrors("#I \"","#I")      
+        this.TestFsxHashDirectivesAreErrors("#I \"", "may only be used in F# script files")
         
     [<Test>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case3``() =  
-        this.TestFsxHashDirectivesAreErrors("#load \"Doo","may only be used in F# script files")      
+        this.TestFsxHashDirectivesAreErrors("#load \"Doo", "may only be used in F# script files")
 
     /// FEATURE: #reference against a non-assembly .EXE gives a reasonable error message
     //[<Test>]
@@ -1329,6 +1329,7 @@ type UsingMSBuild() as this =
         
     // Must be explicitly referenced by compile.
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_Bug5416_2``() =
@@ -1544,6 +1545,7 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``TypeProvider.UnitsOfMeasure.SmokeTest1``() =
         let code =
                                     ["open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames"
