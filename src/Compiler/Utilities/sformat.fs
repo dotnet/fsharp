@@ -7,15 +7,16 @@
 // The one implementation file is used because we keep the implementations of
 // structured formatting the same for fsi.exe and '%A' printing. However F# Interactive has
 // a richer feature set.
-
-#nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
-
 #if COMPILER
 namespace FSharp.Compiler.Text
 #else
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
+
+#nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
+#nowarn "3261" // TODO nullness
+#nowarn "3262" // TODO nullness
 
 // Breakable block layout implementation.
 // This is a fresh implementation of pre-existing ideas.

@@ -69,11 +69,8 @@ let GetTypeProviderImplementationTypes (
                 [
                     for t in exportedTypes do 
                         let ca = t.GetCustomAttributes(typeof<TypeProviderAttribute>, true)
-                        match ca with 
-                        | Null -> ()
-                        | NonNull ca -> 
-                            if ca.Length > 0 then 
-                                yield t
+                        if ca.Length > 0 then 
+                            yield t
                 ]
             filtered
         with e ->
@@ -423,7 +420,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
 
-    member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
+    member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: objnull[]) = 
         provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
 
     member _.IsVoid = (Type.op_Equality(x, typeof<Void>) || (x.Namespace = "System" && x.Name = "Void"))
@@ -546,11 +543,11 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
                 let ctorArgs = 
                     a.ConstructorArguments 
                     |> Seq.toList 
-                    |> List.map (function Arg null -> None | Arg obj -> Some obj | _ -> None)
+                    |> List.map (function Arg obj -> Some obj | _ -> None)
                 let namedArgs = 
                     a.NamedArguments 
                     |> Seq.toList 
-                    |> List.map (fun arg -> arg.MemberName, match arg.TypedValue with Arg null -> None | Arg obj -> Some obj | _ -> None)
+                    |> List.map (fun arg -> arg.MemberName, match arg.TypedValue with Arg obj -> Some obj | _ -> None)
                 ctorArgs, namedArgs)
 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider = 
@@ -746,7 +743,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
 
         staticParams |> ProvidedParameterInfo.CreateArrayNonNull ctxt
 
-    member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: obj[]) = 
+    member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: objnull[]) = 
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
 
         let mb = 
@@ -1097,7 +1094,7 @@ let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBas
 
 /// Compute the Name or FullName property of a provided type, reporting appropriate errors
 let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =
-    let name = 
+    let name : string MaybeNull = 
         try st.PUntaint(proj, m) 
         with :? TypeProviderError as tpe -> 
             let newError = tpe.MapText((fun msg -> FSComp.SR.etProvidedTypeWithNameException(propertyString, msg)), st.TypeProviderDesignation, m)

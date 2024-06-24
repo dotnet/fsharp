@@ -39,11 +39,16 @@ let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
 
 let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
+#if NO_CHECKNULLS
+    compare (func x) (func y)
+#else
     match x,y with
     | null,null -> 0
     | null,_ -> -1
     | _,null -> 1
     | x,y ->  compare (func !!x) (func !!y)
+#endif
+
 
 
 //---------------------------------------------------------------------------

@@ -136,20 +136,20 @@ module internal Activity =
                 new ActivityListener(
                     ShouldListenTo = (fun a -> a.Name = ActivityNames.ProfiledSourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
-                    ActivityStarted = (fun a -> ()),
-                    //ActivityStarted = (fun a -> a.AddTag(gcStatsInnerTag, collectGCStats ()) |> ignore),
+                    ActivityStarted = (fun a -> a.AddTag(gcStatsInnerTag, collectGCStats ()) |> ignore),
                     ActivityStopped =
                         (fun a ->
-                            let statsBefore = a.GetTagItem(gcStatsInnerTag) :?> GCStats
                             let statsAfter = collectGCStats ()
                             let p = Process.GetCurrentProcess()
                             a.AddTag(Tags.workingSetMB, p.WorkingSet64 / 1_000_000L) |> ignore
                             a.AddTag(Tags.handles, p.HandleCount) |> ignore
                             a.AddTag(Tags.threads, p.Threads.Count) |> ignore
 
-                            for i = 0 to statsAfter.Length - 1 do
-                                a.AddTag($"gc{i}", statsAfter[i] - statsBefore[i]) |> ignore)
-
+                            match a.GetTagItem(gcStatsInnerTag) with
+                            | :? GCStats as statsBefore ->
+                                for i = 0 to statsAfter.Length - 1 do
+                                    a.AddTag($"gc{i}", statsAfter[i] - statsBefore[i]) |> ignore
+                            | _ -> ())
                 )
 
             ActivitySource.AddActivityListener(l)

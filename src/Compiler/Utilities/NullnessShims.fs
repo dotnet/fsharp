@@ -8,7 +8,7 @@ module internal NullnessShims =
     let inline isNotNull (x: 'T) = not (isNull x)
 
 #if NO_CHECKNULLS
-    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
+    type 'T MaybeNull when 'T: not struct = 'T
     type objnull = obj
 
     let inline (^) (a: 'a) ([<InlineIfLambda>] b: 'a -> 'b) : 'b =
@@ -32,13 +32,18 @@ module internal NullnessShims =
         | v -> NonNull v
 
     let inline nullArgCheck paramName (x: 'T MaybeNull) =
-        match x with
-        | null -> raise (ArgumentNullException(paramName))
-        | v -> v
+        if isNull (box x) then raise (ArgumentNullException(paramName))
+        else x
 
     let inline (!!) x = x
 
     let inline defaultIfNull defaultValue arg = match arg with | null -> defaultValue | _ -> arg
+
+    let inline nullSafeEquality (x: MaybeNull<'T>) (y: MaybeNull<'T>) ([<InlineIfLambda>]nonNullEqualityFunc:'T->'T->bool) =
+        match box x, box y with
+        | null, null -> true
+        | null,_ | _, null -> false
+        | _,_ -> nonNullEqualityFunc x y
 #else
     type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
 
@@ -49,13 +54,15 @@ module internal NullnessShims =
 
     let inline (!!) (x:'T | null) = Unchecked.nonNull x
 
-#endif    
-
     let inline nullSafeEquality (x: MaybeNull<'T>) (y: MaybeNull<'T>) ([<InlineIfLambda>]nonNullEqualityFunc:'T->'T->bool) =
         match x, y with
         | null, null -> true
         | null,_ | _, null -> false
         | x, y -> nonNullEqualityFunc !!x !!y
+
+#endif    
+
+
 
     [<return:Struct>]
     let inline (|NonEmptyString|_|) (x: string MaybeNull) =

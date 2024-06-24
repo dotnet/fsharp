@@ -15,7 +15,7 @@ open System.Collections.Concurrent
 module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString (s:string | null)  =
+    let ofString (s:string MaybeNull)  =
         match s with
         | null -> None
         | "" -> None
