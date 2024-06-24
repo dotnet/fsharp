@@ -484,8 +484,11 @@ module OperatorsModuleDynamic =
         if Info.isX86Runtime then
             Assert.AreEqual(-2147483648n, result)
         else
-            // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
-            Assert.AreEqual(-9223372036854775807n - 1n, result)
+            if not Info.isNetFramework then
+                Assert.AreEqual(9223372036854775807n, result)
+            else
+                // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
+                Assert.AreEqual(-9223372036854775807n - 1n, result)
         
         // Overflow (depends on pointer size)
         let result = Operators.nativeint Double.MinValue
@@ -767,7 +770,10 @@ module OperatorsModuleDynamic =
         if Info.isX86Runtime then
             Assert.AreEqual(0un, result)
         else
-            Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
+            if not Info.isNetFramework then
+                Assert.AreEqual(0un, result)
+            else
+                Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
         
         // Overflow Double.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.unativeint Double.MaxValue
