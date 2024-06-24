@@ -79,8 +79,8 @@
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
-    <Compile Include="Conformance\Expressions\ComputationExpressions\CustomOperations.fs" />
-    <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
+    <Compile Include="Conformance\Expressions\ComputationExpressions\ComputationExpressions.fs" />
+      <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />

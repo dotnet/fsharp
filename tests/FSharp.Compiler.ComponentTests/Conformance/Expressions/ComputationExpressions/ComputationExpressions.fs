@@ -1,4 +1,4 @@
-namespace Conformance.Expressions.ComputationExpressions
+﻿namespace Conformance.Expressions.ComputationExpressions
 
 open Xunit
 open FSharp.Test.Compiler
