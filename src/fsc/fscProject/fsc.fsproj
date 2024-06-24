@@ -14,7 +14,6 @@
     <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
   <ItemGroup Condition="'$(Configuration)' == 'Proto'">  
     <PublishReadyToRunExclude Include="FSharp.Core.dll" />
   </ItemGroup>
