@@ -13,6 +13,8 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service", "
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core", "src\FSharp.Core\FSharp.Core.fsproj", "{5A4B66D5-A6C3-402C-A010-7A3635098DA7}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager.Nuget", "src\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj", "{860808CF-D092-4511-B011-6205B654031D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,11 +47,20 @@ Global
 		{5A4B66D5-A6C3-402C-A010-7A3635098DA7}.Proto|Any CPU.Build.0 = Proto|Any CPU
 		{5A4B66D5-A6C3-402C-A010-7A3635098DA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A4B66D5-A6C3-402C-A010-7A3635098DA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{860808CF-D092-4511-B011-6205B654031D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{860808CF-D092-4511-B011-6205B654031D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{860808CF-D092-4511-B011-6205B654031D}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
+		{860808CF-D092-4511-B011-6205B654031D}.Proto|Any CPU.Build.0 = Debug|Any CPU
+		{860808CF-D092-4511-B011-6205B654031D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{860808CF-D092-4511-B011-6205B654031D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{14B9AB0E-2FC0-43F1-9775-20C262202D12} = {B4A1E626-4A48-4977-B291-219882DB3413}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BCE01FEF-1B00-471B-81E0-A06994EC90ED}
 	EndGlobalSection
 EndGlobal
