@@ -1132,6 +1132,33 @@ module RangeTests =
             if System.UIntPtr.Size >= 8 then
                 RangeTestsHelpers.unsigned 0x0un 0x1un 0x0un 0xffffffffffffffffun
 
+    [<AutoOpen>]
+    module UserDefinedRange =
+        type Step(value:int) =
+            member __.Value = value
+    
+            static member Zero = Step 0
+
+        type Value(value:int) =
+            member __.Value = value
+    
+            static member (+)(a:Value, b:Step) = Value(a.Value + b.Value)
+    
+            interface System.IComparable with
+                member a.CompareTo(b) =
+                    match b with
+                    | :? Value as b' -> compare a.Value b'.Value
+                    | _ -> failwith "unsupported"
+    
+        [<Fact>]
+        let ``Range.UserDefined``() =
+            // using a user defined type, as opposed to a primitive, as the base type
+            let rangeList = [Value 0 .. Step 2 .. Value 2]
+            let rangeArray = [Value 0 .. Step 2 .. Value 2]
+            Assert.AreEqual(2, rangeList.Length)
+            Assert.AreEqual(2, rangeArray.Length)
+
+
     /// These tests' arguments are intentionally _not_ inlined
     /// to force the size of the collection (for lists and arrays) or count (for for-loops) to be computed at runtime.
     module Runtime =
@@ -1215,6 +1242,13 @@ module RangeTests =
             if System.UIntPtr.Size >= 8 then
                 let zero, one, min0, max0 =  System.UIntPtr 0u, System.UIntPtr 1u, System.UIntPtr System.UInt64.MinValue, System.UIntPtr System.UInt64.MaxValue
                 RangeTestsHelpers.unsigned zero one min0 max0
+
+        [<Fact>]
+        let ``Range.UserDefined``() =
+            let rangeList = [Value 0 .. Step 2 .. Value 2]
+            let rangeArray = [Value 0 .. Step 2 .. Value 2]
+            Assert.AreEqual(2, rangeList.Length)
+            ()
 
 open NonStructuralComparison
 

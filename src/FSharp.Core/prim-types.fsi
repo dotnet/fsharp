@@ -3758,6 +3758,8 @@ namespace Microsoft.FSharp.Core
                                 and ^Step: (static member Zero: ^Step)
                                 and ^T: equality
                                 and ^T: comparison                                
+                                and ^Step: equality
+                                and ^Step: comparison                                
                                 and default ^Step: ^T
                                 and default ^T: int
         
