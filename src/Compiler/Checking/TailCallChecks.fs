@@ -756,7 +756,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
                 | Expr.Lambda(bodyExpr = bodyExpr) -> checkTailCall insideSubBindingOrTry bodyExpr
                 | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBindingOrTry expr
                 | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
-                    // detect continuation shapes like MakeAsyns
+                    // detect continuation shapes like MakeAsync
                     let isContinuation =
                         match bodyExpr with
                         | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
